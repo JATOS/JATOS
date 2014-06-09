@@ -1,0 +1,13 @@
+@(experiment: MAExperiment)
+
+@main("Mechanical Argentinian - Experiment " + experiment.title) {
+
+	<h1>Results for experiment "@experiment.title" (ID @experiment.id)</h1>
+
+	<ul>
+	@for(result <- experiment.resultList) {
+		<li>@result.id (@result.date, @result.result)</li>
+	}
+	</ul>
+
+}

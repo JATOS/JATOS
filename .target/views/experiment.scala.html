@@ -1,0 +1,88 @@
+@(title: String, experimentJson: String, data: String)
+@main("Mechanical Argentinian - Experiment " + title) {
+<div id="body">
+	<h1 id="text"></h1>
+	<img id="image" src=""> <span id="loader"><img
+		src="http://jimpunk.net/Loading/wp-content/uploads/loading1.gif"></span>
+</div>
+
+<script>
+		$('#body').css('opacity', 0);
+		var experiment = @Html(experimentJson);
+		var slideList = @Html(data);
+		var slideCount = 0;
+		var slideListLength = slideList.length;
+		var experimentResult = {id:experiment.id, slideResultList:[], lostFocus:false};
+		
+		function SlideResult (duration, keycode) {
+			this.duration = duration;
+			this.keycode = keycode;
+		}
+		
+		function postResults() {
+			experimentResult.lostFocus = lostFocus;
+			var experimentResultJson = JSON.stringify(experimentResult);
+			
+			var ajax = $.ajax({
+				url: "/experiment/" + experiment.id,
+				data: experimentResultJson,
+				processData: false,
+				type: "POST",
+				contentType: "application/json",
+				success: function(response) {
+					window.location.replace("/finished");
+				},
+				error: function(err) {
+					alert(err.responseText);
+				}
+			});
+			
+		}
+		
+		function postResultSuccess() {
+			window.location.replace("/finished");
+		}
+		
+		function postResultError(err) {
+			alert(err.responseText);
+		}
+		
+		var imgUrl = slideList[slideCount].imgUrl;
+		var text = slideList[slideCount].text;
+		$("#image").attr("src",imgUrl);
+		$("#text").html(text);
+		
+		$(document).keypress(function(event){
+			var timeEnd = performance.now();
+			var duration = timeEnd - timeStart;
+			duration = (Math.round(duration * 1000))/1000;
+			var keycode = (event.keyCode ? event.keyCode : event.which);
+			experimentResult.slideResultList.push(new SlideResult(duration, keycode));
+			slideCount++;
+			if (slideCount < slideListLength) {
+				$('#loader').show(); 
+				var imgUrl = slideList[slideCount].imgUrl;
+				var text = slideList[slideCount].text;
+				$("#image").attr("src", imgUrl).load(function() {
+					$('#loader').hide();
+				});
+				$("#text").html(text);
+				timeStart = performance.now();
+			} else {
+				postResults();
+			}
+		});
+		
+		var timeStart;
+		$(window).load(function() {
+			$('#body').css('opacity', 1);
+			timeStart = performance.now();
+		});
+		
+		var lostFocus = false;
+		$(window).blur(function(){
+			lostFocus = true;
+		});
+		
+	</script>
+}

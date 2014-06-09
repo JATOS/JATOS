@@ -1,0 +1,22 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                              controllers.Application.index()
+GET     /experiment/:id                controllers.Application.experiment(id: Long)
+POST    /experiment/:id                controllers.Application.submitResult(id: Long)
+GET     /finished                      controllers.Application.finished()
+GET     /admin/experiment/create       controllers.Admin.createExperiment()
+POST    /admin/experiment/create       controllers.Admin.submitExperiment()
+GET     /admin/experiment/:id/change   controllers.Admin.changeExperiment(id: Long)
+POST    /admin/experiment/:id/change   controllers.Admin.submitChangedExperiment(id: Long)
+GET     /admin/experiment/:id          controllers.Admin.experiment(id: Long)
+GET     /admin/experiment/:id/         controllers.Admin.experiment(id: Long)
+GET     /admin/experiment              controllers.Admin.index()
+GET     /admin/experiment/             controllers.Admin.index()
+GET     /admin                         controllers.Admin.index()
+GET     /admin/                        controllers.Admin.index()
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)
