@@ -1,0 +1,30 @@
+@(form: Form[Admin.Login])
+
+@main("Mechanical Argentinian - Login") {
+
+	@if(form.hasGlobalErrors) {
+		<p class="error">
+			@form.globalError.message
+		</p>
+	}
+	
+	@if(flash.contains("success")) {
+		<p class="success">
+			@flash.get("success")
+		</p>
+	}
+	
+	@helper.form(routes.Admin.authenticate) {
+		<h1>Sign in</h1>
+		
+		<p>
+			<input type="email" name="email" placeholder="Email" value="@form("email").value">
+		</p>
+		<p>
+			<input type="password" name="password" placeholder="Password">
+		</p>
+		<p>
+			<button type="submit">Login</button>
+		</p>
+	}
+}
