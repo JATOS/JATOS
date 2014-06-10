@@ -7,12 +7,14 @@
 			@error
 		</p>
 	}
+	
+	<a href="/admin/experiment/create">Create new experiment</a>
 
 	<h1>Experiments so far:</h1>
 
 	<ul>
 	@for(experiment <- experimentList) {
-		<li><a href="/admin/experiment/@experiment.id">@experiment.id (@experiment.title, @experiment.resultList.size())</a></li>
+		<li>@experiment.id "@experiment.title" <a href="/admin/experiment/@experiment.id">(@experiment.resultList.size() results)</a> - <a href="/admin/experiment/@experiment.id/change">change</a></li>
 	}
 	</ul>
 

@@ -4,6 +4,8 @@
 
 # Home page
 GET     /                              controllers.Application.index()
+GET     /experiment                    controllers.Application.index()
+GET     /experiment/                   controllers.Application.index()
 GET     /experiment/:id                controllers.Application.experiment(id: Long)
 POST    /experiment/:id                controllers.Application.submitResult(id: Long)
 GET     /finished                      controllers.Application.finished()

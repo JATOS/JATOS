@@ -7,6 +7,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import views.html.error;
 import views.html.finished;
+import views.html.index;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 public class Application extends Controller {
 
 	public static Result index() {
-		return ok("ready");
+		return ok(index.render());
 	}
 
 	@Transactional
