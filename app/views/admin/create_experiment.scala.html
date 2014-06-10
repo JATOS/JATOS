@@ -1,24 +1,28 @@
-@(form: Form[MAExperiment])
+@(experimentList: List[MAExperiment], error: String, user: MAUser, form: Form[MAExperiment])
 
-@main("Mechanical Argentinian - Create Experiment") {
+@main(experimentList, error, user){
 
-	@if(form.hasGlobalErrors) {
-		<p class="error">
-			@form.globalError.message
-		</p>
-	}
+	<header>
+		<hgroup>
+			<h1>Dashboard > </h1>
+			<h2>Experiments > </h2>
+			<h4>New Experiment > </h4>
+		</hgroup>
+	</header>
 
-	@helper.form(action = routes.Admin.submitExperiment()) {
-
-		<p>
-			<input type="text" name="title" placeholder="Title" value="@form("title").value">
-		</p>
-		<p>
-			<textarea name="data" cols="160" rows="20" placeholder="Data - put your JSON string here.">@form("data").value</textarea>
-		</p>
-		<p>	
-			<button type="submit">Create</button>
-		</p>
-	}
-
+	<article class="tasks" id="tasks">
+		<div class="folder">
+		
+			@helper.form(action = routes.Admin.submitExperiment()) {
+				@if(form.hasGlobalErrors) {
+					<p>
+						@form.globalError.message
+					</p>
+				}
+				<input type="text" name="title" placeholder="Title" value="@form("title").value">
+				<textarea name="data" cols="160" rows="20" placeholder="Data - put your JSON string here.">@form("data").value</textarea>
+				<button id="newGroup" type="submit">Create</button>
+			}
+		</div>
+	</article>
 }

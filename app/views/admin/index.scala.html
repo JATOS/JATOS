@@ -1,21 +1,12 @@
-@(experimentList: List[MAExperiment], error: String)
+@(experimentList: List[MAExperiment], error: String, user: MAUser)
 
-@main("Mechanical Argentinian - Admin") {
+@main(experimentList, error, user){
 
-	@if(error != null) {
-		<p class="error">
-			@error
-		</p>
-	}
-	
-	<a href="/admin/experiment/create">Create new experiment</a>
-
-	<h1>Experiments so far:</h1>
-
-	<ul>
-	@for(experiment <- experimentList) {
-		<li>@experiment.id "@experiment.title" <a href="/admin/experiment/@experiment.id">(@experiment.resultList.size() results)</a> - <a href="/admin/experiment/@experiment.id/change">change</a></li>
-	}
-	</ul>
-
+    <header>
+        <hgroup>
+            <h1>Dashboard > </h1>
+            <h2>Experiments > </h2>
+        </hgroup>
+    </header>
+    
 }

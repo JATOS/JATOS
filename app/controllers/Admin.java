@@ -22,7 +22,8 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result index() {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		return ok(index.render(experimentList, null));
+		MAUser user = MAUser.findById(session("email"));
+		return ok(index.render(experimentList, null, user));
 	}
 
 	public static Result login() {
@@ -49,8 +50,12 @@ public class Admin extends Controller {
 	}
 
 	@Security.Authenticated(Secured.class)
+	@Transactional
 	public static Result createExperiment() {
-		return ok(create_experiment.render(Form.form(MAExperiment.class)));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		MAUser user = MAUser.findById(session("email"));
+		return ok(create_experiment.render(experimentList, null, user,
+				Form.form(MAExperiment.class)));
 	}
 
 	@Transactional
@@ -62,7 +67,10 @@ public class Admin extends Controller {
 		}
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.fill(experiment);
-		return ok(change_experiment.render(form, id));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		MAUser user = MAUser.findById(session("email"));
+		return ok(change_experiment
+				.render(experimentList, null, user, form, id));
 	}
 
 	@Transactional
@@ -72,7 +80,10 @@ public class Admin extends Controller {
 		if (experiment == null) {
 			return badRequestNotExist(id);
 		}
-		return ok(views.html.admin.experiment.render(experiment));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		MAUser user = MAUser.findById(session("email"));
+		return ok(views.html.admin.experiment.render(experimentList, null,
+				user, experiment));
 	}
 
 	@Transactional
@@ -81,7 +92,10 @@ public class Admin extends Controller {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			return badRequest(create_experiment.render(form));
+			List<MAExperiment> experimentList = MAExperiment.findAll();
+			MAUser user = MAUser.findById(session("email"));
+			return badRequest(create_experiment.render(experimentList, null,
+					user, form));
 		} else {
 			MAExperiment experiment = form.get();
 			experiment.persist();
@@ -95,7 +109,10 @@ public class Admin extends Controller {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			return badRequest(change_experiment.render(form, id));
+			List<MAExperiment> experimentList = MAExperiment.findAll();
+			MAUser user = MAUser.findById(session("email"));
+			return badRequest(change_experiment.render(experimentList, null,
+					user, form, id));
 		}
 
 		MAExperiment experiment = MAExperiment.findById(id);
@@ -107,13 +124,13 @@ public class Admin extends Controller {
 		experiment.title = requestData.get("title");
 		experiment.setData(requestData.get("data"));
 		experiment.merge();
-		return redirect(routes.Admin.index());
+		return redirect(routes.Admin.experiment(id));
 	}
-	
+
 	public static class Login {
 
 		public String email;
-		
+
 		public String password;
 
 		public String validate() {
@@ -128,7 +145,8 @@ public class Admin extends Controller {
 	private static Result badRequestNotExist(Long id) {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		String error = "An experiment with id " + id + " doesn't exist.";
-		return badRequest(index.render(experimentList, error));
+		return badRequest(index.render(experimentList, error,
+				MAUser.findById(session("email"))));
 	}
 
 }

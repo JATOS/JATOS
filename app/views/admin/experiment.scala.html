@@ -1,13 +1,31 @@
-@(experiment: MAExperiment)
+@(experimentList: List[MAExperiment], error: String, user: MAUser,
+experiment: MAExperiment)
 
-@main("Mechanical Argentinian - Experiment " + experiment.title) {
+@main(experimentList, error, user){
 
-	<h1>Results for experiment "@experiment.title" (ID @experiment.id)</h1>
+<header>
+	<hgroup>
+		<h1>Dashboard > </h1>
+		<h2>Experiments > </h2>
+		<h3>@experiment.id "@experiment.title" > </h3>
+	</hgroup>
+</header>
 
-	<ul>
-	@for(result <- experiment.resultList) {
-		<li>@result.id (@result.date, @result.result)</li>
-	}
-	</ul>
+<article class="tasks" id="tasks">
+		<a id="newGroup" href="@routes.Admin.changeExperiment(experiment.id)">Change</a>
+		<a id="newGroup" href="">Delete</a>
+	<div class="folder" data-folder-id="@experiment.id">
+		<header>
+			<h3>Results so far</h3>
+		</header>
+
+		<ul class="list">
+			@for(result <- experiment.resultList) {
+			<li data-task-id="@experiment.id">@result.id (@result.date,
+				@result.result)</li>
+			}
+		</ul>
+	</div>
+</article>
 
 }

@@ -35,5 +35,9 @@ public class MAUser {
 				.setParameter("password", password).getResultList();
 		return userList.isEmpty() ? null : userList.get(0);
 	}
+	
+	public static MAUser findById(String email) {
+		return JPA.em().find(MAUser.class, email);
+	}
 
 }
