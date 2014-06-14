@@ -1,0 +1,43 @@
+@(experimentList: List[MAExperiment], error: String, user: MAUser)(body: Html)
+
+<html>
+<head>
+<title>Mechanical Argentinian</title>
+<link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
+<link rel="stylesheet" type="text/css" media="screen"
+	href="@routes.Assets.at("stylesheets/main.css")">
+<script type="text/javascript" src="@routes.Assets.at("javascripts/jquery-1.9.0.min.js")"></script>
+</head>
+
+<body>
+	<header>
+		<a href="@routes.Admin.index" id="logo"><span>Mechanical</span>Argentinian</a>
+		<dl id="user">
+			<dt>
+				@user.name <span>(@user.email)</span>
+			</dt>
+			<dd>
+				<a href="@routes.Admin.logout()">Logout</a>
+			</dd>
+		</dl>
+	</header>
+
+	<nav>
+		<h4 class="dashboard">
+			<a href="@routes.Admin.index()">Dashboard</a>
+		</h4>
+		<a id="newGroup" href="@routes.Admin.createExperiment()">New
+			experiment</a>
+		<ul id="projects">
+			@for(experiment <- experimentList) {
+				<li data-task-id="@experiment.id"><a class="name"
+					href="@routes.Admin.experiment(experiment.id)">@experiment.id
+						"@experiment.title" (@experiment.resultList.size())</a></li>
+			}
+		</ul>
+	</nav>
+
+	<section id="main">@body</section>
+	
+</body>
+</html>
