@@ -17,11 +17,13 @@ import views.html.admin.login;
 
 public class Admin extends Controller {
 
+	private static final String COOKIE_EMAIL = "email";
+
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result index() {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session("email"));
+		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 		return ok(index.render(experimentList, null, user));
 	}
 
@@ -35,19 +37,19 @@ public class Admin extends Controller {
 		if (loginForm.hasErrors()) {
 			return badRequest(login.render(loginForm));
 		} else {
-			session().clear();
-			session("email", loginForm.get().email);
+			// session().clear();
+			session(COOKIE_EMAIL, loginForm.get().email);
 			return redirect(routes.Admin.index());
 		}
 	}
 
 	@Security.Authenticated(Secured.class)
 	public static Result logout() {
-		session().clear();
+		session().remove(COOKIE_EMAIL);
 		flash("success", "You've been logged out");
 		return redirect(routes.Admin.login());
 	}
-	
+
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result experiment(Long id) {
@@ -56,7 +58,7 @@ public class Admin extends Controller {
 			return badRequestNotExist(id);
 		}
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session("email"));
+		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 		return ok(views.html.admin.experiment.render(experimentList, null,
 				user, experiment));
 	}
@@ -65,7 +67,7 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result createExperiment() {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session("email"));
+		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 		return ok(experiment_create.render(experimentList, null, user,
 				Form.form(MAExperiment.class)));
 	}
@@ -77,18 +79,18 @@ public class Admin extends Controller {
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			List<MAExperiment> experimentList = MAExperiment.findAll();
-			MAUser user = MAUser.findById(session("email"));
+			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 			return badRequest(experiment_create.render(experimentList, null,
 					user, form));
 		} else {
 			MAExperiment experiment = form.get();
-			MAUser user = MAUser.findById(session("email"));
+			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 			experiment.creator = user.toString();
 			experiment.persist();
 			return redirect(routes.Admin.experiment(experiment.id));
 		}
 	}
-	
+
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result updateExperiment(Long id) {
@@ -99,7 +101,7 @@ public class Admin extends Controller {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.fill(experiment);
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session("email"));
+		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 		return ok(experiment_update
 				.render(experimentList, null, user, form, id));
 	}
@@ -111,7 +113,7 @@ public class Admin extends Controller {
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			List<MAExperiment> experimentList = MAExperiment.findAll();
-			MAUser user = MAUser.findById(session("email"));
+			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 			return badRequest(experiment_update.render(experimentList, null,
 					user, form, id));
 		}
@@ -127,7 +129,7 @@ public class Admin extends Controller {
 		experiment.merge();
 		return redirect(routes.Admin.experiment(id));
 	}
-	
+
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result deleteExperiment(Long id) {
@@ -135,9 +137,9 @@ public class Admin extends Controller {
 		if (experiment == null) {
 			return badRequestNotExist(id);
 		}
-		
+
 		experiment.remove();
-		
+
 		return redirect(routes.Admin.index());
 	}
 
@@ -159,8 +161,8 @@ public class Admin extends Controller {
 	private static Result badRequestNotExist(Long id) {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		String error = "An experiment with id " + id + " doesn't exist.";
-		return badRequest(index.render(experimentList, error,
-				MAUser.findById(session("email"))));
+		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
+		return badRequest(index.render(experimentList, error, user));
 	}
 
 }

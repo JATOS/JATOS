@@ -15,6 +15,9 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 public class Application extends Controller {
 
+	private static final String COOKIE_EXPS_DONE = "expsDone";
+	public static final String EXPERIMENTS_DONE_DELIMITER = ",";
+
 	public static Result index() {
 		return ok(index.render());
 	}
@@ -27,11 +30,38 @@ public class Application extends Controller {
 					+ " doesn't exist."));
 		}
 
+		boolean result = setExperimentDone(id);
+		if (!result) {
+			return badRequest(error.render("It is not allowed to reload an "
+					+ "experiment you've started already."));
+		}
+
 		ObjectWriter objectWriter = new ObjectMapper()
 				.writerWithView(MAExperiment.Public.class);
 		String experimentJson = objectWriter.writeValueAsString(experiment);
 		return ok(views.html.experiment.render(String.valueOf(id),
 				experimentJson, experiment.data));
+	}
+
+	private static boolean setExperimentDone(Long id) {
+		String experimentsDone = session(COOKIE_EXPS_DONE);
+		if (experimentsDone == null) {
+			session(COOKIE_EXPS_DONE, id.toString());
+			return true;
+		}
+
+		// If there are several experiment ids stored in the cookie check them
+		// one by one.
+		String[] experimentsDoneArray = experimentsDone
+				.split(EXPERIMENTS_DONE_DELIMITER);
+		for (String experimentDone : experimentsDoneArray) {
+			if (experimentDone.equals(id.toString())) {
+				return false;
+			}
+		}
+		session(COOKIE_EXPS_DONE, experimentsDone + EXPERIMENTS_DONE_DELIMITER
+				+ id);
+		return true;
 	}
 
 	@Transactional
