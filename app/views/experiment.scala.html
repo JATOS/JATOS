@@ -1,23 +1,66 @@
 @(title: String, experimentJson: String, data: String)
+
 @main("Mechanical Argentinian - Experiment " + title) {
-<div id="body">
+<div id="experiment">
 	<img id="image" src="">
 	<p id="text"></p>
 </div>
 
 <script>
-		$('#body').css('opacity', 0);
 		var experiment = @Html(experimentJson);
-		var slideList = @Html(data);
+		var data = @Html(data);
+		var slideList = data.slideList;
+		var turkGateUrl = data.turkGateUrl;
 		var slideCount = 0;
 		var slideListLength = slideList.length;
-		var experimentResult = {id:experiment.id, slideResultList:[], lostFocus:false};
+		var timeStart;
+		var lostFocus = false;
 		
+		// The experimentResult will be sent back to the server
+		var experimentResult = {id:experiment.id, slideResultList:[], lostFocus:false};
 		function SlideResult (duration, keycode) {
 			this.duration = duration;
 			this.keycode = keycode;
 		}
 		
+		// When the window is fully loaded display the first slide 
+		$(window).load(function() {
+			displaySlide();
+		});
+		
+		// If the user leaves the browser's tab set lostFocus to true
+		$(window).blur(function(){
+			lostFocus = true;
+		});
+		
+		// Callback function when key is pressed
+		$(document).keypress(function(event){
+			var timeEnd = performance.now();
+			var duration = timeEnd - timeStart;
+			duration = (Math.round(duration * 1000))/1000;
+			var keycode = (event.keyCode ? event.keyCode : event.which);
+			experimentResult.slideResultList.push(new SlideResult(duration, keycode));
+			slideCount++;
+			if (slideCount < slideListLength) {
+				displaySlide();
+			} else {
+				postResults();
+			}
+		});
+		
+		function displaySlide() {
+			$('#loader').show(); 
+			var imgUrl = slideList[slideCount].imgUrl;
+			var text = slideList[slideCount].text;
+			$("#image").attr("src", imgUrl).load(function() {
+				$('#loader').hide();
+				// Start timer when imgage is fully loaded
+				timeStart = performance.now();
+			});
+			$("#text").html(text);
+		}
+		
+		// Post results back to the server
 		function postResults() {
 			experimentResult.lostFocus = lostFocus;
 			var experimentResultJson = JSON.stringify(experimentResult);
@@ -29,59 +72,13 @@
 				type: "POST",
 				contentType: "application/json",
 				success: function(response) {
-					window.location.replace("/finished");
+					window.location.replace(turkGateUrl);
 				},
 				error: function(err) {
 					alert(err.responseText);
 				}
 			});
-			
 		}
-		
-		function postResultSuccess() {
-			window.location.replace("/finished");
-		}
-		
-		function postResultError(err) {
-			alert(err.responseText);
-		}
-		
-		var imgUrl = slideList[slideCount].imgUrl;
-		var text = slideList[slideCount].text;
-		$("#image").attr("src",imgUrl);
-		$("#text").html(text);
-		
-		$(document).keypress(function(event){
-			var timeEnd = performance.now();
-			var duration = timeEnd - timeStart;
-			duration = (Math.round(duration * 1000))/1000;
-			var keycode = (event.keyCode ? event.keyCode : event.which);
-			experimentResult.slideResultList.push(new SlideResult(duration, keycode));
-			slideCount++;
-			if (slideCount < slideListLength) {
-				$('#loader').show(); 
-				var imgUrl = slideList[slideCount].imgUrl;
-				var text = slideList[slideCount].text;
-				$("#image").attr("src", imgUrl).load(function() {
-					$('#loader').hide();
-				});
-				$("#text").html(text);
-				timeStart = performance.now();
-			} else {
-				postResults();
-			}
-		});
-		
-		var timeStart;
-		$(window).load(function() {
-			$('#body').css('opacity', 1);
-			timeStart = performance.now();
-		});
-		
-		var lostFocus = false;
-		$(window).blur(function(){
-			lostFocus = true;
-		});
 		
 	</script>
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -37,11 +38,14 @@ public class MAExperiment {
 	@JsonView(MAExperiment.Admin.class)
 	public Timestamp date;
 
+	@JsonView(MAExperiment.Admin.class)
+	public String creator;
+
 	@JsonIgnore
 	public String data;
 
 	@JsonView(MAExperiment.Admin.class)
-	@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	public List<MAResult> resultList;
 
 	public MAExperiment() {
@@ -108,6 +112,11 @@ public class MAExperiment {
 
 	public MAExperiment merge() {
 		JPA.em().merge(this);
+		return this;
+	}
+
+	public MAExperiment remove() {
+		JPA.em().remove(this);
 		return this;
 	}
 

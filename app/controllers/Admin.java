@@ -1,6 +1,5 @@
 package controllers;
 
-import java.io.IOException;
 import java.util.List;
 
 import models.MAExperiment;
@@ -11,8 +10,8 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
-import views.html.admin.change_experiment;
-import views.html.admin.create_experiment;
+import views.html.admin.experiment_create;
+import views.html.admin.experiment_update;
 import views.html.admin.index;
 import views.html.admin.login;
 
@@ -48,31 +47,7 @@ public class Admin extends Controller {
 		flash("success", "You've been logged out");
 		return redirect(routes.Admin.login());
 	}
-
-	@Security.Authenticated(Secured.class)
-	@Transactional
-	public static Result createExperiment() {
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session("email"));
-		return ok(create_experiment.render(experimentList, null, user,
-				Form.form(MAExperiment.class)));
-	}
-
-	@Transactional
-	@Security.Authenticated(Secured.class)
-	public static Result changeExperiment(Long id) {
-		MAExperiment experiment = MAExperiment.findById(id);
-		if (experiment == null) {
-			return badRequestNotExist(id);
-		}
-		Form<MAExperiment> form = Form.form(MAExperiment.class)
-				.fill(experiment);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session("email"));
-		return ok(change_experiment
-				.render(experimentList, null, user, form, id));
-	}
-
+	
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result experiment(Long id) {
@@ -88,30 +63,56 @@ public class Admin extends Controller {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
+	public static Result createExperiment() {
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		MAUser user = MAUser.findById(session("email"));
+		return ok(experiment_create.render(experimentList, null, user,
+				Form.form(MAExperiment.class)));
+	}
+
+	@Transactional
+	@Security.Authenticated(Secured.class)
 	public static Result submitExperiment() {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			List<MAExperiment> experimentList = MAExperiment.findAll();
 			MAUser user = MAUser.findById(session("email"));
-			return badRequest(create_experiment.render(experimentList, null,
+			return badRequest(experiment_create.render(experimentList, null,
 					user, form));
 		} else {
 			MAExperiment experiment = form.get();
+			MAUser user = MAUser.findById(session("email"));
+			experiment.creator = user.toString();
 			experiment.persist();
-			return redirect(routes.Admin.index());
+			return redirect(routes.Admin.experiment(experiment.id));
 		}
+	}
+	
+	@Transactional
+	@Security.Authenticated(Secured.class)
+	public static Result updateExperiment(Long id) {
+		MAExperiment experiment = MAExperiment.findById(id);
+		if (experiment == null) {
+			return badRequestNotExist(id);
+		}
+		Form<MAExperiment> form = Form.form(MAExperiment.class)
+				.fill(experiment);
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		MAUser user = MAUser.findById(session("email"));
+		return ok(experiment_update
+				.render(experimentList, null, user, form, id));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitChangedExperiment(Long id) throws IOException {
+	public static Result submitUpdatedExperiment(Long id) {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			List<MAExperiment> experimentList = MAExperiment.findAll();
 			MAUser user = MAUser.findById(session("email"));
-			return badRequest(change_experiment.render(experimentList, null,
+			return badRequest(experiment_update.render(experimentList, null,
 					user, form, id));
 		}
 
@@ -125,6 +126,19 @@ public class Admin extends Controller {
 		experiment.setData(requestData.get("data"));
 		experiment.merge();
 		return redirect(routes.Admin.experiment(id));
+	}
+	
+	@Transactional
+	@Security.Authenticated(Secured.class)
+	public static Result deleteExperiment(Long id) {
+		MAExperiment experiment = MAExperiment.findById(id);
+		if (experiment == null) {
+			return badRequestNotExist(id);
+		}
+		
+		experiment.remove();
+		
+		return redirect(routes.Admin.index());
 	}
 
 	public static class Login {

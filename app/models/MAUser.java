@@ -26,6 +26,11 @@ public class MAUser {
 
 	public MAUser() {
 	}
+	
+	@Override
+	public String toString() {
+		return name + ", " + email;
+	}
 
 	public static MAUser authenticate(String email, String password) {
 		String queryStr = "SELECT e FROM MAUser e WHERE "

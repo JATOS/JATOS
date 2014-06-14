@@ -6,7 +6,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import views.html.error;
-import views.html.finished;
 import views.html.index;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -52,11 +51,6 @@ public class Application extends Controller {
 			result.persist();
 			return ok();
 		}
-	}
-
-	public static Result finished() {
-		return ok(finished
-				.render("The experiment is finished. Thank you for your time!"));
 	}
 
 }

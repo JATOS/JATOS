@@ -5,27 +5,56 @@ experiment: MAExperiment)
 
 <header>
 	<hgroup>
-		<h1>Dashboard > </h1>
-		<h2>Experiments > </h2>
-		<h3>@experiment.id "@experiment.title" > </h3>
+		<h1>Dashboard ></h1>
+		<h2>Experiments ></h2>
+		<h3>@experiment.id "@experiment.title" ></h3>
 	</hgroup>
 </header>
 
 <article class="tasks" id="tasks">
-		<a id="newGroup" href="@routes.Admin.changeExperiment(experiment.id)">Change</a>
-		<a id="newGroup" href="">Delete</a>
+	<input id="newGroup" type="button" onClick="updateExperiment()"
+		value="Update">
+	<input id="newGroup" type="button" onClick="deleteExperiment()"
+		value="Delete">
 	<div class="folder" data-folder-id="@experiment.id">
 		<header>
-			<h3>Results so far</h3>
+			@if(experiment.resultList.isEmpty()) {
+				<h3>No results so far</h3>
+			} else {
+				<h3>Results so far</h3>
+			}
 		</header>
 
 		<ul class="list">
 			@for(result <- experiment.resultList) {
-			<li data-task-id="@experiment.id">@result.id (@result.date,
-				@result.result)</li>
+				<li data-task-id="@experiment.id">@result.id (@result.date, @result.result)</li>
 			}
 		</ul>
 	</div>
 </article>
+
+<script type="text/javascript">
+	function updateExperiment() {
+		window.location
+				.replace('@routes.Admin.updateExperiment(experiment.id)');
+	}
+
+	function deleteExperiment() {
+		var conf = confirm("Are you sure you want to delete experiment "
+				+ "@experiment.id" + "\u00a0" + "\"@experiment.title\"?");
+		if (conf == true) {
+			$.ajax({
+				url : '@routes.Admin.deleteExperiment(experiment.id)',
+				type : 'DELETE',
+				success : function(result) {
+					window.location.replace('@routes.Admin.index()');
+				},
+				error : function(err) {
+					alert(err.responseText);
+				}
+			});
+		}
+	}
+</script>
 
 }
