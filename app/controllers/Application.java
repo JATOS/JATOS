@@ -44,6 +44,11 @@ public class Application extends Controller {
 	}
 
 	private static boolean setExperimentDone(Long id) {
+		// If an admin is logged in do nothing
+		if (session(Admin.COOKIE_EMAIL) != null) {
+			return true;
+		}
+		
 		String experimentsDone = session(COOKIE_EXPS_DONE);
 		if (experimentsDone == null) {
 			session(COOKIE_EXPS_DONE, id.toString());

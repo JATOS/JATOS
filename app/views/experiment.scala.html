@@ -1,12 +1,45 @@
 @(title: String, experimentJson: String, data: String)
 
-@main("Mechanical Argentinian - Experiment " + title) {
-<div id="experiment">
-	<img id="image" src="">
-	<p id="text"></p>
-</div>
+<!DOCTYPE html>
 
-<script>
+<html>
+<head>
+<title>"Mechanical Argentinian - Experiment " + title</title>
+<link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery-ui-1.10.4.custom.min.css")"/>
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/experiment.css")"/>
+<script src="@routes.Assets.at("javascripts/jquery-1.10.2.js")"></script>
+<script src="@routes.Assets.at("javascripts/jquery-ui-1.10.4.custom.min.js")"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+	<div id="experiment">
+		<div id="progress">
+			<p id="progressBarText">Your progress</p>
+			<div id="progressBar"></div>
+		</div>
+		<p id="text"></p>
+		<div id="answers">
+			<p id="answerLeft"></p>
+			<p id="answerRight"></p>
+			<div style="clear: both;"></div>
+			<p id="answerError">Only &#8592; or &#8594; allowed</p>
+		</div>
+		<div id="confidence">
+			<p id="confidenceQuestion">What's your confidence?</p>
+			<div id="confidenceScale">
+				<p class="confidenceScaleLeft">weak</p>
+				<p class="confidenceScaleRight">strong</p>
+				<div style="clear: both;"></div>
+			</div>
+			<div id="confidenceSlider"></div>
+		</div>
+		<p id="nextSlide">Press any key to go on.</p>
+	</div>
+
+	<script>
 		var experiment = @Html(experimentJson);
 		var data = @Html(data);
 		var slideList = data.slideList;
@@ -15,13 +48,13 @@
 		var slideListLength = slideList.length;
 		var timeStart;
 		var lostFocus = false;
+		var Stage = Object.freeze({
+			NEW: 0, ANSWER: 1, CONFIDENCE: 2, FINISHED: 3, ERROR: 4
+		});
+		var currentSlideResult = {};
 		
 		// The experimentResult will be sent back to the server
-		var experimentResult = {id:experiment.id, slideResultList:[], lostFocus:false};
-		function SlideResult (duration, keycode) {
-			this.duration = duration;
-			this.keycode = keycode;
-		}
+		var experimentResult = {id:experiment.id, slideResultList:[]};
 		
 		// When the window is fully loaded display the first slide 
 		$(window).load(function() {
@@ -32,39 +65,139 @@
 		$(window).blur(function(){
 			lostFocus = true;
 		});
-		
+
 		// Callback function when key is pressed
-		$(document).keypress(function(event){
-			var timeEnd = performance.now();
-			var duration = timeEnd - timeStart;
-			duration = (Math.round(duration * 1000))/1000;
+		$(document).keydown(function(event) {
+			switch (currentStage) {
+			case Stage.ANSWER:
+				endAnswerStage();
+				break;
+			case Stage.FINISHED:
+				nextSlide();
+				break;
+			case Stage.ERROR:
+				nextSlide();
+				break;
+			}
+		});
+
+		$(window).mousemove(function(event) {
+			if (currentStage == Stage.CONFIDENCE) {
+				moveConfidenceSlider(event.pageX);
+			}
+		});
+		
+		$(document).mousedown(function(event) {
+			if (currentStage != Stage.CONFIDENCE) {
+				return;
+			}
+			endConfidenceStage();
+		});
+		
+		function displaySlide() {
+			currentStage = Stage.NEW;
+			resetSlide();
+			var progressValue = ((slideCount + 1) / slideListLength) * 100;
+			$("#progressBar").progressbar({value: progressValue});
+			startAnswerStage();
+		}
+		
+		function startAnswerStage() {
+			currentStage = Stage.ANSWER;
+			var text = slideList[slideCount].text;
+			var answerLeft = slideList[slideCount].answerLeft;
+			var answerRight = slideList[slideCount].answerRight;
+			$("#text").html(text);
+			$("#answerLeft").html(answerLeft);
+			$("#answerRight").html(answerRight);
+			timeStart = performance.now();
+		}
+		
+		function endAnswerStage() {
 			var keycode = (event.keyCode ? event.keyCode : event.which);
-			experimentResult.slideResultList.push(new SlideResult(duration, keycode));
+			currentSlideResult.keycode = keycode;
+			currentSlideResult.questionDuration = getDuration();
+
+			// Check anwer keycode (37 == shift left, 39 == shift right)
+			if (!(keycode == 37 || keycode == 39)) {
+				currentSlideResult.error = "wrong_key";
+				startErrorStage();
+			} else {
+				if (keycode == 37) {
+					$("#answerLeft").css('color', 'red');
+				} else {
+					$("#answerRight").css('color', 'red');
+				}
+				startConfidenceStage();
+			}
+		}
+
+		function startErrorStage() {
+			currentStage = Stage.ERROR;
+			$("#answerError").show();
+			startFinishedStage();
+		}
+
+		function startConfidenceStage() {
+			currentStage = Stage.CONFIDENCE;
+			$("#confidence").show();
+			timeStart = performance.now();
+		}
+
+		function endConfidenceStage() {
+			var confidence = Math.round($("#confidenceSlider")
+					.slider("value"));
+			currentSlideResult.confidence = confidence;
+			currentSlideResult.confidenceDuration = getDuration();
+			startFinishedStage();
+		}
+		
+		function startFinishedStage() {
+			currentStage = Stage.FINISHED;
+			$("#nextSlide").show();
+		}
+		
+		function nextSlide() {
+			currentSlideResult.lostFocus = lostFocus;
+			experimentResult.slideResultList.push(currentSlideResult);
+			currentSlideResult = {};
 			slideCount++;
 			if (slideCount < slideListLength) {
 				displaySlide();
 			} else {
 				postResults();
 			}
-		});
+		}
 		
-		function displaySlide() {
-			$('#loader').show(); 
-			var imgUrl = slideList[slideCount].imgUrl;
-			var text = slideList[slideCount].text;
-			$("#image").attr("src", imgUrl).load(function() {
-				$('#loader').hide();
-				// Start timer when imgage is fully loaded
-				timeStart = performance.now();
-			});
-			$("#text").html(text);
+		function moveConfidenceSlider(mouseX) {
+			var sliderLeft = $("#confidenceSlider").offset().left;
+			var sliderWidth = $("#confidenceSlider").width();
+			var confidenceValue = ((mouseX - sliderLeft) / (sliderWidth)) * 100;
+			$("#confidenceSlider").slider({step: 20, value: confidenceValue});
+		}
+		
+		function getDuration() {
+			var timeEnd = performance.now();
+			var duration = timeEnd - timeStart;
+			roundedDuration = Math.round(duration);
+			return roundedDuration;
+		}
+		
+		function resetSlide() {
+			lostFocus = false;
+			$("#progressBar").progressbar({disabled: true});
+			$("#confidenceSlider").slider({disabled: true});
+			$("#confidence").hide();
+			$("#answerLeft").css('color', '');
+			$("#answerRight").css('color', '');
+			$("#answerError").hide();
+			$("#answer").hide();
+			$("#nextSlide").hide();
 		}
 		
 		// Post results back to the server
 		function postResults() {
-			experimentResult.lostFocus = lostFocus;
 			var experimentResultJson = JSON.stringify(experimentResult);
-			
 			var ajax = $.ajax({
 				url: "/experiment/" + experiment.id,
 				data: experimentResultJson,
@@ -81,4 +214,5 @@
 		}
 		
 	</script>
-}
+</body>
+</html>

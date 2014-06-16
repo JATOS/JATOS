@@ -60,13 +60,67 @@ body {
 	font-size: 20px;
 }
 
+#answers {
+	margin-top: 10px;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+#answerLeft {
+	margin-left: 20%;
+	padding-left: 0;
+	float: left;
+	font-size: 20px;
+}
+
+#answerRight {
+	margin-right: 20%;
+	padding-right: 0;
+	float: right;
+	font-size: 20px;
+}
+
+#answerError {
+	font-size: 20px;
+	color: rgb(255,0,0);
+	text-align: center;
+	display: none;
+}
+
 #image {
 	margin: 0;
 	padding: 0;
 	width: 100%;
 	background:
-		url('http://jimpunk.net/Loading/wp-content/uploads/loading1.gif')
+		url('../images/ajax-loader.gif')
 		no-repeat;
+}
+
+#progressBar {
+	height: 10px;
+	margin-bottom: 10px;
+}
+
+#progressBarText {
+	font-size: 12px;
+	margin: 0;
+}
+
+#confidenceSlider {
+	clear:both;
+	margin-top: 10px;
+	margin-left: 30% ;
+	margin-right: 30% ;
+	color: #00ff00;
+	display: none;
+}
+
+#goOn {
+	margin: 0;
+	padding: 0;
+	font-size: 20px;
+	text-align: center;
+	display: none;
 }
 
 #error {

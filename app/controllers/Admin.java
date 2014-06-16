@@ -17,7 +17,7 @@ import views.html.admin.login;
 
 public class Admin extends Controller {
 
-	private static final String COOKIE_EMAIL = "email";
+	public static final String COOKIE_EMAIL = "email";
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
