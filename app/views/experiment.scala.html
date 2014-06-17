@@ -65,9 +65,22 @@
 		$(window).blur(function(){
 			lostFocus = true;
 		});
+		
+		// Show alert msg if user wants to reload the page
+		window.onunload = window.onbeforeunload = (function() {
+			if (currentStage != Stage.FINISHED) {
+				return "It is important to do this survey all at once. A restart form the beginning is not allowed. If you reload the page during an experiment it will become invalid and you will NOT RECEIVE ANY PAY at Mechanical Turk for this experiment.";
+			}
+		});
 
 		// Callback function when key is pressed
 		$(document).keydown(function(event) {
+			// Do nothing if Shift, Control, Alt key (AltGr doesn't seem to work)
+			if (event.ctrlKey || event.altKey || event.altGraphKey 
+					|| event.shiftKey) {
+				return;	
+			}
+			
 			switch (currentStage) {
 			case Stage.ANSWER:
 				endAnswerStage();
@@ -118,7 +131,7 @@
 			currentSlideResult.keycode = keycode;
 			currentSlideResult.questionDuration = getDuration();
 
-			// Check anwer keycode (37 == shift left, 39 == shift right)
+			// Check answer keycode (37 == arrow left, 39 == arrow right)
 			if (!(keycode == 37 || keycode == 39)) {
 				currentSlideResult.error = "wrong_key";
 				startErrorStage();
@@ -131,7 +144,7 @@
 				startConfidenceStage();
 			}
 		}
-
+		
 		function startErrorStage() {
 			currentStage = Stage.ERROR;
 			$("#answerError").show();
@@ -186,7 +199,11 @@
 		function resetSlide() {
 			lostFocus = false;
 			$("#progressBar").progressbar({disabled: true});
-			$("#confidenceSlider").slider({disabled: true});
+			var randomConfidenceValue = Math.random() * 100;
+			$("#confidenceSlider").slider({
+				disabled: true,
+				step: 20,
+				value: randomConfidenceValue});
 			$("#confidence").hide();
 			$("#answerLeft").css('color', '');
 			$("#answerRight").css('color', '');

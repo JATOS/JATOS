@@ -126,6 +126,7 @@ public class Admin extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		experiment.title = requestData.get("title");
 		experiment.setData(requestData.get("data"));
+		experiment.view = requestData.get("view");
 		experiment.merge();
 		return redirect(routes.Admin.experiment(id));
 	}

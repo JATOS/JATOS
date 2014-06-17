@@ -40,6 +40,9 @@ public class MAExperiment {
 
 	@JsonView(MAExperiment.Admin.class)
 	public String creator;
+	
+	@JsonView(MAExperiment.Admin.class)
+	public String view;
 
 	@JsonIgnore
 	public String data;
@@ -80,6 +83,9 @@ public class MAExperiment {
 		if (this.data == null || this.data.isEmpty()) {
 			return "Data missing or invalid JSON format.";
 		}
+		if (this.view == null || this.view.isEmpty()) {
+			return "Missing view";
+		}
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			mapper.readTree(this.data);
@@ -92,7 +98,7 @@ public class MAExperiment {
 
 	@Override
 	public String toString() {
-		return id + ", " + title + ", " + data;
+		return id + ", " + title + ", " + creator + ", " + view + ", " + data;
 	}
 
 	public static MAExperiment findById(Long id) {

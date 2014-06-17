@@ -12,6 +12,9 @@ experiment: MAExperiment)
 </header>
 
 <article class="tasks" id="tasks">
+	<p class="creator">created by @experiment.creator</p>
+	<input id="newGroup" type="button" onClick="tryExperiment()"
+		value="Try">
 	<input id="newGroup" type="button" onClick="updateExperiment()"
 		value="Update">
 	<input id="newGroup" type="button" onClick="deleteExperiment()"
@@ -34,9 +37,12 @@ experiment: MAExperiment)
 </article>
 
 <script type="text/javascript">
+	function tryExperiment() {
+		window.location.href = "@routes.Application.experiment(experiment.id)";
+	}
+
 	function updateExperiment() {
-		window.location
-				.replace('@routes.Admin.updateExperiment(experiment.id)');
+		window.location.href = "@routes.Admin.updateExperiment(experiment.id)";
 	}
 
 	function deleteExperiment() {

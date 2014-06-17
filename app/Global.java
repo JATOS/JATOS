@@ -8,6 +8,7 @@ import static play.mvc.Results.*;
 public class Global extends GlobalSettings {
 
 	public Promise<SimpleResult> onError(RequestHeader request, Throwable t) {
+		Logger.error(t.getMessage());
 		return Promise.<SimpleResult> pure(internalServerError(views.html.error
 				.render("internal server error")));
 	}
