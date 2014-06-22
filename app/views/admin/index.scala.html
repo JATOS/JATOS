@@ -1,17 +1,18 @@
-@(componentList: List[MAComponent], error: String, user: MAUser)
+@(experimentList: List[MAExperiment], error: String, user: MAUser)
 
-@main(componentList, error, user){
+@main(experimentList, error, user){
 
-    <header>
-        <hgroup>
-            <h1>Dashboard > </h1>
-            <h2>Components > </h2>
-        </hgroup>
-    </header>
-    
-    <article class="tasks" id="tasks">
-    	@if(error != null) {
-			<p>@error</p>
-		}
-	</article>
+<header>
+	<hgroup>
+		<h2>/ > </h2>
+	</hgroup>
+</header>
+
+
+<article class="tasks" id="tasks">
+<a id="newGroup" href="@routes.Admin.createExperiment()">New experiment</a>
+	@if(error != null) {
+		<p>@error</p>
+	}
+</article>
 }

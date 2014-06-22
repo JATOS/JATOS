@@ -1,4 +1,4 @@
-@(componentList: List[MAComponent], error: String, user: MAUser)(body: Html)
+@(experimentList: List[MAExperiment], error: String, user: MAUser)(body: Html)
 
 <html>
 <head>
@@ -23,16 +23,22 @@
 	</header>
 
 	<nav>
-		<h4 class="dashboard">
-			<a href="@routes.Admin.index()">Dashboard</a>
-		</h4>
-		<a id="newGroup" href="@routes.Admin.createComponent()">New
-			component</a>
 		<ul id="projects">
-			@for(component <- componentList) {
-				<li data-task-id="@component.id"><a class="name"
-					href="@routes.Admin.component(component.id)">@component.id
-						"@component.title" (@component.resultList.size())</a></li>
+			@for(experiment <- experimentList) {
+				<li data-group="@experiment.id">
+					<a class="name" href="@routes.Admin.experiment(experiment.id)">
+						@experiment.id "@experiment.title"
+					</a>
+					<ul id="components">
+						@for(component <- experiment.componentList) {
+							<li data-project="@component.id">
+								<a class="name" href="@routes.Admin.component(experiment.id, component.id)">
+									@component.id "@component.title" (@component.resultList.size())
+								</a>
+							</li>
+						}
+					</ul>
+				</li>
 			}
 		</ul>
 	</nav>

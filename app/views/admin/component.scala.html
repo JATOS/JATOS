@@ -1,12 +1,12 @@
-@(componentList: List[MAComponent], error: String, user: MAUser, component: MAComponent)
+@(experimentList: List[MAExperiment], experiment: MAExperiment,
+	error: String, user: MAUser, component: MAComponent)
 
-@main(componentList, error, user){
+@main(experimentList, error, user){
 
 <header>
 	<hgroup>
-		<h1>Dashboard ></h1>
-		<h2>Components ></h2>
-		<h3>@component.id "@component.title" ></h3>
+		<h2>@experiment.id "@experiment.title" > </h2>
+		<h3>@component.id "@component.title" > </h3>
 	</hgroup>
 </header>
 
@@ -41,7 +41,8 @@
 	}
 
 	function updateComponent() {
-		window.location.href = "@routes.Admin.updateComponent(component.id)";
+		window.location.href = "@routes.Admin.updateComponent(
+				experiment.id, component.id)";
 	}
 
 	function deleteComponent() {
@@ -49,7 +50,8 @@
 				+ "@component.id" + "\u00a0" + "\"@Html(component.title)\"?");
 		if (conf == true) {
 			$.ajax({
-				url : '@routes.Admin.deleteComponent(component.id)',
+				url : '@routes.Admin.deleteComponent(
+						experiment.id, component.id)',
 				type : 'DELETE',
 				success : function(result) {
 					window.location.replace('@routes.Admin.index()');
