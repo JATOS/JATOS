@@ -1,6 +1,7 @@
 package models;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -13,21 +14,21 @@ import javax.persistence.TypedQuery;
 
 import play.db.jpa.JPA;
 
-//@Entity
+@Entity
 public class MAExperiment {
 
-//	@Id
-//	@GeneratedValue
+	@Id
+	@GeneratedValue
 	public Long id;
 
 	public String title;
 
 	public Timestamp date;
 
-	public String creator;
-	
-	//@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	public List<MAComponent> componentList;
+	public String author;
+
+	@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	public List<MAComponent> componentList = new ArrayList<MAComponent>();
 
 	public MAExperiment() {
 	}
@@ -41,7 +42,7 @@ public class MAExperiment {
 
 	@Override
 	public String toString() {
-		return id + ", " + title + ", " + creator;
+		return id + ", " + title + ", " + author;
 	}
 
 	public static MAExperiment findById(Long id) {

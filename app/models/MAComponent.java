@@ -9,11 +9,14 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.TypedQuery;
 
 import play.db.jpa.JPA;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,6 +34,11 @@ public class MAComponent {
 	@GeneratedValue
 	@JsonView(MAComponent.Public.class)
 	public Long id;
+	
+	@JsonIgnore
+	@ManyToOne(fetch=FetchType.LAZY)
+	@JoinColumn(name = "experiment_id")
+	public MAExperiment experiment;
 
 	@JsonView(MAComponent.Public.class)
 	public String title;
@@ -39,7 +47,7 @@ public class MAComponent {
 	public Timestamp date;
 
 	@JsonView(MAComponent.Admin.class)
-	public String creator;
+	public String author;
 	
 	@JsonView(MAComponent.Admin.class)
 	public String view;
@@ -98,7 +106,7 @@ public class MAComponent {
 
 	@Override
 	public String toString() {
-		return id + ", " + title + ", " + creator + ", " + view + ", " + data;
+		return id + ", " + title + ", " + author + ", " + view + ", " + data;
 	}
 
 	public static MAComponent findById(Long id) {

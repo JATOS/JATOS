@@ -1,0 +1,28 @@
+@(componentList: List[MAComponent], error: String, user: MAUser, form: Form[MAExperiment])
+
+@main(componentList, error, user){
+
+	<header>
+		<hgroup>
+			<h1>Dashboard > </h1>
+			<h2>Components > </h2>
+			<h4>New Experiment > </h4>
+		</hgroup>
+	</header>
+
+	<article class="tasks" id="tasks">
+		<div class="folder">
+		
+			@helper.form(action = routes.Admin.submitExperiment(), 'class -> "addTask") {
+				@if(form.hasGlobalErrors) {
+					<p class="error">
+						@form.globalError.message
+					</p>
+				}
+				<input type="text" name="title" placeholder="Title" value="@form("title").value">
+				<button id="newGroup" type="submit">Create</button>
+			}
+		</div>
+	</article>
+
+}
