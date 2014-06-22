@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Mechanical Argentinian</title>
+<link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
+<link rel="stylesheet" href="/assets/stylesheets/jquery-ui-1.10.4.custom.min.css"/>
+<link rel="stylesheet" href="/assets/stylesheets/elis_confidence.css"/>
+<script src="/assets/javascripts/jquery-1.10.2.js"></script>
+<script src="/assets/javascripts/jquery-ui-1.10.4.custom.min.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+	<div id="instructions">
+		<div id="progress">
+			<p id="progressBarText">Your progress</p>
+			<div id="progressBar"></div>
+		</div>
+		<p id="text"></p>
+		<p id="nextSlide">Press any key to go on.</p>
+	</div>
+
+	<script>
+		var instructions;
+		var data;
+		var slideList;
+		var practiceUrl;
+		var slideCount = 0;
+		
+		// When the window is fully loaded get data and display the first slide
+		$(window).load(function() {
+			if (!checkBrowser()) {
+				return;
+			}
+			getData(47);
+		});
+		
+		function getData(id) {
+			var url = "/componentdata/" + id;
+			$.getJSON(url, start);
+		}
+		
+		// Callback function when key is pressed
+		$(document).keydown(function(event) {
+			// Do nothing if key is Shift, Control or Alt (AltGr doesn't seem to
+			// work)
+			if (event.ctrlKey || event.altKey || event.altGraphKey 
+					|| event.shiftKey) {
+				return;	
+			}
+			
+			nextSlide();
+		});
+		
+		function start(instructions) {
+			this.instructions = instructions;
+			this.data = $.parseJSON(instructions.data);
+			this.slideList = data.slideList;
+			this.practiceUrl = data.practiceUrl;
+			document.title = instructions.title;
+			displaySlide();
+		}
+
+		function displaySlide() {
+			$("#progress").show();
+			var progressValue = ((slideCount + 1) / slideList.length) * 100;
+			$("#progressBar").progressbar({value: progressValue});
+			var text = slideList[slideCount].text;
+			$("#text").html(text);
+		}
+		
+		function nextSlide() {
+			slideCount++;
+			if (slideCount < slideList.length) {
+				displaySlide();
+			} else {
+				window.location.replace(practiceUrl);
+			}
+		}
+		
+		function checkBrowser() {
+			var userAgent = navigator.userAgent;
+			var errorMsg;
+			// Check mobile phones and tablets
+			if (userAgent.match(
+					/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)) {
+				var text = "Sorry, you can't do this questionaire on a mobile or a tablet.";
+				$("#text").html(text);
+				var errorMsg = "Mobile phone browser not supported: component "
+					+ component.id + ", userAgent \"" + userAgent + "\"";
+			}
+			
+			// Check if browser supports perfomance.now feature
+			if (!performance.now) {
+				var text = "Sorry, you can't do this questionaire with this browser.";
+				$("#text").html(text);
+				var errorMsg = "Browser doesn't support perfomance.now: component "
+					+ component.id + ", userAgent \"" + userAgent + "\"";
+			}
+			
+			if (errorMsg) {
+				// Send error msg for logging to server
+				$.ajax({
+					url: "/error",
+					data: errorMsg,
+					processData: false,
+					type: "POST",
+					contentType: "text/plain"
+				});
+				return false;
+			}
+			return true;
+		}
+		
+	</script>
+</body>
+</html>

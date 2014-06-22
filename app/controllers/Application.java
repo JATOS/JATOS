@@ -3,8 +3,9 @@ package controllers;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import models.MAExperiment;
+import models.MAComponent;
 import models.MAResult;
+import play.Logger;
 import play.api.Play;
 import play.db.jpa.Transactional;
 import play.mvc.Content;
@@ -20,75 +21,104 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 public class Application extends Controller {
 
 	private static final String COOKIE_EXPS_DONE = "expsDone";
-	public static final String EXPERIMENTS_DONE_DELIMITER = ",";
+	public static final String COMPONENTS_DONE_DELIMITER = ",";
 
 	public static Result index() {
 		return ok(index.render());
 	}
+	
+	public static Result logError() {
+		String msg = request().body().asText();
+		Logger.error("Client-side error: " + msg);
+		return ok();
+	}
+	
+	@Transactional
+	public static Result componentData(Long id) throws Exception {
+		MAComponent component = MAComponent.findById(id);
+		if (component == null) {
+			return badRequest(error.render("An component with id " + id
+					+ " doesn't exist."));
+		}
+		
+		// Check if it's a browser reload of the same user of the same
+		// component
+		boolean isReload = !setComponentDone(id);
+		if (isReload) {
+			return badRequest(error.render("It is not allowed to reload an "
+					+ "component you've started already."));
+		}
+		
+		// Serialize MAComponent into JSON (only the public part)
+		ObjectWriter objectWriter = new ObjectMapper()
+				.writerWithView(MAComponent.Public.class);
+		String componentAsJson = objectWriter.writeValueAsString(component);
+		return ok(componentAsJson);
+	}
 
 	@Transactional
-	public static Result experiment(Long id) throws Exception {
-		MAExperiment experiment = MAExperiment.findById(id);
-		if (experiment == null) {
-			return badRequest(error.render("An experiment with id " + id
+	public static Result component(Long id) throws Exception {
+		MAComponent component = MAComponent.findById(id);
+		if (component == null) {
+			return badRequest(error.render("An component with id " + id
 					+ " doesn't exist."));
 		}
 
 		// Check if it's a browser reload of the same user of the same
-		// experiment
-		boolean result = setExperimentDone(id);
+		// component
+		boolean result = setComponentDone(id);
 		if (!result) {
 			return badRequest(error.render("It is not allowed to reload an "
-					+ "experiment you've started already."));
+					+ "component you've started already."));
 		}
 
-		// Serialize MAExperiment into JSON (only the public part)
+		// Serialize MAComponent into JSON (only the public part)
 		ObjectWriter objectWriter = new ObjectMapper()
-				.writerWithView(MAExperiment.Public.class);
-		String experimentJson = objectWriter.writeValueAsString(experiment);
+				.writerWithView(MAComponent.Public.class);
+		String componentJson = objectWriter.writeValueAsString(component);
 
-		// Dynamically load view specified in the 'view' field of MAExperiment 
-		Content content = getViewContent(id, experiment, experimentJson);
+		// Dynamically load view specified in the 'view' field of MAComponent 
+		Content content = getViewContent(component, componentJson);
 		return ok(content);
 	}
 
-	private static Content getViewContent(Long id, MAExperiment experiment,
-			String experimentJson) throws ClassNotFoundException,
+	private static Content getViewContent(MAComponent component,
+			String componentJson) throws ClassNotFoundException,
 			NoSuchMethodException, IllegalAccessException,
 			InvocationTargetException {
 		Content content;
-		String viewClazzName = "views.html." + experiment.view;
+		String viewClazzName = "views.html." + component.view;
 		Class<?> viewClazz = Play.current().classloader()
 				.loadClass(viewClazzName);
 		Method render = viewClazz.getDeclaredMethod("render", String.class,
 				String.class, String.class);
 		content = (play.api.templates.Html) render.invoke(viewClazz,
-				String.valueOf(id), experimentJson, experiment.data);
+				component.title, componentJson, component.data);
 		return content;
 	}
 
-	private static boolean setExperimentDone(Long id) {
+	private static boolean setComponentDone(Long id) {
 		// If an admin is logged in do nothing
 		if (session(Admin.COOKIE_EMAIL) != null) {
 			return true;
 		}
 
-		String experimentsDone = session(COOKIE_EXPS_DONE);
-		if (experimentsDone == null) {
+		String componentsDone = session(COOKIE_EXPS_DONE);
+		if (componentsDone == null) {
 			session(COOKIE_EXPS_DONE, id.toString());
 			return true;
 		}
 
-		// If there are several experiment ids stored in the cookie check them
+		// If there are several component ids stored in the cookie check them
 		// one by one.
-		String[] experimentsDoneArray = experimentsDone
-				.split(EXPERIMENTS_DONE_DELIMITER);
-		for (String experimentDone : experimentsDoneArray) {
-			if (experimentDone.equals(id.toString())) {
+		String[] componentsDoneArray = componentsDone
+				.split(COMPONENTS_DONE_DELIMITER);
+		for (String componentDone : componentsDoneArray) {
+			if (componentDone.equals(id.toString())) {
 				return false;
 			}
 		}
-		session(COOKIE_EXPS_DONE, experimentsDone + EXPERIMENTS_DONE_DELIMITER
+		session(COOKIE_EXPS_DONE, componentsDone + COMPONENTS_DONE_DELIMITER
 				+ id);
 		return true;
 	}

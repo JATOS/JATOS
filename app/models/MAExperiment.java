@@ -1,6 +1,5 @@
 package models;
 
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -14,91 +13,35 @@ import javax.persistence.TypedQuery;
 
 import play.db.jpa.JPA;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-@Entity
+//@Entity
 public class MAExperiment {
 
-	public static class Public {
-	}
-
-	public static class Admin extends Public {
-	}
-
-	@Id
-	@GeneratedValue
-	@JsonView(MAExperiment.Public.class)
+//	@Id
+//	@GeneratedValue
 	public Long id;
 
-	@JsonView(MAExperiment.Public.class)
 	public String title;
 
-	@JsonView(MAExperiment.Admin.class)
 	public Timestamp date;
 
-	@JsonView(MAExperiment.Admin.class)
 	public String creator;
 	
-	@JsonView(MAExperiment.Admin.class)
-	public String view;
-
-	@JsonIgnore
-	public String data;
-
-	@JsonView(MAExperiment.Admin.class)
-	@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	public List<MAResult> resultList;
+	//@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	public List<MAComponent> componentList;
 
 	public MAExperiment() {
-	}
-
-	public String getData() {
-		ObjectMapper mapper = new ObjectMapper();
-		String data = null;
-		try {
-			Object json = mapper.readValue(this.data, Object.class);
-			data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(
-					json);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return data;
-	}
-
-	public void setData(String data) {
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			this.data = mapper.readTree(data).toString();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public String validate() {
 		if (this.title == null || this.title.isEmpty()) {
 			return "Missing title";
 		}
-		if (this.data == null || this.data.isEmpty()) {
-			return "Data missing or invalid JSON format.";
-		}
-		if (this.view == null || this.view.isEmpty()) {
-			return "Missing view";
-		}
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.readTree(this.data);
-		} catch (IOException e) {
-			return "Problems deserializing data string: invalid JSON format.";
-		}
-
 		return null;
 	}
 
 	@Override
 	public String toString() {
-		return id + ", " + title + ", " + creator + ", " + view + ", " + data;
+		return id + ", " + title + ", " + creator;
 	}
 
 	public static MAExperiment findById(Long id) {

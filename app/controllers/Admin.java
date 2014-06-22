@@ -2,7 +2,7 @@ package controllers;
 
 import java.util.List;
 
-import models.MAExperiment;
+import models.MAComponent;
 import models.MAUser;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -10,8 +10,8 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
-import views.html.admin.experiment_create;
-import views.html.admin.experiment_update;
+import views.html.admin.component_create;
+import views.html.admin.component_update;
 import views.html.admin.index;
 import views.html.admin.login;
 
@@ -22,9 +22,9 @@ public class Admin extends Controller {
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result index() {
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		List<MAComponent> componentList = MAComponent.findAll();
 		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-		return ok(index.render(experimentList, null, user));
+		return ok(index.render(componentList, null, user));
 	}
 
 	public static Result login() {
@@ -52,94 +52,94 @@ public class Admin extends Controller {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result experiment(Long id) {
-		MAExperiment experiment = MAExperiment.findById(id);
-		if (experiment == null) {
+	public static Result component(Long id) {
+		MAComponent component = MAComponent.findById(id);
+		if (component == null) {
 			return badRequestNotExist(id);
 		}
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		List<MAComponent> componentList = MAComponent.findAll();
 		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-		return ok(views.html.admin.experiment.render(experimentList, null,
-				user, experiment));
+		return ok(views.html.admin.component.render(componentList, null,
+				user, component));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result createExperiment() {
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+	public static Result createComponent() {
+		List<MAComponent> componentList = MAComponent.findAll();
 		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-		return ok(experiment_create.render(experimentList, null, user,
-				Form.form(MAExperiment.class)));
+		return ok(component_create.render(componentList, null, user,
+				Form.form(MAComponent.class)));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitExperiment() {
-		Form<MAExperiment> form = Form.form(MAExperiment.class)
+	public static Result submitComponent() {
+		Form<MAComponent> form = Form.form(MAComponent.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			List<MAExperiment> experimentList = MAExperiment.findAll();
+			List<MAComponent> componentList = MAComponent.findAll();
 			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-			return badRequest(experiment_create.render(experimentList, null,
+			return badRequest(component_create.render(componentList, null,
 					user, form));
 		} else {
-			MAExperiment experiment = form.get();
+			MAComponent component = form.get();
 			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-			experiment.creator = user.toString();
-			experiment.persist();
-			return redirect(routes.Admin.experiment(experiment.id));
+			component.creator = user.toString();
+			component.persist();
+			return redirect(routes.Admin.component(component.id));
 		}
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result updateExperiment(Long id) {
-		MAExperiment experiment = MAExperiment.findById(id);
-		if (experiment == null) {
+	public static Result updateComponent(Long id) {
+		MAComponent component = MAComponent.findById(id);
+		if (component == null) {
 			return badRequestNotExist(id);
 		}
-		Form<MAExperiment> form = Form.form(MAExperiment.class)
-				.fill(experiment);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		Form<MAComponent> form = Form.form(MAComponent.class)
+				.fill(component);
+		List<MAComponent> componentList = MAComponent.findAll();
 		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-		return ok(experiment_update
-				.render(experimentList, null, user, form, id));
+		return ok(component_update
+				.render(componentList, null, user, form, id));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitUpdatedExperiment(Long id) {
-		Form<MAExperiment> form = Form.form(MAExperiment.class)
+	public static Result submitUpdatedComponent(Long id) {
+		Form<MAComponent> form = Form.form(MAComponent.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			List<MAExperiment> experimentList = MAExperiment.findAll();
+			List<MAComponent> componentList = MAComponent.findAll();
 			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-			return badRequest(experiment_update.render(experimentList, null,
+			return badRequest(component_update.render(componentList, null,
 					user, form, id));
 		}
 
-		MAExperiment experiment = MAExperiment.findById(id);
-		if (experiment == null) {
+		MAComponent component = MAComponent.findById(id);
+		if (component == null) {
 			return badRequestNotExist(id);
 		}
 
 		DynamicForm requestData = Form.form().bindFromRequest();
-		experiment.title = requestData.get("title");
-		experiment.setData(requestData.get("data"));
-		experiment.view = requestData.get("view");
-		experiment.merge();
-		return redirect(routes.Admin.experiment(id));
+		component.title = requestData.get("title");
+		component.setData(requestData.get("data"));
+		component.view = requestData.get("view");
+		component.merge();
+		return redirect(routes.Admin.component(id));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result deleteExperiment(Long id) {
-		MAExperiment experiment = MAExperiment.findById(id);
-		if (experiment == null) {
+	public static Result deleteComponent(Long id) {
+		MAComponent component = MAComponent.findById(id);
+		if (component == null) {
 			return badRequestNotExist(id);
 		}
 
-		experiment.remove();
+		component.remove();
 
 		return redirect(routes.Admin.index());
 	}
@@ -160,10 +160,10 @@ public class Admin extends Controller {
 	}
 
 	private static Result badRequestNotExist(Long id) {
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		String error = "An experiment with id " + id + " doesn't exist.";
+		List<MAComponent> componentList = MAComponent.findAll();
+		String error = "An component with id " + id + " doesn't exist.";
 		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-		return badRequest(index.render(experimentList, error, user));
+		return badRequest(index.render(componentList, error, user));
 	}
 
 }

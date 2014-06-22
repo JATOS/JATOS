@@ -1,7 +1,7 @@
-@(title: String, experimentJson: String, data: String)
+@(title: String, componentJson: String, data: String)
 
-@main("Mechanical Argentinian - Experiment " + title) {
-<div id="experiment">
+@main("Mechanical Argentinian - Component " + title) {
+<div id="component">
 	<div id="progressBar"></div>
 	<img id="image" src="">
 	<p id="text"></p>
@@ -9,7 +9,7 @@
 </div>
 
 <script>
-		var experiment = @Html(experimentJson);
+		var component = @Html(componentJson);
 		var data = @Html(data);
 		var slideList = data.slideList;
 		var turkGateUrl = data.turkGateUrl;
@@ -18,8 +18,8 @@
 		var timeStart;
 		var lostFocus = false;
 		
-		// The experimentResult will be sent back to the server
-		var experimentResult = {id:experiment.id, slideResultList:[]};
+		// The componentResult will be sent back to the server
+		var componentResult = {id:component.id, slideResultList:[]};
 		function SlideResult (duration, keycode, lostFocus) {
 			this.duration = duration;
 			this.keycode = keycode;
@@ -53,7 +53,7 @@
 			var duration = timeEnd - timeStart;
 			duration = (Math.round(duration * 1000))/1000;
 			var keycode = (event.keyCode ? event.keyCode : event.which);
-			experimentResult.slideResultList.push(new SlideResult(duration,
+			componentResult.slideResultList.push(new SlideResult(duration,
 					keycode, lostFocus));
 			slideCount++;
 			if (slideCount < slideListLength) {
@@ -78,12 +78,12 @@
 		
 		// Post results back to the server
 		function postResults() {
-			experimentResult.lostFocus = lostFocus;
-			var experimentResultJson = JSON.stringify(experimentResult);
+			componentResult.lostFocus = lostFocus;
+			var componentResultJson = JSON.stringify(componentResult);
 			
 			var ajax = $.ajax({
-				url: "/experiment/" + experiment.id,
-				data: experimentResultJson,
+				url: "/component/" + component.id,
+				data: componentResultJson,
 				processData: false,
 				type: "POST",
 				contentType: "application/json",

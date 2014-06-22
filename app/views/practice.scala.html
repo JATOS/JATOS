@@ -1,0 +1,258 @@
+@(title: String, componentJson: String, data: String)
+
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>@title</title>
+<link rel="shortcut icon" type="image/png" href="@routes.Assets.at("/public", "images/favicon.png")">
+<link rel="stylesheet" href="@routes.Assets.at("/public", "stylesheets/jquery-ui-1.10.4.custom.min.css")"/>
+<link rel="stylesheet" href="@routes.Assets.at("/public", "stylesheets/elis_confidence.css")"/>
+<script src="@routes.Assets.at("/public", "javascripts/jquery-1.10.2.js")"></script>
+<script src="@routes.Assets.at("/public", "javascripts/jquery-ui-1.10.4.custom.min.js")"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+	<div id="component">
+		<div id="progress">
+			<p id="progressBarText">Your progress</p>
+			<div id="progressBar"></div>
+		</div>
+		<p id="text"></p>
+		<div id="answers">
+			<p id="answerLeft"></p>
+			<p id="answerRight"></p>
+			<div style="clear: both;"></div>
+			<p id="answerError">Only &#8592; or &#8594; allowed</p>
+		</div>
+		<div id="confidence">
+			<p id="confidenceQuestion">What's your confidence?</p>
+			<div id="confidenceScale">
+				<p class="confidenceScaleLeft">weak</p>
+				<p class="confidenceScaleRight">strong</p>
+				<div style="clear: both;"></div>
+			</div>
+			<div id="confidenceSlider"></div>
+		</div>
+		<p id="nextSlide">Press any key to go on.</p>
+	</div>
+
+	<script>
+		var component = @Html(componentJson);
+		var data = @Html(data);
+		var slideList = data.slideList;
+		var nextUrl = data.nextUrl;
+		var slideCount = 0;
+		var timeStart;
+		var lostFocus = false;
+		var State = Object.freeze({
+			NEW: 0, ANSWER: 1, CONFIDENCE: 2, FINISHED: 3, ERROR: 4
+		});
+		var currentState = State.NEW;
+		var currentSlideResult = {};
+		
+		// The componentResult will be sent back to the server
+		var componentResult = {id:component.id, slideResultList:[]};
+		
+		// When the window is fully loaded display the first slide
+		$(window).load(function() {
+			if (checkBrowser()) {
+				displaySlide();
+			}
+		});
+		
+		// If the user leaves the browser's tab set lostFocus to true
+		$(window).blur(function(){
+			lostFocus = true;
+		});
+		
+		// Show alert msg if user wants to reload the page
+		window.onunload = window.onbeforeunload = (function() {
+			if (currentState != State.FINISHED) {
+				return "It is important to do this survey all at once. A restart form the beginning is not allowed. If you reload the page during an component it will become invalid and you will NOT RECEIVE ANY PAY at Mechanical Turk for this component.";
+			}
+		});
+
+		// Callback function when key is pressed
+		$(document).keydown(function(event) {
+			// Do nothing if key is Shift, Control or Alt (AltGr doesn't seem to
+			// work)
+			if (event.ctrlKey || event.altKey || event.altGraphKey 
+					|| event.shiftKey) {
+				return;	
+			}
+			
+			switch (currentState) {
+			case State.ANSWER:
+				endAnswerState(event);
+				break;
+			case State.FINISHED:
+				nextSlide();
+				break;
+			case State.ERROR:
+				nextSlide();
+				break;
+			}
+		});
+
+		$(window).mousemove(function(event) {
+			if (currentState == State.CONFIDENCE) {
+				moveConfidenceSlider(event.pageX);
+			}
+		});
+		
+		$(document).mousedown(function(event) {
+			if (currentState != State.CONFIDENCE) {
+				return;
+			}
+			endConfidenceState();
+		});
+		
+		function displaySlide() {
+			currentState = State.NEW;
+			resetSlide();
+			$("#progress").show();
+			var progressValue = ((slideCount + 1) / slideList.length) * 100;
+			$("#progressBar").progressbar({value: progressValue});
+			startAnswerState();
+		}
+		
+		function startAnswerState() {
+			currentState = State.ANSWER;
+			var text = slideList[slideCount].text;
+			var answerLeft = slideList[slideCount].answerLeft;
+			var answerRight = slideList[slideCount].answerRight;
+			$("#text").html(text);
+			$("#answerLeft").html(answerLeft);
+			$("#answerRight").html(answerRight);
+			timeStart = performance.now();
+		}
+		
+		function endAnswerState(event) {
+			var keycode = (event.keyCode ? event.keyCode : event.which);
+			currentSlideResult.keycode = keycode;
+			currentSlideResult.questionDuration = getDuration();
+
+			// Check answer keycode (37 == arrow left, 39 == arrow right)
+			if (!(keycode == 37 || keycode == 39)) {
+				currentSlideResult.error = "wrong_key";
+				startErrorState();
+			} else {
+				if (keycode == 37) {
+					$("#answerLeft").css('background-color', '#dddddd');
+				}
+				if (keycode == 39) {
+					$("#answerRight").css('background-color', '#dddddd');
+				}
+				startConfidenceState();
+			}
+		}
+		
+		function startErrorState() {
+			currentState = State.ERROR;
+			$("#answerError").show();
+			startFinishedState();
+		}
+
+		function startConfidenceState() {
+			currentState = State.CONFIDENCE;
+			$("#confidence").show();
+			$("#confidenceSlider").show();
+			timeStart = performance.now();
+		}
+
+		function endConfidenceState() {
+			var confidence = Math.round($("#confidenceSlider")
+					.slider("value"));
+			currentSlideResult.confidence = confidence;
+			currentSlideResult.confidenceDuration = getDuration();
+			startFinishedState();
+		}
+		
+		function startFinishedState() {
+			currentState = State.FINISHED;
+			$("#nextSlide").show();
+		}
+		
+		function nextSlide() {
+			currentSlideResult.lostFocus = lostFocus;
+			componentResult.slideResultList.push(currentSlideResult);
+			currentSlideResult = {};
+			slideCount++;
+			if (slideCount < slideList.length) {
+				displaySlide();
+			} else {
+				window.location.replace(nextUrl);
+			}
+		}
+		
+		function moveConfidenceSlider(mouseX) {
+			var sliderLeft = $("#confidenceSlider").offset().left;
+			var sliderWidth = $("#confidenceSlider").width();
+			var confidenceValue = ((mouseX - sliderLeft) / (sliderWidth)) * 100;
+			$("#confidenceSlider").slider({step: 20, value: confidenceValue});
+		}
+		
+		function getDuration() {
+			var timeEnd = performance.now();
+			var duration = timeEnd - timeStart;
+			roundedDuration = Math.round(duration);
+			return roundedDuration;
+		}
+		
+		function resetSlide() {
+			lostFocus = false;
+			$("#progress").hide();
+			$("#progressBar").progressbar({disabled: true});
+			$("#confidence").hide();
+			var randomConfidenceValue = Math.random() * 100;
+			$("#confidenceSlider").slider({
+				disabled: true,
+				step: 20,
+				value: randomConfidenceValue});
+			$("#answer").hide();
+			$("#answerLeft").css('background-color', '');
+			$("#answerRight").css('background-color', '');
+			$("#answerError").hide();
+			$("#nextSlide").hide();
+		}
+		
+		function checkBrowser() {
+			var userAgent = navigator.userAgent;
+			var errorMsg;
+			// Check mobile phones and tablets
+			if (userAgent.match(
+					/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)) {
+				var text = "Sorry, you can't do this questionaire on a mobile or a tablet.";
+				$("#text").html(text);
+				var errorMsg = "Mobile phone browser not supported: component "
+					+ component.id + ", userAgent \"" + userAgent + "\"";
+			}
+			
+			// Check if browser supports perfomance.now feature
+			if (!performance.now) {
+				var text = "Sorry, you can't do this questionaire with this browser.";
+				$("#text").html(text);
+				var errorMsg = "Browser doesn't support perfomance.now: component "
+					+ component.id + ", userAgent \"" + userAgent + "\"";
+			}
+			
+			if (errorMsg) {
+				// Send error msg for logging to server
+				$.ajax({
+					url: "/error",
+					data: errorMsg,
+					processData: false,
+					type: "POST",
+					contentType: "text/plain"
+				});
+				return false;
+			}
+			return true;
+		}
+		
+	</script>
+</body>
+</html>

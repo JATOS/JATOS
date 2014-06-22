@@ -26,28 +26,28 @@ public class MAResult {
 	
 	@JsonIgnore
 	@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name = "experiment_id")
-	public MAExperiment experiment;
+	@JoinColumn(name = "component_id")
+	public MAComponent component;
 	
 	public String result;
 	
 	public MAResult() {
 	}
 	
-	public MAResult(String result, Long experimentId) {
+	public MAResult(String result, Long componentId) {
 		this.date = new Timestamp(new Date().getTime());
 		this.result = result;
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		this.experiment = experiment;
+		MAComponent component = MAComponent.findById(componentId);
+		this.component = component;
 	}
 	
 	@Override
 	public String toString() {
-		return id + ", " + experiment.id + ", " + date + ", " + result;
+		return id + ", " + component.id + ", " + date + ", " + result;
 	}
 	
 	public String validate() {
-		if (this.experiment == null || this.date == null
+		if (this.component == null || this.date == null
 				|| this.result == null) {
 			return "Result not valid";
 		}

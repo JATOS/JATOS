@@ -1,20 +1,19 @@
-@(experimentList: List[MAExperiment], error: String, user: MAUser, form: Form[MAExperiment], id: Long)
+@(componentList: List[MAComponent], error: String, user: MAUser, form: Form[MAComponent])
 
-@main(experimentList, error, user){
+@main(componentList, error, user){
 
 	<header>
 		<hgroup>
 			<h1>Dashboard > </h1>
-			<h2>Experiments > </h2>
-			<h3>@id "@form("title").value" > </h3>
-			<h4>Change > </h4>
+			<h2>Components > </h2>
+			<h4>New Component > </h4>
 		</hgroup>
 	</header>
 
 	<article class="tasks" id="tasks">
-		<div class="folder" data-folder-id="@id">
+		<div class="folder">
 		
-			@helper.form(action = routes.Admin.submitUpdatedExperiment(id), 'class -> "addTask") {
+			@helper.form(action = routes.Admin.submitComponent(), 'class -> "addTask") {
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message
@@ -23,7 +22,7 @@
 				<input type="text" name="title" placeholder="Title" value="@form("title").value">
 				<input type="text" name="view" placeholder="View" value="@form("view").value">
 				<textarea name="data" placeholder="Data - put your JSON string here.">@form("data").value</textarea>
-				<button id="newGroup" type="submit">Update</button>
+				<button id="newGroup" type="submit">Create</button>
 			}
 		</div>
 	</article>

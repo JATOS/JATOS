@@ -4,7 +4,7 @@ body {
 	padding: 0;
 }
 
-#experiment {
+#component {
 	margin-top: 5%;
 	margin-left: auto;
 	margin-right: auto;
@@ -27,14 +27,20 @@ body {
 #answerLeft {
 	margin: 0;
 	margin-left: 20%;
-	padding-left: 0;
+	padding: 4px;
+	border: 1px solid;
+	border-color: #aaaaaa;
+	border-radius: 4px 4px 4px 4px;
 	float: left;
 }
 
 #answerRight {
 	margin: 0;
 	margin-right: 20%;
-	padding-right: 0;
+	padding: 4px;
+	border: 1px solid;
+	border-color: #aaaaaa;
+	border-radius: 4px 4px 4px 4px;
 	float: right;
 }
 
@@ -54,6 +60,7 @@ body {
 
 #progress {
 	margin-bottom: 30px;
+	display: none;
 }
 
 #progressBar {
@@ -67,6 +74,7 @@ body {
 
 #confidence {
 	margin-bottom: 30px;
+	display: none;
 }
 
 #confidenceQuestion {
@@ -98,6 +106,7 @@ body {
 	margin-right: 30%;
 	background-color: #ffffee;
 	opacity: 1.0;
+	display: none;
 }
 
 #nextSlide {

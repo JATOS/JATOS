@@ -1,12 +1,12 @@
-@(experimentList: List[MAExperiment], error: String, user: MAUser)(body: Html)
+@(componentList: List[MAComponent], error: String, user: MAUser)(body: Html)
 
 <html>
 <head>
 <title>Mechanical Argentinian</title>
-<link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
-<link rel="stylesheet" type="text/css" media="screen"
-	href="@routes.Assets.at("stylesheets/main.css")">
-<script type="text/javascript" src="@routes.Assets.at("javascripts/jquery-1.9.0.min.js")"></script>
+<link rel="shortcut icon" type="image/png" href="@routes.Assets.at("/public", "images/favicon.png")">
+<link rel="stylesheet" type="text/css" media="screen" href="@routes.Assets.at("/public", "stylesheets/main.css")">
+<script type="text/javascript" src="@routes.Assets.at("/public", "javascripts/jquery-1.10.2.js")"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 </head>
 
 <body>
@@ -26,13 +26,13 @@
 		<h4 class="dashboard">
 			<a href="@routes.Admin.index()">Dashboard</a>
 		</h4>
-		<a id="newGroup" href="@routes.Admin.createExperiment()">New
-			experiment</a>
+		<a id="newGroup" href="@routes.Admin.createComponent()">New
+			component</a>
 		<ul id="projects">
-			@for(experiment <- experimentList) {
-				<li data-task-id="@experiment.id"><a class="name"
-					href="@routes.Admin.experiment(experiment.id)">@experiment.id
-						"@experiment.title" (@experiment.resultList.size())</a></li>
+			@for(component <- componentList) {
+				<li data-task-id="@component.id"><a class="name"
+					href="@routes.Admin.component(component.id)">@component.id
+						"@component.title" (@component.resultList.size())</a></li>
 			}
 		</ul>
 	</nav>
