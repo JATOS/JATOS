@@ -3,11 +3,10 @@
 # ~~~~
 
 # Public
-GET     /                             controllers.Application.index()
-POST    /error                        controllers.Application.logError()
-GET     /component/:id                controllers.Application.component(id: Long)
-POST    /component/:id                controllers.Application.submitResult(id: Long)
-GET     /componentdata/:id            controllers.Application.componentData(id: Long)
+GET     /                                          controllers.Application.index()
+POST    /error                                     controllers.Application.logError()
+GET     /data/:experimentId/:componentId           controllers.Application.getComponentData(experimentId: Long, componentId: Long)
+POST    /data/:experimentId/:componentId           controllers.Application.submitResult(experimentId: Long, componentId: Long)
 
 # Admin
 GET     /admin/login                               controllers.Admin.login()
@@ -30,6 +29,6 @@ GET     /admin/:experimentId/:componentId/         controllers.Admin.component(e
 GET     /admin                                     controllers.Admin.index()
 GET     /admin/                                    controllers.Admin.index()
 
-# Map static resources from the /public folder
+# Static resources (not managed by the Play framework) from the /public folder
 GET     /assets/*file                 controllers.Assets.at(path="/public", file)
-GET     /staticcomponent/*file        controllers.Assets.at(path="/public/components", file)
+GET     /experiments/*file            controllers.Assets.at(path="/public/experiments", file)

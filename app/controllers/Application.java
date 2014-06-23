@@ -1,14 +1,9 @@
 package controllers;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import models.MAComponent;
 import models.MAResult;
 import play.Logger;
-import play.api.Play;
 import play.db.jpa.Transactional;
-import play.mvc.Content;
 import play.mvc.Controller;
 import play.mvc.Result;
 import views.html.error;
@@ -26,75 +21,38 @@ public class Application extends Controller {
 	public static Result index() {
 		return ok(index.render());
 	}
-	
+
 	public static Result logError() {
 		String msg = request().body().asText();
 		Logger.error("Client-side error: " + msg);
 		return ok();
 	}
-	
+
 	@Transactional
-	public static Result componentData(Long id) throws Exception {
-		MAComponent component = MAComponent.findById(id);
+	public static Result getComponentData(Long experimentId, Long componentId)
+			throws Exception {
+		MAComponent component = MAComponent.findById(componentId);
 		if (component == null) {
-			return badRequest(error.render("An component with id " + id
-					+ " doesn't exist."));
+			return badRequestComponentNotExist(componentId);
 		}
-		
+		if (component.experiment.id != experimentId) {
+			return badRequestComponentNotBelongToExperiment(experimentId,
+					componentId);
+		}
+
 		// Check if it's a browser reload of the same user of the same
 		// component
-		boolean isReload = !setComponentDone(id);
+		boolean isReload = !setComponentDone(componentId);
 		if (isReload) {
 			return badRequest(error.render("It is not allowed to reload an "
 					+ "component you've started already."));
 		}
-		
+
 		// Serialize MAComponent into JSON (only the public part)
 		ObjectWriter objectWriter = new ObjectMapper()
 				.writerWithView(MAComponent.Public.class);
 		String componentAsJson = objectWriter.writeValueAsString(component);
 		return ok(componentAsJson);
-	}
-
-	@Transactional
-	public static Result component(Long id) throws Exception {
-		MAComponent component = MAComponent.findById(id);
-		if (component == null) {
-			return badRequest(error.render("An component with id " + id
-					+ " doesn't exist."));
-		}
-
-		// Check if it's a browser reload of the same user of the same
-		// component
-		boolean result = setComponentDone(id);
-		if (!result) {
-			return badRequest(error.render("It is not allowed to reload an "
-					+ "component you've started already."));
-		}
-
-		// Serialize MAComponent into JSON (only the public part)
-		ObjectWriter objectWriter = new ObjectMapper()
-				.writerWithView(MAComponent.Public.class);
-		String componentJson = objectWriter.writeValueAsString(component);
-
-		// Dynamically load view specified in the 'view' field of MAComponent 
-		Content content = getViewContent(component, componentJson);
-		return ok(content);
-	}
-
-	private static Content getViewContent(MAComponent component,
-			String componentJson) throws ClassNotFoundException,
-			NoSuchMethodException, IllegalAccessException,
-			InvocationTargetException {
-		Content content;
-		String viewClazzName = "views.html." + component.view;
-		Class<?> viewClazz = Play.current().classloader()
-				.loadClass(viewClazzName);
-		Method render = viewClazz.getDeclaredMethod("render", String.class,
-				String.class, String.class);
-		content = (play.api.templates.Html) render.invoke(viewClazz,
-				component.title, componentJson, component.data);
-		return content;
 	}
 
 	private static boolean setComponentDone(Long id) {
@@ -124,14 +82,23 @@ public class Application extends Controller {
 	}
 
 	@Transactional
-	public static Result submitResult(Long id) {
+	public static Result submitResult(Long experimentId, Long componentId) {
+		MAComponent component = MAComponent.findById(componentId);
+		if (component == null) {
+			return badRequestComponentNotExist(componentId);
+		}
+		if (component.experiment.id != experimentId) {
+			return badRequestComponentNotBelongToExperiment(experimentId,
+					componentId);
+		}
+
 		JsonNode resultJson = request().body().asJson();
 		if (resultJson == null) {
-			return badRequest(error.render("Expecting Json data"));
+			return badRequest(error.render("Expecting data in JSON format"));
 		}
 
 		String resultStr = resultJson.toString();
-		MAResult result = new MAResult(resultStr, id);
+		MAResult result = new MAResult(resultStr, componentId);
 
 		String errorMsg = result.validate();
 		if (errorMsg != null) {
@@ -140,6 +107,19 @@ public class Application extends Controller {
 			result.persist();
 			return ok();
 		}
+	}
+
+	private static Result badRequestComponentNotExist(Long componentId) {
+		String errorMsg = "An component with id " + componentId
+				+ " doesn't exist.";
+		return badRequest(error.render(errorMsg));
+	}
+
+	private static Result badRequestComponentNotBelongToExperiment(
+			Long experimentId, Long componentId) {
+		String errorMsg = "There is no experiment with id " + experimentId
+				+ " that has a component with id " + componentId + ".";
+		return badRequest(error.render(errorMsg));
 	}
 
 }

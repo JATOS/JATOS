@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Entity
 public class MAComponent {
 
-	// For JSON serialization 
+	// For JSON serialization
 	public static class Public {
 	}
 	// For JSON serialization
@@ -34,9 +34,9 @@ public class MAComponent {
 	@GeneratedValue
 	@JsonView(MAComponent.Public.class)
 	public Long id;
-	
+
 	@JsonIgnore
-	@ManyToOne(fetch=FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "experiment_id")
 	public MAExperiment experiment;
 
@@ -48,12 +48,9 @@ public class MAComponent {
 
 	@JsonView(MAComponent.Admin.class)
 	public String author;
-	
-	@JsonView(MAComponent.Admin.class)
-	public String view;
 
 	@JsonView(MAComponent.Public.class)
-	public String data;
+	public String jsonData;
 
 	@JsonView(MAComponent.Admin.class)
 	@OneToMany(mappedBy = "component", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -62,23 +59,23 @@ public class MAComponent {
 	public MAComponent() {
 	}
 
-	public String getData() {
+	public String getJsonData() {
 		ObjectMapper mapper = new ObjectMapper();
-		String data = null;
+		String jsonData = null;
 		try {
-			Object json = mapper.readValue(this.data, Object.class);
-			data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(
-					json);
+			Object json = mapper.readValue(this.jsonData, Object.class);
+			jsonData = mapper.writerWithDefaultPrettyPrinter()
+					.writeValueAsString(json);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return data;
+		return jsonData;
 	}
 
-	public void setData(String data) {
+	public void setJsonData(String jsonData) {
 		try {
 			ObjectMapper mapper = new ObjectMapper();
-			this.data = mapper.readTree(data).toString();
+			this.jsonData = mapper.readTree(jsonData).toString();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -88,17 +85,14 @@ public class MAComponent {
 		if (this.title == null || this.title.isEmpty()) {
 			return "Missing title";
 		}
-		if (this.data == null || this.data.isEmpty()) {
+		if (this.jsonData == null || this.jsonData.isEmpty()) {
 			return "Data missing or invalid JSON format.";
-		}
-		if (this.view == null || this.view.isEmpty()) {
-			return "Missing view";
 		}
 		try {
 			ObjectMapper mapper = new ObjectMapper();
-			mapper.readTree(this.data);
+			mapper.readTree(this.jsonData);
 		} catch (IOException e) {
-			return "Problems deserializing data string: invalid JSON format.";
+			return "Problems deserializing jsonData string: invalid JSON format.";
 		}
 
 		return null;
@@ -106,7 +100,7 @@ public class MAComponent {
 
 	@Override
 	public String toString() {
-		return id + ", " + title + ", " + author + ", " + view + ", " + data;
+		return id + ", " + title + ", " + author + ", " + jsonData;
 	}
 
 	public static MAComponent findById(Long id) {

@@ -5,7 +5,7 @@
 <title>Mechanical Argentinian</title>
 <link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
 <link rel="stylesheet" href="/assets/stylesheets/jquery-ui-1.10.4.custom.min.css"/>
-<link rel="stylesheet" href="/assets/stylesheets/elis_confidence.css"/>
+<link rel="stylesheet" href="/experiments/1/elis_confidence.css"/>
 <script src="/assets/javascripts/jquery-1.10.2.js"></script>
 <script src="/assets/javascripts/jquery-ui-1.10.4.custom.min.js"></script>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -38,8 +38,10 @@
 	</div>
 
 	<script>
-		var component;
-		var data;
+		var experimentId = 1;
+		var componentId = 48;
+		var componentData;
+		var jsonData;
 		var slideList;
 		var nextUrl;
 		var slideCount = 0;
@@ -59,13 +61,8 @@
 			if (!checkBrowser()) {
 				return;
 			}
-			getcomponentData(48);
+			getComponentData(experimentId, componentId);
 		});
-		
-		function getcomponentData(id) {
-			var url = "/componentdata/" + id;
-			$.getJSON(url, startComponent);
-		}
 		
 		// If the user leaves the browser's tab set lostFocus to true
 		$(window).blur(function(){
@@ -114,13 +111,21 @@
 			endConfidenceState();
 		});
 		
+		function getComponentData(experimentId, componentId) {
+			var url = "/data/" + experimentId + "/" + componentId;
+			// TODO
+			$.getJSON(url, startComponent)
+				.error(function() { alert("error"); });
+		}
+		
 		function startComponent(response) {
-			component = response;
-			data = $.parseJSON(component.data);
-			slideList = data.slideList;
-			nextUrl = data.turkGateUrl;
-			componentResult = {id:component.id, slideResultList:[]};
-			document.title = component.title;
+			componentData = response;
+			jsonData = $.parseJSON(componentData.jsonData);
+			slideList = jsonData.slideList;
+			nextUrl = jsonData.nextUrl;
+			componentResult = {experimentId:experimentId, 
+					componentId:componentId, slideResultList:[]};
+			document.title = componentData.title;
 			displaySlide();
 		}
 		

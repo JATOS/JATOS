@@ -5,7 +5,7 @@
 <title>Mechanical Argentinian</title>
 <link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
 <link rel="stylesheet" href="/assets/stylesheets/jquery-ui-1.10.4.custom.min.css"/>
-<link rel="stylesheet" href="/assets/stylesheets/elis_confidence.css"/>
+<link rel="stylesheet" href="/experiments/1/instructions.css"/>
 <script src="/assets/javascripts/jquery-1.10.2.js"></script>
 <script src="/assets/javascripts/jquery-ui-1.10.4.custom.min.js"></script>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -23,10 +23,12 @@
 	</div>
 
 	<script>
-		var instructions;
-		var data;
+		var experimentId = 1;
+		var componentId = 47;
+		var componentData;
+		var jsonData;
 		var slideList;
-		var practiceUrl;
+		var nextUrl;
 		var slideCount = 0;
 		
 		// When the window is fully loaded get data and display the first slide
@@ -34,13 +36,8 @@
 			if (!checkBrowser()) {
 				return;
 			}
-			getData(47);
+			getComponentData(experimentId, componentId);
 		});
-		
-		function getData(id) {
-			var url = "/componentdata/" + id;
-			$.getJSON(url, start);
-		}
 		
 		// Callback function when key is pressed
 		$(document).keydown(function(event) {
@@ -54,12 +51,19 @@
 			nextSlide();
 		});
 		
-		function start(instructions) {
-			this.instructions = instructions;
-			this.data = $.parseJSON(instructions.data);
-			this.slideList = data.slideList;
-			this.practiceUrl = data.practiceUrl;
-			document.title = instructions.title;
+		function getComponentData(experimentId, componentId) {
+			var url = "/data/" + experimentId + "/" + componentId;
+			// TODO
+			$.getJSON(url, startComponent)
+				.error(function() { alert("error"); });
+		}
+		
+		function startComponent(response) {
+			componentData = response;
+			jsonData = $.parseJSON(componentData.jsonData);
+			slideList = jsonData.slideList;
+			nextUrl = jsonData.nextUrl;
+			document.title = componentData.title;
 			displaySlide();
 		}
 
@@ -76,7 +80,7 @@
 			if (slideCount < slideList.length) {
 				displaySlide();
 			} else {
-				window.location.replace(practiceUrl);
+				window.location.replace(nextUrl);
 			}
 		}
 		

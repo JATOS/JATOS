@@ -19,7 +19,7 @@ import views.html.admin.index;
 import views.html.admin.login;
 
 public class Admin extends Controller {
-
+	
 	public static final String COOKIE_EMAIL = "email";
 
 	@Transactional
@@ -40,7 +40,6 @@ public class Admin extends Controller {
 		if (loginForm.hasErrors()) {
 			return badRequest(login.render(loginForm));
 		} else {
-			// session().clear();
 			session(COOKIE_EMAIL, loginForm.get().email);
 			return redirect(routes.Admin.index());
 		}
@@ -146,14 +145,6 @@ public class Admin extends Controller {
 		return redirect(routes.Admin.index());
 	}
 
-	private static Result badRequestExperimentNotExist(Long experimentId) {
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		String error = "An experiment with id " + experimentId
-				+ " doesn't exist.";
-		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-		return badRequest(index.render(experimentList, error, user));
-	}
-
 	// *** Component ***
 
 	@Transactional
@@ -167,6 +158,11 @@ public class Admin extends Controller {
 		MAComponent component = MAComponent.findById(componentId);
 		if (component == null) {
 			return badRequestComponentNotExist(componentId);
+		}
+		
+		if (component.experiment.id != experiment.id) {
+			return badRequestComponentNotBelongToExperiment(experimentId,
+					componentId);
 		}
 
 		List<MAExperiment> experimentList = MAExperiment.findAll();
@@ -226,6 +222,11 @@ public class Admin extends Controller {
 		if (component == null) {
 			return badRequestComponentNotExist(componentId);
 		}
+		
+		if (component.experiment.id != experiment.id) {
+			return badRequestComponentNotBelongToExperiment(experimentId,
+					componentId);
+		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).fill(component);
 		List<MAExperiment> experimentList = MAExperiment.findAll();
@@ -247,6 +248,11 @@ public class Admin extends Controller {
 		if (component == null) {
 			return badRequestComponentNotExist(componentId);
 		}
+		
+		if (component.experiment.id != experiment.id) {
+			return badRequestComponentNotBelongToExperiment(experimentId,
+					componentId);
+		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
@@ -258,8 +264,7 @@ public class Admin extends Controller {
 
 		DynamicForm requestData = Form.form().bindFromRequest();
 		component.title = requestData.get("title");
-		component.setData(requestData.get("data"));
-		component.view = requestData.get("view");
+		component.setJsonData(requestData.get("jsonData"));
 		component.merge();
 		return redirect(routes.Admin.component(experiment.id, componentId));
 	}
@@ -277,15 +282,38 @@ public class Admin extends Controller {
 			return badRequestComponentNotExist(componentId);
 		}
 
+		if (component.experiment.id != experiment.id) {
+			return badRequestComponentNotBelongToExperiment(experimentId,
+					componentId);
+		}
+
 		component.remove();
 		return redirect(routes.Admin.index());
 	}
 
-	private static Result badRequestComponentNotExist(Long id) {
+	private static Result badRequestExperimentNotExist(Long experimentId) {
+		String errorMsg = "An experiment with id " + experimentId
+				+ " doesn't exist.";
+		return getBadRequest(errorMsg);
+	}
+
+	private static Result badRequestComponentNotExist(Long componentId) {
+		String errorMsg = "An component with id " + componentId
+				+ " doesn't exist.";
+		return getBadRequest(errorMsg);
+	}
+
+	private static Result badRequestComponentNotBelongToExperiment(
+			Long experimentId, Long componentId) {
+		String errorMsg = "There is no experiment with id " + experimentId
+				+ " that has a component with id " + componentId + ".";
+		return getBadRequest(errorMsg);
+	}
+	
+	private static Result getBadRequest(String errorMsg) {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		String error = "An component with id " + id + " doesn't exist.";
 		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-		return badRequest(index.render(experimentList, error, user));
+		return badRequest(index.render(experimentList, errorMsg, user));
 	}
 
 	/**
