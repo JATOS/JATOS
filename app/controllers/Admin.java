@@ -19,14 +19,14 @@ import views.html.admin.index;
 import views.html.admin.login;
 
 public class Admin extends Controller {
-	
+
 	public static final String COOKIE_EMAIL = "email";
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result index() {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
 		return ok(index.render(experimentList, null, user));
 	}
 
@@ -58,12 +58,16 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result experiment(Long experimentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
 		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
+		}
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 		return ok(views.html.admin.experiment.render(experimentList, null,
 				user, experiment));
 	}
@@ -72,7 +76,7 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result createExperiment() {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
 		return ok(experiment_create.render(experimentList, null, user,
 				Form.form(MAExperiment.class)));
 	}
@@ -84,13 +88,13 @@ public class Admin extends Controller {
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			List<MAExperiment> experimentList = MAExperiment.findAll();
-			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
+			MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
 			return badRequest(experiment_create.render(experimentList, null,
 					user, form));
 		} else {
 			MAExperiment experiment = form.get();
-			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-			experiment.author = user.toString();
+			MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
+			experiment.addMember(user);
 			experiment.persist();
 			return redirect(routes.Admin.experiment(experiment.id));
 		}
@@ -100,13 +104,18 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result updateExperiment(Long experimentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
 		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
 		}
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
+
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.fill(experiment);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 		return ok(experiment_update.render(experimentList, experiment, null,
 				user, form));
 	}
@@ -115,15 +124,19 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result submitUpdatedExperiment(Long experimentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
 		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
+		}
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			List<MAExperiment> experimentList = MAExperiment.findAll();
-			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 			return badRequest(experiment_update.render(experimentList,
 					experiment, null, user, form));
 		}
@@ -138,9 +151,16 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result deleteExperiment(Long experimentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
 		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
 		}
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
+
 		experiment.remove();
 		return redirect(routes.Admin.index());
 	}
@@ -151,22 +171,25 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result component(Long experimentId, Long componentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
-		}
-
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		if (component == null) {
-			return badRequestComponentNotExist(componentId);
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		if (experiment == null) {
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
 		}
-		
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
+		if (component == null) {
+			return badRequestComponentNotExist(componentId, experiment, user,
+					experimentList);
+		}
 		if (component.experiment.id != experiment.id) {
-			return badRequestComponentNotBelongToExperiment(experimentId,
-					componentId);
+			return badRequestComponentNotBelongToExperiment(experiment,
+					component, user, experimentList);
 		}
 
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 		return ok(views.html.admin.component.render(experimentList, experiment,
 				null, user, component));
 	}
@@ -176,12 +199,16 @@ public class Admin extends Controller {
 	public static Result createComponent(Long experimentId)
 			throws NumberFormatException {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
 		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
+		}
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 		return ok(component_create.render(experimentList, experiment, null,
 				user, Form.form(MAComponent.class)));
 	}
@@ -190,20 +217,22 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result submitComponent(Long experimentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
 		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
+		}
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
-			List<MAExperiment> experimentList = MAExperiment.findAll();
-			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 			return badRequest(component_create.render(experimentList,
 					experiment, null, user, form));
 		} else {
 			MAComponent component = form.get();
-			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
-			component.author = user.toString();
 			component.experiment = experiment;
 			component.persist();
 			return redirect(routes.Admin.component(experiment.id, component.id));
@@ -214,23 +243,26 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result updateComponent(Long experimentId, Long componentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
-		}
-
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		if (component == null) {
-			return badRequestComponentNotExist(componentId);
+		if (experiment == null) {
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
 		}
-		
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
+		if (component == null) {
+			return badRequestComponentNotExist(componentId, experiment, user,
+					experimentList);
+		}
 		if (component.experiment.id != experiment.id) {
-			return badRequestComponentNotBelongToExperiment(experimentId,
-					componentId);
+			return badRequestComponentNotBelongToExperiment(experiment,
+					component, user, experimentList);
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).fill(component);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 		return ok(component_update.render(experimentList, component,
 				experiment, null, user, form));
 	}
@@ -240,24 +272,27 @@ public class Admin extends Controller {
 	public static Result submitUpdatedComponent(Long experimentId,
 			Long componentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
-		}
-
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		if (component == null) {
-			return badRequestComponentNotExist(componentId);
+		if (experiment == null) {
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
 		}
-		
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
+		if (component == null) {
+			return badRequestComponentNotExist(componentId, experiment, user,
+					experimentList);
+		}
 		if (component.experiment.id != experiment.id) {
-			return badRequestComponentNotBelongToExperiment(experimentId,
-					componentId);
+			return badRequestComponentNotBelongToExperiment(experiment,
+					component, user, experimentList);
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
-			List<MAExperiment> experimentList = MAExperiment.findAll();
-			MAUser user = MAUser.findById(session(COOKIE_EMAIL));
 			return badRequest(component_update.render(experimentList,
 					component, experiment, null, user, form));
 		}
@@ -273,47 +308,59 @@ public class Admin extends Controller {
 	@Security.Authenticated(Secured.class)
 	public static Result deleteComponent(Long experimentId, Long componentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
-		}
-
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		if (component == null) {
-			return badRequestComponentNotExist(componentId);
+		if (experiment == null) {
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
 		}
-
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
+		if (component == null) {
+			return badRequestComponentNotExist(componentId, experiment, user,
+					experimentList);
+		}
 		if (component.experiment.id != experiment.id) {
-			return badRequestComponentNotBelongToExperiment(experimentId,
-					componentId);
+			return badRequestComponentNotBelongToExperiment(experiment,
+					component, user, experimentList);
 		}
 
 		component.remove();
 		return redirect(routes.Admin.index());
 	}
 
-	private static Result badRequestExperimentNotExist(Long experimentId) {
+	private static Result badRequestExperimentNotExist(Long experimentId,
+			MAUser user, List<MAExperiment> experimentList) {
 		String errorMsg = "An experiment with id " + experimentId
 				+ " doesn't exist.";
-		return getBadRequest(errorMsg);
+		return badRequest(index.render(experimentList, errorMsg, user));
 	}
 
-	private static Result badRequestComponentNotExist(Long componentId) {
+	private static Result badRequestComponentNotExist(Long componentId,
+			MAExperiment experiment, MAUser user,
+			List<MAExperiment> experimentList) {
 		String errorMsg = "An component with id " + componentId
 				+ " doesn't exist.";
-		return getBadRequest(errorMsg);
+		return badRequest(index.render(experimentList, errorMsg, user));
 	}
 
 	private static Result badRequestComponentNotBelongToExperiment(
-			Long experimentId, Long componentId) {
-		String errorMsg = "There is no experiment with id " + experimentId
-				+ " that has a component with id " + componentId + ".";
-		return getBadRequest(errorMsg);
-	}
-	
-	private static Result getBadRequest(String errorMsg) {
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findById(session(COOKIE_EMAIL));
+			MAExperiment experiment, MAComponent component, MAUser user,
+			List<MAExperiment> experimentList) {
+		String errorMsg = "There is no experiment with id " + experiment.id
+				+ " that has a component with id " + component.id + ".";
 		return badRequest(index.render(experimentList, errorMsg, user));
+	}
+
+	private static Result forbiddenNotMember(MAUser user,
+			MAExperiment experiment, List<MAExperiment> experimentList) {
+		String errorMsg = user.name + " (" + user.email
+				+ ") isn't member of experiment " + experiment.id + " \""
+				+ experiment.title + "\".";
+		return forbidden(views.html.admin.index.render(experimentList,
+				errorMsg, user));
 	}
 
 	/**

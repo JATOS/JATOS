@@ -10,7 +10,9 @@
 </header>
 
 <article class="tasks" id="tasks">
-	<p class="author">created by @experiment.author</p>
+	@for(member <- experiment.memberList) {
+		<p class="owner"> @member.name (@member.email)</p>
+	}
 	<input id="newGroup" type="button" onClick="addComponent()"
 		value="Add Component">
 	<input id="newGroup" type="button" onClick="updateExperiment()"

@@ -2,13 +2,16 @@ package models;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.TypedQuery;
 
@@ -25,7 +28,8 @@ public class MAExperiment {
 
 	public Timestamp date;
 
-	public String author;
+	@ManyToMany
+	public Set<MAUser> memberList = new HashSet<MAUser>();
 
 	@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	public List<MAComponent> componentList = new ArrayList<MAComponent>();
@@ -42,7 +46,7 @@ public class MAExperiment {
 
 	@Override
 	public String toString() {
-		return id + ", " + title + ", " + author;
+		return id + ", " + title;
 	}
 
 	public static MAExperiment findById(Long id) {
@@ -54,7 +58,19 @@ public class MAExperiment {
 				"SELECT e FROM MAExperiment e", MAExperiment.class);
 		return query.getResultList();
 	}
-
+	
+	public void addMember(MAUser user) {
+		memberList.add(user);
+	}
+	
+	public void removeMember(MAUser user) {
+		memberList.remove(user);
+	}
+	
+	public boolean isMember(MAUser user) {
+		return memberList.contains(user);
+	}
+		
 	public MAExperiment persist() {
 		JPA.em().persist(this);
 		return this;

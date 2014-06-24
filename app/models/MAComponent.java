@@ -46,9 +46,6 @@ public class MAComponent {
 	@JsonView(MAComponent.Admin.class)
 	public Timestamp date;
 
-	@JsonView(MAComponent.Admin.class)
-	public String author;
-
 	@JsonView(MAComponent.Public.class)
 	public String jsonData;
 
@@ -100,7 +97,7 @@ public class MAComponent {
 
 	@Override
 	public String toString() {
-		return id + ", " + title + ", " + author + ", " + jsonData;
+		return id + ", " + title + ", " + jsonData;
 	}
 
 	public static MAComponent findById(Long id) {

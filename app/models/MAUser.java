@@ -41,7 +41,7 @@ public class MAUser {
 		return userList.isEmpty() ? null : userList.get(0);
 	}
 	
-	public static MAUser findById(String email) {
+	public static MAUser findByEmail(String email) {
 		return JPA.em().find(MAUser.class, email);
 	}
 
