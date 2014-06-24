@@ -3,14 +3,17 @@
 # ~~~~
 
 # Public
-POST    /error                                     controllers.Public.logError()
-GET     /data/:experimentId/:componentId           controllers.Public.getComponentData(experimentId: Long, componentId: Long)
-POST    /data/:experimentId/:componentId           controllers.Public.submitResult(experimentId: Long, componentId: Long)
+POST    /error                                     controllers.Publix.logError()
+GET     /data/:experimentId/:componentId           controllers.Publix.getComponentData(experimentId: Long, componentId: Long)
+POST    /data/:experimentId/:componentId           controllers.Publix.submitResult(experimentId: Long, componentId: Long)
 
 # Admin
 GET     /admin/login                               controllers.Admin.login()
 POST    /admin/login                               controllers.Admin.authenticate()
 GET     /admin/logout                              controllers.Admin.logout()
+GET     /admin                                     controllers.Admin.index()
+GET     /admin/                                    controllers.Admin.index()
+GET     /                                          controllers.Admin.index()
 GET     /admin/createexperiment                    controllers.Experiments.create()
 POST    /admin/createexperiment                    controllers.Experiments.submit()
 GET     /admin/:experimentId/update                controllers.Experiments.update(experimentId: Long)
@@ -25,9 +28,6 @@ POST    /admin/:experimentId/:componentId/update   controllers.Components.submit
 DELETE  /admin/:experimentId/:componentId/delete   controllers.Components.delete(experimentId: Long, componentId: Long)
 GET     /admin/:experimentId/:componentId          controllers.Components.get(experimentId: Long, componentId: Long)
 GET     /admin/:experimentId/:componentId/         controllers.Components.get(experimentId: Long, componentId: Long)
-GET     /admin                                     controllers.Admin.index()
-GET     /admin/                                    controllers.Admin.index()
-GET     /                                          controllers.Admin.index()
 
 # Static resources (not managed by the Play framework) from the /public folder
 GET     /assets/*file                 controllers.Assets.at(path="/public", file)

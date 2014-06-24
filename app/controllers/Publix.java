@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-public class Public extends Controller {
+public class Publix extends Controller {
 
 	private static final String COOKIE_EXPS_DONE = "expsDone";
 	public static final String COMPONENTS_DONE_DELIMITER = ",";
