@@ -1,13 +1,71 @@
-@(experiment: MAExperiment)
+@(experimentList: List[MAExperiment], error: String, user: MAUser,
+	experiment: MAExperiment)
 
-@main("Mechanical Argentinian - Experiment " + experiment.title) {
+@main(experimentList, error, user){
 
-	<h1>Results for experiment "@experiment.title" (ID @experiment.id)</h1>
+<header>
+	<hgroup>
+		<h3>@experiment.id "@experiment.title" > </h3>
+	</hgroup>
+</header>
 
-	<ul>
-	@for(result <- experiment.resultList) {
-		<li>@result.id (@result.date, @result.result)</li>
+<article class="tasks" id="tasks">
+	@for(member <- experiment.memberList) {
+		<p class="owner"> @member.name (@member.email)</p>
 	}
-	</ul>
+	<input id="newGroup" type="button" onClick="addComponent()"
+		value="Add Component">
+	<input id="newGroup" type="button" onClick="updateExperiment()"
+		value="Update">
+	<input id="newGroup" type="button" onClick="deleteExperiment()"
+		value="Delete">
+	<div class="folder" data-folder-id="@experiment.id">
+		<header>
+			@if(experiment.componentList.isEmpty()) {
+				<h3>No components so far</h3>
+			} else {
+				<h3>Components so far</h3>
+			}
+		</header>
+
+		<ul class="list">
+			@for(component <- experiment.componentList) {
+				<li data-task-id="@experiment.id">
+					<a class="name"
+							href="@routes.Components.get(experiment.id, component.id)">
+							@component.id "@component.title" (@component.resultList.size())
+					</a>
+			}
+		</ul>
+	</div>
+</article>
+
+<script type="text/javascript">
+
+	function addComponent() {
+		window.location.href = "@routes.Components.create(experiment.id)";
+	}
+
+	function updateExperiment() {
+		window.location.href = "@routes.Experiments.update(experiment.id)";
+	}
+
+	function deleteExperiment() {
+		var conf = confirm("Are you sure you want to delete experiment "
+				+ "@experiment.id" + "\u00a0" + "\"@Html(experiment.title)\"?");
+		if (conf == true) {
+			$.ajax({
+				url : '@routes.Experiments.delete(experiment.id)',
+				type : 'DELETE',
+				success : function(result) {
+					window.location.replace('@routes.Admin.index()');
+				},
+				error : function(err) {
+					alert(err.responseText);
+				}
+			});
+		}
+	}
+</script>
 
 }

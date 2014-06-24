@@ -7,20 +7,15 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import views.html.error;
-import views.html.index;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-public class Application extends Controller {
+public class Public extends Controller {
 
 	private static final String COOKIE_EXPS_DONE = "expsDone";
 	public static final String COMPONENTS_DONE_DELIMITER = ",";
-
-	public static Result index() {
-		return ok(index.render());
-	}
 
 	public static Result logError() {
 		String msg = request().body().asText();
@@ -57,7 +52,7 @@ public class Application extends Controller {
 
 	private static boolean setComponentDone(Long id) {
 		// If an admin is logged in do nothing
-		if (session(Admin.COOKIE_EMAIL) != null) {
+		if (session(MAController.COOKIE_EMAIL) != null) {
 			return true;
 		}
 

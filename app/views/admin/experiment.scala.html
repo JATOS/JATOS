@@ -32,7 +32,7 @@
 			@for(component <- experiment.componentList) {
 				<li data-task-id="@experiment.id">
 					<a class="name"
-							href="@routes.Admin.component(experiment.id, component.id)">
+							href="@routes.Components.get(experiment.id, component.id)">
 							@component.id "@component.title" (@component.resultList.size())
 					</a>
 			}
@@ -43,11 +43,11 @@
 <script type="text/javascript">
 
 	function addComponent() {
-		window.location.href = "@routes.Admin.createComponent(experiment.id)";
+		window.location.href = "@routes.Components.create(experiment.id)";
 	}
 
 	function updateExperiment() {
-		window.location.href = "@routes.Admin.updateExperiment(experiment.id)";
+		window.location.href = "@routes.Experiments.update(experiment.id)";
 	}
 
 	function deleteExperiment() {
@@ -55,7 +55,7 @@
 				+ "@experiment.id" + "\u00a0" + "\"@Html(experiment.title)\"?");
 		if (conf == true) {
 			$.ajax({
-				url : '@routes.Admin.deleteExperiment(experiment.id)',
+				url : '@routes.Experiments.delete(experiment.id)',
 				type : 'DELETE',
 				success : function(result) {
 					window.location.replace('@routes.Admin.index()');

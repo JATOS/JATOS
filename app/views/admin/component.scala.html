@@ -34,7 +34,7 @@
 
 <script type="text/javascript">
 	function updateComponent() {
-		window.location.href = "@routes.Admin.updateComponent(
+		window.location.href = "@routes.Components.update(
 				experiment.id, component.id)";
 	}
 
@@ -43,7 +43,7 @@
 				+ "@component.id" + "\u00a0" + "\"@Html(component.title)\"?");
 		if (conf == true) {
 			$.ajax({
-				url : '@routes.Admin.deleteComponent(
+				url : '@routes.Components.delete(
 						experiment.id, component.id)',
 				type : 'DELETE',
 				success : function(result) {

@@ -13,7 +13,7 @@
 	<article class="tasks" id="tasks">
 		<div class="folder">
 		
-			@helper.form(action = routes.Admin.submitUpdatedExperiment(experiment.id), 'class -> "addTask") {
+			@helper.form(action = routes.Experiments.submitUpdated(experiment.id), 'class -> "addTask") {
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message
