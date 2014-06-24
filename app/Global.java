@@ -10,13 +10,14 @@ public class Global extends GlobalSettings {
 	@Override
 	public Promise<SimpleResult> onError(RequestHeader request, Throwable t) {
 		Logger.error(t.getMessage());
-		return Promise.<SimpleResult> pure(internalServerError(views.html.error
-				.render("Internal server error")));
+		return Promise
+				.<SimpleResult> pure(internalServerError(views.html.publix.error
+						.render("Internal server error")));
 	}
 
 	@Override
 	public Promise<SimpleResult> onHandlerNotFound(RequestHeader request) {
-		return Promise.<SimpleResult> pure(notFound(views.html.error
+		return Promise.<SimpleResult> pure(notFound(views.html.publix.error
 				.render("Requested page \"" + request.uri()
 						+ "\" doesn't exist.")));
 	}

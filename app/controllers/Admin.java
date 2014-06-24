@@ -8,8 +8,6 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Result;
 import play.mvc.Security;
-import views.html.admin.index;
-import views.html.admin.login;
 
 public class Admin extends MAController {
 
@@ -18,18 +16,18 @@ public class Admin extends MAController {
 	public static Result index() {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
-		return ok(index.render(experimentList, null, user));
+		return ok(views.html.admin.index.render(experimentList, null, user));
 	}
 
 	public static Result login() {
-		return ok(login.render(Form.form(Login.class)));
+		return ok(views.html.admin.login.render(Form.form(Login.class)));
 	}
 
 	@Transactional
 	public static Result authenticate() {
 		Form<Login> loginForm = Form.form(Login.class).bindFromRequest();
 		if (loginForm.hasErrors()) {
-			return badRequest(login.render(loginForm));
+			return badRequest(views.html.admin.login.render(loginForm));
 		} else {
 			session(COOKIE_EMAIL, loginForm.get().email);
 			return redirect(routes.Admin.index());

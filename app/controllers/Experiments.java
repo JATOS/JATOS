@@ -9,8 +9,6 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Result;
 import play.mvc.Security;
-import views.html.admin.experiment_create;
-import views.html.admin.experiment_update;
 
 public class Experiments extends MAController {
 
@@ -28,7 +26,7 @@ public class Experiments extends MAController {
 			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
-		return ok(views.html.admin.experiment.render(experimentList, null,
+		return ok(views.html.admin.experiment.experiment.render(experimentList, null,
 				user, experiment));
 	}
 
@@ -37,7 +35,7 @@ public class Experiments extends MAController {
 	public static Result create() {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
-		return ok(experiment_create.render(experimentList, null, user,
+		return ok(views.html.admin.experiment.create.render(experimentList, null, user,
 				Form.form(MAExperiment.class)));
 	}
 
@@ -49,7 +47,7 @@ public class Experiments extends MAController {
 		if (form.hasErrors()) {
 			List<MAExperiment> experimentList = MAExperiment.findAll();
 			MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
-			return badRequest(experiment_create.render(experimentList, null,
+			return badRequest(views.html.admin.experiment.create.render(experimentList, null,
 					user, form));
 		} else {
 			MAExperiment experiment = form.get();
@@ -76,7 +74,7 @@ public class Experiments extends MAController {
 
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.fill(experiment);
-		return ok(experiment_update.render(experimentList, experiment, null,
+		return ok(views.html.admin.experiment.update.render(experimentList, experiment, null,
 				user, form));
 	}
 
@@ -97,7 +95,7 @@ public class Experiments extends MAController {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			return badRequest(experiment_update.render(experimentList,
+			return badRequest(views.html.admin.experiment.update.render(experimentList,
 					experiment, null, user, form));
 		}
 

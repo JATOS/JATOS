@@ -6,7 +6,6 @@ import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
-import views.html.error;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +38,7 @@ public class Public extends Controller {
 		// component
 		boolean isReload = !setComponentDone(componentId);
 		if (isReload) {
-			return badRequest(error.render("It is not allowed to reload an "
+			return badRequest(views.html.publix.error.render("It is not allowed to reload an "
 					+ "component you've started already."));
 		}
 
@@ -89,7 +88,7 @@ public class Public extends Controller {
 
 		JsonNode resultJson = request().body().asJson();
 		if (resultJson == null) {
-			return badRequest(error.render("Expecting data in JSON format"));
+			return badRequest(views.html.publix.error.render("Expecting data in JSON format"));
 		}
 
 		String resultStr = resultJson.toString();
@@ -97,7 +96,7 @@ public class Public extends Controller {
 
 		String errorMsg = result.validate();
 		if (errorMsg != null) {
-			return badRequest(error.render(errorMsg));
+			return badRequest(views.html.publix.error.render(errorMsg));
 		} else {
 			result.persist();
 			return ok();
@@ -107,14 +106,14 @@ public class Public extends Controller {
 	private static Result badRequestComponentNotExist(Long componentId) {
 		String errorMsg = "An component with id " + componentId
 				+ " doesn't exist.";
-		return badRequest(error.render(errorMsg));
+		return badRequest(views.html.publix.error.render(errorMsg));
 	}
 
 	private static Result badRequestComponentNotBelongToExperiment(
 			Long experimentId, Long componentId) {
 		String errorMsg = "There is no experiment with id " + experimentId
 				+ " that has a component with id " + componentId + ".";
-		return badRequest(error.render(errorMsg));
+		return badRequest(views.html.publix.error.render(errorMsg));
 	}
 
 }

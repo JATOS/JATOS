@@ -7,7 +7,6 @@ import models.MAExperiment;
 import models.MAUser;
 import play.mvc.Controller;
 import play.mvc.Result;
-import views.html.admin.index;
 
 public class MAController extends Controller {
 
@@ -17,7 +16,7 @@ public class MAController extends Controller {
 			MAUser user, List<MAExperiment> experimentList) {
 		String errorMsg = "An experiment with id " + experimentId
 				+ " doesn't exist.";
-		return badRequest(index.render(experimentList, errorMsg, user));
+		return badRequest(views.html.admin.index.render(experimentList, errorMsg, user));
 	}
 	
 	public static Result badRequestComponentNotExist(Long componentId,
@@ -25,7 +24,7 @@ public class MAController extends Controller {
 			List<MAExperiment> experimentList) {
 		String errorMsg = "An component with id " + componentId
 				+ " doesn't exist.";
-		return badRequest(index.render(experimentList, errorMsg, user));
+		return badRequest(views.html.admin.index.render(experimentList, errorMsg, user));
 	}
 
 	public static Result badRequestComponentNotBelongToExperiment(
@@ -33,7 +32,7 @@ public class MAController extends Controller {
 			List<MAExperiment> experimentList) {
 		String errorMsg = "There is no experiment with id " + experiment.id
 				+ " that has a component with id " + component.id + ".";
-		return badRequest(index.render(experimentList, errorMsg, user));
+		return badRequest(views.html.admin.index.render(experimentList, errorMsg, user));
 	}
 
 	public static Result forbiddenNotMember(MAUser user,

@@ -10,8 +10,6 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Result;
 import play.mvc.Security;
-import views.html.admin.component_create;
-import views.html.admin.component_update;
 
 public class Components extends MAController {
 
@@ -38,7 +36,7 @@ public class Components extends MAController {
 					component, user, experimentList);
 		}
 
-		return ok(views.html.admin.component.render(experimentList, experiment,
+		return ok(views.html.admin.component.component.render(experimentList, experiment,
 				null, user, component));
 	}
 
@@ -57,7 +55,7 @@ public class Components extends MAController {
 			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
-		return ok(component_create.render(experimentList, experiment, null,
+		return ok(views.html.admin.component.create.render(experimentList, experiment, null,
 				user, Form.form(MAComponent.class)));
 	}
 
@@ -77,7 +75,7 @@ public class Components extends MAController {
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
-			return badRequest(component_create.render(experimentList,
+			return badRequest(views.html.admin.component.create.render(experimentList,
 					experiment, null, user, form));
 		} else {
 			MAComponent component = form.get();
@@ -111,7 +109,7 @@ public class Components extends MAController {
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).fill(component);
-		return ok(component_update.render(experimentList, component,
+		return ok(views.html.admin.component.update.render(experimentList, component,
 				experiment, null, user, form));
 	}
 
@@ -141,7 +139,7 @@ public class Components extends MAController {
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
-			return badRequest(component_update.render(experimentList,
+			return badRequest(views.html.admin.component.update.render(experimentList,
 					component, experiment, null, user, form));
 		}
 
