@@ -71,19 +71,16 @@ public class MAExperiment {
 		return memberList.contains(user);
 	}
 		
-	public MAExperiment persist() {
+	public void persist() {
 		JPA.em().persist(this);
-		return this;
 	}
 
-	public MAExperiment merge() {
+	public void merge() {
 		JPA.em().merge(this);
-		return this;
 	}
 
-	public MAExperiment remove() {
+	public void remove() {
 		JPA.em().remove(this);
-		return this;
 	}
 
 }

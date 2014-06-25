@@ -26,8 +26,8 @@ public class Experiments extends MAController {
 			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
-		return ok(views.html.admin.experiment.experiment.render(experimentList, null,
-				user, experiment));
+		return ok(views.html.admin.experiment.experiment.render(experimentList,
+				null, user, experiment));
 	}
 
 	@Transactional
@@ -35,8 +35,8 @@ public class Experiments extends MAController {
 	public static Result create() {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
-		return ok(views.html.admin.experiment.create.render(experimentList, null, user,
-				Form.form(MAExperiment.class)));
+		return ok(views.html.admin.experiment.create.render(experimentList,
+				null, user, Form.form(MAExperiment.class)));
 	}
 
 	@Transactional
@@ -44,14 +44,14 @@ public class Experiments extends MAController {
 	public static Result submit() {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.bindFromRequest();
+		MAUser user = MAUser
+				.findByEmail(session(MAController.COOKIE_EMAIL));
 		if (form.hasErrors()) {
 			List<MAExperiment> experimentList = MAExperiment.findAll();
-			MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
-			return badRequest(views.html.admin.experiment.create.render(experimentList, null,
-					user, form));
+			return badRequest(views.html.admin.experiment.create.render(
+					experimentList, null, user, form));
 		} else {
 			MAExperiment experiment = form.get();
-			MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 			experiment.addMember(user);
 			experiment.persist();
 			return redirect(routes.Experiments.get(experiment.id));
@@ -74,8 +74,8 @@ public class Experiments extends MAController {
 
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.fill(experiment);
-		return ok(views.html.admin.experiment.update.render(experimentList, experiment, null,
-				user, form));
+		return ok(views.html.admin.experiment.update.render(experimentList,
+				experiment, null, user, form));
 	}
 
 	@Transactional
@@ -95,8 +95,8 @@ public class Experiments extends MAController {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			return badRequest(views.html.admin.experiment.update.render(experimentList,
-					experiment, null, user, form));
+			return badRequest(views.html.admin.experiment.update.render(
+					experimentList, experiment, null, user, form));
 		}
 
 		DynamicForm requestData = Form.form().bindFromRequest();

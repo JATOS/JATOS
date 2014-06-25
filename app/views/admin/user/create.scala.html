@@ -1,0 +1,30 @@
+@(experimentList: List[MAExperiment], error: String, loggedInUser: MAUser,
+	form: Form[MAUser])
+
+@admin.main(experimentList, error, loggedInUser){
+
+	<header>
+		<hgroup>
+			<h2>/ > </h2>
+			<h4>New User > </h4>
+		</hgroup>
+	</header>
+
+	<article class="tasks" id="tasks">
+		<div class="folder">
+		
+			@helper.form(action = routes.Users.submit(), 'class -> "addTask") {
+				@if(form.hasGlobalErrors) {
+					<p class="error">
+						@form.globalError.message
+					</p>
+				}
+				<input type="text" class="formTop" placeholder="Name" value="@form("name").value">
+				<input type="text" class="formMiddle" placeholder="Email" value="@form("email").value">
+				<input type="text" class="formBottom" placeholder="Password" value="@form("password").value">
+				<button id="newGroup" type="submit">Create</button>
+			}
+		</div>
+	</article>
+
+}

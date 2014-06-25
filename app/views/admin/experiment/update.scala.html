@@ -5,6 +5,7 @@
 
 	<header>
 		<hgroup>
+			<h2>/ > </h2>
 			<h3>@experiment.id "@experiment.title" > </h3>
 			<h4>Update > </h4>
 		</hgroup>
@@ -19,7 +20,7 @@
 						@form.globalError.message
 					</p>
 				}
-				<input type="text" name="title" placeholder="Title" value="@form("title").value">
+				<input type="text" class="formSingle" placeholder="Title" value="@form("title").value">
 				<button id="newGroup" type="submit">Update</button>
 			}
 		</div>

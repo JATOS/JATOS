@@ -1,0 +1,31 @@
+@(experimentList: List[MAExperiment], user: MAUser, error: String,
+	loggedInUser: MAUser, form: Form[MAUser])
+
+@admin.main(experimentList, error, loggedInUser){
+
+	<header>
+		<hgroup>
+			<h2>/ > </h2>
+			<h3>@user.toString() > </h3>
+			<h4>Update > </h4>
+		</hgroup>
+	</header>
+
+	<article class="tasks" id="tasks">
+		<div class="folder">
+		
+			@helper.form(action = routes.Users.submitUpdated(user.email), 'class -> "addTask") {
+				@if(form.hasGlobalErrors) {
+					<p class="error">
+						@form.globalError.message
+					</p>
+				}
+				<input type="text" class="formTop" placeholder="Name" value="@form("name").value">
+				<input type="text" class="formMiddle" placeholder="Email" value="@form("email").value">
+				<input type="text" class="formBottom" placeholder="Password" value="@form("password").value">
+				<button id="newGroup" type="submit">Update</button>
+			}
+		</div>
+	</article>
+
+}

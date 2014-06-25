@@ -1,0 +1,31 @@
+@(experimentList: List[MAExperiment], error: String, loggedInUser: MAUser,
+	user: MAUser)
+
+@admin.main(experimentList, error, loggedInUser){
+
+<header>
+	<hgroup>
+		<h2>/ > </h2>
+		<h3>@user.toString() > </h3>
+	</hgroup>
+</header>
+
+<article class="tasks" id="tasks">
+	<div class="folder" data-folder-id="@user.email">
+		<header>
+			<h3>@user.toString()</h3>
+		</header>
+
+		<ul class="list">
+			@for(experiment <- user.experimentList) {
+				<li data-task-id="@experiment.id">
+					<a class="name"
+							href="@routes.Experiments.get(experiment.id)">
+							@experiment.id "@experiment.title"
+					</a>
+			}
+		</ul>
+	</div>
+</article>
+
+}

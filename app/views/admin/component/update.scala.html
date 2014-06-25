@@ -5,6 +5,7 @@
 
 	<header>
 		<hgroup>
+			<h2>/ > </h2>
 			<h2>@experiment.id "@experiment.title" > </h2>
 			<h3>@form("id").value "@form("title").value" > </h3>
 			<h4>Update > </h4>
@@ -20,8 +21,8 @@
 						@form.globalError.message
 					</p>
 				}
-				<input type="text" name="title" placeholder="Title" value="@form("title").value">
-				<textarea name="jsonData" placeholder="JSON data - put your JSON string here.">@form("jsonData").value</textarea>
+				<input type="text" class="formTop" placeholder="Title" value="@form("title").value">
+				<textarea class="formJsonData" placeholder="JSON data - put your JSON string here.">@form("jsonData").value</textarea>
 				<button id="newGroup" type="submit">Update</button>
 			}
 		</div>

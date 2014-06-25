@@ -4,7 +4,8 @@
 
 	<header>
 		<hgroup>
-			<h4>/ > New Experiment > </h4>
+			<h2>/ > </h2>
+			<h4>New Experiment > </h4>
 		</hgroup>
 	</header>
 
@@ -17,7 +18,7 @@
 						@form.globalError.message
 					</p>
 				}
-				<input type="text" name="title" placeholder="Title" value="@form("title").value">
+				<input type="text class="formSingle" placeholder="Title" value="@form("title").value">
 				<button id="newGroup" type="submit">Create</button>
 			}
 		</div>
