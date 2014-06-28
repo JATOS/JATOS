@@ -11,18 +11,32 @@
 </header>
 
 <article class="tasks" id="tasks">
+
+	@if(error != null) {
+		<p class="error">@error</p>
+	}
+
+	<a id="newGroup" href="@routes.Users.update(user.email)">Update</a>
+
 	<div class="folder" data-folder-id="@user.email">
 		<header>
-			<h3>@user.toString()</h3>
+			<h3>Member in Experiments</h3>
 		</header>
 
 		<ul class="list">
+			@if(user.experimentList.isEmpty()) {
+				<li>
+					<p class="name">None</p>
+				</li>
+			}
+		
 			@for(experiment <- user.experimentList) {
 				<li data-task-id="@experiment.id">
 					<a class="name"
 							href="@routes.Experiments.get(experiment.id)">
 							@experiment.id "@experiment.title"
 					</a>
+				</li>
 			}
 		</ul>
 	</div>

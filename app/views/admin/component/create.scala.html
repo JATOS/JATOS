@@ -20,8 +20,8 @@
 						@form.globalError.message
 					</p>
 				}
-				<input type="text" class="formTop" placeholder="Title" value="@form("title").value">
-				<textarea class="formJsonData" placeholder="JSON data - put your JSON string here.">@form("jsonData").value</textarea>
+				<input type="text" name="title" class="formTop" placeholder="Title" value="@form("title").value">
+				<textarea name="jsonData" class="formJsonData" placeholder="JSON data - put your JSON string here.">@form("jsonData").value</textarea>
 				<button id="newGroup" type="submit">Create</button>
 			}
 		</div>

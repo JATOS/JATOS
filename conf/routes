@@ -24,6 +24,8 @@ GET     /admin/createexperiment                    controllers.Experiments.creat
 POST    /admin/createexperiment                    controllers.Experiments.submit()
 GET     /admin/:experimentId/update                controllers.Experiments.update(experimentId: Long)
 POST    /admin/:experimentId/update                controllers.Experiments.submitUpdated(experimentId: Long)
+GET     /admin/:experimentId/updateMembers         controllers.Experiments.updateMembers(experimentId: Long)
+POST    /admin/:experimentId/updateMembers         controllers.Experiments.submitUpdatedMembers(experimentId: Long)
 DELETE  /admin/:experimentId/delete                controllers.Experiments.delete(experimentId: Long)
 GET     /admin/:experimentId                       controllers.Experiments.get(experimentId: Long)
 GET     /admin/:experimentId/                      controllers.Experiments.get(experimentId: Long)

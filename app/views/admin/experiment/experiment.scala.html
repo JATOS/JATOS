@@ -18,6 +18,8 @@
 		value="Add Component">
 	<input id="newGroup" type="button" onClick="updateExperiment()"
 		value="Update">
+	<input id="newGroup" type="button" onClick="updateMembers()"
+		value="Update Members">
 	<input id="newGroup" type="button" onClick="deleteExperiment()"
 		value="Delete">
 	<div class="folder" data-folder-id="@experiment.id">
@@ -36,6 +38,7 @@
 							href="@routes.Components.get(experiment.id, component.id)">
 							@component.id "@component.title" (@component.resultList.size())
 					</a>
+				</li>
 			}
 		</ul>
 	</div>
@@ -49,6 +52,10 @@
 
 	function updateExperiment() {
 		window.location.href = "@routes.Experiments.update(experiment.id)";
+	}
+	
+	function updateMembers() {
+		window.location.href = "@routes.Experiments.updateMembers(experiment.id)";
 	}
 
 	function deleteExperiment() {

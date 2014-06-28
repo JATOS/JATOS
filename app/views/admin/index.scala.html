@@ -1,4 +1,5 @@
-@(experimentList: List[MAExperiment], error: String, user: MAUser)
+@(experimentList: List[MAExperiment], userList: List[MAUser], error: String,
+	user: MAUser)
 
 @main(experimentList, error, user){
 
@@ -10,9 +11,31 @@
 
 
 <article class="tasks" id="tasks">
-<a id="newGroup" href="@routes.Experiments.create()">New experiment</a>
 	@if(error != null) {
 		<p>@error</p>
 	}
+	<a id="newGroup" href="@routes.Experiments.create()">Add experiment</a>
+	<a id="newGroup" href="@routes.Users.create()">Add user</a>
+	
+	<div class="folder">
+		<header>
+			@if(userList.isEmpty()) {
+				<h3>No user so far</h3>
+			} else {
+				<h3>Users</h3>
+			}
+		</header>
+		
+		<ul class="list">
+			@for(user <- userList) {
+				<li data-task-id="@user.email">
+						<a class="name" href="@routes.Users.get(user.email)">
+								@user.toString()
+						</a>
+				</li>
+			}
+		</ul>
+	</div>
+	
 </article>
 }

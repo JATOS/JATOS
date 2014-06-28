@@ -15,8 +15,10 @@ public class Admin extends MAController {
 	@Security.Authenticated(Secured.class)
 	public static Result index() {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findByEmail(session(COOKIE_EMAIL));
-		return ok(views.html.admin.index.render(experimentList, null, user));
+		MAUser loggedInUser = MAUser.findByEmail(session(COOKIE_EMAIL));
+		List<MAUser> userList = MAUser.findAll();
+		return ok(views.html.admin.index.render(experimentList, userList, null,
+				loggedInUser));
 	}
 
 	public static Result login() {

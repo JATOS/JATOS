@@ -16,15 +16,17 @@ public class MAController extends Controller {
 			MAUser user, List<MAExperiment> experimentList) {
 		String errorMsg = "An experiment with id " + experimentId
 				+ " doesn't exist.";
+		List<MAUser> userList = MAUser.findAll();
 		return badRequest(views.html.admin.index.render(experimentList,
-				errorMsg, user));
+				userList, errorMsg, user));
 	}
 
 	public static Result badRequestUserNotExist(String email,
 			MAUser loggedInUser, List<MAExperiment> experimentList) {
 		String errorMsg = "An user with email " + email + " doesn't exist.";
+		List<MAUser> userList = MAUser.findAll();
 		return badRequest(views.html.admin.index.render(experimentList,
-				errorMsg, loggedInUser));
+				userList, errorMsg, loggedInUser));
 	}
 
 	public static Result badRequestComponentNotExist(Long componentId,
@@ -32,8 +34,9 @@ public class MAController extends Controller {
 			List<MAExperiment> experimentList) {
 		String errorMsg = "An component with id " + componentId
 				+ " doesn't exist.";
+		List<MAUser> userList = MAUser.findAll();
 		return badRequest(views.html.admin.index.render(experimentList,
-				errorMsg, user));
+				userList, errorMsg, user));
 	}
 
 	public static Result badRequestComponentNotBelongToExperiment(
@@ -41,8 +44,9 @@ public class MAController extends Controller {
 			List<MAExperiment> experimentList) {
 		String errorMsg = "There is no experiment with id " + experiment.id
 				+ " that has a component with id " + component.id + ".";
+		List<MAUser> userList = MAUser.findAll();
 		return badRequest(views.html.admin.index.render(experimentList,
-				errorMsg, user));
+				userList, errorMsg, user));
 	}
 
 	public static Result forbiddenNotMember(MAUser user,
@@ -50,8 +54,9 @@ public class MAController extends Controller {
 		String errorMsg = user.name + " (" + user.email
 				+ ") isn't member of experiment " + experiment.id + " \""
 				+ experiment.title + "\".";
+		List<MAUser> userList = MAUser.findAll();
 		return forbidden(views.html.admin.index.render(experimentList,
-				errorMsg, user));
+				userList, errorMsg, user));
 	}
 
 }

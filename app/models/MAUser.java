@@ -1,5 +1,6 @@
 package models;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -9,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.TypedQuery;
 
+import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 
 @Entity
@@ -20,8 +22,8 @@ public class MAUser {
 	public String name;
 
 	public String password;
-	
-	@ManyToMany(mappedBy="memberList")
+
+	@ManyToMany(mappedBy = "memberList")
 	public Set<MAExperiment> experimentList = new HashSet<MAExperiment>();
 
 	public MAUser(String email, String name, String password) {
@@ -32,7 +34,7 @@ public class MAUser {
 
 	public MAUser() {
 	}
-	
+
 	@Override
 	public String toString() {
 		return name + ", " + email;
@@ -46,24 +48,31 @@ public class MAUser {
 				.setParameter("password", password).getResultList();
 		return userList.isEmpty() ? null : userList.get(0);
 	}
-	
-	public String validate() {
-		if (this.name == null || this.name.isEmpty()) {
-			return "Missing Name";
-		}
+
+	public List<ValidationError> validate() {
+		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (this.email == null || this.email.isEmpty()) {
-			return "Missing Email";
+			errorList.add(new ValidationError("email", "Missing Email"));
+		}
+		if (this.name == null || this.name.isEmpty()) {
+			errorList.add(new ValidationError("name", "Missing Name"));
 		}
 		if (this.password == null || this.password.isEmpty()) {
-			return "Missing Password";
+			errorList.add(new ValidationError("password", "Missing Password"));
 		}
-		return null;
+		return errorList.isEmpty() ? null : errorList;
 	}
-	
+
 	public static MAUser findByEmail(String email) {
 		return JPA.em().find(MAUser.class, email);
 	}
 	
+	public static List<MAUser> findAll() {
+		TypedQuery<MAUser> query = JPA.em().createQuery(
+				"SELECT e FROM MAUser e", MAUser.class);
+		return query.getResultList();
+	}
+
 	public void persist() {
 		JPA.em().persist(this);
 	}

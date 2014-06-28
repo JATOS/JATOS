@@ -1,6 +1,7 @@
 package controllers;
 
 import java.util.List;
+import java.util.Map;
 
 import models.MAExperiment;
 import models.MAUser;
@@ -44,8 +45,7 @@ public class Experiments extends MAController {
 	public static Result submit() {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.bindFromRequest();
-		MAUser user = MAUser
-				.findByEmail(session(MAController.COOKIE_EMAIL));
+		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		if (form.hasErrors()) {
 			List<MAExperiment> experimentList = MAExperiment.findAll();
 			return badRequest(views.html.admin.experiment.create.render(
@@ -121,6 +121,61 @@ public class Experiments extends MAController {
 
 		experiment.remove();
 		return redirect(routes.Admin.index());
+	}
+
+	@Transactional
+	@Security.Authenticated(Secured.class)
+	public static Result updateMembers(Long experimentId) {
+		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		if (experiment == null) {
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
+		}
+		if (!experiment.isMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
+
+		List<MAUser> userList = MAUser.findAll();
+		return ok(views.html.admin.experiment.updateMembers.render(
+				experimentList, experiment, userList, null, user, null));
+	}
+
+	@Transactional
+	@Security.Authenticated(Secured.class)
+	public static Result submitUpdatedMembers(Long experimentId) {
+		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser loggedInUser = MAUser
+				.findByEmail(session(MAController.COOKIE_EMAIL));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		if (experiment == null) {
+			return badRequestExperimentNotExist(experimentId, loggedInUser,
+					experimentList);
+		}
+		if (!experiment.isMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, experiment, experimentList);
+		}
+
+		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
+		String[] checkedUsers = formMap.get("user");
+		if (checkedUsers == null || checkedUsers.length < 1) {
+			String errorMsg = "An experiment should have at least one member.";
+			List<MAUser> userList = MAUser.findAll();
+			return badRequest(views.html.admin.experiment.updateMembers.render(
+					experimentList, experiment, userList, null,
+					loggedInUser, errorMsg));
+		}
+		experiment.memberList.clear();
+		for (String email : checkedUsers) {
+			MAUser user = MAUser.findByEmail(email);
+			if (user != null) {
+				experiment.memberList.add(user);
+			}
+		}
+
+		experiment.merge();
+		return redirect(routes.Experiments.get(experimentId));
 	}
 
 }

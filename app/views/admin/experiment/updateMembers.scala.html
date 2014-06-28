@@ -1,0 +1,37 @@
+@(experimentList: List[MAExperiment], experiment: MAExperiment,
+	userList: List[MAUser], error: String, loggedInUser: MAUser, formError: String)
+
+@admin.main(experimentList, error, loggedInUser){
+
+	<header>
+		<hgroup>
+			<h2>/ > </h2>
+			<h3>@experiment.id "@experiment.title" > </h3>
+			<h4>Update Members > </h4>
+		</hgroup>
+	</header>
+
+	<article class="tasks" id="tasks">
+		<div class="folder">
+		
+			@helper.form(action = routes.Experiments.submitUpdatedMembers(experiment.id), 'class -> "addTask") {
+				@if(formError != null) {
+					<p class="error">
+						@formError
+					</p>
+				}
+				
+				@for(user <- userList) {
+					<input type="checkbox" name="user" value="@user.email" 
+					@if(experiment.isMember(user)) {
+						checked
+					}
+					>@user.toString()<br>
+				}
+				<button id="newGroup" type="submit">Update</button>
+			}
+			
+		</div>
+	</article>
+
+}
