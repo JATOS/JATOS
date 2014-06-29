@@ -1,7 +1,7 @@
 @(experimentList: List[MAExperiment], component: MAComponent,
-	experiment: MAExperiment, error: String, user: MAUser, form: Form[MAComponent])
+	experiment: MAExperiment, user: MAUser, form: Form[MAComponent])
 
-@admin.main(experimentList, error, user){
+@admin.main(experimentList, user){
 
 	<header>
 		<hgroup>

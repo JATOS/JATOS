@@ -58,7 +58,7 @@ public class Components extends MAController {
 		}
 
 		return ok(views.html.admin.component.create.render(experimentList,
-				experiment, null, user, Form.form(MAComponent.class)));
+				experiment, user, Form.form(MAComponent.class)));
 	}
 
 	@Transactional
@@ -78,7 +78,7 @@ public class Components extends MAController {
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(views.html.admin.component.create.render(
-					experimentList, experiment, null, user, form));
+					experimentList, experiment, user, form));
 		} else {
 			MAComponent component = form.get();
 			component.experiment = experiment;
@@ -112,7 +112,7 @@ public class Components extends MAController {
 
 		Form<MAComponent> form = Form.form(MAComponent.class).fill(component);
 		return ok(views.html.admin.component.update.render(experimentList,
-				component, experiment, null, user, form));
+				component, experiment, user, form));
 	}
 
 	@Transactional
@@ -140,7 +140,7 @@ public class Components extends MAController {
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(views.html.admin.component.update.render(
-					experimentList, component, experiment, null, user, form));
+					experimentList, component, experiment, user, form));
 		}
 
 		// Update component in DB

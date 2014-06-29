@@ -1,7 +1,7 @@
-@(experimentList: List[MAExperiment], experiment: MAExperiment,
-	error: String, user: MAUser, component: MAComponent)
+@(experimentList: List[MAExperiment], experiment: MAExperiment, errorMsg: String, 
+	user: MAUser, component: MAComponent)
 
-@admin.main(experimentList, error, user){
+@admin.main(experimentList, user){
 
 <header>
 	<hgroup>
@@ -12,6 +12,10 @@
 </header>
 
 <article class="tasks" id="tasks">
+	@if(errorMsg != null) {
+		<p class="error">@errorMsg</p>
+	}
+
 	<input id="newGroup" type="button" onClick="updateComponent()"
 		value="Update">
 	<input id="newGroup" type="button" onClick="deleteComponent()"

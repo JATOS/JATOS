@@ -1,7 +1,7 @@
-@(experimentList: List[MAExperiment], error: String, loggedInUser: MAUser,
+@(experimentList: List[MAExperiment], loggedInUser: MAUser,
 	form: Form[MAUser])
 
-@admin.main(experimentList, error, loggedInUser){
+@admin.main(experimentList, loggedInUser){
 
 	<header>
 		<hgroup>
@@ -14,6 +14,8 @@
 		<div class="folder">
 		
 			@helper.form(action = routes.Users.submit(), 'class -> "addTask") {
+				<p>The email adress will be your username.</p>
+
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message

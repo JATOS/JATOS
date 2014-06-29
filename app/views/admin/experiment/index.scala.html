@@ -1,7 +1,7 @@
-@(experimentList: List[MAExperiment], error: String, user: MAUser,
+@(experimentList: List[MAExperiment], user: MAUser, errorMsg: String,
 	experiment: MAExperiment)
 
-@admin.main(experimentList, error, user){
+@admin.main(experimentList, user){
 
 <header>
 	<hgroup>
@@ -11,6 +11,10 @@
 </header>
 
 <article class="tasks" id="tasks">
+	@if(errorMsg != null) {
+		<p class="error">@errorMsg</p>
+	}
+
 	@for(member <- experiment.memberList) {
 		<p class="owner"> @member.name (@member.email)</p>
 	}

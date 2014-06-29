@@ -1,7 +1,7 @@
-@(experimentList: List[MAExperiment], error: String, loggedInUser: MAUser,
+@(experimentList: List[MAExperiment], loggedInUser: MAUser, errorMsg: String,
 	user: MAUser)
 
-@admin.main(experimentList, error, loggedInUser){
+@admin.main(experimentList, loggedInUser){
 
 <header>
 	<hgroup>
@@ -12,8 +12,8 @@
 
 <article class="tasks" id="tasks">
 
-	@if(error != null) {
-		<p class="error">@error</p>
+	@if(errorMsg != null) {
+		<p class="error">@errorMsg</p>
 	}
 
 	<a id="newGroup" href="@routes.Users.update(user.email)">Update</a>

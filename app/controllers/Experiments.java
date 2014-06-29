@@ -32,7 +32,7 @@ public class Experiments extends MAController {
 		}
 
 		return ok(views.html.admin.experiment.index.render(experimentList,
-				null, user, experiment));
+				user, null, experiment));
 	}
 
 	@Transactional
@@ -41,7 +41,7 @@ public class Experiments extends MAController {
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		return ok(views.html.admin.experiment.create.render(experimentList,
-				null, user, Form.form(MAExperiment.class)));
+				user, Form.form(MAExperiment.class)));
 	}
 
 	@Transactional
@@ -53,7 +53,7 @@ public class Experiments extends MAController {
 		if (form.hasErrors()) {
 			List<MAExperiment> experimentList = MAExperiment.findAll();
 			return badRequest(views.html.admin.experiment.create.render(
-					experimentList, null, user, form));
+					experimentList, user, form));
 		} else {
 			MAExperiment experiment = form.get();
 			experiment.addMember(user);
@@ -79,7 +79,7 @@ public class Experiments extends MAController {
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
 				.fill(experiment);
 		return ok(views.html.admin.experiment.update.render(experimentList,
-				experiment, null, user, form));
+				experiment, user, form));
 	}
 
 	@Transactional
@@ -100,7 +100,7 @@ public class Experiments extends MAController {
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(views.html.admin.experiment.update.render(
-					experimentList, experiment, null, user, form));
+					experimentList, experiment, user, form));
 		}
 
 		// Update experiment in DB
@@ -144,7 +144,7 @@ public class Experiments extends MAController {
 
 		List<MAUser> userList = MAUser.findAll();
 		return ok(views.html.admin.experiment.updateMembers.render(
-				experimentList, experiment, userList, null, user, null));
+				experimentList, experiment, userList, user, null));
 	}
 
 	@Transactional
@@ -168,8 +168,8 @@ public class Experiments extends MAController {
 			String errorMsg = AN_EXPERIMENT_SHOULD_HAVE_AT_LEAST_ONE_MEMBER;
 			List<MAUser> userList = MAUser.findAll();
 			return badRequest(views.html.admin.experiment.updateMembers.render(
-					experimentList, experiment, userList, null,
-					loggedInUser, errorMsg));
+					experimentList, experiment, userList, loggedInUser,
+					errorMsg));
 		}
 		experiment.memberList.clear();
 		for (String email : checkedUsers) {
