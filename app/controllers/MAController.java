@@ -1,13 +1,10 @@
 package controllers;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import models.MAComponent;
 import models.MAExperiment;
 import models.MAUser;
-import play.data.Form;
-import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -62,14 +59,4 @@ public class MAController extends Controller {
 				userList, errorMsg, user));
 	}
 	
-	public static void addValidationError(Form<?> form, String key, String msg) {
-		if (form.errors().containsKey(key)) {
-			form.errors().get(key).add(new ValidationError(key, msg));
-		} else {
-			List<ValidationError> errorList = new ArrayList<ValidationError>();
-			errorList.add(new ValidationError(key, msg));
-			form.errors().put(key, errorList);
-		}
-	}
-
 }

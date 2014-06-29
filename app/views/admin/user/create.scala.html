@@ -20,21 +20,21 @@
 					</p>
 				}
 				
-				@for(error <- form("name").errors) {
+				@for(error <- form(Users.NAME).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="text" name="name" class="formTop" placeholder="Name" value="@form("name").value">
+				<input type="text" name="@Users.NAME" class="formTop" placeholder="Name" value="@form(Users.NAME).value">
 
 				@for(error <- form("email").errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="email" name="email" class="formMiddle" placeholder="Email" value="@form("email").value">
+				<input type="email" name="@Users.EMAIL" class="formMiddle" placeholder="Email" value="@form(Users.EMAIL).value">
 
-				@for(error <- form("password").errors) {
+				@for(error <- form(Users.PASSWORD).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="password" name="password" class="formMiddle" placeholder="Password" value="">
-				<input type="password" name="passwordRepeat" class="formBottom" placeholder="Repeat password" value="">
+				<input type="password" name="@Users.PASSWORD" class="formMiddle" placeholder="Password" value="">
+				<input type="password" name="@Users.PASSWORD_REPEAT" class="formBottom" placeholder="Repeat password" value="">
 
 				<button id="newGroup" type="submit">Create</button>
 			}

@@ -18,10 +18,10 @@
 						@form.globalError.message
 					</p>
 				}
-				@for(error <- form("title").errors) {
+				@for(error <- form(Experiments.TITLE).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="text" name="title" class="formSingle" placeholder="Title" value="@form("title").value">
+				<input type="text" name="@Experiments.TITLE" class="formSingle" placeholder="Title" value="@form(Experiments.TITLE).value">
 				
 				<button id="newGroup" type="submit">Create</button>
 			}

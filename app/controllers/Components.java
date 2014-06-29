@@ -8,11 +8,13 @@ import models.MAUser;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
-import play.mvc.Http.Request;
 import play.mvc.Result;
 import play.mvc.Security;
 
 public class Components extends MAController {
+
+	public static final String JSON_DATA = "jsonData";
+	public static final String TITLE = "title";
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
@@ -43,7 +45,7 @@ public class Components extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result create(Long experimentId) throws NumberFormatException {
+	public static Result create(Long experimentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
@@ -143,8 +145,8 @@ public class Components extends MAController {
 
 		// Update component in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
-		component.title = requestData.get("title");
-		component.setJsonData(requestData.get("jsonData"));
+		component.title = requestData.get(TITLE);
+		component.setJsonData(requestData.get(JSON_DATA));
 		component.merge();
 		return redirect(routes.Components.get(experiment.id, componentId));
 	}

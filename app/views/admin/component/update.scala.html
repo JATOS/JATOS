@@ -22,15 +22,15 @@
 					</p>
 				}
 				
-				@for(error <- form("title").errors) {
+				@for(error <- form(Components.TITLE).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input name="title" type="text" class="formTop" placeholder="Title" value="@form("title").value">
+				<input name="@Components.TITLE" type="text" class="formTop" placeholder="Title" value="@form(Components.TITLE).value">
 				
-				@for(error <- form("jsonData").errors) {
+				@for(error <- form(Components.JSON_DATA).errors) {
 					<p class="error">@error.message</p>
 				}
-				<textarea name="jsonData" class="formJsonData" placeholder="JSON data - put your JSON string here.">@form("jsonData").value</textarea>
+				<textarea name="@Components.JSON_DATA" class="formJsonData" placeholder="JSON data - put your JSON string here.">@form(Components.JSON_DATA).value</textarea>
 				
 				<button id="newGroup" type="submit">Update</button>
 			}

@@ -13,6 +13,10 @@ import play.mvc.Security;
 
 public class Experiments extends MAController {
 
+	public static final String AN_EXPERIMENT_SHOULD_HAVE_AT_LEAST_ONE_MEMBER = "An experiment should have at least one member.";
+	public static final String USER = "user";
+	public static final String TITLE = "title";
+
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result get(Long experimentId) {
@@ -101,7 +105,7 @@ public class Experiments extends MAController {
 
 		// Update experiment in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
-		experiment.title = requestData.get("title");
+		experiment.title = requestData.get(TITLE);
 		experiment.merge();
 		return redirect(routes.Experiments.get(experimentId));
 	}
@@ -159,9 +163,9 @@ public class Experiments extends MAController {
 		}
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
-		String[] checkedUsers = formMap.get("user");
+		String[] checkedUsers = formMap.get(USER);
 		if (checkedUsers == null || checkedUsers.length < 1) {
-			String errorMsg = "An experiment should have at least one member.";
+			String errorMsg = AN_EXPERIMENT_SHOULD_HAVE_AT_LEAST_ONE_MEMBER;
 			List<MAUser> userList = MAUser.findAll();
 			return badRequest(views.html.admin.experiment.updateMembers.render(
 					experimentList, experiment, userList, null,

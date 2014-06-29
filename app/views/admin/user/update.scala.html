@@ -21,12 +21,12 @@
 					</p>
 				}
 
-				@for(error <- form("name").errors) {
+				@for(error <- form(Users.NAME).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input name="name" type="text" class="formSingle" placeholder="Name" value="@form("name").value">
+				<input name="@Users.NAME" type="text" class="formSingle" placeholder="Name" value="@form(Users.NAME).value">
 				
-				<input name="email" type="hidden" value="@form("email").value">
+				<input name="@Users.EMAIL" type="hidden" value="@form(Users.EMAIL).value">
 				
 				<button id="newGroup" type="submit">Update</button>
 			}
