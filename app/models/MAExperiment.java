@@ -15,6 +15,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.TypedQuery;
 
+import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 
 @Entity
@@ -37,11 +38,12 @@ public class MAExperiment {
 	public MAExperiment() {
 	}
 
-	public String validate() {
+	public List<ValidationError> validate() {
+		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (this.title == null || this.title.isEmpty()) {
-			return "Missing title";
+			errorList.add(new ValidationError("title", "Missing title"));
 		}
-		return null;
+		return errorList.isEmpty() ? null : errorList;
 	}
 
 	@Override

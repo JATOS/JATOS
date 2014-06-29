@@ -8,6 +8,7 @@ import models.MAUser;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
+import play.mvc.Http.Request;
 import play.mvc.Result;
 import play.mvc.Security;
 
@@ -36,14 +37,13 @@ public class Components extends MAController {
 					component, user, experimentList);
 		}
 
-		return ok(views.html.admin.component.component.render(experimentList, experiment,
-				null, user, component));
+		return ok(views.html.admin.component.index.render(experimentList,
+				experiment, null, user, component));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result create(Long experimentId)
-			throws NumberFormatException {
+	public static Result create(Long experimentId) throws NumberFormatException {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
@@ -55,8 +55,8 @@ public class Components extends MAController {
 			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
-		return ok(views.html.admin.component.create.render(experimentList, experiment, null,
-				user, Form.form(MAComponent.class)));
+		return ok(views.html.admin.component.create.render(experimentList,
+				experiment, null, user, Form.form(MAComponent.class)));
 	}
 
 	@Transactional
@@ -75,8 +75,8 @@ public class Components extends MAController {
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
-			return badRequest(views.html.admin.component.create.render(experimentList,
-					experiment, null, user, form));
+			return badRequest(views.html.admin.component.create.render(
+					experimentList, experiment, null, user, form));
 		} else {
 			MAComponent component = form.get();
 			component.experiment = experiment;
@@ -109,14 +109,13 @@ public class Components extends MAController {
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).fill(component);
-		return ok(views.html.admin.component.update.render(experimentList, component,
-				experiment, null, user, form));
+		return ok(views.html.admin.component.update.render(experimentList,
+				component, experiment, null, user, form));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitUpdated(Long experimentId,
-			Long componentId) {
+	public static Result submitUpdated(Long experimentId, Long componentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
@@ -136,13 +135,13 @@ public class Components extends MAController {
 			return badRequestComponentNotBelongToExperiment(experiment,
 					component, user, experimentList);
 		}
-
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
-			return badRequest(views.html.admin.component.update.render(experimentList,
-					component, experiment, null, user, form));
+			return badRequest(views.html.admin.component.update.render(
+					experimentList, component, experiment, null, user, form));
 		}
 
+		// Update component in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
 		component.title = requestData.get("title");
 		component.setJsonData(requestData.get("jsonData"));

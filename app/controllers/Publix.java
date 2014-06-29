@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 public class Publix extends Controller {
 
-	private static final String COOKIE_EXPS_DONE = "expsDone";
+	private static final String COOKIE_COMPONENTS_DONE = "componentsDone";
 	public static final String COMPONENTS_DONE_DELIMITER = ",";
 
 	public static Result logError() {
@@ -38,8 +38,9 @@ public class Publix extends Controller {
 		// component
 		boolean isReload = !setComponentDone(componentId);
 		if (isReload) {
-			return badRequest(views.html.publix.error.render("It is not allowed to reload an "
-					+ "component you've started already."));
+			return badRequest(views.html.publix.error
+					.render("It is not allowed to reload an "
+							+ "component you've started already."));
 		}
 
 		// Serialize MAComponent into JSON (only the public part)
@@ -55,9 +56,9 @@ public class Publix extends Controller {
 			return true;
 		}
 
-		String componentsDone = session(COOKIE_EXPS_DONE);
+		String componentsDone = session(COOKIE_COMPONENTS_DONE);
 		if (componentsDone == null) {
-			session(COOKIE_EXPS_DONE, id.toString());
+			session(COOKIE_COMPONENTS_DONE, id.toString());
 			return true;
 		}
 
@@ -70,8 +71,8 @@ public class Publix extends Controller {
 				return false;
 			}
 		}
-		session(COOKIE_EXPS_DONE, componentsDone + COMPONENTS_DONE_DELIMITER
-				+ id);
+		session(COOKIE_COMPONENTS_DONE, componentsDone
+				+ COMPONENTS_DONE_DELIMITER + id);
 		return true;
 	}
 
@@ -88,7 +89,8 @@ public class Publix extends Controller {
 
 		JsonNode resultJson = request().body().asJson();
 		if (resultJson == null) {
-			return badRequest(views.html.publix.error.render("Expecting data in JSON format"));
+			return badRequest(views.html.publix.error
+					.render("Expecting data in JSON format"));
 		}
 
 		String resultStr = resultJson.toString();
@@ -97,10 +99,10 @@ public class Publix extends Controller {
 		String errorMsg = result.validate();
 		if (errorMsg != null) {
 			return badRequest(views.html.publix.error.render(errorMsg));
-		} else {
-			result.persist();
-			return ok();
 		}
+
+		result.persist();
+		return ok();
 	}
 
 	private static Result badRequestComponentNotExist(Long componentId) {

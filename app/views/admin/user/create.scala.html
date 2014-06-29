@@ -24,14 +24,18 @@
 					<p class="error">@error.message</p>
 				}
 				<input type="text" name="name" class="formTop" placeholder="Name" value="@form("name").value">
+
 				@for(error <- form("email").errors) {
 					<p class="error">@error.message</p>
 				}
 				<input type="email" name="email" class="formMiddle" placeholder="Email" value="@form("email").value">
+
 				@for(error <- form("password").errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="password" name="password" class="formBottom" placeholder="Password" value="@form("password").value">
+				<input type="password" name="password" class="formMiddle" placeholder="Password" value="">
+				<input type="password" name="passwordRepeat" class="formBottom" placeholder="Repeat password" value="">
+
 				<button id="newGroup" type="submit">Create</button>
 			}
 		

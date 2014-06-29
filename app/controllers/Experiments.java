@@ -27,7 +27,7 @@ public class Experiments extends MAController {
 			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
-		return ok(views.html.admin.experiment.experiment.render(experimentList,
+		return ok(views.html.admin.experiment.index.render(experimentList,
 				null, user, experiment));
 	}
 
@@ -99,6 +99,7 @@ public class Experiments extends MAController {
 					experimentList, experiment, null, user, form));
 		}
 
+		// Update experiment in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
 		experiment.title = requestData.get("title");
 		experiment.merge();

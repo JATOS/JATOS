@@ -20,8 +20,17 @@
 						@form.globalError.message
 					</p>
 				}
+				
+				@for(error <- form("title").errors) {
+					<p class="error">@error.message</p>
+				}
 				<input type="text" name="title" class="formTop" placeholder="Title" value="@form("title").value">
+				
+				@for(error <- form("jsonData").errors) {
+					<p class="error">@error.message</p>
+				}
 				<textarea name="jsonData" class="formJsonData" placeholder="JSON data - put your JSON string here.">@form("jsonData").value</textarea>
+				
 				<button id="newGroup" type="submit">Create</button>
 			}
 		</div>

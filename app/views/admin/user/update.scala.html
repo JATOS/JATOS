@@ -20,9 +20,14 @@
 						@form.globalError.message
 					</p>
 				}
-				<input name="name" type="text" class="formTop" placeholder="Name" value="@form("name").value">
+
+				@for(error <- form("name").errors) {
+					<p class="error">@error.message</p>
+				}
+				<input name="name" type="text" class="formSingle" placeholder="Name" value="@form("name").value">
+				
 				<input name="email" type="hidden" value="@form("email").value">
-				<input name="password" type="text" class="formBottom" placeholder="Password" value="@form("password").value">
+				
 				<button id="newGroup" type="submit">Update</button>
 			}
 		</div>

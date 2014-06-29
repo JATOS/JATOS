@@ -2,6 +2,7 @@ package models;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -14,10 +15,13 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.TypedQuery;
 
+import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Entity
@@ -26,6 +30,7 @@ public class MAComponent {
 	// For JSON serialization
 	public static class Public {
 	}
+
 	// For JSON serialization
 	public static class Admin extends Public {
 	}
@@ -70,29 +75,49 @@ public class MAComponent {
 	}
 
 	public void setJsonData(String jsonData) {
+		if (!isValidJSON(jsonData)) {
+			return;
+		}
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			this.jsonData = mapper.readTree(jsonData).toString();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public String validate() {
-		if (this.title == null || this.title.isEmpty()) {
-			return "Missing title";
-		}
-		if (this.jsonData == null || this.jsonData.isEmpty()) {
-			return "Data missing or invalid JSON format.";
-		}
+	public static boolean isValidJSON(final String json) {
+		boolean valid = false;
 		try {
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.readTree(this.jsonData);
+			final JsonParser parser = new ObjectMapper().getFactory()
+					.createParser(json);
+			while (parser.nextToken() != null) {
+			}
+			valid = true;
+		} catch (JsonParseException e) {
+			e.printStackTrace();
 		} catch (IOException e) {
-			return "Problems deserializing jsonData string: invalid JSON format.";
+			e.printStackTrace();
 		}
 
-		return null;
+		return valid;
+	}
+
+	public List<ValidationError> validate() {
+		List<ValidationError> errorList = new ArrayList<ValidationError>();
+		if (this.title == null || this.title.isEmpty()) {
+			errorList.add(new ValidationError("title", "Missing title"));
+		}
+		if (this.jsonData == null || this.jsonData.isEmpty()) {
+			errorList.add(new ValidationError("jsonData",
+					"JSON data missing or invalid JSON format."));
+		}
+		if (this.jsonData != null && !isValidJSON(this.jsonData)) {
+			errorList
+					.add(new ValidationError("jsonData",
+							"Problems deserializing JSON data string: invalid JSON format."));
+		}
+		return errorList.isEmpty() ? null : errorList;
 	}
 
 	@Override

@@ -1,5 +1,8 @@
 package models;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -21,15 +24,16 @@ public class MAUser {
 
 	public String name;
 
-	public String password;
+	// Password is stored as a hash
+	public String passwordHash;
 
 	@ManyToMany(mappedBy = "memberList")
 	public Set<MAExperiment> experimentList = new HashSet<MAExperiment>();
 
-	public MAUser(String email, String name, String password) {
+	public MAUser(String email, String name, String passwordHash) {
 		this.email = email;
 		this.name = name;
-		this.password = password;
+		this.passwordHash = passwordHash;
 	}
 
 	public MAUser() {
@@ -40,33 +44,45 @@ public class MAUser {
 		return name + ", " + email;
 	}
 
-	public static MAUser authenticate(String email, String password) {
+	public static MAUser authenticate(String email, String passwordHash) {
 		String queryStr = "SELECT e FROM MAUser e WHERE "
-				+ "e.email=:email and e.password=MD5(:password)";
+				+ "e.email=:email and e.passwordHash=:passwordHash";
 		TypedQuery<MAUser> query = JPA.em().createQuery(queryStr, MAUser.class);
 		List<MAUser> userList = query.setParameter("email", email)
-				.setParameter("password", password).getResultList();
+				.setParameter("passwordHash", passwordHash).getResultList();
 		return userList.isEmpty() ? null : userList.get(0);
 	}
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (this.email == null || this.email.isEmpty()) {
-			errorList.add(new ValidationError("email", "Missing Email"));
+			errorList.add(new ValidationError("email", "Missing email"));
 		}
 		if (this.name == null || this.name.isEmpty()) {
-			errorList.add(new ValidationError("name", "Missing Name"));
-		}
-		if (this.password == null || this.password.isEmpty()) {
-			errorList.add(new ValidationError("password", "Missing Password"));
+			errorList.add(new ValidationError("name", "Missing name"));
 		}
 		return errorList.isEmpty() ? null : errorList;
+	}
+
+	public static String getHashMDFive(String str)
+			throws NoSuchAlgorithmException, UnsupportedEncodingException {
+		byte[] strBytes = str.getBytes("UTF-8");
+		MessageDigest md = MessageDigest.getInstance("MD5");
+		byte[] hashByte = md.digest(strBytes);
+
+		// Convert the byte to hex format
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < hashByte.length; i++) {
+			sb.append(Integer.toString((hashByte[i] & 0xff) + 0x100, 16)
+					.substring(1));
+		}
+		return sb.toString();
 	}
 
 	public static MAUser findByEmail(String email) {
 		return JPA.em().find(MAUser.class, email);
 	}
-	
+
 	public static List<MAUser> findAll() {
 		TypedQuery<MAUser> query = JPA.em().createQuery(
 				"SELECT e FROM MAUser e", MAUser.class);
