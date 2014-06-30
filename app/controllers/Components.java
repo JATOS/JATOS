@@ -175,8 +175,10 @@ public class Components extends MAController {
 		
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
 		String[] checkedComponents = formMap.get(RESULT);
-		for (String resultIdStr : checkedComponents) {
-			removeResult(resultIdStr);
+		if (checkedComponents != null) {
+			for (String resultIdStr : checkedComponents) {
+				removeResult(resultIdStr);
+			}
 		}
 		
 		return redirect(routes.Components.index(experiment.id, componentId));

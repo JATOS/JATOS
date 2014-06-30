@@ -88,7 +88,7 @@
 				type: "POST",
 				contentType: "application/json",
 				success: function(response) {
-					window.location.replace(turkGateUrl);
+					window.location.assign(turkGateUrl);
 				},
 				error: function(err) {
 					alert(err.responseText);

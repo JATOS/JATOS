@@ -26,7 +26,7 @@
 			}
 		</header>
 		
-		<ul class="list">
+		<ul id="components">
 			@for(user <- userList) {
 				<li data-task-id="@user.email">
 						<a class="name" href="@routes.Users.index(user.email)">

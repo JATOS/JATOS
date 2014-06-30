@@ -72,7 +72,7 @@
 		// Show alert msg if user wants to reload the page
 		window.onunload = window.onbeforeunload = (function() {
 			if (currentState != State.FINISHED) {
-				return "It is important to do this survey all at once. A restart form the beginning is not allowed. If you reload the page during an component it will become invalid and you will NOT RECEIVE ANY PAY at Mechanical Turk for this component.";
+				return "It is important to do this survey all at once. A restart form the beginning is not allowed. If you reload the page during an component it will become invalid and you will NOT RECEIVE ANY PAY at Mechanical Turk for this survey.";
 			}
 		});
 
@@ -282,7 +282,7 @@
 				type: "POST",
 				contentType: "application/json",
 				success: function(response) {
-					window.location.replace(nextComponentUrl);
+					window.location.assign(nextComponentUrl);
 				},
 				error: function(err) {
 					alert(err.responseText);
