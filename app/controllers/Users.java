@@ -28,7 +28,7 @@ public class Users extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result get(String email) {
+	public static Result index(String email) {
 		MAUser user = MAUser.findByEmail(email);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
@@ -93,7 +93,7 @@ public class Users extends MAController {
 		} else {
 			newUser.passwordHash = passwordHash;
 			newUser.persist();
-			return redirect(routes.Users.get(newUser.email));
+			return redirect(routes.Users.index(newUser.email));
 		}
 	}
 
@@ -150,7 +150,7 @@ public class Users extends MAController {
 			DynamicForm requestData = Form.form().bindFromRequest();
 			user.name = requestData.get(NAME);
 			user.merge();
-			return redirect(routes.Users.get(email));
+			return redirect(routes.Users.index(email));
 		}
 	}
 
@@ -226,7 +226,7 @@ public class Users extends MAController {
 			// Update password hash in DB
 			user.passwordHash = newPasswordHash;
 			user.merge();
-			return redirect(routes.Users.get(email));
+			return redirect(routes.Users.index(email));
 		}
 	}
 

@@ -29,7 +29,7 @@ public class MAExperiment {
 
 	public Timestamp date;
 
-	@ManyToMany
+	@ManyToMany(fetch=FetchType.LAZY)
 	public Set<MAUser> memberList = new HashSet<MAUser>();
 
 	@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)

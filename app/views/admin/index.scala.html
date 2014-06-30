@@ -29,7 +29,7 @@
 		<ul class="list">
 			@for(user <- userList) {
 				<li data-task-id="@user.email">
-						<a class="name" href="@routes.Users.get(user.email)">
+						<a class="name" href="@routes.Users.index(user.email)">
 								@user.toString()
 						</a>
 				</li>

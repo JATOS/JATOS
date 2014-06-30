@@ -85,6 +85,10 @@ public class MAComponent {
 			e.printStackTrace();
 		}
 	}
+	
+	public void removeResult(MAResult result) {
+		resultList.remove(result);
+	}
 
 	public static boolean isValidJSON(final String json) {
 		boolean valid = false;
@@ -135,19 +139,16 @@ public class MAComponent {
 		return query.getResultList();
 	}
 
-	public MAComponent persist() {
+	public void persist() {
 		JPA.em().persist(this);
-		return this;
 	}
 
-	public MAComponent merge() {
+	public void merge() {
 		JPA.em().merge(this);
-		return this;
 	}
 
-	public MAComponent remove() {
+	public void remove() {
 		JPA.em().remove(this);
-		return this;
 	}
 
 }

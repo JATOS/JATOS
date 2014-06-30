@@ -34,7 +34,7 @@
 			@for(experiment <- user.experimentList) {
 				<li data-task-id="@experiment.id">
 					<a class="name"
-							href="@routes.Experiments.get(experiment.id)">
+							href="@routes.Experiments.index(experiment.id)">
 							@experiment.id "@experiment.title"
 					</a>
 				</li>

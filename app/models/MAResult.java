@@ -11,7 +11,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 import play.db.jpa.JPA;
-import play.db.jpa.Transactional;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -54,15 +53,16 @@ public class MAResult {
 		return null;
 	}
 	
-	@Transactional
 	public static MAResult findById(Long id) {
 		return JPA.em().find(MAResult.class, id);
 	}
 	
-	@Transactional
-	public MAResult persist() {
+	public void persist() {
 		JPA.em().persist(this);
-		return this;
+	}
+	
+	public void remove() {
+		JPA.em().remove(this);
 	}
 
 }

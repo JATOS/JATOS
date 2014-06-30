@@ -19,7 +19,7 @@ public class Experiments extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result get(Long experimentId) {
+	public static Result index(Long experimentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
@@ -58,7 +58,7 @@ public class Experiments extends MAController {
 			MAExperiment experiment = form.get();
 			experiment.addMember(user);
 			experiment.persist();
-			return redirect(routes.Experiments.get(experiment.id));
+			return redirect(routes.Experiments.index(experiment.id));
 		}
 	}
 
@@ -107,7 +107,7 @@ public class Experiments extends MAController {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		experiment.title = requestData.get(TITLE);
 		experiment.merge();
-		return redirect(routes.Experiments.get(experimentId));
+		return redirect(routes.Experiments.index(experimentId));
 	}
 
 	@Transactional
@@ -180,7 +180,7 @@ public class Experiments extends MAController {
 		}
 
 		experiment.merge();
-		return redirect(routes.Experiments.get(experimentId));
+		return redirect(routes.Experiments.index(experimentId));
 	}
 
 }

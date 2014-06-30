@@ -20,6 +20,9 @@
 		value="Update">
 	<input id="newGroup" type="button" onClick="deleteComponent()"
 		value="Delete">
+	<input id="newGroup" type="button" onClick="deleteResults()"
+		value="Delete Results">
+		
 	<div class="folder" data-folder-id="@component.id">
 		<header>
 			@if(component.resultList.isEmpty()) {
@@ -42,7 +45,7 @@
 		window.location.href = "@routes.Components.update(
 				experiment.id, component.id)";
 	}
-
+	
 	function deleteComponent() {
 		var conf = confirm("Are you sure you want to delete component "
 				+ "@component.id" + "\u00a0" + "\"@Html(component.title)\"?");
@@ -59,6 +62,11 @@
 				}
 			});
 		}
+	}
+	
+	function deleteResults() {
+		window.location.href = "@routes.Components.deleteResults(
+				experiment.id, component.id)";
 	}
 </script>
 

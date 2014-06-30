@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.TypedQuery;
@@ -27,7 +28,7 @@ public class MAUser {
 	// Password is stored as a hash
 	public String passwordHash;
 
-	@ManyToMany(mappedBy = "memberList")
+	@ManyToMany(mappedBy = "memberList", fetch=FetchType.LAZY)
 	public Set<MAExperiment> experimentList = new HashSet<MAExperiment>();
 
 	public MAUser(String email, String name, String passwordHash) {
