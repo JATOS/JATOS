@@ -1,7 +1,12 @@
 package controllers;
 
+import java.util.Random;
+import java.util.UUID;
+
 import models.MAComponent;
+import models.MAExperiment;
 import models.MAResult;
+import models.MTWorker;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -20,6 +25,49 @@ public class Publix extends Controller {
 		String msg = request().body().asText();
 		Logger.error("Client-side error: " + msg);
 		return ok();
+	}
+	
+	@Transactional
+	public static Result startExperiment(Long experimentId, String workerId) {
+		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MTWorker worker = MTWorker.findById(workerId);
+		if (experiment == null) {
+			return badRequest("The experiment doesn't exist.");
+		}
+//		if (worker != null || experiment.hasWorker(worker)) {
+//			return badRequest("Worker did this experiment already");
+//		}
+
+		if (worker == null) {
+			worker = new MTWorker(workerId);
+			worker.persist();
+		}
+		session("workerId", workerId);
+//		experiment.addWorker(worker);
+		experiment.merge();
+		return redirect("/experiments/1/elis_confidence_inst.html");
+	}
+	
+	@Transactional
+	public static Result endExperiment(Long experimentId) { 
+		String workerId = session("workerId");
+		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MTWorker worker = MTWorker.findById(workerId);
+		if (experiment == null) {
+			return badRequest("The experiment doesn't exist.");
+		}
+		if (worker == null) {
+			return badRequest("The worker doesn't exist.");
+		}
+//		if (!experiment.hasWorker(worker)) {
+//			return badRequest("Worker never started this experiment.");
+//		}
+		
+		String confirmationCode = UUID.randomUUID().toString();
+//		worker.putConfirmationCode(experiment.id, confirmationCode);
+		worker.merge();
+		
+		return ok(views.html.publix.confirmationCode.render(confirmationCode));
 	}
 
 	@Transactional

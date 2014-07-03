@@ -13,6 +13,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 import javax.persistence.TypedQuery;
 
 import play.data.validation.ValidationError;
@@ -29,11 +30,15 @@ public class MAExperiment {
 
 	public Timestamp date;
 
-	@ManyToMany(fetch=FetchType.LAZY)
+	@ManyToMany(fetch = FetchType.LAZY)
 	public Set<MAUser> memberList = new HashSet<MAUser>();
 
 	@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OrderColumn(name = "componentList_ORDER")
 	public List<MAComponent> componentList = new ArrayList<MAComponent>();
+
+	// @OneToMany(fetch = FetchType.LAZY)
+	// public Set<MTWorker> workerList = new HashSet<MTWorker>();
 
 	public MAExperiment() {
 	}
@@ -60,19 +65,56 @@ public class MAExperiment {
 				"SELECT e FROM MAExperiment e", MAExperiment.class);
 		return query.getResultList();
 	}
-	
+
+	public boolean hasComponent(MAComponent component) {
+		return componentList.contains(component);
+	}
+
+	public void componentOrderMinusOne(MAComponent component) {
+		int index = componentList.indexOf(component);
+		if (index > 0) {
+			MAComponent prevComponent = componentList.get(index - 1);
+			componentOrderSwap(component, prevComponent);
+		}
+	}
+
+	public void componentOrderPlusOne(MAComponent component) {
+		int index = componentList.indexOf(component);
+		if (index < (componentList.size() - 1)) {
+			MAComponent nextComponent = componentList.get(index + 1);
+			componentOrderSwap(component, nextComponent);
+		}
+	}
+
+	public void componentOrderSwap(MAComponent component1,
+			MAComponent component2) {
+		int index1 = componentList.indexOf(component1);
+		int index2 = componentList.indexOf(component2);
+		MAComponent.changeComponentOrder(component1, index2);
+		MAComponent.changeComponentOrder(component2, index1);
+		JPA.em().refresh(this);
+	}
+
 	public void addMember(MAUser user) {
 		memberList.add(user);
 	}
-	
+
 	public void removeMember(MAUser user) {
 		memberList.remove(user);
 	}
-	
-	public boolean isMember(MAUser user) {
+
+	public boolean hasMember(MAUser user) {
 		return memberList.contains(user);
 	}
-		
+
+	// public void addWorker(MTWorker worker) {
+	// workerList.add(worker);
+	// }
+	//
+	// public boolean hasWorker(MTWorker worker) {
+	// return workerList.contains(worker);
+	// }
+
 	public void persist() {
 		JPA.em().persist(this);
 	}

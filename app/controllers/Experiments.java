@@ -3,6 +3,7 @@ package controllers;
 import java.util.List;
 import java.util.Map;
 
+import models.MAComponent;
 import models.MAExperiment;
 import models.MAUser;
 import play.data.DynamicForm;
@@ -23,12 +24,10 @@ public class Experiments extends MAController {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId, user,
-					experimentList);
-		}
-		if (!experiment.isMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		Result result = checkStandard(experiment, experimentId, user,
+				experimentList);
+		if (result != null) {
+			return result;
 		}
 
 		return ok(views.html.admin.experiment.index.render(experimentList,
@@ -68,12 +67,10 @@ public class Experiments extends MAController {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId, user,
-					experimentList);
-		}
-		if (!experiment.isMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		Result result = checkStandard(experiment, experimentId, user,
+				experimentList);
+		if (result != null) {
+			return result;
 		}
 
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
@@ -88,12 +85,10 @@ public class Experiments extends MAController {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId, user,
-					experimentList);
-		}
-		if (!experiment.isMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		Result result = checkStandard(experiment, experimentId, user,
+				experimentList);
+		if (result != null) {
+			return result;
 		}
 
 		Form<MAExperiment> form = Form.form(MAExperiment.class)
@@ -116,12 +111,10 @@ public class Experiments extends MAController {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId, user,
-					experimentList);
-		}
-		if (!experiment.isMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		Result result = checkStandard(experiment, experimentId, user,
+				experimentList);
+		if (result != null) {
+			return result;
 		}
 
 		experiment.remove();
@@ -134,12 +127,10 @@ public class Experiments extends MAController {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId, user,
-					experimentList);
-		}
-		if (!experiment.isMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		Result result = checkStandard(experiment, experimentId, user,
+				experimentList);
+		if (result != null) {
+			return result;
 		}
 
 		List<MAUser> userList = MAUser.findAll();
@@ -154,12 +145,10 @@ public class Experiments extends MAController {
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId, loggedInUser,
-					experimentList);
-		}
-		if (!experiment.isMember(loggedInUser)) {
-			return forbiddenNotMember(loggedInUser, experiment, experimentList);
+		Result result = checkStandard(experiment, experimentId, loggedInUser,
+				experimentList);
+		if (result != null) {
+			return result;
 		}
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
@@ -181,6 +170,52 @@ public class Experiments extends MAController {
 
 		experiment.merge();
 		return redirect(routes.Experiments.index(experimentId));
+	}
+
+	@Transactional
+	@Security.Authenticated(Secured.class)
+	public static Result changeComponentOrder(Long experimentId,
+			Long componentId, String direction) {
+		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser loggedInUser = MAUser
+				.findByEmail(session(MAController.COOKIE_EMAIL));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		Result result = checkStandard(experiment, experimentId, loggedInUser,
+				experimentList);
+		if (result != null) {
+			return result;
+		}
+
+		MAComponent component = MAComponent.findById(componentId);
+		if (component == null) {
+			badRequestComponentNotExist(componentId, experiment, loggedInUser,
+					experimentList);
+		}
+		if (!experiment.hasComponent(component)) {
+			badRequestComponentNotBelongToExperiment(experiment, component,
+					loggedInUser, experimentList);
+		}
+
+		if (direction.equals("up")) {
+			experiment.componentOrderMinusOne(component);
+		}
+		if (direction.equals("down")) {
+			experiment.componentOrderPlusOne(component);
+		}
+
+		return ok();
+	}
+
+	private static Result checkStandard(MAExperiment experiment,
+			Long experimentId, MAUser user, List<MAExperiment> experimentList) {
+		if (experiment == null) {
+			return badRequestExperimentNotExist(experimentId, user,
+					experimentList);
+		}
+		if (!experiment.hasMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
+		return null;
 	}
 
 }

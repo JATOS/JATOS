@@ -46,7 +46,7 @@ public class Components extends MAController {
 			return badRequestExperimentNotExist(experimentId, user,
 					experimentList);
 		}
-		if (!experiment.isMember(user)) {
+		if (!experiment.hasMember(user)) {
 			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
@@ -64,7 +64,7 @@ public class Components extends MAController {
 			return badRequestExperimentNotExist(experimentId, user,
 					experimentList);
 		}
-		if (!experiment.isMember(user)) {
+		if (!experiment.hasMember(user)) {
 			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
@@ -203,7 +203,7 @@ public class Components extends MAController {
 			return badRequestExperimentNotExist(experimentId, user,
 					experimentList);
 		}
-		if (!experiment.isMember(user)) {
+		if (!experiment.hasMember(user)) {
 			return forbiddenNotMember(user, experiment, experimentList);
 		}
 		if (component == null) {

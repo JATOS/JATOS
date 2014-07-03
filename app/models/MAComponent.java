@@ -13,6 +13,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import play.data.validation.ValidationError;
@@ -85,7 +86,7 @@ public class MAComponent {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void removeResult(MAResult result) {
 		resultList.remove(result);
 	}
@@ -137,6 +138,15 @@ public class MAComponent {
 		TypedQuery<MAComponent> query = JPA.em().createQuery(
 				"SELECT e FROM MAComponent e", MAComponent.class);
 		return query.getResultList();
+	}
+
+	public static void changeComponentOrder(MAComponent component, int newIndex) {
+		String queryStr = "UPDATE MAComponent SET componentList_ORDER = "
+				+ ":newIndex WHERE id = :id";
+		Query query = JPA.em().createQuery(queryStr);
+		query.setParameter("newIndex", newIndex);
+		query.setParameter("id", component.id);
+		query.executeUpdate();
 	}
 
 	public void persist() {
