@@ -1,11 +1,16 @@
 package models;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -53,13 +58,31 @@ public class MAComponent {
 	public Timestamp date;
 
 	@JsonView(MAComponent.Public.class)
+	public String viewUrl; // URL or local path
+	
+	@JsonView(MAComponent.Public.class)
+	public boolean reloadable;
+
+	@JsonView(MAComponent.Public.class)
 	public String jsonData;
 
 	@JsonView(MAComponent.Admin.class)
 	@OneToMany(mappedBy = "component", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	public List<MAResult> resultList;
+	public List<MAResult> resultList = new ArrayList<MAResult>();
+	
+	@JsonView(MAComponent.Admin.class)
+	@OneToMany(fetch = FetchType.LAZY)
+	@JoinColumn(name="component_id", referencedColumnName="id")
+	public Set<MTWorker> workerSet = new HashSet<MTWorker>();
 
 	public MAComponent() {
+	}
+	
+	public void update(String title, boolean reloadable, String viewUrl, String jsonData) {
+		this.title = title;
+		this.reloadable = reloadable;
+		this.viewUrl = viewUrl;
+		setJsonData(jsonData);
 	}
 
 	public String getJsonData() {
@@ -85,6 +108,23 @@ public class MAComponent {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void addWorker(MTWorker worker) {
+		workerSet.add(worker);
+	}
+
+	public boolean hasWorker(MTWorker worker) {
+		return workerSet.contains(worker);
+	}
+	
+	@Column(name = "relaodable")
+	public boolean isReloadable() {
+		return reloadable;
+	}
+	
+	public void addResult(MAResult result) {
+		resultList.add(result);
 	}
 
 	public void removeResult(MAResult result) {
@@ -113,6 +153,15 @@ public class MAComponent {
 		if (this.title == null || this.title.isEmpty()) {
 			errorList.add(new ValidationError("title", "Missing title"));
 		}
+		if (this.viewUrl == null) {
+			errorList.add(new ValidationError("viewUrl", "Missing URL"));
+		}
+		String pathRegEx = "^(\\/\\w+)+\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
+		if (!(validateUrl(this.viewUrl) || this.viewUrl.matches(pathRegEx) || this.viewUrl
+				.isEmpty())) {
+			errorList.add(new ValidationError("viewUrl",
+					"Neither a path nor an URL (you can leave it empty)"));
+		}
 		if (this.jsonData == null || this.jsonData.isEmpty()) {
 			errorList.add(new ValidationError("jsonData",
 					"JSON data missing or invalid JSON format."));
@@ -123,6 +172,15 @@ public class MAComponent {
 							"Problems deserializing JSON data string: invalid JSON format."));
 		}
 		return errorList.isEmpty() ? null : errorList;
+	}
+
+	private boolean validateUrl(String url) {
+		try {
+			new URL(url);
+		} catch (MalformedURLException malformedURLException) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override

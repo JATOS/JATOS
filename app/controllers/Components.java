@@ -15,9 +15,11 @@ import play.mvc.Security;
 
 public class Components extends MAController {
 
-	public static final String JSON_DATA = "jsonData";
 	public static final String TITLE = "title";
+	public static final String VIEW_URL = "viewUrl";
+	public static final String JSON_DATA = "jsonData";
 	public static final String RESULT = "result";
+	public static final String RELOADABLE = "reloadable";
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
@@ -74,9 +76,9 @@ public class Components extends MAController {
 					experimentList, experiment, user, form));
 		} else {
 			MAComponent component = form.get();
-			component.experiment = experiment;
-			component.persist();
-			return redirect(routes.Components.index(experiment.id, component.id));
+			addComponent(experiment, component);
+			return redirect(routes.Components
+					.index(experiment.id, component.id));
 		}
 	}
 
@@ -119,8 +121,11 @@ public class Components extends MAController {
 
 		// Update component in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
-		component.title = requestData.get(TITLE);
-		component.setJsonData(requestData.get(JSON_DATA));
+		String title = requestData.get(TITLE);
+		String viewUrl = requestData.get(VIEW_URL);
+		String jsonData = requestData.get(JSON_DATA);
+		boolean reloadable = (requestData.get(RELOADABLE) != null);
+		component.update(title, reloadable, viewUrl, jsonData);
 		component.merge();
 		return redirect(routes.Components.index(experiment.id, componentId));
 	}
@@ -138,7 +143,7 @@ public class Components extends MAController {
 			return result;
 		}
 
-		component.remove();
+		removeComponent(experiment, component);
 		return redirect(routes.Experiments.index(experiment.id));
 	}
 
@@ -172,30 +177,47 @@ public class Components extends MAController {
 		if (result != null) {
 			return result;
 		}
-		
+
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
 		String[] checkedComponents = formMap.get(RESULT);
 		if (checkedComponents != null) {
 			for (String resultIdStr : checkedComponents) {
-				removeResult(resultIdStr);
+				removeResult(resultIdStr, component);
 			}
 		}
-		
+
 		return redirect(routes.Components.index(experiment.id, componentId));
 	}
-	
-	private static void removeResult(String resultIdStr) {
+
+	private static void removeResult(String resultIdStr, MAComponent component) {
 		try {
 			Long resultId = Long.valueOf(resultIdStr);
 			MAResult result = MAResult.findById(resultId);
 			if (result != null) {
+				component.removeResult(result);
+				component.merge();
 				result.remove();
 			}
 		} catch (NumberFormatException e) {
 			// Do nothing
 		}
 	}
-	
+
+	private static void addComponent(MAExperiment experiment,
+			MAComponent component) {
+		component.experiment = experiment;
+		experiment.addComponent(component);
+		component.persist();
+		experiment.merge();
+	}
+
+	private static void removeComponent(MAExperiment experiment,
+			MAComponent component) {
+		component.remove(); // TODO unnecessary because cascade.ALL?
+		experiment.removeComponent(component);
+		experiment.merge();
+	}
+
 	private static Result checkStandard(Long experimentId, Long componentId,
 			MAExperiment experiment, List<MAExperiment> experimentList,
 			MAUser user, MAComponent component) {

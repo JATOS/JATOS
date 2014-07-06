@@ -6,7 +6,7 @@
 	<header>
 		<hgroup>
 			<h2>/ > </h2>
-			<h2>@experiment.id "@experiment.title" > </h2>
+			<h2>@experiment.id @experiment.title > </h2>
 			<h4>New Component > </h4>
 		</hgroup>
 	</header>
@@ -24,12 +24,26 @@
 				@for(error <- form(Components.TITLE).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="text" name="@Components.TITLE" class="formTop" placeholder="Title" value="@form(Components.TITLE).value">
+				<input type="text" name="@Components.TITLE"
+					class="formTop" placeholder="Title"
+					value="@form(Components.TITLE).value">
+					
+				<input type="checkbox" name="@Components.RELOADABLE" value="true">
+				<input type="hidden" name="@Components.RELOADABLE" value="false" />
+				
+				@for(error <- form(Components.VIEW_URL).errors) {
+					<p class="error">@error.message</p>
+				}
+				<input type="text" name="@Components.VIEW_URL"
+					class="formMiddle" placeholder="URL or path of the actual component"
+					value="@form(Components.VIEW_URL).value">
 				
 				@for(error <- form(Components.JSON_DATA).errors) {
 					<p class="error">@error.message</p>
 				}
-				<textarea name="@Components.JSON_DATA" class="formJsonData" placeholder="JSON data - put your JSON string here.">@form(Components.JSON_DATA).value</textarea>
+				<textarea name="@Components.JSON_DATA" class="formJsonData"
+					placeholder="JSON data - put your JSON string here."
+					>@form(Components.JSON_DATA).value</textarea>
 				
 				<button id="newGroup" type="submit">Create</button>
 			}

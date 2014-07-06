@@ -6,8 +6,8 @@
 <header>
 	<hgroup>
 		<h2>/ > </h2>
-		<h2>@experiment.id "@experiment.title" > </h2>
-		<h3>@component.id "@component.title" > </h3>
+		<h2>@experiment.id @experiment.title > </h2>
+		<h3>@component.id @component.title > </h3>
 	</hgroup>
 </header>
 
@@ -16,6 +16,8 @@
 		<p class="error">@errorMsg</p>
 	}
 
+	<input id="newGroup" type="button" onClick="tryComponent()"
+		value="Try">
 	<input id="newGroup" type="button" onClick="updateComponent()"
 		value="Update">
 	<input id="newGroup" type="button" onClick="deleteComponent()"
@@ -41,6 +43,11 @@
 </article>
 
 <script type="text/javascript">
+
+	function tryComponent() {
+		window.location.href = "@component.viewUrl";
+	}
+
 	function updateComponent() {
 		window.location.href = "@routes.Components.update(
 				experiment.id, component.id)";

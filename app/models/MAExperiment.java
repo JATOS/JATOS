@@ -11,6 +11,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
@@ -33,14 +34,16 @@ public class MAExperiment {
 	@ManyToMany(fetch = FetchType.LAZY)
 	public Set<MAUser> memberList = new HashSet<MAUser>();
 
-	@OneToMany(mappedBy = "experiment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentList_ORDER")
+	@JoinColumn(name="experiment_id")
 	public List<MAComponent> componentList = new ArrayList<MAComponent>();
 
-	// @OneToMany(fetch = FetchType.LAZY)
-	// public Set<MTWorker> workerList = new HashSet<MTWorker>();
-
 	public MAExperiment() {
+	}
+	
+	public void update(String title) {
+		this.title = title;
 	}
 
 	public List<ValidationError> validate() {
@@ -64,6 +67,14 @@ public class MAExperiment {
 		TypedQuery<MAExperiment> query = JPA.em().createQuery(
 				"SELECT e FROM MAExperiment e", MAExperiment.class);
 		return query.getResultList();
+	}
+	
+	public void addComponent(MAComponent component) {
+		componentList.add(component);
+	}
+	
+	public void removeComponent(MAComponent component) {
+		componentList.remove(component);
 	}
 
 	public boolean hasComponent(MAComponent component) {
@@ -92,7 +103,6 @@ public class MAExperiment {
 		int index2 = componentList.indexOf(component2);
 		MAComponent.changeComponentOrder(component1, index2);
 		MAComponent.changeComponentOrder(component2, index1);
-		JPA.em().refresh(this);
 	}
 
 	public void addMember(MAUser user) {
@@ -107,13 +117,20 @@ public class MAExperiment {
 		return memberList.contains(user);
 	}
 
-	// public void addWorker(MTWorker worker) {
-	// workerList.add(worker);
-	// }
-	//
-	// public boolean hasWorker(MTWorker worker) {
-	// return workerList.contains(worker);
-	// }
+	public MAComponent getFirstComponent() {
+		if (componentList.size() > 0) {
+			return componentList.get(0);
+		}
+		return null;
+	}
+
+	public MAComponent getNextComponent(MAComponent component) {
+		int index = componentList.indexOf(component);
+		if (index < componentList.size() - 1) {
+			componentList.get(index + 1);
+		}
+		return null;
+	}
 
 	public void persist() {
 		JPA.em().persist(this);
@@ -125,6 +142,10 @@ public class MAExperiment {
 
 	public void remove() {
 		JPA.em().remove(this);
+	}
+	
+	public void refresh() {
+		JPA.em().refresh(this);
 	}
 
 }

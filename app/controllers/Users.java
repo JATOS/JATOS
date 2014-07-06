@@ -145,10 +145,10 @@ public class Users extends MAController {
 		} else {
 			// Update user in database
 			// Do not update 'email' since it's the id and should stay
-			// unaltered.
-			// For the password we have an extra form.
+			// unaltered. For the password we have an extra form.
 			DynamicForm requestData = Form.form().bindFromRequest();
-			user.name = requestData.get(NAME);
+			String name = requestData.get(NAME);
+			user.update(name);
 			user.merge();
 			return redirect(routes.Users.index(email));
 		}
@@ -224,7 +224,7 @@ public class Users extends MAController {
 					experimentList, user, loggedInUser, form));
 		} else {
 			// Update password hash in DB
-			user.passwordHash = newPasswordHash;
+			user.changePasswordHash(newPasswordHash);
 			user.merge();
 			return redirect(routes.Users.index(email));
 		}

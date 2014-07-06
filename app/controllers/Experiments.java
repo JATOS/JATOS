@@ -100,7 +100,8 @@ public class Experiments extends MAController {
 
 		// Update experiment in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
-		experiment.title = requestData.get(TITLE);
+		String title = requestData.get(TITLE);
+		experiment.update(title);
 		experiment.merge();
 		return redirect(routes.Experiments.index(experimentId));
 	}
@@ -118,6 +119,7 @@ public class Experiments extends MAController {
 		}
 
 		experiment.remove();
+		// TODO delete it's components too?
 		return redirect(routes.Admin.index());
 	}
 
@@ -164,11 +166,11 @@ public class Experiments extends MAController {
 		for (String email : checkedUsers) {
 			MAUser user = MAUser.findByEmail(email);
 			if (user != null) {
-				experiment.memberList.add(user);
+				experiment.addMember(user);
+				experiment.merge();
 			}
 		}
 
-		experiment.merge();
 		return redirect(routes.Experiments.index(experimentId));
 	}
 
@@ -202,6 +204,7 @@ public class Experiments extends MAController {
 		if (direction.equals("down")) {
 			experiment.componentOrderPlusOne(component);
 		}
+		experiment.refresh();
 
 		return ok();
 	}

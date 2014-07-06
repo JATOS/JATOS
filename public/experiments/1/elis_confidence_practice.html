@@ -112,7 +112,7 @@
 		});
 		
 		function getComponentData(experimentId, componentId) {
-			var url = "/data/" + experimentId + "/" + componentId;
+			var url = "/ma/" + experimentId + "/" + componentId;
 			// TODO
 			$.getJSON(url, startComponent)
 				.error(function() { alert("error"); });
@@ -261,7 +261,7 @@
 			if (errorMsg) {
 				// Send error msg for logging to server
 				$.ajax({
-					url: "/error",
+					url: "/logError",
 					data: errorMsg,
 					processData: false,
 					type: "POST",

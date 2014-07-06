@@ -33,24 +33,15 @@ public class MAResult {
 	public MAResult() {
 	}
 	
-	public MAResult(String result, Long componentId) {
+	public MAResult(String result, MAComponent component) {
 		this.date = new Timestamp(new Date().getTime());
 		this.result = result;
-		MAComponent component = MAComponent.findById(componentId);
 		this.component = component;
 	}
 	
 	@Override
 	public String toString() {
 		return id + ", " + component.id + ", " + date + ", " + result;
-	}
-	
-	public String validate() {
-		if (this.component == null || this.date == null
-				|| this.result == null) {
-			return "Result not valid";
-		}
-		return null;
 	}
 	
 	public static MAResult findById(Long id) {

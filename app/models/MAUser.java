@@ -36,8 +36,16 @@ public class MAUser {
 		this.name = name;
 		this.passwordHash = passwordHash;
 	}
-
+	
 	public MAUser() {
+	}
+
+	public void update(String name) {
+		this.name = name;
+	}
+	
+	public void changePasswordHash(String passwordHash) {
+		this.passwordHash = passwordHash;
 	}
 
 	@Override

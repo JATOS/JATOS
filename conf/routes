@@ -3,13 +3,13 @@
 # ~~~~
 
 # Public
-POST    /error                                     controllers.Publix.logError()
-GET     /data/:experimentId/:componentId           controllers.Publix.getComponentData(experimentId: Long, componentId: Long)
-POST    /data/:experimentId/:componentId           controllers.Publix.submitResult(experimentId: Long, componentId: Long)
-
-# Mechanical Turk
-GET     /mt/:experimentId/start                    controllers.Publix.startExperiment(experimentId: Long, workerId: String)
-GET     /mt/:experimentId/end                      controllers.Publix.endExperiment(experimentId: Long)
+POST    /ma/logError                               controllers.Publix.logError()
+GET     /ma/:experimentId/start                    controllers.Publix.startExperiment(experimentId: Long, workerId: String)
+GET     /ma/:experimentId/end                      controllers.Publix.endExperiment(experimentId: Long)
+GET     /ma/:experimentId/:componentId             controllers.Publix.getComponentData(experimentId: Long, componentId: Long)
+POST    /ma/:experimentId/:componentId             controllers.Publix.submitResult(experimentId: Long, componentId: Long)
+GET     /ma/:experimentId/:componentId/nextUrl     controllers.Publix.getNextComponentUrl(experimentId: Long, componentId: Long)
+GET     /ma/:experimentId/:componentId/url         controllers.Publix.getComponentUrl(experimentId: Long, componentId: Long)
 
 # Admin
 GET     /admin/login                                      controllers.Admin.login()
@@ -26,8 +26,8 @@ GET     /admin/user/:email/changePassword                 controllers.Users.chan
 POST    /admin/user/:email/changePassword                 controllers.Users.submitChangedPassword(email: String)
 GET     /admin/user/:email                                controllers.Users.index(email: String)
 GET     /admin/user/:email/                               controllers.Users.index(email: String)
-GET     /admin/createexperiment                           controllers.Experiments.create()
-POST    /admin/createexperiment                           controllers.Experiments.submit()
+GET     /admin/createExperiment                           controllers.Experiments.create()
+POST    /admin/createExperiment                           controllers.Experiments.submit()
 GET     /admin/:experimentId/update                       controllers.Experiments.update(experimentId: Long)
 POST    /admin/:experimentId/update                       controllers.Experiments.submitUpdated(experimentId: Long)
 GET     /admin/:experimentId/updateMembers                controllers.Experiments.updateMembers(experimentId: Long)
