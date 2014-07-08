@@ -56,7 +56,7 @@ public class MAExperiment {
 
 	@Override
 	public String toString() {
-		return id + ", " + title;
+		return id + " " + title;
 	}
 
 	public static MAExperiment findById(Long id) {
@@ -127,7 +127,7 @@ public class MAExperiment {
 	public MAComponent getNextComponent(MAComponent component) {
 		int index = componentList.indexOf(component);
 		if (index < componentList.size() - 1) {
-			componentList.get(index + 1);
+			return componentList.get(index + 1);
 		}
 		return null;
 	}

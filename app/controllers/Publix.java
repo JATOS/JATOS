@@ -3,6 +3,7 @@ package controllers;
 import models.MAComponent;
 import models.MAExperiment;
 import models.MAResult;
+import models.MAUser;
 import models.MTWorker;
 import play.Logger;
 import play.db.jpa.Transactional;
@@ -10,64 +11,62 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 
 public class Publix extends Controller {
 
 	public static final String WORKER_ID = "workerId";
 	public static final String COMPONENT_ID = "componentId";
-	public static final String COOKIE_COMPONENTS_DONE = "componentsDone";
-	public static final String COMPONENTS_DONE_DELIMITER = ",";
-
-	public static Result logError() {
-		String msg = request().body().asText();
-		Logger.error("Client-side error: " + msg);
-		return ok();
-	}
 
 	@Transactional
 	public static Result startExperiment(Long experimentId, String workerId) {
+		Logger.info("startExperiment: experimentId " + experimentId + ", "
+				+ "workerId " + workerId);
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MTWorker worker = MTWorker.findById(workerId);
 		if (experiment == null) {
-			return badRequestComponentNotExist(experimentId);
+			String errorMsg = experimentNotExist(experimentId);
+			return badRequest(views.html.publix.error.render(errorMsg));
 		}
 		if (worker == null) {
 			worker = new MTWorker(workerId);
 			worker.persist();
 		} else if (worker.didFinishExperiment(experimentId)) {
-			return badRequest("Worker did this experiment already");
+			String errorMsg = workerNotAllowedExperiment(workerId, experimentId);
+			return forbidden(views.html.publix.error.render(errorMsg));
 		}
 
 		MAComponent component = experiment.getFirstComponent();
 		if (component == null) {
-			return badRequestExperimentHasNoComponents(experimentId);
+			String errorMsg = experimentHasNoComponents(experimentId);
+			return badRequest(views.html.publix.error.render(errorMsg));
 		}
-		if (!component.hasWorker(worker)) {
-			component.addWorker(worker);
-			component.merge();
-		} else if (!component.isReloadable()) {
-			return badRequest("Worker did this component already");
-		}
-		
+
 		session(WORKER_ID, workerId);
 		return redirect(component.viewUrl);
 	}
 
 	@Transactional
 	public static Result endExperiment(Long experimentId) {
-		String workerId = session(WORKER_ID);
+		Logger.info("endExperiment: experimentId " + experimentId + ", "
+				+ "workerId " + session(WORKER_ID));
 		MAExperiment experiment = MAExperiment.findById(experimentId);
-		MTWorker worker = MTWorker.findById(workerId);
 		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId);
+			return badRequest(views.html.publix.error
+					.render(experimentNotExist(experimentId)));
 		}
+		String workerId = session(WORKER_ID);
+		if (workerId == null) {
+			return forbidden(views.html.publix.error
+					.render(workerNeverStartedExperiment(experimentId)));
+		}
+		MTWorker worker = MTWorker.findById(workerId);
 		if (worker == null) {
-			return badRequestWorkerNotExist(workerId);
+			return forbidden(views.html.publix.error
+					.render(workerNotExist(workerId)));
 		}
 		if (worker.didFinishExperiment(experimentId)) {
-			return badRequest("Worker did this experiment already");
+			String errorMsg = workerNotAllowedExperiment(workerId, experimentId);
+			return forbidden(views.html.publix.error.render(errorMsg));
 		}
 
 		String confirmationCode = worker.finishExperiment(experimentId);
@@ -76,72 +75,87 @@ public class Publix extends Controller {
 	}
 
 	@Transactional
-	public static Result getComponentData(Long experimentId, Long componentId)
-			throws Exception {
+	public static Result setComponentDone(Long experimentId, Long componentId) {
+		Logger.info("setComponentDone: experimentId " + experimentId + ", "
+				+ "componentId " + componentId + ", "
+				+ "workerId " + session(WORKER_ID));
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAComponent component = MAComponent.findById(componentId);
-		Result result = checkStandard(experiment, component, experimentId,
+		String result = checkStandard(experiment, component, experimentId,
 				componentId);
 		if (result != null) {
-			return result;
+			return badRequest(result);
 		}
 
-		// Check if it's a browser reload of the same user of the same
-		// component
-		boolean isReload = !setComponentDone(componentId);
-		if (isReload) {
-			return badRequest(views.html.publix.error
-					.render("It is not allowed to reload an "
-							+ "component you've started already."));
+		// If an admin is logged in just return ok and do nothing.
+		if (isAdmin(experiment)) {
+			return ok();
 		}
 
-		// Serialize MAComponent into JSON (only the public part)
-		ObjectWriter objectWriter = new ObjectMapper()
-				.writerWithView(MAComponent.Public.class);
-		String componentAsJson = objectWriter.writeValueAsString(component);
-		return ok(componentAsJson);
+		String workerId = session(WORKER_ID);
+		if (workerId == null) {
+			return forbidden(workerNotExist(workerId));
+		}
+		MTWorker worker = MTWorker.findById(workerId);
+		if (worker == null) {
+			return forbidden(workerNotExist(workerId));
+		}
+
+		// Check if this worker did this component already
+		if (component.hasWorker(worker)) {
+			// Check if the component can be done several times
+			if (!component.isReloadable()) {
+				return forbidden(workerNotAllowedComponent(workerId,
+						experimentId, componentId));
+			}
+		} else {
+			component.addWorker(worker);
+			component.merge();
+		}
+
+		return ok();
 	}
 
-	private static boolean setComponentDone(Long componentId) {
-		// If an admin is logged in do nothing
-		if (session(MAController.COOKIE_EMAIL) != null) {
-			return true;
+	@Transactional
+	public static Result getComponentData(Long experimentId, Long componentId)
+			throws Exception {
+		Logger.info("getComponentData: experimentId " + experimentId + ", "
+				+ "componentId " + componentId + ", "
+				+ "workerId " + session(WORKER_ID));
+		Status result = (Status) setComponentDone(experimentId, componentId);
+		if (result.getWrappedSimpleResult().header().status() == OK) {
+			MAComponent component = MAComponent.findById(componentId);
+			return ok(MAComponent.asJsonForPublic(component));
+		} else {
+			return result;
 		}
-
-		String componentsDone = session(COOKIE_COMPONENTS_DONE);
-		if (componentsDone == null) {
-			session(COOKIE_COMPONENTS_DONE, componentId.toString());
-			return true;
-		}
-
-		// If there are several component ids stored in the cookie check them
-		// one by one.
-		String[] componentsDoneArray = componentsDone
-				.split(COMPONENTS_DONE_DELIMITER);
-		for (String componentDone : componentsDoneArray) {
-			if (componentDone.equals(componentId.toString())) {
-				return false;
-			}
-		}
-		session(COOKIE_COMPONENTS_DONE, componentsDone
-				+ COMPONENTS_DONE_DELIMITER + componentId);
-		return true;
 	}
 
 	@Transactional
 	public static Result submitResult(Long experimentId, Long componentId) {
+		Logger.info("submitResult: experimentId " + experimentId + ", "
+				+ "componentId " + componentId + ", "
+				+ "workerId " + session(WORKER_ID));
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAComponent component = MAComponent.findById(componentId);
-		Result result = checkStandard(experiment, component, experimentId,
+		String result = checkStandard(experiment, component, experimentId,
 				componentId);
 		if (result != null) {
-			return result;
+			return badRequest(result);
+		}
+		
+		String workerId = session(WORKER_ID);
+		if (workerId == null) {
+			return forbidden(workerNotExist(workerId));
+		}
+		MTWorker worker = MTWorker.findById(workerId);
+		if (worker == null) {
+			return forbidden(workerNotExist(workerId));
 		}
 
 		JsonNode resultJson = request().body().asJson();
 		if (resultJson == null) {
-			return badRequest(views.html.publix.error
-					.render("Expecting data in JSON format"));
+			return badRequest(submitResultNotJson(experimentId, componentId));
 		}
 
 		String resultStr = resultJson.toString();
@@ -154,12 +168,17 @@ public class Publix extends Controller {
 
 	@Transactional
 	public static Result getNextComponentUrl(Long experimentId, Long componentId) {
+		Logger.info("getNextComponentUrl: experimentId " + experimentId + ", "
+				+ "componentId " + componentId + ", "
+				+ "workerId " + session(WORKER_ID));
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAComponent component = MAComponent.findById(componentId);
-		Result result = checkStandard(experiment, component, experimentId,
+		
+		
+		String result = checkStandard(experiment, component, experimentId,
 				componentId);
 		if (result != null) {
-			return result;
+			return badRequest(result);
 		}
 
 		return okNextComponentUrl(experiment, component);
@@ -176,66 +195,131 @@ public class Publix extends Controller {
 
 	@Transactional
 	public static Result getComponentUrl(Long experimentId, Long componentId) {
+		Logger.info("getComponentUrl: experimentId " + experimentId + ", "
+				+ "componentId " + componentId + ", "
+				+ "workerId " + session(WORKER_ID));
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAComponent component = MAComponent.findById(componentId);
-		Result result = checkStandard(experiment, component, experimentId,
+		String result = checkStandard(experiment, component, experimentId,
 				componentId);
 		if (result != null) {
-			return result;
+			return badRequest(result);
 		}
 
 		return ok(component.viewUrl);
 	}
-	
+
+	public static Result logError() {
+		String msg = request().body().asText();
+		Logger.error("Client-side error: " + msg);
+		return ok();
+	}
+
 	private static void addResult(MAComponent component, MAResult result) {
 		result.persist();
 		component.addResult(result);
 		component.merge();
 	}
 
-	private static Result checkStandard(MAExperiment experiment,
+	private static String checkStandard(MAExperiment experiment,
 			MAComponent component, Long experimentId, Long componentId) {
 		if (experiment == null) {
-			return badRequest("The experiment doesn't exist.");
+			return experimentNotExist(experimentId);
 		}
 		if (component == null) {
-			return badRequestComponentNotExist(componentId);
+			return componentNotExist(componentId);
 		}
 		if (component.experiment.id != experimentId) {
-			return badRequestComponentNotBelongToExperiment(experimentId,
-					componentId);
+			return componentNotBelongToExperiment(experimentId, componentId);
 		}
 		return null;
 	}
 	
-	private static Result badRequestWorkerNotExist(String workerId) {
-		String errorMsg = "A worker with id " + workerId + " doesn't exist.";
-		return badRequest(views.html.publix.error.render(errorMsg));
+	/**
+	 * Returns true if an admin of this experiment is logged in and false
+	 * otherwise.
+	 */
+	private static boolean isAdmin(MAExperiment experiment) {
+		String email = session(MAController.COOKIE_EMAIL);
+		if (email != null) {
+			MAUser user = MAUser.findByEmail(email);
+			if (user != null && experiment.hasMember(user)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
-	private static Result badRequestExperimentNotExist(Long experimentId) {
+	private static String workerNotExist(String workerId) {
+		String errorMsg;
+		if (workerId == null) {
+			errorMsg = "No worker id found";
+		} else {
+			errorMsg = "A worker with id " + workerId + " doesn't exist.";
+		}
+		Logger.info(errorMsg);
+		return errorMsg;
+	}
+
+	private static String workerNeverStartedExperiment(Long experimentId) {
+		String errorMsg = "Experiment " + experimentId + " was never started.";
+		Logger.info(errorMsg);
+		return errorMsg;
+	}
+
+	private static String experimentNotExist(Long experimentId) {
 		String errorMsg = "An experiment with id " + experimentId
 				+ " doesn't exist.";
-		return badRequest(views.html.publix.error.render(errorMsg));
+		Logger.info(errorMsg);
+		return errorMsg;
 	}
 
-	private static Result badRequestExperimentHasNoComponents(Long experimentId) {
+	private static String experimentHasNoComponents(Long experimentId) {
 		String errorMsg = "The experiment with id " + experimentId
 				+ " has no components.";
-		return badRequest(views.html.publix.error.render(errorMsg));
+		Logger.info(errorMsg);
+		return errorMsg;
 	}
 
-	private static Result badRequestComponentNotExist(Long componentId) {
+	private static String componentNotExist(Long componentId) {
 		String errorMsg = "An component with id " + componentId
 				+ " doesn't exist.";
-		return badRequest(views.html.publix.error.render(errorMsg));
+		Logger.info(errorMsg);
+		return errorMsg;
 	}
 
-	private static Result badRequestComponentNotBelongToExperiment(
-			Long experimentId, Long componentId) {
+	private static String componentNotBelongToExperiment(Long experimentId,
+			Long componentId) {
 		String errorMsg = "There is no experiment with id " + experimentId
 				+ " that has a component with id " + componentId + ".";
-		return badRequest(views.html.publix.error.render(errorMsg));
+		Logger.info(errorMsg);
+		return errorMsg;
+	}
+
+	private static String workerNotAllowedExperiment(String workerId,
+			Long experimentId) {
+		String errorMsg = "Worker " + workerId + " is not allowed to do "
+				+ "experiment " + experimentId + ".";
+		Logger.info(errorMsg);
+		return errorMsg;
+	}
+
+	private static String workerNotAllowedComponent(String workerId,
+			Long experimentId, Long componentId) {
+		String errorMsg = "Worker " + workerId + " is not allowed to do "
+				+ "component " + componentId + " of " + "experiment "
+				+ experimentId + ".";
+		Logger.info(errorMsg);
+		return errorMsg;
+	}
+
+	private static String submitResultNotJson(Long experimentId,
+			Long componentId) {
+		String errorMsg = "Submit result for component + " + componentId
+				+ "of experiment " + experimentId + ": "
+				+ "Expecting data in JSON format";
+		Logger.info(errorMsg);
+		return errorMsg;
 	}
 
 }

@@ -2,10 +2,10 @@
 
 <html>
 <head>
-<title>Mechanical Argentinian</title>
+<title>Eli's confidence experiment - experiment</title>
 <link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
 <link rel="stylesheet" href="/assets/stylesheets/jquery-ui-1.10.4.custom.min.css"/>
-<link rel="stylesheet" href="/experiments/1/elis_confidence.css"/>
+<link rel="stylesheet" href="/experiments/elis_confidence_exp/experiment.css"/>
 <script src="/assets/javascripts/jquery-1.10.2.js"></script>
 <script src="/assets/javascripts/jquery-ui-1.10.4.custom.min.js"></script>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -14,6 +14,7 @@
 <body>
 
 	<div id="component">
+		<p id="error"></p>
 		<div id="progress">
 			<p id="progressBarText">Your progress</p>
 			<div id="progressBar"></div>
@@ -57,6 +58,7 @@
 		
 		// When the window is fully loaded get data and display the first slide
 		$(window).load(function() {
+			resetSlide();
 			if (!checkBrowser()) {
 				return;
 			}
@@ -111,10 +113,17 @@
 		});
 		
 		function getComponentData(experimentId, componentId) {
-			var url = "/ma/" + experimentId + "/" + componentId;
-			// TODO
-			$.getJSON(url, startComponent)
-				.error(function() { alert("error"); });
+			$.ajax({
+				url: "/ma/" + experimentId + "/" + componentId,
+				type: "GET",
+				dataType: 'json',
+				success: function(response) {
+					startComponent(response);
+				},
+				error: function(err) {
+					showError(err.responseText);
+				}
+			});
 		}
 		
 		function startComponent(response) {
@@ -132,7 +141,7 @@
 			resetSlide();
 			$("#progress").show();
 			var progressValue = ((slideCount + 1) / slideList.length) * 100;
-			$("#progressBar").progressbar({value: progressValue});
+			$("#progressBar").progressbar({value: progressValue}).show();
 			startAnswerState();
 		}
 		
@@ -141,9 +150,10 @@
 			var text = slideList[slideCount].text;
 			var answerLeft = slideList[slideCount].answerLeft;
 			var answerRight = slideList[slideCount].answerRight;
-			$("#text").html(text);
-			$("#answerLeft").html(answerLeft);
-			$("#answerRight").html(answerRight);
+			$("#text").html(text).show();
+			$("#answers").show();
+			$("#answerLeft").html(answerLeft).show();
+			$("#answerRight").html(answerRight).show();
 			timeStart = performance.now();
 		}
 		
@@ -201,13 +211,30 @@
 			if (slideCount < slideList.length) {
 				displaySlide();
 			} else {
-				endComponent();
+				endComponentAndNext();
 			}
 		}
 		
-		function endComponent() {
-			postResultsAndNextComponent();
-			//nextComponent();
+		// Post results back to the server and move to the next component
+		function endComponentAndNext() {
+			var componentResultJson = JSON.stringify(componentResult);
+			var ajax = $.ajax({
+				url: "/ma/" + experimentId + "/" + componentId,
+				data: componentResultJson,
+				processData: false,
+				type: "POST",
+				contentType: "application/json",
+				success: function(url) {
+					if (url) {
+						window.location.assign(url);
+					} else {
+						showError("Missing next URL");
+					}
+				},
+				error: function(err) {
+					showError(err.responseText);
+				}
+			});
 		}
 		
 		function moveConfidenceSlider(mouseX) {
@@ -226,46 +253,46 @@
 		
 		function resetSlide() {
 			lostFocus = false;
-			$("#progress").hide();
+			$("#component").children().hide();
 			$("#progressBar").progressbar({disabled: true});
-			$("#confidence").hide();
 			var randomConfidenceValue = Math.random() * 100;
 			$("#confidenceSlider").slider({
 				disabled: true,
 				step: 20,
 				value: randomConfidenceValue});
-			$("#answer").hide();
 			$("#answerLeft").css('background-color', '');
 			$("#answerRight").css('background-color', '');
 			$("#answerError").hide();
-			$("#nextSlide").hide();
+		}
+		
+		function showError(errorMsg) {
+			resetSlide();
+			$("#error").html(errorMsg).show();
 		}
 		
 		function checkBrowser() {
 			var userAgent = navigator.userAgent;
-			var errorMsg;
+			var logErrorMsg;
 			// Check mobile phones and tablets
 			if (userAgent.match(
 					/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)) {
-				var text = "Sorry, you can't do this questionaire on a mobile or a tablet.";
-				$("#text").html(text);
-				var errorMsg = "Mobile phone browser not supported: component "
-					+ componentData.id + ", userAgent \"" + userAgent + "\"";
+				showError("Sorry, you can't do this questionaire on a mobile or a tablet.");
+				logErrorMsg = "Mobile phone browser not supported: component "
+					+ component.id + ", userAgent \"" + userAgent + "\"";
 			}
 			
 			// Check if browser supports perfomance.now feature
 			if (!performance.now) {
-				var text = "Sorry, you can't do this questionaire with this browser.";
-				$("#text").html(text);
-				var errorMsg = "Browser doesn't support perfomance.now: component "
-					+ componentData.id + ", userAgent \"" + userAgent + "\"";
+				showError("Sorry, you can't do this questionaire with this browser.");
+				var logErrorMsg = "Browser doesn't support perfomance.now: component "
+					+ component.id + ", userAgent \"" + userAgent + "\"";
 			}
 			
-			if (errorMsg) {
+			if (logErrorMsg) {
 				// Send error msg for logging to server
 				$.ajax({
 					url: "/logError",
-					data: errorMsg,
+					data: logErrorMsg,
 					processData: false,
 					type: "POST",
 					contentType: "text/plain"
@@ -273,24 +300,6 @@
 				return false;
 			}
 			return true;
-		}
-		
-		// Post results back to the server and move to the next component
-		function postResultsAndNextComponent() {
-			var componentResultJson = JSON.stringify(componentResult);
-			var ajax = $.ajax({
-				url: "/ma/" + experimentId + "/" + componentId,
-				data: componentResultJson,
-				processData: false,
-				type: "POST",
-				contentType: "application/json",
-				success: function(url) {
-					window.location.assign(url);
-				},
-				error: function(err) {
-					alert(err.responseText);
-				}
-			});
 		}
 		
 	</script>

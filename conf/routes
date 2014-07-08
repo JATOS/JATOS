@@ -8,6 +8,7 @@ GET     /ma/:experimentId/start                    controllers.Publix.startExper
 GET     /ma/:experimentId/end                      controllers.Publix.endExperiment(experimentId: Long)
 GET     /ma/:experimentId/:componentId             controllers.Publix.getComponentData(experimentId: Long, componentId: Long)
 POST    /ma/:experimentId/:componentId             controllers.Publix.submitResult(experimentId: Long, componentId: Long)
+GET     /ma/:experimentId/:componentId/done        controllers.Publix.setComponentDone(experimentId: Long, componentId: Long)
 GET     /ma/:experimentId/:componentId/nextUrl     controllers.Publix.getNextComponentUrl(experimentId: Long, componentId: Long)
 GET     /ma/:experimentId/:componentId/url         controllers.Publix.getComponentUrl(experimentId: Long, componentId: Long)
 
@@ -43,6 +44,7 @@ POST    /admin/:experimentId/:componentId/update          controllers.Components
 GET     /admin/:experimentId/:componentId/deleteResults   controllers.Components.deleteResults(experimentId: Long, componentId: Long)
 POST    /admin/:experimentId/:componentId/deleteResults   controllers.Components.submitDeletedResults(experimentId: Long, componentId: Long)
 DELETE  /admin/:experimentId/:componentId/delete          controllers.Components.delete(experimentId: Long, componentId: Long)
+GET     /admin/:experimentId/:componentId/try             controllers.Components.tryComponent(experimentId: Long, componentId: Long)
 GET     /admin/:experimentId/:componentId                 controllers.Components.index(experimentId: Long, componentId: Long)
 GET     /admin/:experimentId/:componentId/                controllers.Components.index(experimentId: Long, componentId: Long)
 

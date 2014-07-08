@@ -2,10 +2,10 @@
 
 <html>
 <head>
-<title>Mechanical Argentinian</title>
+<title>Eli's confidence experiment - instructions</title>
 <link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
 <link rel="stylesheet" href="/assets/stylesheets/jquery-ui-1.10.4.custom.min.css"/>
-<link rel="stylesheet" href="/experiments/1/instructions.css"/>
+<link rel="stylesheet" href="/experiments/elis_confidence_exp/experiment.css"/>
 <script src="/assets/javascripts/jquery-1.10.2.js"></script>
 <script src="/assets/javascripts/jquery-ui-1.10.4.custom.min.js"></script>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -13,7 +13,8 @@
 
 <body>
 
-	<div id="instructions">
+	<div id="component">
+		<p id="error"></p>
 		<div id="progress">
 			<p id="progressBarText">Your progress</p>
 			<div id="progressBar"></div>
@@ -33,6 +34,7 @@
 		
 		// When the window is fully loaded get data and display the first slide
 		$(window).load(function() {
+			resetSlide();
 			if (!checkBrowser()) {
 				return;
 			}
@@ -52,10 +54,17 @@
 		});
 		
 		function getComponentData(experimentId, componentId) {
-			var url = "/ma/" + experimentId + "/" + componentId;
-			// TODO
-			$.getJSON(url, startComponent)
-				.error(function() { alert("error"); });
+			$.ajax({
+				url: "/ma/" + experimentId + "/" + componentId,
+				type: "GET",
+				dataType: 'json',
+				success: function(response) {
+					startComponent(response);
+				},
+				error: function(err) {
+					showError(err.responseText);
+				}
+			});
 		}
 		
 		function startComponent(response) {
@@ -72,7 +81,8 @@
 			var progressValue = ((slideCount + 1) / slideList.length) * 100;
 			$("#progressBar").progressbar({value: progressValue});
 			var text = slideList[slideCount].text;
-			$("#text").html(text);
+			$("#text").html(text).show()
+			$("#nextSlide").show();
 		}
 		
 		function nextSlide() {
@@ -80,35 +90,60 @@
 			if (slideCount < slideList.length) {
 				displaySlide();
 			} else {
-				window.location.assign(nextUrl);
+				endComponentAndNext();
 			}
+		}
+		
+		function endComponentAndNext() {
+			var ajax = $.ajax({
+				url: "/ma/" + experimentId + "/" + componentId + "/nextUrl",
+				type: "GET",
+				success: function(url) {
+					if (url) {
+						window.location.assign(url);
+					} else {
+						showError("Missing next URL");
+					}
+				},
+				error: function(err) {
+					showError(err.responseText);
+				}
+			});
+		}
+		
+		function showError(errorMsg) {
+			resetSlide();
+			$("#error").html(errorMsg).show();
+		}
+		
+		function resetSlide() {
+			$("#instructions").children().hide();
+			$("#progressBar").progressbar({disabled: true});
 		}
 		
 		function checkBrowser() {
 			var userAgent = navigator.userAgent;
-			var errorMsg;
+			var logErrorMsg;
 			// Check mobile phones and tablets
 			if (userAgent.match(
 					/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)) {
-				var text = "Sorry, you can't do this questionaire on a mobile or a tablet.";
-				$("#text").html(text);
-				var errorMsg = "Mobile phone browser not supported: component "
+				showError("Sorry, you can't do this questionaire on a mobile or a tablet.");
+				logErrorMsg = "Mobile phone browser not supported: component "
 					+ component.id + ", userAgent \"" + userAgent + "\"";
 			}
 			
 			// Check if browser supports perfomance.now feature
 			if (!performance.now) {
-				var text = "Sorry, you can't do this questionaire with this browser.";
-				$("#text").html(text);
-				var errorMsg = "Browser doesn't support perfomance.now: component "
+				showError("Sorry, you can't do this questionaire with this browser.");
+				var logErrorMsg = "Browser doesn't support perfomance.now: component "
 					+ component.id + ", userAgent \"" + userAgent + "\"";
 			}
 			
-			if (errorMsg) {
+			if (logErrorMsg) {
 				// Send error msg for logging to server
 				$.ajax({
 					url: "/logError",
-					data: errorMsg,
+					data: logErrorMsg,
 					processData: false,
 					type: "POST",
 					contentType: "text/plain"

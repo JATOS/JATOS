@@ -17,7 +17,7 @@ public class Experiments extends MAController {
 	public static final String AN_EXPERIMENT_SHOULD_HAVE_AT_LEAST_ONE_MEMBER = "An experiment should have at least one member.";
 	public static final String USER = "user";
 	public static final String TITLE = "title";
-
+	
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result index(Long experimentId) {

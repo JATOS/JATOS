@@ -59,4 +59,12 @@ public class MAController extends Controller {
 				userList, errorMsg, user));
 	}
 	
+	public static Result badRequestUrlViewEmpty(MAUser user,
+			MAExperiment experiment, List<MAExperiment> experimentList) {
+		String errorMsg = "Component's URL field is empty.";
+		List<MAUser> userList = MAUser.findAll();
+		return forbidden(views.html.admin.index.render(experimentList,
+				userList, errorMsg, user));
+	}
+	
 }

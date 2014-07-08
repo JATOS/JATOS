@@ -28,7 +28,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 @Entity
 public class MAComponent {
@@ -118,6 +120,7 @@ public class MAComponent {
 		return workerSet.contains(worker);
 	}
 	
+	@JsonIgnore
 	@Column(name = "relaodable")
 	public boolean isReloadable() {
 		return reloadable;
@@ -185,7 +188,16 @@ public class MAComponent {
 
 	@Override
 	public String toString() {
-		return id + ", " + title + ", " + jsonData;
+		return id + " " + title;
+	}
+	
+	public static String asJsonForPublic(MAComponent component)
+			throws JsonProcessingException {
+		// Serialize MAComponent into JSON (only the public part)
+		ObjectWriter objectWriter = new ObjectMapper()
+				.writerWithView(MAComponent.Public.class);
+		String componentAsJson = objectWriter.writeValueAsString(component);
+		return componentAsJson;
 	}
 
 	public static MAComponent findById(Long id) {

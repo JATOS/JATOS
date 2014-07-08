@@ -37,6 +37,25 @@ public class Components extends MAController {
 		return ok(views.html.admin.component.index.render(experimentList,
 				experiment, null, user, component));
 	}
+	
+	@Transactional
+	@Security.Authenticated(Secured.class)
+	public static Result tryComponent(Long experimentId, Long componentId) {
+		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+		MAComponent component = MAComponent.findById(componentId);
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		Result result = checkStandard(experimentId, componentId, experiment,
+				experimentList, user, component);
+		if (result != null) {
+			return result;
+		}
+		
+		if (component.viewUrl == null || component.viewUrl.isEmpty()) {
+			return badRequestUrlViewEmpty(user, experiment, experimentList);
+		}
+		return redirect(component.viewUrl);
+	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)

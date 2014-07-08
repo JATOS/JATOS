@@ -12,6 +12,14 @@ body {
 	padding: 0;
 }
 
+#error {
+	margin: 0;
+	margin-top: 5%;
+	text-align: center;
+	font-size: 100%;
+	color: rgb(255, 0, 0);
+}
+
 #text {
 	margin: 0;
 	padding: 0;
@@ -48,7 +56,6 @@ body {
 	margin: 0;
 	color: rgb(255, 0, 0);
 	text-align: center;
-	display: none;
 }
 
 #image {
@@ -60,7 +67,6 @@ body {
 
 #progress {
 	margin-bottom: 30px;
-	display: none;
 }
 
 #progressBar {
@@ -74,7 +80,6 @@ body {
 
 #confidence {
 	margin-bottom: 30px;
-	display: none;
 }
 
 #confidenceQuestion {
@@ -106,19 +111,11 @@ body {
 	margin-right: 30%;
 	background-color: #ffffee;
 	opacity: 1.0;
-	display: none;
 }
 
 #nextSlide {
 	margin: 0;
 	padding: 0;
 	text-align: center;
-	display: none;
 }
 
-#error {
-	margin: 0;
-	margin-top: 5%;
-	text-align: center;
-	font-size: 250%;
-}

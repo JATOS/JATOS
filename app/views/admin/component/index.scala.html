@@ -45,7 +45,8 @@
 <script type="text/javascript">
 
 	function tryComponent() {
-		window.location.href = "@component.viewUrl";
+		window.location.href = "@routes.Components.tryComponent(
+			experiment.id, component.id)";
 	}
 
 	function updateComponent() {
