@@ -17,7 +17,7 @@ public class Experiments extends MAController {
 	public static final String AN_EXPERIMENT_SHOULD_HAVE_AT_LEAST_ONE_MEMBER = "An experiment should have at least one member.";
 	public static final String USER = "user";
 	public static final String TITLE = "title";
-	
+
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result index(Long experimentId) {
@@ -174,6 +174,9 @@ public class Experiments extends MAController {
 		return redirect(routes.Experiments.index(experimentId));
 	}
 
+	/**
+	 * Ajax POST request to change the oder of components within an experiment.
+	 */
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result changeComponentOrder(Long experimentId,
@@ -181,21 +184,20 @@ public class Experiments extends MAController {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		Result result = checkStandard(experiment, experimentId, loggedInUser,
-				experimentList);
-		if (result != null) {
-			return result;
+		if (experiment == null) {
+			return badRequest(experimentNotExist(experimentId));
+		}
+		if (!experiment.hasMember(loggedInUser)) {
+			return forbidden(notMember(loggedInUser.name, loggedInUser.email,
+					experiment.id, experiment.title));
 		}
 
 		MAComponent component = MAComponent.findById(componentId);
 		if (component == null) {
-			badRequestComponentNotExist(componentId, experiment, loggedInUser,
-					experimentList);
+			return badRequest(componentNotExist(componentId));
 		}
 		if (!experiment.hasComponent(component)) {
-			badRequestComponentNotBelongToExperiment(experiment, component,
-					loggedInUser, experimentList);
+			badRequest(componentNotBelongToExperiment(experimentId, componentId));
 		}
 
 		if (direction.equals("up")) {

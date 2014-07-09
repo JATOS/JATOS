@@ -37,7 +37,7 @@ public class Components extends MAController {
 		return ok(views.html.admin.component.index.render(experimentList,
 				experiment, null, user, component));
 	}
-	
+
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result tryComponent(Long experimentId, Long componentId) {
@@ -50,9 +50,10 @@ public class Components extends MAController {
 		if (result != null) {
 			return result;
 		}
-		
+
 		if (component.viewUrl == null || component.viewUrl.isEmpty()) {
-			return badRequestUrlViewEmpty(user, experiment, experimentList);
+			return badRequestUrlViewEmpty(user, experiment, component,
+					experimentList);
 		}
 		return redirect(component.viewUrl);
 	}
@@ -232,7 +233,7 @@ public class Components extends MAController {
 
 	private static void removeComponent(MAExperiment experiment,
 			MAComponent component) {
-		component.remove(); // TODO unnecessary because cascade.ALL?
+		component.remove();
 		experiment.removeComponent(component);
 		experiment.merge();
 	}
