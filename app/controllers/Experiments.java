@@ -108,7 +108,7 @@ public class Experiments extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result delete(Long experimentId) {
+	public static Result remove(Long experimentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAExperiment> experimentList = MAExperiment.findAll();
@@ -119,7 +119,6 @@ public class Experiments extends MAController {
 		}
 
 		experiment.remove();
-		// TODO delete it's components too?
 		return redirect(routes.Admin.index());
 	}
 

@@ -24,8 +24,8 @@
 		value="Update">
 	<input id="newGroup" type="button" onClick="updateMembers()"
 		value="Update Members">
-	<input id="newGroup" type="button" onClick="deleteExperiment()"
-		value="Delete">
+	<input id="newGroup" type="button" onClick="removeExperiment()"
+		value="Remove">
 	<div class="folder" data-folder-id="@experiment.id">
 		<header>
 			@if(experiment.componentList.isEmpty()) {
@@ -97,12 +97,12 @@
 		window.location.href = "@routes.Experiments.updateMembers(experiment.id)";
 	}
 
-	function deleteExperiment() {
-		var conf = confirm("Are you sure you want to delete experiment "
+	function removeExperiment() {
+		var conf = confirm("Are you sure you want to remove experiment "
 				+ "@experiment.id" + "\u00a0" + "\"@Html(experiment.title)\"?");
 		if (conf == true) {
 			$.ajax({
-				url : '@routes.Experiments.delete(experiment.id)',
+				url : '@routes.Experiments.remove(experiment.id)',
 				type : 'DELETE',
 				success : function(result) {
 					window.location.replace('@routes.Admin.index()');

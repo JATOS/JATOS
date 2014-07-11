@@ -20,10 +20,10 @@
 		value="Try">
 	<input id="newGroup" type="button" onClick="updateComponent()"
 		value="Update">
-	<input id="newGroup" type="button" onClick="deleteComponent()"
-		value="Delete">
-	<input id="newGroup" type="button" onClick="deleteResults()"
-		value="Delete Results">
+	<input id="newGroup" type="button" onClick="removeComponent()"
+		value="Remove">
+	<input id="newGroup" type="button" onClick="removeResults()"
+		value="Remove Results">
 		
 	<div class="folder" data-folder-id="@component.id">
 		<header>
@@ -36,7 +36,21 @@
 
 		<ul class="list">
 			@for(result <- component.resultList) {
-				<li data-task-id="@component.id">@result.id (@result.date, @result.result)</li>
+				
+				<li data-task-id="@component.id">
+					@result.id, @result.date, 
+					@if(result.worker != null) {
+						@result.worker.workerId
+					} else {
+						none
+					},
+					@if(result.state != null){
+						@result.state
+					} else {
+						none
+					}<br>
+					@result.result
+				</li>
 			}
 		</ul>
 	</div>
@@ -54,12 +68,12 @@
 				experiment.id, component.id)";
 	}
 	
-	function deleteComponent() {
-		var conf = confirm("Are you sure you want to delete component "
+	function removeComponent() {
+		var conf = confirm("Are you sure you want to remove component "
 				+ "@component.id" + "\u00a0" + "\"@Html(component.title)\"?");
 		if (conf == true) {
 			$.ajax({
-				url : '@routes.Components.delete(
+				url : '@routes.Components.remove(
 						experiment.id, component.id)',
 				type : 'DELETE',
 				success : function(result) {
@@ -72,8 +86,8 @@
 		}
 	}
 	
-	function deleteResults() {
-		window.location.href = "@routes.Components.deleteResults(
+	function removeResults() {
+		window.location.href = "@routes.Components.removeResults(
 				experiment.id, component.id)";
 	}
 </script>

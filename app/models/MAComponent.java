@@ -5,11 +5,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -69,13 +66,8 @@ public class MAComponent {
 	public String jsonData;
 
 	@JsonView(MAComponent.Admin.class)
-	@OneToMany(mappedBy = "component", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "component", fetch = FetchType.LAZY)
 	public List<MAResult> resultList = new ArrayList<MAResult>();
-	
-	@JsonView(MAComponent.Admin.class)
-	@OneToMany(fetch = FetchType.LAZY)
-	@JoinColumn(name="component_id", referencedColumnName="id")
-	public Set<MTWorker> workerSet = new HashSet<MTWorker>();
 
 	public MAComponent() {
 	}
@@ -110,14 +102,6 @@ public class MAComponent {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-	
-	public void addWorker(MTWorker worker) {
-		workerSet.add(worker);
-	}
-
-	public boolean hasWorker(MTWorker worker) {
-		return workerSet.contains(worker);
 	}
 	
 	@JsonIgnore

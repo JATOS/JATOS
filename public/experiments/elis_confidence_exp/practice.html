@@ -47,10 +47,14 @@
 		var slideCount = 0;
 		var timeStart;
 		var lostFocus = false;
-		var State = Object.freeze({
+		var slideState = Object.freeze({
 			NEW: 0, ANSWER: 1, CONFIDENCE: 2, FINISHED: 3, ERROR: 4
 		});
-		var currentState = State.NEW;
+		var currentSlideState = slideState.NEW;
+		var componentState = Object.freeze({
+			RUNNING: 0, WAITING: 1
+		});
+		currentComponentState = componentState.RUNNING;
 		var currentSlideResult = {};
 		
 		// The componentResult will be sent back to the server
@@ -72,7 +76,7 @@
 		
 		// Show alert msg if user wants to reload the page
 		window.onunload = window.onbeforeunload = (function() {
-			if (currentState != State.FINISHED) {
+			if (currentSlideState != slideState.FINISHED) {
 				return "It is important to do this survey all at once. A restart form the beginning is not allowed. If you reload the page during an component it will become invalid and you will NOT RECEIVE ANY PAY at Mechanical Turk for this survey.";
 			}
 		});
@@ -86,41 +90,49 @@
 				return;	
 			}
 			
-			switch (currentState) {
-			case State.ANSWER:
+			// If we wait for an answer to an HTTP POST don't react to keys
+			if (currentComponentState == componentState.WAITING) {
+				return;
+			}
+			
+			switch (currentSlideState) {
+			case slideState.ANSWER:
 				endAnswerState(event);
 				break;
-			case State.FINISHED:
+			case slideState.FINISHED:
 				nextSlide();
 				break;
-			case State.ERROR:
+			case slideState.ERROR:
 				nextSlide();
 				break;
 			}
 		});
 
 		$(window).mousemove(function(event) {
-			if (currentState == State.CONFIDENCE) {
+			if (currentSlideState == slideState.CONFIDENCE) {
 				moveConfidenceSlider(event.pageX);
 			}
 		});
 		
 		$(document).mousedown(function(event) {
-			if (currentState != State.CONFIDENCE) {
+			if (currentSlideState != slideState.CONFIDENCE) {
 				return;
 			}
 			endConfidenceState();
 		});
 		
 		function getComponentData(experimentId, componentId) {
+			currentComponentState = componentState.WAITING;
 			$.ajax({
 				url: "/ma/" + experimentId + "/" + componentId,
 				type: "GET",
 				dataType: 'json',
 				success: function(response) {
+					currentComponentState = componentState.RUNNING;
 					startComponent(response);
 				},
 				error: function(err) {
+					currentComponentState = componentState.RUNNING;
 					showError(err.responseText);
 				}
 			});
@@ -137,7 +149,7 @@
 		}
 		
 		function displaySlide() {
-			currentState = State.NEW;
+			currentSlideState = slideState.NEW;
 			resetSlide();
 			$("#progress").show();
 			var progressValue = ((slideCount + 1) / slideList.length) * 100;
@@ -146,7 +158,7 @@
 		}
 		
 		function startAnswerState() {
-			currentState = State.ANSWER;
+			currentSlideState = slideState.ANSWER;
 			var text = slideList[slideCount].text;
 			var answerLeft = slideList[slideCount].answerLeft;
 			var answerRight = slideList[slideCount].answerRight;
@@ -178,13 +190,13 @@
 		}
 		
 		function startErrorState() {
-			currentState = State.ERROR;
+			currentSlideState = slideState.ERROR;
 			$("#answerError").show();
 			startFinishedState();
 		}
 
 		function startConfidenceState() {
-			currentState = State.CONFIDENCE;
+			currentSlideState = slideState.CONFIDENCE;
 			$("#confidence").show();
 			$("#confidenceSlider").show();
 			timeStart = performance.now();
@@ -199,7 +211,7 @@
 		}
 		
 		function startFinishedState() {
-			currentState = State.FINISHED;
+			currentSlideState = slideState.FINISHED;
 			$("#nextSlide").show();
 		}
 		
@@ -215,7 +227,7 @@
 			}
 		}
 		
-		// Post results back to the server and move to the next component
+		// Get next component's URL and move to it
 		function endComponentAndNext() {
 			var nextComponentId = 46;
 			var ajax = $.ajax({
@@ -225,10 +237,12 @@
 					if (url) {
 						window.location.assign(url);
 					} else {
+						currentComponentState = componentState.RUNNING;
 						showError("Missing next URL");
 					}
 				},
 				error: function(err) {
+					currentComponentState = componentState.RUNNING;
 					showError(err.responseText);
 				}
 			});

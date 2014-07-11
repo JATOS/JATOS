@@ -50,6 +50,10 @@ public class Components extends MAController {
 		if (result != null) {
 			return result;
 		}
+		
+		if (!experiment.hasMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
 
 		if (component.viewUrl == null || component.viewUrl.isEmpty()) {
 			return badRequestUrlViewEmpty(user, experiment, component,
@@ -114,6 +118,9 @@ public class Components extends MAController {
 		if (result != null) {
 			return result;
 		}
+		if (!experiment.hasMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).fill(component);
 		return ok(views.html.admin.component.update.render(experimentList,
@@ -131,6 +138,9 @@ public class Components extends MAController {
 				experimentList, user, component);
 		if (result != null) {
 			return result;
+		}
+		if (!experiment.hasMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
@@ -152,7 +162,7 @@ public class Components extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result delete(Long experimentId, Long componentId) {
+	public static Result remove(Long experimentId, Long componentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
@@ -161,6 +171,9 @@ public class Components extends MAController {
 				experimentList, user, component);
 		if (result != null) {
 			return result;
+		}
+		if (!experiment.hasMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
 		removeComponent(experiment, component);
@@ -169,7 +182,7 @@ public class Components extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result deleteResults(Long experimentId, Long componentId) {
+	public static Result removeResults(Long experimentId, Long componentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
@@ -179,14 +192,17 @@ public class Components extends MAController {
 		if (result != null) {
 			return result;
 		}
+		if (!experiment.hasMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
+		}
 
-		return ok(views.html.admin.component.deleteResults.render(
+		return ok(views.html.admin.component.removeResults.render(
 				experimentList, component, experiment, user));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitDeletedResults(Long experimentId,
+	public static Result submitRemovedResults(Long experimentId,
 			Long componentId) {
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		List<MAExperiment> experimentList = MAExperiment.findAll();
@@ -196,6 +212,9 @@ public class Components extends MAController {
 				experimentList, user, component);
 		if (result != null) {
 			return result;
+		}
+		if (!experiment.hasMember(user)) {
+			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
