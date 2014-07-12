@@ -1,11 +1,22 @@
 package controllers;
 
+import java.io.StringWriter;
+
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import models.MAComponent;
 import models.MAExperiment;
 import models.MAResult;
 import models.MAResult.State;
 import models.MAUser;
 import models.MAWorker;
+
+import org.w3c.dom.Document;
+
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -57,8 +68,7 @@ public class Publix extends Controller {
 		session(WORKER_ID, workerId);
 
 		// Start first component
-		boolean alreadyStarted = startComponent(component,
-				worker);
+		boolean alreadyStarted = startComponent(component, worker);
 		if (alreadyStarted) {
 			String errorMsg = componentAlreadyStarted(component.id);
 			return forbidden(views.html.publix.error.render(errorMsg));
@@ -99,8 +109,7 @@ public class Publix extends Controller {
 		}
 
 		// Start component
-		boolean alreadyStarted = startComponent(component,
-				worker);
+		boolean alreadyStarted = startComponent(component, worker);
 		if (alreadyStarted && !component.isReloadable()) {
 			// If someone tries to reload a not reloadable component end the
 			// experiment
@@ -111,8 +120,7 @@ public class Publix extends Controller {
 		return ok();
 	}
 
-	private static boolean startComponent(MAComponent component,
-			MAWorker worker) {
+	private static boolean startComponent(MAComponent component, MAWorker worker) {
 		boolean alreadyStarted = worker.hasCurrentComponent(component);
 		if (!alreadyStarted) {
 			createResult(component, worker);
@@ -216,12 +224,12 @@ public class Publix extends Controller {
 			return forbidden(errorMsg);
 		}
 
-		// Get result as JSON string
-		JsonNode resultJson = request().body().asJson();
-		if (resultJson == null) {
-			return badRequest(submitResultNotJson(experimentId, componentId));
+		// Get result in format JSON, text or XML and convert to String
+		String resultStr = getResultAsString();
+		if (resultStr == null) {
+			return badRequest(submittedResultUnknownFormat(experimentId,
+					componentId));
 		}
-		String resultStr = resultJson.toString();
 
 		// End component
 		MAResult result = worker.getCurrentResult(component);
@@ -235,6 +243,25 @@ public class Publix extends Controller {
 
 		// Conveniently send the URL of the next component (or end page)
 		return okNextComponentUrl(experiment, component);
+	}
+
+	private static String getResultAsString() {
+		String text = request().body().asText();
+		if (text != null) {
+			return text;
+		}
+
+		JsonNode json = request().body().asJson();
+		if (json != null) {
+			return json.toString();
+		}
+
+		Document xml = request().body().asXml();
+		if (xml != null) {
+			return asString(xml);
+		}
+
+		return null;
 	}
 
 	/**
@@ -310,8 +337,8 @@ public class Publix extends Controller {
 		// Check for admin
 		if (callerIsAdmin(experiment)) {
 			boolean admin = true;
-			return ok(views.html.publix.end.render(experimentId,
-					null, true, admin));
+			return ok(views.html.publix.end.render(experimentId, null, true,
+					admin));
 		}
 
 		// Check worker
@@ -409,6 +436,24 @@ public class Publix extends Controller {
 		String msg = request().body().asText();
 		Logger.error("Client-side error: " + msg);
 		return ok();
+	}
+
+	/**
+	 * Convert XML-Document to String
+	 */
+	private static String asString(Document doc) {
+		try {
+			DOMSource domSource = new DOMSource(doc);
+			StringWriter writer = new StringWriter();
+			StreamResult result = new StreamResult(writer);
+			TransformerFactory tf = TransformerFactory.newInstance();
+			Transformer transformer = tf.newTransformer();
+			transformer.transform(domSource, result);
+			return writer.toString();
+		} catch (TransformerException e) {
+			Logger.info("XML to String conversion: ", e);
+			return null;
+		}
 	}
 
 	private static String checkStandard(MAExperiment experiment,
@@ -536,11 +581,10 @@ public class Publix extends Controller {
 		return errorMsg;
 	}
 
-	private static String submitResultNotJson(Long experimentId,
+	private static String submittedResultUnknownFormat(Long experimentId,
 			Long componentId) {
-		String errorMsg = "Submit result for component + " + componentId
-				+ "of experiment " + experimentId + ": "
-				+ "Expecting data in JSON format";
+		String errorMsg = "Unknown format of submitted result for component + "
+				+ componentId + "of experiment " + experimentId + ".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
