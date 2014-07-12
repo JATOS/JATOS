@@ -19,7 +19,9 @@ import javax.persistence.OneToMany;
 import play.db.jpa.JPA;
 
 @Entity
-public class MTWorker {
+public class MAWorker {
+
+	private static final String FAIL = "fail";
 
 	@Id
 	public String workerId;
@@ -28,7 +30,7 @@ public class MTWorker {
 	@CollectionTable(name = "MAExperiment_confirmationCode")
 	@MapKeyColumn(name = "MAExperiment_id")
 	@Column(name = "confirmationCode")
-	public Map<Long, String> confirmationCodeMap = new HashMap<Long, String>();
+	public Map<Long, String> finishedExperimentMap = new HashMap<Long, String>();
 
 	@OneToMany(mappedBy = "worker", fetch = FetchType.LAZY)
 	public List<MAResult> resultList = new ArrayList<MAResult>();
@@ -39,11 +41,11 @@ public class MTWorker {
 	@Column(name = "result_id")
 	public Map<Long, Long> currentComponentMap = new HashMap<Long, Long>();
 
-	public MTWorker() {
+	public MAWorker() {
 	}
 
-	public MTWorker(String workerId) {
-		this.workerId = workerId;
+	public MAWorker(String id) {
+		this.workerId = id;
 	}
 
 	public boolean hasCurrentComponent(MAComponent component) {
@@ -79,17 +81,22 @@ public class MTWorker {
 	}
 
 	public boolean finishedExperiment(Long experimentId) {
-		return confirmationCodeMap.containsKey(experimentId);
+		return finishedExperimentMap.containsKey(experimentId);
 	}
 
-	public String finishExperiment(Long experimentId) {
-		String confirmationCode = UUID.randomUUID().toString();
-		confirmationCodeMap.put(experimentId, confirmationCode);
+	public String finishExperiment(Long experimentId, boolean successful) {
+		String confirmationCode;
+		if (successful) {
+			confirmationCode = UUID.randomUUID().toString();
+		} else {
+			confirmationCode = FAIL;
+		}
+		finishedExperimentMap.put(experimentId, confirmationCode);
 		return confirmationCode;
 	}
 	
 	public String getConfirmationCode(Long experimentId) {
-		return confirmationCodeMap.get(experimentId);
+		return finishedExperimentMap.get(experimentId);
 	}
 
 	public void addResult(MAResult result) {
@@ -105,8 +112,8 @@ public class MTWorker {
 		return workerId;
 	}
 
-	public static MTWorker findById(String workerId) {
-		return JPA.em().find(MTWorker.class, workerId);
+	public static MAWorker findById(String id) {
+		return JPA.em().find(MAWorker.class, id);
 	}
 
 	public void persist() {

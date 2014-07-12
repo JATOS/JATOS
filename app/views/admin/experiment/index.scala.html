@@ -18,6 +18,8 @@
 	@for(member <- experiment.memberList) {
 		<p class="owner"> @member.name (@member.email)</p>
 	}
+	<input id="newGroup" type="button" onClick="tryExperiment()"
+		value="Try">
 	<input id="newGroup" type="button" onClick="addComponent()"
 		value="Add Component">
 	<input id="newGroup" type="button" onClick="updateExperiment()"
@@ -83,6 +85,10 @@
 				alert(err.responseText);
 			}
 		});
+	}
+	
+	function tryExperiment() {
+		window.location.href = "@routes.Publix.startExperiment(experiment.id)";
 	}
 
 	function addComponent() {

@@ -5,7 +5,7 @@ import models.MAExperiment;
 import models.MAResult;
 import models.MAResult.State;
 import models.MAUser;
-import models.MTWorker;
+import models.MAWorker;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -46,9 +46,9 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			badRequest(workerNotExist(workerId));
 		}
-		MTWorker worker = MTWorker.findById(workerId);
+		MAWorker worker = MAWorker.findById(workerId);
 		if (worker == null) {
-			worker = new MTWorker(workerId);
+			worker = new MAWorker(workerId);
 			worker.persist();
 		} else if (worker.finishedExperiment(experimentId)) {
 			String errorMsg = workerNotAllowedExperiment(workerId, experimentId);
@@ -57,7 +57,7 @@ public class Publix extends Controller {
 		session(WORKER_ID, workerId);
 
 		// Start first component
-		boolean alreadyStarted = startComponentAndCreateResult(component,
+		boolean alreadyStarted = startComponent(component,
 				worker);
 		if (alreadyStarted) {
 			String errorMsg = componentAlreadyStarted(component.id);
@@ -92,24 +92,27 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			return forbidden(workerNotExist(workerId));
 		}
-		MTWorker worker = MTWorker.findById(workerId);
+		MAWorker worker = MAWorker.findById(workerId);
 		errorMsg = checkWorker(workerId, worker, experimentId);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
 		}
 
 		// Start component
-		boolean alreadyStarted = startComponentAndCreateResult(component,
+		boolean alreadyStarted = startComponent(component,
 				worker);
 		if (alreadyStarted && !component.isReloadable()) {
-			return forbidden(componentAlreadyStarted(componentId));
+			// If someone tries to reload a not reloadable component end the
+			// experiment
+			endExperiment(worker, experiment, false);
+			return forbidden(reloadNotAllowed(experimentId, componentId));
 		}
 
 		return ok();
 	}
 
-	private static boolean startComponentAndCreateResult(MAComponent component,
-			MTWorker worker) {
+	private static boolean startComponent(MAComponent component,
+			MAWorker worker) {
 		boolean alreadyStarted = worker.hasCurrentComponent(component);
 		if (!alreadyStarted) {
 			createResult(component, worker);
@@ -120,7 +123,7 @@ public class Publix extends Controller {
 	/**
 	 * Create/persist result and update/persist component and worker.
 	 */
-	private static void createResult(MAComponent component, MTWorker worker) {
+	private static void createResult(MAComponent component, MAWorker worker) {
 		MAResult result = new MAResult(component, worker);
 		result.persist();
 		component.addResult(result);
@@ -157,20 +160,22 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			return forbidden(workerNotExist(workerId));
 		}
-		MTWorker worker = MTWorker.findById(workerId);
+		MAWorker worker = MAWorker.findById(workerId);
 		errorMsg = checkWorker(workerId, worker, experimentId);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
 		}
 
 		// If component not already started do so
-		startComponentAndCreateResult(component, worker);
+		startComponent(component, worker);
 
 		// Put result into DATA state
 		MAResult result = worker.getCurrentResult(component);
 		if (result.state != State.STARTED && !component.isReloadable()) {
-			return forbidden(workerNotAllowedComponent(workerId, experimentId,
-					componentId));
+			// If someone tries to reload a not reloadable component end the
+			// experiment
+			endExperiment(worker, experiment, false);
+			return forbidden(reloadNotAllowed(experimentId, componentId));
 		}
 		result.state = State.DATA;
 		result.merge();
@@ -205,7 +210,7 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			return forbidden(workerNotExist(workerId));
 		}
-		MTWorker worker = MTWorker.findById(workerId);
+		MAWorker worker = MAWorker.findById(workerId);
 		errorMsg = checkWorker(workerId, worker, experimentId);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
@@ -220,8 +225,9 @@ public class Publix extends Controller {
 
 		// End component
 		MAResult result = worker.getCurrentResult(component);
-		if (result == null
-				|| (result.state == State.DONE && !component.isReloadable())) {
+		if (result == null || result.state == State.DONE) {
+			// If component was never started (result==null) or it's already
+			// finished (state==DONE) return a HTTP 403
 			return forbidden(workerNotAllowedComponent(workerId, experimentId,
 					componentId));
 		}
@@ -235,7 +241,7 @@ public class Publix extends Controller {
 	 * Put result into state DONE, persist and remove from worker
 	 */
 	private static void endComponent(MAResult result, String resultStr,
-			MAComponent component, MTWorker worker) {
+			MAComponent component, MAWorker worker) {
 		result.result = resultStr;
 		result.state = State.DONE;
 		result.merge();
@@ -269,7 +275,7 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			return forbidden(workerNotExist(workerId));
 		}
-		MTWorker worker = MTWorker.findById(workerId);
+		MAWorker worker = MAWorker.findById(workerId);
 		errorMsg = checkWorker(workerId, worker, experimentId);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
@@ -277,8 +283,9 @@ public class Publix extends Controller {
 
 		// End component
 		MAResult result = worker.getCurrentResult(component);
-		if (result == null
-				|| (result.state == State.DONE && !component.isReloadable())) {
+		if (result == null || result.state == State.DONE) {
+			// If component was never started (result==null) or it's already
+			// finished (state==DONE) return a HTTP 403
 			return forbidden(workerNotAllowedComponent(workerId, experimentId,
 					componentId));
 		}
@@ -302,8 +309,9 @@ public class Publix extends Controller {
 
 		// Check for admin
 		if (callerIsAdmin(experiment)) {
-			return ok(views.html.publix.confirmationCode
-					.render("none (admin logged in)"));
+			boolean admin = true;
+			return ok(views.html.publix.end.render(experimentId,
+					null, true, admin));
 		}
 
 		// Check worker
@@ -312,23 +320,33 @@ public class Publix extends Controller {
 			return forbidden(views.html.publix.error
 					.render(experimentNeverStarted(experimentId)));
 		}
-		MTWorker worker = MTWorker.findById(workerId);
+		MAWorker worker = MAWorker.findById(workerId);
 		if (worker == null) {
 			return forbidden(views.html.publix.error
 					.render(workerNotExist(workerId)));
 		}
 
 		// Get confirmation code
+		boolean successful = true;
+		String confirmationCode = endExperiment(worker, experiment, successful);
+
+		boolean admin = false;
+		return ok(views.html.publix.end.render(experimentId, confirmationCode,
+				successful, admin));
+	}
+
+	private static String endExperiment(MAWorker worker,
+			MAExperiment experiment, boolean successful) {
 		String confirmationCode;
-		if (worker.finishedExperiment(experimentId)) {
-			confirmationCode = worker.getConfirmationCode(experimentId);
+		if (worker.finishedExperiment(experiment.id)) {
+			confirmationCode = worker.getConfirmationCode(experiment.id);
 		} else {
-			confirmationCode = worker.finishExperiment(experimentId);
+			confirmationCode = worker.finishExperiment(experiment.id,
+					successful);
 			worker.removeCurrentComponentsForExperiment(experiment);
 			worker.merge();
 		}
-
-		return ok(views.html.publix.confirmationCode.render(confirmationCode));
+		return confirmationCode;
 	}
 
 	/**
@@ -347,22 +365,6 @@ public class Publix extends Controller {
 			return badRequest(errorMsg);
 		}
 
-		// Check for admin
-		if (callerIsAdmin(experiment)) {
-			return okNextComponentUrl(experiment, component);
-		}
-
-		// Check worker
-		String workerId = session(WORKER_ID);
-		if (workerId == null) {
-			return forbidden(workerNotExist(workerId));
-		}
-		MTWorker worker = MTWorker.findById(workerId);
-		errorMsg = checkWorker(workerId, worker, experimentId);
-		if (errorMsg != null) {
-			return forbidden(errorMsg);
-		}
-		
 		return okNextComponentUrl(experiment, component);
 	}
 
@@ -396,22 +398,6 @@ public class Publix extends Controller {
 			return badRequest(errorMsg);
 		}
 
-		// Check for admin
-		if (callerIsAdmin(experiment)) {
-			return ok(component.viewUrl);
-		}
-
-		// Check worker
-		String workerId = session(WORKER_ID);
-		if (workerId == null) {
-			return forbidden(workerNotExist(workerId));
-		}
-		MTWorker worker = MTWorker.findById(workerId);
-		errorMsg = checkWorker(workerId, worker, experimentId);
-		if (errorMsg != null) {
-			return forbidden(errorMsg);
-		}
-
 		return ok(component.viewUrl);
 	}
 
@@ -439,7 +425,7 @@ public class Publix extends Controller {
 		return null;
 	}
 
-	private static String checkWorker(String workerId, MTWorker worker,
+	private static String checkWorker(String workerId, MAWorker worker,
 			Long experimentId) {
 		if (worker == null) {
 			return workerNotExist(workerId);
@@ -538,6 +524,14 @@ public class Publix extends Controller {
 		String errorMsg = "Worker " + workerId + " is not allowed to do "
 				+ "component " + componentId + " of " + "experiment "
 				+ experimentId + ".";
+		Logger.info(errorMsg);
+		return errorMsg;
+	}
+
+	private static String reloadNotAllowed(Long experimentId, Long componentId) {
+		String errorMsg = "It is not allowed to reload " + "component "
+				+ componentId + " of " + "experiment " + experimentId
+				+ ". The experiment is finished.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}

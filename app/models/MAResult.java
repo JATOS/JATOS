@@ -45,14 +45,14 @@ public class MAResult {
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "worker_id")
-	public MTWorker worker;
+	public MAWorker worker;
 
 	public String result;
 
 	public MAResult() {
 	}
 
-	public MAResult(MAComponent component, MTWorker worker) {
+	public MAResult(MAComponent component, MAWorker worker) {
 		this.date = new Timestamp(new Date().getTime());
 		this.component = component;
 		this.worker = worker;
