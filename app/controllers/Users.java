@@ -1,7 +1,5 @@
 package controllers;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import models.MAExperiment;
@@ -54,8 +52,7 @@ public class Users extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submit() throws NoSuchAlgorithmException,
-			UnsupportedEncodingException {
+	public static Result submit() throws Exception {
 		Form<MAUser> form = Form.form(MAUser.class).bindFromRequest();
 		List<MAExperiment> experimentList = MAExperiment.findAll();
 		MAUser loggedInUser = MAUser
@@ -180,8 +177,7 @@ public class Users extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitChangedPassword(String email)
-			throws NoSuchAlgorithmException, UnsupportedEncodingException {
+	public static Result submitChangedPassword(String email) throws Exception {
 		MAUser user = MAUser.findByEmail(email);
 		Form<MAUser> form = Form.form(MAUser.class).fill(user);
 		MAUser loggedInUser = MAUser

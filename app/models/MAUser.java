@@ -1,8 +1,6 @@
 package models;
 
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -74,7 +72,7 @@ public class MAUser {
 	}
 
 	public static String getHashMDFive(String str)
-			throws NoSuchAlgorithmException, UnsupportedEncodingException {
+			throws Exception {
 		byte[] strBytes = str.getBytes("UTF-8");
 		MessageDigest md = MessageDigest.getInstance("MD5");
 		byte[] hashByte = md.digest(strBytes);

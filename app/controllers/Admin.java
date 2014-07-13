@@ -51,8 +51,13 @@ public class Admin extends MAController {
 		public String password;
 
 		public String validate() {
-			if (MAUser.authenticate(email, password) == null) {
-				return "Invalid user or password";
+			try {
+				String passwordHash = MAUser.getHashMDFive(password);
+				if (MAUser.authenticate(email, passwordHash) == null) {
+					return "Invalid user or password";
+				}
+			} catch (Exception e) {
+				return null;
 			}
 			return null;
 		}

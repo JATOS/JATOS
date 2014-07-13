@@ -5,9 +5,15 @@
 // -----------------------------------
 
 .tasks {
-	.owner {
-		text-align: right;
-	}
+    p.error {
+        width: inherit;
+        margin: 5px 0;
+        color: #c00;
+        text-shadow: 1px 1px rgba(0,0,0,.1);
+    }
+    .owner {
+        text-align: right;
+    }
     .folder {
         .box();
         > header {
@@ -45,13 +51,18 @@
                 }
                 .upArrow {
                     cursor: pointer;
+                    color: @projectColor;
                     margin-left: 0;
                     margin-top: 0;
                 }
                 .downArrow {
                     cursor: pointer;
+                    color: @projectColor;
                     margin-left: 0;
                     margin-bottom: 0;
+                }
+                :hover {
+                    color: #000;
                 }
                 a {
                     display: block;
@@ -67,10 +78,6 @@
                     .delete();
                     top: 4px;
                     right: 4px;
-                }
-                &:hover .deleteTask {
-                    opacity: 1;
-                    -webkit-transition-delay: 0;
                 }
                 .assignedTo {
                     float: right;
