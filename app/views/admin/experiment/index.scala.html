@@ -26,6 +26,8 @@
 		value="Update">
 	<input id="newGroup" type="button" onClick="updateMembers()"
 		value="Update Members">
+	<input id="newGroup" type="button" onClick="showMTurkSourceCode()"
+		value="MT Source Code">
 	<input id="newGroup" type="button" onClick="removeExperiment()"
 		value="Remove">
 	<div class="folder" data-folder-id="@experiment.id">
@@ -101,6 +103,10 @@
 	
 	function updateMembers() {
 		window.location.href = "@routes.Experiments.updateMembers(experiment.id)";
+	}
+	
+	function showMTurkSourceCode() {
+		window.location.href = "@routes.Experiments.showMTurkSourceCode(experiment.id)";
 	}
 
 	function removeExperiment() {

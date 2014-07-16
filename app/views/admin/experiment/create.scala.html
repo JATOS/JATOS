@@ -21,7 +21,14 @@
 				@for(error <- form(Experiments.TITLE).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="text" name="@Experiments.TITLE" class="formSingle" placeholder="Title" value="@form(Experiments.TITLE).value">
+				<input type="text" name="@Experiments.TITLE" class="formTop" placeholder="Title" value="@form(Experiments.TITLE).value">
+				
+				@for(error <- form(Experiments.DESCRIPTION).errors) {
+					<p class="error">@error.message</p>
+				}
+				<textarea name="@Experiments.DESCRIPTION" class="formDescription" rows="3"
+					placeholder="Description"
+					>@form(Experiments.DESCRIPTION).value</textarea>
 				
 				<button id="newGroup" type="submit">Create</button>
 			}

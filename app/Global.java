@@ -1,9 +1,11 @@
-import play.*;
-import play.mvc.*;
-import play.mvc.Http.*;
-import play.libs.F.*;
-
-import static play.mvc.Results.*;
+import static play.mvc.Results.badRequest;
+import static play.mvc.Results.internalServerError;
+import static play.mvc.Results.notFound;
+import play.GlobalSettings;
+import play.Logger;
+import play.libs.F.Promise;
+import play.mvc.Http.RequestHeader;
+import play.mvc.SimpleResult;
 
 public class Global extends GlobalSettings {
 

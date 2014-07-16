@@ -14,9 +14,10 @@ import play.mvc.Security;
 
 public class Experiments extends MAController {
 
-	public static final String AN_EXPERIMENT_SHOULD_HAVE_AT_LEAST_ONE_MEMBER = "An experiment should have at least one member.";
 	public static final String USER = "user";
 	public static final String TITLE = "title";
+	public static final String DESCRIPTION = "description";
+	public static final String AN_EXPERIMENT_SHOULD_HAVE_AT_LEAST_ONE_MEMBER = "An experiment should have at least one member.";
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
@@ -101,7 +102,8 @@ public class Experiments extends MAController {
 		// Update experiment in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String title = requestData.get(TITLE);
-		experiment.update(title);
+		String description = requestData.get(DESCRIPTION);
+		experiment.update(title, description);
 		experiment.merge();
 		return redirect(routes.Experiments.index(experimentId));
 	}
@@ -208,6 +210,23 @@ public class Experiments extends MAController {
 		experiment.refresh();
 
 		return ok();
+	}
+
+	@Transactional
+	@Security.Authenticated(Secured.class)
+	public static Result showMTurkSourceCode(Long experimentId) {
+		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+		List<MAExperiment> experimentList = MAExperiment.findAll();
+		Result result = checkStandard(experiment, experimentId, user,
+				experimentList);
+		if (result != null) {
+			return result;
+		}
+
+		String hostname = request().host();
+		return ok(views.html.admin.experiment.mTurkSourceCode.render(
+				experimentList, user, null, experiment, hostname));
 	}
 
 	private static Result checkStandard(MAExperiment experiment,

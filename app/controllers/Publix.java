@@ -28,14 +28,19 @@ public class Publix extends Controller {
 
 	public static final String WORKER_ID = "workerId";
 	public static final String COMPONENT_ID = "componentId";
+	public static final String ASSIGNMENT_ID_NOT_AVAILABLE = "ASSIGNMENT_ID_NOT_AVAILABLE";
 
 	/**
 	 * HTTP type: Normal GET request
 	 */
 	@Transactional
-	public static Result startExperiment(Long experimentId, String workerId) {
+	public static Result startExperiment(Long experimentId, String workerId,
+			String assignmentId, String hitId) {
 		Logger.info("startExperiment: experimentId " + experimentId + ", "
-				+ "workerId " + workerId);
+				+ "workerId " + workerId, "assignmentId " + assignmentId + ", "
+				+ "hitId " + hitId);
+		checkForMTurkSandbox();
+
 		MAExperiment experiment = MAExperiment.findById(experimentId);
 		if (experiment == null) {
 			String errorMsg = experimentNotExist(experimentId);
@@ -49,19 +54,31 @@ public class Publix extends Controller {
 		}
 
 		// Check for admin
-		if (callerIsAdmin(experiment)) {
+		if (adminLoggedIn(experiment)) {
 			return redirect(component.viewUrl);
+		}
+
+		// Check Mechanical Turk assignment id
+		if (assignmentId == null) {
+			String errorMsg = assignmentIdNotSpecified();
+			return badRequest(views.html.publix.error.render(errorMsg));
+		}
+		if (assignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
+			// It's a preview coming from Mechanical Turk
+			String errorMsg = noPreviewAvailable(experimentId);
+			return badRequest(views.html.publix.error.render(errorMsg));
 		}
 
 		// Check worker
 		if (workerId == null) {
-			badRequest(workerNotExist(workerId));
+			return badRequest(workerNotExist(workerId));
 		}
 		MAWorker worker = MAWorker.findById(workerId);
 		if (worker == null) {
 			worker = new MAWorker(workerId);
 			worker.persist();
-		} else if (worker.finishedExperiment(experimentId)) {
+		} else if (worker.finishedExperiment(experimentId)
+				&& !isRequestFromMTurkSandbox()) {
 			String errorMsg = workerNotAllowedExperiment(workerId, experimentId);
 			return forbidden(views.html.publix.error.render(errorMsg));
 		}
@@ -93,7 +110,7 @@ public class Publix extends Controller {
 		}
 
 		// Check for admin
-		if (callerIsAdmin(experiment)) {
+		if (adminLoggedIn(experiment)) {
 			return ok();
 		}
 
@@ -159,7 +176,7 @@ public class Publix extends Controller {
 		}
 
 		// Check for admin: if yes, just return JSON data
-		if (callerIsAdmin(experiment)) {
+		if (adminLoggedIn(experiment)) {
 			return ok(MAComponent.asJsonForPublic(component));
 		}
 
@@ -209,7 +226,7 @@ public class Publix extends Controller {
 		}
 
 		// Check for admin: if yes, don't persist result and return
-		if (callerIsAdmin(experiment)) {
+		if (adminLoggedIn(experiment)) {
 			return okNextComponentUrl(experiment, component);
 		}
 
@@ -269,7 +286,7 @@ public class Publix extends Controller {
 	 */
 	private static void endComponent(MAResult result, String resultStr,
 			MAComponent component, MAWorker worker) {
-		result.result = resultStr;
+		result.data = resultStr;
 		result.state = State.DONE;
 		result.merge();
 		worker.removeCurrentComponent(component);
@@ -293,7 +310,7 @@ public class Publix extends Controller {
 		}
 
 		// Check for admin
-		if (callerIsAdmin(experiment)) {
+		if (adminLoggedIn(experiment)) {
 			return ok();
 		}
 
@@ -335,7 +352,7 @@ public class Publix extends Controller {
 		}
 
 		// Check for admin
-		if (callerIsAdmin(experiment)) {
+		if (adminLoggedIn(experiment)) {
 			boolean admin = true;
 			return ok(views.html.publix.end.render(experimentId, null, true,
 					admin));
@@ -370,9 +387,9 @@ public class Publix extends Controller {
 		} else {
 			confirmationCode = worker.finishExperiment(experiment.id,
 					successful);
-			worker.removeCurrentComponentsForExperiment(experiment);
-			worker.merge();
 		}
+		worker.removeCurrentComponentsForExperiment(experiment);
+		worker.merge();
 		return confirmationCode;
 	}
 
@@ -475,7 +492,8 @@ public class Publix extends Controller {
 		if (worker == null) {
 			return workerNotExist(workerId);
 		}
-		if (worker.finishedExperiment(experimentId)) {
+		if (worker.finishedExperiment(experimentId)
+				&& !isRequestFromMTurkSandbox()) {
 			return workerFinishedExperimentAlready(workerId, experimentId);
 		}
 		return null;
@@ -485,7 +503,7 @@ public class Publix extends Controller {
 	 * Returns true if an admin of this experiment is logged in and false
 	 * otherwise.
 	 */
-	private static boolean callerIsAdmin(MAExperiment experiment) {
+	private static boolean adminLoggedIn(MAExperiment experiment) {
 		String email = session(MAController.COOKIE_EMAIL);
 		if (email != null) {
 			MAUser user = MAUser.findByEmail(email);
@@ -496,6 +514,25 @@ public class Publix extends Controller {
 		return false;
 	}
 
+	/**
+	 * Checks if the request comes from Mechanical Turk sandbox and if yes sets
+	 * a session variable.
+	 */
+	private static void checkForMTurkSandbox() {
+		String turkSubmitTo = request().getQueryString("turkSubmitTo");
+		if (turkSubmitTo != null && turkSubmitTo.contains("sandbox")) {
+			session("mturk", "sandbox");
+		}
+	}
+
+	/**
+	 * Returns true if the original request comes from the Mechanical Turk
+	 * sandbox and false otherwise.
+	 */
+	private static boolean isRequestFromMTurkSandbox() {
+		return session("mturk").equals("sandbox");
+	}
+
 	private static String workerNotExist(String workerId) {
 		String errorMsg;
 		if (workerId == null) {
@@ -503,6 +540,19 @@ public class Publix extends Controller {
 		} else {
 			errorMsg = "A worker with id " + workerId + " doesn't exist.";
 		}
+		Logger.info(errorMsg);
+		return errorMsg;
+	}
+
+	private static String assignmentIdNotSpecified() {
+		String errorMsg = "No assignment id specified in query parameters.";
+		Logger.info(errorMsg);
+		return errorMsg;
+	}
+
+	private static String noPreviewAvailable(Long experimentId) {
+		String errorMsg = "No preview available for experiment " + experimentId
+				+ ".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}

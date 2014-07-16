@@ -38,18 +38,7 @@
 			@for(result <- component.resultList) {
 				
 				<li data-task-id="@component.id">
-					@result.id, @result.date, 
-					@if(result.worker != null) {
-						@result.worker.workerId
-					} else {
-						none
-					},
-					@if(result.state != null){
-						@result.state
-					} else {
-						none
-					}<br>
-					@result.result
+					@MAResult.asJson(result);
 				</li>
 			}
 		</ul>

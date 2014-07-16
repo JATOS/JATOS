@@ -4,7 +4,7 @@
 
 # Public
 POST    /ma/logError                               controllers.Publix.logError()
-GET     /ma/:experimentId/start                    controllers.Publix.startExperiment(experimentId: Long, workerId: String ?= null)
+GET     /ma/:experimentId/start                    controllers.Publix.startExperiment(experimentId: Long, workerId: String ?= null, assignmentId: String ?= null, hitId: String ?= null)
 GET     /ma/:experimentId/end                      controllers.Publix.endExperiment(experimentId: Long)
 GET     /ma/:experimentId/:componentId             controllers.Publix.getComponentData(experimentId: Long, componentId: Long)
 POST    /ma/:experimentId/:componentId             controllers.Publix.submitResult(experimentId: Long, componentId: Long)
@@ -36,6 +36,7 @@ GET     /admin/:experimentId/updateMembers                controllers.Experiment
 POST    /admin/:experimentId/updateMembers                controllers.Experiments.submitUpdatedMembers(experimentId: Long)
 DELETE  /admin/:experimentId/remove                       controllers.Experiments.remove(experimentId: Long)
 POST    /admin/:experimentId/changeComponentOrder         controllers.Experiments.changeComponentOrder(experimentId: Long, componentId: Long, direction: String)
+GET     /admin/:experimentId/mturk                        controllers.Experiments.showMTurkSourceCode(experimentId: Long)
 GET     /admin/:experimentId                              controllers.Experiments.index(experimentId: Long)
 GET     /admin/:experimentId/                             controllers.Experiments.index(experimentId: Long)
 GET     /admin/:experimentId/createComponent              controllers.Components.create(experimentId: Long)

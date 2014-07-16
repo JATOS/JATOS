@@ -28,6 +28,8 @@ public class MAExperiment {
 	public Long id;
 
 	public String title;
+	
+	public String description;
 
 	public Timestamp date;
 
@@ -42,8 +44,9 @@ public class MAExperiment {
 	public MAExperiment() {
 	}
 	
-	public void update(String title) {
+	public void update(String title, String description) {
 		this.title = title;
+		this.description = description;
 	}
 
 	public List<ValidationError> validate() {
