@@ -28,8 +28,8 @@
 		
 		<ul id="components">
 			@for(user <- userList) {
-				<li data-task-id="@user.email">
-						<a class="name" href="@routes.Users.index(user.email)">
+				<li data-task-id="@user.getEmail()">
+						<a class="name" href="@routes.Users.index(user.getEmail())">
 								@user.toString()
 						</a>
 				</li>

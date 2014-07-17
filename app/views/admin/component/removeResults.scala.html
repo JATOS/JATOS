@@ -33,19 +33,19 @@
 					</li>
 					@for(result <- component.getResultList()) {
 						<li data-task-id="@component.getId()">
-							<input type="checkbox" name="@Components.RESULT" value="@result.id" unchecked>
-								@result.id, @result.date, 
-								@if(result.worker != null) {
-									@result.worker.workerId
+							<input type="checkbox" name="@Components.RESULT" value="@result.getId()" unchecked>
+								@result.getId(), @result.getDate(), 
+								@if(result.getWorker() != null) {
+									@result.getWorker().getWorkerId()
 								} else {
 									none
 								},
-								@if(result.state != null){
-									@result.state
+								@if(result.getState() != null){
+									@result.getState()
 								} else {
 									none
 								}<br>
-								@result.data
+								@result.getData()
 						</li>
 					}
 					<li data-task-id="@component.getId()">

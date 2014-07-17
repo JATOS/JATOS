@@ -24,22 +24,22 @@ public class MAWorker {
 	private static final String FAIL = "fail";
 
 	@Id
-	public String workerId;
+	private String workerId;
 
 	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(name = "MAExperiment_confirmationCode")
 	@MapKeyColumn(name = "MAExperiment_id")
 	@Column(name = "confirmationCode")
-	public Map<Long, String> finishedExperimentMap = new HashMap<Long, String>();
+	private Map<Long, String> finishedExperimentMap = new HashMap<Long, String>();
 
 	@OneToMany(mappedBy = "worker", fetch = FetchType.LAZY)
-	public List<MAResult> resultList = new ArrayList<MAResult>();
+	private List<MAResult> resultList = new ArrayList<MAResult>();
 
 	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(name = "MAComponent_MAResult")
 	@MapKeyColumn(name = "component_id")
 	@Column(name = "result_id")
-	public Map<Long, Long> currentComponentMap = new HashMap<Long, Long>();
+	private Map<Long, Long> currentComponentMap = new HashMap<Long, Long>();
 
 	public MAWorker() {
 	}
@@ -47,7 +47,66 @@ public class MAWorker {
 	public MAWorker(String id) {
 		this.workerId = id;
 	}
+	
+	public void setWorkerId(String workerId) {
+		this.workerId = workerId;
+	}
+	
+	public String getWorkerId() {
+		return this.workerId;
+	}
+	
+	public void setFinishedExperimentMap(Map<Long, String> finishedExperimentMap) {
+		this.finishedExperimentMap = finishedExperimentMap;
+	}
+	
+	public Map<Long, String> getFinishedExperimentMap() {
+		return this.finishedExperimentMap;
+	}
+	
+	public boolean finishedExperiment(Long experimentId) {
+		return finishedExperimentMap.containsKey(experimentId);
+	}
 
+	public String finishExperiment(Long experimentId, boolean successful) {
+		String confirmationCode;
+		if (successful) {
+			confirmationCode = UUID.randomUUID().toString();
+		} else {
+			confirmationCode = FAIL;
+		}
+		finishedExperimentMap.put(experimentId, confirmationCode);
+		return confirmationCode;
+	}
+	
+	public String getConfirmationCode(Long experimentId) {
+		return finishedExperimentMap.get(experimentId);
+	}
+	
+	public void setResultList(List<MAResult> resultList) {
+		this.resultList = resultList;
+	}
+	
+	public List<MAResult> getResultList() {
+		return this.resultList;
+	}
+	
+	public void addResult(MAResult result) {
+		resultList.add(result);
+	}
+
+	public void removeResult(MAResult result) {
+		resultList.remove(result);
+	}
+	
+	public void setCurrentComponentMap(Map<Long, Long> currentComponentMap) {
+		this.currentComponentMap = currentComponentMap;
+	}
+	
+	public Map<Long, Long> getCurrentComponentMap() {
+		return this.currentComponentMap;
+	}
+	
 	public boolean hasCurrentComponent(MAComponent component) {
 		return currentComponentMap.containsKey(component.getId());
 	}
@@ -58,7 +117,7 @@ public class MAWorker {
 	}
 
 	public void addCurrentComponent(MAComponent component, MAResult result) {
-		currentComponentMap.put(component.getId(), result.id);
+		currentComponentMap.put(component.getId(), result.getId());
 	}
 
 	public void removeCurrentComponent(MAComponent component) {
@@ -78,33 +137,6 @@ public class MAWorker {
 				it.remove();
 			}
 		}
-	}
-
-	public boolean finishedExperiment(Long experimentId) {
-		return finishedExperimentMap.containsKey(experimentId);
-	}
-
-	public String finishExperiment(Long experimentId, boolean successful) {
-		String confirmationCode;
-		if (successful) {
-			confirmationCode = UUID.randomUUID().toString();
-		} else {
-			confirmationCode = FAIL;
-		}
-		finishedExperimentMap.put(experimentId, confirmationCode);
-		return confirmationCode;
-	}
-	
-	public String getConfirmationCode(Long experimentId) {
-		return finishedExperimentMap.get(experimentId);
-	}
-
-	public void addResult(MAResult result) {
-		resultList.add(result);
-	}
-
-	public void removeResult(MAResult result) {
-		resultList.remove(result);
 	}
 
 	@Override

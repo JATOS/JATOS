@@ -29,13 +29,13 @@ public class MAResult {
 	@JsonProperty("resultId")
 	@Id
 	@GeneratedValue
-	public Long id;
+	private Long id;
 
 	/**
 	 * Time and date when the component was started.
 	 */
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd,HH:mm:ss")
-	public Timestamp date;
+	private Timestamp date;
 
 	public enum State {
 		STARTED, // Component was started
@@ -46,21 +46,20 @@ public class MAResult {
 	/**
 	 * State in the progress of a component.
 	 */
-	public State state;
+	private State state;
 
 	@JsonIgnore
 	// We get it via a getter
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "component_id")
-	public MAComponent component;
+	private MAComponent component;
 
 	@JsonIgnore
-	// We get it via a getter
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "worker_id")
-	public MAWorker worker;
+	private MAWorker worker;
 
-	public String data;
+	private String data;
 
 	public MAResult() {
 	}
@@ -71,11 +70,59 @@ public class MAResult {
 		this.worker = worker;
 		this.state = State.STARTED;
 	}
+	
+	public void setId(Long id) {
+		this.id = id;
+	}
+	
+	public Long getId() {
+		return this.id;
+	}
+	
+	public void setDate(Timestamp date) {
+		this.date = date;
+	}
+	
+	public Timestamp getDate() {
+		return this.date;
+	}
+	
+	public void setState(State state) {
+		this.state = state;
+	}
+	
+	public State getState() {
+		return this.state;
+	}
+	
+	public void setComponent(MAComponent component) {
+		this.component = component;
+	}
+	
+	public MAComponent getComponent() {
+		return this.component;
+	}
+	
+	public void setWorker(MAWorker worker) {
+		this.worker = worker;
+	}
+	
+	public MAWorker getWorker() {
+		return this.worker;
+	}
+	
+	public void setData(String data) {
+		this.data = data;
+	}
+	
+	public String getData() {
+		return this.data;
+	}
 
 	@Override
 	public String toString() {
 		return id + ", " + date + ", " + component.getId() + ", "
-				+ worker.workerId;
+				+ worker.getWorkerId();
 	}
 
 	public static String asJson(MAResult result) throws JsonProcessingException {
@@ -96,9 +143,9 @@ public class MAResult {
 	}
 
 	@JsonProperty("workerId")
-	private String getWorkerId() {
+	private String getWorkerId( ) {
 		if (worker != null) {
-			return worker.workerId;
+			return worker.getWorkerId();
 		} else {
 			return null;
 		}

@@ -65,7 +65,7 @@ public class Users extends MAController {
 
 		// Check if user with this email already exists.
 		MAUser newUser = form.get();
-		if (MAUser.findByEmail(newUser.email) != null) {
+		if (MAUser.findByEmail(newUser.getEmail()) != null) {
 			form.reject(EMAIL, THIS_EMAIL_IS_ALREADY_REGISTERED);
 		}
 
@@ -88,9 +88,9 @@ public class Users extends MAController {
 			return badRequest(views.html.admin.user.create.render(
 					experimentList, loggedInUser, form));
 		} else {
-			newUser.passwordHash = passwordHash;
+			newUser.setPasswordHash(passwordHash);
 			newUser.persist();
-			return redirect(routes.Users.index(newUser.email));
+			return redirect(routes.Users.index(newUser.getEmail()));
 		}
 	}
 
@@ -107,7 +107,7 @@ public class Users extends MAController {
 		}
 
 		// To change a user this user must be logged in.
-		if (user.email != loggedInUser.email) {
+		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
 			return badRequest(views.html.admin.user.index.render(
 					experimentList, loggedInUser, errorMsg, user));
@@ -132,7 +132,7 @@ public class Users extends MAController {
 		}
 
 		// To change a user this user must be logged in.
-		if (user.email != loggedInUser.email) {
+		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			form.reject(errorMsgYouMustBeLoggedIn(user));
 		}
 
@@ -164,7 +164,7 @@ public class Users extends MAController {
 		}
 
 		// To change a user this user must be logged in.
-		if (user.email != loggedInUser.email) {
+		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
 			return badRequest(views.html.admin.user.index.render(
 					experimentList, loggedInUser, errorMsg, user));
@@ -190,14 +190,14 @@ public class Users extends MAController {
 		}
 
 		// To change a user this user must be logged in.
-		if (user.email != loggedInUser.email) {
+		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			form.reject(errorMsgYouMustBeLoggedIn(user));
 		}
 
 		// Authenticate
 		String oldPasswordHash = MAUser.getHashMDFive(requestData
 				.get(OLD_PASSWORD));
-		if (MAUser.authenticate(user.email, oldPasswordHash) == null) {
+		if (MAUser.authenticate(user.getEmail(), oldPasswordHash) == null) {
 			form.reject(OLD_PASSWORD, WRONG_OLD_PASSWORD);
 		}
 
@@ -220,7 +220,7 @@ public class Users extends MAController {
 					experimentList, user, loggedInUser, form));
 		} else {
 			// Update password hash in DB
-			user.changePasswordHash(newPasswordHash);
+			user.setPasswordHash(newPasswordHash);
 			user.merge();
 			return redirect(routes.Users.index(email));
 		}

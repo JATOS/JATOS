@@ -17,7 +17,7 @@
 	}
 
 	@for(member <- experiment.getMemberList()) {
-		<p class="owner"> @member.name (@member.email)</p>
+		<p class="owner"> @member.getName() (@member.getEmail())</p>
 	}
 
 	<div class="folder" data-folder-id="@experiment.getId()">

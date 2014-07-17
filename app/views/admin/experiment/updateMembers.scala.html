@@ -22,7 +22,7 @@
 				}
 				
 				@for(user <- userList) {
-					<input type="checkbox" name="@Experiments.USER" value="@user.email" 
+					<input type="checkbox" name="@Experiments.USER" value="@user.getEmail()" 
 					@if(experiment.hasMember(user)) {
 						checked
 					}

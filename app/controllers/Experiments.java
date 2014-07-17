@@ -189,8 +189,9 @@ public class Experiments extends MAController {
 			return badRequest(experimentNotExist(experimentId));
 		}
 		if (!experiment.hasMember(loggedInUser)) {
-			return forbidden(notMember(loggedInUser.name, loggedInUser.email,
-					experiment.getId(), experiment.getTitle()));
+			return forbidden(notMember(loggedInUser.getName(),
+					loggedInUser.getEmail(), experiment.getId(),
+					experiment.getTitle()));
 		}
 
 		MAComponent component = MAComponent.findById(componentId);

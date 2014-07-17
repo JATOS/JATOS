@@ -85,7 +85,7 @@ public class MAController extends Controller {
 
 	public static Result forbiddenNotMember(MAUser user,
 			MAExperiment experiment, List<MAExperiment> experimentList) {
-		String errorMsg = notMember(user.name, user.email, experiment.getId(),
+		String errorMsg = notMember(user.getName(), user.getEmail(), experiment.getId(),
 				experiment.getTitle());
 		List<MAUser> userList = MAUser.findAll();
 		return forbidden(views.html.admin.index.render(experimentList,

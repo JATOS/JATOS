@@ -19,15 +19,15 @@ import play.db.jpa.JPA;
 public class MAUser {
 
 	@Id
-	public String email;
+	private String email;
 
-	public String name;
+	private String name;
 
 	// Password is stored as a hash
-	public String passwordHash;
+	private String passwordHash;
 
 	@ManyToMany(mappedBy = "memberList", fetch=FetchType.LAZY)
-	public Set<MAExperiment> experimentList = new HashSet<MAExperiment>();
+	private Set<MAExperiment> experimentList = new HashSet<MAExperiment>();
 
 	public MAUser(String email, String name, String passwordHash) {
 		this.email = email;
@@ -42,10 +42,38 @@ public class MAUser {
 		this.name = name;
 	}
 	
-	public void changePasswordHash(String passwordHash) {
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	
+	public String getEmail() {
+		return this.email;
+	}
+	
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	public String getName() {
+		return this.name;
+	}
+	
+	public void setPasswordHash(String passwordHash) {
 		this.passwordHash = passwordHash;
 	}
+	
+	public String getPasswordHash() {
+		return this.passwordHash;
+	}
+	
+	public void setExperimentList(Set<MAExperiment> experimentList) {
+		this.experimentList = experimentList;
+	}
 
+	public Set<MAExperiment> getExperimentList() {
+		return this.experimentList;
+	}
+	
 	@Override
 	public String toString() {
 		return name + ", " + email;

@@ -16,22 +16,22 @@
 		<p class="error">@errorMsg</p>
 	}
 
-	<a id="newGroup" href="@routes.Users.update(user.email)">Update</a>
-	<a id="newGroup" href="@routes.Users.changePassword(user.email)">Change password</a>
+	<a id="newGroup" href="@routes.Users.update(user.getEmail())">Update</a>
+	<a id="newGroup" href="@routes.Users.changePassword(user.getEmail())">Change password</a>
 
-	<div class="folder" data-folder-id="@user.email">
+	<div class="folder" data-folder-id="@user.getEmail()">
 		<header>
 			<h3>Member in Experiments</h3>
 		</header>
 
 		<ul class="list">
-			@if(user.experimentList.isEmpty()) {
+			@if(user.getExperimentList().isEmpty()) {
 				<li>
 					<p class="name">None</p>
 				</li>
 			}
 		
-			@for(experiment <- user.experimentList) {
+			@for(experiment <- user.getExperimentList()) {
 				<li data-task-id="@experiment.getId()">
 					<a class="name"
 							href="@routes.Experiments.index(experiment.getId())">

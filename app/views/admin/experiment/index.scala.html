@@ -16,7 +16,7 @@
 	}
 
 	@for(member <- experiment.getMemberList()) {
-		<p class="owner"> @member.name (@member.email)</p>
+		<p class="owner"> @member.getName() (@member.getEmail())</p>
 	}
 	<input id="newGroup" type="button" onClick="tryExperiment()"
 		value="Try">

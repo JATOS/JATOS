@@ -196,13 +196,13 @@ public class Publix extends Controller {
 
 		// Put result into DATA state
 		MAResult result = worker.getCurrentResult(component);
-		if (result.state != State.STARTED && !component.isReloadable()) {
+		if (result.getState() != State.STARTED && !component.isReloadable()) {
 			// If someone tries to reload a not reloadable component end the
 			// experiment
 			endExperiment(worker, experiment, false);
 			return forbidden(reloadNotAllowed(experimentId, componentId));
 		}
-		result.state = State.DATA;
+		result.setState(State.DATA);
 		result.merge();
 
 		// return component as JSON
@@ -241,28 +241,28 @@ public class Publix extends Controller {
 			return forbidden(errorMsg);
 		}
 
-		// Get result in format JSON, text or XML and convert to String
-		String resultStr = getResultAsString();
-		if (resultStr == null) {
-			return badRequest(submittedResultUnknownFormat(experimentId,
+		// Get data in format JSON, text or XML and convert to String
+		String data = getDataAsString();
+		if (data == null) {
+			return badRequest(submittedDataUnknownFormat(experimentId,
 					componentId));
 		}
 
 		// End component
 		MAResult result = worker.getCurrentResult(component);
-		if (result == null || result.state == State.DONE) {
+		if (result == null || result.getState() == State.DONE) {
 			// If component was never started (result==null) or it's already
 			// finished (state==DONE) return a HTTP 403
 			return forbidden(workerNotAllowedComponent(workerId, experimentId,
 					componentId));
 		}
-		endComponent(result, resultStr, component, worker);
+		endComponent(result, data, component, worker);
 
 		// Conveniently send the URL of the next component (or end page)
 		return okNextComponentUrl(experiment, component);
 	}
 
-	private static String getResultAsString() {
+	private static String getDataAsString() {
 		String text = request().body().asText();
 		if (text != null) {
 			return text;
@@ -284,10 +284,10 @@ public class Publix extends Controller {
 	/**
 	 * Put result into state DONE, persist and remove from worker
 	 */
-	private static void endComponent(MAResult result, String resultStr,
+	private static void endComponent(MAResult result, String data,
 			MAComponent component, MAWorker worker) {
-		result.data = resultStr;
-		result.state = State.DONE;
+		result.setData(data);
+		result.setState(State.DONE);
 		result.merge();
 		worker.removeCurrentComponent(component);
 		worker.merge();
@@ -327,7 +327,7 @@ public class Publix extends Controller {
 
 		// End component
 		MAResult result = worker.getCurrentResult(component);
-		if (result == null || result.state == State.DONE) {
+		if (result == null || result.getState() == State.DONE) {
 			// If component was never started (result==null) or it's already
 			// finished (state==DONE) return a HTTP 403
 			return forbidden(workerNotAllowedComponent(workerId, experimentId,
@@ -631,9 +631,9 @@ public class Publix extends Controller {
 		return errorMsg;
 	}
 
-	private static String submittedResultUnknownFormat(Long experimentId,
+	private static String submittedDataUnknownFormat(Long experimentId,
 			Long componentId) {
-		String errorMsg = "Unknown format of submitted result for component + "
+		String errorMsg = "Unknown format of submitted data for component + "
 				+ componentId + "of experiment " + experimentId + ".";
 		Logger.info(errorMsg);
 		return errorMsg;

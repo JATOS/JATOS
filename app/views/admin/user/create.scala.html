@@ -27,7 +27,7 @@
 				}
 				<input type="text" name="@Users.NAME" class="formTop" placeholder="Name" value="@form(Users.NAME).value">
 
-				@for(error <- form("email").errors) {
+				@for(error <- form(Users.EMAIL).errors) {
 					<p class="error">@error.message</p>
 				}
 				<input type="email" name="@Users.EMAIL" class="formMiddle" placeholder="Email" value="@form(Users.EMAIL).value">
