@@ -49,20 +49,20 @@ public class MAWorker {
 	}
 
 	public boolean hasCurrentComponent(MAComponent component) {
-		return currentComponentMap.containsKey(component.id);
+		return currentComponentMap.containsKey(component.getId());
 	}
 
 	public MAResult getCurrentResult(MAComponent component) {
-		Long resultId = currentComponentMap.get(component.id);
+		Long resultId = currentComponentMap.get(component.getId());
 		return MAResult.findById(resultId);
 	}
 
 	public void addCurrentComponent(MAComponent component, MAResult result) {
-		currentComponentMap.put(component.id, result.id);
+		currentComponentMap.put(component.getId(), result.id);
 	}
 
 	public void removeCurrentComponent(MAComponent component) {
-		currentComponentMap.remove(component.id);
+		currentComponentMap.remove(component.getId());
 	}
 
 	/**

@@ -55,11 +55,11 @@ public class Components extends MAController {
 			return forbiddenNotMember(user, experiment, experimentList);
 		}
 
-		if (component.viewUrl == null || component.viewUrl.isEmpty()) {
+		if (component.getViewUrl() == null || component.getViewUrl().isEmpty()) {
 			return badRequestUrlViewEmpty(user, experiment, component,
 					experimentList);
 		}
-		return redirect(component.viewUrl);
+		return redirect(component.getViewUrl());
 	}
 
 	@Transactional
@@ -102,7 +102,7 @@ public class Components extends MAController {
 			MAComponent component = form.get();
 			addComponent(experiment, component);
 			return redirect(routes.Components
-					.index(experiment.id, component.id));
+					.index(experiment.getId(), component.getId()));
 		}
 	}
 
@@ -157,7 +157,7 @@ public class Components extends MAController {
 		boolean reloadable = (requestData.get(RELOADABLE) != null);
 		component.update(title, reloadable, viewUrl, jsonData);
 		component.merge();
-		return redirect(routes.Components.index(experiment.id, componentId));
+		return redirect(routes.Components.index(experiment.getId(), componentId));
 	}
 
 	@Transactional
@@ -177,7 +177,7 @@ public class Components extends MAController {
 		}
 
 		removeComponent(experiment, component);
-		return redirect(routes.Experiments.index(experiment.id));
+		return redirect(routes.Experiments.index(experiment.getId()));
 	}
 
 	@Transactional
@@ -225,7 +225,7 @@ public class Components extends MAController {
 			}
 		}
 
-		return redirect(routes.Components.index(experiment.id, componentId));
+		return redirect(routes.Components.index(experiment.getId(), componentId));
 	}
 
 	private static void removeResult(String resultIdStr, MAComponent component) {
@@ -244,7 +244,7 @@ public class Components extends MAController {
 
 	private static void addComponent(MAExperiment experiment,
 			MAComponent component) {
-		component.experiment = experiment;
+		component.setExperiment(experiment);
 		experiment.addComponent(component);
 		component.persist();
 		experiment.merge();
@@ -271,7 +271,7 @@ public class Components extends MAController {
 			return badRequestComponentNotExist(componentId, experiment, user,
 					experimentList);
 		}
-		if (component.experiment.id != experiment.id) {
+		if (!component.getExperiment().getId().equals(experiment.getId())) {
 			return badRequestComponentNotBelongToExperiment(experiment,
 					component, user, experimentList);
 		}

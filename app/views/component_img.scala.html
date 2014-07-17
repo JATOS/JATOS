@@ -19,7 +19,7 @@
 		var lostFocus = false;
 		
 		// The componentResult will be sent back to the server
-		var componentResult = {id:component.id, slideResultList:[]};
+		var componentResult = {id:component.getId(), slideResultList:[]};
 		function SlideResult (duration, keycode, lostFocus) {
 			this.duration = duration;
 			this.keycode = keycode;
@@ -82,7 +82,7 @@
 			var componentResultJson = JSON.stringify(componentResult);
 			
 			var ajax = $.ajax({
-				url: "/component/" + component.id,
+				url: "/component/" + component.getId(),
 				data: componentResultJson,
 				processData: false,
 				type: "POST",

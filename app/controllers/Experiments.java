@@ -58,7 +58,7 @@ public class Experiments extends MAController {
 			MAExperiment experiment = form.get();
 			experiment.addMember(user);
 			experiment.persist();
-			return redirect(routes.Experiments.index(experiment.id));
+			return redirect(routes.Experiments.index(experiment.getId()));
 		}
 	}
 
@@ -163,7 +163,7 @@ public class Experiments extends MAController {
 					experimentList, experiment, userList, loggedInUser,
 					errorMsg));
 		}
-		experiment.memberList.clear();
+		experiment.getMemberList().clear();
 		for (String email : checkedUsers) {
 			MAUser user = MAUser.findByEmail(email);
 			if (user != null) {
@@ -190,7 +190,7 @@ public class Experiments extends MAController {
 		}
 		if (!experiment.hasMember(loggedInUser)) {
 			return forbidden(notMember(loggedInUser.name, loggedInUser.email,
-					experiment.id, experiment.title));
+					experiment.getId(), experiment.getTitle()));
 		}
 
 		MAComponent component = MAComponent.findById(componentId);

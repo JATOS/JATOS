@@ -68,8 +68,8 @@ public class MAController extends Controller {
 	public static Result badRequestComponentNotBelongToExperiment(
 			MAExperiment experiment, MAComponent component, MAUser user,
 			List<MAExperiment> experimentList) {
-		String errorMsg = componentNotBelongToExperiment(experiment.id,
-				component.id);
+		String errorMsg = componentNotBelongToExperiment(experiment.getId(),
+				component.getId());
 		List<MAUser> userList = MAUser.findAll();
 		return badRequest(views.html.admin.index.render(experimentList,
 				userList, errorMsg, user));
@@ -85,8 +85,8 @@ public class MAController extends Controller {
 
 	public static Result forbiddenNotMember(MAUser user,
 			MAExperiment experiment, List<MAExperiment> experimentList) {
-		String errorMsg = notMember(user.name, user.email, experiment.id,
-				experiment.title);
+		String errorMsg = notMember(user.name, user.email, experiment.getId(),
+				experiment.getTitle());
 		List<MAUser> userList = MAUser.findAll();
 		return forbidden(views.html.admin.index.render(experimentList,
 				userList, errorMsg, user));
@@ -101,7 +101,7 @@ public class MAController extends Controller {
 	public static Result badRequestUrlViewEmpty(MAUser user,
 			MAExperiment experiment, MAComponent component,
 			List<MAExperiment> experimentList) {
-		String errorMsg = urlViewEmpty(component.id);
+		String errorMsg = urlViewEmpty(component.getId());
 		List<MAUser> userList = MAUser.findAll();
 		return forbidden(views.html.admin.index.render(experimentList,
 				userList, errorMsg, user));

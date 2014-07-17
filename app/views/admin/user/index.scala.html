@@ -32,10 +32,10 @@
 			}
 		
 			@for(experiment <- user.experimentList) {
-				<li data-task-id="@experiment.id">
+				<li data-task-id="@experiment.getId()">
 					<a class="name"
-							href="@routes.Experiments.index(experiment.id)">
-							@experiment.id "@experiment.title"
+							href="@routes.Experiments.index(experiment.getId())">
+							@experiment.getId() "@experiment.getTitle()"
 					</a>
 				</li>
 			}

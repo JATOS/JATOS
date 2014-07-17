@@ -55,7 +55,7 @@ public class Publix extends Controller {
 
 		// Check for admin
 		if (adminLoggedIn(experiment)) {
-			return redirect(component.viewUrl);
+			return redirect(component.getViewUrl());
 		}
 
 		// Check Mechanical Turk assignment id
@@ -87,11 +87,11 @@ public class Publix extends Controller {
 		// Start first component
 		boolean alreadyStarted = startComponent(component, worker);
 		if (alreadyStarted) {
-			String errorMsg = componentAlreadyStarted(component.id);
+			String errorMsg = componentAlreadyStarted(component.getId());
 			return forbidden(views.html.publix.error.render(errorMsg));
 		}
 
-		return redirect(component.viewUrl);
+		return redirect(component.getViewUrl());
 	}
 
 	/**
@@ -382,10 +382,10 @@ public class Publix extends Controller {
 	private static String endExperiment(MAWorker worker,
 			MAExperiment experiment, boolean successful) {
 		String confirmationCode;
-		if (worker.finishedExperiment(experiment.id)) {
-			confirmationCode = worker.getConfirmationCode(experiment.id);
+		if (worker.finishedExperiment(experiment.getId())) {
+			confirmationCode = worker.getConfirmationCode(experiment.getId());
 		} else {
-			confirmationCode = worker.finishExperiment(experiment.id,
+			confirmationCode = worker.finishExperiment(experiment.getId(),
 					successful);
 		}
 		worker.removeCurrentComponentsForExperiment(experiment);
@@ -421,9 +421,9 @@ public class Publix extends Controller {
 			MAComponent component) {
 		MAComponent nextComponent = experiment.getNextComponent(component);
 		if (nextComponent == null) {
-			return ok(routes.Publix.endExperiment(experiment.id).url());
+			return ok(routes.Publix.endExperiment(experiment.getId()).url());
 		}
-		return ok(nextComponent.viewUrl);
+		return ok(nextComponent.getViewUrl());
 	}
 
 	/**
@@ -442,7 +442,7 @@ public class Publix extends Controller {
 			return badRequest(errorMsg);
 		}
 
-		return ok(component.viewUrl);
+		return ok(component.getViewUrl());
 	}
 
 	/**
@@ -481,7 +481,7 @@ public class Publix extends Controller {
 		if (component == null) {
 			return componentNotExist(componentId);
 		}
-		if (component.experiment.id != experimentId) {
+		if (!component.getExperiment().getId().equals(experimentId)) {
 			return componentNotBelongToExperiment(experimentId, componentId);
 		}
 		return null;

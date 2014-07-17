@@ -49,11 +49,13 @@ public class MAResult {
 	public State state;
 
 	@JsonIgnore
+	// We get it via a getter
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "component_id")
 	public MAComponent component;
 
 	@JsonIgnore
+	// We get it via a getter
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "worker_id")
 	public MAWorker worker;
@@ -72,7 +74,8 @@ public class MAResult {
 
 	@Override
 	public String toString() {
-		return id + ", " + date + ", " + component.id + ", " + worker.workerId;
+		return id + ", " + date + ", " + component.getId() + ", "
+				+ worker.workerId;
 	}
 
 	public static String asJson(MAResult result) throws JsonProcessingException {
@@ -86,7 +89,7 @@ public class MAResult {
 	@JsonProperty("componentId")
 	private Long getComponentId() {
 		if (component != null) {
-			return component.id;
+			return component.getId();
 		} else {
 			return null;
 		}
@@ -103,8 +106,8 @@ public class MAResult {
 
 	@JsonProperty("experimentId")
 	private Long getExperimentId() {
-		if (component != null && component.experiment != null) {
-			return component.experiment.id;
+		if (component != null && component.getExperiment() != null) {
+			return component.getExperiment().getId();
 		} else {
 			return null;
 		}

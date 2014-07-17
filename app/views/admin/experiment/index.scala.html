@@ -6,7 +6,7 @@
 <header>
 	<hgroup>
 		<h2>/ > </h2>
-		<h3>@experiment.id @experiment.title > </h3>
+		<h3>@experiment.getId() @experiment.getTitle() > </h3>
 	</hgroup>
 </header>
 
@@ -15,7 +15,7 @@
 		<p class="error">@errorMsg</p>
 	}
 
-	@for(member <- experiment.memberList) {
+	@for(member <- experiment.getMemberList()) {
 		<p class="owner"> @member.name (@member.email)</p>
 	}
 	<input id="newGroup" type="button" onClick="tryExperiment()"
@@ -30,9 +30,9 @@
 		value="MT Source Code">
 	<input id="newGroup" type="button" onClick="removeExperiment()"
 		value="Remove">
-	<div class="folder" data-folder-id="@experiment.id">
+	<div class="folder" data-folder-id="@experiment.getId()">
 		<header>
-			@if(experiment.componentList.isEmpty()) {
+			@if(experiment.getComponentList().isEmpty()) {
 				<h3>No components so far</h3>
 			} else {
 				<h3>Components so far</h3>
@@ -40,13 +40,13 @@
 		</header>
 
 		<ul class="list" id="componentList">
-			@for(component <- experiment.componentList) {
-				<li component-id="@component.id">
-					<p class="upArrow" component-id="@component.id">&#9650;</p>
-					<p class="downArrow" component-id="@component.id">&#9660;</p>
+			@for(component <- experiment.getComponentList()) {
+				<li component-id="@component.getId()">
+					<p class="upArrow" component-id="@component.getId()">&#9650;</p>
+					<p class="downArrow" component-id="@component.getId()">&#9660;</p>
 					<a class="name"
-							href="@routes.Components.index(experiment.id, component.id)">
-							@component.id @component.title (@component.resultList.size())
+							href="@routes.Components.index(experiment.getId(), component.getId())">
+							@component.getId() @component.getTitle() (@component.getResultList().size())
 					</a>
 				</li>
 			}
@@ -70,7 +70,7 @@
 	
 	function ajaxChangeComponentOrder(componentId, direction, componentElement) {
 		var ajax = $.ajax({
-			url: "/admin/@experiment.id/changeComponentOrder"
+			url: "/admin/@experiment.getId()/changeComponentOrder"
 				+ "?componentId=" + componentId + "&direction=" + direction,
 			type: "POST",
 			success: function(response) {
@@ -90,31 +90,31 @@
 	}
 	
 	function tryExperiment() {
-		window.location.href = "@routes.Publix.startExperiment(experiment.id)";
+		window.location.href = "@routes.Publix.startExperiment(experiment.getId())";
 	}
 
 	function addComponent() {
-		window.location.href = "@routes.Components.create(experiment.id)";
+		window.location.href = "@routes.Components.create(experiment.getId())";
 	}
 
 	function updateExperiment() {
-		window.location.href = "@routes.Experiments.update(experiment.id)";
+		window.location.href = "@routes.Experiments.update(experiment.getId())";
 	}
 	
 	function updateMembers() {
-		window.location.href = "@routes.Experiments.updateMembers(experiment.id)";
+		window.location.href = "@routes.Experiments.updateMembers(experiment.getId())";
 	}
 	
 	function showMTurkSourceCode() {
-		window.location.href = "@routes.Experiments.showMTurkSourceCode(experiment.id)";
+		window.location.href = "@routes.Experiments.showMTurkSourceCode(experiment.getId())";
 	}
 
 	function removeExperiment() {
 		var conf = confirm("Are you sure you want to remove experiment "
-				+ "@experiment.id" + "\u00a0" + "\"@Html(experiment.title)\"?");
+				+ "@experiment.getId()" + "\u00a0" + "\"@Html(experiment.getTitle())\"?");
 		if (conf == true) {
 			$.ajax({
-				url : '@routes.Experiments.remove(experiment.id)',
+				url : '@routes.Experiments.remove(experiment.getId())',
 				type : 'DELETE',
 				success : function(result) {
 					window.location.replace('@routes.Admin.index()');

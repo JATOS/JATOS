@@ -1,13 +1,11 @@
 package models;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -18,12 +16,12 @@ import javax.persistence.OneToMany;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
+import play.Logger;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,53 +41,102 @@ public class MAComponent {
 	@Id
 	@GeneratedValue
 	@JsonView(MAComponent.Public.class)
-	public Long id;
+	private Long id;
 
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "experiment_id")
-	public MAExperiment experiment;
+	private MAExperiment experiment;
 
 	@JsonView(MAComponent.Public.class)
-	public String title;
+	private String title;
 
+	/**
+	 * Timestamp of the creation or the last update of this component
+	 */
 	@JsonView(MAComponent.Admin.class)
-	public Timestamp date;
+	private Timestamp date;
 
 	@JsonView(MAComponent.Public.class)
-	public String viewUrl; // URL or local path
-	
-	@JsonView(MAComponent.Public.class)
-	public boolean reloadable;
+	private String viewUrl; // URL or local path
 
 	@JsonView(MAComponent.Public.class)
-	public String jsonData;
+	private boolean reloadable;
+
+	@JsonView(MAComponent.Public.class)
+	private String jsonData;
 
 	@JsonView(MAComponent.Admin.class)
 	@OneToMany(mappedBy = "component", fetch = FetchType.LAZY)
-	public List<MAResult> resultList = new ArrayList<MAResult>();
+	private List<MAResult> resultList = new ArrayList<MAResult>();
 
 	public MAComponent() {
 	}
-	
-	public void update(String title, boolean reloadable, String viewUrl, String jsonData) {
+
+	public void update(String title, boolean reloadable, String viewUrl,
+			String jsonData) {
 		this.title = title;
 		this.reloadable = reloadable;
 		this.viewUrl = viewUrl;
 		setJsonData(jsonData);
 	}
+	
+	public void setId(Long id) {
+		this.id = id;
+	}
+	
+	public Long getId() {
+		return this.id;
+	}
+	
+	public void setExperiment(MAExperiment experiment) {
+		this.experiment = experiment;
+	}
+	
+	public MAExperiment getExperiment() {
+		return this.experiment;
+	}
+	
+	public void setTitle(String title) {
+		this.title = title;
+	}
+	
+	public String getTitle() {
+		return this.title;
+	}
+	
+	public void setDate(Timestamp date) {
+		this.date = date;
+	}
+	
+	public Timestamp getDate() {
+		return this.date;
+	}
+	
+	public void setViewUrl(String viewUrl) {
+		this.viewUrl = viewUrl;
+	}
+	
+	public String getViewUrl() {
+		return this.viewUrl;
+	}
 
 	public String getJsonData() {
-		ObjectMapper mapper = new ObjectMapper();
-		String jsonData = null;
-		try {
-			Object json = mapper.readValue(this.jsonData, Object.class);
-			jsonData = mapper.writerWithDefaultPrettyPrinter()
-					.writeValueAsString(json);
-		} catch (IOException e) {
-			e.printStackTrace();
+		if (this.jsonData == null) {
+			return null;
 		}
-		return jsonData;
+		
+		// Try to make it pretty
+		String jsonDataPretty = null;
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			Object json = mapper.readValue(this.jsonData, Object.class);
+			jsonDataPretty = mapper.writerWithDefaultPrettyPrinter()
+					.writeValueAsString(json);
+		} catch (Exception e) {
+			Logger.info("getJsonData: ", e);
+		}
+		return jsonDataPretty;
 	}
 
 	public void setJsonData(String jsonData) {
@@ -100,14 +147,16 @@ public class MAComponent {
 			ObjectMapper mapper = new ObjectMapper();
 			this.jsonData = mapper.readTree(jsonData).toString();
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.info("setJsonData: ", e);
 		}
 	}
 	
-	@JsonIgnore
-	@Column(name = "relaodable")
-	public boolean isReloadable() {
-		return reloadable;
+	public void setResultList(List<MAResult> resultList) {
+		this.resultList = resultList;
+	}
+	
+	public List<MAResult> getResultList() {
+		return this.resultList;
 	}
 	
 	public void addResult(MAResult result) {
@@ -118,6 +167,14 @@ public class MAComponent {
 		resultList.remove(result);
 	}
 
+	public boolean isReloadable() {
+		return reloadable;
+	}
+	
+	public void setReloadable(boolean reloadable) {
+		this.reloadable = reloadable;
+	}
+
 	public static boolean isValidJSON(final String json) {
 		boolean valid = false;
 		try {
@@ -126,12 +183,10 @@ public class MAComponent {
 			while (parser.nextToken() != null) {
 			}
 			valid = true;
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			Logger.info("isValidJSON: ", e);
+			valid = false;
 		}
-
 		return valid;
 	}
 
@@ -174,7 +229,7 @@ public class MAComponent {
 	public String toString() {
 		return id + " " + title;
 	}
-	
+
 	public static String asJsonForPublic(MAComponent component)
 			throws JsonProcessingException {
 		// Serialize MAComponent into JSON (only the public part)

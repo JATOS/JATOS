@@ -6,7 +6,7 @@
 	<header>
 		<hgroup>
 			<h2>/ > </h2>
-			<h2>@experiment.id @experiment.title > </h2>
+			<h2>@experiment.getId() @experiment.getTitle() > </h2>
 			<h4>New Component > </h4>
 		</hgroup>
 	</header>
@@ -14,7 +14,7 @@
 	<article class="tasks" id="tasks">
 		<div class="folder">
 		
-			@helper.form(action = routes.Components.submit(experiment.id), 'class -> "addTask") {
+			@helper.form(action = routes.Components.submit(experiment.getId()), 'class -> "addTask") {
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message

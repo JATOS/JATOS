@@ -6,7 +6,7 @@
 	<header>
 		<hgroup>
 			<h2>/ > </h2>
-			<h3>@experiment.id @experiment.title > </h3>
+			<h3>@experiment.getId() @experiment.getTitle() > </h3>
 			<h4>Update Members > </h4>
 		</hgroup>
 	</header>
@@ -14,7 +14,7 @@
 	<article class="tasks" id="tasks">
 		<div class="folder">
 		
-			@helper.form(action = routes.Experiments.submitUpdatedMembers(experiment.id), 'class -> "addTask") {
+			@helper.form(action = routes.Experiments.submitUpdatedMembers(experiment.getId()), 'class -> "addTask") {
 				@if(formError != null) {
 					<p class="error">
 						@formError
