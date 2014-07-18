@@ -2,10 +2,10 @@
 
 <html>
 <head>
-<title>Eli's confidence experiment - experiment</title>
+<title>Eli's confidence study - practice</title>
 <link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
 <link rel="stylesheet" href="/assets/stylesheets/jquery-ui-1.10.4.custom.min.css"/>
-<link rel="stylesheet" href="/experiments/elis_confidence_exp/experiment.css"/>
+<link rel="stylesheet" href="/studies/elis_confidence_exp/study.css"/>
 <script src="/assets/javascripts/jquery-1.10.2.js"></script>
 <script src="/assets/javascripts/jquery-ui-1.10.4.custom.min.js"></script>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -39,8 +39,8 @@
 	</div>
 
 	<script>
-		var experimentId = 1;
-		var componentId = 46;
+		var studyId = 1;
+		var componentId = 48;
 		var componentData;
 		var jsonData;
 		var slideList;
@@ -66,7 +66,7 @@
 			if (!checkBrowser()) {
 				return;
 			}
-			getComponentData(experimentId, componentId);
+			getComponentData(studyId, componentId);
 		});
 		
 		// If the user leaves the browser's tab set lostFocus to true
@@ -121,10 +121,10 @@
 			endConfidenceState();
 		});
 		
-		function getComponentData(experimentId, componentId) {
+		function getComponentData(studyId, componentId) {
 			currentComponentState = componentState.WAITING;
 			$.ajax({
-				url: "/ma/" + experimentId + "/" + componentId,
+				url: "/ma/" + studyId + "/" + componentId,
 				type: "GET",
 				dataType: 'json',
 				success: function(response) {
@@ -142,7 +142,7 @@
 			componentData = response;
 			jsonData = $.parseJSON(componentData.jsonData);
 			slideList = jsonData.slideList;
-			componentResult = {experimentId:experimentId, 
+			componentResult = {studyId:studyId, 
 					componentId:componentId, slideResultList:[]};
 			document.title = componentData.title;
 			displaySlide();
@@ -227,16 +227,12 @@
 			}
 		}
 		
-		// Post results back to the server and move to the next component
+		// Get next component's URL and move to it
 		function endComponentAndNext() {
-			currentComponentState = componentState.WAITING;
-			var componentResultJson = JSON.stringify(componentResult);
+			var nextComponentId = 46;
 			var ajax = $.ajax({
-				url: "/ma/" + experimentId + "/" + componentId,
-				data: componentResultJson,
-				processData: false,
-				type: "POST",
-				contentType: "application/json",
+				url: "/ma/" + studyId + "/" + nextComponentId + "/url",
+				type: "GET",
 				success: function(url) {
 					if (url) {
 						window.location.assign(url);

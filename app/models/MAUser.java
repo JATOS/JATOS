@@ -27,7 +27,7 @@ public class MAUser {
 	private String passwordHash;
 
 	@ManyToMany(mappedBy = "memberList", fetch=FetchType.LAZY)
-	private Set<MAExperiment> experimentList = new HashSet<MAExperiment>();
+	private Set<MAStudy> studyList = new HashSet<MAStudy>();
 
 	public MAUser(String email, String name, String passwordHash) {
 		this.email = email;
@@ -66,12 +66,12 @@ public class MAUser {
 		return this.passwordHash;
 	}
 	
-	public void setExperimentList(Set<MAExperiment> experimentList) {
-		this.experimentList = experimentList;
+	public void setStudyList(Set<MAStudy> studyList) {
+		this.studyList = studyList;
 	}
 
-	public Set<MAExperiment> getExperimentList() {
-		return this.experimentList;
+	public Set<MAStudy> getStudyList() {
+		return this.studyList;
 	}
 	
 	@Override

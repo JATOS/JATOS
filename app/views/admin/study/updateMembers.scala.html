@@ -1,12 +1,12 @@
-@(experimentList: List[MAExperiment], experiment: MAExperiment,
+@(studyList: List[MAStudy], study: MAStudy,
 	userList: List[MAUser], loggedInUser: MAUser, formError: String)
 
-@admin.main(experimentList, loggedInUser){
+@admin.main(studyList, loggedInUser){
 
 	<header>
 		<hgroup>
 			<h2>/ > </h2>
-			<h3>@experiment.getId() @experiment.getTitle() > </h3>
+			<h3>@study.getId() @study.getTitle() > </h3>
 			<h4>Update Members > </h4>
 		</hgroup>
 	</header>
@@ -14,7 +14,7 @@
 	<article class="tasks" id="tasks">
 		<div class="folder">
 		
-			@helper.form(action = routes.Experiments.submitUpdatedMembers(experiment.getId()), 'class -> "addTask") {
+			@helper.form(action = routes.Studies.submitUpdatedMembers(study.getId()), 'class -> "addTask") {
 				@if(formError != null) {
 					<p class="error">
 						@formError
@@ -22,8 +22,8 @@
 				}
 				
 				@for(user <- userList) {
-					<input type="checkbox" name="@Experiments.USER" value="@user.getEmail()" 
-					@if(experiment.hasMember(user)) {
+					<input type="checkbox" name="@Studies.USER" value="@user.getEmail()" 
+					@if(study.hasMember(user)) {
 						checked
 					}
 					>@user.toString()<br>

@@ -1,0 +1,40 @@
+@(studyList: List[MAStudy], study: MAStudy,
+	user: MAUser, form: Form[MAStudy])
+
+@admin.main(studyList, user){
+
+	<header>
+		<hgroup>
+			<h2>/ > </h2>
+			<h3>@study.getId() @study.getTitle() > </h3>
+			<h4>Update > </h4>
+		</hgroup>
+	</header>
+
+	<article class="tasks" id="tasks">
+		<div class="folder">
+		
+			@helper.form(action = routes.Studies.submitUpdated(study.getId()), 'class -> "addTask") {
+				@if(form.hasGlobalErrors) {
+					<p class="error">
+						@form.globalError.message
+					</p>
+				}
+				@for(error <- form(Studies.TITLE).errors) {
+					<p class="error">@error.message</p>
+				}
+				<input name="@Studies.TITLE" type="text" class="formTop" placeholder="Title" value="@form(Studies.TITLE).value">
+				
+				@for(error <- form(Studies.DESCRIPTION).errors) {
+					<p class="error">@error.message</p>
+				}
+				<textarea name="@Studies.DESCRIPTION" class="formDescription" rows="3"
+					placeholder="Description"
+					>@form(Studies.DESCRIPTION).value</textarea>
+				
+				<button id="newGroup" type="submit">Update</button>
+			}
+		</div>
+	</article>
+
+}

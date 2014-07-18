@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import models.MAComponent;
-import models.MAExperiment;
+import models.MAStudy;
 import models.MAResult;
 import models.MAUser;
 import play.data.DynamicForm;
@@ -23,130 +23,140 @@ public class Components extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result index(Long experimentId, Long componentId) {
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+	public static Result index(Long studyId, Long componentId) {
+		MAStudy study = MAStudy.findById(studyId);
+		MAUser loggedInUser = MAUser
+				.findByEmail(session(MAController.COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		Result result = checkStandard(experimentId, componentId, experiment,
-				experimentList, user, component);
+		List<MAStudy> studyList = MAStudy.findAll();
+		Result result = checkStandard(studyId, componentId, study,
+				studyList, loggedInUser, component);
 		if (result != null) {
 			return result;
 		}
 
-		return ok(views.html.admin.component.index.render(experimentList,
-				experiment, null, user, component));
+		return ok(views.html.admin.component.index.render(studyList,
+				study, null, loggedInUser, component));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result tryComponent(Long experimentId, Long componentId) {
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+	public static Result tryComponent(Long studyId, Long componentId) {
+		MAStudy study = MAStudy.findById(studyId);
+		MAUser loggedInUser = MAUser
+				.findByEmail(session(MAController.COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		Result result = checkStandard(experimentId, componentId, experiment,
-				experimentList, user, component);
+		List<MAStudy> studyList = MAStudy.findAll();
+		Result result = checkStandard(studyId, componentId, study,
+				studyList, loggedInUser, component);
 		if (result != null) {
 			return result;
 		}
-		
-		if (!experiment.hasMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+
+		if (!study.hasMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
 		if (component.getViewUrl() == null || component.getViewUrl().isEmpty()) {
-			return badRequestUrlViewEmpty(user, experiment, component,
-					experimentList);
+			return badRequestUrlViewEmpty(loggedInUser, study, component,
+					studyList);
 		}
 		return redirect(component.getViewUrl());
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result create(Long experimentId) {
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId, user,
-					experimentList);
+	public static Result create(Long studyId) {
+		MAStudy study = MAStudy.findById(studyId);
+		MAUser loggedInUser = MAUser
+				.findByEmail(session(MAController.COOKIE_EMAIL));
+		List<MAStudy> studyList = MAStudy.findAll();
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
 		}
-		if (!experiment.hasMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		if (study == null) {
+			return badRequestStudyNotExist(studyId, loggedInUser,
+					studyList);
+		}
+		if (!study.hasMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
-		return ok(views.html.admin.component.create.render(experimentList,
-				experiment, user, Form.form(MAComponent.class)));
+		return ok(views.html.admin.component.create.render(studyList,
+				study, loggedInUser, Form.form(MAComponent.class)));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submit(Long experimentId) {
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId, user,
-					experimentList);
+	public static Result submit(Long studyId) {
+		MAStudy study = MAStudy.findById(studyId);
+		List<MAStudy> studyList = MAStudy.findAll();
+		MAUser loggedInUser = MAUser
+				.findByEmail(session(MAController.COOKIE_EMAIL));
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
 		}
-		if (!experiment.hasMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		if (study == null) {
+			return badRequestStudyNotExist(studyId, loggedInUser,
+					studyList);
+		}
+		if (!study.hasMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(views.html.admin.component.create.render(
-					experimentList, experiment, user, form));
+					studyList, study, loggedInUser, form));
 		} else {
 			MAComponent component = form.get();
-			addComponent(experiment, component);
-			return redirect(routes.Components
-					.index(experiment.getId(), component.getId()));
+			addComponent(study, component);
+			return redirect(routes.Components.index(study.getId(),
+					component.getId()));
 		}
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result update(Long experimentId, Long componentId) {
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+	public static Result update(Long studyId, Long componentId) {
+		MAStudy study = MAStudy.findById(studyId);
+		List<MAStudy> studyList = MAStudy.findAll();
+		MAUser loggedInUser = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		Result result = checkStandard(experimentId, componentId, experiment,
-				experimentList, user, component);
+		Result result = checkStandard(studyId, componentId, study,
+				studyList, loggedInUser, component);
 		if (result != null) {
 			return result;
 		}
-		if (!experiment.hasMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		if (!study.hasMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).fill(component);
-		return ok(views.html.admin.component.update.render(experimentList,
-				component, experiment, user, form));
+		return ok(views.html.admin.component.update.render(studyList,
+				component, study, loggedInUser, form));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitUpdated(Long experimentId, Long componentId) {
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+	public static Result submitUpdated(Long studyId, Long componentId) {
+		MAStudy study = MAStudy.findById(studyId);
+		List<MAStudy> studyList = MAStudy.findAll();
+		MAUser loggedInUser = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		Result result = checkStandard(experimentId, componentId, experiment,
-				experimentList, user, component);
+		Result result = checkStandard(studyId, componentId, study,
+				studyList, loggedInUser, component);
 		if (result != null) {
 			return result;
 		}
-		if (!experiment.hasMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		if (!study.hasMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(views.html.admin.component.update.render(
-					experimentList, component, experiment, user, form));
+					studyList, component, study, loggedInUser, form));
 		}
 
 		// Update component in DB
@@ -157,64 +167,65 @@ public class Components extends MAController {
 		boolean reloadable = (requestData.get(RELOADABLE) != null);
 		component.update(title, reloadable, viewUrl, jsonData);
 		component.merge();
-		return redirect(routes.Components.index(experiment.getId(), componentId));
+		return redirect(routes.Components
+				.index(study.getId(), componentId));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result remove(Long experimentId, Long componentId) {
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+	public static Result remove(Long studyId, Long componentId) {
+		MAStudy study = MAStudy.findById(studyId);
+		List<MAStudy> studyList = MAStudy.findAll();
+		MAUser loggedInUser = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		Result result = checkStandard(experimentId, componentId, experiment,
-				experimentList, user, component);
+		Result result = checkStandard(studyId, componentId, study,
+				studyList, loggedInUser, component);
 		if (result != null) {
 			return result;
 		}
-		if (!experiment.hasMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		if (!study.hasMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
-		removeComponent(experiment, component);
-		return redirect(routes.Experiments.index(experiment.getId()));
+		removeComponent(study, component);
+		return redirect(routes.Studies.index(study.getId()));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result removeResults(Long experimentId, Long componentId) {
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+	public static Result removeResults(Long studyId, Long componentId) {
+		MAStudy study = MAStudy.findById(studyId);
+		List<MAStudy> studyList = MAStudy.findAll();
+		MAUser loggedInUser = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		Result result = checkStandard(experimentId, componentId, experiment,
-				experimentList, user, component);
+		Result result = checkStandard(studyId, componentId, study,
+				studyList, loggedInUser, component);
 		if (result != null) {
 			return result;
 		}
-		if (!experiment.hasMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		if (!study.hasMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
 		return ok(views.html.admin.component.removeResults.render(
-				experimentList, component, experiment, user));
+				studyList, component, study, loggedInUser));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitRemovedResults(Long experimentId,
+	public static Result submitRemovedResults(Long studyId,
 			Long componentId) {
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		List<MAExperiment> experimentList = MAExperiment.findAll();
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+		MAStudy study = MAStudy.findById(studyId);
+		List<MAStudy> studyList = MAStudy.findAll();
+		MAUser loggedInUser = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
 		MAComponent component = MAComponent.findById(componentId);
-		Result result = checkStandard(experimentId, componentId, experiment,
-				experimentList, user, component);
+		Result result = checkStandard(studyId, componentId, study,
+				studyList, loggedInUser, component);
 		if (result != null) {
 			return result;
 		}
-		if (!experiment.hasMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		if (!study.hasMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
@@ -225,7 +236,8 @@ public class Components extends MAController {
 			}
 		}
 
-		return redirect(routes.Components.index(experiment.getId(), componentId));
+		return redirect(routes.Components
+				.index(study.getId(), componentId));
 	}
 
 	private static void removeResult(String resultIdStr, MAComponent component) {
@@ -242,38 +254,41 @@ public class Components extends MAController {
 		}
 	}
 
-	private static void addComponent(MAExperiment experiment,
+	private static void addComponent(MAStudy study,
 			MAComponent component) {
-		component.setExperiment(experiment);
-		experiment.addComponent(component);
+		component.setStudy(study);
+		study.addComponent(component);
 		component.persist();
-		experiment.merge();
+		study.merge();
 	}
 
-	private static void removeComponent(MAExperiment experiment,
+	private static void removeComponent(MAStudy study,
 			MAComponent component) {
 		component.remove();
-		experiment.removeComponent(component);
-		experiment.merge();
+		study.removeComponent(component);
+		study.merge();
 	}
 
-	private static Result checkStandard(Long experimentId, Long componentId,
-			MAExperiment experiment, List<MAExperiment> experimentList,
-			MAUser user, MAComponent component) {
-		if (experiment == null) {
-			return badRequestExperimentNotExist(experimentId, user,
-					experimentList);
+	private static Result checkStandard(Long studyId, Long componentId,
+			MAStudy study, List<MAStudy> studyList,
+			MAUser loggedInUser, MAComponent component) {
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
 		}
-		if (!experiment.hasMember(user)) {
-			return forbiddenNotMember(user, experiment, experimentList);
+		if (study == null) {
+			return badRequestStudyNotExist(studyId, loggedInUser,
+					studyList);
+		}
+		if (!study.hasMember(loggedInUser)) {
+			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 		if (component == null) {
-			return badRequestComponentNotExist(componentId, experiment, user,
-					experimentList);
+			return badRequestComponentNotExist(componentId, study,
+					loggedInUser, studyList);
 		}
-		if (!component.getExperiment().getId().equals(experiment.getId())) {
-			return badRequestComponentNotBelongToExperiment(experiment,
-					component, user, experimentList);
+		if (!component.getStudy().getId().equals(study.getId())) {
+			return badRequestComponentNotBelongToStudy(study,
+					component, loggedInUser, studyList);
 		}
 		return null;
 	}

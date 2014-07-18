@@ -1,7 +1,7 @@
-@(experimentList: List[MAExperiment], loggedInUser: MAUser, errorMsg: String,
+@(studyList: List[MAStudy], loggedInUser: MAUser, errorMsg: String,
 	user: MAUser)
 
-@admin.main(experimentList, loggedInUser){
+@admin.main(studyList, loggedInUser){
 
 <header>
 	<hgroup>
@@ -21,21 +21,21 @@
 
 	<div class="folder" data-folder-id="@user.getEmail()">
 		<header>
-			<h3>Member in Experiments</h3>
+			<h3>Member in Studies</h3>
 		</header>
 
 		<ul class="list">
-			@if(user.getExperimentList().isEmpty()) {
+			@if(user.getStudyList().isEmpty()) {
 				<li>
 					<p class="name">None</p>
 				</li>
 			}
 		
-			@for(experiment <- user.getExperimentList()) {
-				<li data-task-id="@experiment.getId()">
+			@for(study <- user.getStudyList()) {
+				<li data-task-id="@study.getId()">
 					<a class="name"
-							href="@routes.Experiments.index(experiment.getId())">
-							@experiment.getId() "@experiment.getTitle()"
+							href="@routes.Studies.index(study.getId())">
+							@study.getId() "@study.getTitle()"
 					</a>
 				</li>
 			}

@@ -11,6 +11,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Query;
@@ -45,8 +46,8 @@ public class MAComponent {
 
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "experiment_id")
-	private MAExperiment experiment;
+	@JoinColumn(name = "study_id")
+	private MAStudy study;
 
 	@JsonView(MAComponent.Public.class)
 	private String title;
@@ -64,6 +65,7 @@ public class MAComponent {
 	private boolean reloadable;
 
 	@JsonView(MAComponent.Public.class)
+	@Lob
 	private String jsonData;
 
 	@JsonView(MAComponent.Admin.class)
@@ -89,12 +91,12 @@ public class MAComponent {
 		return this.id;
 	}
 	
-	public void setExperiment(MAExperiment experiment) {
-		this.experiment = experiment;
+	public void setStudy(MAStudy study) {
+		this.study = study;
 	}
 	
-	public MAExperiment getExperiment() {
-		return this.experiment;
+	public MAStudy getStudy() {
+		return this.study;
 	}
 	
 	public void setTitle(String title) {
@@ -250,7 +252,7 @@ public class MAComponent {
 	}
 
 	public static void changeComponentOrder(MAComponent component, int newIndex) {
-		String queryStr = "UPDATE MAComponent SET componentList_ORDER = "
+		String queryStr = "UPDATE MAComponent SET componentList_order = "
 				+ ":newIndex WHERE id = :id";
 		Query query = JPA.em().createQuery(queryStr);
 		query.setParameter("newIndex", newIndex);

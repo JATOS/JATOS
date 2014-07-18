@@ -1,12 +1,12 @@
-@(experimentList: List[MAExperiment], component: MAComponent,
-	experiment: MAExperiment, user: MAUser, form: Form[MAComponent])
+@(studyList: List[MAStudy], component: MAComponent,
+	study: MAStudy, user: MAUser, form: Form[MAComponent])
 
-@admin.main(experimentList, user){
+@admin.main(studyList, user){
 
 	<header>
 		<hgroup>
 			<h2>/ > </h2>
-			<h2>@experiment.getId() @experiment.getTitle() > </h2>
+			<h2>@study.getId() @study.getTitle() > </h2>
 			<h3>@form("id").value @form("title").value > </h3>
 			<h4>Update > </h4>
 		</hgroup>
@@ -15,7 +15,7 @@
 	<article class="tasks" id="tasks">
 		<div class="folder">
 		
-			@helper.form(action = routes.Components.submitUpdated(experiment.getId(), component.getId()), 'class -> "addTask") {
+			@helper.form(action = routes.Components.submitUpdated(study.getId(), component.getId()), 'class -> "addTask") {
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message

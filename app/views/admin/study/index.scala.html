@@ -1,12 +1,12 @@
-@(experimentList: List[MAExperiment], user: MAUser, errorMsg: String,
-	experiment: MAExperiment)
+@(studyList: List[MAStudy], user: MAUser, errorMsg: String,
+	study: MAStudy)
 
-@admin.main(experimentList, user){
+@admin.main(studyList, user){
 
 <header>
 	<hgroup>
 		<h2>/ > </h2>
-		<h3>@experiment.getId() @experiment.getTitle() > </h3>
+		<h3>@study.getId() @study.getTitle() > </h3>
 	</hgroup>
 </header>
 
@@ -15,24 +15,24 @@
 		<p class="error">@errorMsg</p>
 	}
 
-	@for(member <- experiment.getMemberList()) {
+	@for(member <- study.getMemberList()) {
 		<p class="owner"> @member.getName() (@member.getEmail())</p>
 	}
-	<input id="newGroup" type="button" onClick="tryExperiment()"
+	<input id="newGroup" type="button" onClick="tryStudy()"
 		value="Try">
 	<input id="newGroup" type="button" onClick="addComponent()"
 		value="Add Component">
-	<input id="newGroup" type="button" onClick="updateExperiment()"
+	<input id="newGroup" type="button" onClick="updateStudy()"
 		value="Update">
 	<input id="newGroup" type="button" onClick="updateMembers()"
 		value="Update Members">
 	<input id="newGroup" type="button" onClick="showMTurkSourceCode()"
 		value="MT Source Code">
-	<input id="newGroup" type="button" onClick="removeExperiment()"
+	<input id="newGroup" type="button" onClick="removeStudy()"
 		value="Remove">
-	<div class="folder" data-folder-id="@experiment.getId()">
+	<div class="folder" data-folder-id="@study.getId()">
 		<header>
-			@if(experiment.getComponentList().isEmpty()) {
+			@if(study.getComponentList().isEmpty()) {
 				<h3>No components so far</h3>
 			} else {
 				<h3>Components so far</h3>
@@ -40,12 +40,12 @@
 		</header>
 
 		<ul class="list" id="componentList">
-			@for(component <- experiment.getComponentList()) {
+			@for(component <- study.getComponentList()) {
 				<li component-id="@component.getId()">
 					<p class="upArrow" component-id="@component.getId()">&#9650;</p>
 					<p class="downArrow" component-id="@component.getId()">&#9660;</p>
 					<a class="name"
-							href="@routes.Components.index(experiment.getId(), component.getId())">
+							href="@routes.Components.index(study.getId(), component.getId())">
 							@component.getId() @component.getTitle() (@component.getResultList().size())
 					</a>
 				</li>
@@ -70,7 +70,7 @@
 	
 	function ajaxChangeComponentOrder(componentId, direction, componentElement) {
 		var ajax = $.ajax({
-			url: "/admin/@experiment.getId()/changeComponentOrder"
+			url: "/admin/@study.getId()/changeComponentOrder"
 				+ "?componentId=" + componentId + "&direction=" + direction,
 			type: "POST",
 			success: function(response) {
@@ -89,32 +89,32 @@
 		});
 	}
 	
-	function tryExperiment() {
-		window.location.href = "@routes.Publix.startExperiment(experiment.getId())";
+	function tryStudy() {
+		window.location.href = "@routes.Publix.startStudy(study.getId())";
 	}
 
 	function addComponent() {
-		window.location.href = "@routes.Components.create(experiment.getId())";
+		window.location.href = "@routes.Components.create(study.getId())";
 	}
 
-	function updateExperiment() {
-		window.location.href = "@routes.Experiments.update(experiment.getId())";
+	function updateStudy() {
+		window.location.href = "@routes.Studies.update(study.getId())";
 	}
 	
 	function updateMembers() {
-		window.location.href = "@routes.Experiments.updateMembers(experiment.getId())";
+		window.location.href = "@routes.Studies.updateMembers(study.getId())";
 	}
 	
 	function showMTurkSourceCode() {
-		window.location.href = "@routes.Experiments.showMTurkSourceCode(experiment.getId())";
+		window.location.href = "@routes.Studies.showMTurkSourceCode(study.getId())";
 	}
 
-	function removeExperiment() {
-		var conf = confirm("Are you sure you want to remove experiment "
-				+ "@experiment.getId()" + "\u00a0" + "\"@Html(experiment.getTitle())\"?");
+	function removeStudy() {
+		var conf = confirm("Are you sure you want to remove study "
+				+ "@study.getId()" + "\u00a0" + "\"@Html(study.getTitle())\"?");
 		if (conf == true) {
 			$.ajax({
-				url : '@routes.Experiments.remove(experiment.getId())',
+				url : '@routes.Studies.remove(study.getId())',
 				type : 'DELETE',
 				success : function(result) {
 					window.location.replace('@routes.Admin.index()');

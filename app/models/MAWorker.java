@@ -13,6 +13,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
 
@@ -24,19 +25,19 @@ public class MAWorker {
 	private static final String FAIL = "fail";
 
 	@Id
-	private String workerId;
+	private String id;
 
 	@ElementCollection(fetch = FetchType.LAZY)
-	@CollectionTable(name = "MAExperiment_confirmationCode")
-	@MapKeyColumn(name = "MAExperiment_id")
+	@CollectionTable(name = "FinishedStudyMap", joinColumns = @JoinColumn(name = "worker_id"))
+	@MapKeyColumn(name = "study_id")
 	@Column(name = "confirmationCode")
-	private Map<Long, String> finishedExperimentMap = new HashMap<Long, String>();
+	private Map<Long, String> finishedStudyMap = new HashMap<Long, String>();
 
 	@OneToMany(mappedBy = "worker", fetch = FetchType.LAZY)
 	private List<MAResult> resultList = new ArrayList<MAResult>();
 
 	@ElementCollection(fetch = FetchType.LAZY)
-	@CollectionTable(name = "MAComponent_MAResult")
+	@CollectionTable(name = "CurrentComponentMap", joinColumns = @JoinColumn(name = "worker_id"))
 	@MapKeyColumn(name = "component_id")
 	@Column(name = "result_id")
 	private Map<Long, Long> currentComponentMap = new HashMap<Long, Long>();
@@ -45,52 +46,52 @@ public class MAWorker {
 	}
 
 	public MAWorker(String id) {
-		this.workerId = id;
-	}
-	
-	public void setWorkerId(String workerId) {
-		this.workerId = workerId;
-	}
-	
-	public String getWorkerId() {
-		return this.workerId;
-	}
-	
-	public void setFinishedExperimentMap(Map<Long, String> finishedExperimentMap) {
-		this.finishedExperimentMap = finishedExperimentMap;
-	}
-	
-	public Map<Long, String> getFinishedExperimentMap() {
-		return this.finishedExperimentMap;
-	}
-	
-	public boolean finishedExperiment(Long experimentId) {
-		return finishedExperimentMap.containsKey(experimentId);
+		this.id = id;
 	}
 
-	public String finishExperiment(Long experimentId, boolean successful) {
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getId() {
+		return this.id;
+	}
+
+	public void setFinishedStudyMap(Map<Long, String> finishedStudyMap) {
+		this.finishedStudyMap = finishedStudyMap;
+	}
+
+	public Map<Long, String> getFinishedStudyMap() {
+		return this.finishedStudyMap;
+	}
+
+	public boolean finishedStudy(Long studyId) {
+		return finishedStudyMap.containsKey(studyId);
+	}
+
+	public String finishStudy(Long studyId, boolean successful) {
 		String confirmationCode;
 		if (successful) {
 			confirmationCode = UUID.randomUUID().toString();
 		} else {
 			confirmationCode = FAIL;
 		}
-		finishedExperimentMap.put(experimentId, confirmationCode);
+		finishedStudyMap.put(studyId, confirmationCode);
 		return confirmationCode;
 	}
-	
-	public String getConfirmationCode(Long experimentId) {
-		return finishedExperimentMap.get(experimentId);
+
+	public String getConfirmationCode(Long studyId) {
+		return finishedStudyMap.get(studyId);
 	}
-	
+
 	public void setResultList(List<MAResult> resultList) {
 		this.resultList = resultList;
 	}
-	
+
 	public List<MAResult> getResultList() {
 		return this.resultList;
 	}
-	
+
 	public void addResult(MAResult result) {
 		resultList.add(result);
 	}
@@ -98,15 +99,15 @@ public class MAWorker {
 	public void removeResult(MAResult result) {
 		resultList.remove(result);
 	}
-	
+
 	public void setCurrentComponentMap(Map<Long, Long> currentComponentMap) {
 		this.currentComponentMap = currentComponentMap;
 	}
-	
+
 	public Map<Long, Long> getCurrentComponentMap() {
 		return this.currentComponentMap;
 	}
-	
+
 	public boolean hasCurrentComponent(MAComponent component) {
 		return currentComponentMap.containsKey(component.getId());
 	}
@@ -125,15 +126,15 @@ public class MAWorker {
 	}
 
 	/**
-	 * Remove all components of this experiment from worker's
+	 * Remove all components of this study from worker's
 	 * currentComponentMap
 	 */
-	public void removeCurrentComponentsForExperiment(MAExperiment experiment) {
+	public void removeCurrentComponentsForStudy(MAStudy study) {
 		Iterator<Long> it = currentComponentMap.keySet().iterator();
 		while (it.hasNext()) {
 			Long componentId = it.next();
 			MAComponent component = MAComponent.findById(componentId);
-			if (experiment.hasComponent(component)) {
+			if (study.hasComponent(component)) {
 				it.remove();
 			}
 		}
@@ -141,7 +142,7 @@ public class MAWorker {
 
 	@Override
 	public String toString() {
-		return workerId;
+		return id;
 	}
 
 	public static MAWorker findById(String id) {

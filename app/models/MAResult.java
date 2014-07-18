@@ -9,6 +9,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 
 import play.db.jpa.JPA;
@@ -21,7 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-@JsonPropertyOrder({ "resultId", "workerId", "date", "state", "experimentId",
+@JsonPropertyOrder({ "resultId", "workerId", "date", "state", "studyId",
 		"componentId", "data" })
 @Entity
 public class MAResult {
@@ -59,6 +60,7 @@ public class MAResult {
 	@JoinColumn(name = "worker_id")
 	private MAWorker worker;
 
+	@Lob
 	private String data;
 
 	public MAResult() {
@@ -122,7 +124,7 @@ public class MAResult {
 	@Override
 	public String toString() {
 		return id + ", " + date + ", " + component.getId() + ", "
-				+ worker.getWorkerId();
+				+ worker.getId();
 	}
 
 	public static String asJson(MAResult result) throws JsonProcessingException {
@@ -145,16 +147,16 @@ public class MAResult {
 	@JsonProperty("workerId")
 	private String getWorkerId( ) {
 		if (worker != null) {
-			return worker.getWorkerId();
+			return worker.getId();
 		} else {
 			return null;
 		}
 	}
 
-	@JsonProperty("experimentId")
-	private Long getExperimentId() {
-		if (component != null && component.getExperiment() != null) {
-			return component.getExperiment().getId();
+	@JsonProperty("studyId")
+	private Long getStudyId() {
+		if (component != null && component.getStudy() != null) {
+			return component.getStudy().getId();
 		} else {
 			return null;
 		}

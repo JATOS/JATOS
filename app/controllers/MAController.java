@@ -3,7 +3,7 @@ package controllers;
 import java.util.List;
 
 import models.MAComponent;
-import models.MAExperiment;
+import models.MAStudy;
 import models.MAUser;
 import play.Logger;
 import play.mvc.Controller;
@@ -13,18 +13,18 @@ public class MAController extends Controller {
 
 	public static final String COOKIE_EMAIL = "email";
 
-	public static String experimentNotExist(Long experimentId) {
-		String errorMsg = "An experiment with id " + experimentId
+	public static String studyNotExist(Long studyId) {
+		String errorMsg = "An study with id " + studyId
 				+ " doesn't exist.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	public static Result badRequestExperimentNotExist(Long experimentId,
-			MAUser user, List<MAExperiment> experimentList) {
-		String errorMsg = experimentNotExist(experimentId);
+	public static Result badRequestStudyNotExist(Long studyId,
+			MAUser user, List<MAStudy> studyList) {
+		String errorMsg = studyNotExist(studyId);
 		List<MAUser> userList = MAUser.findAll();
-		return badRequest(views.html.admin.index.render(experimentList,
+		return badRequest(views.html.admin.index.render(studyList,
 				userList, errorMsg, user));
 	}
 
@@ -35,10 +35,10 @@ public class MAController extends Controller {
 	}
 
 	public static Result badRequestUserNotExist(String email,
-			MAUser loggedInUser, List<MAExperiment> experimentList) {
+			MAUser loggedInUser, List<MAStudy> studyList) {
 		String errorMsg = userNotExist(email);
 		List<MAUser> userList = MAUser.findAll();
-		return badRequest(views.html.admin.index.render(experimentList,
+		return badRequest(views.html.admin.index.render(studyList,
 				userList, errorMsg, loggedInUser));
 	}
 
@@ -49,46 +49,46 @@ public class MAController extends Controller {
 	}
 
 	public static Result badRequestComponentNotExist(Long componentId,
-			MAExperiment experiment, MAUser user,
-			List<MAExperiment> experimentList) {
+			MAStudy study, MAUser user,
+			List<MAStudy> studyList) {
 		String errorMsg = componentNotExist(componentId);
 		List<MAUser> userList = MAUser.findAll();
-		return badRequest(views.html.admin.index.render(experimentList,
+		return badRequest(views.html.admin.index.render(studyList,
 				userList, errorMsg, user));
 	}
 
-	public static String componentNotBelongToExperiment(Long experimentId,
+	public static String componentNotBelongToStudy(Long studyId,
 			Long componentId) {
-		String errorMsg = "There is no experiment with id " + experimentId
+		String errorMsg = "There is no study with id " + studyId
 				+ " that has a component with id " + componentId + ".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	public static Result badRequestComponentNotBelongToExperiment(
-			MAExperiment experiment, MAComponent component, MAUser user,
-			List<MAExperiment> experimentList) {
-		String errorMsg = componentNotBelongToExperiment(experiment.getId(),
+	public static Result badRequestComponentNotBelongToStudy(
+			MAStudy study, MAComponent component, MAUser user,
+			List<MAStudy> studyList) {
+		String errorMsg = componentNotBelongToStudy(study.getId(),
 				component.getId());
 		List<MAUser> userList = MAUser.findAll();
-		return badRequest(views.html.admin.index.render(experimentList,
+		return badRequest(views.html.admin.index.render(studyList,
 				userList, errorMsg, user));
 	}
 
 	public static String notMember(String username, String email,
-			Long experimentId, String experimentTitle) {
-		String errorMsg = username + " (" + email + ") isn't member of experiment "
-				+ experimentId + " \"" + experimentTitle + "\".";
+			Long studyId, String studyTitle) {
+		String errorMsg = username + " (" + email + ") isn't member of study "
+				+ studyId + " \"" + studyTitle + "\".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	public static Result forbiddenNotMember(MAUser user,
-			MAExperiment experiment, List<MAExperiment> experimentList) {
-		String errorMsg = notMember(user.getName(), user.getEmail(), experiment.getId(),
-				experiment.getTitle());
+			MAStudy study, List<MAStudy> studyList) {
+		String errorMsg = notMember(user.getName(), user.getEmail(), study.getId(),
+				study.getTitle());
 		List<MAUser> userList = MAUser.findAll();
-		return forbidden(views.html.admin.index.render(experimentList,
+		return forbidden(views.html.admin.index.render(studyList,
 				userList, errorMsg, user));
 	}
 
@@ -99,11 +99,11 @@ public class MAController extends Controller {
 	}
 
 	public static Result badRequestUrlViewEmpty(MAUser user,
-			MAExperiment experiment, MAComponent component,
-			List<MAExperiment> experimentList) {
+			MAStudy study, MAComponent component,
+			List<MAStudy> studyList) {
 		String errorMsg = urlViewEmpty(component.getId());
 		List<MAUser> userList = MAUser.findAll();
-		return forbidden(views.html.admin.index.render(experimentList,
+		return forbidden(views.html.admin.index.render(studyList,
 				userList, errorMsg, user));
 	}
 

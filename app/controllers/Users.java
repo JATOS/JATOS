@@ -2,7 +2,7 @@ package controllers;
 
 import java.util.List;
 
-import models.MAExperiment;
+import models.MAStudy;
 import models.MAUser;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -30,23 +30,29 @@ public class Users extends MAController {
 		MAUser user = MAUser.findByEmail(email);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
+		}
+		List<MAStudy> studyList = MAStudy.findAll();
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, experimentList);
+			return badRequestUserNotExist(email, loggedInUser, studyList);
 		}
 
-		return ok(views.html.admin.user.index.render(experimentList,
+		return ok(views.html.admin.user.index.render(studyList,
 				loggedInUser, null, user));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result create() {
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		List<MAStudy> studyList = MAStudy.findAll();
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
-		return ok(views.html.admin.user.create.render(experimentList,
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
+		}
+		return ok(views.html.admin.user.create.render(studyList,
 				loggedInUser, Form.form(MAUser.class)));
 	}
 
@@ -54,13 +60,16 @@ public class Users extends MAController {
 	@Security.Authenticated(Secured.class)
 	public static Result submit() throws Exception {
 		Form<MAUser> form = Form.form(MAUser.class).bindFromRequest();
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		List<MAStudy> studyList = MAStudy.findAll();
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
-
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
+		}
+		
 		if (form.hasErrors()) {
 			return badRequest(views.html.admin.user.create.render(
-					experimentList, loggedInUser, form));
+					studyList, loggedInUser, form));
 		}
 
 		// Check if user with this email already exists.
@@ -86,7 +95,7 @@ public class Users extends MAController {
 
 		if (form.hasErrors()) {
 			return badRequest(views.html.admin.user.create.render(
-					experimentList, loggedInUser, form));
+					studyList, loggedInUser, form));
 		} else {
 			newUser.setPasswordHash(passwordHash);
 			newUser.persist();
@@ -100,21 +109,24 @@ public class Users extends MAController {
 		MAUser user = MAUser.findByEmail(email);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		List<MAStudy> studyList = MAStudy.findAll();
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
+		}
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, experimentList);
+			return badRequestUserNotExist(email, loggedInUser, studyList);
 		}
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
 			return badRequest(views.html.admin.user.index.render(
-					experimentList, loggedInUser, errorMsg, user));
+					studyList, loggedInUser, errorMsg, user));
 		}
 
 		Form<MAUser> form = Form.form(MAUser.class).fill(user);
-		return ok(views.html.admin.user.update.render(experimentList, user,
+		return ok(views.html.admin.user.update.render(studyList, user,
 				loggedInUser, form));
 	}
 
@@ -124,11 +136,15 @@ public class Users extends MAController {
 		MAUser user = MAUser.findByEmail(email);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		List<MAStudy> studyList = MAStudy.findAll();
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
+		}
+		
 		Form<MAUser> form = Form.form(MAUser.class).bindFromRequest();
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, experimentList);
+			return badRequestUserNotExist(email, loggedInUser, studyList);
 		}
 
 		// To change a user this user must be logged in.
@@ -138,7 +154,7 @@ public class Users extends MAController {
 
 		if (form.hasErrors()) {
 			return badRequest(views.html.admin.user.update.render(
-					experimentList, user, loggedInUser, form));
+					studyList, user, loggedInUser, form));
 		} else {
 			// Update user in database
 			// Do not update 'email' since it's the id and should stay
@@ -157,21 +173,24 @@ public class Users extends MAController {
 		MAUser user = MAUser.findByEmail(email);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		List<MAStudy> studyList = MAStudy.findAll();
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
+		}
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, experimentList);
+			return badRequestUserNotExist(email, loggedInUser, studyList);
 		}
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
 			return badRequest(views.html.admin.user.index.render(
-					experimentList, loggedInUser, errorMsg, user));
+					studyList, loggedInUser, errorMsg, user));
 		}
 
 		Form<MAUser> form = Form.form(MAUser.class).fill(user);
-		return ok(views.html.admin.user.changePassword.render(experimentList,
+		return ok(views.html.admin.user.changePassword.render(studyList,
 				user, loggedInUser, form));
 	}
 
@@ -182,11 +201,14 @@ public class Users extends MAController {
 		Form<MAUser> form = Form.form(MAUser.class).fill(user);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAExperiment> experimentList = MAExperiment.findAll();
+		List<MAStudy> studyList = MAStudy.findAll();
 		DynamicForm requestData = Form.form().bindFromRequest();
+		if (loggedInUser == null) {
+			return redirect(routes.Admin.login());
+		}
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, experimentList);
+			return badRequestUserNotExist(email, loggedInUser, studyList);
 		}
 
 		// To change a user this user must be logged in.
@@ -217,7 +239,7 @@ public class Users extends MAController {
 
 		if (form.hasErrors()) {
 			return badRequest(views.html.admin.user.changePassword.render(
-					experimentList, user, loggedInUser, form));
+					studyList, user, loggedInUser, form));
 		} else {
 			// Update password hash in DB
 			user.setPasswordHash(newPasswordHash);

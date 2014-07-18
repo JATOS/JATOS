@@ -1,12 +1,12 @@
-@(experimentList: List[MAExperiment], experiment: MAExperiment, errorMsg: String, 
+@(studyList: List[MAStudy], study: MAStudy, errorMsg: String, 
 	user: MAUser, component: MAComponent)
 
-@admin.main(experimentList, user){
+@admin.main(studyList, user){
 
 <header>
 	<hgroup>
 		<h2>/ > </h2>
-		<h2>@experiment.getId() @experiment.getTitle() > </h2>
+		<h2>@study.getId() @study.getTitle() > </h2>
 		<h3>@component.getId() @component.getTitle() > </h3>
 	</hgroup>
 </header>
@@ -49,12 +49,12 @@
 
 	function tryComponent() {
 		window.location.href = "@routes.Components.tryComponent(
-			experiment.getId, component.getId())";
+			study.getId, component.getId())";
 	}
 
 	function updateComponent() {
 		window.location.href = "@routes.Components.update(
-				experiment.getId(), component.getId())";
+				study.getId(), component.getId())";
 	}
 	
 	function removeComponent() {
@@ -63,7 +63,7 @@
 		if (conf == true) {
 			$.ajax({
 				url : '@routes.Components.remove(
-						experiment.getId(), component.getId())',
+						study.getId(), component.getId())',
 				type : 'DELETE',
 				success : function(result) {
 					window.location.replace('@routes.Admin.index()');
@@ -77,7 +77,7 @@
 	
 	function removeResults() {
 		window.location.href = "@routes.Components.removeResults(
-				experiment.getId(), component.getId())";
+				study.getId(), component.getId())";
 	}
 </script>
 

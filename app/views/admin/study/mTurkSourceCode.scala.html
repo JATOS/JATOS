@@ -1,12 +1,12 @@
-@(experimentList: List[MAExperiment], user: MAUser, errorMsg: String,
-	experiment: MAExperiment, hostname: String)
+@(studyList: List[MAStudy], user: MAUser, errorMsg: String,
+	study: MAStudy, hostname: String)
 
-@admin.main(experimentList, user){
+@admin.main(studyList, user){
 
 <header>
 	<hgroup>
 		<h2>/ > </h2>
-		<h3>@experiment.getId() @experiment.getTitle() > </h3>
+		<h3>@study.getId() @study.getTitle() > </h3>
 		<h4>Mechanical Turk HIT layout source code > </h4>
 	</hgroup>
 </header>
@@ -16,13 +16,13 @@
 		<p class="error">@errorMsg</p>
 	}
 
-	@for(member <- experiment.getMemberList()) {
+	@for(member <- study.getMemberList()) {
 		<p class="owner"> @member.getName() (@member.getEmail())</p>
 	}
 
-	<div class="folder" data-folder-id="@experiment.getId()">
+	<div class="folder" data-folder-id="@study.getId()">
 		<header>
-			<h3>Copy & paste this code into your experiment's design layout in Mechanical Turk</h3>
+			<h3>Copy & paste this code into your study's design layout in Mechanical Turk</h3>
 		</header>
 
 		<pre class="sourceCode"><code>
@@ -34,13 +34,13 @@
 
 &lt;div class=&quot;panel-body&quot;&gt;
 
-&lt;p id=&quot;experimentDescription&quot;&gt;@experiment.getDescription()&lt;/p&gt;
+&lt;p id=&quot;studyDescription&quot;&gt;@study.getDescription()&lt;/p&gt;
 
-&lt;p id=&quot;previewHit&quot;&gt;This is a &lt;strong&gt;preview&lt;/strong&gt; of the experiment. When you&#39;ve accepted the HIT a link to the experiment will be shown. At the end of the experiment, you will receive a code to paste into the box below to receive credit for taking our experiment.&lt;/p&gt;
+&lt;p id=&quot;previewHit&quot;&gt;This is a &lt;strong&gt;preview&lt;/strong&gt; of the study. When you&#39;ve accepted the HIT a link to the study will be shown. At the end of the study, you will receive a code to paste into the box below to receive credit for taking our study.&lt;/p&gt;
 
-&lt;p id=&quot;acceptedHit&quot; style=&quot;display: none&quot;&gt;Select the link below to complete the experiment. At the end of the experiment, you will receive a code to paste into the box below to receive credit for taking our experiment.&lt;/p&gt;
+&lt;p id=&quot;acceptedHit&quot; style=&quot;display: none&quot;&gt;Select the link below to complete the study. At the end of the study, you will receive a code to paste into the box below to receive credit for taking our study.&lt;/p&gt;
 
-&lt;p&gt;&lt;strong&gt;Make sure to leave this window open as you complete the experiment.&lt;/strong&gt; When you are finished, you will return to this page to paste the code into the box.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Make sure to leave this window open as you complete the study.&lt;/strong&gt; When you are finished, you will return to this page to paste the code into the box.&lt;/p&gt;
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;!-- End Instruction --&gt;
@@ -48,11 +48,11 @@
 &lt;table&gt;
 	&lt;tbody&gt;
 		&lt;tr&gt;
-			&lt;td&gt;&lt;strong&gt;Experiment link:&lt;/strong&gt;&lt;/td&gt;
-			&lt;td&gt;&lt;a href=&quot;&quot; id=&quot;experimentUrl&quot; target=&quot;_blank&quot;&gt;link will be shown when HIT is accepted&lt;/a&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;strong&gt;Study link:&lt;/strong&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;a href=&quot;&quot; id=&quot;studyUrl&quot; target=&quot;_blank&quot;&gt;link will be shown when HIT is accepted&lt;/a&gt;&lt;/td&gt;
 		&lt;/tr&gt;
 		&lt;tr&gt;
-			&lt;td&gt;&lt;strong&gt;Provide the experiment&#39;s confirmation code here:&lt;/strong&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;strong&gt;Provide the study&#39;s confirmation code here:&lt;/strong&gt;&lt;/td&gt;
 			&lt;td style=&quot;vertical-align: middle;&quot;&gt;&lt;input class=&quot;form-control&quot; id=&quot;surveycode&quot; name=&quot;surveycode&quot; placeholder=&quot;e.g. 123456&quot; type=&quot;text&quot; /&gt;&lt;/td&gt;
 		&lt;/tr&gt;
 	&lt;/tbody&gt;
@@ -64,9 +64,9 @@
 &lt;/style&gt;
 
 &lt;script&gt;
-	// Hint: What&#39;s called an experiment in MA is called a survey in MT
+	// Hint: What&#39;s called an study in MA is called a survey in MT
 	var host = &quot;@hostname&quot;;
-	var experimentPath = &quot;/ma/@experiment.getId()/start&quot;;
+	var studyPath = &quot;/ma/@study.getId()/start&quot;;
 	var query = document.URL.split(&#39;?&#39;)[1];
 
 	window.onload = function() {
@@ -74,17 +74,17 @@
 			// Show preview
 			document.getElementById(&quot;previewHit&quot;).style.display = &quot;block&quot;;
 			document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;none&quot;;
-			var experimentUrlHref = &quot;&quot;;
-			var experimentUrlText = &quot;link will be shown when HIT is accepted&quot;;
+			var studyUrlHref = &quot;&quot;;
+			var studyUrlText = &quot;link will be shown when HIT is accepted&quot;;
 		} else {
 			// Show accepted HIT
 			document.getElementById(&quot;previewHit&quot;).style.display = &quot;none&quot;;
 			document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;block&quot;;
-			var experimentUrlHref = &quot;http://&quot; + host + experimentPath + &quot;?&quot; + query;
-			var experimentUrlText = experimentUrlHref;
+			var studyUrlHref = &quot;http://&quot; + host + studyPath + &quot;?&quot; + query;
+			var studyUrlText = studyUrlHref;
 		}
-		document.getElementById(&quot;experimentUrl&quot;).setAttribute(&quot;href&quot;, experimentUrlHref);
-		document.getElementById(&quot;experimentUrl&quot;).innerHTML = experimentUrlText;
+		document.getElementById(&quot;studyUrl&quot;).setAttribute(&quot;href&quot;, studyUrlHref);
+		document.getElementById(&quot;studyUrl&quot;).innerHTML = studyUrlText;
 	}
 &lt;/script&gt;
 		</code></pre>

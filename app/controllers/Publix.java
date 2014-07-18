@@ -9,7 +9,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import models.MAComponent;
-import models.MAExperiment;
+import models.MAStudy;
 import models.MAResult;
 import models.MAResult.State;
 import models.MAUser;
@@ -34,27 +34,27 @@ public class Publix extends Controller {
 	 * HTTP type: Normal GET request
 	 */
 	@Transactional
-	public static Result startExperiment(Long experimentId, String workerId,
+	public static Result startStudy(Long studyId, String workerId,
 			String assignmentId, String hitId) {
-		Logger.info("startExperiment: experimentId " + experimentId + ", "
+		Logger.info("startStudy: studyId " + studyId + ", "
 				+ "workerId " + workerId, "assignmentId " + assignmentId + ", "
 				+ "hitId " + hitId);
 		checkForMTurkSandbox();
 
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		if (experiment == null) {
-			String errorMsg = experimentNotExist(experimentId);
+		MAStudy study = MAStudy.findById(studyId);
+		if (study == null) {
+			String errorMsg = studyNotExist(studyId);
 			return badRequest(views.html.publix.error.render(errorMsg));
 		}
 
-		MAComponent component = experiment.getFirstComponent();
+		MAComponent component = study.getFirstComponent();
 		if (component == null) {
-			String errorMsg = experimentHasNoComponents(experimentId);
+			String errorMsg = studyHasNoComponents(studyId);
 			return badRequest(views.html.publix.error.render(errorMsg));
 		}
 
 		// Check for admin
-		if (adminLoggedIn(experiment)) {
+		if (adminLoggedIn(study)) {
 			return redirect(component.getViewUrl());
 		}
 
@@ -65,7 +65,7 @@ public class Publix extends Controller {
 		}
 		if (assignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
 			// It's a preview coming from Mechanical Turk
-			String errorMsg = noPreviewAvailable(experimentId);
+			String errorMsg = noPreviewAvailable(studyId);
 			return badRequest(views.html.publix.error.render(errorMsg));
 		}
 
@@ -77,9 +77,9 @@ public class Publix extends Controller {
 		if (worker == null) {
 			worker = new MAWorker(workerId);
 			worker.persist();
-		} else if (worker.finishedExperiment(experimentId)
+		} else if (worker.finishedStudy(studyId)
 				&& !isRequestFromMTurkSandbox()) {
-			String errorMsg = workerNotAllowedExperiment(workerId, experimentId);
+			String errorMsg = workerNotAllowedStudy(workerId, studyId);
 			return forbidden(views.html.publix.error.render(errorMsg));
 		}
 		session(WORKER_ID, workerId);
@@ -98,19 +98,19 @@ public class Publix extends Controller {
 	 * HTTP type: Ajax POST request
 	 */
 	@Transactional
-	public static Result startComponent(Long experimentId, Long componentId) {
-		Logger.info("startComponent: experimentId " + experimentId + ", "
+	public static Result startComponent(Long studyId, Long componentId) {
+		Logger.info("startComponent: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
-		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAStudy study = MAStudy.findById(studyId);
 		MAComponent component = MAComponent.findById(componentId);
-		String errorMsg = checkStandard(experiment, component, experimentId,
+		String errorMsg = checkStandard(study, component, studyId,
 				componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
 		}
 
 		// Check for admin
-		if (adminLoggedIn(experiment)) {
+		if (adminLoggedIn(study)) {
 			return ok();
 		}
 
@@ -120,7 +120,7 @@ public class Publix extends Controller {
 			return forbidden(workerNotExist(workerId));
 		}
 		MAWorker worker = MAWorker.findById(workerId);
-		errorMsg = checkWorker(workerId, worker, experimentId);
+		errorMsg = checkWorker(workerId, worker, studyId);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
 		}
@@ -129,9 +129,9 @@ public class Publix extends Controller {
 		boolean alreadyStarted = startComponent(component, worker);
 		if (alreadyStarted && !component.isReloadable()) {
 			// If someone tries to reload a not reloadable component end the
-			// experiment
-			endExperiment(worker, experiment, false);
-			return forbidden(reloadNotAllowed(experimentId, componentId));
+			// study
+			endStudy(worker, study, false);
+			return forbidden(reloadNotAllowed(studyId, componentId));
 		}
 
 		return ok();
@@ -162,21 +162,21 @@ public class Publix extends Controller {
 	 * HTTP type: Ajax GET request
 	 */
 	@Transactional
-	public static Result getComponentData(Long experimentId, Long componentId)
+	public static Result getComponentData(Long studyId, Long componentId)
 			throws Exception {
-		Logger.info("getComponentData: experimentId " + experimentId + ", "
+		Logger.info("getComponentData: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAStudy study = MAStudy.findById(studyId);
 		MAComponent component = MAComponent.findById(componentId);
-		String errorMsg = checkStandard(experiment, component, experimentId,
+		String errorMsg = checkStandard(study, component, studyId,
 				componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
 		}
 
 		// Check for admin: if yes, just return JSON data
-		if (adminLoggedIn(experiment)) {
+		if (adminLoggedIn(study)) {
 			return ok(MAComponent.asJsonForPublic(component));
 		}
 
@@ -186,7 +186,7 @@ public class Publix extends Controller {
 			return forbidden(workerNotExist(workerId));
 		}
 		MAWorker worker = MAWorker.findById(workerId);
-		errorMsg = checkWorker(workerId, worker, experimentId);
+		errorMsg = checkWorker(workerId, worker, studyId);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
 		}
@@ -198,9 +198,9 @@ public class Publix extends Controller {
 		MAResult result = worker.getCurrentResult(component);
 		if (result.getState() != State.STARTED && !component.isReloadable()) {
 			// If someone tries to reload a not reloadable component end the
-			// experiment
-			endExperiment(worker, experiment, false);
-			return forbidden(reloadNotAllowed(experimentId, componentId));
+			// study
+			endStudy(worker, study, false);
+			return forbidden(reloadNotAllowed(studyId, componentId));
 		}
 		result.setState(State.DATA);
 		result.merge();
@@ -213,21 +213,21 @@ public class Publix extends Controller {
 	 * HTTP type: Ajax POST request
 	 */
 	@Transactional
-	public static Result submitResult(Long experimentId, Long componentId) {
-		Logger.info("submitResult: experimentId " + experimentId + ", "
+	public static Result submitResult(Long studyId, Long componentId) {
+		Logger.info("submitResult: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAStudy study = MAStudy.findById(studyId);
 		MAComponent component = MAComponent.findById(componentId);
-		String errorMsg = checkStandard(experiment, component, experimentId,
+		String errorMsg = checkStandard(study, component, studyId,
 				componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
 		}
 
 		// Check for admin: if yes, don't persist result and return
-		if (adminLoggedIn(experiment)) {
-			return okNextComponentUrl(experiment, component);
+		if (adminLoggedIn(study)) {
+			return okNextComponentUrl(study, component);
 		}
 
 		// Check worker
@@ -236,7 +236,7 @@ public class Publix extends Controller {
 			return forbidden(workerNotExist(workerId));
 		}
 		MAWorker worker = MAWorker.findById(workerId);
-		errorMsg = checkWorker(workerId, worker, experimentId);
+		errorMsg = checkWorker(workerId, worker, studyId);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
 		}
@@ -244,7 +244,7 @@ public class Publix extends Controller {
 		// Get data in format JSON, text or XML and convert to String
 		String data = getDataAsString();
 		if (data == null) {
-			return badRequest(submittedDataUnknownFormat(experimentId,
+			return badRequest(submittedDataUnknownFormat(studyId,
 					componentId));
 		}
 
@@ -253,13 +253,13 @@ public class Publix extends Controller {
 		if (result == null || result.getState() == State.DONE) {
 			// If component was never started (result==null) or it's already
 			// finished (state==DONE) return a HTTP 403
-			return forbidden(workerNotAllowedComponent(workerId, experimentId,
+			return forbidden(workerNotAllowedComponent(workerId, studyId,
 					componentId));
 		}
 		endComponent(result, data, component, worker);
 
 		// Conveniently send the URL of the next component (or end page)
-		return okNextComponentUrl(experiment, component);
+		return okNextComponentUrl(study, component);
 	}
 
 	private static String getDataAsString() {
@@ -297,20 +297,20 @@ public class Publix extends Controller {
 	 * HTTP type: Ajax POST request
 	 */
 	@Transactional
-	public static Result endComponent(Long experimentId, Long componentId) {
-		Logger.info("endComponent: experimentId " + experimentId + ", "
+	public static Result endComponent(Long studyId, Long componentId) {
+		Logger.info("endComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAStudy study = MAStudy.findById(studyId);
 		MAComponent component = MAComponent.findById(componentId);
-		String errorMsg = checkStandard(experiment, component, experimentId,
+		String errorMsg = checkStandard(study, component, studyId,
 				componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
 		}
 
 		// Check for admin
-		if (adminLoggedIn(experiment)) {
+		if (adminLoggedIn(study)) {
 			return ok();
 		}
 
@@ -320,7 +320,7 @@ public class Publix extends Controller {
 			return forbidden(workerNotExist(workerId));
 		}
 		MAWorker worker = MAWorker.findById(workerId);
-		errorMsg = checkWorker(workerId, worker, experimentId);
+		errorMsg = checkWorker(workerId, worker, studyId);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
 		}
@@ -330,7 +330,7 @@ public class Publix extends Controller {
 		if (result == null || result.getState() == State.DONE) {
 			// If component was never started (result==null) or it's already
 			// finished (state==DONE) return a HTTP 403
-			return forbidden(workerNotAllowedComponent(workerId, experimentId,
+			return forbidden(workerNotAllowedComponent(workerId, studyId,
 					componentId));
 		}
 		endComponent(result, null, component, worker);
@@ -342,19 +342,19 @@ public class Publix extends Controller {
 	 * HTTP type: Normal GET request
 	 */
 	@Transactional
-	public static Result endExperiment(Long experimentId) {
-		Logger.info("endExperiment: experimentId " + experimentId + ", "
+	public static Result endStudy(Long studyId) {
+		Logger.info("endStudy: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
-		MAExperiment experiment = MAExperiment.findById(experimentId);
-		if (experiment == null) {
+		MAStudy study = MAStudy.findById(studyId);
+		if (study == null) {
 			return badRequest(views.html.publix.error
-					.render(experimentNotExist(experimentId)));
+					.render(studyNotExist(studyId)));
 		}
 
 		// Check for admin
-		if (adminLoggedIn(experiment)) {
+		if (adminLoggedIn(study)) {
 			boolean admin = true;
-			return ok(views.html.publix.end.render(experimentId, null, true,
+			return ok(views.html.publix.end.render(studyId, null, true,
 					admin));
 		}
 
@@ -362,7 +362,7 @@ public class Publix extends Controller {
 		String workerId = session(WORKER_ID);
 		if (workerId == null) {
 			return forbidden(views.html.publix.error
-					.render(experimentNeverStarted(experimentId)));
+					.render(studyNeverStarted(studyId)));
 		}
 		MAWorker worker = MAWorker.findById(workerId);
 		if (worker == null) {
@@ -372,23 +372,23 @@ public class Publix extends Controller {
 
 		// Get confirmation code
 		boolean successful = true;
-		String confirmationCode = endExperiment(worker, experiment, successful);
+		String confirmationCode = endStudy(worker, study, successful);
 
 		boolean admin = false;
-		return ok(views.html.publix.end.render(experimentId, confirmationCode,
+		return ok(views.html.publix.end.render(studyId, confirmationCode,
 				successful, admin));
 	}
 
-	private static String endExperiment(MAWorker worker,
-			MAExperiment experiment, boolean successful) {
+	private static String endStudy(MAWorker worker,
+			MAStudy study, boolean successful) {
 		String confirmationCode;
-		if (worker.finishedExperiment(experiment.getId())) {
-			confirmationCode = worker.getConfirmationCode(experiment.getId());
+		if (worker.finishedStudy(study.getId())) {
+			confirmationCode = worker.getConfirmationCode(study.getId());
 		} else {
-			confirmationCode = worker.finishExperiment(experiment.getId(),
+			confirmationCode = worker.finishStudy(study.getId(),
 					successful);
 		}
-		worker.removeCurrentComponentsForExperiment(experiment);
+		worker.removeCurrentComponentsForStudy(study);
 		worker.merge();
 		return confirmationCode;
 	}
@@ -397,31 +397,31 @@ public class Publix extends Controller {
 	 * HTTP type: Ajax GET request
 	 */
 	@Transactional
-	public static Result getNextComponentUrl(Long experimentId, Long componentId) {
-		Logger.info("getNextComponentUrl: experimentId " + experimentId + ", "
+	public static Result getNextComponentUrl(Long studyId, Long componentId) {
+		Logger.info("getNextComponentUrl: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAStudy study = MAStudy.findById(studyId);
 		MAComponent component = MAComponent.findById(componentId);
-		String errorMsg = checkStandard(experiment, component, experimentId,
+		String errorMsg = checkStandard(study, component, studyId,
 				componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
 		}
 
-		return okNextComponentUrl(experiment, component);
+		return okNextComponentUrl(study, component);
 	}
 
 	/**
 	 * Returns OK with the view URL of the next component or OK with the URL to
-	 * endExperiment() if the current component is the last one of the
-	 * experiment.
+	 * endStudy() if the current component is the last one of the
+	 * study.
 	 */
-	private static Result okNextComponentUrl(MAExperiment experiment,
+	private static Result okNextComponentUrl(MAStudy study,
 			MAComponent component) {
-		MAComponent nextComponent = experiment.getNextComponent(component);
+		MAComponent nextComponent = study.getNextComponent(component);
 		if (nextComponent == null) {
-			return ok(routes.Publix.endExperiment(experiment.getId()).url());
+			return ok(routes.Publix.endStudy(study.getId()).url());
 		}
 		return ok(nextComponent.getViewUrl());
 	}
@@ -430,13 +430,13 @@ public class Publix extends Controller {
 	 * HTTP type: Ajax GET request
 	 */
 	@Transactional
-	public static Result getComponentUrl(Long experimentId, Long componentId) {
-		Logger.info("getComponentUrl: experimentId " + experimentId + ", "
+	public static Result getComponentUrl(Long studyId, Long componentId) {
+		Logger.info("getComponentUrl: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAExperiment experiment = MAExperiment.findById(experimentId);
+		MAStudy study = MAStudy.findById(studyId);
 		MAComponent component = MAComponent.findById(componentId);
-		String errorMsg = checkStandard(experiment, component, experimentId,
+		String errorMsg = checkStandard(study, component, studyId,
 				componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
@@ -473,41 +473,41 @@ public class Publix extends Controller {
 		}
 	}
 
-	private static String checkStandard(MAExperiment experiment,
-			MAComponent component, Long experimentId, Long componentId) {
-		if (experiment == null) {
-			return experimentNotExist(experimentId);
+	private static String checkStandard(MAStudy study,
+			MAComponent component, Long studyId, Long componentId) {
+		if (study == null) {
+			return studyNotExist(studyId);
 		}
 		if (component == null) {
 			return componentNotExist(componentId);
 		}
-		if (!component.getExperiment().getId().equals(experimentId)) {
-			return componentNotBelongToExperiment(experimentId, componentId);
+		if (!component.getStudy().getId().equals(studyId)) {
+			return componentNotBelongToStudy(studyId, componentId);
 		}
 		return null;
 	}
 
 	private static String checkWorker(String workerId, MAWorker worker,
-			Long experimentId) {
+			Long studyId) {
 		if (worker == null) {
 			return workerNotExist(workerId);
 		}
-		if (worker.finishedExperiment(experimentId)
+		if (worker.finishedStudy(studyId)
 				&& !isRequestFromMTurkSandbox()) {
-			return workerFinishedExperimentAlready(workerId, experimentId);
+			return workerFinishedStudyAlready(workerId, studyId);
 		}
 		return null;
 	}
 
 	/**
-	 * Returns true if an admin of this experiment is logged in and false
+	 * Returns true if an admin of this study is logged in and false
 	 * otherwise.
 	 */
-	private static boolean adminLoggedIn(MAExperiment experiment) {
+	private static boolean adminLoggedIn(MAStudy study) {
 		String email = session(MAController.COOKIE_EMAIL);
 		if (email != null) {
 			MAUser user = MAUser.findByEmail(email);
-			if (user != null && experiment.hasMember(user)) {
+			if (user != null && study.hasMember(user)) {
 				return true;
 			}
 		}
@@ -550,28 +550,28 @@ public class Publix extends Controller {
 		return errorMsg;
 	}
 
-	private static String noPreviewAvailable(Long experimentId) {
-		String errorMsg = "No preview available for experiment " + experimentId
+	private static String noPreviewAvailable(Long studyId) {
+		String errorMsg = "No preview available for study " + studyId
 				+ ".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	private static String experimentNeverStarted(Long experimentId) {
-		String errorMsg = "Experiment " + experimentId + " was never started.";
+	private static String studyNeverStarted(Long studyId) {
+		String errorMsg = "Study " + studyId + " was never started.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	private static String experimentNotExist(Long experimentId) {
-		String errorMsg = "An experiment with id " + experimentId
+	private static String studyNotExist(Long studyId) {
+		String errorMsg = "An study with id " + studyId
 				+ " doesn't exist.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	private static String experimentHasNoComponents(Long experimentId) {
-		String errorMsg = "The experiment with id " + experimentId
+	private static String studyHasNoComponents(Long studyId) {
+		String errorMsg = "The study with id " + studyId
 				+ " has no components.";
 		Logger.info(errorMsg);
 		return errorMsg;
@@ -584,9 +584,9 @@ public class Publix extends Controller {
 		return errorMsg;
 	}
 
-	private static String componentNotBelongToExperiment(Long experimentId,
+	private static String componentNotBelongToStudy(Long studyId,
 			Long componentId) {
-		String errorMsg = "There is no experiment with id " + experimentId
+		String errorMsg = "There is no study with id " + studyId
 				+ " that has a component with id " + componentId + ".";
 		Logger.info(errorMsg);
 		return errorMsg;
@@ -598,43 +598,43 @@ public class Publix extends Controller {
 		return errorMsg;
 	}
 
-	private static String workerNotAllowedExperiment(String workerId,
-			Long experimentId) {
+	private static String workerNotAllowedStudy(String workerId,
+			Long studyId) {
 		String errorMsg = "Worker " + workerId + " is not allowed to do "
-				+ "experiment " + experimentId + ".";
+				+ "study " + studyId + ".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	private static String workerFinishedExperimentAlready(String workerId,
-			Long experimentId) {
-		String errorMsg = "Worker " + workerId + " finished " + "experiment "
-				+ experimentId + " already.";
+	private static String workerFinishedStudyAlready(String workerId,
+			Long studyId) {
+		String errorMsg = "Worker " + workerId + " finished " + "study "
+				+ studyId + " already.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	private static String workerNotAllowedComponent(String workerId,
-			Long experimentId, Long componentId) {
+			Long studyId, Long componentId) {
 		String errorMsg = "Worker " + workerId + " is not allowed to do "
-				+ "component " + componentId + " of " + "experiment "
-				+ experimentId + ".";
+				+ "component " + componentId + " of " + "study "
+				+ studyId + ".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	private static String reloadNotAllowed(Long experimentId, Long componentId) {
+	private static String reloadNotAllowed(Long studyId, Long componentId) {
 		String errorMsg = "It is not allowed to reload " + "component "
-				+ componentId + " of " + "experiment " + experimentId
-				+ ". The experiment is finished.";
+				+ componentId + " of " + "study " + studyId
+				+ ". The study is finished.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	private static String submittedDataUnknownFormat(Long experimentId,
+	private static String submittedDataUnknownFormat(Long studyId,
 			Long componentId) {
 		String errorMsg = "Unknown format of submitted data for component + "
-				+ componentId + "of experiment " + experimentId + ".";
+				+ componentId + "of study " + studyId + ".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}

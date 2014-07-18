@@ -1,4 +1,4 @@
-@(experimentList: List[MAExperiment], user: MAUser)(body: Html)
+@(studyList: List[MAStudy], user: MAUser)(body: Html)
 
 <html>
 <head>
@@ -25,15 +25,15 @@
 	<nav>
 		<h4 class="dashboard"><a href="/admin">Dashboard</a></h4>
 		<ul id="projects">
-			@for(experiment <- experimentList) {
-				<li data-group="@experiment.getId()">
-					<a class="name" href="@routes.Experiments.index(experiment.getId())">
-						@experiment.getId() @experiment.getTitle()
+			@for(study <- studyList) {
+				<li data-group="@study.getId()">
+					<a class="name" href="@routes.Studies.index(study.getId())">
+						@study.getId() @study.getTitle()
 					</a>
 					<ul id="components">
-						@for(component <- experiment.getComponentList()) {
+						@for(component <- study.getComponentList()) {
 							<li data-project="@component.getId()">
-								<a class="name" href="@routes.Components.index(experiment.getId(), component.getId())">
+								<a class="name" href="@routes.Components.index(study.getId(), component.getId())">
 									@component.getId() @component.getTitle() (@component.getResultList().size())
 								</a>
 							</li>
