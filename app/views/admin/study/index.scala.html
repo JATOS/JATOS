@@ -42,8 +42,8 @@
 		<ul class="list" id="componentList">
 			@for(component <- study.getComponentList()) {
 				<li component-id="@component.getId()">
-					<p class="upArrow" component-id="@component.getId()">&#9650;</p>
-					<p class="downArrow" component-id="@component.getId()">&#9660;</p>
+					<div class="upArrow" component-id="@component.getId()"><p>&#9650;</p></div>
+					<div class="downArrow" component-id="@component.getId()"><p>&#9660;</p></div>
 					<a class="name"
 							href="@routes.Components.index(study.getId(), component.getId())">
 							@component.getId() @component.getTitle() (@component.getResultList().size())
