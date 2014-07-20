@@ -1,0 +1,103 @@
+// -----------------------------------
+// TASKS
+// -----------------------------------
+// author: mda@zenexity.com - 2011
+// -----------------------------------
+
+.study {
+    p.error {
+        width: inherit;
+        margin: 5px 0;
+        color: #c00;
+        text-shadow: 1px 1px rgba(0,0,0,.1);
+    }
+    .tryStudy, .updateStudy, .removeStudy, .showMTurkSourceCode {
+        .button();
+        display: inline-block;
+        margin-right: 5px;
+        margin-bottom: 15px;
+    }
+    .members {
+        overflow:hidden;
+        .member {
+            float: right;
+            padding-right:0px;
+        }
+        .updateMembers {
+            .button();
+            margin-top: 2px;
+            clear: right;
+            float: right;
+        }
+    }
+    .components {
+        .box();
+        > header {
+            h3 {
+                padding-right: 5px;
+            }
+            .addComponent {
+                .button();
+                vertical-align: middle;
+                display: inline-block;
+                
+            }
+        }
+        > ul {
+            > li {
+                position: relative;
+                padding: 4px 20px 4px 7px;
+                border-bottom: 1px solid rgba(0,0,0,.05);
+                -webkit-user-select: text;
+                .arrows {
+                    overflow:hidden;
+                    display: inline-block;
+                    vertical-align: middle;
+                    .upArrow, .downArrow {
+                        cursor: pointer;
+                        color: @arrow;
+                        p:hover {
+                            color: @arrowHover;
+                        }
+                    }
+                }
+                a {
+                    vertical-align: middle;
+                    padding-left: 5px;
+                    padding-right: 5px;
+                }
+                .tryComponent {
+                    .button();
+                    display: inline-block;
+                    vertical-align: middle;
+                    margin-right: 5px;
+                }
+                .showResults {
+                    .button();
+                    display: inline-block;
+                    vertical-align: middle;
+                }
+                .removeComponent {
+                    display: inline-block;
+                    vertical-align: middle;
+                    position: absolute;
+                    right: 0;
+                    border: none;
+                    padding: 0;
+                    width: 18px;
+                    height: 20px;
+                    overflow: hidden;
+                    text-indent: -99em;
+                    background: url(/assets/images/icons/delete.png) 0 1px no-repeat;
+                    .transition(opacity, 300ms, ease-in-out);
+                    -webkit-transition-delay: 100ms;
+                    z-index: 7;
+                    cursor: pointer;
+                    &:hover {
+                        background: url(/assets/images/icons/delete.png) 0 -19px no-repeat;
+                    }
+                }
+            }
+        }
+    }
+}
