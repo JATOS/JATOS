@@ -42,10 +42,10 @@
 					</div>
 					<a class="name"
 							href="@routes.Components.update(study.getId(), component.getId())">
-							@component.getId() @component.getTitle() (@component.getResultList().size())
+							@component.getId() @component.getTitle()
 					</a>
 					<div class="tryComponent">Try</div>
-					<div class="showResults">Show Results</div>
+					<div class="showResults">Show Results (@component.getResultList().size())</div>
 					<div class="removeComponent">Remove</div>
 				</li>
 			}

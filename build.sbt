@@ -1,4 +1,4 @@
-name := "myFirstApp"
+name := "MechArg"
 
 version := "1.0-SNAPSHOT"
 

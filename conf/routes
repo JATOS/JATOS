@@ -3,7 +3,7 @@
 # ~~~~
 
 # Public
-POST    /ma/logError                               controllers.Publix.logError()
+POST    /ma/logError                          controllers.Publix.logError()
 GET     /ma/:studyId/start                    controllers.Publix.startStudy(studyId: Long, workerId: String ?= null, assignmentId: String ?= null, hitId: String ?= null)
 GET     /ma/:studyId/end                      controllers.Publix.endStudy(studyId: Long)
 GET     /ma/:studyId/:componentId             controllers.Publix.getComponentData(studyId: Long, componentId: Long)
@@ -51,5 +51,5 @@ GET     /admin/:studyId/:componentId                 controllers.Components.inde
 GET     /admin/:studyId/:componentId/                controllers.Components.index(studyId: Long, componentId: Long)
 
 # Static resources (not managed by the Play framework) from the /public folder
-GET     /assets/*file                 controllers.Assets.at(path="/public", file)
+GET     /assets/*file             controllers.Assets.at(path="/public", file)
 GET     /studies/*file            controllers.Assets.at(path="/public/studies", file)
