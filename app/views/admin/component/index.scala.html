@@ -19,16 +19,16 @@
 	<input id="newGroup" type="button" onClick="tryComponent()"
 		value="Try Component">
 	<input id="newGroup" type="button" onClick="updateComponent()"
-		value="Update">
+		value="Edit">
 	<input id="newGroup" type="button" onClick="removeComponent()"
-		value="Remove">
+		value="Delete">
 	<input id="newGroup" type="button" onClick="removeResults()"
 		value="Remove Results">
 		
 	<div class="folder" data-folder-id="@component.getId()">
 		<header>
 			@if(component.getResultList().isEmpty()) {
-				<h3>No results so far</h3>
+				<h3>No results</h3>
 			} else {
 				<h3>Results so far</h3>
 			}

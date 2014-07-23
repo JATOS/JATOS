@@ -28,13 +28,13 @@
 			@for(study <- studyList) {
 				<li data-group="@study.getId()">
 					<a class="name" href="@routes.Studies.index(study.getId())">
-						@study.getId() @study.getTitle()
+						@study.getTitle()
 					</a>
 					<ul id="components">
 						@for(component <- study.getComponentList()) {
 							<li data-project="@component.getId()">
 								<a class="name" href="@routes.Components.index(study.getId(), component.getId())">
-									@component.getId() @component.getTitle() (@component.getResultList().size())
+									@component.getTitle()
 								</a>
 							</li>
 						}

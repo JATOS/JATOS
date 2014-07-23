@@ -28,13 +28,17 @@
 				<input type="text" name="@Components.TITLE"
 					class="formTop" placeholder="Title"
 					value="@form(Components.TITLE).value">
-					
+				
+				<div>
 				<input type="checkbox" name="@Components.RELOADABLE"
+					style="vertical-align: middle;"
 					@if(component.isReloadable()) {
 						checked="checked"
 					}
 				>
-					
+				<p style="display: inline-block; vertical-align: middle;">Allow participants to reload</p>
+				</div>
+				
 				@for(error <- form(Components.VIEW_URL).errors) {
 					<p class="error">@error.message</p>
 				}

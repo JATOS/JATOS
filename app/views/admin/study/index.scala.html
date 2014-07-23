@@ -14,26 +14,41 @@
 	@if(errorMsg != null) {
 		<p class="error">@errorMsg</p>
 	}
-
-	<div class="members">
-		@for(member <- study.getMemberList()) {
-			<a class="member" href="@routes.Users.index(member.getEmail())"> @member.getName() (@member.getEmail())</a>
-		}
-		<div class="updateMembers">Update Members</div>
+	
+	<div class="boxRow">
+		<div class="studyBox">
+			<header>
+				<h3>Study</h3>
+				<div class="placeHolder">X</div>
+			</header>
+			<div class="tryStudy">Show Whole Study</div>	
+			<div class="updateStudy">Properties</div>
+			<div class="showMTurkSourceCode">MT Source Code</div>
+			<div class="removeStudy">Remove</div>
+		</div>
+	
+		<div class="membersBox">
+			<header>
+				<h3>Members</h3>
+				<div class="updateMembers">Change Members</div>
+			</header>
+			<ul>
+				@for(member <- study.getMemberList()) {
+					<li>
+						<a class="member" href="@routes.Users.index(member.getEmail())"> @member.getName() (@member.getEmail())</a>
+					</li>
+				}
+			</ul>
+		</div>
 	</div>
 	
-	<div class="tryStudy">Try Whole Experiment</div>	
-	<div class="updateStudy">Update</div>
-	<div class="removeStudy">Remove</div>
-	<div class="showMTurkSourceCode">MT Source Code</div>
-	
-	<div class="components">
+	<div class="componentsBox">
 		<header>
 			<h3>Components</h3>
-			<div class="addComponent">Add</div>
+			<div class="addComponent">+</div>
 		</header>
 
-		<ul class="list" id="componentList">
+		<ul>
 			@for(component <- study.getComponentList()) {
 				<li component-id="@component.getId()">
 					<div class="arrows">
@@ -41,16 +56,17 @@
 						<div class="downArrow" component-id="@component.getId()"><p>&#9660;</p></div>
 					</div>
 					<a class="name"
-							href="@routes.Components.update(study.getId(), component.getId())">
-							@component.getId() @component.getTitle()
+							href="@routes.Components.index(study.getId(), component.getId())">
+							@component.getTitle() (id: @component.getId())
 					</a>
-					<div class="tryComponent">Try</div>
+					<div class="tryComponent">Show From Here</div>
 					<div class="showResults">Show Results (@component.getResultList().size())</div>
 					<div class="removeComponent">Remove</div>
 				</li>
 			}
 		</ul>
 	</div>
+	
 </article>
 
 <script type="text/javascript">
