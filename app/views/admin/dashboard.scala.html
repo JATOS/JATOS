@@ -1,21 +1,14 @@
-@(studyList: List[MAStudy], userList: List[MAUser], errorMsg: String,
-	user: MAUser)
+@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
+	userList: List[MAUser], errorMsg: String)
 
-@main(studyList, user){
-
-<header>
-	<hgroup>
-		<h2>/ > </h2>
-	</hgroup>
-</header>
-
+@main(studyList, loggedInUser, breadcrumbs){
 
 <article class="tasks" id="tasks">
 	@if(errorMsg != null) {
 		<p class="error">@errorMsg</p>
 	}
-	<a id="newGroup" href="@routes.Studies.create()">Add study</a>
-	<a id="newGroup" href="@routes.Users.create()">Add user</a>
+	<a id="newGroup" href="@routes.Studies.create()">New Study</a>
+	<a id="newGroup" href="@routes.Users.create()">New User</a>
 	
 	<div class="folder">
 		<header>
@@ -29,7 +22,7 @@
 		<ul id="components">
 			@for(user <- userList) {
 				<li data-task-id="@user.getEmail()">
-						<a class="name" href="@routes.Users.index(user.getEmail())">
+						<a class="name" href="@routes.Users.profile(user.getEmail())">
 								@user.toString()
 						</a>
 				</li>

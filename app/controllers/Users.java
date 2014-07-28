@@ -26,7 +26,7 @@ public class Users extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result index(String email) {
+	public static Result profile(String email) {
 		MAUser user = MAUser.findByEmail(email);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
@@ -39,8 +39,10 @@ public class Users extends MAController {
 			return badRequestUserNotExist(email, loggedInUser, studyList);
 		}
 
-		return ok(views.html.admin.user.index.render(studyList,
-				loggedInUser, null, user));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user));
+		return ok(views.html.admin.user.profile.render(studyList, loggedInUser,
+				breadcrumbs, null, user));
 	}
 
 	@Transactional
@@ -52,8 +54,10 @@ public class Users extends MAController {
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
-		return ok(views.html.admin.user.create.render(studyList,
-				loggedInUser, Form.form(MAUser.class)));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(), "New User");
+		return ok(views.html.admin.user.create.render(studyList, loggedInUser,
+				breadcrumbs, Form.form(MAUser.class)));
 	}
 
 	@Transactional
@@ -66,10 +70,12 @@ public class Users extends MAController {
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
-		
+
 		if (form.hasErrors()) {
-			return badRequest(views.html.admin.user.create.render(
-					studyList, loggedInUser, form));
+			String breadcrumbs = MAController.getBreadcrumbs(
+					MAController.getDashboardBreadcrumb(), "New User");
+			return badRequest(views.html.admin.user.create.render(studyList,
+					loggedInUser, breadcrumbs, form));
 		}
 
 		// Check if user with this email already exists.
@@ -94,18 +100,20 @@ public class Users extends MAController {
 		}
 
 		if (form.hasErrors()) {
-			return badRequest(views.html.admin.user.create.render(
-					studyList, loggedInUser, form));
+			String breadcrumbs = MAController.getBreadcrumbs(
+					MAController.getDashboardBreadcrumb(), "New User");
+			return badRequest(views.html.admin.user.create.render(studyList,
+					loggedInUser, breadcrumbs, form));
 		} else {
 			newUser.setPasswordHash(passwordHash);
 			newUser.persist();
-			return redirect(routes.Users.index(newUser.getEmail()));
+			return redirect(routes.Users.profile(newUser.getEmail()));
 		}
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result update(String email) {
+	public static Result editProfile(String email) {
 		MAUser user = MAUser.findByEmail(email);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
@@ -121,18 +129,24 @@ public class Users extends MAController {
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
-			return badRequest(views.html.admin.user.index.render(
-					studyList, loggedInUser, errorMsg, user));
+			String breadcrumbs = MAController.getBreadcrumbs(
+					MAController.getDashboardBreadcrumb());
+			List<MAUser> userList = MAUser.findAll();
+			return badRequest(views.html.admin.dashboard.render(studyList,
+					loggedInUser, breadcrumbs, userList, errorMsg));
 		}
 
 		Form<MAUser> form = Form.form(MAUser.class).fill(user);
-		return ok(views.html.admin.user.update.render(studyList, user,
-				loggedInUser, form));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
+				"Edit Profile");
+		return ok(views.html.admin.user.editProfile.render(studyList, loggedInUser,
+				breadcrumbs, user, form));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitUpdated(String email) {
+	public static Result submitEditedProfile(String email) {
 		MAUser user = MAUser.findByEmail(email);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
@@ -140,7 +154,7 @@ public class Users extends MAController {
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
-		
+
 		Form<MAUser> form = Form.form(MAUser.class).bindFromRequest();
 
 		if (user == null) {
@@ -153,8 +167,11 @@ public class Users extends MAController {
 		}
 
 		if (form.hasErrors()) {
-			return badRequest(views.html.admin.user.update.render(
-					studyList, user, loggedInUser, form));
+			String breadcrumbs = MAController.getBreadcrumbs(
+					MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
+					"Edit Profile");
+			return badRequest(views.html.admin.user.editProfile.render(studyList,
+					loggedInUser, breadcrumbs, user, form));
 		} else {
 			// Update user in database
 			// Do not update 'email' since it's the id and should stay
@@ -163,7 +180,7 @@ public class Users extends MAController {
 			String name = requestData.get(NAME);
 			user.update(name);
 			user.merge();
-			return redirect(routes.Users.index(email));
+			return redirect(routes.Users.profile(email));
 		}
 	}
 
@@ -182,16 +199,22 @@ public class Users extends MAController {
 			return badRequestUserNotExist(email, loggedInUser, studyList);
 		}
 
-		// To change a user this user must be logged in.
+		// To change a user's password this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
-			return badRequest(views.html.admin.user.index.render(
-					studyList, loggedInUser, errorMsg, user));
+			String breadcrumbs = MAController.getBreadcrumbs(
+					MAController.getDashboardBreadcrumb());
+			List<MAUser> userList = MAUser.findAll();
+			return badRequest(views.html.admin.dashboard.render(studyList,
+					loggedInUser, breadcrumbs, userList, errorMsg));
 		}
 
 		Form<MAUser> form = Form.form(MAUser.class).fill(user);
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
+				"Change Password");
 		return ok(views.html.admin.user.changePassword.render(studyList,
-				user, loggedInUser, form));
+				loggedInUser, breadcrumbs, form));
 	}
 
 	@Transactional
@@ -238,19 +261,35 @@ public class Users extends MAController {
 		}
 
 		if (form.hasErrors()) {
+			String breadcrumbs = MAController.getBreadcrumbs(
+					MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
+					"Change Password");
 			return badRequest(views.html.admin.user.changePassword.render(
-					studyList, user, loggedInUser, form));
+					studyList, loggedInUser, breadcrumbs, form));
 		} else {
 			// Update password hash in DB
 			user.setPasswordHash(newPasswordHash);
 			user.merge();
-			return redirect(routes.Users.index(email));
+			return redirect(routes.Users.profile(email));
 		}
 	}
 
 	private static String errorMsgYouMustBeLoggedIn(MAUser user) {
 		return "You must be logged in as " + user.toString()
 				+ " to update this user.";
+	}
+
+	public static String getUserBreadcrumb(MAUser user) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("<a href=\"");
+		sb.append(routes.Users.profile(user.getEmail()));
+		sb.append("\">");
+		sb.append(user.getName());
+		sb.append(" (");
+		sb.append(user.getEmail());
+		sb.append(")");
+		sb.append("</a>");
+		return sb.toString();
 	}
 
 }

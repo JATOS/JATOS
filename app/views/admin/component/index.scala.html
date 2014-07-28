@@ -1,15 +1,7 @@
-@(studyList: List[MAStudy], study: MAStudy, errorMsg: String, 
-	user: MAUser, component: MAComponent)
+@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
+	study: MAStudy, errorMsg: String, component: MAComponent)
 
-@admin.main(studyList, user){
-
-<header>
-	<hgroup>
-		<h2>/ > </h2>
-		<h2>@study.getId() @study.getTitle() > </h2>
-		<h3>@component.getId() @component.getTitle() > </h3>
-	</hgroup>
-</header>
+@admin.main(studyList, loggedInUser, breadcrumbs){
 
 <article class="tasks" id="tasks">
 	@if(errorMsg != null) {
@@ -23,7 +15,7 @@
 	<input id="newGroup" type="button" onClick="removeComponent()"
 		value="Delete">
 	<input id="newGroup" type="button" onClick="removeResults()"
-		value="Remove Results">
+		value="Delete Results">
 		
 	<div class="folder" data-folder-id="@component.getId()">
 		<header>
@@ -53,7 +45,7 @@
 	}
 
 	function updateComponent() {
-		window.location.href = "@routes.Components.update(
+		window.location.href = "@routes.Components.edit(
 				study.getId(), component.getId())";
 	}
 	
@@ -66,7 +58,7 @@
 						study.getId(), component.getId())',
 				type : 'DELETE',
 				success : function(result) {
-					window.location.replace('@routes.Admin.index()');
+					window.location.replace('@routes.Admin.dashboard()');
 				},
 				error : function(err) {
 					alert(err.responseText);

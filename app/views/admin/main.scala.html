@@ -1,4 +1,4 @@
-@(studyList: List[MAStudy], user: MAUser)(body: Html)
+@(studyList: List[MAStudy], user: MAUser, breadcrumbs: String)(body: Html)
 
 <html>
 <head>
@@ -11,10 +11,12 @@
 
 <body>
 	<header>
-		<a href="@routes.Admin.index" id="logo"><span>Mechanical</span>Argentinian</a>
+		<a href="@routes.Admin.dashboard" id="logo"><span>Mechanical</span>Argentinian</a>
 		<dl id="user">
 			<dt>
-				@user.getName() <span>(@user.getEmail())</span>
+				<a href="@routes.Users.profile(user.getEmail())">
+					@user.getName() <span>(@user.getEmail())</span>
+				</a>
 			</dt>
 			<dd>
 				<a href="@routes.Admin.logout()">Logout</a>
@@ -44,7 +46,14 @@
 		</ul>
 	</nav>
 
-	<section id="main">@body</section>
+	<section id="main">
+		<header>
+			<hgroup>
+				<h2>@Html(breadcrumbs)</h2>
+			</hgroup>
+		</header>
+		@body
+	</section>
 	
 </body>
 </html>

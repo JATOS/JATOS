@@ -23,16 +23,19 @@ public class Studies extends MAController {
 	@Security.Authenticated(Secured.class)
 	public static Result index(Long studyId) {
 		MAStudy study = MAStudy.findById(studyId);
-		MAUser user = MAUser.findByEmail(session(MAController.COOKIE_EMAIL));
+		MAUser loggedInUser = MAUser
+				.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAStudy> studyList = MAStudy.findAll();
-		Result result = checkStandard(study, studyId, user,
-				studyList);
+		Result result = checkStandard(study, studyId, loggedInUser, studyList);
 		if (result != null) {
 			return result;
 		}
 
-		return ok(views.html.admin.study.index.render(studyList,
-				user, null, study));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(),
+				getStudyBreadcrumb(study));
+		return ok(views.html.admin.study.index.render(studyList, loggedInUser,
+				breadcrumbs, null, study));
 	}
 
 	@Transactional
@@ -44,15 +47,17 @@ public class Studies extends MAController {
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
-		return ok(views.html.admin.study.create.render(studyList,
-				loggedInUser, Form.form(MAStudy.class)));
+
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(), "New Study");
+		return ok(views.html.admin.study.create.render(studyList, loggedInUser,
+				breadcrumbs, Form.form(MAStudy.class)));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result submit() {
-		Form<MAStudy> form = Form.form(MAStudy.class)
-				.bindFromRequest();
+		Form<MAStudy> form = Form.form(MAStudy.class).bindFromRequest();
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
 		if (loggedInUser == null) {
@@ -60,8 +65,10 @@ public class Studies extends MAController {
 		}
 		if (form.hasErrors()) {
 			List<MAStudy> studyList = MAStudy.findAll();
-			return badRequest(views.html.admin.study.create.render(
-					studyList, loggedInUser, form));
+			String breadcrumbs = MAController.getBreadcrumbs(
+					MAController.getDashboardBreadcrumb(), "New Study");
+			return badRequest(views.html.admin.study.create.render(studyList,
+					loggedInUser, breadcrumbs, form));
 		} else {
 			MAStudy study = form.get();
 			study.addMember(loggedInUser);
@@ -72,41 +79,43 @@ public class Studies extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result update(Long studyId) {
+	public static Result properties(Long studyId) {
 		MAStudy study = MAStudy.findById(studyId);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAStudy> studyList = MAStudy.findAll();
-		Result result = checkStandard(study, studyId, loggedInUser,
-				studyList);
+		Result result = checkStandard(study, studyId, loggedInUser, studyList);
 		if (result != null) {
 			return result;
 		}
 
-		Form<MAStudy> form = Form.form(MAStudy.class)
-				.fill(study);
-		return ok(views.html.admin.study.update.render(studyList,
-				study, loggedInUser, form));
+		Form<MAStudy> form = Form.form(MAStudy.class).fill(study);
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(),
+				getStudyBreadcrumb(study), "Properties");
+		return ok(views.html.admin.study.properties.render(studyList, loggedInUser,
+				breadcrumbs, study, form));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitUpdated(Long studyId) {
+	public static Result submitProperties(Long studyId) {
 		MAStudy study = MAStudy.findById(studyId);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAStudy> studyList = MAStudy.findAll();
-		Result result = checkStandard(study, studyId, loggedInUser,
-				studyList);
+		Result result = checkStandard(study, studyId, loggedInUser, studyList);
 		if (result != null) {
 			return result;
 		}
 
-		Form<MAStudy> form = Form.form(MAStudy.class)
-				.bindFromRequest();
+		Form<MAStudy> form = Form.form(MAStudy.class).bindFromRequest();
 		if (form.hasErrors()) {
-			return badRequest(views.html.admin.study.update.render(
-					studyList, study, loggedInUser, form));
+			String breadcrumbs = MAController.getBreadcrumbs(
+					MAController.getDashboardBreadcrumb(),
+					getStudyBreadcrumb(study), "Properties");
+			return badRequest(views.html.admin.study.properties.render(studyList,
+					loggedInUser, breadcrumbs, study, form));
 		}
 
 		// Update study in DB
@@ -125,43 +134,43 @@ public class Studies extends MAController {
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAStudy> studyList = MAStudy.findAll();
-		Result result = checkStandard(study, studyId, loggedInUser,
-				studyList);
+		Result result = checkStandard(study, studyId, loggedInUser, studyList);
 		if (result != null) {
 			return result;
 		}
 
 		study.remove();
-		return redirect(routes.Admin.index());
+		return redirect(routes.Admin.dashboard());
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result updateMembers(Long studyId) {
+	public static Result changeMembers(Long studyId) {
 		MAStudy study = MAStudy.findById(studyId);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAStudy> studyList = MAStudy.findAll();
-		Result result = checkStandard(study, studyId, loggedInUser,
-				studyList);
+		Result result = checkStandard(study, studyId, loggedInUser, studyList);
 		if (result != null) {
 			return result;
 		}
 
 		List<MAUser> userList = MAUser.findAll();
-		return ok(views.html.admin.study.updateMembers.render(
-				studyList, study, userList, loggedInUser, null));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(),
+				getStudyBreadcrumb(study), "Change Members");
+		return ok(views.html.admin.study.changeMembers.render(studyList,
+				loggedInUser, breadcrumbs, study, userList, null));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitUpdatedMembers(Long studyId) {
+	public static Result submitChangedMembers(Long studyId) {
 		MAStudy study = MAStudy.findById(studyId);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAStudy> studyList = MAStudy.findAll();
-		Result result = checkStandard(study, studyId, loggedInUser,
-				studyList);
+		Result result = checkStandard(study, studyId, loggedInUser, studyList);
 		if (result != null) {
 			return result;
 		}
@@ -171,8 +180,11 @@ public class Studies extends MAController {
 		if (checkedUsers == null || checkedUsers.length < 1) {
 			String errorMsg = AN_STUDY_SHOULD_HAVE_AT_LEAST_ONE_MEMBER;
 			List<MAUser> userList = MAUser.findAll();
-			return badRequest(views.html.admin.study.updateMembers.render(
-					studyList, study, userList, loggedInUser,
+			String breadcrumbs = MAController.getBreadcrumbs(
+					MAController.getDashboardBreadcrumb(),
+					getStudyBreadcrumb(study), "Change Members");
+			return badRequest(views.html.admin.study.changeMembers.render(
+					studyList, loggedInUser, breadcrumbs, study, userList,
 					errorMsg));
 		}
 		study.getMemberList().clear();
@@ -192,8 +204,8 @@ public class Studies extends MAController {
 	 */
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result changeComponentOrder(Long studyId,
-			Long componentId, String direction) {
+	public static Result changeComponentOrder(Long studyId, Long componentId,
+			String direction) {
 		MAStudy study = MAStudy.findById(studyId);
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
@@ -205,8 +217,7 @@ public class Studies extends MAController {
 		}
 		if (!study.hasMember(loggedInUser)) {
 			return forbidden(notMember(loggedInUser.getName(),
-					loggedInUser.getEmail(), study.getId(),
-					study.getTitle()));
+					loggedInUser.getEmail(), study.getId(), study.getTitle()));
 		}
 
 		MAComponent component = MAComponent.findById(componentId);
@@ -235,31 +246,42 @@ public class Studies extends MAController {
 		MAUser loggedInUser = MAUser
 				.findByEmail(session(MAController.COOKIE_EMAIL));
 		List<MAStudy> studyList = MAStudy.findAll();
-		Result result = checkStandard(study, studyId, loggedInUser,
-				studyList);
+		Result result = checkStandard(study, studyId, loggedInUser, studyList);
 		if (result != null) {
 			return result;
 		}
 
 		String hostname = request().host();
-		return ok(views.html.admin.study.mTurkSourceCode.render(
-				studyList, loggedInUser, null, study, hostname));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(),
+				getStudyBreadcrumb(study),
+				"Mechanical Turk HIT layout source code");
+		return ok(views.html.admin.study.mTurkSourceCode.render(studyList,
+				loggedInUser, breadcrumbs, null, study, hostname));
 	}
 
-	private static Result checkStandard(MAStudy study,
-			Long studyId, MAUser loggedInUser,
-			List<MAStudy> studyList) {
+	private static Result checkStandard(MAStudy study, Long studyId,
+			MAUser loggedInUser, List<MAStudy> studyList) {
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
 		if (study == null) {
-			return badRequestStudyNotExist(studyId, loggedInUser,
-					studyList);
+			return badRequestStudyNotExist(studyId, loggedInUser, studyList);
 		}
 		if (!study.hasMember(loggedInUser)) {
 			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 		return null;
+	}
+
+	public static String getStudyBreadcrumb(MAStudy study) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("<a href=\"");
+		sb.append(routes.Studies.index(study.getId()));
+		sb.append("\">");
+		sb.append(study.getTitle());
+		sb.append("</a>");
+		return sb.toString();
 	}
 
 }

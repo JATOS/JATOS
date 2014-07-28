@@ -1,15 +1,7 @@
-@(studyList: List[MAStudy], study: MAStudy,
-	user: MAUser, form: Form[MAComponent])
+@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
+	study: MAStudy, form: Form[MAComponent])
 
-@admin.main(studyList, user){
-
-	<header>
-		<hgroup>
-			<h2>/ > </h2>
-			<h2>@study.getId() @study.getTitle() > </h2>
-			<h4>New Component > </h4>
-		</hgroup>
-	</header>
+@admin.main(studyList, loggedInUser, breadcrumbs){
 
 	<article class="tasks" id="tasks">
 		<div class="folder">
@@ -27,9 +19,15 @@
 				<input type="text" name="@Components.TITLE"
 					class="formTop" placeholder="Title"
 					value="@form(Components.TITLE).value">
-					
-				<input type="checkbox" name="@Components.RELOADABLE" value="true">
+				
+				<!-- We need a hidden input field.
+				 http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+				<input type="checkbox" class="reloadable" name="@Components.RELOADABLE" value="true"
+					@if("true".equals(form("reloadable").value)) {
+						checked="checked"
+					}>
 				<input type="hidden" name="@Components.RELOADABLE" value="false" />
+				<p class="reloadable">Allow participants to reload</p>
 				
 				@for(error <- form(Components.VIEW_URL).errors) {
 					<p class="error">@error.message</p>

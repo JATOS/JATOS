@@ -176,7 +176,7 @@ public class MAStudy {
 	public String toString() {
 		return id + " " + title;
 	}
-
+	
 	public static MAStudy findById(Long id) {
 		return JPA.em().find(MAStudy.class, id);
 	}

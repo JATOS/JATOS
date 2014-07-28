@@ -13,19 +13,35 @@ public class MAController extends Controller {
 
 	public static final String COOKIE_EMAIL = "email";
 
+	public static String getDashboardBreadcrumb() {
+		return "<a href=\"" + routes.Admin.dashboard() + "\">" + "/" + "</a>";
+	}
+
+	public static String getBreadcrumbs(String... crumbs) {
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < crumbs.length; i++) {
+			sb.append(crumbs[i]);
+			if (i < crumbs.length - 1) {
+				sb.append(" > ");
+			}
+		}
+		return sb.toString();
+	}
+
 	public static String studyNotExist(Long studyId) {
-		String errorMsg = "An study with id " + studyId
-				+ " doesn't exist.";
+		String errorMsg = "An study with id " + studyId + " doesn't exist.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	public static Result badRequestStudyNotExist(Long studyId,
-			MAUser user, List<MAStudy> studyList) {
+			MAUser loggedInUser, List<MAStudy> studyList) {
 		String errorMsg = studyNotExist(studyId);
 		List<MAUser> userList = MAUser.findAll();
-		return badRequest(views.html.admin.index.render(studyList,
-				userList, errorMsg, user));
+		String breadcrumbs = MAController.getBreadcrumbs(MAController
+				.getDashboardBreadcrumb());
+		return badRequest(views.html.admin.dashboard.render(studyList,
+				loggedInUser, breadcrumbs, userList, errorMsg));
 	}
 
 	public static String userNotExist(String email) {
@@ -38,23 +54,28 @@ public class MAController extends Controller {
 			MAUser loggedInUser, List<MAStudy> studyList) {
 		String errorMsg = userNotExist(email);
 		List<MAUser> userList = MAUser.findAll();
-		return badRequest(views.html.admin.index.render(studyList,
-				userList, errorMsg, loggedInUser));
+		String breadcrumbs = MAController.getBreadcrumbs(MAController
+				.getDashboardBreadcrumb());
+		return badRequest(views.html.admin.dashboard.render(studyList,
+				loggedInUser, breadcrumbs, userList, errorMsg));
 	}
 
 	public static String componentNotExist(Long componentId) {
-		String errorMsg = "An component with id " + componentId + " doesn't exist.";
+		String errorMsg = "An component with id " + componentId
+				+ " doesn't exist.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	public static Result badRequestComponentNotExist(Long componentId,
-			MAStudy study, MAUser user,
-			List<MAStudy> studyList) {
+			MAStudy study, MAUser loggedInUser, List<MAStudy> studyList) {
 		String errorMsg = componentNotExist(componentId);
 		List<MAUser> userList = MAUser.findAll();
-		return badRequest(views.html.admin.index.render(studyList,
-				userList, errorMsg, user));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(),
+				Studies.getStudyBreadcrumb(study));
+		return badRequest(views.html.admin.dashboard.render(studyList,
+				loggedInUser, breadcrumbs, userList, errorMsg));
 	}
 
 	public static String componentNotBelongToStudy(Long studyId,
@@ -65,31 +86,36 @@ public class MAController extends Controller {
 		return errorMsg;
 	}
 
-	public static Result badRequestComponentNotBelongToStudy(
-			MAStudy study, MAComponent component, MAUser user,
-			List<MAStudy> studyList) {
+	public static Result badRequestComponentNotBelongToStudy(MAStudy study,
+			MAComponent component, MAUser loggedInUser, List<MAStudy> studyList) {
 		String errorMsg = componentNotBelongToStudy(study.getId(),
 				component.getId());
 		List<MAUser> userList = MAUser.findAll();
-		return badRequest(views.html.admin.index.render(studyList,
-				userList, errorMsg, user));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(),
+				Studies.getStudyBreadcrumb(study));
+		return badRequest(views.html.admin.dashboard.render(studyList,
+				loggedInUser, breadcrumbs, userList, errorMsg));
 	}
 
-	public static String notMember(String username, String email,
-			Long studyId, String studyTitle) {
+	public static String notMember(String username, String email, Long studyId,
+			String studyTitle) {
 		String errorMsg = username + " (" + email + ") isn't member of study "
 				+ studyId + " \"" + studyTitle + "\".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	public static Result forbiddenNotMember(MAUser user,
-			MAStudy study, List<MAStudy> studyList) {
-		String errorMsg = notMember(user.getName(), user.getEmail(), study.getId(),
-				study.getTitle());
+	public static Result forbiddenNotMember(MAUser loggedInUser, MAStudy study,
+			List<MAStudy> studyList) {
+		String errorMsg = notMember(loggedInUser.getName(),
+				loggedInUser.getEmail(), study.getId(), study.getTitle());
 		List<MAUser> userList = MAUser.findAll();
-		return forbidden(views.html.admin.index.render(studyList,
-				userList, errorMsg, user));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(),
+				Studies.getStudyBreadcrumb(study));
+		return forbidden(views.html.admin.dashboard.render(studyList, loggedInUser,
+				breadcrumbs, userList, errorMsg));
 	}
 
 	public static String urlViewEmpty(Long componentId) {
@@ -98,13 +124,16 @@ public class MAController extends Controller {
 		return errorMsg;
 	}
 
-	public static Result badRequestUrlViewEmpty(MAUser user,
-			MAStudy study, MAComponent component,
-			List<MAStudy> studyList) {
+	public static Result badRequestUrlViewEmpty(MAUser loggedInUser,
+			MAStudy study, MAComponent component, List<MAStudy> studyList) {
 		String errorMsg = urlViewEmpty(component.getId());
 		List<MAUser> userList = MAUser.findAll();
-		return forbidden(views.html.admin.index.render(studyList,
-				userList, errorMsg, user));
+		String breadcrumbs = MAController.getBreadcrumbs(
+				MAController.getDashboardBreadcrumb(),
+				Studies.getStudyBreadcrumb(study),
+				Components.getComponentBreadcrumb(study, component));
+		return forbidden(views.html.admin.dashboard.render(studyList, loggedInUser,
+				breadcrumbs, userList, errorMsg));
 	}
 
 }

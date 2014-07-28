@@ -1,14 +1,7 @@
-@(studyList: List[MAStudy], loggedInUser: MAUser, errorMsg: String,
-	user: MAUser)
+@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
+	errorMsg: String, user: MAUser)
 
-@admin.main(studyList, loggedInUser){
-
-<header>
-	<hgroup>
-		<h2>/ > </h2>
-		<h3>@user.toString() > </h3>
-	</hgroup>
-</header>
+@admin.main(studyList, loggedInUser, breadcrumbs){
 
 <article class="tasks" id="tasks">
 
@@ -16,7 +9,7 @@
 		<p class="error">@errorMsg</p>
 	}
 
-	<a id="newGroup" href="@routes.Users.update(user.getEmail())">Edit Details</a>
+	<a id="newGroup" href="@routes.Users.editProfile(user.getEmail())">Edit Profile</a>
 	<a id="newGroup" href="@routes.Users.changePassword(user.getEmail())">Change password</a>
 
 	<div class="folder" data-folder-id="@user.getEmail()">

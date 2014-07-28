@@ -1,20 +1,12 @@
-@(studyList: List[MAStudy], user: MAUser,
-	loggedInUser: MAUser, form: Form[MAUser])
+@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
+	user: MAUser, form: Form[MAUser])
 
-@admin.main(studyList, loggedInUser){
-
-	<header>
-		<hgroup>
-			<h2>/ > </h2>
-			<h3>@user.toString() > </h3>
-			<h4>Update > </h4>
-		</hgroup>
-	</header>
+@admin.main(studyList, loggedInUser, breadcrumbs){
 
 	<article class="tasks" id="tasks">
 		<div class="folder">
 		
-			@helper.form(action = routes.Users.submitUpdated(user.getEmail()), 'class -> "addTask") {
+			@helper.form(action = routes.Users.submitEditedProfile(user.getEmail()), 'class -> "addTask") {
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message

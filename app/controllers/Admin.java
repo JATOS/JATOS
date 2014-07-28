@@ -13,15 +13,17 @@ public class Admin extends MAController {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result index() {
+	public static Result dashboard() {
 		List<MAStudy> studyList = MAStudy.findAll();
 		MAUser loggedInUser = MAUser.findByEmail(session(COOKIE_EMAIL));
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
 		List<MAUser> userList = MAUser.findAll();
-		return ok(views.html.admin.index.render(studyList, userList, null,
-				loggedInUser));
+		String breadcrumbs = MAController.getBreadcrumbs(MAController
+				.getDashboardBreadcrumb());
+		return ok(views.html.admin.dashboard.render(studyList, loggedInUser,
+				breadcrumbs, userList, null));
 	}
 
 	@Transactional
@@ -44,7 +46,7 @@ public class Admin extends MAController {
 			return badRequest(views.html.admin.login.render(loginForm));
 		} else {
 			session(COOKIE_EMAIL, loginForm.get().email);
-			return redirect(routes.Admin.index());
+			return redirect(routes.Admin.dashboard());
 		}
 	}
 

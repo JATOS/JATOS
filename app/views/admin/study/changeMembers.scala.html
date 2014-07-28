@@ -1,20 +1,12 @@
-@(studyList: List[MAStudy], study: MAStudy,
-	userList: List[MAUser], loggedInUser: MAUser, formError: String)
+@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
+	study: MAStudy, userList: List[MAUser], formError: String)
 
-@admin.main(studyList, loggedInUser){
-
-	<header>
-		<hgroup>
-			<h2>/ > </h2>
-			<h3>@study.getId() @study.getTitle() > </h3>
-			<h4>Update Members > </h4>
-		</hgroup>
-	</header>
+@admin.main(studyList, loggedInUser, breadcrumbs){
 
 	<article class="tasks" id="tasks">
 		<div class="folder">
 		
-			@helper.form(action = routes.Studies.submitUpdatedMembers(study.getId()), 'class -> "addTask") {
+			@helper.form(action = routes.Studies.submitChangedMembers(study.getId()), 'class -> "addTask") {
 				@if(formError != null) {
 					<p class="error">
 						@formError

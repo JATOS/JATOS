@@ -1,14 +1,7 @@
-@(studyList: List[MAStudy], user: MAUser, errorMsg: String,
-	study: MAStudy)
+@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
+	errorMsg: String, study: MAStudy)
 
-@admin.main(studyList, user){
-
-<header>
-	<hgroup>
-		<h2>/ > </h2>
-		<h3>@study.getId() @study.getTitle() > </h3>
-	</hgroup>
-</header>
+@admin.main(studyList, loggedInUser, breadcrumbs){
 
 <article class="study">
 	@if(errorMsg != null) {
@@ -35,7 +28,7 @@
 			<ul>
 				@for(member <- study.getMemberList()) {
 					<li>
-						<a class="member" href="@routes.Users.index(member.getEmail())"> @member.getName() (@member.getEmail())</a>
+						<a class="member" href="@routes.Users.profile(member.getEmail())"> @member.getName() (@member.getEmail())</a>
 					</li>
 				}
 			</ul>
@@ -108,11 +101,11 @@
 	});
 
 	$(".updateStudy").click(function(e) {
-		window.location.href = "@routes.Studies.update(study.getId())";
+		window.location.href = "@routes.Studies.properties(study.getId())";
 	});
 	
 	$(".updateMembers").click(function(e) {
-		window.location.href = "@routes.Studies.updateMembers(study.getId())";
+		window.location.href = "@routes.Studies.changeMembers(study.getId())";
 	});
 	
 	$(".showMTurkSourceCode").click(function(e) {
@@ -127,7 +120,7 @@
 				url : '@routes.Studies.remove(study.getId())',
 				type : 'DELETE',
 				success : function(result) {
-					window.location.replace('@routes.Admin.index()');
+					window.location.replace('@routes.Admin.dashboard()');
 				},
 				error : function(err) {
 					alert(err.responseText);
@@ -159,7 +152,7 @@
 				url : window.location.href = "/admin/@study.getId/"+ componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
-					window.location.replace('@routes.Admin.index()');
+					window.location.replace('@routes.Admin.dashboard()');
 				},
 				error : function(err) {
 					alert(err.responseText);

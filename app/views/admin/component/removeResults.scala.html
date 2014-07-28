@@ -1,16 +1,7 @@
-@(studyList: List[MAStudy], component: MAComponent,
-	study: MAStudy, loggedInUser: MAUser)
+@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
+	component: MAComponent, study: MAStudy)
 
-@admin.main(studyList, loggedInUser){
-
-	<header>
-		<hgroup>
-			<h2>/ > </h2>
-			<h3>@study.getId() @study.getTitle() > </h3>
-			<h3>@component.getId() @component.getTitle() > </h3>
-			<h4>Remove Results > </h4>
-		</hgroup>
-	</header>
+@admin.main(studyList, loggedInUser, breadcrumbs){
 
 	<article class="tasks" id="tasks">
 		
@@ -22,7 +13,7 @@
 					@if(component.getResultList().isEmpty()) {
 						<h3>No results so far</h3>
 					} else {
-						<h3>Which results should be removed?</h3>
+						<h3>Which results should be deleted?</h3>
 					}
 				</header>
 				
