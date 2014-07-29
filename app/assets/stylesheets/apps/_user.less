@@ -1,0 +1,69 @@
+// -----------------------------------
+// With many thanks to the author of the CSS of ZenTask
+// mda@zenexity.com
+// -----------------------------------
+
+.user {
+	p.error {
+		width: inherit;
+		margin: 5px 0;
+		color: #c00;
+		text-shadow: 1px 1px rgba(0,0,0,.1);
+	}
+	.boxRow {
+		overflow: hidden;
+		width: 100%;
+		.manageBox {
+			.box();
+			width: 49%;
+			overflow: hidden;
+			float: left;
+			> header {
+				h3 {
+					padding-right: 5px;
+					vertical-align: middle;
+				}
+				.placeHolder {
+					.button();
+					vertical-align: middle;
+					display: inline-block;
+					visibility: hidden;
+				}
+			}
+			.editProfile, .changePassword {
+				.button();
+				vertical-align: middle;
+				display: inline-block;
+				margin: 5px;
+			}
+		}
+		.studiesBox {
+			.box();
+			width: 49%;
+			float: right;
+			> header {
+				h3 {
+					vertical-align: middle;
+					padding-right: 5px;
+				}
+				.placeHolder {
+					.button();
+					vertical-align: middle;
+					display: inline-block;
+					visibility: hidden;
+				}
+			}
+			> ul {
+				> li {
+					position: relative;
+					padding: 4px 20px 4px 7px;
+					border-bottom: 1px solid rgba(0,0,0,.05);
+					-webkit-user-select: text;
+					a {
+						vertical-align: middle;
+					}
+				}
+			}
+		}
+	}
+}

@@ -20,7 +20,7 @@ public class Admin extends MAController {
 			return redirect(routes.Admin.login());
 		}
 		List<MAUser> userList = MAUser.findAll();
-		String breadcrumbs = MAController.getBreadcrumbs(MAController
+		String breadcrumbs = MAController.generateBreadcrumbs(MAController
 				.getDashboardBreadcrumb());
 		return ok(views.html.admin.dashboard.render(studyList, loggedInUser,
 				breadcrumbs, userList, null));

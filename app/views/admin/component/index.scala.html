@@ -3,35 +3,38 @@
 
 @admin.main(studyList, loggedInUser, breadcrumbs){
 
-<article class="tasks" id="tasks">
+<article class="component">
+
 	@if(errorMsg != null) {
 		<p class="error">@errorMsg</p>
 	}
-
-	<input id="newGroup" type="button" onClick="tryComponent()"
-		value="Try Component">
-	<input id="newGroup" type="button" onClick="updateComponent()"
-		value="Edit">
-	<input id="newGroup" type="button" onClick="removeComponent()"
-		value="Delete">
-	<input id="newGroup" type="button" onClick="removeResults()"
-		value="Delete Results">
-		
-	<div class="folder" data-folder-id="@component.getId()">
+	
+	<div class="manageBox">
 		<header>
-			@if(component.getResultList().isEmpty()) {
-				<h3>No results</h3>
-			} else {
-				<h3>Results so far</h3>
-			}
+			<h3>Manage Component</h3>
+			<div class="placeHolder">X</div>
+		</header>
+		<div class="tryComponent">Show Component</div>	
+		<div class="edit">Edit</div>
+		<div class="removeResults">Delete Results</div>
+		<div class="remove">Delete</div>
+	</div>
+
+	<div class="resultsBox">
+		<header>
+			<h3>Results</h3>
+			<div class="placeHolder">X</div>
 		</header>
 
-		<ul class="list">
+		<ul>
 			@for(result <- component.getResultList()) {
-				
-				<li data-task-id="@component.getId()">
+				<li>
 					@MAResult.asJson(result);
+					<div class="removeResult">Remove</div>
 				</li>
+			}
+			@if(component.getResultList().isEmpty()) {
+				<li>None</li>
 			}
 		</ul>
 	</div>
@@ -39,19 +42,24 @@
 
 <script type="text/javascript">
 
-	function tryComponent() {
+	$(".tryComponent").click(function(e) {
 		window.location.href = "@routes.Components.tryComponent(
 			study.getId, component.getId())";
-	}
+	});
 
-	function updateComponent() {
+	$(".edit").click(function(e) {
 		window.location.href = "@routes.Components.edit(
 				study.getId(), component.getId())";
-	}
+	});
 	
-	function removeComponent() {
-		var conf = confirm("Are you sure you want to remove component "
-				+ "@component.getId()" + "\u00a0" + "\"@Html(component.getTitle())\"?");
+	$(".remove").click(function(e) {
+		var conf = confirm("Are you sure you want to delete component " +
+				"\"@Html(component.getTitle())\" (id: @component.getId()) with all it's results?");
+		if (conf == false) {
+			return
+		}
+		conf = confirm("If you confirm, this component INCLUDING all it's " +
+				"RESULTS will be unrecoverably deleted!");
 		if (conf == true) {
 			$.ajax({
 				url : '@routes.Components.remove(
@@ -65,12 +73,16 @@
 				}
 			});
 		}
-	}
+	});
 	
-	function removeResults() {
+	$(".removeResults").click(function(e) {
 		window.location.href = "@routes.Components.removeResults(
 				study.getId(), component.getId())";
-	}
+	});
+	
+	$(".removeResult").click(function(e) {
+		// TODO implement single result remove 
+	});
 </script>
 
 }

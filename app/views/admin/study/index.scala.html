@@ -11,7 +11,7 @@
 	<div class="boxRow">
 		<div class="studyBox">
 			<header>
-				<h3>Study</h3>
+				<h3>Manage Study</h3>
 				<div class="placeHolder">X</div>
 			</header>
 			<div class="tryStudy">Show Whole Study</div>	
@@ -43,7 +43,7 @@
 
 		<ul>
 			@for(component <- study.getComponentList()) {
-				<li component-id="@component.getId()">
+				<li component-id="@component.getId()" component-title="@component.getTitle()">
 					<div class="arrows">
 						<div class="upArrow" component-id="@component.getId()"><p>&#9650;</p></div>
 						<div class="downArrow" component-id="@component.getId()"><p>&#9660;</p></div>
@@ -113,8 +113,14 @@
 	});
 	
 	$(".removeStudy").click(function(e) {
-		var conf = confirm("Are you sure you want to remove study "
-				+ "@study.getId()" + "\u00a0" + "\"@Html(study.getTitle())\"?");
+		var conf = confirm("Are you sure you want to delete study "
+				+ "\"@Html(study.getTitle())\" (id: @study.getId()) " +
+				"with all it's components and results?");
+		if (conf == false) {
+			return;
+		}
+		conf = confirm("If you confirm, this study INCLUDING all COMPONENTS and their " +
+				"RESULTS will be unrecoverably deleted!");
 		if (conf == true) {
 			$.ajax({
 				url : '@routes.Studies.remove(study.getId())',
@@ -145,14 +151,20 @@
 	
 	$(".removeComponent").click(function(e) {
 		var componentId = getComponentId(e);
-		var conf = confirm("Are you sure you want to remove component "
-				+ componentId + "?");
+		var componentTitle = getComponentTitle(e);
+		var conf = confirm("Are you sure you want to delete component \""
+				+ componentTitle + "\" (id: "+ componentId + ") with all it's results?");
+		if (conf == false) {
+			return
+		}
+		conf = confirm("If you confirm, this component INCLUDING all it's " +
+				"RESULTS will be unrecoverably deleted!");
 		if (conf == true) {
 			$.ajax({
-				url : window.location.href = "/admin/@study.getId/"+ componentId + "/remove",
+				url : "/admin/@study.getId/"+ componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
-					window.location.replace('@routes.Admin.dashboard()');
+					window.location.replace('@routes.Studies.index(study.getId())');
 				},
 				error : function(err) {
 					alert(err.responseText);
@@ -165,6 +177,12 @@
 		var componentElement = $(e.target).parent();
 		var componentId = componentElement.attr("component-id");
 		return componentId;
+	}
+	
+	function getComponentTitle(e) {
+		var componentElement = $(e.target).parent();
+		var componentTitle = componentElement.attr("component-title");
+		return componentTitle;
 	}
 	
 </script>

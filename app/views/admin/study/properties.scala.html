@@ -20,7 +20,7 @@
 				@for(error <- form(Studies.DESCRIPTION).errors) {
 					<p class="error">@error.message</p>
 				}
-				<p>Description will be shown to participants in Mechanical Turk</p>
+				<p class="formText">Description will be shown to participants in Mechanical Turk</p>
 				<textarea name="@Studies.DESCRIPTION" class="formDescription" rows="3"
 					placeholder="Description"
 					>@form(Studies.DESCRIPTION).value</textarea>

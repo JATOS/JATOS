@@ -6,6 +6,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -31,17 +32,17 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 @Entity
 public class MAComponent {
 
-	// For JSON serialization
-	public static class Public {
+	// For JSON serialization: fields for public API
+	public static class JsonForPublic {
 	}
 
-	// For JSON serialization
-	public static class Admin extends Public {
+	// For JSON serialization: fields for MechArg
+	public static class JsonForMA extends JsonForPublic {
 	}
 
 	@Id
 	@GeneratedValue
-	@JsonView(MAComponent.Public.class)
+	@JsonView(MAComponent.JsonForPublic.class)
 	private Long id;
 
 	@JsonIgnore
@@ -49,27 +50,27 @@ public class MAComponent {
 	@JoinColumn(name = "study_id")
 	private MAStudy study;
 
-	@JsonView(MAComponent.Public.class)
+	@JsonView(MAComponent.JsonForPublic.class)
 	private String title;
 
 	/**
 	 * Timestamp of the creation or the last update of this component
 	 */
-	@JsonView(MAComponent.Admin.class)
+	@JsonView(MAComponent.JsonForMA.class)
 	private Timestamp date;
 
-	@JsonView(MAComponent.Public.class)
+	@JsonView(MAComponent.JsonForPublic.class)
 	private String viewUrl; // URL or local path
 
-	@JsonView(MAComponent.Public.class)
+	@JsonView(MAComponent.JsonForPublic.class)
 	private boolean reloadable;
 
-	@JsonView(MAComponent.Public.class)
+	@JsonView(MAComponent.JsonForPublic.class)
 	@Lob
 	private String jsonData;
 
-	@JsonView(MAComponent.Admin.class)
-	@OneToMany(mappedBy = "component", fetch = FetchType.LAZY)
+	@JsonView(MAComponent.JsonForMA.class)
+	@OneToMany(mappedBy = "component", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private List<MAResult> resultList = new ArrayList<MAResult>();
 
 	public MAComponent() {
@@ -82,43 +83,43 @@ public class MAComponent {
 		this.viewUrl = viewUrl;
 		setJsonData(jsonData);
 	}
-	
+
 	public void setId(Long id) {
 		this.id = id;
 	}
-	
+
 	public Long getId() {
 		return this.id;
 	}
-	
+
 	public void setStudy(MAStudy study) {
 		this.study = study;
 	}
-	
+
 	public MAStudy getStudy() {
 		return this.study;
 	}
-	
+
 	public void setTitle(String title) {
 		this.title = title;
 	}
-	
+
 	public String getTitle() {
 		return this.title;
 	}
-	
+
 	public void setDate(Timestamp date) {
 		this.date = date;
 	}
-	
+
 	public Timestamp getDate() {
 		return this.date;
 	}
-	
+
 	public void setViewUrl(String viewUrl) {
 		this.viewUrl = viewUrl;
 	}
-	
+
 	public String getViewUrl() {
 		return this.viewUrl;
 	}
@@ -127,7 +128,7 @@ public class MAComponent {
 		if (this.jsonData == null) {
 			return null;
 		}
-		
+
 		// Try to make it pretty
 		String jsonDataPretty = null;
 		try {
@@ -152,15 +153,15 @@ public class MAComponent {
 			Logger.info("setJsonData: ", e);
 		}
 	}
-	
+
 	public void setResultList(List<MAResult> resultList) {
 		this.resultList = resultList;
 	}
-	
+
 	public List<MAResult> getResultList() {
 		return this.resultList;
 	}
-	
+
 	public void addResult(MAResult result) {
 		resultList.add(result);
 	}
@@ -172,7 +173,7 @@ public class MAComponent {
 	public boolean isReloadable() {
 		return reloadable;
 	}
-	
+
 	public void setReloadable(boolean reloadable) {
 		this.reloadable = reloadable;
 	}
@@ -236,7 +237,7 @@ public class MAComponent {
 			throws JsonProcessingException {
 		// Serialize MAComponent into JSON (only the public part)
 		ObjectWriter objectWriter = new ObjectMapper()
-				.writerWithView(MAComponent.Public.class);
+				.writerWithView(MAComponent.JsonForPublic.class);
 		String componentAsJson = objectWriter.writeValueAsString(component);
 		return componentAsJson;
 	}

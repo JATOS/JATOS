@@ -35,7 +35,7 @@ public class Components extends MAController {
 			return result;
 		}
 
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				Studies.getStudyBreadcrumb(study),
 				getComponentBreadcrumb(study, component));
@@ -85,7 +85,7 @@ public class Components extends MAController {
 			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				Studies.getStudyBreadcrumb(study), "New Component");
 		return ok(views.html.admin.component.create.render(studyList,
@@ -111,7 +111,7 @@ public class Components extends MAController {
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb(),
 					Studies.getStudyBreadcrumb(study), "New Component");
 			return badRequest(views.html.admin.component.create.render(
@@ -142,7 +142,7 @@ public class Components extends MAController {
 		}
 
 		Form<MAComponent> form = Form.form(MAComponent.class).fill(component);
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				Studies.getStudyBreadcrumb(study),
 				getComponentBreadcrumb(study, component), "Edit");
@@ -169,7 +169,7 @@ public class Components extends MAController {
 
 		Form<MAComponent> form = Form.form(MAComponent.class).bindFromRequest();
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb(),
 					Studies.getStudyBreadcrumb(study),
 					getComponentBreadcrumb(study, component),
@@ -228,7 +228,7 @@ public class Components extends MAController {
 			return forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				Studies.getStudyBreadcrumb(study),
 				getComponentBreadcrumb(study, component), "Delete Results");

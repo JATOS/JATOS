@@ -17,7 +17,7 @@ public class MAController extends Controller {
 		return "<a href=\"" + routes.Admin.dashboard() + "\">" + "/" + "</a>";
 	}
 
-	public static String getBreadcrumbs(String... crumbs) {
+	public static String generateBreadcrumbs(String... crumbs) {
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0; i < crumbs.length; i++) {
 			sb.append(crumbs[i]);
@@ -38,7 +38,7 @@ public class MAController extends Controller {
 			MAUser loggedInUser, List<MAStudy> studyList) {
 		String errorMsg = studyNotExist(studyId);
 		List<MAUser> userList = MAUser.findAll();
-		String breadcrumbs = MAController.getBreadcrumbs(MAController
+		String breadcrumbs = MAController.generateBreadcrumbs(MAController
 				.getDashboardBreadcrumb());
 		return badRequest(views.html.admin.dashboard.render(studyList,
 				loggedInUser, breadcrumbs, userList, errorMsg));
@@ -54,7 +54,7 @@ public class MAController extends Controller {
 			MAUser loggedInUser, List<MAStudy> studyList) {
 		String errorMsg = userNotExist(email);
 		List<MAUser> userList = MAUser.findAll();
-		String breadcrumbs = MAController.getBreadcrumbs(MAController
+		String breadcrumbs = MAController.generateBreadcrumbs(MAController
 				.getDashboardBreadcrumb());
 		return badRequest(views.html.admin.dashboard.render(studyList,
 				loggedInUser, breadcrumbs, userList, errorMsg));
@@ -71,7 +71,7 @@ public class MAController extends Controller {
 			MAStudy study, MAUser loggedInUser, List<MAStudy> studyList) {
 		String errorMsg = componentNotExist(componentId);
 		List<MAUser> userList = MAUser.findAll();
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				Studies.getStudyBreadcrumb(study));
 		return badRequest(views.html.admin.dashboard.render(studyList,
@@ -91,7 +91,7 @@ public class MAController extends Controller {
 		String errorMsg = componentNotBelongToStudy(study.getId(),
 				component.getId());
 		List<MAUser> userList = MAUser.findAll();
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				Studies.getStudyBreadcrumb(study));
 		return badRequest(views.html.admin.dashboard.render(studyList,
@@ -111,7 +111,7 @@ public class MAController extends Controller {
 		String errorMsg = notMember(loggedInUser.getName(),
 				loggedInUser.getEmail(), study.getId(), study.getTitle());
 		List<MAUser> userList = MAUser.findAll();
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				Studies.getStudyBreadcrumb(study));
 		return forbidden(views.html.admin.dashboard.render(studyList, loggedInUser,
@@ -128,7 +128,7 @@ public class MAController extends Controller {
 			MAStudy study, MAComponent component, List<MAStudy> studyList) {
 		String errorMsg = urlViewEmpty(component.getId());
 		List<MAUser> userList = MAUser.findAll();
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				Studies.getStudyBreadcrumb(study),
 				Components.getComponentBreadcrumb(study, component));

@@ -31,7 +31,7 @@ public class Studies extends MAController {
 			return result;
 		}
 
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				getStudyBreadcrumb(study));
 		return ok(views.html.admin.study.index.render(studyList, loggedInUser,
@@ -48,7 +48,7 @@ public class Studies extends MAController {
 			return redirect(routes.Admin.login());
 		}
 
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(), "New Study");
 		return ok(views.html.admin.study.create.render(studyList, loggedInUser,
 				breadcrumbs, Form.form(MAStudy.class)));
@@ -65,7 +65,7 @@ public class Studies extends MAController {
 		}
 		if (form.hasErrors()) {
 			List<MAStudy> studyList = MAStudy.findAll();
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb(), "New Study");
 			return badRequest(views.html.admin.study.create.render(studyList,
 					loggedInUser, breadcrumbs, form));
@@ -90,7 +90,7 @@ public class Studies extends MAController {
 		}
 
 		Form<MAStudy> form = Form.form(MAStudy.class).fill(study);
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				getStudyBreadcrumb(study), "Properties");
 		return ok(views.html.admin.study.properties.render(studyList, loggedInUser,
@@ -111,7 +111,7 @@ public class Studies extends MAController {
 
 		Form<MAStudy> form = Form.form(MAStudy.class).bindFromRequest();
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb(),
 					getStudyBreadcrumb(study), "Properties");
 			return badRequest(views.html.admin.study.properties.render(studyList,
@@ -156,7 +156,7 @@ public class Studies extends MAController {
 		}
 
 		List<MAUser> userList = MAUser.findAll();
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				getStudyBreadcrumb(study), "Change Members");
 		return ok(views.html.admin.study.changeMembers.render(studyList,
@@ -180,7 +180,7 @@ public class Studies extends MAController {
 		if (checkedUsers == null || checkedUsers.length < 1) {
 			String errorMsg = AN_STUDY_SHOULD_HAVE_AT_LEAST_ONE_MEMBER;
 			List<MAUser> userList = MAUser.findAll();
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb(),
 					getStudyBreadcrumb(study), "Change Members");
 			return badRequest(views.html.admin.study.changeMembers.render(
@@ -252,7 +252,7 @@ public class Studies extends MAController {
 		}
 
 		String hostname = request().host();
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(),
 				getStudyBreadcrumb(study),
 				"Mechanical Turk HIT layout source code");

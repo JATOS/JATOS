@@ -39,7 +39,7 @@ public class Users extends MAController {
 			return badRequestUserNotExist(email, loggedInUser, studyList);
 		}
 
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user));
 		return ok(views.html.admin.user.profile.render(studyList, loggedInUser,
 				breadcrumbs, null, user));
@@ -54,7 +54,7 @@ public class Users extends MAController {
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(), "New User");
 		return ok(views.html.admin.user.create.render(studyList, loggedInUser,
 				breadcrumbs, Form.form(MAUser.class)));
@@ -72,7 +72,7 @@ public class Users extends MAController {
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb(), "New User");
 			return badRequest(views.html.admin.user.create.render(studyList,
 					loggedInUser, breadcrumbs, form));
@@ -100,7 +100,7 @@ public class Users extends MAController {
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb(), "New User");
 			return badRequest(views.html.admin.user.create.render(studyList,
 					loggedInUser, breadcrumbs, form));
@@ -129,7 +129,7 @@ public class Users extends MAController {
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb());
 			List<MAUser> userList = MAUser.findAll();
 			return badRequest(views.html.admin.dashboard.render(studyList,
@@ -137,7 +137,7 @@ public class Users extends MAController {
 		}
 
 		Form<MAUser> form = Form.form(MAUser.class).fill(user);
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
 				"Edit Profile");
 		return ok(views.html.admin.user.editProfile.render(studyList, loggedInUser,
@@ -167,7 +167,7 @@ public class Users extends MAController {
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
 					"Edit Profile");
 			return badRequest(views.html.admin.user.editProfile.render(studyList,
@@ -202,7 +202,7 @@ public class Users extends MAController {
 		// To change a user's password this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb());
 			List<MAUser> userList = MAUser.findAll();
 			return badRequest(views.html.admin.dashboard.render(studyList,
@@ -210,7 +210,7 @@ public class Users extends MAController {
 		}
 
 		Form<MAUser> form = Form.form(MAUser.class).fill(user);
-		String breadcrumbs = MAController.getBreadcrumbs(
+		String breadcrumbs = MAController.generateBreadcrumbs(
 				MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
 				"Change Password");
 		return ok(views.html.admin.user.changePassword.render(studyList,
@@ -261,7 +261,7 @@ public class Users extends MAController {
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.getBreadcrumbs(
+			String breadcrumbs = MAController.generateBreadcrumbs(
 					MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
 					"Change Password");
 			return badRequest(views.html.admin.user.changePassword.render(

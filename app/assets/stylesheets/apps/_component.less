@@ -1,0 +1,71 @@
+// -----------------------------------
+// With many thanks to the author of the CSS of ZenTask
+// mda@zenexity.com
+// -----------------------------------
+
+.component {
+	p.error {
+		width: inherit;
+		margin: 5px 0;
+		color: #c00;
+		text-shadow: 1px 1px rgba(0,0,0,.1);
+	}
+	.manageBox {
+		.box();
+		width: 49%;
+		position: relative;
+		> header {
+			h3 {
+				padding-right: 5px;
+				vertical-align: middle;
+			}
+			.placeHolder {
+				.button();
+				vertical-align: middle;
+				display: inline-block;
+				visibility: hidden;
+			}
+		}
+		.tryComponent, .edit, .removeResults {
+			.button();
+			vertical-align: middle;
+			display: inline-block;
+			margin: 5px;
+		}
+		.remove {
+			.removeButton();
+			display: inline-block;
+			right: 0px;
+			vertical-align: middle;
+		}
+	}
+	.resultsBox {
+		.box();
+		> header {
+			h3 {
+				vertical-align: middle;
+				padding-right: 5px;
+			}
+			.placeHolder {
+				.button();
+				vertical-align: middle;
+				display: inline-block;
+				visibility: hidden;
+			}
+		}
+		> ul {
+			> li {
+				position: relative;
+				padding: 4px 20px 4px 7px;
+				border-bottom: 1px solid rgba(0,0,0,.05);
+				-webkit-user-select: text;
+				.removeResult {
+					.removeButton();
+					right: 0px;
+					display: inline-block;
+					vertical-align: middle;
+				}
+			}
+		}
+	}
+}

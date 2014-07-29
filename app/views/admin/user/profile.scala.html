@@ -3,37 +3,55 @@
 
 @admin.main(studyList, loggedInUser, breadcrumbs){
 
-<article class="tasks" id="tasks">
+<article class="user">
 
 	@if(errorMsg != null) {
 		<p class="error">@errorMsg</p>
 	}
-
-	<a id="newGroup" href="@routes.Users.editProfile(user.getEmail())">Edit Profile</a>
-	<a id="newGroup" href="@routes.Users.changePassword(user.getEmail())">Change password</a>
-
-	<div class="folder" data-folder-id="@user.getEmail()">
-		<header>
-			<h3>Member in Studies</h3>
-		</header>
-
-		<ul class="list">
-			@if(user.getStudyList().isEmpty()) {
-				<li>
-					<p class="name">None</p>
-				</li>
-			}
-		
-			@for(study <- user.getStudyList()) {
-				<li data-task-id="@study.getId()">
-					<a class="name"
-							href="@routes.Studies.index(study.getId())">
-							@study.getId() "@study.getTitle()"
-					</a>
-				</li>
-			}
-		</ul>
+	
+	<div class="boxRow">
+		<div class="manageBox">
+			<header>
+				<h3>Manage User</h3>
+				<div class="placeHolder">X</div>
+			</header>
+			<div class="editProfile">Edit Profile</div>	
+			<div class="changePassword">Change password</div>
+		</div>
+	
+		<div class="studiesBox">
+			<header>
+				<h3>Member in Studies</h3>
+				<div class="placeHolder">X</div>
+			</header>
+	
+			<ul>
+				@if(user.getStudyList().isEmpty()) {
+					<li>None</li>
+				}
+			
+				@for(study <- user.getStudyList()) {
+					<li>
+						<a href="@routes.Studies.index(study.getId())">
+							@study.getTitle() (id: @study.getId())
+						</a>
+					</li>
+				}
+			</ul>
+		</div>
 	</div>
 </article>
+
+<script type="text/javascript">
+
+$(".editProfile").click(function(e) {
+	window.location.href = "/admin/user/@user.getEmail()/editProfile";
+});
+
+$(".changePassword").click(function(e) {
+	window.location.href = "/admin/user/@user.getEmail()/changePassword";
+});
+
+</script>
 
 }

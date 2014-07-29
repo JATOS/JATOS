@@ -7,8 +7,15 @@
 	@if(errorMsg != null) {
 		<p class="error">@errorMsg</p>
 	}
-	<a id="newGroup" href="@routes.Studies.create()">New Study</a>
-	<a id="newGroup" href="@routes.Users.create()">New User</a>
+	
+	<div class="folder">
+		<header>
+			<h3>Manage</h3>
+		</header>
+		<a id="newGroup" href="@routes.Studies.create()">New Study</a>
+		<a id="newGroup" href="@routes.Users.create()">New User</a>
+	</div>
+	
 	
 	<div class="folder">
 		<header>
