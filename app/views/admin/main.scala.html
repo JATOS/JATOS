@@ -25,18 +25,18 @@
 	</header>
 
 	<nav>
-		<h4 class="dashboard"><a href="/admin">Dashboard</a></h4>
-		<ul id="projects">
+		<h4><a href="@routes.Admin.dashboard()">Dashboard</a></h4>
+		<ul id="studies">
 			@for(study <- studyList) {
-				<li data-group="@study.getId()">
-					<a class="name" href="@routes.Studies.index(study.getId())">
-						@study.getTitle()
+				<li>
+					<a href="@routes.Studies.index(study.getId())">
+						@study.getTitle() (id: @study.getId())
 					</a>
-					<ul id="components">
+					<ul>
 						@for(component <- study.getComponentList()) {
-							<li data-project="@component.getId()">
-								<a class="name" href="@routes.Components.index(study.getId(), component.getId())">
-									@component.getTitle()
+							<li>
+								<a href="@routes.Components.index(study.getId(), component.getId())">
+									@component.getTitle() (id: @component.getId())
 								</a>
 							</li>
 						}
