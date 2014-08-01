@@ -1,4 +1,4 @@
-@(form: Form[Admin.Login])
+@(form: Form[Authentication.Login])
 
 <html>
 <head>
@@ -10,10 +10,10 @@
 <body>
 
 	<header>
-		<a href="@routes.Admin.dashboard" id="logo"><span>Mechanical</span>Argentinian</a>
+		<a href="@routes.Dashboard.dashboard" id="logo"><span>Mechanical</span>Argentinian</a>
 	</header>
 
-	@helper.form(routes.Admin.authenticate) {
+	@helper.form(routes.Authentication.authenticate) {
 
 		<h1>Sign in</h1>
 	

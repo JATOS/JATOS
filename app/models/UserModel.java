@@ -16,7 +16,7 @@ import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 
 @Entity
-public class MAUser {
+public class UserModel {
 
 	@Id
 	private String email;
@@ -27,15 +27,15 @@ public class MAUser {
 	private String passwordHash;
 
 	@ManyToMany(mappedBy = "memberList", fetch=FetchType.LAZY)
-	private Set<MAStudy> studyList = new HashSet<MAStudy>();
+	private Set<StudyModel> studyList = new HashSet<StudyModel>();
 
-	public MAUser(String email, String name, String passwordHash) {
+	public UserModel(String email, String name, String passwordHash) {
 		this.email = email;
 		this.name = name;
 		this.passwordHash = passwordHash;
 	}
 	
-	public MAUser() {
+	public UserModel() {
 	}
 
 	public void update(String name) {
@@ -66,11 +66,11 @@ public class MAUser {
 		return this.passwordHash;
 	}
 	
-	public void setStudyList(Set<MAStudy> studyList) {
+	public void setStudyList(Set<StudyModel> studyList) {
 		this.studyList = studyList;
 	}
 
-	public Set<MAStudy> getStudyList() {
+	public Set<StudyModel> getStudyList() {
 		return this.studyList;
 	}
 	
@@ -79,11 +79,11 @@ public class MAUser {
 		return name + ", " + email;
 	}
 
-	public static MAUser authenticate(String email, String passwordHash) {
-		String queryStr = "SELECT e FROM MAUser e WHERE "
+	public static UserModel authenticate(String email, String passwordHash) {
+		String queryStr = "SELECT e FROM UserModel e WHERE "
 				+ "e.email=:email and e.passwordHash=:passwordHash";
-		TypedQuery<MAUser> query = JPA.em().createQuery(queryStr, MAUser.class);
-		List<MAUser> userList = query.setParameter("email", email)
+		TypedQuery<UserModel> query = JPA.em().createQuery(queryStr, UserModel.class);
+		List<UserModel> userList = query.setParameter("email", email)
 				.setParameter("passwordHash", passwordHash).getResultList();
 		return userList.isEmpty() ? null : userList.get(0);
 	}
@@ -114,13 +114,13 @@ public class MAUser {
 		return sb.toString();
 	}
 
-	public static MAUser findByEmail(String email) {
-		return JPA.em().find(MAUser.class, email);
+	public static UserModel findByEmail(String email) {
+		return JPA.em().find(UserModel.class, email);
 	}
 
-	public static List<MAUser> findAll() {
-		TypedQuery<MAUser> query = JPA.em().createQuery(
-				"SELECT e FROM MAUser e", MAUser.class);
+	public static List<UserModel> findAll() {
+		TypedQuery<UserModel> query = JPA.em().createQuery(
+				"SELECT e FROM UserModel e", UserModel.class);
 		return query.getResultList();
 	}
 

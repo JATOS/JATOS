@@ -1,7 +1,7 @@
-@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
-	errorMsg: String, user: MAUser)
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+	errorMsg: String, user: UserModel)
 
-@admin.main(studyList, loggedInUser, breadcrumbs){
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
 <article class="user">
 

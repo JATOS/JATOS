@@ -2,15 +2,17 @@ package controllers;
 
 import java.util.List;
 
-import models.MAStudy;
-import models.MAUser;
+import controllers.routes;
+import models.StudyModel;
+import models.UserModel;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
+import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 
-public class Users extends MAController {
+public class Users extends Controller {
 
 	public static final String NAME = "name";
 	public static final String EMAIL = "email";
@@ -23,64 +25,67 @@ public class Users extends MAController {
 	public static final String PASSWORDS_ARENT_THE_SAME = "Passwords aren't the same.";
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings.";
 	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email is already registered.";
+	public static final String COOKIE_EMAIL = "email";
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result profile(String email) {
-		MAUser user = MAUser.findByEmail(email);
-		MAUser loggedInUser = MAUser
-				.findByEmail(session(MAController.COOKIE_EMAIL));
+		UserModel user = UserModel.findByEmail(email);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
-		List<MAStudy> studyList = MAStudy.findAll();
+		List<StudyModel> studyList = StudyModel.findAll();
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, studyList);
+			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+					studyList);
 		}
 
-		String breadcrumbs = MAController.generateBreadcrumbs(
-				MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user));
-		return ok(views.html.admin.user.profile.render(studyList, loggedInUser,
-				breadcrumbs, null, user));
+		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getUserBreadcrumb(user));
+		return ok(views.html.mecharg.user.profile.render(studyList,
+				loggedInUser, breadcrumbs, null, user));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result create() {
-		List<MAStudy> studyList = MAStudy.findAll();
-		MAUser loggedInUser = MAUser
-				.findByEmail(session(MAController.COOKIE_EMAIL));
+		List<StudyModel> studyList = StudyModel.findAll();
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
-		String breadcrumbs = MAController.generateBreadcrumbs(
-				MAController.getDashboardBreadcrumb(), "New User");
-		return ok(views.html.admin.user.create.render(studyList, loggedInUser,
-				breadcrumbs, Form.form(MAUser.class)));
+		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+				Breadcrumbs.getDashboardBreadcrumb(), "New User");
+		return ok(views.html.mecharg.user.create.render(studyList,
+				loggedInUser, breadcrumbs, Form.form(UserModel.class)));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result submit() throws Exception {
-		Form<MAUser> form = Form.form(MAUser.class).bindFromRequest();
-		List<MAStudy> studyList = MAStudy.findAll();
-		MAUser loggedInUser = MAUser
-				.findByEmail(session(MAController.COOKIE_EMAIL));
+		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
+		List<StudyModel> studyList = StudyModel.findAll();
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.generateBreadcrumbs(
-					MAController.getDashboardBreadcrumb(), "New User");
-			return badRequest(views.html.admin.user.create.render(studyList,
+			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+					Breadcrumbs.getDashboardBreadcrumb(), "New User");
+			return badRequest(views.html.mecharg.user.create.render(studyList,
 					loggedInUser, breadcrumbs, form));
 		}
 
 		// Check if user with this email already exists.
-		MAUser newUser = form.get();
-		if (MAUser.findByEmail(newUser.getEmail()) != null) {
+		UserModel newUser = form.get();
+		if (UserModel.findByEmail(newUser.getEmail()) != null) {
 			form.reject(EMAIL, THIS_EMAIL_IS_ALREADY_REGISTERED);
 		}
 
@@ -93,16 +98,16 @@ public class Users extends MAController {
 		}
 
 		// Check that both passwords are the same
-		String passwordHash = MAUser.getHashMDFive(password);
-		String passwordHashRepeat = MAUser.getHashMDFive(passwordRepeat);
+		String passwordHash = UserModel.getHashMDFive(password);
+		String passwordHashRepeat = UserModel.getHashMDFive(passwordRepeat);
 		if (!passwordHash.equals(passwordHashRepeat)) {
 			form.reject(PASSWORD, PASSWORDS_ARENT_THE_SAME);
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.generateBreadcrumbs(
-					MAController.getDashboardBreadcrumb(), "New User");
-			return badRequest(views.html.admin.user.create.render(studyList,
+			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+					Breadcrumbs.getDashboardBreadcrumb(), "New User");
+			return badRequest(views.html.mecharg.user.create.render(studyList,
 					loggedInUser, breadcrumbs, form));
 		} else {
 			newUser.setPasswordHash(passwordHash);
@@ -114,51 +119,53 @@ public class Users extends MAController {
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result editProfile(String email) {
-		MAUser user = MAUser.findByEmail(email);
-		MAUser loggedInUser = MAUser
-				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAStudy> studyList = MAStudy.findAll();
+		UserModel user = UserModel.findByEmail(email);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		List<StudyModel> studyList = StudyModel.findAll();
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, studyList);
+			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+					studyList);
 		}
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
-			String breadcrumbs = MAController.generateBreadcrumbs(
-					MAController.getDashboardBreadcrumb());
-			List<MAUser> userList = MAUser.findAll();
-			return badRequest(views.html.admin.dashboard.render(studyList,
+			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
+					.getDashboardBreadcrumb());
+			List<UserModel> userList = UserModel.findAll();
+			return badRequest(views.html.mecharg.dashboard.render(studyList,
 					loggedInUser, breadcrumbs, userList, errorMsg));
 		}
 
-		Form<MAUser> form = Form.form(MAUser.class).fill(user);
-		String breadcrumbs = MAController.generateBreadcrumbs(
-				MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
-				"Edit Profile");
-		return ok(views.html.admin.user.editProfile.render(studyList, loggedInUser,
-				breadcrumbs, user, form));
+		Form<UserModel> form = Form.form(UserModel.class).fill(user);
+		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getUserBreadcrumb(user), "Edit Profile");
+		return ok(views.html.mecharg.user.editProfile.render(studyList,
+				loggedInUser, breadcrumbs, user, form));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result submitEditedProfile(String email) {
-		MAUser user = MAUser.findByEmail(email);
-		MAUser loggedInUser = MAUser
-				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAStudy> studyList = MAStudy.findAll();
+		UserModel user = UserModel.findByEmail(email);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		List<StudyModel> studyList = StudyModel.findAll();
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
 
-		Form<MAUser> form = Form.form(MAUser.class).bindFromRequest();
+		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, studyList);
+			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+					studyList);
 		}
 
 		// To change a user this user must be logged in.
@@ -167,11 +174,11 @@ public class Users extends MAController {
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.generateBreadcrumbs(
-					MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
-					"Edit Profile");
-			return badRequest(views.html.admin.user.editProfile.render(studyList,
-					loggedInUser, breadcrumbs, user, form));
+			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+					Breadcrumbs.getDashboardBreadcrumb(),
+					Breadcrumbs.getUserBreadcrumb(user), "Edit Profile");
+			return badRequest(views.html.mecharg.user.editProfile.render(
+					studyList, loggedInUser, breadcrumbs, user, form));
 		} else {
 			// Update user in database
 			// Do not update 'email' since it's the id and should stay
@@ -187,51 +194,53 @@ public class Users extends MAController {
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result changePassword(String email) {
-		MAUser user = MAUser.findByEmail(email);
-		MAUser loggedInUser = MAUser
-				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAStudy> studyList = MAStudy.findAll();
+		UserModel user = UserModel.findByEmail(email);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		List<StudyModel> studyList = StudyModel.findAll();
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, studyList);
+			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+					studyList);
 		}
 
 		// To change a user's password this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = errorMsgYouMustBeLoggedIn(user);
-			String breadcrumbs = MAController.generateBreadcrumbs(
-					MAController.getDashboardBreadcrumb());
-			List<MAUser> userList = MAUser.findAll();
-			return badRequest(views.html.admin.dashboard.render(studyList,
+			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
+					.getDashboardBreadcrumb());
+			List<UserModel> userList = UserModel.findAll();
+			return badRequest(views.html.mecharg.dashboard.render(studyList,
 					loggedInUser, breadcrumbs, userList, errorMsg));
 		}
 
-		Form<MAUser> form = Form.form(MAUser.class).fill(user);
-		String breadcrumbs = MAController.generateBreadcrumbs(
-				MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
-				"Change Password");
-		return ok(views.html.admin.user.changePassword.render(studyList,
+		Form<UserModel> form = Form.form(UserModel.class).fill(user);
+		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getUserBreadcrumb(user), "Change Password");
+		return ok(views.html.mecharg.user.changePassword.render(studyList,
 				loggedInUser, breadcrumbs, form));
 	}
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result submitChangedPassword(String email) throws Exception {
-		MAUser user = MAUser.findByEmail(email);
-		Form<MAUser> form = Form.form(MAUser.class).fill(user);
-		MAUser loggedInUser = MAUser
-				.findByEmail(session(MAController.COOKIE_EMAIL));
-		List<MAStudy> studyList = MAStudy.findAll();
+		UserModel user = UserModel.findByEmail(email);
+		Form<UserModel> form = Form.form(UserModel.class).fill(user);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		List<StudyModel> studyList = StudyModel.findAll();
 		DynamicForm requestData = Form.form().bindFromRequest();
 		if (loggedInUser == null) {
 			return redirect(routes.Admin.login());
 		}
 
 		if (user == null) {
-			return badRequestUserNotExist(email, loggedInUser, studyList);
+			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+					studyList);
 		}
 
 		// To change a user this user must be logged in.
@@ -240,9 +249,9 @@ public class Users extends MAController {
 		}
 
 		// Authenticate
-		String oldPasswordHash = MAUser.getHashMDFive(requestData
+		String oldPasswordHash = UserModel.getHashMDFive(requestData
 				.get(OLD_PASSWORD));
-		if (MAUser.authenticate(user.getEmail(), oldPasswordHash) == null) {
+		if (UserModel.authenticate(user.getEmail(), oldPasswordHash) == null) {
 			form.reject(OLD_PASSWORD, WRONG_OLD_PASSWORD);
 		}
 
@@ -254,17 +263,18 @@ public class Users extends MAController {
 		}
 
 		// Check that both passwords are the same
-		String newPasswordHash = MAUser.getHashMDFive(newPassword);
-		String newPasswordHashRepeat = MAUser.getHashMDFive(newPasswordRepeat);
+		String newPasswordHash = UserModel.getHashMDFive(newPassword);
+		String newPasswordHashRepeat = UserModel
+				.getHashMDFive(newPasswordRepeat);
 		if (!newPasswordHash.equals(newPasswordHashRepeat)) {
 			form.reject(NEW_PASSWORD, PASSWORDS_ARENT_THE_SAME);
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = MAController.generateBreadcrumbs(
-					MAController.getDashboardBreadcrumb(), getUserBreadcrumb(user),
-					"Change Password");
-			return badRequest(views.html.admin.user.changePassword.render(
+			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+					Breadcrumbs.getDashboardBreadcrumb(),
+					Breadcrumbs.getUserBreadcrumb(user), "Change Password");
+			return badRequest(views.html.mecharg.user.changePassword.render(
 					studyList, loggedInUser, breadcrumbs, form));
 		} else {
 			// Update password hash in DB
@@ -274,22 +284,9 @@ public class Users extends MAController {
 		}
 	}
 
-	private static String errorMsgYouMustBeLoggedIn(MAUser user) {
+	private static String errorMsgYouMustBeLoggedIn(UserModel user) {
 		return "You must be logged in as " + user.toString()
 				+ " to update this user.";
-	}
-
-	public static String getUserBreadcrumb(MAUser user) {
-		StringBuffer sb = new StringBuffer();
-		sb.append("<a href=\"");
-		sb.append(routes.Users.profile(user.getEmail()));
-		sb.append("\">");
-		sb.append(user.getName());
-		sb.append(" (");
-		sb.append(user.getEmail());
-		sb.append(")");
-		sb.append("</a>");
-		return sb.toString();
 	}
 
 }

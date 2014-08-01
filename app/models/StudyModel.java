@@ -23,7 +23,7 @@ import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 
 @Entity
-public class MAStudy {
+public class StudyModel {
 
 	@Id
 	@GeneratedValue
@@ -38,14 +38,14 @@ public class MAStudy {
 
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "email") })
-	private Set<MAUser> memberList = new HashSet<MAUser>();
+	private Set<UserModel> memberList = new HashSet<UserModel>();
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
-	private List<MAComponent> componentList = new ArrayList<MAComponent>();
+	private List<ComponentModel> componentList = new ArrayList<ComponentModel>();
 
-	public MAStudy() {
+	public StudyModel() {
 	}
 
 	public void setId(Long id) {
@@ -80,54 +80,54 @@ public class MAStudy {
 		return this.date;
 	}
 
-	public void setMemberList(Set<MAUser> memberList) {
+	public void setMemberList(Set<UserModel> memberList) {
 		this.memberList = memberList;
 	}
 
-	public Set<MAUser> getMemberList() {
+	public Set<UserModel> getMemberList() {
 		return memberList;
 	}
 
-	public void addMember(MAUser user) {
+	public void addMember(UserModel user) {
 		memberList.add(user);
 	}
 
-	public void removeMember(MAUser user) {
+	public void removeMember(UserModel user) {
 		memberList.remove(user);
 	}
 
-	public boolean hasMember(MAUser user) {
+	public boolean hasMember(UserModel user) {
 		return memberList.contains(user);
 	}
 
-	public void setComponentList(List<MAComponent> componentList) {
+	public void setComponentList(List<ComponentModel> componentList) {
 		this.componentList = componentList;
 	}
 
-	public List<MAComponent> getComponentList() {
+	public List<ComponentModel> getComponentList() {
 		return this.componentList;
 	}
 
-	public void addComponent(MAComponent component) {
+	public void addComponent(ComponentModel component) {
 		componentList.add(component);
 	}
 
-	public void removeComponent(MAComponent component) {
+	public void removeComponent(ComponentModel component) {
 		componentList.remove(component);
 	}
 
-	public boolean hasComponent(MAComponent component) {
+	public boolean hasComponent(ComponentModel component) {
 		return componentList.contains(component);
 	}
 
-	public MAComponent getFirstComponent() {
+	public ComponentModel getFirstComponent() {
 		if (componentList.size() > 0) {
 			return componentList.get(0);
 		}
 		return null;
 	}
 
-	public MAComponent getNextComponent(MAComponent component) {
+	public ComponentModel getNextComponent(ComponentModel component) {
 		int index = componentList.indexOf(component);
 		if (index < componentList.size() - 1) {
 			return componentList.get(index + 1);
@@ -135,28 +135,28 @@ public class MAStudy {
 		return null;
 	}
 
-	public void componentOrderMinusOne(MAComponent component) {
+	public void componentOrderMinusOne(ComponentModel component) {
 		int index = componentList.indexOf(component);
 		if (index > 0) {
-			MAComponent prevComponent = componentList.get(index - 1);
+			ComponentModel prevComponent = componentList.get(index - 1);
 			componentOrderSwap(component, prevComponent);
 		}
 	}
 
-	public void componentOrderPlusOne(MAComponent component) {
+	public void componentOrderPlusOne(ComponentModel component) {
 		int index = componentList.indexOf(component);
 		if (index < (componentList.size() - 1)) {
-			MAComponent nextComponent = componentList.get(index + 1);
+			ComponentModel nextComponent = componentList.get(index + 1);
 			componentOrderSwap(component, nextComponent);
 		}
 	}
 
-	public void componentOrderSwap(MAComponent component1,
-			MAComponent component2) {
+	public void componentOrderSwap(ComponentModel component1,
+			ComponentModel component2) {
 		int index1 = componentList.indexOf(component1);
 		int index2 = componentList.indexOf(component2);
-		MAComponent.changeComponentOrder(component1, index2);
-		MAComponent.changeComponentOrder(component2, index1);
+		ComponentModel.changeComponentOrder(component1, index2);
+		ComponentModel.changeComponentOrder(component2, index1);
 	}
 
 	public void update(String title, String description) {
@@ -177,13 +177,13 @@ public class MAStudy {
 		return id + " " + title;
 	}
 	
-	public static MAStudy findById(Long id) {
-		return JPA.em().find(MAStudy.class, id);
+	public static StudyModel findById(Long id) {
+		return JPA.em().find(StudyModel.class, id);
 	}
 
-	public static List<MAStudy> findAll() {
-		TypedQuery<MAStudy> query = JPA.em().createQuery(
-				"SELECT e FROM MAStudy e", MAStudy.class);
+	public static List<StudyModel> findAll() {
+		TypedQuery<StudyModel> query = JPA.em().createQuery(
+				"SELECT e FROM StudyModel e", StudyModel.class);
 		return query.getResultList();
 	}
 

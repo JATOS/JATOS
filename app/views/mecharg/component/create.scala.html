@@ -1,7 +1,7 @@
-@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
-	study: MAStudy, form: Form[MAComponent])
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+	study: StudyModel, form: Form[ComponentModel])
 
-@admin.main(studyList, loggedInUser, breadcrumbs){
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
 	<article class="tasks" id="tasks">
 		<div class="folder">

@@ -1,4 +1,4 @@
-@(studyList: List[MAStudy], user: MAUser, breadcrumbs: String)(body: Html)
+@(studyList: List[StudyModel], user: UserModel, breadcrumbs: String)(body: Html)
 
 <html>
 <head>
@@ -11,7 +11,7 @@
 
 <body>
 	<header>
-		<a href="@routes.Admin.dashboard" id="logo"><span>Mechanical</span>Argentinian</a>
+		<a href="@routes.Dashboard.dashboard" id="logo"><span>Mechanical</span>Argentinian</a>
 		<dl id="user">
 			<dt>
 				<a href="@routes.Users.profile(user.getEmail())">
@@ -19,13 +19,13 @@
 				</a>
 			</dt>
 			<dd>
-				<a href="@routes.Admin.logout()">Logout</a>
+				<a href="@routes.Authentication.logout()">Logout</a>
 			</dd>
 		</dl>
 	</header>
 
 	<nav>
-		<h4><a href="@routes.Admin.dashboard()">Dashboard</a></h4>
+		<h4><a href="@routes.Dashboard.dashboard()">Dashboard</a></h4>
 		<ul id="studies">
 			@for(study <- studyList) {
 				<li>

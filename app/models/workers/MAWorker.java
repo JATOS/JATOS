@@ -3,26 +3,26 @@ package models.workers;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import models.MAUser;
+import models.UserModel;
 
 @Entity
 @DiscriminatorValue("MA")
 public class MAWorker extends Worker {
 
-	private MAUser user;
+	private UserModel user;
 
 	public MAWorker() {
 	}
 	
-	public MAWorker(MAUser user) {
+	public MAWorker(UserModel user) {
 		this.user = user;
 	}
 
-	public void setUser(MAUser user) {
+	public void setUser(UserModel user) {
 		this.user = user;
 	}
 
-	public MAUser getUser() {
+	public UserModel getUser() {
 		return this.user;
 	}
 

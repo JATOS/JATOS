@@ -1,7 +1,7 @@
-@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
-	errorMsg: String, study: MAStudy, hostname: String)
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+	errorMsg: String, study: StudyModel, hostname: String)
 
-@admin.main(studyList, loggedInUser, breadcrumbs){
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
 <article class="tasks" id="tasks">
 	@if(errorMsg != null) {

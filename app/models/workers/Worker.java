@@ -10,6 +10,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 
 import models.results.StudyResult;
@@ -25,6 +26,7 @@ public abstract class Worker {
 	private String id;
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "worker_id")
 	private List<StudyResult> studyResultList = new ArrayList<StudyResult>();
 
 	public Worker() {
@@ -49,7 +51,7 @@ public abstract class Worker {
 	public void addStudyResult(StudyResult studyresult) {
 		studyResultList.add(studyresult);
 	}
-
+	
 	@Override
 	public String toString() {
 		return id;

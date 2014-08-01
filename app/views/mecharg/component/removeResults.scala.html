@@ -1,7 +1,8 @@
-@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
-	component: MAComponent, study: MAStudy)
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+	component: ComponentModel, study: StudyModel,
+	componentResultList: List[results.ComponentResult])
 
-@admin.main(studyList, loggedInUser, breadcrumbs){
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
 	<article class="tasks" id="tasks">
 		
@@ -10,7 +11,7 @@
 			onSubmit="return confirm('Are you sure you want to remove those results?');">
 			<div class="folder" data-folder-id="@component.getId()">
 				<header>
-					@if(component.getResultList().isEmpty()) {
+					@if(componentResultList.isEmpty()) {
 						<h3>No results so far</h3>
 					} else {
 						<h3>Which results should be deleted?</h3>
@@ -22,12 +23,12 @@
 						<input type="checkbox" name="@Components.RESULT" onClick="toggle(this)" value="none"/>
 						Toggle All
 					</li>
-					@for(result <- component.getResultList()) {
+					@for(result <- componentResultList) {
 						<li data-task-id="@component.getId()">
 							<input type="checkbox" name="@Components.RESULT" value="@result.getId()" unchecked>
 								@result.getId(), @result.getDate(), 
-								@if(result.getWorker() != null) {
-									@result.getWorker().getId()
+								@if(result.getStudyResult().getWorker() != null) {
+									@result.getStudyResult().getWorker().getId()
 								} else {
 									none
 								},

@@ -1,12 +1,12 @@
-@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
-	study: MAStudy, form: Form[MAStudy])
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+	form: Form[StudyModel])
 
-@admin.main(studyList, loggedInUser, breadcrumbs){
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
 	<article class="tasks" id="tasks">
 		<div class="folder">
 		
-			@helper.form(action = routes.Studies.submitProperties(study.getId()), 'class -> "addTask") {
+			@helper.form(action = routes.Studies.submit(), 'class -> "addTask") {
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message
@@ -15,17 +15,16 @@
 				@for(error <- form(Studies.TITLE).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input name="@Studies.TITLE" type="text" class="formTop" placeholder="Title" value="@form(Studies.TITLE).value">
+				<input type="text" name="@Studies.TITLE" class="formTop" placeholder="Title" value="@form(Studies.TITLE).value">
 				
 				@for(error <- form(Studies.DESCRIPTION).errors) {
 					<p class="error">@error.message</p>
 				}
-				<p class="formText">Description will be shown to participants in Mechanical Turk</p>
 				<textarea name="@Studies.DESCRIPTION" class="formDescription" rows="3"
 					placeholder="Description"
 					>@form(Studies.DESCRIPTION).value</textarea>
 				
-				<button id="newGroup" type="submit">Update</button>
+				<button id="newGroup" type="submit">Create</button>
 			}
 		</div>
 	</article>

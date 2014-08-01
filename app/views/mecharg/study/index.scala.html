@@ -1,7 +1,7 @@
-@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
-	errorMsg: String, study: MAStudy)
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+	errorMsg: String, study: StudyModel)
 
-@admin.main(studyList, loggedInUser, breadcrumbs){
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
 <article class="study">
 	@if(errorMsg != null) {
@@ -53,7 +53,7 @@
 							@component.getTitle() (id: @component.getId())
 					</a>
 					<div class="tryComponent">Show From Here</div>
-					<div class="showResults">Show Results (@component.getResultList().size())</div>
+					<div class="showResults">Show Results (@results.ComponentResult.findAllByComponent(component.getId()).size())</div>
 					<div class="removeComponent">Remove</div>
 				</li>
 			}
@@ -126,7 +126,7 @@
 				url : '@routes.Studies.remove(study.getId())',
 				type : 'DELETE',
 				success : function(result) {
-					window.location.replace('@routes.Admin.dashboard()');
+					window.location.replace('@routes.Dashboard.dashboard()');
 				},
 				error : function(err) {
 					alert(err.responseText);

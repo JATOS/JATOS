@@ -6,7 +6,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -14,7 +13,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
@@ -30,7 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 @Entity
-public class MAComponent {
+public class ComponentModel {
 
 	// For JSON serialization: fields for public API
 	public static class JsonForPublic {
@@ -42,38 +40,34 @@ public class MAComponent {
 
 	@Id
 	@GeneratedValue
-	@JsonView(MAComponent.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublic.class)
 	private Long id;
 
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "study_id")
-	private MAStudy study;
+	private StudyModel study;
 
-	@JsonView(MAComponent.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublic.class)
 	private String title;
 
 	/**
 	 * Timestamp of the creation or the last update of this component
 	 */
-	@JsonView(MAComponent.JsonForMA.class)
+	@JsonView(ComponentModel.JsonForMA.class)
 	private Timestamp date;
 
-	@JsonView(MAComponent.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublic.class)
 	private String viewUrl; // URL or local path
 
-	@JsonView(MAComponent.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublic.class)
 	private boolean reloadable;
 
-	@JsonView(MAComponent.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublic.class)
 	@Lob
 	private String jsonData;
 
-	@JsonView(MAComponent.JsonForMA.class)
-	@OneToMany(mappedBy = "component", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	private List<MAResult> resultList = new ArrayList<MAResult>();
-
-	public MAComponent() {
+	public ComponentModel() {
 	}
 
 	public void update(String title, boolean reloadable, String viewUrl,
@@ -92,11 +86,11 @@ public class MAComponent {
 		return this.id;
 	}
 
-	public void setStudy(MAStudy study) {
+	public void setStudy(StudyModel study) {
 		this.study = study;
 	}
 
-	public MAStudy getStudy() {
+	public StudyModel getStudy() {
 		return this.study;
 	}
 
@@ -152,22 +146,6 @@ public class MAComponent {
 		} catch (Exception e) {
 			Logger.info("setJsonData: ", e);
 		}
-	}
-
-	public void setResultList(List<MAResult> resultList) {
-		this.resultList = resultList;
-	}
-
-	public List<MAResult> getResultList() {
-		return this.resultList;
-	}
-
-	public void addResult(MAResult result) {
-		resultList.add(result);
-	}
-
-	public void removeResult(MAResult result) {
-		resultList.remove(result);
 	}
 
 	public boolean isReloadable() {
@@ -233,27 +211,27 @@ public class MAComponent {
 		return id + " " + title;
 	}
 
-	public static String asJsonForPublic(MAComponent component)
+	public static String asJsonForPublic(ComponentModel component)
 			throws JsonProcessingException {
-		// Serialize MAComponent into JSON (only the public part)
+		// Serialize ComponentModel into JSON (only the public part)
 		ObjectWriter objectWriter = new ObjectMapper()
-				.writerWithView(MAComponent.JsonForPublic.class);
+				.writerWithView(ComponentModel.JsonForPublic.class);
 		String componentAsJson = objectWriter.writeValueAsString(component);
 		return componentAsJson;
 	}
 
-	public static MAComponent findById(Long id) {
-		return JPA.em().find(MAComponent.class, id);
+	public static ComponentModel findById(Long id) {
+		return JPA.em().find(ComponentModel.class, id);
 	}
 
-	public static List<MAComponent> findAll() {
-		TypedQuery<MAComponent> query = JPA.em().createQuery(
-				"SELECT e FROM MAComponent e", MAComponent.class);
+	public static List<ComponentModel> findAll() {
+		TypedQuery<ComponentModel> query = JPA.em().createQuery(
+				"SELECT e FROM ComponentModel e", ComponentModel.class);
 		return query.getResultList();
 	}
 
-	public static void changeComponentOrder(MAComponent component, int newIndex) {
-		String queryStr = "UPDATE MAComponent SET componentList_order = "
+	public static void changeComponentOrder(ComponentModel component, int newIndex) {
+		String queryStr = "UPDATE ComponentModel SET componentList_order = "
 				+ ":newIndex WHERE id = :id";
 		Query query = JPA.em().createQuery(queryStr);
 		query.setParameter("newIndex", newIndex);

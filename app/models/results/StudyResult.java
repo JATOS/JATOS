@@ -11,10 +11,13 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
-import models.MAStudy;
+import models.StudyModel;
+import models.workers.Worker;
 import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -41,20 +44,24 @@ public class StudyResult {
 	 */
 	private StudyState studyState;
 
-	private boolean sandbox; // Whether this is just test, e.g. in MTurk sandbox
-
 	@OneToOne(fetch = FetchType.LAZY)
-	private MAStudy study;
+	@JoinColumn(name = "study_id")
+	private StudyModel study;
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "studyResult_id")
 	private List<ComponentResult> componentResultList = new ArrayList<ComponentResult>();
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "worker_id")
+	private Worker worker;
+	
 	private String confirmationCode;
 
 	public StudyResult() {
 	}
 
-	public StudyResult(MAStudy study) {
+	public StudyResult(StudyModel study) {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.study = study;
 		this.studyState = StudyState.STARTED;
@@ -83,20 +90,12 @@ public class StudyResult {
 	public StudyState getState() {
 		return this.studyState;
 	}
-	
-	public void setSandbox(boolean sandbox) {
-		this.sandbox = sandbox;
-	}
-	
-	public boolean getSandbox() {
-		return this.sandbox;
-	}
 
-	public void setStudy(MAStudy study) {
+	public void setStudy(StudyModel study) {
 		this.study = study;
 	}
 
-	public MAStudy getStudy() {
+	public StudyModel getStudy() {
 		return this.study;
 	}
 
@@ -120,9 +119,21 @@ public class StudyResult {
 	public List<ComponentResult> getComponentResultList() {
 		return this.componentResultList;
 	}
+	
+	public void removeComponentResult(ComponentResult componentResult) {
+		componentResultList.remove(componentResult);
+	}
 
 	public void addComponentResult(ComponentResult componentResult) {
 		componentResultList.add(componentResult);
+	}
+	
+	public void setWorker(Worker worker) {
+		this.worker = worker;
+	}
+	
+	public Worker getWorker() {
+		return this.worker;
 	}
 
 	@Override

@@ -1,7 +1,8 @@
-@(studyList: List[MAStudy], loggedInUser: MAUser, breadcrumbs: String,
-	study: MAStudy, errorMsg: String, component: MAComponent)
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+	study: StudyModel, errorMsg: String, component: ComponentModel,
+	componentResultList: List[results.ComponentResult])
 
-@admin.main(studyList, loggedInUser, breadcrumbs){
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
 <article class="component">
 
@@ -27,13 +28,13 @@
 		</header>
 
 		<ul>
-			@for(result <- component.getResultList()) {
+			@for(result <- componentResultList) {
 				<li>
-					@MAResult.asJson(result);
+					@result.asJson();
 					<div class="removeResult">Remove</div>
 				</li>
 			}
-			@if(component.getResultList().isEmpty()) {
+			@if(componentResultList.isEmpty()) {
 				<li>None</li>
 			}
 		</ul>
@@ -66,7 +67,7 @@
 						study.getId(), component.getId())',
 				type : 'DELETE',
 				success : function(result) {
-					window.location.replace('@routes.Admin.dashboard()');
+					window.location.replace('@routes.Dashboard.dashboard()');
 				},
 				error : function(err) {
 					alert(err.responseText);

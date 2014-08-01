@@ -8,12 +8,13 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import models.MAComponent;
-import models.MAStudy;
-import models.MAResult;
-import models.MAResult.State;
-import models.MAUser;
-import models.MAWorker;
+import models.ComponentModel;
+import models.StudyModel;
+import models.results.ComponentResult;
+import models.results.ComponentResult.ComponentState;
+import models.UserModel;
+import models.workers.MTWorker;
+import models.workers.Worker;
 
 import org.w3c.dom.Document;
 
@@ -23,6 +24,8 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import controllers.routes;
 
 public class Publix extends Controller {
 
@@ -41,21 +44,21 @@ public class Publix extends Controller {
 				+ hitId);
 		checkForMTurkSandbox();
 
-		MAStudy study = MAStudy.findById(studyId);
+		StudyModel study = StudyModel.findById(studyId);
 		if (study == null) {
 			String errorMsg = studyNotExist(studyId);
 			return badRequest(views.html.publix.error.render(errorMsg));
 		}
 
-		MAComponent component = study.getFirstComponent();
+		ComponentModel component = study.getFirstComponent();
 		if (component == null) {
 			String errorMsg = studyHasNoComponents(studyId);
 			return badRequest(views.html.publix.error.render(errorMsg));
 		}
 
-		// If we don't come from MTurk but an MAUser is logged in go on anyway
-		// and use user's email as workerId.
-		MAUser user = maUserLoggedIn(study);
+		// If we don't come from MTurk but a member of this study is logged in
+		// go on anyway and use member's email as workerId.
+		UserModel user = memberLoggedIn(study);
 		if (user != null && workerId == null) {
 			workerId = user.getEmail();
 			assignmentId = "MechArg";
@@ -76,9 +79,9 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			return badRequest(workerNotExist(workerId));
 		}
-		MAWorker worker = MAWorker.findById(workerId);
+		Worker worker = Worker.findById(workerId);
 		if (worker == null) {
-			worker = new MAWorker(workerId);
+			worker = new MTWorker(workerId);
 			worker.persist();
 		} else if (worker.finishedStudy(studyId)
 				&& !isRequestFromMTurkSandbox() && user == null) {
@@ -104,15 +107,15 @@ public class Publix extends Controller {
 	public static Result startComponent(Long studyId, Long componentId) {
 		Logger.info("startComponent: studyId " + studyId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAStudy study = MAStudy.findById(studyId);
-		MAComponent component = MAComponent.findById(componentId);
+		StudyModel study = StudyModel.findById(studyId);
+		ComponentModel component = ComponentModel.findById(componentId);
 		String errorMsg = checkStandard(study, component, studyId, componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
 		}
 
 		// Check for admin
-		// if (maUserLoggedIn(study)) {
+		// if (memberLoggedIn(study)) {
 		// return ok();
 		// }
 
@@ -121,15 +124,15 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			return forbidden(workerNotExist(workerId));
 		}
-		MAWorker worker = MAWorker.findById(workerId);
+		Worker worker = Worker.findById(workerId);
 		errorMsg = checkWorker(workerId, worker, study);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
 		}
 
 		// Start component. If someone tries to reload a not reloadable
-		// component end the study, except a MAUser of this study is logged in.
-		MAUser user = maUserLoggedIn(study);
+		// component end the study, except a member of this study is logged in.
+		UserModel user = memberLoggedIn(study);
 		boolean alreadyStarted = startComponent(component, worker);
 		if (alreadyStarted && !component.isReloadable() && user == null) {
 			endStudy(worker, study, false);
@@ -139,7 +142,7 @@ public class Publix extends Controller {
 		return ok();
 	}
 
-	private static boolean startComponent(MAComponent component, MAWorker worker) {
+	private static boolean startComponent(ComponentModel component, Worker worker) {
 		boolean alreadyStarted = worker.hasCurrentComponent(component);
 		if (!alreadyStarted) {
 			createResult(component, worker);
@@ -150,7 +153,7 @@ public class Publix extends Controller {
 	/**
 	 * Create/persist result and update/persist component and worker.
 	 */
-	private static void createResult(MAComponent component, MAWorker worker) {
+	private static void createResult(ComponentModel component, Worker worker) {
 		MAResult result = new MAResult(component, worker);
 		result.persist();
 		component.addResult(result);
@@ -169,16 +172,16 @@ public class Publix extends Controller {
 		Logger.info("getComponentData: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAStudy study = MAStudy.findById(studyId);
-		MAComponent component = MAComponent.findById(componentId);
+		StudyModel study = StudyModel.findById(studyId);
+		ComponentModel component = ComponentModel.findById(componentId);
 		String errorMsg = checkStandard(study, component, studyId, componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
 		}
 
 		// Check for admin: if yes, just return JSON data
-		// if (maUserLoggedIn(study)) {
-		// return ok(MAComponent.asJsonForPublic(component));
+		// if (memberLoggedIn(study)) {
+		// return ok(ComponentModel.asJsonForPublic(component));
 		// }
 
 		// Check worker
@@ -186,7 +189,7 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			return forbidden(workerNotExist(workerId));
 		}
-		MAWorker worker = MAWorker.findById(workerId);
+		Worker worker = Worker.findById(workerId);
 		errorMsg = checkWorker(workerId, worker, study);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
@@ -207,7 +210,7 @@ public class Publix extends Controller {
 		result.merge();
 
 		// return component as JSON
-		return ok(MAComponent.asJsonForPublic(component));
+		return ok(ComponentModel.asJsonForPublic(component));
 	}
 
 	/**
@@ -217,15 +220,15 @@ public class Publix extends Controller {
 	public static Result submitResult(Long studyId, Long componentId) {
 		Logger.info("submitResult: studyId " + studyId + ", " + "componentId "
 				+ componentId + ", " + "workerId " + session(WORKER_ID));
-		MAStudy study = MAStudy.findById(studyId);
-		MAComponent component = MAComponent.findById(componentId);
+		StudyModel study = StudyModel.findById(studyId);
+		ComponentModel component = ComponentModel.findById(componentId);
 		String errorMsg = checkStandard(study, component, studyId, componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
 		}
 
 		// Check for admin: if yes, don't persist result and return
-		// if (maUserLoggedIn(study)) {
+		// if (memberLoggedIn(study)) {
 		// return okNextComponentUrl(study, component);
 		// }
 
@@ -234,7 +237,7 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			return forbidden(workerNotExist(workerId));
 		}
-		MAWorker worker = MAWorker.findById(workerId);
+		Worker worker = Worker.findById(workerId);
 		errorMsg = checkWorker(workerId, worker, study);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
@@ -283,7 +286,7 @@ public class Publix extends Controller {
 	 * Put result into state DONE, persist and remove from worker
 	 */
 	private static void endComponent(MAResult result, String data,
-			MAComponent component, MAWorker worker) {
+			ComponentModel component, Worker worker) {
 		result.setData(data);
 		result.setState(State.DONE);
 		result.merge();
@@ -298,15 +301,15 @@ public class Publix extends Controller {
 	public static Result endComponent(Long studyId, Long componentId) {
 		Logger.info("endComponent: studyId " + studyId + ", " + "componentId "
 				+ componentId + ", " + "workerId " + session(WORKER_ID));
-		MAStudy study = MAStudy.findById(studyId);
-		MAComponent component = MAComponent.findById(componentId);
+		StudyModel study = StudyModel.findById(studyId);
+		ComponentModel component = ComponentModel.findById(componentId);
 		String errorMsg = checkStandard(study, component, studyId, componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
 		}
 
 		// Check for admin
-		// if (maUserLoggedIn(study)) {
+		// if (memberLoggedIn(study)) {
 		// return ok();
 		// }
 
@@ -315,7 +318,7 @@ public class Publix extends Controller {
 		if (workerId == null) {
 			return forbidden(workerNotExist(workerId));
 		}
-		MAWorker worker = MAWorker.findById(workerId);
+		Worker worker = Worker.findById(workerId);
 		errorMsg = checkWorker(workerId, worker, study);
 		if (errorMsg != null) {
 			return forbidden(errorMsg);
@@ -341,7 +344,7 @@ public class Publix extends Controller {
 	public static Result endStudy(Long studyId) {
 		Logger.info("endStudy: studyId " + studyId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAStudy study = MAStudy.findById(studyId);
+		StudyModel study = StudyModel.findById(studyId);
 		if (study == null) {
 			return badRequest(views.html.publix.error
 					.render(studyNotExist(studyId)));
@@ -353,14 +356,14 @@ public class Publix extends Controller {
 			return forbidden(views.html.publix.error
 					.render(studyNeverStarted(studyId)));
 		}
-		MAWorker worker = MAWorker.findById(workerId);
+		Worker worker = Worker.findById(workerId);
 		if (worker == null) {
 			return forbidden(views.html.publix.error
 					.render(workerNotExist(workerId)));
 		}
 
-		// Check if MAUser of this study is logged in
-		MAUser user = maUserLoggedIn(study);
+		// Check if member of this study is logged in
+		UserModel user = memberLoggedIn(study);
 		boolean userLoggedIn = (user != null);
 		
 		// Get confirmation code
@@ -371,7 +374,7 @@ public class Publix extends Controller {
 				successful, userLoggedIn));
 	}
 
-	private static String endStudy(MAWorker worker, MAStudy study,
+	private static String endStudy(Worker worker, StudyModel study,
 			boolean successful) {
 		String confirmationCode;
 		if (worker.finishedStudy(study.getId())) {
@@ -392,8 +395,8 @@ public class Publix extends Controller {
 		Logger.info("getNextComponentUrl: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAStudy study = MAStudy.findById(studyId);
-		MAComponent component = MAComponent.findById(componentId);
+		StudyModel study = StudyModel.findById(studyId);
+		ComponentModel component = ComponentModel.findById(componentId);
 		String errorMsg = checkStandard(study, component, studyId, componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
@@ -406,9 +409,9 @@ public class Publix extends Controller {
 	 * Returns OK with the view URL of the next component or OK with the URL to
 	 * endStudy() if the current component is the last one of the study.
 	 */
-	private static Result okNextComponentUrl(MAStudy study,
-			MAComponent component) {
-		MAComponent nextComponent = study.getNextComponent(component);
+	private static Result okNextComponentUrl(StudyModel study,
+			ComponentModel component) {
+		ComponentModel nextComponent = study.getNextComponent(component);
 		if (nextComponent == null) {
 			return ok(routes.Publix.endStudy(study.getId()).url());
 		}
@@ -423,8 +426,8 @@ public class Publix extends Controller {
 		Logger.info("getComponentUrl: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MAStudy study = MAStudy.findById(studyId);
-		MAComponent component = MAComponent.findById(componentId);
+		StudyModel study = StudyModel.findById(studyId);
+		ComponentModel component = ComponentModel.findById(componentId);
 		String errorMsg = checkStandard(study, component, studyId, componentId);
 		if (errorMsg != null) {
 			return badRequest(errorMsg);
@@ -461,7 +464,7 @@ public class Publix extends Controller {
 		}
 	}
 
-	private static String checkStandard(MAStudy study, MAComponent component,
+	private static String checkStandard(StudyModel study, ComponentModel component,
 			Long studyId, Long componentId) {
 		if (study == null) {
 			return studyNotExist(studyId);
@@ -477,17 +480,17 @@ public class Publix extends Controller {
 
 	/**
 	 * Checks worker: A worker isn't allowed to redo an already finished study.
-	 * Exceptions: worker comes from MTurk sandbox or worker is an MAUser of
+	 * Exceptions: worker comes from MTurk sandbox or worker is an member of
 	 * this study. In the parameters the workerId is needed additionally to the
 	 * worker because the worker might be null (e.g. not in the DB).
 	 */
-	private static String checkWorker(String workerId, MAWorker worker,
-			MAStudy study) {
+	private static String checkWorker(String workerId, Worker worker,
+			StudyModel study) {
 		if (worker == null) {
 			return workerNotExist(workerId);
 		}
 
-		MAUser user = maUserLoggedIn(study);
+		UserModel user = memberLoggedIn(study);
 		if (worker.finishedStudy(study.getId()) && !isRequestFromMTurkSandbox()
 				&& user == null) {
 			return workerFinishedStudyAlready(workerId, study.getId());
@@ -498,10 +501,10 @@ public class Publix extends Controller {
 	/**
 	 * Returns true if an admin of this study is logged in and false otherwise.
 	 */
-	private static MAUser maUserLoggedIn(MAStudy study) {
-		String email = session(MAController.COOKIE_EMAIL);
+	private static UserModel memberLoggedIn(StudyModel study) {
+		String email = session(Users.COOKIE_EMAIL);
 		if (email != null) {
-			MAUser user = MAUser.findByEmail(email);
+			UserModel user = UserModel.findByEmail(email);
 			if (user != null && study.hasMember(user)) {
 				return user;
 			}
