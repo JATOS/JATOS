@@ -2,6 +2,9 @@ package models.workers;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 
 import models.UserModel;
 
@@ -9,6 +12,8 @@ import models.UserModel;
 @DiscriminatorValue("MA")
 public class MAWorker extends Worker {
 
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_email")
 	private UserModel user;
 
 	public MAWorker() {

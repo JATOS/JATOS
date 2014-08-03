@@ -78,7 +78,7 @@
 	
 	function ajaxChangeComponentOrder(componentId, direction, componentElement) {
 		var ajax = $.ajax({
-			url: "/admin/@study.getId()/changeComponentOrder"
+			url: "/mecharg/@study.getId()/changeComponentOrder"
 				+ "?componentId=" + componentId + "&direction=" + direction,
 			type: "POST",
 			success: function(response) {
@@ -136,17 +136,17 @@
 	});
 	
 	$(".addComponent").click(function(e) {
-		window.location.href = "/admin/@study.getId/createComponent";
+		window.location.href = "/mecharg/@study.getId/createComponent";
 	});
 	
 	$(".tryComponent").click(function(e) {
 		var componentId = getComponentId(e);
-		window.location.href = "/admin/@study.getId/"+ componentId + "/try";
+		window.location.href = "/mecharg/@study.getId/"+ componentId + "/try";
 	});
 	
 	$(".showResults").click(function(e) {
 		var componentId = getComponentId(e);
-		window.location.href = "/admin/@study.getId/"+ componentId + "/";
+		window.location.href = "/mecharg/@study.getId/"+ componentId + "/";
 	});
 	
 	$(".removeComponent").click(function(e) {
@@ -161,7 +161,7 @@
 				"RESULTS will be unrecoverably deleted!");
 		if (conf == true) {
 			$.ajax({
-				url : "/admin/@study.getId/"+ componentId + "/remove",
+				url : "/mecharg/@study.getId/"+ componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
 					window.location.replace('@routes.Studies.index(study.getId())');

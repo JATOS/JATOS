@@ -5,6 +5,7 @@ import java.util.List;
 import controllers.routes;
 import models.StudyModel;
 import models.UserModel;
+import models.workers.MAWorker;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
@@ -110,12 +111,16 @@ public class Users extends Controller {
 			return badRequest(views.html.mecharg.user.create.render(studyList,
 					loggedInUser, breadcrumbs, form));
 		} else {
+			MAWorker worker = new MAWorker(newUser);
+			worker.persist();
 			newUser.setPasswordHash(passwordHash);
+			newUser.setWorker(worker);
 			newUser.persist();
+			worker.merge();
 			return redirect(routes.Users.profile(newUser.getEmail()));
 		}
 	}
-
+	
 	@Transactional
 	@Security.Authenticated(Secured.class)
 	public static Result editProfile(String email) {

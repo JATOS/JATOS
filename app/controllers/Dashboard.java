@@ -4,13 +4,10 @@ import java.util.List;
 
 import models.StudyModel;
 import models.UserModel;
-import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
-import controllers.routes;
-import controllers.Authentication.Login;
 
 public class Dashboard extends Controller {
 

@@ -6,12 +6,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.TypedQuery;
 
+import models.workers.MAWorker;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 
@@ -22,6 +25,9 @@ public class UserModel {
 	private String email;
 
 	private String name;
+	
+	@OneToOne(mappedBy="user", fetch=FetchType.LAZY, cascade = CascadeType.ALL)
+	private MAWorker worker;
 
 	// Password is stored as a hash
 	private String passwordHash;
@@ -72,6 +78,14 @@ public class UserModel {
 
 	public Set<StudyModel> getStudyList() {
 		return this.studyList;
+	}
+	
+	public void setWorker(MAWorker worker) {
+		this.worker = worker;
+	}
+	
+	public MAWorker getWorker() {
+		return this.worker;
 	}
 	
 	@Override

@@ -1,14 +1,9 @@
 package controllers;
 
-import java.util.List;
-
-import controllers.routes;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import play.Logger;
 import play.mvc.Controller;
-import play.mvc.Result;
 
 public class Breadcrumbs extends Controller {
 

@@ -14,7 +14,6 @@ import models.results.ComponentResult;
 import models.results.ComponentResult.ComponentState;
 import models.results.StudyResult;
 import models.results.StudyResult.StudyState;
-import models.UserModel;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
@@ -27,8 +26,6 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
-import controllers.routes;
 
 public class Publix extends Controller {
 
@@ -144,7 +141,7 @@ public class Publix extends Controller {
 		StudyResult studyResult = worker.getStartedStudyResult(studyId);
 		if (studyResult == null) {
 			// Worker never started the study
-			errorMsg = workerNotAllowedStudy(workerId, studyId);
+			errorMsg = workerNeverStartedStudy(workerId, studyId);
 			return forbidden(views.html.publix.error.render(errorMsg));
 		}
 		ComponentResult componentResult = studyResult
@@ -224,7 +221,7 @@ public class Publix extends Controller {
 		StudyResult studyResult = worker.getStartedStudyResult(studyId);
 		if (studyResult == null) {
 			// Worker never started the study
-			String errorMsg = workerNotAllowedStudy(workerId, studyId);
+			String errorMsg = workerNeverStartedStudy(workerId, studyId);
 			return forbidden(views.html.publix.error.render(errorMsg));
 		}
 
@@ -280,7 +277,7 @@ public class Publix extends Controller {
 		StudyResult studyResult = worker.getStartedStudyResult(studyId);
 		if (studyResult == null) {
 			// Worker never started the study
-			errorMsg = workerNotAllowedStudy(workerId, studyId);
+			errorMsg = workerNeverStartedStudy(workerId, studyId);
 			return forbidden(errorMsg);
 		}
 
@@ -289,7 +286,7 @@ public class Publix extends Controller {
 				.getComponentResult(componentId);
 		if (componentResult == null
 				|| componentResult.getState() != ComponentState.STARTED) {
-			errorMsg = componentNeverStarted(componentId);
+			errorMsg = componentNeverStarted(studyId, componentId);
 			return forbidden(errorMsg);
 		}
 
@@ -337,7 +334,7 @@ public class Publix extends Controller {
 		StudyResult studyResult = worker.getStartedStudyResult(studyId);
 		if (studyResult == null) {
 			// Worker never started the study
-			errorMsg = workerNotAllowedStudy(workerId, studyId);
+			errorMsg = workerNeverStartedStudy(workerId, studyId);
 			return forbidden(errorMsg);
 		}
 
@@ -347,7 +344,7 @@ public class Publix extends Controller {
 		if (componentResult == null
 				|| componentResult.getState() == ComponentState.FINISHED
 				|| componentResult.getState() == ComponentState.FAIL) {
-			errorMsg = componentAlreadyFinishedOrFailed(componentId);
+			errorMsg = componentAlreadyFinishedOrFailed(studyId, componentId);
 			return forbidden(errorMsg);
 		}
 
@@ -383,7 +380,7 @@ public class Publix extends Controller {
 
 		return null;
 	}
-	
+
 	/**
 	 * HTTP type: Normal GET request
 	 */
@@ -396,7 +393,8 @@ public class Publix extends Controller {
 	 * HTTP type: Normal GET request
 	 */
 	@Transactional
-	public static Result finishStudy(Long studyId, Boolean successful, String errorMsg) {
+	public static Result finishStudy(Long studyId, Boolean successful,
+			String errorMsg) {
 		Logger.info("finishStudy: studyId " + studyId + ", " + "successful "
 				+ successful + ", " + "workerId " + session(WORKER_ID));
 
@@ -431,7 +429,7 @@ public class Publix extends Controller {
 		StudyResult studyResult = worker.getStartedStudyResult(studyId);
 		if (studyResult == null) {
 			// Worker never started the study
-			errorMsg = workerNotAllowedStudy(workerId, studyId);
+			errorMsg = workerNeverStartedStudy(workerId, studyId);
 			return forbidden(views.html.publix.error.render(errorMsg));
 		}
 
@@ -493,7 +491,7 @@ public class Publix extends Controller {
 			return studyNotExist(studyId);
 		}
 		if (component == null) {
-			return componentNotExist(componentId);
+			return componentNotExist(studyId, componentId);
 		}
 		if (!component.getStudy().getId().equals(studyId)) {
 			return componentNotBelongToStudy(studyId, componentId);
@@ -548,8 +546,9 @@ public class Publix extends Controller {
 		return errorMsg;
 	}
 
-	private static String studyNeverStarted(Long studyId) {
-		String errorMsg = "Study " + studyId + " was never started.";
+	private static String workerNeverStartedStudy(Long workerId, Long studyId) {
+		String errorMsg = "Worker " + workerId + " never started study "
+				+ studyId + ".";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
@@ -567,9 +566,9 @@ public class Publix extends Controller {
 		return errorMsg;
 	}
 
-	private static String componentNotExist(Long componentId) {
-		String errorMsg = "An component with id " + componentId
-				+ " doesn't exist.";
+	private static String componentNotExist(Long studyId, Long componentId) {
+		String errorMsg = "An component with id " + componentId + " of study "
+				+ studyId + " doesn't exist.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
@@ -591,20 +590,16 @@ public class Publix extends Controller {
 		return errorMsg;
 	}
 
-	private static String componentAlreadyStarted(Long componentId) {
-		String errorMsg = "Component " + componentId + " was already started.";
+	private static String componentNeverStarted(Long studyId, Long componentId) {
+		String errorMsg = "Component " + componentId + " of study " + studyId
+				+ " was never started.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
-	private static String componentNeverStarted(Long componentId) {
-		String errorMsg = "Component " + componentId + " was never started.";
-		Logger.info(errorMsg);
-		return errorMsg;
-	}
-
-	private static String componentAlreadyFinishedOrFailed(Long componentId) {
-		String errorMsg = "Component " + componentId
+	private static String componentAlreadyFinishedOrFailed(Long studyId,
+			Long componentId) {
+		String errorMsg = "Component " + componentId + " of study " + studyId
 				+ " is already finished or failed.";
 		Logger.info(errorMsg);
 		return errorMsg;
@@ -613,30 +608,6 @@ public class Publix extends Controller {
 	private static String workerNotAllowedStudy(Long workerId, Long studyId) {
 		String errorMsg = "Worker " + workerId + " is not allowed to do "
 				+ "study " + studyId + ".";
-		Logger.info(errorMsg);
-		return errorMsg;
-	}
-
-	private static String workerFinishedStudyAlready(Long workerId, Long studyId) {
-		String errorMsg = "Worker " + workerId + " finished " + "study "
-				+ studyId + " already.";
-		Logger.info(errorMsg);
-		return errorMsg;
-	}
-
-	private static String workerNotAllowedComponent(Long workerId,
-			Long studyId, Long componentId) {
-		String errorMsg = "Worker " + workerId + " is not allowed to do "
-				+ "component " + componentId + " of " + "study " + studyId
-				+ ".";
-		Logger.info(errorMsg);
-		return errorMsg;
-	}
-
-	private static String reloadNotAllowed(Long studyId, Long componentId) {
-		String errorMsg = "It is not allowed to reload " + "component "
-				+ componentId + " of " + "study " + studyId
-				+ ". The study is finished.";
 		Logger.info(errorMsg);
 		return errorMsg;
 	}
