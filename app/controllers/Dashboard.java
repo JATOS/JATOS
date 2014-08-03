@@ -21,7 +21,7 @@ public class Dashboard extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 		List<UserModel> userList = UserModel.findAll();
 		String breadcrumbs = Breadcrumbs

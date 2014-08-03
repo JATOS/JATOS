@@ -14,16 +14,17 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 
 import models.results.StudyResult;
+import models.results.StudyResult.StudyState;
 import play.db.jpa.JPA;
 
 @Entity
 @Inheritance
-@DiscriminatorColumn(name="workerType")
+@DiscriminatorColumn(name = "workerType")
 public abstract class Worker {
 
 	@Id
 	@GeneratedValue
-	private String id;
+	private Long id;
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "worker_id")
@@ -32,32 +33,55 @@ public abstract class Worker {
 	public Worker() {
 	}
 
-	public void setId(String id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 
-	public String getId() {
+	public Long getId() {
 		return this.id;
 	}
-	
+
 	public void setStudyResultList(List<StudyResult> studyResultList) {
 		this.studyResultList = studyResultList;
 	}
-	
+
 	public List<StudyResult> getStudyResultList() {
 		return this.studyResultList;
 	}
-	
-	public void addStudyResult(StudyResult studyresult) {
-		studyResultList.add(studyresult);
-	}
-	
-	@Override
-	public String toString() {
-		return id;
+
+	public void addStudyResult(StudyResult studyResult) {
+		studyResultList.add(studyResult);
 	}
 
-	public static Worker findById(String id) {
+	public boolean didStudy(Long studyId) {
+		for (StudyResult studyResult : studyResultList) {
+			if (studyResult.getId() == studyId) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public abstract boolean isAllowedToStartStudy(Long studyId);
+
+	public StudyResult getStartedStudyResult(Long studyId) {
+		for (StudyResult studyResult : studyResultList) {
+			if (studyResult.getStudy().getId() == studyId
+					&& studyResult.getState() == StudyState.STARTED) {
+				// Since there is only one study result of the same study
+				// allowed to be in STARTED, return the first one
+				return studyResult;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public String toString() {
+		return String.valueOf(id);
+	}
+
+	public static Worker findById(Long id) {
 		return JPA.em().find(Worker.class, id);
 	}
 

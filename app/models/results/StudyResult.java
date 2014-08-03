@@ -15,6 +15,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderColumn;
 
 import models.StudyModel;
 import models.workers.Worker;
@@ -49,6 +50,7 @@ public class StudyResult {
 	private StudyModel study;
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OrderColumn(name = "componentResultList_order")
 	@JoinColumn(name = "studyResult_id")
 	private List<ComponentResult> componentResultList = new ArrayList<ComponentResult>();
 
@@ -134,6 +136,22 @@ public class StudyResult {
 	
 	public Worker getWorker() {
 		return this.worker;
+	}
+	
+	public ComponentResult getComponentResult(Long componentId) {
+		for (ComponentResult componentResult : componentResultList) {
+			if (componentResult.getComponent().getId() == componentId) {
+				return componentResult;
+			}
+		}
+		return null;
+	}
+	
+	public ComponentResult getLastComponentResult() {
+		if (componentResultList.size() > 0) {
+			return componentResultList.get(componentResultList.size() - 1);
+		}
+		return null;
 	}
 
 	@Override

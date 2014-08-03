@@ -46,7 +46,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -62,7 +62,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 		if (form.hasErrors()) {
 			List<StudyModel> studyList = StudyModel.findAll();
@@ -211,7 +211,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 		if (study == null) {
 			return badRequest(BadRequests.studyNotExist(studyId));
@@ -264,7 +264,7 @@ public class Studies extends Controller {
 	private static Result checkStandard(StudyModel study, Long studyId,
 			UserModel loggedInUser, List<StudyModel> studyList) {
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 		if (study == null) {
 			return BadRequests.badRequestStudyNotExist(studyId, loggedInUser, studyList);

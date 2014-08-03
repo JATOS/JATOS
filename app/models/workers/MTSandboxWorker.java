@@ -7,4 +7,13 @@ import javax.persistence.Entity;
 @DiscriminatorValue("MTSandbox")
 public class MTSandboxWorker extends MTWorker {
 
+	public MTSandboxWorker(String workerId) {
+		super(workerId);
+	}
+	
+	@Override
+	public boolean isAllowedToStartStudy(Long studyId) {
+		return true;
+	}
+
 }

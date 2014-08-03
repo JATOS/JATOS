@@ -42,7 +42,7 @@ public class Authentication extends Controller {
 	public static Result logout() {
 		session().remove(Users.COOKIE_EMAIL);
 		flash("success", "You've been logged out");
-		return redirect(routes.Admin.login());
+		return redirect(routes.Authentication.login());
 	}
 
 	/**

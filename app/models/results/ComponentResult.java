@@ -16,7 +16,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.TypedQuery;
 
 import models.ComponentModel;
-import models.StudyModel;
 import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -39,7 +38,6 @@ public class ComponentResult {
 	private Timestamp startDate;
 
 	public enum ComponentState {
-		NEW, // Not yet started
 		STARTED, // Component was started
 		DATA_RETRIEVED, // Component's jsonData were retrieved
 		RESULTDATA_POSTED, // Result data were posted
@@ -70,7 +68,7 @@ public class ComponentResult {
 	public ComponentResult(ComponentModel component) {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.component = component;
-		this.componetState = ComponentState.NEW;
+		this.componetState = ComponentState.STARTED;
 	}
 
 	public void setId(Long id) {

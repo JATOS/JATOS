@@ -38,12 +38,16 @@ public class Components extends Controller {
 			return result;
 		}
 
+		List<ComponentResult> componentResultList = ComponentResult
+				.findAllByComponent(componentId);
+
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study),
 				Breadcrumbs.getComponentBreadcrumb(study, component));
 		return ok(views.html.mecharg.component.index.render(studyList,
-				loggedInUser, breadcrumbs, study, null, component));
+				loggedInUser, breadcrumbs, study, null, component,
+				componentResultList));
 	}
 
 	@Transactional
@@ -80,7 +84,7 @@ public class Components extends Controller {
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 		if (study == null) {
 			return BadRequests.badRequestStudyNotExist(studyId, loggedInUser,
@@ -107,7 +111,7 @@ public class Components extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 		if (study == null) {
 			return BadRequests.badRequestStudyNotExist(studyId, loggedInUser,
@@ -244,13 +248,17 @@ public class Components extends Controller {
 					studyList);
 		}
 
+		List<ComponentResult> componentResultList = ComponentResult
+				.findAllByComponent(componentId);
+
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study),
 				Breadcrumbs.getComponentBreadcrumb(study, component),
 				"Delete Results");
 		return ok(views.html.mecharg.component.removeResults.render(studyList,
-				loggedInUser, breadcrumbs, component, study));
+				loggedInUser, breadcrumbs, component, study,
+				componentResultList));
 	}
 
 	@Transactional
@@ -316,7 +324,7 @@ public class Components extends Controller {
 			StudyModel study, List<StudyModel> studyList,
 			UserModel loggedInUser, ComponentModel component) {
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 		if (study == null) {
 			return BadRequests.badRequestStudyNotExist(studyId, loggedInUser,

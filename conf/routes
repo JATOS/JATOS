@@ -2,16 +2,14 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Public
-POST    /publix/logError                          controllers.Publix.logError()
-GET     /publix/:studyId/start                    controllers.Publix.startStudy(studyId: Long, workerId: String ?= null, assignmentId: String ?= null, hitId: String ?= null)
-GET     /publix/:studyId/end                      controllers.Publix.endStudy(studyId: Long)
-GET     /publix/:studyId/:componentId             controllers.Publix.getComponentData(studyId: Long, componentId: Long)
-POST    /publix/:studyId/:componentId             controllers.Publix.submitResult(studyId: Long, componentId: Long)
-POST    /publix/:studyId/:componentId/start       controllers.Publix.startComponent(studyId: Long, componentId: Long)
-POST    /publix/:studyId/:componentId/end         controllers.Publix.endComponent(studyId: Long, componentId: Long)
-GET     /publix/:studyId/:componentId/nextUrl     controllers.Publix.getNextComponentUrl(studyId: Long, componentId: Long)
-GET     /publix/:studyId/:componentId/url         controllers.Publix.getComponentUrl(studyId: Long, componentId: Long)
+# Public from MTurk
+GET     /publix/:studyId/start                           controllers.Publix.startStudy(studyId: Long, workerId: String ?= null, assignmentId: String ?= null, hitId: String ?= null)
+GET     /publix/:studyId/end                             controllers.Publix.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
+GET     /publix/:studyId/:componentId/start              controllers.Publix.startComponent(studyId: Long, componentId: Long)
+GET     /publix/:studyId/startNextComponent              controllers.Publix.startNextComponent(studyId: Long)
+GET     /publix/:studyId/:componentId/getData            controllers.Publix.getComponentData(studyId: Long, componentId: Long)
+POST    /publix/:studyId/:componentId/submitResultData   controllers.Publix.submitResultData(studyId: Long, componentId: Long)
+POST    /publix/logError                                 controllers.Publix.logError()
 
 # MechArg
 GET     /mecharg/login                                 controllers.Authentication.login()

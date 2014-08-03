@@ -34,7 +34,7 @@ public class Users extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 		List<StudyModel> studyList = StudyModel.findAll();
 
@@ -57,7 +57,7 @@ public class Users extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(), "New User");
@@ -73,7 +73,7 @@ public class Users extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 
 		if (form.hasErrors()) {
@@ -124,7 +124,7 @@ public class Users extends Controller {
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 
 		if (user == null) {
@@ -158,7 +158,7 @@ public class Users extends Controller {
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
@@ -199,7 +199,7 @@ public class Users extends Controller {
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 
 		if (user == null) {
@@ -235,7 +235,7 @@ public class Users extends Controller {
 		List<StudyModel> studyList = StudyModel.findAll();
 		DynamicForm requestData = Form.form().bindFromRequest();
 		if (loggedInUser == null) {
-			return redirect(routes.Admin.login());
+			return redirect(routes.Authentication.login());
 		}
 
 		if (user == null) {

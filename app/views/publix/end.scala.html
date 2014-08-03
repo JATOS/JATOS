@@ -1,21 +1,13 @@
-@(studyId: Long, confirmationCode: String, successful: Boolean,
-	admin: Boolean)
+@(studyId: Long, confirmationCode: String, successful: Boolean, errorMsg: String)
 
 @main("Mechanical Argentinian") {
 
 	<h1 style="text-align: center">
-		@if(admin) {
-			Confirmation code: none (admin logged in)<br>
-			Go back to <a href="@routes.Studies.index(studyId)">
-			study @studyId's admin view</a>
+		@if(successful) {
+			Confirmation code: @confirmationCode
 		} else {
-			@if(successful) {
-				Confirmation code: @confirmationCode
-			} else {
-				A problem occurred during study @studyId.
-			}
+			A problem occurred during this study (id: @studyId)
+			@if(errorMsg) {: @errorMsg} else {.}
 		}
 	</h1>
-	
-
 }

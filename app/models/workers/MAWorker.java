@@ -30,5 +30,10 @@ public class MAWorker extends Worker {
 	public String toString() {
 		return user.getEmail() + ", " + super.toString();
 	}
+	
+	@Override
+	public boolean isAllowedToStartStudy(Long studyId) {
+		return true;
+	}
 
 }

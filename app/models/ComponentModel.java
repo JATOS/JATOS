@@ -211,12 +211,12 @@ public class ComponentModel {
 		return id + " " + title;
 	}
 
-	public static String asJsonForPublic(ComponentModel component)
+	public String asJsonForPublic()
 			throws JsonProcessingException {
 		// Serialize ComponentModel into JSON (only the public part)
 		ObjectWriter objectWriter = new ObjectMapper()
 				.writerWithView(ComponentModel.JsonForPublic.class);
-		String componentAsJson = objectWriter.writeValueAsString(component);
+		String componentAsJson = objectWriter.writeValueAsString(this);
 		return componentAsJson;
 	}
 
