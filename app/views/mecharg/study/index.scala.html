@@ -53,7 +53,7 @@
 							@component.getTitle() (id: @component.getId())
 					</a>
 					<div class="tryComponent">Show From Here</div>
-					<div class="showResults">Show Results (@results.ComponentResult.findAllByComponent(component.getId()).size())</div>
+					<div class="showResults">Show Results (@results.ComponentResult.findAllByComponent(component).size())</div>
 					<div class="removeComponent">Remove</div>
 				</li>
 			}

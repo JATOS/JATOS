@@ -7,8 +7,6 @@ import play.mvc.Controller;
 
 public class Breadcrumbs extends Controller {
 
-	public static final String COOKIE_EMAIL = "email";
-
 	public static String getDashboardBreadcrumb() {
 		return "<a href=\"" + routes.Dashboard.dashboard() + "\">" + "/" + "</a>";
 	}

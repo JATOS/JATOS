@@ -1,6 +1,7 @@
 package controllers;
 
 import java.io.StringWriter;
+import java.util.List;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -26,6 +27,11 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.net.MediaType;
+
+import exceptions.BadRequestPublixException;
+import exceptions.ForbiddenPublixException;
+import exceptions.OkPublixException;
 
 public class Publix extends Controller {
 
@@ -33,44 +39,39 @@ public class Publix extends Controller {
 	public static final String COMPONENT_ID = "componentId";
 	public static final String ASSIGNMENT_ID_NOT_AVAILABLE = "ASSIGNMENT_ID_NOT_AVAILABLE";
 
+	public static Result index() {
+		return ok();
+	}
+
 	/**
 	 * HTTP type: Normal GET request
 	 */
 	@Transactional
-	public static Result startStudy(Long studyId, String mtWorkerId,
-			String mtAssignmentId, String mtHitId) {
+	public static Result startStudy(Long studyId) throws Exception {
+		// Get MTurk query parameters
+		String mtWorkerId = request().getQueryString("workerId");
+		String mtAssignmentId = request().getQueryString("assignmentId");
+		String mtHitId = request().getQueryString("hitId");
 		Logger.info("startStudy: studyId " + studyId + ", "
 				+ "Parameters from MTurk: workerId " + mtWorkerId + ", "
 				+ "assignmentId " + mtAssignmentId + ", " + "hitId " + mtHitId);
 
-		StudyModel study = StudyModel.findById(studyId);
-		if (study == null) {
-			String errorMsg = studyNotExist(studyId);
-			return badRequest(views.html.publix.error.render(errorMsg));
-		}
+		StudyModel study = retrieveStudy(studyId);
 
-		// Check MTurk assignment id and if it's a preview
-		if (mtAssignmentId == null) {
-			String errorMsg = assignmentIdNotSpecified();
-			return badRequest(views.html.publix.error.render(errorMsg));
-		}
-		if (mtAssignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
-			// It's a preview coming from Mechanical Turk -> no previews
-			String errorMsg = noPreviewAvailable(studyId);
-			return badRequest(views.html.publix.error.render(errorMsg));
-		}
+		checkForMTurkPreview(studyId, mtAssignmentId);
 
 		// Check worker
 		if (mtWorkerId == null) {
-			return badRequest(workerNotExist(mtWorkerId));
+			throw new BadRequestPublixException(
+					workerNotInQueryParameter(mtWorkerId));
 		}
 		Worker worker = MTWorker.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
 			worker = createWorker(mtWorkerId);
 		}
 		if (!worker.isAllowedToStartStudy(studyId)) {
-			String errorMsg = workerNotAllowedStudy(worker.getId(), studyId);
-			return forbidden(views.html.publix.error.render(errorMsg));
+			throw new ForbiddenPublixException(workerNotAllowedStudy(
+					worker.getId(), studyId));
 		}
 		session(WORKER_ID, String.valueOf(worker.getId()));
 
@@ -79,10 +80,219 @@ public class Publix extends Controller {
 		// Start first component
 		ComponentModel component = study.getFirstComponent();
 		if (component == null) {
-			String errorMsg = studyHasNoComponents(studyId);
-			return badRequest(views.html.publix.error.render(errorMsg));
+			throw new BadRequestPublixException(studyHasNoComponents(studyId));
 		}
 		return startComponent(studyId, component.getId());
+	}
+
+	/**
+	 * HTTP type: Normal GET request
+	 */
+	@Transactional
+	public static Result startComponent(Long studyId, Long componentId)
+			throws Exception {
+		Logger.info("startComponent: studyId " + studyId + ", " + "workerId "
+				+ session(WORKER_ID));
+
+		Worker worker = retrieveWorker();
+		StudyModel study = retrieveStudy(studyId);
+		ComponentModel component = retrieveComponent(study, componentId);
+
+		// Check worker
+		StudyResult studyResult = retrieveWorkersStartedStudyResult(worker,
+				study);
+
+		ComponentResult componentResult = retrieveComponentResult(component,
+				studyResult);
+		if (componentResult != null) {
+			// Only one component of the same kind can be done in the same study
+			// by the same worker. Exception: If a component is reloadable,
+			// the old component result will be deleted and a new one generated.
+			component = componentResult.getComponent();
+			if (component.isReloadable()) {
+				studyResult.removeComponentResult(componentResult);
+			} else {
+				// Worker tried to reload a non-reloadable component -> end
+				// study with fail
+				finishStudy(false, studyResult);
+				throw new ForbiddenPublixException(componentNotAllowedToReload(
+						study.getId(), component.getId()));
+			}
+		}
+		finishAllComponentResults(studyResult);
+		createComponentResult(studyResult, component);
+
+		return redirect(component.getViewUrl());
+	}
+
+	/**
+	 * HTTP type: Normal GET request
+	 */
+	@Transactional
+	public static Result startNextComponent(Long studyId) throws Exception {
+		Logger.info("startNextComponent: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID));
+
+		Worker worker = retrieveWorker();
+		StudyModel study = retrieveStudy(studyId);
+		StudyResult studyResult = retrieveWorkersStartedStudyResult(worker,
+				study);
+
+		// Get next component in study
+		ComponentModel currentComponent = retrieveLastComponent(studyResult);
+		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
+				currentComponent);
+		if (nextComponent == null) {
+			// No more components in study -> finish study
+			return finishStudy(studyId);
+		}
+
+		return startComponent(studyId, nextComponent.getId());
+	}
+
+	/**
+	 * HTTP type: Ajax GET request
+	 */
+	@Transactional
+	public static Result getComponentData(Long studyId, Long componentId)
+			throws Exception {
+		Logger.info("getComponentData: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID));
+
+		Worker worker = retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyModel study = retrieveStudy(studyId,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
+		ComponentModel component = retrieveComponent(study, componentId,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyResult studyResult = retrieveWorkersStartedStudyResult(worker,
+				study, MediaType.TEXT_JAVASCRIPT_UTF_8);
+
+		// Check component result
+		ComponentResult componentResult = retrieveComponentResult(component,
+				studyResult);
+		if (componentResult == null
+				|| componentResult.getComponentState() != ComponentState.STARTED) {
+			throw new ForbiddenPublixException(componentNeverStarted(studyId,
+					componentId), MediaType.TEXT_JAVASCRIPT_UTF_8);
+		}
+
+		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
+		componentResult.merge();
+
+		return ok(component.asJsonForPublic());
+	}
+
+	/**
+	 * HTTP type: Ajax POST request
+	 */
+	@Transactional
+	public static Result submitResultData(Long studyId, Long componentId)
+			throws Exception {
+		Logger.info("submitResultData: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID));
+
+		Worker worker = retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyModel study = retrieveStudy(studyId,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
+		ComponentModel component = retrieveComponent(study, componentId,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyResult studyResult = retrieveWorkersStartedStudyResult(worker,
+				study, MediaType.TEXT_JAVASCRIPT_UTF_8);
+
+		// Check component result
+		ComponentResult componentResult = retrieveComponentResult(component,
+				studyResult);
+		if (componentResult == null
+				|| componentResult.getComponentState() == ComponentState.FINISHED
+				|| componentResult.getComponentState() == ComponentState.FAIL) {
+			throw new ForbiddenPublixException(
+					componentAlreadyFinishedOrFailed(study.getId(),
+							component.getId()), MediaType.TEXT_JAVASCRIPT_UTF_8);
+		}
+
+		// Get data in format JSON, text or XML and convert to String
+		String data = getDataAsString();
+		if (data == null) {
+			componentResult.setComponentState(ComponentState.FAIL);
+			componentResult.merge();
+			throw new BadRequestPublixException(submittedDataUnknownFormat(
+					study.getId(), component.getId()),
+					MediaType.TEXT_JAVASCRIPT_UTF_8);
+		}
+
+		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
+		componentResult.merge();
+
+		return ok();
+	}
+
+	/**
+	 * HTTP type: Normal GET request
+	 */
+	@Transactional
+	public static Result finishStudy(Long studyId) throws Exception {
+		return finishStudy(studyId, true, null);
+	}
+
+	/**
+	 * HTTP type: Normal GET request
+	 */
+	@Transactional
+	public static Result finishStudy(Long studyId, Boolean successful,
+			String errorMsg) throws Exception {
+		Logger.info("finishStudy: studyId " + studyId + ", " + "successful "
+				+ successful + ", " + "workerId " + session(WORKER_ID));
+
+		Worker worker = retrieveWorker();
+		StudyModel study = retrieveStudy(studyId);
+		StudyResult studyResult = retrieveWorkersStartedStudyResult(worker,
+				study, MediaType.TEXT_JAVASCRIPT_UTF_8);
+
+		String confirmationCode = finishStudy(successful, studyResult);
+
+		if (!successful) {
+			throw new OkPublixException(errorMsg);
+		}
+		return ok(views.html.publix.end.render(study.getId(), confirmationCode));
+	}
+
+	private static String finishStudy(Boolean successful,
+			StudyResult studyResult) {
+		finishAllComponentResults(studyResult);
+		String confirmationCode;
+		if (successful) {
+			confirmationCode = studyResult.generateConfirmationCode();
+			studyResult.setStudyState(StudyState.FINISHED);
+		} else {
+			confirmationCode = "fail";
+			studyResult.setStudyState(StudyState.FAIL);
+		}
+		studyResult.merge();
+		session().remove(WORKER_ID);
+		return confirmationCode;
+	}
+
+	/**
+	 * In case the client side wants to log an error.<br>
+	 * HTTP type: Ajax GET request
+	 */
+	public static Result logError() {
+		String msg = request().body().asText();
+		Logger.error("Client-side error: " + msg);
+		return ok();
+	}
+
+	private static void checkForMTurkPreview(Long studyId, String mtAssignmentId)
+			throws BadRequestPublixException {
+		if (mtAssignmentId == null) {
+			throw new BadRequestPublixException(assignmentIdNotSpecified());
+		}
+		if (mtAssignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
+			// It's a preview coming from Mechanical Turk -> no previews
+			throw new BadRequestPublixException(noPreviewAvailable(studyId));
+		}
 	}
 
 	private static Worker createWorker(String mtWorkerId) {
@@ -104,75 +314,120 @@ public class Publix extends Controller {
 		return studyResult;
 	}
 
-	/**
-	 * HTTP type: Normal GET request
-	 */
-	@Transactional
-	public static Result startComponent(Long studyId, Long componentId) {
-		Logger.info("startComponent: studyId " + studyId + ", " + "workerId "
-				+ session(WORKER_ID));
+	private static StudyResult retrieveWorkersStartedStudyResult(Worker worker,
+			StudyModel study) throws ForbiddenPublixException {
+		return retrieveWorkersStartedStudyResult(worker, study,
+				MediaType.HTML_UTF_8);
+	}
 
-		// Get worker id
+	private static StudyResult retrieveWorkersStartedStudyResult(Worker worker,
+			StudyModel study, MediaType errorMediaType)
+			throws ForbiddenPublixException {
+		for (StudyResult studyResult : worker.getStudyResultList()) {
+			if (studyResult.getStudy().getId() == study.getId()
+					&& studyResult.getStudyState() == StudyState.STARTED) {
+				// Since there is only one study result of the same study
+				// allowed to be in STARTED, return the first one
+				return studyResult;
+			}
+		}
+		// Worker never started the study
+		throw new ForbiddenPublixException(workerNeverStartedStudy(
+				worker.getId(), study.getId()), errorMediaType);
+	}
+
+	private static ComponentResult retrieveComponentResult(
+			ComponentModel component, StudyResult studyResult) {
+		for (ComponentResult componentResult : studyResult
+				.getComponentResultList()) {
+			if (componentResult.getComponent().getId() == component.getId()) {
+				return componentResult;
+			}
+		}
+		return null;
+	}
+
+	private static ComponentModel retrieveLastComponent(StudyResult studyResult) {
+		List<ComponentResult> componentResultList = studyResult
+				.getComponentResultList();
+		if (componentResultList.size() > 0) {
+			return componentResultList.get(componentResultList.size() - 1)
+					.getComponent();
+		}
+		return null;
+	}
+
+	private static ComponentModel retrieveComponent(StudyModel study,
+			Long componentId) throws Exception {
+		return retrieveComponent(study, componentId, MediaType.HTML_UTF_8);
+	}
+
+	private static ComponentModel retrieveComponent(StudyModel study,
+			Long componentId, MediaType errorMediaType) throws Exception {
+		ComponentModel component = ComponentModel.findById(componentId);
+		if (component == null) {
+			throw new BadRequestPublixException(componentNotExist(
+					study.getId(), componentId), errorMediaType);
+		}
+		if (!component.getStudy().getId().equals(study.getId())) {
+			throw new BadRequestPublixException(componentNotBelongToStudy(
+					study.getId(), componentId), errorMediaType);
+		}
+		return component;
+	}
+
+	private static StudyModel retrieveStudy(Long studyId) throws Exception {
+		return retrieveStudy(studyId, MediaType.HTML_UTF_8);
+	}
+
+	private static StudyModel retrieveStudy(Long studyId,
+			MediaType errorMediaType) throws Exception {
+		StudyModel study = StudyModel.findById(studyId);
+		if (study == null) {
+			throw new BadRequestPublixException(studyNotExist(studyId),
+					errorMediaType);
+		}
+		return study;
+	}
+
+	private static Worker retrieveWorker() throws Exception {
+		return retrieveWorker(MediaType.HTML_UTF_8);
+	}
+
+	private static Worker retrieveWorker(MediaType errorMediaType)
+			throws Exception {
 		String workerIdStr = session(WORKER_ID);
 		if (workerIdStr == null) {
 			// No worker id in session -> study never started
-			String errorMsg = noWorkerIdInSession();
-			return forbidden(views.html.publix.error.render(errorMsg));
+			throw new ForbiddenPublixException(noWorkerIdInSession(),
+					errorMediaType);
 		}
 		long workerId;
 		try {
 			workerId = Long.parseLong(workerIdStr);
 		} catch (NumberFormatException e) {
-			String errorMsg = workerNotExist(workerIdStr);
-			return badRequest(views.html.publix.error.render(errorMsg));
+			throw new BadRequestPublixException(workerNotExist(workerIdStr),
+					errorMediaType);
 		}
 
-		// Standard check
 		Worker worker = Worker.findById(workerId);
-		StudyModel study = StudyModel.findById(studyId);
-		ComponentModel component = ComponentModel.findById(componentId);
-		String errorMsg = checkStandard(worker, study, component, workerId,
-				studyId, componentId);
-		if (errorMsg != null) {
-			return badRequest(views.html.publix.error.render(errorMsg));
+		if (worker == null) {
+			throw new BadRequestPublixException(workerNotExist(workerId),
+					errorMediaType);
 		}
-
-		// Check worker
-		StudyResult studyResult = worker.getStartedStudyResult(studyId);
-		if (studyResult == null) {
-			// Worker never started the study
-			errorMsg = workerNeverStartedStudy(workerId, studyId);
-			return forbidden(views.html.publix.error.render(errorMsg));
+		if (!(worker instanceof MTWorker)) {
+			throw new BadRequestPublixException(workerNotFromMTurk(workerId),
+					errorMediaType);
 		}
-		ComponentResult componentResult = studyResult
-				.getComponentResult(componentId);
-		if (componentResult != null) {
-			// Only one component of the same kind can be done in the same study
-			// by the same worker. Exception: If a component is reloadable,
-			// the old component result will be deleted and a new one generated.
-			component = componentResult.getComponent();
-			if (component.isReloadable()) {
-				studyResult.removeComponentResult(componentResult);
-			} else {
-				// Worker tried to reload a non-reloadable component -> end
-				// study
-				errorMsg = componentNotAllowedToReload(studyId, componentId);
-				// End study with fail
-				return finishStudy(workerId, false, errorMsg);
-			}
-		}
-		finishAllComponentResults(studyResult);
-		createComponentResult(studyResult, component);
-
-		return redirect(component.getViewUrl());
+		return worker;
 	}
 
 	private static void finishAllComponentResults(StudyResult studyResult) {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
-			if (componentResult.getState() != ComponentState.FINISHED
-					|| componentResult.getState() != ComponentState.FAIL) {
-				componentResult.setState(ComponentState.FINISHED);
+			if (componentResult.getComponentState() != ComponentState.FINISHED
+					|| componentResult.getComponentState() != ComponentState.FAIL) {
+				componentResult.setComponentState(ComponentState.FINISHED);
 				componentResult.merge();
 			}
 		}
@@ -185,181 +440,6 @@ public class Publix extends Controller {
 		studyResult.addComponentResult(componentResult);
 		studyResult.merge();
 		return componentResult;
-	}
-
-	/**
-	 * HTTP type: Normal GET request
-	 */
-	@Transactional
-	public static Result startNextComponent(Long studyId) {
-		Logger.info("startNextComponent: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID));
-
-		// Get worker id
-		String workerIdStr = session(WORKER_ID);
-		if (workerIdStr == null) {
-			// No worker id in session -> study never started
-			String errorMsg = noWorkerIdInSession();
-			return forbidden(views.html.publix.error.render(errorMsg));
-		}
-		long workerId;
-		try {
-			workerId = Long.parseLong(workerIdStr);
-		} catch (NumberFormatException e) {
-			String errorMsg = workerNotExist(workerIdStr);
-			return badRequest(views.html.publix.error.render(errorMsg));
-		}
-
-		// Get worker
-		Worker worker = Worker.findById(workerId);
-		if (worker == null) {
-			String errorMsg = workerNotExist(workerId);
-			return badRequest(views.html.publix.error.render(errorMsg));
-		}
-
-		// Get study result
-		StudyResult studyResult = worker.getStartedStudyResult(studyId);
-		if (studyResult == null) {
-			// Worker never started the study
-			String errorMsg = workerNeverStartedStudy(workerId, studyId);
-			return forbidden(views.html.publix.error.render(errorMsg));
-		}
-
-		// Get next component in study
-		ComponentModel currentComponent = studyResult.getLastComponentResult()
-				.getComponent();
-		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
-				currentComponent);
-		if (nextComponent == null) {
-			// No more components in study -> finish study
-			return finishStudy(studyId);
-		}
-
-		return startComponent(studyId, nextComponent.getId());
-	}
-
-	/**
-	 * HTTP type: Ajax GET request
-	 */
-	@Transactional
-	public static Result getComponentData(Long studyId, Long componentId)
-			throws Exception {
-		Logger.info("getComponentData: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "workerId "
-				+ session(WORKER_ID));
-
-		// Get worker id
-		String workerIdStr = session(WORKER_ID);
-		if (workerIdStr == null) {
-			// No worker id in session -> study never started
-			String errorMsg = noWorkerIdInSession();
-			return forbidden(errorMsg);
-		}
-		long workerId;
-		try {
-			workerId = Long.parseLong(workerIdStr);
-		} catch (NumberFormatException e) {
-			String errorMsg = workerNotExist(workerIdStr);
-			return badRequest(errorMsg);
-		}
-
-		// Standard check
-		Worker worker = Worker.findById(workerId);
-		StudyModel study = StudyModel.findById(studyId);
-		ComponentModel component = ComponentModel.findById(componentId);
-		String errorMsg = checkStandard(worker, study, component, workerId,
-				studyId, componentId);
-		if (errorMsg != null) {
-			return badRequest(errorMsg);
-		}
-
-		// Check worker
-		StudyResult studyResult = worker.getStartedStudyResult(studyId);
-		if (studyResult == null) {
-			// Worker never started the study
-			errorMsg = workerNeverStartedStudy(workerId, studyId);
-			return forbidden(errorMsg);
-		}
-
-		// Check component result
-		ComponentResult componentResult = studyResult
-				.getComponentResult(componentId);
-		if (componentResult == null
-				|| componentResult.getState() != ComponentState.STARTED) {
-			errorMsg = componentNeverStarted(studyId, componentId);
-			return forbidden(errorMsg);
-		}
-
-		componentResult.setState(ComponentState.DATA_RETRIEVED);
-		componentResult.merge();
-
-		return ok(component.asJsonForPublic());
-	}
-
-	/**
-	 * HTTP type: Ajax POST request
-	 */
-	@Transactional
-	public static Result submitResultData(Long studyId, Long componentId) {
-		Logger.info("submitResultData: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "workerId "
-				+ session(WORKER_ID));
-
-		// Get worker id
-		String workerIdStr = session(WORKER_ID);
-		if (workerIdStr == null) {
-			// No worker id in session -> study never started
-			String errorMsg = noWorkerIdInSession();
-			return forbidden(errorMsg);
-		}
-		long workerId;
-		try {
-			workerId = Long.parseLong(workerIdStr);
-		} catch (NumberFormatException e) {
-			String errorMsg = workerNotExist(workerIdStr);
-			return badRequest(errorMsg);
-		}
-
-		// Standard check
-		Worker worker = Worker.findById(workerId);
-		StudyModel study = StudyModel.findById(studyId);
-		ComponentModel component = ComponentModel.findById(componentId);
-		String errorMsg = checkStandard(worker, study, component, workerId,
-				studyId, componentId);
-		if (errorMsg != null) {
-			return badRequest(errorMsg);
-		}
-
-		// Check worker
-		StudyResult studyResult = worker.getStartedStudyResult(studyId);
-		if (studyResult == null) {
-			// Worker never started the study
-			errorMsg = workerNeverStartedStudy(workerId, studyId);
-			return forbidden(errorMsg);
-		}
-
-		// Check component result
-		ComponentResult componentResult = studyResult
-				.getComponentResult(componentId);
-		if (componentResult == null
-				|| componentResult.getState() == ComponentState.FINISHED
-				|| componentResult.getState() == ComponentState.FAIL) {
-			errorMsg = componentAlreadyFinishedOrFailed(studyId, componentId);
-			return forbidden(errorMsg);
-		}
-
-		// Get data in format JSON, text or XML and convert to String
-		String data = getDataAsString();
-		if (data == null) {
-			componentResult.setState(ComponentState.FAIL);
-			componentResult.merge();
-			return badRequest(submittedDataUnknownFormat(studyId, componentId));
-		}
-
-		componentResult.setState(ComponentState.DATA_RETRIEVED);
-		componentResult.merge();
-
-		return ok();
 	}
 
 	private static String getDataAsString() {
@@ -382,85 +462,6 @@ public class Publix extends Controller {
 	}
 
 	/**
-	 * HTTP type: Normal GET request
-	 */
-	@Transactional
-	public static Result finishStudy(Long studyId) {
-		return finishStudy(studyId, true, null);
-	}
-
-	/**
-	 * HTTP type: Normal GET request
-	 */
-	@Transactional
-	public static Result finishStudy(Long studyId, Boolean successful,
-			String errorMsg) {
-		Logger.info("finishStudy: studyId " + studyId + ", " + "successful "
-				+ successful + ", " + "workerId " + session(WORKER_ID));
-
-		// Get worker id
-		String workerIdStr = session(WORKER_ID);
-		if (workerIdStr == null) {
-			// No worker id in session -> study never started
-			errorMsg = noWorkerIdInSession();
-			return forbidden(views.html.publix.error.render(errorMsg));
-		}
-		long workerId;
-		try {
-			workerId = Long.parseLong(workerIdStr);
-		} catch (NumberFormatException e) {
-			errorMsg = workerNotExist(workerIdStr);
-			return badRequest(views.html.publix.error.render(errorMsg));
-		}
-
-		Worker worker = Worker.findById(workerId);
-		if (worker == null) {
-			errorMsg = workerNotExist(workerId);
-			return badRequest(views.html.publix.error.render(errorMsg));
-		}
-
-		StudyModel study = StudyModel.findById(studyId);
-		if (study == null) {
-			errorMsg = studyNotExist(studyId);
-			return badRequest(views.html.publix.error.render(errorMsg));
-		}
-
-		// Get study result
-		StudyResult studyResult = worker.getStartedStudyResult(studyId);
-		if (studyResult == null) {
-			// Worker never started the study
-			errorMsg = workerNeverStartedStudy(workerId, studyId);
-			return forbidden(views.html.publix.error.render(errorMsg));
-		}
-
-		// Finish study
-		finishAllComponentResults(studyResult);
-		String confirmationCode;
-		if (successful) {
-			confirmationCode = studyResult.generateConfirmationCode();
-			studyResult.setState(StudyState.FINISHED);
-		} else {
-			confirmationCode = "fail";
-			studyResult.setState(StudyState.FAIL);
-		}
-		studyResult.merge();
-		session().remove(WORKER_ID);
-
-		return ok(views.html.publix.end.render(studyId, confirmationCode,
-				successful, errorMsg));
-	}
-
-	/**
-	 * In case the client side wants to log an error.<br>
-	 * HTTP type: Ajax GET request
-	 */
-	public static Result logError() {
-		String msg = request().body().asText();
-		Logger.error("Client-side error: " + msg);
-		return ok();
-	}
-
-	/**
 	 * Convert XML-Document to String
 	 */
 	private static String asString(Document doc) {
@@ -478,27 +479,6 @@ public class Publix extends Controller {
 		}
 	}
 
-	private static String checkStandard(Worker worker, StudyModel study,
-			ComponentModel component, Long workerId, Long studyId,
-			Long componentId) {
-		if (worker == null) {
-			return workerNotExist(workerId);
-		}
-		if (!(worker instanceof MTWorker)) {
-			return workerNotFromMTurk(workerId);
-		}
-		if (study == null) {
-			return studyNotExist(studyId);
-		}
-		if (component == null) {
-			return componentNotExist(studyId, componentId);
-		}
-		if (!component.getStudy().getId().equals(studyId)) {
-			return componentNotBelongToStudy(studyId, componentId);
-		}
-		return null;
-	}
-
 	/**
 	 * Returns true if the request comes from the Mechanical Turk Sandbox and
 	 * false otherwise.
@@ -513,7 +493,11 @@ public class Publix extends Controller {
 
 	private static String noWorkerIdInSession() {
 		String errorMsg = "No worker id in session. Was the study started?";
-		Logger.info(errorMsg);
+		return errorMsg;
+	}
+
+	private static String workerNotInQueryParameter(String mtWorkerId) {
+		String errorMsg = "MTurk's worker is missing in the query parameters.";
 		return errorMsg;
 	}
 
@@ -521,55 +505,47 @@ public class Publix extends Controller {
 		return workerNotExist(String.valueOf(workerId));
 	}
 
-	private static String workerNotExist(String workerId) {
-		String errorMsg = "A worker with id " + workerId + " doesn't exist.";
-		Logger.info(errorMsg);
+	private static String workerNotExist(String workerIdStr) {
+		String errorMsg = "A worker with id " + workerIdStr + " doesn't exist.";
 		return errorMsg;
 	}
 
 	private static String workerNotFromMTurk(Long workerId) {
 		String errorMsg = "The worker with id " + workerId
 				+ " isn't a MTurk worker.";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	private static String assignmentIdNotSpecified() {
 		String errorMsg = "No assignment id specified in query parameters.";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	private static String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	private static String workerNeverStartedStudy(Long workerId, Long studyId) {
 		String errorMsg = "Worker " + workerId + " never started study "
 				+ studyId + ".";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	private static String studyNotExist(Long studyId) {
 		String errorMsg = "An study with id " + studyId + " doesn't exist.";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	private static String studyHasNoComponents(Long studyId) {
 		String errorMsg = "The study with id " + studyId
 				+ " has no components.";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	private static String componentNotExist(Long studyId, Long componentId) {
 		String errorMsg = "An component with id " + componentId + " of study "
 				+ studyId + " doesn't exist.";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
@@ -577,7 +553,6 @@ public class Publix extends Controller {
 			Long componentId) {
 		String errorMsg = "There is no study with id " + studyId
 				+ " that has a component with id " + componentId + ".";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
@@ -586,14 +561,12 @@ public class Publix extends Controller {
 		String errorMsg = "It's not allowed to reload this component (id: "
 				+ componentId + "). Unfortunately it is neccessary to finish "
 				+ "this study (id: " + studyId + ") at this point.";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	private static String componentNeverStarted(Long studyId, Long componentId) {
 		String errorMsg = "Component " + componentId + " of study " + studyId
 				+ " was never started.";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
@@ -601,14 +574,12 @@ public class Publix extends Controller {
 			Long componentId) {
 		String errorMsg = "Component " + componentId + " of study " + studyId
 				+ " is already finished or failed.";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
 	private static String workerNotAllowedStudy(Long workerId, Long studyId) {
 		String errorMsg = "Worker " + workerId + " is not allowed to do "
 				+ "study " + studyId + ".";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 
@@ -616,7 +587,6 @@ public class Publix extends Controller {
 			Long componentId) {
 		String errorMsg = "Unknown format of submitted data for component + "
 				+ componentId + "of study " + studyId + ".";
-		Logger.info(errorMsg);
 		return errorMsg;
 	}
 

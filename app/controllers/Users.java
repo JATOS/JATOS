@@ -3,6 +3,7 @@ package controllers;
 import java.util.List;
 
 import controllers.routes;
+import exceptions.ResultException;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.MAWorker;
@@ -12,6 +13,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
+import play.mvc.SimpleResult;
 
 public class Users extends Controller {
 
@@ -30,7 +32,7 @@ public class Users extends Controller {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result profile(String email) {
+	public static Result profile(String email) throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -40,7 +42,7 @@ public class Users extends Controller {
 		List<StudyModel> studyList = StudyModel.findAll();
 
 		if (user == null) {
-			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+			throw BadRequests.badRequestUserNotExist(email, loggedInUser,
 					studyList);
 		}
 
@@ -80,8 +82,9 @@ public class Users extends Controller {
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 					Breadcrumbs.getDashboardBreadcrumb(), "New User");
-			return badRequest(views.html.mecharg.user.create.render(studyList,
-					loggedInUser, breadcrumbs, form));
+			SimpleResult result = badRequest(views.html.mecharg.user.create
+					.render(studyList, loggedInUser, breadcrumbs, form));
+			throw new ResultException(result);
 		}
 
 		// Check if user with this email already exists.
@@ -108,8 +111,9 @@ public class Users extends Controller {
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 					Breadcrumbs.getDashboardBreadcrumb(), "New User");
-			return badRequest(views.html.mecharg.user.create.render(studyList,
-					loggedInUser, breadcrumbs, form));
+			SimpleResult result = badRequest(views.html.mecharg.user.create
+					.render(studyList, loggedInUser, breadcrumbs, form));
+			throw new ResultException(result);
 		} else {
 			MAWorker worker = new MAWorker(newUser);
 			worker.persist();
@@ -120,10 +124,10 @@ public class Users extends Controller {
 			return redirect(routes.Users.profile(newUser.getEmail()));
 		}
 	}
-	
+
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result editProfile(String email) {
+	public static Result editProfile(String email) throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -133,18 +137,14 @@ public class Users extends Controller {
 		}
 
 		if (user == null) {
-			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+			throw BadRequests.badRequestUserNotExist(email, loggedInUser,
 					studyList);
 		}
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			String errorMsg = errorMsgYouMustBeLoggedIn(user);
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
-					.getDashboardBreadcrumb());
-			List<UserModel> userList = UserModel.findAll();
-			return badRequest(views.html.mecharg.dashboard.render(studyList,
-					loggedInUser, breadcrumbs, userList, errorMsg));
+			throw BadRequests.badRequestMustBeLoggedInAsUser(user,
+					loggedInUser, studyList);
 		}
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
@@ -157,7 +157,8 @@ public class Users extends Controller {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result submitEditedProfile(String email) {
+	public static Result submitEditedProfile(String email)
+			throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -169,21 +170,22 @@ public class Users extends Controller {
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 
 		if (user == null) {
-			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+			throw BadRequests.badRequestUserNotExist(email, loggedInUser,
 					studyList);
 		}
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			form.reject(errorMsgYouMustBeLoggedIn(user));
+			form.reject(BadRequests.mustBeLoggedInAsUser(user));
 		}
 
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 					Breadcrumbs.getDashboardBreadcrumb(),
 					Breadcrumbs.getUserBreadcrumb(user), "Edit Profile");
-			return badRequest(views.html.mecharg.user.editProfile.render(
-					studyList, loggedInUser, breadcrumbs, user, form));
+			SimpleResult result = badRequest(views.html.mecharg.user.editProfile
+					.render(studyList, loggedInUser, breadcrumbs, user, form));
+			throw new ResultException(result);
 		} else {
 			// Update user in database
 			// Do not update 'email' since it's the id and should stay
@@ -198,7 +200,7 @@ public class Users extends Controller {
 
 	@Transactional
 	@Security.Authenticated(Secured.class)
-	public static Result changePassword(String email) {
+	public static Result changePassword(String email) throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -208,18 +210,14 @@ public class Users extends Controller {
 		}
 
 		if (user == null) {
-			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+			throw BadRequests.badRequestUserNotExist(email, loggedInUser,
 					studyList);
 		}
 
 		// To change a user's password this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			String errorMsg = errorMsgYouMustBeLoggedIn(user);
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
-					.getDashboardBreadcrumb());
-			List<UserModel> userList = UserModel.findAll();
-			return badRequest(views.html.mecharg.dashboard.render(studyList,
-					loggedInUser, breadcrumbs, userList, errorMsg));
+			throw BadRequests.badRequestMustBeLoggedInAsUser(user,
+					loggedInUser, studyList);
 		}
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
@@ -244,13 +242,13 @@ public class Users extends Controller {
 		}
 
 		if (user == null) {
-			return BadRequests.badRequestUserNotExist(email, loggedInUser,
+			throw BadRequests.badRequestUserNotExist(email, loggedInUser,
 					studyList);
 		}
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			form.reject(errorMsgYouMustBeLoggedIn(user));
+			form.reject(BadRequests.mustBeLoggedInAsUser(user));
 		}
 
 		// Authenticate
@@ -279,19 +277,15 @@ public class Users extends Controller {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 					Breadcrumbs.getDashboardBreadcrumb(),
 					Breadcrumbs.getUserBreadcrumb(user), "Change Password");
-			return badRequest(views.html.mecharg.user.changePassword.render(
-					studyList, loggedInUser, breadcrumbs, form));
+			SimpleResult result = badRequest(views.html.mecharg.user.changePassword
+					.render(studyList, loggedInUser, breadcrumbs, form));
+			throw new ResultException(result);
 		} else {
 			// Update password hash in DB
 			user.setPasswordHash(newPasswordHash);
 			user.merge();
 			return redirect(routes.Users.profile(email));
 		}
-	}
-
-	private static String errorMsgYouMustBeLoggedIn(UserModel user) {
-		return "You must be logged in as " + user.toString()
-				+ " to update this user.";
 	}
 
 }

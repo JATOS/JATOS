@@ -9,8 +9,10 @@ import javax.persistence.TypedQuery;
 import play.db.jpa.JPA;
 
 @Entity
-@DiscriminatorValue("MT")
+@DiscriminatorValue(MTWorker.WORKER_TYPE)
 public class MTWorker extends Worker {
+
+	public static final String WORKER_TYPE = "MT";
 
 	private String mtWorkerId;
 
@@ -40,13 +42,19 @@ public class MTWorker extends Worker {
 	}
 
 	public static MTWorker findByMTWorkerId(String mtWorkerId) {
+		return findByMTWorkerId(mtWorkerId, WORKER_TYPE);
+	}
+
+	protected static MTWorker findByMTWorkerId(String mtWorkerId,
+			String workerType) {
 		String queryStr = "SELECT e FROM Worker e WHERE "
-				+ "e.mtWorkerId=:mtWorkerId";
-		TypedQuery<MTWorker> query = JPA.em().createQuery(queryStr,
-				MTWorker.class);
-		List<MTWorker> workerList = query
-				.setParameter("mtWorkerId", mtWorkerId).getResultList();
-		return workerList.isEmpty() ? null : workerList.get(0);
+				+ "e.mtWorkerId=:mtWorkerId and e.workerType=:workerType";
+		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
+		List<Worker> workerList = query.setParameter("mtWorkerId", mtWorkerId)
+				.setParameter(Worker.DESCRIMINATOR, workerType).getResultList();
+		MTWorker worker = workerList.isEmpty() ? null : (MTWorker) workerList
+				.get(0);
+		return worker;
 	}
 
 }

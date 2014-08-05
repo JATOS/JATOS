@@ -20,14 +20,19 @@ import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 @Entity
+@JsonPropertyOrder(value = { "resultId", "startDate", "studyId", "componentId",
+		"componentState", "data" })
 public class ComponentResult {
 
 	@Id
+	@JsonProperty("resultId")
 	@GeneratedValue
 	private Long id;
 
@@ -48,8 +53,9 @@ public class ComponentResult {
 	/**
 	 * State in the progress of a component.
 	 */
-	private ComponentState componetState;
+	private ComponentState componentState;
 
+	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "component_id")
 	private ComponentModel component;
@@ -58,17 +64,17 @@ public class ComponentResult {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "studyResult_id")
 	private StudyResult studyResult;
-	
+
 	@Lob
 	private String data;
-	
+
 	public ComponentResult() {
 	}
 
 	public ComponentResult(ComponentModel component) {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.component = component;
-		this.componetState = ComponentState.STARTED;
+		this.componentState = ComponentState.STARTED;
 	}
 
 	public void setId(Long id) {
@@ -79,20 +85,20 @@ public class ComponentResult {
 		return this.id;
 	}
 
-	public void setDate(Timestamp date) {
-		this.startDate = date;
+	public void setStartDate(Timestamp startDate) {
+		this.startDate = startDate;
 	}
 
-	public Timestamp getDate() {
+	public Timestamp getStartDate() {
 		return this.startDate;
 	}
 
-	public void setState(ComponentState state) {
-		this.componetState = state;
+	public void setComponentState(ComponentState state) {
+		this.componentState = state;
 	}
 
-	public ComponentState getState() {
-		return this.componetState;
+	public ComponentState getComponentState() {
+		return this.componentState;
 	}
 
 	public void setComponent(ComponentModel component) {
@@ -110,11 +116,11 @@ public class ComponentResult {
 	public String getData() {
 		return this.data;
 	}
-	
+
 	public void setStudyResult(StudyResult studyResult) {
 		this.studyResult = studyResult;
 	}
-	
+
 	public StudyResult getStudyResult() {
 		return this.studyResult;
 	}
@@ -123,7 +129,7 @@ public class ComponentResult {
 	public String toString() {
 		return id + ", " + startDate + ", " + component.getId();
 	}
-	
+
 	public String asJson() throws JsonProcessingException {
 		ObjectWriter objectWriter = new ObjectMapper().setTimeZone(
 				TimeZone.getDefault()).writer();
@@ -131,18 +137,27 @@ public class ComponentResult {
 		return resultAsJson;
 	}
 
+	@JsonProperty("componentId")
+	private Long getComponentId() {
+		return component.getId();
+	}
+
+	@JsonProperty("studyId")
+	private Long getStudyId() {
+		return component.getStudy().getId();
+	}
+
 	public static ComponentResult findById(Long id) {
 		return JPA.em().find(ComponentResult.class, id);
 	}
 
-	public static List<ComponentResult> findAllByComponent(Long componentId) {
-		String queryStr = "SELECT e FROM ComponentResult "
-				+ "WHERE component_id :componentId";
+	public static List<ComponentResult> findAllByComponent(
+			ComponentModel component) {
+		String queryStr = "SELECT e FROM ComponentResult e "
+				+ "WHERE e.component=:componentId";
 		TypedQuery<ComponentResult> query = JPA.em().createQuery(queryStr,
 				ComponentResult.class);
-		query.setParameter("componentId", componentId);
-		query.executeUpdate();
-		return query.getResultList();
+		return query.setParameter("componentId", component).getResultList();
 	}
 
 	public void persist() {

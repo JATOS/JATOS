@@ -1,13 +1,7 @@
-@(studyId: Long, confirmationCode: String, successful: Boolean, errorMsg: String)
+@(studyId: Long, confirmationCode: String)
 
 @main("Mechanical Argentinian") {
-
 	<h1 style="text-align: center">
-		@if(successful) {
-			Confirmation code: @confirmationCode
-		} else {
-			A problem occurred during this study (id: @studyId)
-			@if(errorMsg) {: @errorMsg} else {.}
-		}
+		Confirmation code: @confirmationCode
 	</h1>
 }

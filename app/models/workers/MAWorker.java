@@ -9,8 +9,10 @@ import javax.persistence.OneToOne;
 import models.UserModel;
 
 @Entity
-@DiscriminatorValue("MA")
+@DiscriminatorValue(MAWorker.WORKER_TYPE)
 public class MAWorker extends Worker {
+	
+	public static final String WORKER_TYPE = "MA";
 
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_email")

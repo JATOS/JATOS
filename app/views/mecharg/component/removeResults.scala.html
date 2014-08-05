@@ -26,14 +26,14 @@
 					@for(result <- componentResultList) {
 						<li data-task-id="@component.getId()">
 							<input type="checkbox" name="@Components.RESULT" value="@result.getId()" unchecked>
-								@result.getId(), @result.getDate(), 
+								@result.getId(), @result.getStartDate(), 
 								@if(result.getStudyResult().getWorker() != null) {
 									@result.getStudyResult().getWorker().getId()
 								} else {
 									none
 								},
-								@if(result.getState() != null){
-									@result.getState()
+								@if(result.getComponentState() != null){
+									@result.getComponentState()
 								} else {
 									none
 								}<br>

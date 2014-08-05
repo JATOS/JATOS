@@ -1,6 +1,8 @@
 package models;
 
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,14 +27,14 @@ public class UserModel {
 	private String email;
 
 	private String name;
-	
-	@OneToOne(mappedBy="user", fetch=FetchType.LAZY, cascade = CascadeType.ALL)
+
+	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private MAWorker worker;
 
 	// Password is stored as a hash
 	private String passwordHash;
 
-	@ManyToMany(mappedBy = "memberList", fetch=FetchType.LAZY)
+	@ManyToMany(mappedBy = "memberList", fetch = FetchType.LAZY)
 	private Set<StudyModel> studyList = new HashSet<StudyModel>();
 
 	public UserModel(String email, String name, String passwordHash) {
@@ -40,38 +42,38 @@ public class UserModel {
 		this.name = name;
 		this.passwordHash = passwordHash;
 	}
-	
+
 	public UserModel() {
 	}
 
 	public void update(String name) {
 		this.name = name;
 	}
-	
+
 	public void setEmail(String email) {
 		this.email = email;
 	}
-	
+
 	public String getEmail() {
 		return this.email;
 	}
-	
+
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	public String getName() {
 		return this.name;
 	}
-	
+
 	public void setPasswordHash(String passwordHash) {
 		this.passwordHash = passwordHash;
 	}
-	
+
 	public String getPasswordHash() {
 		return this.passwordHash;
 	}
-	
+
 	public void setStudyList(Set<StudyModel> studyList) {
 		this.studyList = studyList;
 	}
@@ -79,15 +81,15 @@ public class UserModel {
 	public Set<StudyModel> getStudyList() {
 		return this.studyList;
 	}
-	
+
 	public void setWorker(MAWorker worker) {
 		this.worker = worker;
 	}
-	
+
 	public MAWorker getWorker() {
 		return this.worker;
 	}
-	
+
 	@Override
 	public String toString() {
 		return name + ", " + email;
@@ -96,7 +98,8 @@ public class UserModel {
 	public static UserModel authenticate(String email, String passwordHash) {
 		String queryStr = "SELECT e FROM UserModel e WHERE "
 				+ "e.email=:email and e.passwordHash=:passwordHash";
-		TypedQuery<UserModel> query = JPA.em().createQuery(queryStr, UserModel.class);
+		TypedQuery<UserModel> query = JPA.em().createQuery(queryStr,
+				UserModel.class);
 		List<UserModel> userList = query.setParameter("email", email)
 				.setParameter("passwordHash", passwordHash).getResultList();
 		return userList.isEmpty() ? null : userList.get(0);
@@ -114,7 +117,7 @@ public class UserModel {
 	}
 
 	public static String getHashMDFive(String str)
-			throws Exception {
+			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 		byte[] strBytes = str.getBytes("UTF-8");
 		MessageDigest md = MessageDigest.getInstance("MD5");
 		byte[] hashByte = md.digest(strBytes);

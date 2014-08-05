@@ -77,19 +77,19 @@ public class StudyResult {
 		return this.id;
 	}
 
-	public void setDate(Timestamp date) {
+	public void setStartDate(Timestamp date) {
 		this.startDate = date;
 	}
 
-	public Timestamp getDate() {
+	public Timestamp getStartDate() {
 		return this.startDate;
 	}
 
-	public void setState(StudyState state) {
+	public void setStudyState(StudyState state) {
 		this.studyState = state;
 	}
 
-	public StudyState getState() {
+	public StudyState getStudyState() {
 		return this.studyState;
 	}
 
@@ -138,22 +138,6 @@ public class StudyResult {
 		return this.worker;
 	}
 	
-	public ComponentResult getComponentResult(Long componentId) {
-		for (ComponentResult componentResult : componentResultList) {
-			if (componentResult.getComponent().getId() == componentId) {
-				return componentResult;
-			}
-		}
-		return null;
-	}
-	
-	public ComponentResult getLastComponentResult() {
-		if (componentResultList.size() > 0) {
-			return componentResultList.get(componentResultList.size() - 1);
-		}
-		return null;
-	}
-
 	@Override
 	public String toString() {
 		return id + ", " + startDate + ", " + study.getId();
