@@ -23,14 +23,14 @@ public class ApplicationTest {
 
 	@Test
 	public void renderTemplate() {
-		Content html = views.html.publix.index.render();
+		Content html = views.html.publix.confirmationCode.render("test");
 		assertThat(contentType(html)).isEqualTo("text/html");
-		// assertThat(contentAsString(html)).contains("Your new application is ready.");
+		assertThat(contentAsString(html)).contains("Confirmation code:");
 	}
 
 	@Test
 	public void callIndex() {
-		Result result = callAction(controllers.routes.ref.Publix.index());
+		Result result = callAction(controllers.publix.routes.ref.Publix.index());
 		assertThat(status(result)).isEqualTo(OK);
 	}
 
@@ -39,11 +39,11 @@ public class ApplicationTest {
 		running(fakeApplication(Helpers.inMemoryDatabase()), new Runnable() {
 			@Override
 			public void run() {
-				Result result = callAction(controllers.routes.ref.Publix
+				Result result = callAction(controllers.publix.routes.ref.Publix
 						.startStudy(1));
 				assertThat(status(result)).isEqualTo(OK);
 				assertThat(charset(result)).isEqualTo("utf-8");
-				assertThat(contentAsString(result)).contains("Hello Kiki");
+//				assertThat(contentAsString(result)).contains("Hello Kiki");
 			}
 		});
 	}

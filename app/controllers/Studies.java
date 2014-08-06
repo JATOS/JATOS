@@ -3,18 +3,22 @@ package controllers;
 import java.util.List;
 import java.util.Map;
 
-import exceptions.ResultException;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import play.mvc.SimpleResult;
+import models.results.ComponentResult;
+import models.results.StudyResult;
+import models.workers.Worker;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
+import play.mvc.SimpleResult;
+import exceptions.ResultException;
 
+@Security.Authenticated(Secured.class)
 public class Studies extends Controller {
 
 	public static final String USER = "user";
@@ -22,7 +26,6 @@ public class Studies extends Controller {
 	public static final String DESCRIPTION = "description";
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result index(Long studyId) throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
@@ -38,7 +41,6 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result create() {
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
@@ -54,7 +56,6 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result submit() throws ResultException {
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
 		UserModel loggedInUser = UserModel
@@ -78,7 +79,6 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result properties(Long studyId) throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
@@ -95,7 +95,6 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result submitProperties(Long studyId) throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
@@ -123,7 +122,6 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result remove(Long studyId) throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
@@ -131,12 +129,32 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAll();
 		checkStandard(study, studyId, loggedInUser, studyList);
 
-		study.remove();
+		removeStudy(study);
 		return redirect(routes.Dashboard.dashboard());
 	}
 
+	private static void removeStudy(StudyModel study) {
+		// Remove all study's components
+		for (ComponentModel component : study.getComponentList()) {
+			component.remove();
+		}
+		// Remove study's StudyResults and ComponentResults
+		for (StudyResult studyResult : StudyResult.findAllByStudy(study)) {
+			for (ComponentResult componentResult : studyResult
+					.getComponentResultList()) {
+				componentResult.remove();
+			}
+			// Remove StudyResult from worker
+			Worker worker = studyResult.getWorker(); 
+			worker.removeStudyResult(studyResult);
+			worker.merge();
+			studyResult.remove();
+		}
+		
+		study.remove();
+	}
+
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result changeMembers(Long studyId) throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
@@ -153,7 +171,6 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result submitChangedMembers(Long studyId)
 			throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -184,7 +201,6 @@ public class Studies extends Controller {
 	 * Ajax POST request to change the oder of components within an study.
 	 */
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result changeComponentOrder(Long studyId, Long componentId,
 			String direction) throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -230,7 +246,6 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result showMTurkSourceCode(Long studyId)
 			throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);

@@ -9,10 +9,10 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 
+@Security.Authenticated(Secured.class)
 public class Dashboard extends Controller {
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result dashboard() {
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel

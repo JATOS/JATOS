@@ -15,6 +15,7 @@ import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
 
+@Security.Authenticated(Secured.class)
 public class Users extends Controller {
 
 	public static final String NAME = "name";
@@ -31,7 +32,6 @@ public class Users extends Controller {
 	public static final String COOKIE_EMAIL = "email";
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result profile(String email) throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
 		UserModel loggedInUser = UserModel
@@ -54,7 +54,6 @@ public class Users extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result create() {
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
@@ -69,7 +68,6 @@ public class Users extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result submit() throws Exception {
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		List<StudyModel> studyList = StudyModel.findAll();
@@ -126,7 +124,6 @@ public class Users extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result editProfile(String email) throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
 		UserModel loggedInUser = UserModel
@@ -156,7 +153,6 @@ public class Users extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result submitEditedProfile(String email)
 			throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
@@ -199,7 +195,6 @@ public class Users extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result changePassword(String email) throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
 		UserModel loggedInUser = UserModel
@@ -229,7 +224,6 @@ public class Users extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result submitChangedPassword(String email) throws Exception {
 		UserModel user = UserModel.findByEmail(email);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);

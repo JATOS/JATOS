@@ -3,14 +3,15 @@
 # ~~~~
 
 # Public from MTurk
-GET     /publix/:studyId/start                           controllers.Publix.startStudy(studyId: Long)
-GET     /publix/:studyId/end                             controllers.Publix.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
-GET     /publix/:studyId/:componentId/start              controllers.Publix.startComponent(studyId: Long, componentId: Long)
-GET     /publix/:studyId/startNextComponent              controllers.Publix.startNextComponent(studyId: Long)
-GET     /publix/:studyId/:componentId/getData            controllers.Publix.getComponentData(studyId: Long, componentId: Long)
-POST    /publix/:studyId/:componentId/submitResultData   controllers.Publix.submitResultData(studyId: Long, componentId: Long)
-POST    /publix/logError                                 controllers.Publix.logError()
-GET     /publix/                                         controllers.Publix.index()
+GET     /publix/:studyId/start                           controllers.publix.Publix.startStudy(studyId: Long)
+GET     /publix/:studyId/end                             controllers.publix.Publix.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
+GET     /publix/:studyId/:componentId/start              controllers.publix.Publix.startComponent(studyId: Long, componentId: Long)
+GET     /publix/:studyId/startNextComponent              controllers.publix.Publix.startNextComponent(studyId: Long)
+GET     /publix/:studyId/:componentId/getData            controllers.publix.Publix.getComponentData(studyId: Long, componentId: Long)
+POST    /publix/:studyId/:componentId/submitResultData   controllers.publix.Publix.submitResultData(studyId: Long, componentId: Long)
+POST    /publix/logError                                 controllers.publix.Publix.logError()
+GET     /publix/                                         controllers.publix.Publix.index()
+GET     /publix                                          controllers.publix.Publix.index()
 
 # MechArg
 GET     /mecharg/login                                 controllers.Authentication.login()

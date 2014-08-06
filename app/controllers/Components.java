@@ -17,6 +17,7 @@ import play.mvc.Security;
 import play.mvc.SimpleResult;
 import exceptions.ResultException;
 
+@Security.Authenticated(Secured.class)
 public class Components extends Controller {
 
 	public static final String TITLE = "title";
@@ -26,7 +27,6 @@ public class Components extends Controller {
 	public static final String RELOADABLE = "reloadable";
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result index(Long studyId, Long componentId)
 			throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -50,7 +50,6 @@ public class Components extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result tryComponent(Long studyId, Long componentId)
 			throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -74,7 +73,6 @@ public class Components extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result create(Long studyId) throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
@@ -101,7 +99,6 @@ public class Components extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result submit(Long studyId) throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
@@ -128,16 +125,15 @@ public class Components extends Controller {
 			SimpleResult result = badRequest(views.html.mecharg.component.create
 					.render(studyList, loggedInUser, breadcrumbs, study, form));
 			throw new ResultException(result);
-		} else {
-			ComponentModel component = form.get();
-			addComponent(study, component);
-			return redirect(routes.Components.index(study.getId(),
-					component.getId()));
 		}
+	
+		ComponentModel component = form.get();
+		addComponent(study, component);
+		return redirect(routes.Components.index(study.getId(),
+				component.getId()));
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result edit(Long studyId, Long componentId)
 			throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -164,7 +160,6 @@ public class Components extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result submitEdited(Long studyId, Long componentId)
 			throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -206,7 +201,6 @@ public class Components extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result remove(Long studyId, Long componentId)
 			throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -227,7 +221,6 @@ public class Components extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result removeResults(Long studyId, Long componentId)
 			throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -257,7 +250,6 @@ public class Components extends Controller {
 	}
 
 	@Transactional
-	@Security.Authenticated(Secured.class)
 	public static Result submitRemovedResults(Long studyId, Long componentId)
 			throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -309,9 +301,18 @@ public class Components extends Controller {
 
 	private static void removeComponent(StudyModel study,
 			ComponentModel component) {
-		component.remove();
+		// Remove component from study
 		study.removeComponent(component);
 		study.merge();
+		// Remove component's ComponentResults
+		for (ComponentResult componentResult : ComponentResult
+				.findAllByComponent(component)) {
+			StudyResult studyResult = componentResult.getStudyResult();
+			studyResult.removeComponentResult(componentResult);
+			studyResult.merge();
+			componentResult.remove();
+		}
+		component.remove();
 	}
 
 	private static void checkStandard(Long studyId, Long componentId,

@@ -13,14 +13,14 @@ public class Global extends GlobalSettings {
 	public Promise<SimpleResult> onError(RequestHeader request, Throwable t) {
 		Throwable cause = t.getCause();
 		if (cause instanceof PublixException) {
-			Logger.info(cause.getMessage());
+//			Logger.info(cause.getMessage());
 			PublixException resultException = (PublixException) cause;
 			SimpleResult result = resultException.getSimpleResult(cause
 					.getMessage());
 			return Promise.<SimpleResult> pure(result);
 		}
 		if (cause.getCause() instanceof ResultException) {
-			Logger.info(cause.getCause().getMessage());
+//			Logger.info(cause.getCause().getMessage());
 			ResultException resultException = (ResultException) cause.getCause();
 			SimpleResult result = resultException.getResult();
 			return Promise.<SimpleResult> pure(result);

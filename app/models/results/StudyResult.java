@@ -16,6 +16,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
+import javax.persistence.TypedQuery;
 
 import models.StudyModel;
 import models.workers.Worker;
@@ -140,11 +141,20 @@ public class StudyResult {
 	
 	@Override
 	public String toString() {
-		return id + ", " + startDate + ", " + study.getId();
+		return String.valueOf(id);
 	}
 
 	public static StudyResult findById(Long id) {
 		return JPA.em().find(StudyResult.class, id);
+	}
+	
+	public static List<StudyResult> findAllByStudy(
+			StudyModel study) {
+		String queryStr = "SELECT e FROM StudyResult e "
+				+ "WHERE e.study=:studyId";
+		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
+				StudyResult.class);
+		return query.setParameter("studyId", study).getResultList();
 	}
 
 	public void persist() {

@@ -15,12 +15,12 @@ public class MTWorker extends Worker {
 	public static final String WORKER_TYPE = "MT";
 
 	private String mtWorkerId;
-
+	
 	public MTWorker() {
 	}
 
-	public MTWorker(String workerId) {
-		this.mtWorkerId = workerId;
+	public MTWorker(String mtWorkerId) {
+		this.mtWorkerId = mtWorkerId;
 	}
 
 	public void setMTWorkerId(String mtWorkerId) {
@@ -30,7 +30,7 @@ public class MTWorker extends Worker {
 	public String getMTWorkerId() {
 		return this.mtWorkerId;
 	}
-
+	
 	@Override
 	public String toString() {
 		return mtWorkerId + ", " + super.toString();

@@ -15,6 +15,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 
 import models.results.StudyResult;
 import play.db.jpa.JPA;
@@ -34,6 +35,7 @@ public abstract class Worker {
 	private String workerType;
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OrderColumn(name = "studyResultList_order")
 	@JoinColumn(name = "worker_id")
 	private List<StudyResult> studyResultList = new ArrayList<StudyResult>();
 
@@ -67,10 +69,14 @@ public abstract class Worker {
 	public void addStudyResult(StudyResult studyResult) {
 		studyResultList.add(studyResult);
 	}
+	
+	public void removeStudyResult(StudyResult studyResult) {
+		studyResultList.remove(studyResult);
+	}
 
 	public boolean didStudy(Long studyId) {
 		for (StudyResult studyResult : studyResultList) {
-			if (studyResult.getId() == studyId) {
+			if (studyResult.getStudy().getId() == studyId) {
 				return true;
 			}
 		}

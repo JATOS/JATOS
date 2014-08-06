@@ -9,8 +9,8 @@ public class MTSandboxWorker extends MTWorker {
 	
 	public static final String WORKER_TYPE = "MTSandbox";
 
-	public MTSandboxWorker(String workerId) {
-		super(workerId);
+	public MTSandboxWorker(String mtWorkerId) {
+		super(mtWorkerId);
 	}
 	
 	public static MTWorker findByMTWorkerId(String mtWorkerId) {
