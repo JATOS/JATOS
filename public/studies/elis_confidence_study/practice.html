@@ -41,7 +41,7 @@
 	<script>
 		var studyId = 1;
 		var componentId = 3;
-		var nextComponentId = 1;
+		var nextComponentId = 4;
 		var componentData;
 		var jsonData;
 		var slideList;
@@ -125,7 +125,7 @@
 		function getComponentData(studyId, componentId) {
 			currentComponentState = componentState.WAITING;
 			$.ajax({
-				url: "/ma/" + studyId + "/" + componentId,
+				url: "/publix/" + studyId + "/" + componentId + "/getData",
 				type: "GET",
 				dataType: 'json',
 				success: function(response) {
@@ -230,22 +230,7 @@
 		
 		// Get next component's URL and move to it
 		function endComponentAndNext() {
-			var ajax = $.ajax({
-				url: "/ma/" + studyId + "/" + nextComponentId + "/url",
-				type: "GET",
-				success: function(url) {
-					if (url) {
-						window.location.assign(url);
-					} else {
-						currentComponentState = componentState.RUNNING;
-						showError("Missing next URL");
-					}
-				},
-				error: function(err) {
-					currentComponentState = componentState.RUNNING;
-					showError(err.responseText);
-				}
-			});
+			window.location.href = "/publix/" + studyId + "/" + nextComponentId + "/start";
 		}
 		
 		function moveConfidenceSlider(mouseX) {
@@ -302,7 +287,7 @@
 			if (logErrorMsg) {
 				// Send error msg for logging to server
 				$.ajax({
-					url: "/logError",
+					url: "/publix/logError",
 					data: logErrorMsg,
 					processData: false,
 					type: "POST",

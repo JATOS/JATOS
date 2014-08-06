@@ -31,6 +31,7 @@ import com.google.common.net.MediaType;
 
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
+import exceptions.NotFoundPublixException;
 import exceptions.OkPublixException;
 
 public class Publix extends Controller {
@@ -143,8 +144,7 @@ public class Publix extends Controller {
 		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
 				currentComponent);
 		if (nextComponent == null) {
-			// No more components in study -> finish study
-			return finishStudy(studyId);
+			throw new NotFoundPublixException(noMoreComponents());
 		}
 
 		return startComponent(studyId, nextComponent.getId());
@@ -247,10 +247,14 @@ public class Publix extends Controller {
 
 		Worker worker = retrieveWorker();
 		StudyModel study = retrieveStudy(studyId);
-		StudyResult studyResult = retrieveWorkersStartedStudyResult(worker,
-				study, MediaType.TEXT_JAVASCRIPT_UTF_8);
 
-		String confirmationCode = finishStudy(successful, studyResult);
+		StudyResult studyResult = retrieveWorkersLastStudyResult(worker, study);
+		String confirmationCode;
+		if (studyResult.getStudyState() == StudyState.STARTED) {
+			confirmationCode = finishStudy(successful, studyResult);
+		} else {
+			confirmationCode = studyResult.getConfirmationCode();
+		}
 
 		if (!successful) {
 			throw new OkPublixException(errorMsg);
@@ -270,7 +274,7 @@ public class Publix extends Controller {
 			studyResult.setStudyState(StudyState.FAIL);
 		}
 		studyResult.merge();
-		session().remove(WORKER_ID);
+		// session().remove(WORKER_ID);
 		return confirmationCode;
 	}
 
@@ -334,6 +338,27 @@ public class Publix extends Controller {
 		// Worker never started the study
 		throw new ForbiddenPublixException(workerNeverStartedStudy(
 				worker.getId(), study.getId()), errorMediaType);
+	}
+
+	private static StudyResult retrieveWorkersLastStudyResult(Worker worker,
+			StudyModel study) throws ForbiddenPublixException {
+		return retrieveWorkersLastStudyResult(worker, study,
+				MediaType.HTML_UTF_8);
+	}
+
+	private static StudyResult retrieveWorkersLastStudyResult(Worker worker,
+			StudyModel study, MediaType errorMediaType)
+			throws ForbiddenPublixException {
+
+		StudyResult studyResult;
+		for (int i = worker.getStudyResultList().size() - 1; i == 0; i--) {
+			studyResult = worker.getStudyResultList().get(i);
+			if (studyResult.getStudy().getId() == study.getId()) {
+				return studyResult;
+			}
+		}
+		throw new ForbiddenPublixException(workerNeverDidStudy(worker.getId(),
+				study.getId()), errorMediaType);
 	}
 
 	private static ComponentResult retrieveComponentResult(
@@ -532,6 +557,12 @@ public class Publix extends Controller {
 		return errorMsg;
 	}
 
+	private static String workerNeverDidStudy(Long workerId, Long studyId) {
+		String errorMsg = "Worker " + workerId + " never did study " + studyId
+				+ ".";
+		return errorMsg;
+	}
+
 	private static String studyNotExist(Long studyId) {
 		String errorMsg = "An study with id " + studyId + " doesn't exist.";
 		return errorMsg;
@@ -589,5 +620,10 @@ public class Publix extends Controller {
 				+ componentId + "of study " + studyId + ".";
 		return errorMsg;
 	}
-
+	
+	private static String noMoreComponents() {
+		String errorMsg = "There aren't any more components in this study.";
+		return errorMsg;
+	}
+	
 }

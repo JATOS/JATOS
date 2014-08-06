@@ -25,11 +25,10 @@
 
 	<script>
 		var studyId = 1;
-		var componentId = 2;
+		var componentId = 1;
 		var componentData;
 		var jsonData;
 		var slideList;
-		var nextUrl;
 		var slideCount = 0;
 		
 		// When the window is fully loaded get data and display the first slide
@@ -55,7 +54,7 @@
 		
 		function getComponentData(studyId, componentId) {
 			$.ajax({
-				url: "/ma/" + studyId + "/" + componentId,
+				url: "/publix/" + studyId + "/" + componentId + "/getData",
 				type: "GET",
 				dataType: 'json',
 				success: function(response) {
@@ -95,20 +94,7 @@
 		}
 		
 		function endComponentAndNext() {
-			var ajax = $.ajax({
-				url: "/ma/" + studyId + "/" + componentId + "/nextUrl",
-				type: "GET",
-				success: function(url) {
-					if (url) {
-						window.location.assign(url);
-					} else {
-						showError("Missing next URL");
-					}
-				},
-				error: function(err) {
-					showError(err.responseText);
-				}
-			});
+			window.location.href = "/publix/" + studyId + "/startNextComponent";
 		}
 		
 		function showError(errorMsg) {
@@ -142,7 +128,7 @@
 			if (logErrorMsg) {
 				// Send error msg for logging to server
 				$.ajax({
-					url: "/logError",
+					url: "/publix/logError",
 					data: logErrorMsg,
 					processData: false,
 					type: "POST",

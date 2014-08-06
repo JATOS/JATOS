@@ -42,6 +42,9 @@ public class PublixException extends Exception {
 			case HttpStatus.SC_FORBIDDEN:
 				return Results.forbidden(views.html.publix.error
 						.render(message));
+			case HttpStatus.SC_NOT_FOUND:
+				return Results.notFound(views.html.publix.error
+						.render(message));
 			default:
 				return Results.internalServerError(views.html.publix.error
 						.render(message));
@@ -53,6 +56,8 @@ public class PublixException extends Exception {
 			return Results.badRequest(message);
 		case HttpStatus.SC_FORBIDDEN:
 			return Results.forbidden(message);
+		case HttpStatus.SC_NOT_FOUND:
+			return Results.notFound(message);
 		default:
 			return Results.internalServerError(message);
 		}
