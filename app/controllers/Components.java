@@ -25,6 +25,7 @@ public class Components extends Controller {
 	public static final String JSON_DATA = "jsonData";
 	public static final String RESULT = "result";
 	public static final String RELOADABLE = "reloadable";
+	public static final String MECHARG_COMPONENTTRY = "MechArgComponentTry";
 
 	@Transactional
 	public static Result index(Long studyId, Long componentId)
@@ -52,9 +53,9 @@ public class Components extends Controller {
 	@Transactional
 	public static Result tryComponent(Long studyId, Long componentId)
 			throws ResultException {
-		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
 		ComponentModel component = ComponentModel.findById(componentId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		checkStandard(studyId, componentId, study, studyList, loggedInUser,
@@ -69,6 +70,7 @@ public class Components extends Controller {
 			throw BadRequests.badRequestUrlViewEmpty(loggedInUser, study,
 					component, studyList);
 		}
+		session(MECHARG_COMPONENTTRY, "true");
 		return redirect(component.getViewUrl());
 	}
 

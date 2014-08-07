@@ -24,6 +24,7 @@ public class Studies extends Controller {
 	public static final String USER = "user";
 	public static final String TITLE = "title";
 	public static final String DESCRIPTION = "description";
+	public static final String MECHARG_STUDYTRY = "MechArgStudyTry";
 
 	@Transactional
 	public static Result index(Long studyId) throws ResultException {
