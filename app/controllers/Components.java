@@ -3,6 +3,7 @@ package controllers;
 import java.util.List;
 import java.util.Map;
 
+import controllers.publix.MAPublix;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -25,7 +26,7 @@ public class Components extends Controller {
 	public static final String JSON_DATA = "jsonData";
 	public static final String RESULT = "result";
 	public static final String RELOADABLE = "reloadable";
-	public static final String MECHARG_COMPONENTTRY = "MechArgComponentTry";
+	public static final String COMPONENT = "component";
 
 	@Transactional
 	public static Result index(Long studyId, Long componentId)
@@ -70,7 +71,7 @@ public class Components extends Controller {
 			throw BadRequests.badRequestUrlViewEmpty(loggedInUser, study,
 					component, studyList);
 		}
-		session(MECHARG_COMPONENTTRY, "true");
+		session(MAPublix.MECHARG_TRY, COMPONENT);
 		return redirect(component.getViewUrl());
 	}
 

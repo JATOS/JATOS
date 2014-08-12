@@ -39,7 +39,7 @@ public class ApplicationTest {
 		running(fakeApplication(Helpers.inMemoryDatabase()), new Runnable() {
 			@Override
 			public void run() {
-				Result result = callAction(controllers.publix.routes.ref.Publix
+				Result result = callAction(controllers.publix.routes.ref.MTPublix
 						.startStudy(1));
 				assertThat(status(result)).isEqualTo(OK);
 				assertThat(charset(result)).isEqualTo("utf-8");

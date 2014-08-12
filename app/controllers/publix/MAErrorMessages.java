@@ -1,0 +1,51 @@
+package controllers.publix;
+
+import models.workers.MAWorker;
+
+/**
+ * Special ErrorMessages for studies or components started via MechArg's UI.
+ * 
+ * @author madsen
+ */
+public class MAErrorMessages extends ErrorMessages<MAWorker> {
+
+	@Override
+	public String workerNeverStartedStudy(MAWorker worker, Long studyId) {
+		String errorMsg = "Worker " + worker.getId() + " ("
+				+ worker.getUser().getEmail() + ")" + " never started study "
+				+ studyId + ".";
+		return errorMsg;
+	}
+
+	@Override
+	public String workerNeverDidStudy(MAWorker worker, Long studyId) {
+		String errorMsg = "Worker " + worker.getId() + " ("
+				+ worker.getUser().getEmail() + ")" + " never did study "
+				+ studyId + ".";
+		return errorMsg;
+	}
+
+	@Override
+	public String workerNotAllowedStudy(MAWorker worker, Long studyId) {
+		String errorMsg = "Worker " + worker.getId() + " ("
+				+ worker.getUser().getEmail() + ")" + " is not allowed to do "
+				+ "study " + studyId + ".";
+		return errorMsg;
+	}
+
+	public String noUserLoggedIn() {
+		String errorMsg = "No user logged in.";
+		return errorMsg;
+	}
+
+	public String userNotExists() {
+		String errorMsg = "User doesn't exists.";
+		return errorMsg;
+	}
+
+	public String noMechArgTry() {
+		String errorMsg = "This study or component was never started from within MechArg.";
+		return errorMsg;
+	}
+
+}

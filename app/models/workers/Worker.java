@@ -17,6 +17,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 
+import models.StudyModel;
 import models.results.StudyResult;
 import play.db.jpa.JPA;
 
@@ -74,20 +75,48 @@ public abstract class Worker {
 		studyResultList.remove(studyResult);
 	}
 
-	public boolean didStudy(Long studyId) {
+	public boolean didStudy(StudyModel study) {
 		for (StudyResult studyResult : studyResultList) {
-			if (studyResult.getStudy().getId() == studyId) {
+			if (studyResult.getStudy().equals(study)) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	public abstract boolean isAllowedToStartStudy(Long studyId);
-
 	@Override
 	public String toString() {
 		return String.valueOf(id);
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof Worker)) {
+			return false;
+		}
+		Worker other = (Worker) obj;
+		if (id == null) {
+			if (other.getId() != null) {
+				return false;
+			}
+		} else if (!id.equals(other.getId())) {
+			return false;
+		}
+		return true;
 	}
 
 	public static Worker findById(Long id) {

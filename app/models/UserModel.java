@@ -95,6 +95,36 @@ public class UserModel {
 		return name + ", " + email;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((email == null) ? 0 : email.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof UserModel)) {
+			return false;
+		}
+		UserModel other = (UserModel) obj;
+		if (email == null) {
+			if (other.getEmail() != null) {
+				return false;
+			}
+		} else if (!email.equals(other.getEmail())) {
+			return false;
+		}
+		return true;
+	}
+
 	public static UserModel authenticate(String email, String passwordHash) {
 		String queryStr = "SELECT e FROM UserModel e WHERE "
 				+ "e.email=:email and e.passwordHash=:passwordHash";

@@ -17,9 +17,4 @@ public class MTSandboxWorker extends MTWorker {
 		return findByMTWorkerId(mtWorkerId, WORKER_TYPE);
 	}
 	
-	@Override
-	public boolean isAllowedToStartStudy(Long studyId) {
-		return true;
-	}
-
 }

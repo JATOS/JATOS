@@ -36,11 +36,6 @@ public class MTWorker extends Worker {
 		return mtWorkerId + ", " + super.toString();
 	}
 
-	@Override
-	public boolean isAllowedToStartStudy(Long studyId) {
-		return !didStudy(studyId);
-	}
-
 	public static MTWorker findByMTWorkerId(String mtWorkerId) {
 		return findByMTWorkerId(mtWorkerId, WORKER_TYPE);
 	}

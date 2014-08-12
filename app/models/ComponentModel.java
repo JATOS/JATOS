@@ -31,16 +31,16 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 public class ComponentModel {
 
 	// For JSON serialization: fields for public API
-	public static class JsonForPublic {
+	public static class JsonForPublix {
 	}
 
 	// For JSON serialization: fields for MechArg
-	public static class JsonForMA extends JsonForPublic {
+	public static class JsonForMA extends JsonForPublix {
 	}
 
 	@Id
 	@GeneratedValue
-	@JsonView(ComponentModel.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublix.class)
 	private Long id;
 
 	@JsonIgnore
@@ -48,7 +48,7 @@ public class ComponentModel {
 	@JoinColumn(name = "study_id")
 	private StudyModel study;
 
-	@JsonView(ComponentModel.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublix.class)
 	private String title;
 
 	/**
@@ -57,13 +57,13 @@ public class ComponentModel {
 	@JsonView(ComponentModel.JsonForMA.class)
 	private Timestamp date;
 
-	@JsonView(ComponentModel.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublix.class)
 	private String viewUrl; // URL or local path
 
-	@JsonView(ComponentModel.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublix.class)
 	private boolean reloadable;
 
-	@JsonView(ComponentModel.JsonForPublic.class)
+	@JsonView(ComponentModel.JsonForPublix.class)
 	@Lob
 	private String jsonData;
 
@@ -210,12 +210,42 @@ public class ComponentModel {
 	public String toString() {
 		return id + " " + title;
 	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof ComponentModel)) {
+			return false;
+		}
+		ComponentModel other = (ComponentModel) obj;
+		if (id == null) {
+			if (other.getId() != null) {
+				return false;
+			}
+		} else if (!id.equals(other.getId())) {
+			return false;
+		}
+		return true;
+	}
 
 	public String asJsonForPublic()
 			throws JsonProcessingException {
 		// Serialize ComponentModel into JSON (only the public part)
 		ObjectWriter objectWriter = new ObjectMapper()
-				.writerWithView(ComponentModel.JsonForPublic.class);
+				.writerWithView(ComponentModel.JsonForPublix.class);
 		String componentAsJson = objectWriter.writeValueAsString(this);
 		return componentAsJson;
 	}

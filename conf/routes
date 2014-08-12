@@ -3,15 +3,25 @@
 # ~~~~
 
 # Public from MTurk
-GET     /publix/:studyId/start                           controllers.publix.Publix.startStudy(studyId: Long)
-GET     /publix/:studyId/end                             controllers.publix.Publix.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
-GET     /publix/:studyId/:componentId/start              controllers.publix.Publix.startComponent(studyId: Long, componentId: Long)
-GET     /publix/:studyId/startNextComponent              controllers.publix.Publix.startNextComponent(studyId: Long)
-GET     /publix/:studyId/:componentId/getData            controllers.publix.Publix.getComponentData(studyId: Long, componentId: Long)
-POST    /publix/:studyId/:componentId/submitResultData   controllers.publix.Publix.submitResultData(studyId: Long, componentId: Long)
-POST    /publix/logError                                 controllers.publix.Publix.logError()
-GET     /publix/                                         controllers.publix.Publix.index()
-GET     /publix                                          controllers.publix.Publix.index()
+GET     /publix/:studyId/start                           @controllers.publix.MTPublix.startStudy(studyId: Long)
+GET     /publix/:studyId/end                             @controllers.publix.MTPublix.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
+GET     /publix/:studyId/:componentId/start              @controllers.publix.MTPublix.startComponent(studyId: Long, componentId: Long)
+GET     /publix/:studyId/startNextComponent              @controllers.publix.MTPublix.startNextComponent(studyId: Long)
+GET     /publix/:studyId/:componentId/getData            @controllers.publix.MTPublix.getComponentData(studyId: Long, componentId: Long)
+POST    /publix/:studyId/:componentId/submitResultData   @controllers.publix.MTPublix.submitResultData(studyId: Long, componentId: Long)
+
+# Public from MechArg
+GET     /mecharg/publix/:studyId/start                           @controllers.publix.MAPublix.startStudy(studyId: Long)
+GET     /mecharg/publix/:studyId/end                             @controllers.publix.MAPublix.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
+GET     /mecharg/publix/:studyId/:componentId/start              @controllers.publix.MAPublix.startComponent(studyId: Long, componentId: Long)
+GET     /mecharg/publix/:studyId/startNextComponent              @controllers.publix.MAPublix.startNextComponent(studyId: Long)
+GET     /mecharg/publix/:studyId/:componentId/getData            @controllers.publix.MAPublix.getComponentData(studyId: Long, componentId: Long)
+POST    /mecharg/publix/:studyId/:componentId/submitResultData   @controllers.publix.MAPublix.submitResultData(studyId: Long, componentId: Long)
+
+# Public general
+POST    /publix/logError                                 @controllers.publix.Publix.logError()
+GET     /publix/                                         @controllers.publix.Publix.index()
+GET     /publix                                          @controllers.publix.Publix.index()
 
 # MechArg
 GET     /mecharg/login                                 controllers.Authentication.login()
