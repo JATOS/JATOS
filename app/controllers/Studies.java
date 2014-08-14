@@ -16,6 +16,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
+import controllers.publix.MAPublix;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
@@ -146,12 +147,12 @@ public class Studies extends Controller {
 				componentResult.remove();
 			}
 			// Remove StudyResult from worker
-			Worker worker = studyResult.getWorker(); 
+			Worker worker = studyResult.getWorker();
 			worker.removeStudyResult(studyResult);
 			worker.merge();
 			studyResult.remove();
 		}
-		
+
 		study.remove();
 	}
 
@@ -244,6 +245,31 @@ public class Studies extends Controller {
 		study.refresh();
 
 		return ok();
+	}
+
+	@Transactional
+	public static Result tryStudy(Long studyId) throws ResultException {
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		if (loggedInUser == null) {
+			return redirect(routes.Authentication.login());
+		}
+		if (study == null) {
+			String errorMsg = BadRequests.studyNotExist(studyId);
+			SimpleResult result = badRequest(errorMsg);
+			throw new ResultException(result, errorMsg);
+		}
+		if (!study.hasMember(loggedInUser)) {
+			String errorMsg = BadRequests.notMember(loggedInUser.getName(),
+					loggedInUser.getEmail(), study.getId(), study.getTitle());
+			SimpleResult result = forbidden(errorMsg);
+			throw new ResultException(result, errorMsg);
+		}
+
+		session(MAPublix.MECHARG_TRY, STUDY);
+		return redirect(controllers.publix.routes.PublixInterceptor
+				.startStudy(study.getId()));
 	}
 
 	@Transactional

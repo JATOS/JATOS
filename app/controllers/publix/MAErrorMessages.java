@@ -3,7 +3,8 @@ package controllers.publix;
 import models.workers.MAWorker;
 
 /**
- * Special ErrorMessages for studies or components started via MechArg's UI.
+ * Special ErrorMessages for MAPublix (studies or components started via
+ * MechArg's UI).
  * 
  * @author madsen
  */
@@ -45,6 +46,11 @@ public class MAErrorMessages extends ErrorMessages<MAWorker> {
 
 	public String noMechArgTry() {
 		String errorMsg = "This study or component was never started from within MechArg.";
+		return errorMsg;
+	}
+
+	public String noMechArgStudyTry() {
+		String errorMsg = "This study was never started from within MechArg.";
 		return errorMsg;
 	}
 

@@ -1,17 +1,12 @@
-import java.lang.reflect.Method;
+import play.GlobalSettings;
+import play.libs.F.Promise;
+import play.mvc.Http.RequestHeader;
+import play.mvc.Results;
+import play.mvc.SimpleResult;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import play.GlobalSettings;
-import play.libs.F.Promise;
-import play.mvc.Action;
-import play.mvc.Http.Request;
-import play.mvc.Http.RequestHeader;
-import play.mvc.Results;
-import play.mvc.SimpleResult;
-import controllers.publix.MAPublix;
-import controllers.publix.MTPublix;
 import exceptions.PublixException;
 import exceptions.ResultException;
 
@@ -27,36 +22,6 @@ public class Global extends GlobalSettings {
 
 	private static Injector createInjector() {
 		return Guice.createInjector();
-	}
-
-	@Override
-	public Action onRequest(Request request, final Method actionMethod) {
-		// Check if this is a request for the Publix class but originates from
-		// within MechArg and wants to try a component or study
-		String playCookie = request.cookie("PLAY_SESSION").value();
-		boolean isFromMechArg = playCookie.contains(MAPublix.MECHARG_TRY);
-		boolean isForPublix = actionMethod.getDeclaringClass().equals(
-				MTPublix.class);
-		if (isForPublix && isFromMechArg) {
-			return redirectToMAPublix(actionMethod);
-		}
-		return super.onRequest(request, actionMethod);
-	}
-
-	/**
-	 * Creates an action that that redirects to MAPublix (uri prefix
-	 * '/mecharg').
-	 */
-	private Action redirectToMAPublix(final Method actionMethod) {
-		return new Action.Simple() {
-			@Override
-			public Promise<SimpleResult> call(play.mvc.Http.Context ctx)
-					throws Throwable {
-				String uri = "/mecharg" + ctx.request().uri();
-				SimpleResult result = redirect(uri);
-				return Promise.<SimpleResult> pure(result);
-			}
-		};
 	}
 
 	@Override

@@ -52,8 +52,8 @@
 							href="@routes.Components.index(study.getId(), component.getId())">
 							@component.getTitle() (id: @component.getId())
 					</a>
-					<div class="tryComponent">Show From Here</div>
-					<div class="showResults">Show Results (@results.ComponentResult.findAllByComponent(component).size())</div>
+					<div class="tryComponent">Show</div>
+					<div class="showResults">Results (@results.ComponentResult.findAllByComponent(component).size())</div>
 					<div class="removeComponent">Remove</div>
 				</li>
 			}
@@ -97,6 +97,7 @@
 	}
 	
 	$(".tryStudy").click(function(e) {
+		window.location.href = "@routes.Studies.tryStudy(study.getId())";
 	});
 
 	$(".updateStudy").click(function(e) {

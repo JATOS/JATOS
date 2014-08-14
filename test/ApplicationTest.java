@@ -30,7 +30,8 @@ public class ApplicationTest {
 
 	@Test
 	public void callIndex() {
-		Result result = callAction(controllers.publix.routes.ref.Publix.index());
+		Result result = callAction(controllers.publix.routes.ref.PublixInterceptor
+				.index());
 		assertThat(status(result)).isEqualTo(OK);
 	}
 
@@ -39,11 +40,11 @@ public class ApplicationTest {
 		running(fakeApplication(Helpers.inMemoryDatabase()), new Runnable() {
 			@Override
 			public void run() {
-				Result result = callAction(controllers.publix.routes.ref.MTPublix
+				Result result = callAction(controllers.publix.routes.ref.PublixInterceptor
 						.startStudy(1));
 				assertThat(status(result)).isEqualTo(OK);
 				assertThat(charset(result)).isEqualTo("utf-8");
-//				assertThat(contentAsString(result)).contains("Hello Kiki");
+				// assertThat(contentAsString(result)).contains("Hello Kiki");
 			}
 		});
 	}

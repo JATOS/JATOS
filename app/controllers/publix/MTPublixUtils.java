@@ -9,16 +9,16 @@ import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
 
 /**
- * Special Retriever for studies started via MTurk. 
+ * Special PublixUtils for MTPublix (studies started via MTurk). 
  * 
  * @author madsen
  */
-public class MTRetriever extends Retriever<MTWorker> {
+public class MTPublixUtils extends PublixUtils<MTWorker> {
 
 	private MTErrorMessages errorMessages;
 	
-	public MTRetriever(MTErrorMessages errorMessages) {
-		super(errorMessages);
+	public MTPublixUtils(MTErrorMessages errorMessages, Persistance persistance) {
+		super(errorMessages, persistance);
 		this.errorMessages = errorMessages;
 	}
 

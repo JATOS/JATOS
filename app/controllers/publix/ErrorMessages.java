@@ -76,6 +76,12 @@ public abstract class ErrorMessages<T extends Worker> {
 				+ " was already started.";
 		return errorMsg;
 	}
+	
+	public String componentNeverStarted(Long studyId, Long componentId) {
+		String errorMsg = "Component " + componentId + " of study " + studyId
+				+ " was never started.";
+		return errorMsg;
+	}
 
 	public String submittedDataUnknownFormat(Long studyId, Long componentId) {
 		String errorMsg = "Unknown format of submitted data for component "

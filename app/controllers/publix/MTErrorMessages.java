@@ -3,7 +3,7 @@ package controllers.publix;
 import models.workers.MTWorker;
 
 /**
- * Special ErrorMessages for studies started via MTurk.
+ * Special ErrorMessages for MTPublix (studies started via MTurk).
  * 
  * @author madsen
  */
@@ -32,12 +32,12 @@ public class MTErrorMessages extends ErrorMessages<MTWorker> {
 				+ "study " + studyId + ".";
 		return errorMsg;
 	}
-	
+
 	public String assignmentIdNotSpecified() {
 		String errorMsg = "No assignment id specified in query parameters.";
 		return errorMsg;
 	}
-	
+
 	public String workerNotInQueryParameter(String mtWorkerId) {
 		String errorMsg = "MTurk's workerId is missing in the query parameters.";
 		return errorMsg;

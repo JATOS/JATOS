@@ -2,26 +2,14 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Public from MTurk
-GET     /publix/:studyId/start                           @controllers.publix.MTPublix.startStudy(studyId: Long)
-GET     /publix/:studyId/end                             @controllers.publix.MTPublix.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
-GET     /publix/:studyId/:componentId/start              @controllers.publix.MTPublix.startComponent(studyId: Long, componentId: Long)
-GET     /publix/:studyId/startNextComponent              @controllers.publix.MTPublix.startNextComponent(studyId: Long)
-GET     /publix/:studyId/:componentId/getData            @controllers.publix.MTPublix.getComponentData(studyId: Long, componentId: Long)
-POST    /publix/:studyId/:componentId/submitResultData   @controllers.publix.MTPublix.submitResultData(studyId: Long, componentId: Long)
-
-# Public from MechArg
-GET     /mecharg/publix/:studyId/start                           @controllers.publix.MAPublix.startStudy(studyId: Long)
-GET     /mecharg/publix/:studyId/end                             @controllers.publix.MAPublix.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
-GET     /mecharg/publix/:studyId/:componentId/start              @controllers.publix.MAPublix.startComponent(studyId: Long, componentId: Long)
-GET     /mecharg/publix/:studyId/startNextComponent              @controllers.publix.MAPublix.startNextComponent(studyId: Long)
-GET     /mecharg/publix/:studyId/:componentId/getData            @controllers.publix.MAPublix.getComponentData(studyId: Long, componentId: Long)
-POST    /mecharg/publix/:studyId/:componentId/submitResultData   @controllers.publix.MAPublix.submitResultData(studyId: Long, componentId: Long)
-
-# Public general
-POST    /publix/logError                                 @controllers.publix.Publix.logError()
-GET     /publix/                                         @controllers.publix.Publix.index()
-GET     /publix                                          @controllers.publix.Publix.index()
+# Publix
+GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long)
+GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
+GET     /publix/:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long)
+GET     /publix/:studyId/startNextComponent              @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long)
+GET     /publix/:studyId/:componentId/getData            @controllers.publix.PublixInterceptor.getComponentData(studyId: Long, componentId: Long)
+POST    /publix/:studyId/:componentId/submitResultData   @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long)
+POST    /publix/logError                                 @controllers.publix.PublixInterceptor.logError()
 
 # MechArg
 GET     /mecharg/login                                 controllers.Authentication.login()
@@ -47,6 +35,7 @@ POST    /mecharg/:studyId/changeMembers                controllers.Studies.submi
 DELETE  /mecharg/:studyId/remove                       controllers.Studies.remove(studyId: Long)
 POST    /mecharg/:studyId/changeComponentOrder         controllers.Studies.changeComponentOrder(studyId: Long, componentId: Long, direction: String)
 GET     /mecharg/:studyId/mturk                        controllers.Studies.showMTurkSourceCode(studyId: Long)
+GET     /mecharg/:studyId/try                          controllers.Studies.tryStudy(studyId: Long)
 GET     /mecharg/:studyId                              controllers.Studies.index(studyId: Long)
 GET     /mecharg/:studyId/                             controllers.Studies.index(studyId: Long)
 GET     /mecharg/:studyId/createComponent              controllers.Components.create(studyId: Long)

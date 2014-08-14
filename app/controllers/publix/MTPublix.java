@@ -23,16 +23,14 @@ import exceptions.ForbiddenPublixException;
  * 
  * @author madsen
  */
-public class MTPublix extends Publix {
+public class MTPublix extends Publix implements IPublix {
 
 	public static final String ASSIGNMENT_ID_NOT_AVAILABLE = "ASSIGNMENT_ID_NOT_AVAILABLE";
 	private static final String CLASS_NAME = MTPublix.class.getSimpleName();
 
 	private MTErrorMessages errorMessages = new MTErrorMessages();
-	private MTRetriever retriever = new MTRetriever(errorMessages);
 	private Persistance persistance = new Persistance();
-	private PublixUtils utils = new PublixUtils(errorMessages, retriever,
-			persistance);
+	private MTPublixUtils utils = new MTPublixUtils(errorMessages, persistance);
 
 	@Override
 	@Transactional
@@ -48,7 +46,7 @@ public class MTPublix extends Publix {
 				+ "Parameters from MTurk: workerId " + mtWorkerId + ", "
 				+ "assignmentId " + mtAssignmentId + ", " + "hitId " + mtHitId);
 
-		StudyModel study = retriever.retrieveStudy(studyId);
+		StudyModel study = utils.retrieveStudy(studyId);
 
 		checkForMTurkPreview(studyId, mtAssignmentId);
 
@@ -67,7 +65,7 @@ public class MTPublix extends Publix {
 
 		persistance.createStudyResult(study, worker);
 
-		ComponentModel firstComponent = retriever.retrieveFirstComponent(study);
+		ComponentModel firstComponent = utils.retrieveFirstComponent(study);
 		return startComponent(studyId, firstComponent.getId());
 	}
 
@@ -79,11 +77,10 @@ public class MTPublix extends Publix {
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
 
-		MTWorker worker = retriever.retrieveWorker();
-		StudyModel study = retriever.retrieveStudy(studyId);
-		ComponentModel component = retriever.retrieveComponent(study,
-				componentId);
-		StudyResult studyResult = retriever.retrieveWorkersStartedStudyResult(
+		MTWorker worker = utils.retrieveWorker();
+		StudyModel study = utils.retrieveStudy(studyId);
+		ComponentModel component = utils.retrieveComponent(study, componentId);
+		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study);
 
 		utils.startComponent(component, studyResult);
@@ -96,12 +93,11 @@ public class MTPublix extends Publix {
 	public Result startNextComponent(Long studyId) throws Exception {
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
 				+ ", " + "workerId " + session(WORKER_ID));
-		MTWorker worker = retriever.retrieveWorker();
-		StudyModel study = retriever.retrieveStudy(studyId);
-		StudyResult studyResult = retriever.retrieveWorkersStartedStudyResult(
+		MTWorker worker = utils.retrieveWorker();
+		StudyModel study = utils.retrieveStudy(studyId);
+		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study);
-		ComponentModel nextComponent = retriever
-				.retrieveNextComponent(studyResult);
+		ComponentModel nextComponent = utils.retrieveNextComponent(studyResult);
 		return startComponent(studyId, nextComponent.getId());
 	}
 
@@ -113,27 +109,15 @@ public class MTPublix extends Publix {
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
 
-		MTWorker worker = retriever
-				.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyModel study = retriever.retrieveStudy(studyId,
+		MTWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyModel study = utils.retrieveStudy(studyId,
 				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentModel component = retriever.retrieveComponent(study,
-				componentId, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyResult studyResult = retriever.retrieveWorkersStartedStudyResult(
+		ComponentModel component = utils.retrieveComponent(study, componentId,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		// Check component result
-		ComponentResult componentResult = retriever.retrieveComponentResult(
+		ComponentResult componentResult = utils.retrieveStartedComponentResult(
 				component, studyResult);
-		if (componentResult == null) {
-			// If component was never started, conveniently start it
-			componentResult = utils.startComponent(component, studyResult,
-					MediaType.TEXT_JAVASCRIPT_UTF_8);
-		} else if (componentResult.getComponentState() != ComponentState.STARTED) {
-			throw new ForbiddenPublixException(
-					errorMessages.componentAlreadyStarted(study.getId(),
-							component.getId()), MediaType.TEXT_JAVASCRIPT_UTF_8);
-		}
 
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
 		componentResult.merge();
@@ -148,57 +132,36 @@ public class MTPublix extends Publix {
 		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		MTWorker worker = retriever
-				.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyModel study = retriever.retrieveStudy(studyId,
+		MTWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyModel study = utils.retrieveStudy(studyId,
 				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentModel component = retriever.retrieveComponent(study,
-				componentId, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyResult studyResult = retriever.retrieveWorkersStartedStudyResult(
+		ComponentModel component = utils.retrieveComponent(study, componentId,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		// Check component result
-		ComponentResult componentResult = retriever.retrieveComponentResult(
+		ComponentResult componentResult = utils.retrieveStartedComponentResult(
 				component, studyResult);
-		if (componentResult == null
-				|| componentResult.getComponentState() == ComponentState.FINISHED
-				|| componentResult.getComponentState() == ComponentState.FAIL) {
-			throw new ForbiddenPublixException(
-					errorMessages.componentAlreadyFinishedOrFailed(
-							study.getId(), component.getId()),
-					MediaType.TEXT_JAVASCRIPT_UTF_8);
-		}
 
-		// Get data in format JSON, text or XML and convert to String
-		String data = PublixUtils.getRequestBodyAsString(request().body());
-		if (data == null) {
-			componentResult.setComponentState(ComponentState.FAIL);
-			componentResult.merge();
-			return badRequest(errorMessages.submittedDataUnknownFormat(
-					study.getId(), component.getId()));
-		}
-
+		String data = utils.getDataFromRequestBody(request().body(), component,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
 		componentResult.setData(data);
-		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
+		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
 		componentResult.merge();
-
 		return ok();
 	}
-	
+
 	@Override
 	@Transactional
-	public Result finishStudy(Long studyId, Boolean successful,
-			String errorMsg) throws Exception {
+	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
+			throws Exception {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID) + ", "
-				+ "successful " + successful + ", " + "errorMsg \""
-				+ errorMsg + "\"");
+				+ "workerId " + session(WORKER_ID) + ", " + "successful "
+				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
+		MTWorker worker = utils.retrieveWorker();
+		StudyModel study = utils.retrieveStudy(studyId);
 
-		MTWorker worker = retriever.retrieveWorker();
-		StudyModel study = retriever.retrieveStudy(studyId);
-
-		StudyResult studyResult = retriever.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
 		String confirmationCode;
 		if (studyResult.getStudyState() == StudyState.STARTED) {
 			confirmationCode = utils.finishStudy(successful, studyResult);
