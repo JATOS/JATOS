@@ -3,7 +3,6 @@ package controllers.publix;
 import play.Logger;
 import play.mvc.Controller;
 import play.mvc.Result;
-import controllers.Users;
 
 /**
  * Abstract controller class for all controller that implement the IPublix
@@ -27,14 +26,6 @@ public abstract class Publix extends Controller implements IPublix {
 	@Override
 	public Result teapot() {
 		return status(418, "I'm a teapot");
-	}
-
-	public static String getWorkerIdFromSession() {
-		return session(Publix.WORKER_ID);
-	}
-
-	public static String getLoggedInUserEmail() {
-		return session(Users.COOKIE_EMAIL);
 	}
 
 }

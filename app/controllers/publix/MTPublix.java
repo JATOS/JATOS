@@ -117,8 +117,10 @@ public class MTPublix extends Publix implements IPublix {
 				MediaType.TEXT_JAVASCRIPT_UTF_8);
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
+		ComponentState maxAllowedComponentState = ComponentState.STARTED;
 		ComponentResult componentResult = utils.retrieveStartedComponentResult(
-				component, studyResult);
+				component, studyResult, maxAllowedComponentState,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
 
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
 		componentResult.merge();
@@ -140,8 +142,10 @@ public class MTPublix extends Publix implements IPublix {
 				MediaType.TEXT_JAVASCRIPT_UTF_8);
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
+		ComponentState maxAllowedComponentState = ComponentState.DATA_RETRIEVED;
 		ComponentResult componentResult = utils.retrieveStartedComponentResult(
-				component, studyResult);
+				component, studyResult, maxAllowedComponentState,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
 
 		String data = utils.getDataFromRequestBody(request().body(), component,
 				MediaType.TEXT_JAVASCRIPT_UTF_8);

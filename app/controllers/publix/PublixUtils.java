@@ -54,6 +54,9 @@ public abstract class PublixUtils<T extends Worker> {
 		return startComponent(component, studyResult, MediaType.HTML_UTF_8);
 	}
 
+	/**
+	 * Start or restart a component
+	 */
 	public ComponentResult startComponent(ComponentModel component,
 			StudyResult studyResult, MediaType errorMediaType)
 			throws ForbiddenPublixException {
@@ -98,8 +101,10 @@ public abstract class PublixUtils<T extends Worker> {
 		finishStudy(false, studyResult);
 		// Since an exception triggers a transaction rollback we have
 		// to commit the transaction manually.
-		JPA.em().flush();
-		JPA.em().getTransaction().commit();
+		if (JPA.em().getTransaction().isActive()) {
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+		}
 	}
 
 	public void finishAllComponentResults(StudyResult studyResult) {
@@ -210,27 +215,35 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	public ComponentResult retrieveStartedComponentResult(
-			ComponentModel component, StudyResult studyResult)
+			ComponentModel component, StudyResult studyResult,
+			ComponentState maxAllowedComponentState)
 			throws ForbiddenPublixException {
 		return retrieveStartedComponentResult(component, studyResult,
-				MediaType.HTML_UTF_8);
+				maxAllowedComponentState, MediaType.HTML_UTF_8);
 	}
 
 	public ComponentResult retrieveStartedComponentResult(
 			ComponentModel component, StudyResult studyResult,
-			MediaType errorMediaType) throws ForbiddenPublixException {
+			ComponentState maxAllowedComponentState, MediaType errorMediaType)
+			throws ForbiddenPublixException {
 		ComponentResult componentResult = retrieveComponentResult(component,
 				studyResult);
 		if (componentResult == null) {
 			// If component was never started, conveniently start it
 			componentResult = startComponent(component, studyResult,
-					MediaType.TEXT_JAVASCRIPT_UTF_8);
+					errorMediaType);
 		}
 		if (componentResult.getComponentState() == ComponentState.FINISHED
 				|| componentResult.getComponentState() == ComponentState.FAIL) {
 			throw new ForbiddenPublixException(
 					ErrorMessages.componentAlreadyFinishedOrFailed(component
 							.getStudy().getId(), component.getId()),
+					errorMediaType);
+		}
+		if (componentResult.getComponentState().ordinal() > maxAllowedComponentState
+				.ordinal()) {
+			// Restart component
+			componentResult = startComponent(component, studyResult,
 					errorMediaType);
 		}
 		return componentResult;

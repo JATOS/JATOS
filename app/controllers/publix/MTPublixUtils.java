@@ -28,7 +28,7 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 	
 	@Override
 	public MTWorker retrieveWorker(MediaType errorMediaType) throws Exception {
-		String workerIdStr = Publix.getWorkerIdFromSession();
+		String workerIdStr = Publix.session(Publix.WORKER_ID);
 		if (workerIdStr == null) {
 			// No worker id in session -> study never started
 			throw new ForbiddenPublixException(
