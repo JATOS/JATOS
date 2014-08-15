@@ -12,22 +12,22 @@ public class PublixException extends Exception {
 
 	protected MediaType mediaType = MediaType.HTML_UTF_8;
 	protected int httpStatus = HttpStatus.SC_BAD_REQUEST;;
-	
+
 	public PublixException(String message) {
 		super(message);
 	}
-	
+
 	public PublixException(String message, MediaType mediaType, int httpStatus) {
 		super(message);
 		this.mediaType = mediaType;
 		this.httpStatus = httpStatus;
 	}
-	
+
 	public PublixException(String message, MediaType mediaType) {
 		super(message);
 		this.mediaType = mediaType;
 	}
-	
+
 	public PublixException(String message, int httpStatus) {
 		super(message);
 		this.httpStatus = httpStatus;
@@ -43,14 +43,17 @@ public class PublixException extends Exception {
 				return Results.forbidden(views.html.publix.error
 						.render(message));
 			case HttpStatus.SC_NOT_FOUND:
-				return Results.notFound(views.html.publix.error
-						.render(message));
+				return Results
+						.notFound(views.html.publix.error.render(message));
+			case HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE:
+				return Results.status(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE,
+						views.html.publix.error.render(message));
 			default:
 				return Results.internalServerError(views.html.publix.error
 						.render(message));
 			}
 		}
-		
+
 		switch (httpStatus) {
 		case HttpStatus.SC_BAD_REQUEST:
 			return Results.badRequest(message);
@@ -58,6 +61,9 @@ public class PublixException extends Exception {
 			return Results.forbidden(message);
 		case HttpStatus.SC_NOT_FOUND:
 			return Results.notFound(message);
+		case HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE:
+			return Results
+					.status(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, message);
 		default:
 			return Results.internalServerError(message);
 		}

@@ -29,13 +29,6 @@ public class ApplicationTest {
 	}
 
 	@Test
-	public void callIndex() {
-		Result result = callAction(controllers.publix.routes.ref.PublixInterceptor
-				.index());
-		assertThat(status(result)).isEqualTo(OK);
-	}
-
-	@Test
 	public void callStartStudy() {
 		running(fakeApplication(Helpers.inMemoryDatabase()), new Runnable() {
 			@Override

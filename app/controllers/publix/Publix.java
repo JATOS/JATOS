@@ -23,6 +23,11 @@ public abstract class Publix extends Controller implements IPublix {
 		Logger.error(CLASS_NAME + " logging client-side error: " + msg);
 		return ok();
 	}
+	
+	@Override
+	public Result teapot() {
+		return status(418, "I'm a teapot");
+	}
 
 	public static String getWorkerIdFromSession() {
 		return session(Publix.WORKER_ID);

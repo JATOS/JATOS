@@ -14,6 +14,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
+import services.ErrorMessages;
 
 @Security.Authenticated(Secured.class)
 public class Users extends Controller {
@@ -172,7 +173,7 @@ public class Users extends Controller {
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			form.reject(BadRequests.mustBeLoggedInAsUser(user));
+			form.reject(ErrorMessages.mustBeLoggedInAsUser(user));
 		}
 
 		if (form.hasErrors()) {
@@ -242,7 +243,7 @@ public class Users extends Controller {
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			form.reject(BadRequests.mustBeLoggedInAsUser(user));
+			form.reject(ErrorMessages.mustBeLoggedInAsUser(user));
 		}
 
 		// Authenticate

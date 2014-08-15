@@ -11,6 +11,9 @@ import models.workers.MTWorker;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Result;
+import services.ErrorMessages;
+import services.MTErrorMessages;
+import services.Persistance;
 
 import com.google.common.net.MediaType;
 
@@ -29,8 +32,7 @@ public class MTPublix extends Publix implements IPublix {
 	private static final String CLASS_NAME = MTPublix.class.getSimpleName();
 
 	private MTErrorMessages errorMessages = new MTErrorMessages();
-	private Persistance persistance = new Persistance();
-	private MTPublixUtils utils = new MTPublixUtils(errorMessages, persistance);
+	private MTPublixUtils utils = new MTPublixUtils(errorMessages);
 
 	@Override
 	@Transactional
@@ -53,17 +55,17 @@ public class MTPublix extends Publix implements IPublix {
 		// Check worker
 		if (mtWorkerId == null) {
 			throw new BadRequestPublixException(
-					errorMessages.workerNotInQueryParameter(mtWorkerId));
+					ErrorMessages.workerNotInQueryParameter(mtWorkerId));
 		}
 		MTWorker worker = MTWorker.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
-			worker = persistance.createMTWorker(mtWorkerId,
+			worker = Persistance.createMTWorker(mtWorkerId,
 					isRequestFromMTurkSandbox());
 		}
 		checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));
 
-		persistance.createStudyResult(study, worker);
+		Persistance.createStudyResult(study, worker);
 
 		ComponentModel firstComponent = utils.retrieveFirstComponent(study);
 		return startComponent(studyId, firstComponent.getId());
@@ -84,7 +86,6 @@ public class MTPublix extends Publix implements IPublix {
 				worker, study);
 
 		utils.startComponent(component, studyResult);
-
 		return redirect(component.getViewUrl());
 	}
 
@@ -179,12 +180,12 @@ public class MTPublix extends Publix implements IPublix {
 			throws BadRequestPublixException {
 		if (mtAssignmentId == null) {
 			throw new BadRequestPublixException(
-					errorMessages.assignmentIdNotSpecified());
+					ErrorMessages.assignmentIdNotSpecified());
 		}
 		if (mtAssignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
 			// It's a preview coming from Mechanical Turk -> no previews
 			throw new BadRequestPublixException(
-					errorMessages.noPreviewAvailable(studyId));
+					ErrorMessages.noPreviewAvailable(studyId));
 		}
 	}
 

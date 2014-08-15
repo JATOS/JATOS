@@ -10,6 +10,7 @@ GET     /publix/:studyId/startNextComponent              @controllers.publix.Pub
 GET     /publix/:studyId/:componentId/getData            @controllers.publix.PublixInterceptor.getComponentData(studyId: Long, componentId: Long)
 POST    /publix/:studyId/:componentId/submitResultData   @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long)
 POST    /publix/logError                                 @controllers.publix.PublixInterceptor.logError()
+GET     /publix/teapot                                   @controllers.publix.PublixInterceptor.teapot()
 
 # MechArg
 GET     /mecharg/login                                 controllers.Authentication.login()

@@ -2,6 +2,8 @@ package controllers.publix;
 
 import models.workers.MTWorker;
 import models.workers.Worker;
+import services.ErrorMessages;
+import services.MTErrorMessages;
 
 import com.google.common.net.MediaType;
 
@@ -15,11 +17,8 @@ import exceptions.ForbiddenPublixException;
  */
 public class MTPublixUtils extends PublixUtils<MTWorker> {
 
-	private MTErrorMessages errorMessages;
-	
-	public MTPublixUtils(MTErrorMessages errorMessages, Persistance persistance) {
-		super(errorMessages, persistance);
-		this.errorMessages = errorMessages;
+	public MTPublixUtils(MTErrorMessages errorMessages) {
+		super(errorMessages);
 	}
 
 	@Override
@@ -33,24 +32,24 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 		if (workerIdStr == null) {
 			// No worker id in session -> study never started
 			throw new ForbiddenPublixException(
-					errorMessages.noWorkerIdInSession(), errorMediaType);
+					ErrorMessages.noWorkerIdInSession(), errorMediaType);
 		}
 		long workerId;
 		try {
 			workerId = Long.parseLong(workerIdStr);
 		} catch (NumberFormatException e) {
 			throw new BadRequestPublixException(
-					errorMessages.workerNotExist(workerIdStr), errorMediaType);
+					ErrorMessages.workerNotExist(workerIdStr), errorMediaType);
 		}
 
 		Worker worker = Worker.findById(workerId);
 		if (worker == null) {
 			throw new BadRequestPublixException(
-					errorMessages.workerNotExist(workerId), errorMediaType);
+					ErrorMessages.workerNotExist(workerId), errorMediaType);
 		}
 		if (!(worker instanceof MTWorker)) {
 			throw new BadRequestPublixException(
-					errorMessages.workerNotFromMTurk(workerId), errorMediaType);
+					ErrorMessages.workerNotFromMTurk(workerId), errorMediaType);
 		}
 		return (MTWorker) worker;
 	}

@@ -159,11 +159,6 @@ public class StudyModel {
 		ComponentModel.changeComponentOrder(component2, index1);
 	}
 
-	public void update(String title, String description) {
-		this.title = title;
-		this.description = description;
-	}
-
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (this.title == null || this.title.isEmpty()) {

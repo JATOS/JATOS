@@ -7,6 +7,8 @@ import models.results.ComponentResult;
 import models.results.StudyResult;
 import models.results.StudyResult.StudyState;
 import models.workers.MAWorker;
+import services.ErrorMessages;
+import services.MAErrorMessages;
 
 import com.google.common.net.MediaType;
 
@@ -21,11 +23,8 @@ import exceptions.ForbiddenPublixException;
  */
 public class MAPublixUtils extends PublixUtils<MAWorker> {
 
-	private MAErrorMessages errorMessages;
-
-	public MAPublixUtils(MAErrorMessages errorMessages, Persistance persistance) {
-		super(errorMessages, persistance);
-		this.errorMessages = errorMessages;
+	public MAPublixUtils(MAErrorMessages errorMessages) {
+		super(errorMessages);
 	}
 
 	@Override
@@ -37,12 +36,12 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 	public MAWorker retrieveWorker(MediaType errorMediaType) throws Exception {
 		String email = Publix.getLoggedInUserEmail();
 		if (email == null) {
-			throw new BadRequestPublixException(errorMessages.noUserLoggedIn(),
+			throw new BadRequestPublixException(ErrorMessages.noUserLoggedIn(),
 					errorMediaType);
 		}
 		UserModel loggedInUser = UserModel.findByEmail(email);
 		if (loggedInUser == null) {
-			throw new BadRequestPublixException(errorMessages.userNotExists(),
+			throw new BadRequestPublixException(ErrorMessages.userNotExists(),
 					errorMediaType);
 		}
 		return loggedInUser.getWorker();

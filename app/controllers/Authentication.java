@@ -1,12 +1,12 @@
 package controllers;
 
 import models.UserModel;
-import models.workers.MAWorker;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
+import services.Persistance;
 
 public class Authentication extends Controller {
 
@@ -16,14 +16,7 @@ public class Authentication extends Controller {
 		// need an initial user: admin. If admin can't be found, create one.
 		UserModel admin = UserModel.findByEmail("admin");
 		if (admin == null) {
-			MAWorker worker = new MAWorker();
-			worker.persist();
-			String passwordHash = UserModel.getHashMDFive("admin");
-			admin = new UserModel("admin", "Admin", passwordHash);
-			admin.setWorker(worker);
-			admin.persist();
-			worker.setUser(admin);
-			worker.merge();
+			Persistance.createAdmin();
 		}
 		return ok(views.html.mecharg.auth.login.render(Form.form(Login.class)));
 	}

@@ -6,9 +6,6 @@ import java.util.Map;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.results.ComponentResult;
-import models.results.StudyResult;
-import models.workers.Worker;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
@@ -16,6 +13,8 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
+import services.ErrorMessages;
+import services.Persistance;
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
 
@@ -74,8 +73,7 @@ public class Studies extends Controller {
 			throw new ResultException(result);
 		} else {
 			StudyModel study = form.get();
-			study.addMember(loggedInUser);
-			study.persist();
+			Persistance.addMemberToStudy(study, loggedInUser);
 			return redirect(routes.Studies.index(study.getId()));
 		}
 	}
@@ -118,8 +116,7 @@ public class Studies extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String title = requestData.get(TITLE);
 		String description = requestData.get(DESCRIPTION);
-		study.update(title, description);
-		study.merge();
+		Persistance.updateStudy(study, title, description);
 		return redirect(routes.Studies.index(studyId));
 	}
 
@@ -131,29 +128,8 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAll();
 		checkStandard(study, studyId, loggedInUser, studyList);
 
-		removeStudy(study);
+		Persistance.removeStudy(study);
 		return redirect(routes.Dashboard.dashboard());
-	}
-
-	private static void removeStudy(StudyModel study) {
-		// Remove all study's components
-		for (ComponentModel component : study.getComponentList()) {
-			component.remove();
-		}
-		// Remove study's StudyResults and ComponentResults
-		for (StudyResult studyResult : StudyResult.findAllByStudy(study)) {
-			for (ComponentResult componentResult : studyResult
-					.getComponentResultList()) {
-				componentResult.remove();
-			}
-			// Remove StudyResult from worker
-			Worker worker = studyResult.getWorker();
-			worker.removeStudyResult(studyResult);
-			worker.merge();
-			studyResult.remove();
-		}
-
-		study.remove();
 	}
 
 	@Transactional
@@ -184,15 +160,14 @@ public class Studies extends Controller {
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
 		String[] checkedUsers = formMap.get(USER);
 		if (checkedUsers == null || checkedUsers.length < 1) {
-			throw BadRequests.badRequestStudyAtLeastOneMember(loggedInUser,
+			throw BadRequests.forbiddenStudyAtLeastOneMember(loggedInUser,
 					study, studyList);
 		}
 		study.getMemberList().clear();
 		for (String email : checkedUsers) {
 			UserModel user = UserModel.findByEmail(email);
 			if (user != null) {
-				study.addMember(user);
-				study.merge();
+				Persistance.addMemberToStudy(study, user);
 			}
 		}
 
@@ -212,12 +187,12 @@ public class Studies extends Controller {
 			return redirect(routes.Authentication.login());
 		}
 		if (study == null) {
-			String errorMsg = BadRequests.studyNotExist(studyId);
+			String errorMsg = ErrorMessages.studyNotExist(studyId);
 			SimpleResult result = badRequest(errorMsg);
 			throw new ResultException(result, errorMsg);
 		}
 		if (!study.hasMember(loggedInUser)) {
-			String errorMsg = BadRequests.notMember(loggedInUser.getName(),
+			String errorMsg = ErrorMessages.notMember(loggedInUser.getName(),
 					loggedInUser.getEmail(), study.getId(), study.getTitle());
 			SimpleResult result = forbidden(errorMsg);
 			throw new ResultException(result, errorMsg);
@@ -225,12 +200,12 @@ public class Studies extends Controller {
 
 		ComponentModel component = ComponentModel.findById(componentId);
 		if (component == null) {
-			String errorMsg = BadRequests.componentNotExist(componentId);
+			String errorMsg = ErrorMessages.componentNotExist(componentId);
 			SimpleResult result = badRequest(errorMsg);
 			throw new ResultException(result, errorMsg);
 		}
 		if (!study.hasComponent(component)) {
-			String errorStr = BadRequests.componentNotBelongToStudy(studyId,
+			String errorStr = ErrorMessages.componentNotBelongToStudy(studyId,
 					componentId);
 			SimpleResult result = badRequest(errorStr);
 			throw new ResultException(result, errorStr);
@@ -256,12 +231,12 @@ public class Studies extends Controller {
 			return redirect(routes.Authentication.login());
 		}
 		if (study == null) {
-			String errorMsg = BadRequests.studyNotExist(studyId);
+			String errorMsg = ErrorMessages.studyNotExist(studyId);
 			SimpleResult result = badRequest(errorMsg);
 			throw new ResultException(result, errorMsg);
 		}
 		if (!study.hasMember(loggedInUser)) {
-			String errorMsg = BadRequests.notMember(loggedInUser.getName(),
+			String errorMsg = ErrorMessages.notMember(loggedInUser.getName(),
 					loggedInUser.getEmail(), study.getId(), study.getTitle());
 			SimpleResult result = forbidden(errorMsg);
 			throw new ResultException(result, errorMsg);

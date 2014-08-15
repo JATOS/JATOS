@@ -3,12 +3,10 @@ package controllers;
 import java.util.List;
 import java.util.Map;
 
-import controllers.publix.MAPublix;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.results.ComponentResult;
-import models.results.StudyResult;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
@@ -16,6 +14,8 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
+import services.Persistance;
+import controllers.publix.MAPublix;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
@@ -129,9 +129,9 @@ public class Components extends Controller {
 					.render(studyList, loggedInUser, breadcrumbs, study, form));
 			throw new ResultException(result);
 		}
-	
+
 		ComponentModel component = form.get();
-		addComponent(study, component);
+		Persistance.addComponent(study, component);
 		return redirect(routes.Components.index(study.getId(),
 				component.getId()));
 	}
@@ -198,8 +198,8 @@ public class Components extends Controller {
 		String viewUrl = requestData.get(VIEW_URL);
 		String jsonData = requestData.get(JSON_DATA);
 		boolean reloadable = (requestData.get(RELOADABLE) != null);
-		component.update(title, reloadable, viewUrl, jsonData);
-		component.merge();
+		Persistance.updateComponent(component, title, reloadable, viewUrl,
+				jsonData);
 		return redirect(routes.Components.index(study.getId(), componentId));
 	}
 
@@ -219,7 +219,7 @@ public class Components extends Controller {
 					.forbiddenNotMember(loggedInUser, study, studyList);
 		}
 
-		removeComponent(study, component);
+		Persistance.removeComponent(study, component);
 		return redirect(routes.Studies.index(study.getId()));
 	}
 
@@ -254,7 +254,7 @@ public class Components extends Controller {
 
 	@Transactional
 	public static Result submitRemovedResults(Long studyId, Long componentId)
-			throws ResultException {
+			throws Exception {
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
@@ -272,50 +272,11 @@ public class Components extends Controller {
 		String[] checkedComponents = formMap.get(RESULT);
 		if (checkedComponents != null) {
 			for (String resultIdStr : checkedComponents) {
-				removeResult(resultIdStr);
+				Persistance.removeComponentResult(resultIdStr);
 			}
 		}
 
 		return redirect(routes.Components.index(study.getId(), componentId));
-	}
-
-	private static void removeResult(String componentResultIdStr) {
-		try {
-			Long componentResultId = Long.valueOf(componentResultIdStr);
-			ComponentResult componentResult = ComponentResult
-					.findById(componentResultId);
-			if (componentResult != null) {
-				StudyResult studyResult = componentResult.getStudyResult();
-				studyResult.removeComponentResult(componentResult);
-				studyResult.merge();
-				componentResult.remove();
-			}
-		} catch (NumberFormatException e) {
-			// Do nothing
-		}
-	}
-
-	private static void addComponent(StudyModel study, ComponentModel component) {
-		component.setStudy(study);
-		study.addComponent(component);
-		component.persist();
-		study.merge();
-	}
-
-	private static void removeComponent(StudyModel study,
-			ComponentModel component) {
-		// Remove component from study
-		study.removeComponent(component);
-		study.merge();
-		// Remove component's ComponentResults
-		for (ComponentResult componentResult : ComponentResult
-				.findAllByComponent(component)) {
-			StudyResult studyResult = componentResult.getStudyResult();
-			studyResult.removeComponentResult(componentResult);
-			studyResult.merge();
-			componentResult.remove();
-		}
-		component.remove();
 	}
 
 	private static void checkStandard(Long studyId, Long componentId,

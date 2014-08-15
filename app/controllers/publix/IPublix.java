@@ -58,5 +58,10 @@ public interface IPublix {
 	 * In case the client side wants to log an error.
 	 */
 	public Result logError();
+	
+	/**
+	 * HTTP type: Normal GET request<br>
+	 */
+	public Result teapot();
 
 }

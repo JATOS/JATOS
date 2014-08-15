@@ -5,16 +5,18 @@ import models.StudyModel;
 import models.UserModel;
 import models.results.ComponentResult;
 import models.results.ComponentResult.ComponentState;
-import models.results.StudyResult.StudyState;
 import models.results.StudyResult;
+import models.results.StudyResult.StudyState;
 import models.workers.MAWorker;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Result;
+import services.ErrorMessages;
+import services.MAErrorMessages;
+import services.Persistance;
 
 import com.google.common.net.MediaType;
 
-import controllers.BadRequests;
 import controllers.Components;
 import controllers.Studies;
 import controllers.Users;
@@ -35,8 +37,7 @@ public class MAPublix extends Publix implements IPublix {
 	private static final String CLASS_NAME = MAPublix.class.getSimpleName();
 
 	private MAErrorMessages errorMessages = new MAErrorMessages();
-	private Persistance persistance = new Persistance();
-	private MAPublixUtils utils = new MAPublixUtils(errorMessages, persistance);
+	private MAPublixUtils utils = new MAPublixUtils(errorMessages);
 
 	@Override
 	@Transactional
@@ -51,10 +52,10 @@ public class MAPublix extends Publix implements IPublix {
 		String mechArgTry = retrieveMechArgTry();
 		if (!mechArgTry.equals(Studies.STUDY)) {
 			throw new ForbiddenPublixException(
-					errorMessages.noMechArgStudyTry());
+					ErrorMessages.noMechArgStudyTry());
 		}
 
-		persistance.createStudyResult(study, worker);
+		Persistance.createStudyResult(study, worker);
 		return startComponent(studyId, firstComponent.getId());
 	}
 
@@ -194,7 +195,7 @@ public class MAPublix extends Publix implements IPublix {
 		checkMembership(study, loggedInUser, errorMediaType);
 		if (!component.getStudy().equals(study)) {
 			throw new BadRequestPublixException(
-					BadRequests.componentNotBelongToStudy(study.getId(),
+					ErrorMessages.componentNotBelongToStudy(study.getId(),
 							component.getId()), errorMediaType);
 		}
 	}
@@ -207,7 +208,7 @@ public class MAPublix extends Publix implements IPublix {
 	private void checkMembership(StudyModel study, UserModel loggedInUser,
 			MediaType errorMediaType) throws BadRequestPublixException {
 		if (!study.hasMember(loggedInUser)) {
-			throw new BadRequestPublixException(BadRequests.notMember(
+			throw new BadRequestPublixException(ErrorMessages.notMember(
 					loggedInUser.getName(), loggedInUser.getEmail(),
 					study.getId(), study.getTitle()), errorMediaType);
 		}
@@ -221,7 +222,7 @@ public class MAPublix extends Publix implements IPublix {
 			throws ForbiddenPublixException {
 		String mechArgTry = session(MECHARG_TRY);
 		if (mechArgTry == null) {
-			throw new ForbiddenPublixException(errorMessages.noMechArgTry(),
+			throw new ForbiddenPublixException(ErrorMessages.noMechArgTry(),
 					mediaType);
 		}
 		return mechArgTry;
@@ -248,7 +249,7 @@ public class MAPublix extends Publix implements IPublix {
 			if (mechArgTry.equals(Components.COMPONENT)) {
 				// Try-out of a single component: Just create a StudyResult for
 				// this. The StudyResult will have only one ComponentResult.
-				studyResult = persistance.createStudyResult(study, worker);
+				studyResult = Persistance.createStudyResult(study, worker);
 			}
 		}
 		return studyResult;

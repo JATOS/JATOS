@@ -1,4 +1,4 @@
-package controllers.publix;
+package services;
 
 import models.workers.MTWorker;
 
@@ -30,22 +30,6 @@ public class MTErrorMessages extends ErrorMessages<MTWorker> {
 		String errorMsg = "Worker " + worker.getId() + " (MTurk's workerId: "
 				+ worker.getMTWorkerId() + ")" + " is not allowed to do "
 				+ "study " + studyId + ".";
-		return errorMsg;
-	}
-
-	public String assignmentIdNotSpecified() {
-		String errorMsg = "No assignment id specified in query parameters.";
-		return errorMsg;
-	}
-
-	public String workerNotInQueryParameter(String mtWorkerId) {
-		String errorMsg = "MTurk's workerId is missing in the query parameters.";
-		return errorMsg;
-	}
-
-	public String workerNotFromMTurk(Long workerId) {
-		String errorMsg = "The worker with id " + workerId
-				+ " isn't a MTurk worker.";
 		return errorMsg;
 	}
 

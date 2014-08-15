@@ -22,6 +22,8 @@ import org.w3c.dom.Document;
 import play.Logger;
 import play.db.jpa.JPA;
 import play.mvc.Http.RequestBody;
+import services.ErrorMessages;
+import services.Persistance;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.net.MediaType;
@@ -29,6 +31,7 @@ import com.google.common.net.MediaType;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
 import exceptions.NotFoundPublixException;
+import exceptions.UnsupportedMediaTypePublixException;
 
 /**
  * Utilility class with functions that are common for all classes that extend
@@ -41,11 +44,9 @@ public abstract class PublixUtils<T extends Worker> {
 	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
 
 	private ErrorMessages<T> errorMessages;
-	private Persistance persistance = new Persistance();
 
-	public PublixUtils(ErrorMessages<T> errorMessages, Persistance persistance) {
+	public PublixUtils(ErrorMessages<T> errorMessages) {
 		this.errorMessages = errorMessages;
-		this.persistance = persistance;
 	}
 
 	public ComponentResult startComponent(ComponentModel component,
@@ -69,14 +70,14 @@ public abstract class PublixUtils<T extends Worker> {
 				// study with fail
 				exceptionalFinishStudy(studyResult);
 				throw new ForbiddenPublixException(
-						errorMessages.componentNotAllowedToReload(studyResult
+						ErrorMessages.componentNotAllowedToReload(studyResult
 								.getStudy().getId(), component.getId()));
 			}
 		}
 		// Only one ComponentResult can be in state started at the same time.
 		// To start a new ComponentResult, finish all other ones.
 		finishAllComponentResults(studyResult);
-		return persistance.createComponentResult(studyResult, component);
+		return Persistance.createComponentResult(studyResult, component);
 	}
 
 	public String finishStudy(Boolean successful, StudyResult studyResult) {
@@ -228,7 +229,7 @@ public abstract class PublixUtils<T extends Worker> {
 		if (componentResult.getComponentState() == ComponentState.FINISHED
 				|| componentResult.getComponentState() == ComponentState.FAIL) {
 			throw new ForbiddenPublixException(
-					errorMessages.componentAlreadyFinishedOrFailed(component
+					ErrorMessages.componentAlreadyFinishedOrFailed(component
 							.getStudy().getId(), component.getId()),
 					errorMediaType);
 		}
@@ -250,7 +251,7 @@ public abstract class PublixUtils<T extends Worker> {
 		ComponentModel component = study.getFirstComponent();
 		if (component == null) {
 			throw new BadRequestPublixException(
-					errorMessages.studyHasNoComponents(study.getId()));
+					ErrorMessages.studyHasNoComponents(study.getId()));
 		}
 		return component;
 	}
@@ -261,7 +262,7 @@ public abstract class PublixUtils<T extends Worker> {
 		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
 				currentComponent);
 		if (nextComponent == null) {
-			throw new NotFoundPublixException(errorMessages.noMoreComponents());
+			throw new NotFoundPublixException(ErrorMessages.noMoreComponents());
 		}
 		return nextComponent;
 	}
@@ -276,12 +277,12 @@ public abstract class PublixUtils<T extends Worker> {
 		ComponentModel component = ComponentModel.findById(componentId);
 		if (component == null) {
 			throw new BadRequestPublixException(
-					errorMessages.componentNotExist(study.getId(), componentId),
+					ErrorMessages.componentNotExist(study.getId(), componentId),
 					errorMediaType);
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
 			throw new BadRequestPublixException(
-					errorMessages.componentNotBelongToStudy(study.getId(),
+					ErrorMessages.componentNotBelongToStudy(study.getId(),
 							componentId), errorMediaType);
 		}
 		return component;
@@ -296,23 +297,27 @@ public abstract class PublixUtils<T extends Worker> {
 		StudyModel study = StudyModel.findById(studyId);
 		if (study == null) {
 			throw new BadRequestPublixException(
-					errorMessages.studyNotExist(studyId), errorMediaType);
+					ErrorMessages.studyNotExist(studyId), errorMediaType);
 		}
 		return study;
 	}
-	
+
 	public String getDataFromRequestBody(RequestBody requestBody,
-			ComponentModel component) throws BadRequestPublixException {
-		return getDataFromRequestBody(requestBody, component, MediaType.HTML_UTF_8);
+			ComponentModel component)
+			throws UnsupportedMediaTypePublixException {
+		return getDataFromRequestBody(requestBody, component,
+				MediaType.HTML_UTF_8);
 	}
 
 	public String getDataFromRequestBody(RequestBody requestBody,
-			ComponentModel component, MediaType errorMediaType) throws BadRequestPublixException {
+			ComponentModel component, MediaType errorMediaType)
+			throws UnsupportedMediaTypePublixException {
 		String data = getRequestBodyAsString(requestBody);
 		if (data == null) {
-			throw new BadRequestPublixException(
-					errorMessages.submittedDataUnknownFormat(component
-							.getStudy().getId(), component.getId()), errorMediaType);
+			throw new UnsupportedMediaTypePublixException(
+					ErrorMessages.submittedDataUnknownFormat(component
+							.getStudy().getId(), component.getId()),
+					errorMediaType);
 		}
 		return data;
 	}

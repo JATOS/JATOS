@@ -1,4 +1,4 @@
-package controllers.publix;
+package services;
 
 import models.workers.MAWorker;
 
@@ -31,26 +31,6 @@ public class MAErrorMessages extends ErrorMessages<MAWorker> {
 		String errorMsg = "Worker " + worker.getId() + " ("
 				+ worker.getUser().getEmail() + ")" + " is not allowed to do "
 				+ "study " + studyId + ".";
-		return errorMsg;
-	}
-
-	public String noUserLoggedIn() {
-		String errorMsg = "No user logged in.";
-		return errorMsg;
-	}
-
-	public String userNotExists() {
-		String errorMsg = "User doesn't exists.";
-		return errorMsg;
-	}
-
-	public String noMechArgTry() {
-		String errorMsg = "This study or component was never started from within MechArg.";
-		return errorMsg;
-	}
-
-	public String noMechArgStudyTry() {
-		String errorMsg = "This study was never started from within MechArg.";
 		return errorMsg;
 	}
 

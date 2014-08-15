@@ -70,14 +70,6 @@ public class ComponentModel {
 	public ComponentModel() {
 	}
 
-	public void update(String title, boolean reloadable, String viewUrl,
-			String jsonData) {
-		this.title = title;
-		this.reloadable = reloadable;
-		this.viewUrl = viewUrl;
-		setJsonData(jsonData);
-	}
-
 	public void setId(Long id) {
 		this.id = id;
 	}

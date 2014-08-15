@@ -89,6 +89,15 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return mtPublix.logError();
 		}
 	}
+	
+	@Override
+	public Result teapot() {
+		if (isFromMechArg()) {
+			return maPublix.teapot();
+		} else {
+			return mtPublix.teapot();
+		}
+	}
 
 	/**
 	 * Check if this request originates from within MechArg.
