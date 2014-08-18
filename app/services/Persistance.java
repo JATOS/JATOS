@@ -68,9 +68,10 @@ public class Persistance {
 	}
 
 	public static void updateStudy(StudyModel study, String title,
-			String description) {
+			String description, String jsonData) {
 		study.setTitle(title);
 		study.setDescription(description);
+		study.setJsonData(jsonData);
 		study.merge();
 	}
 

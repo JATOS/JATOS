@@ -19,27 +19,47 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.TypedQuery;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
+import services.ErrorMessages;
+import services.JsonUtils;
 
 @Entity
 public class StudyModel {
 
+	public static final String MEMBERS = "user";
+	public static final String TITLE = "title";
+	public static final String JSON_DATA = "jsonData";
+	public static final String DESCRIPTION = "description";
+
 	@Id
 	@GeneratedValue
+	@JsonView(JsonUtils.JsonForPublix.class)
 	private Long id;
 
+	@JsonView(JsonUtils.JsonForPublix.class)
 	private String title;
 
 	@Lob
+	@JsonView(JsonUtils.JsonForPublix.class)
 	private String description;
 
+	@JsonView(JsonUtils.JsonForMA.class)
 	private Timestamp date;
 
+	@Lob
+	@JsonView(JsonUtils.JsonForPublix.class)
+	private String jsonData;
+
+	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "email") })
 	private Set<UserModel> memberList = new HashSet<UserModel>();
 
+	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
@@ -78,6 +98,23 @@ public class StudyModel {
 
 	public Timestamp getDate() {
 		return this.date;
+	}
+
+	public String getJsonData() {
+		if (this.jsonData == null) {
+			return null;
+		}
+		return JsonUtils.makePretty(jsonData);
+	}
+
+	public void setJsonData(String jsonDataStr) {
+		if (!JsonUtils.isValidJSON(jsonDataStr)) {
+			// Set the invalid string anyway. It will cause an error during
+			// validate().
+			this.jsonData = jsonDataStr;
+			return;
+		}
+		this.jsonData = JsonUtils.asStringForDB(jsonDataStr);
 	}
 
 	public void setMemberList(Set<UserModel> memberList) {
@@ -120,6 +157,7 @@ public class StudyModel {
 		return componentList.contains(component);
 	}
 
+	@JsonIgnore
 	public ComponentModel getFirstComponent() {
 		if (componentList.size() > 0) {
 			return componentList.get(0);
@@ -127,6 +165,7 @@ public class StudyModel {
 		return null;
 	}
 
+	@JsonIgnore
 	public ComponentModel getNextComponent(ComponentModel component) {
 		int index = componentList.indexOf(component);
 		if (index < componentList.size() - 1) {
@@ -162,7 +201,14 @@ public class StudyModel {
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (this.title == null || this.title.isEmpty()) {
-			errorList.add(new ValidationError("title", "Missing title"));
+			errorList.add(new ValidationError(TITLE,
+					ErrorMessages.MISSING_TITLE));
+		}
+		if (this.jsonData != null && !JsonUtils.isValidJSON(this.jsonData)) {
+			errorList
+					.add(new ValidationError(
+							JSON_DATA,
+							ErrorMessages.PROBLEMS_DESERIALIZING_JSON_DATA_STRING_INVALID_JSON_FORMAT));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}
@@ -171,7 +217,7 @@ public class StudyModel {
 	public String toString() {
 		return id + " " + title;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;

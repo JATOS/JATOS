@@ -14,7 +14,7 @@
 				}
 				
 				@for(user <- userList) {
-					<input type="checkbox" name="@Studies.USER" value="@user.getEmail()" 
+					<input type="checkbox" name="@StudyModel.MEMBERS" value="@user.getEmail()" 
 					@if(study.hasMember(user)) {
 						checked
 					}

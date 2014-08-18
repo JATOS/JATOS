@@ -19,10 +19,15 @@ import javax.persistence.TypedQuery;
 import models.workers.MAWorker;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
+import services.ErrorMessages;
 
 @Entity
 public class UserModel {
 
+	public static final String NAME = "name";
+	public static final String EMAIL = "email";
+	public static final String PASSWORD = "password";
+	
 	@Id
 	private String email;
 
@@ -138,10 +143,12 @@ public class UserModel {
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (this.email == null || this.email.isEmpty()) {
-			errorList.add(new ValidationError("email", "Missing email"));
+			errorList.add(new ValidationError("email",
+					ErrorMessages.MISSING_EMAIL));
 		}
 		if (this.name == null || this.name.isEmpty()) {
-			errorList.add(new ValidationError("name", "Missing name"));
+			errorList.add(new ValidationError("name",
+					ErrorMessages.MISSING_NAME));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}

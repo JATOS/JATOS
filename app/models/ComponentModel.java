@@ -16,31 +16,27 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
-import play.Logger;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
+import services.ErrorMessages;
+import services.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 
 @Entity
 public class ComponentModel {
 
-	// For JSON serialization: fields for public API
-	public static class JsonForPublix {
-	}
-
-	// For JSON serialization: fields for MechArg
-	public static class JsonForMA extends JsonForPublix {
-	}
+	public static final String TITLE = "title";
+	public static final String VIEW_URL = "viewUrl";
+	public static final String JSON_DATA = "jsonData";
+	public static final String RESULT = "result";
+	public static final String RELOADABLE = "reloadable";
+	public static final String COMPONENT = "component";
 
 	@Id
 	@GeneratedValue
-	@JsonView(ComponentModel.JsonForPublix.class)
+	@JsonView(JsonUtils.JsonForPublix.class)
 	private Long id;
 
 	@JsonIgnore
@@ -48,22 +44,22 @@ public class ComponentModel {
 	@JoinColumn(name = "study_id")
 	private StudyModel study;
 
-	@JsonView(ComponentModel.JsonForPublix.class)
+	@JsonView(JsonUtils.JsonForPublix.class)
 	private String title;
 
 	/**
 	 * Timestamp of the creation or the last update of this component
 	 */
-	@JsonView(ComponentModel.JsonForMA.class)
+	@JsonView(JsonUtils.JsonForMA.class)
 	private Timestamp date;
 
-	@JsonView(ComponentModel.JsonForPublix.class)
+	@JsonView(JsonUtils.JsonForPublix.class)
 	private String viewUrl; // URL or local path
 
-	@JsonView(ComponentModel.JsonForPublix.class)
+	@JsonView(JsonUtils.JsonForPublix.class)
 	private boolean reloadable;
 
-	@JsonView(ComponentModel.JsonForPublix.class)
+	@JsonView(JsonUtils.JsonForPublix.class)
 	@Lob
 	private String jsonData;
 
@@ -114,30 +110,17 @@ public class ComponentModel {
 		if (this.jsonData == null) {
 			return null;
 		}
-
-		// Try to make it pretty
-		String jsonDataPretty = null;
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			Object json = mapper.readValue(this.jsonData, Object.class);
-			jsonDataPretty = mapper.writerWithDefaultPrettyPrinter()
-					.writeValueAsString(json);
-		} catch (Exception e) {
-			Logger.info("getJsonData: ", e);
-		}
-		return jsonDataPretty;
+		return JsonUtils.makePretty(jsonData);
 	}
 
-	public void setJsonData(String jsonData) {
-		if (!isValidJSON(jsonData)) {
+	public void setJsonData(String jsonDataStr) {
+		if (!JsonUtils.isValidJSON(jsonDataStr)) {
+			// Set the invalid string anyway. It will cause an error during
+			// validate().
+			this.jsonData = jsonDataStr;
 			return;
 		}
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			this.jsonData = mapper.readTree(jsonData).toString();
-		} catch (Exception e) {
-			Logger.info("setJsonData: ", e);
-		}
+		this.jsonData = JsonUtils.asStringForDB(jsonDataStr);
 	}
 
 	public boolean isReloadable() {
@@ -148,43 +131,29 @@ public class ComponentModel {
 		this.reloadable = reloadable;
 	}
 
-	public static boolean isValidJSON(final String json) {
-		boolean valid = false;
-		try {
-			final JsonParser parser = new ObjectMapper().getFactory()
-					.createParser(json);
-			while (parser.nextToken() != null) {
-			}
-			valid = true;
-		} catch (Exception e) {
-			Logger.info("isValidJSON: ", e);
-			valid = false;
-		}
-		return valid;
-	}
-
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (this.title == null || this.title.isEmpty()) {
-			errorList.add(new ValidationError("title", "Missing title"));
+			errorList.add(new ValidationError(TITLE,
+					ErrorMessages.MISSING_TITLE));
 		}
 		if (this.viewUrl == null) {
-			errorList.add(new ValidationError("viewUrl", "Missing URL"));
+			errorList.add(new ValidationError(VIEW_URL,
+					ErrorMessages.MISSING_URL));
 		}
 		String pathRegEx = "^(\\/\\w+)+\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
 		if (!(validateUrl(this.viewUrl) || this.viewUrl.matches(pathRegEx) || this.viewUrl
 				.isEmpty())) {
-			errorList.add(new ValidationError("viewUrl",
-					"Neither a path nor an URL (you can leave it empty)"));
-		}
-		if (this.jsonData == null || this.jsonData.isEmpty()) {
-			errorList.add(new ValidationError("jsonData",
-					"JSON data missing or invalid JSON format."));
-		}
-		if (this.jsonData != null && !isValidJSON(this.jsonData)) {
 			errorList
-					.add(new ValidationError("jsonData",
-							"Problems deserializing JSON data string: invalid JSON format."));
+					.add(new ValidationError(
+							VIEW_URL,
+							ErrorMessages.NEITHER_A_PATH_NOR_AN_URL_YOU_CAN_LEAVE_IT_EMPTY));
+		}
+		if (this.jsonData != null && !JsonUtils.isValidJSON(this.jsonData)) {
+			errorList
+					.add(new ValidationError(
+							JSON_DATA,
+							ErrorMessages.PROBLEMS_DESERIALIZING_JSON_DATA_STRING_INVALID_JSON_FORMAT));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}
@@ -202,7 +171,7 @@ public class ComponentModel {
 	public String toString() {
 		return id + " " + title;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -233,15 +202,6 @@ public class ComponentModel {
 		return true;
 	}
 
-	public String asJsonForPublic()
-			throws JsonProcessingException {
-		// Serialize ComponentModel into JSON (only the public part)
-		ObjectWriter objectWriter = new ObjectMapper()
-				.writerWithView(ComponentModel.JsonForPublix.class);
-		String componentAsJson = objectWriter.writeValueAsString(this);
-		return componentAsJson;
-	}
-
 	public static ComponentModel findById(Long id) {
 		return JPA.em().find(ComponentModel.class, id);
 	}
@@ -252,7 +212,8 @@ public class ComponentModel {
 		return query.getResultList();
 	}
 
-	public static void changeComponentOrder(ComponentModel component, int newIndex) {
+	public static void changeComponentOrder(ComponentModel component,
+			int newIndex) {
 		String queryStr = "UPDATE ComponentModel SET componentList_order = "
 				+ ":newIndex WHERE id = :id";
 		Query query = JPA.em().createQuery(queryStr);

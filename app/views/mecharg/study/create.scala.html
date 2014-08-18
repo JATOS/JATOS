@@ -12,17 +12,21 @@
 						@form.globalError.message
 					</p>
 				}
-				@for(error <- form(Studies.TITLE).errors) {
+				@for(error <- form(StudyModel.TITLE).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="text" name="@Studies.TITLE" class="formTop" placeholder="Title" value="@form(Studies.TITLE).value">
+				<input type="text" name="@StudyModel.TITLE" class="formTop" placeholder="Title" value="@form(StudyModel.TITLE).value">
 				
-				@for(error <- form(Studies.DESCRIPTION).errors) {
+				@for(error <- form(StudyModel.DESCRIPTION).errors) {
 					<p class="error">@error.message</p>
 				}
-				<textarea name="@Studies.DESCRIPTION" class="formDescription" rows="3"
+				<textarea name="@StudyModel.DESCRIPTION" class="formDescription" rows="3"
 					placeholder="Description"
-					>@form(Studies.DESCRIPTION).value</textarea>
+					>@form(StudyModel.DESCRIPTION).value</textarea>
+				
+				<textarea name="@StudyModel.JSON_DATA" class="formJsonData"
+					placeholder="JSON data - put your JSON string here."
+				>@form(StudyModel.JSON_DATA).value</textarea>
 				
 				<button id="newGroup" type="submit">Create</button>
 			}

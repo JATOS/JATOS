@@ -15,6 +15,18 @@ public abstract class ErrorMessages<T extends Worker> {
 	public abstract String workerNeverDidStudy(T worker, Long studyId);
 
 	public abstract String workerNotAllowedStudy(T worker, Long studyId);
+
+	public static final String PROBLEMS_DESERIALIZING_JSON_DATA_STRING_INVALID_JSON_FORMAT = "Problems deserializing JSON data string: invalid JSON format.";
+	public static final String MISSING_TITLE = "Missing title";
+	public static final String MISSING_URL = "Missing URL";
+	public static final String MISSING_NAME = "Missing name";
+	public static final String MISSING_EMAIL = "Missing email";
+	public static final String NEITHER_A_PATH_NOR_AN_URL_YOU_CAN_LEAVE_IT_EMPTY = "Neither a path nor an URL (you can leave it empty)";
+	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format.";
+	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
+	public static final String PASSWORDS_ARENT_THE_SAME = "Passwords aren't the same.";
+	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings.";
+	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email is already registered.";
 	
 	public static String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
@@ -52,13 +64,15 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String componentNotBelongToStudy(Long studyId, Long componentId) {
+	public static String componentNotBelongToStudy(Long studyId,
+			Long componentId) {
 		String errorMsg = "There is no study with id " + studyId
 				+ " that has a component with id " + componentId + ".";
 		return errorMsg;
 	}
 
-	public static String componentNotAllowedToReload(Long studyId, Long componentId) {
+	public static String componentNotAllowedToReload(Long studyId,
+			Long componentId) {
 		String errorMsg = "It's not allowed to reload this component (id: "
 				+ componentId + "). Unfortunately it is neccessary to finish "
 				+ "this study (id: " + studyId + ") at this point.";
@@ -77,14 +91,15 @@ public abstract class ErrorMessages<T extends Worker> {
 				+ " was already started.";
 		return errorMsg;
 	}
-	
+
 	public static String componentNeverStarted(Long studyId, Long componentId) {
 		String errorMsg = "Component " + componentId + " of study " + studyId
 				+ " was never started.";
 		return errorMsg;
 	}
 
-	public static String submittedDataUnknownFormat(Long studyId, Long componentId) {
+	public static String submittedDataUnknownFormat(Long studyId,
+			Long componentId) {
 		String errorMsg = "Unknown format of submitted data for component "
 				+ componentId + " of study " + studyId + ".";
 		return errorMsg;
@@ -94,7 +109,7 @@ public abstract class ErrorMessages<T extends Worker> {
 		String errorMsg = "There aren't any more components in this study.";
 		return errorMsg;
 	}
-	
+
 	public static String noUserLoggedIn() {
 		String errorMsg = "No user logged in.";
 		return errorMsg;
@@ -114,7 +129,7 @@ public abstract class ErrorMessages<T extends Worker> {
 		String errorMsg = "This study was never started from within MechArg.";
 		return errorMsg;
 	}
-	
+
 	public static String assignmentIdNotSpecified() {
 		String errorMsg = "No assignment id specified in query parameters.";
 		return errorMsg;
@@ -130,35 +145,35 @@ public abstract class ErrorMessages<T extends Worker> {
 				+ " isn't a MTurk worker.";
 		return errorMsg;
 	}
-	
+
 	public static String userNotExist(String email) {
 		String errorMsg = "An user with email " + email + " doesn't exist.";
 		return errorMsg;
 	}
-	
+
 	public static String componentNotExist(Long componentId) {
 		String errorMsg = "An component with id " + componentId
 				+ " doesn't exist.";
 		return errorMsg;
 	}
-	
+
 	public static String notMember(String username, String email, Long studyId,
 			String studyTitle) {
 		String errorMsg = username + " (" + email + ") isn't member of study "
 				+ studyId + " \"" + studyTitle + "\".";
 		return errorMsg;
 	}
-	
+
 	public static String urlViewEmpty(Long componentId) {
 		String errorMsg = "Component " + componentId + "'s URL field is empty.";
 		return errorMsg;
 	}
-	
+
 	public static String studyAtLeastOneMember() {
 		String errorMsg = "An study should have at least one member.";
 		return errorMsg;
 	}
-	
+
 	public static String mustBeLoggedInAsUser(UserModel user) {
 		return "You must be logged in as " + user.toString()
 				+ " to update this user.";

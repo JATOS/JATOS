@@ -13,35 +13,35 @@
 					</p>
 				}
 				
-				@for(error <- form(Components.TITLE).errors) {
+				@for(error <- form(ComponentModel.TITLE).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="text" name="@Components.TITLE"
+				<input type="text" name="@ComponentModel.TITLE"
 					class="formTop" placeholder="Title"
-					value="@form(Components.TITLE).value">
+					value="@form(ComponentModel.TITLE).value">
 				
 				<!-- We need a hidden input field.
 				 http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-				<input type="checkbox" class="reloadable" name="@Components.RELOADABLE" value="true"
+				<input type="checkbox" class="reloadable" name="@ComponentModel.RELOADABLE" value="true"
 					@if("true".equals(form("reloadable").value)) {
 						checked="checked"
 					}>
-				<input type="hidden" name="@Components.RELOADABLE" value="false" />
+				<input type="hidden" name="@ComponentModel.RELOADABLE" value="false" />
 				<p class="reloadable">Allow participants to reload</p>
 				
-				@for(error <- form(Components.VIEW_URL).errors) {
+				@for(error <- form(ComponentModel.VIEW_URL).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="text" name="@Components.VIEW_URL"
+				<input type="text" name="@ComponentModel.VIEW_URL"
 					class="formMiddle" placeholder="URL or path of the actual component"
-					value="@form(Components.VIEW_URL).value">
+					value="@form(ComponentModel.VIEW_URL).value">
 				
-				@for(error <- form(Components.JSON_DATA).errors) {
+				@for(error <- form(ComponentModel.JSON_DATA).errors) {
 					<p class="error">@error.message</p>
 				}
-				<textarea name="@Components.JSON_DATA" class="formJsonData"
+				<textarea name="@ComponentModel.JSON_DATA" class="formJsonData"
 					placeholder="JSON data - put your JSON string here."
-					>@form(Components.JSON_DATA).value</textarea>
+					>@form(ComponentModel.JSON_DATA).value</textarea>
 				
 				<button id="newGroup" type="submit">Create</button>
 			}

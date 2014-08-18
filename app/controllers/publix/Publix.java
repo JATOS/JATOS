@@ -19,7 +19,7 @@ public abstract class Publix extends Controller implements IPublix {
 	@Override
 	public Result logError() {
 		String msg = request().body().asText();
-		Logger.error(CLASS_NAME + " logging client-side error: " + msg);
+		Logger.error(CLASS_NAME + " - logging client-side error: " + msg);
 		return ok();
 	}
 	

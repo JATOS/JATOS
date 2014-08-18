@@ -12,6 +12,7 @@ import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Result;
 import services.ErrorMessages;
+import services.JsonUtils;
 import services.MAErrorMessages;
 import services.Persistance;
 
@@ -109,6 +110,22 @@ public class MAPublix extends Publix implements IPublix {
 		ComponentModel nextComponent = utils.retrieveNextComponent(studyResult);
 		return startComponent(studyId, nextComponent.getId());
 	}
+	
+	@Override
+	@Transactional
+	public Result getStudyData(Long studyId) throws Exception {
+		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID));
+		MAWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyModel study = utils.retrieveStudy(studyId,
+				MediaType.TEXT_JAVASCRIPT_UTF_8);
+		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
+				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
+		
+		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
+		studyResult.merge();
+		return ok(JsonUtils.asJsonForPublix(study));
+	}
 
 	@Override
 	@Transactional
@@ -135,7 +152,7 @@ public class MAPublix extends Publix implements IPublix {
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
 		componentResult.merge();
 
-		return ok(component.asJsonForPublic());
+		return ok(JsonUtils.asJsonForPublix(component));
 	}
 
 	@Override

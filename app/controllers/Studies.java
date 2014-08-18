@@ -21,11 +21,8 @@ import exceptions.ResultException;
 @Security.Authenticated(Secured.class)
 public class Studies extends Controller {
 
-	public static final String USER = "user";
-	public static final String TITLE = "title";
-	public static final String DESCRIPTION = "description";
 	public static final String STUDY = "study";
-
+	
 	@Transactional
 	public static Result index(Long studyId) throws ResultException {
 		StudyModel study = StudyModel.findById(studyId);
@@ -114,9 +111,10 @@ public class Studies extends Controller {
 
 		// Update study in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
-		String title = requestData.get(TITLE);
-		String description = requestData.get(DESCRIPTION);
-		Persistance.updateStudy(study, title, description);
+		String title = requestData.get(StudyModel.TITLE);
+		String description = requestData.get(StudyModel.DESCRIPTION);
+		String jsonData = requestData.get(StudyModel.JSON_DATA);
+		Persistance.updateStudy(study, title, description, jsonData);
 		return redirect(routes.Studies.index(studyId));
 	}
 
@@ -158,7 +156,7 @@ public class Studies extends Controller {
 		checkStandard(study, studyId, loggedInUser, studyList);
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
-		String[] checkedUsers = formMap.get(USER);
+		String[] checkedUsers = formMap.get(StudyModel.MEMBERS);
 		if (checkedUsers == null || checkedUsers.length < 1) {
 			throw BadRequests.forbiddenStudyAtLeastOneMember(loggedInUser,
 					study, studyList);
@@ -242,7 +240,7 @@ public class Studies extends Controller {
 			throw new ResultException(result, errorMsg);
 		}
 
-		session(MAPublix.MECHARG_TRY, STUDY);
+		session(MAPublix.MECHARG_TRY, Studies.STUDY);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startStudy(study.getId()));
 	}

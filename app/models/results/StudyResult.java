@@ -38,7 +38,10 @@ public class StudyResult {
 	private Timestamp startDate;
 
 	public enum StudyState {
-		STARTED, FINISHED, FAIL
+		STARTED, // Study was started
+		DATA_RETRIEVED, // Study's jsonData were retrieved
+		FINISHED, // Study finished
+		FAIL // Something went wrong
 	};
 
 	/**
@@ -58,7 +61,7 @@ public class StudyResult {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "worker_id")
 	private Worker worker;
-	
+
 	private String confirmationCode;
 
 	public StudyResult() {
@@ -122,7 +125,7 @@ public class StudyResult {
 	public List<ComponentResult> getComponentResultList() {
 		return this.componentResultList;
 	}
-	
+
 	public void removeComponentResult(ComponentResult componentResult) {
 		componentResultList.remove(componentResult);
 	}
@@ -130,15 +133,15 @@ public class StudyResult {
 	public void addComponentResult(ComponentResult componentResult) {
 		componentResultList.add(componentResult);
 	}
-	
+
 	public void setWorker(Worker worker) {
 		this.worker = worker;
 	}
-	
+
 	public Worker getWorker() {
 		return this.worker;
 	}
-	
+
 	@Override
 	public String toString() {
 		return String.valueOf(id);
@@ -177,9 +180,8 @@ public class StudyResult {
 	public static StudyResult findById(Long id) {
 		return JPA.em().find(StudyResult.class, id);
 	}
-	
-	public static List<StudyResult> findAllByStudy(
-			StudyModel study) {
+
+	public static List<StudyResult> findAllByStudy(StudyModel study) {
 		String queryStr = "SELECT e FROM StudyResult e "
 				+ "WHERE e.study=:studyId";
 		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,

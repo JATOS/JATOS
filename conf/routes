@@ -5,6 +5,7 @@
 # Publix
 GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long)
 GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
+GET     /publix/:studyId/getData                         @controllers.publix.PublixInterceptor.getStudyData(studyId: Long)
 GET     /publix/:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long)
 GET     /publix/:studyId/startNextComponent              @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long)
 GET     /publix/:studyId/:componentId/getData            @controllers.publix.PublixInterceptor.getComponentData(studyId: Long, componentId: Long)

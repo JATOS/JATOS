@@ -47,6 +47,16 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return mtPublix.startNextComponent(studyId);
 		}
 	}
+	
+	@Override
+	@Transactional
+	public Result getStudyData(Long studyId) throws Exception {
+	if (isFromMechArg()) {
+		return maPublix.getStudyData(studyId);
+	} else {
+		return mtPublix.getStudyData(studyId);
+	}
+	}
 
 	@Override
 	@Transactional

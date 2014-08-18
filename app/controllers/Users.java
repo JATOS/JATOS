@@ -19,17 +19,10 @@ import services.ErrorMessages;
 @Security.Authenticated(Secured.class)
 public class Users extends Controller {
 
-	public static final String NAME = "name";
-	public static final String EMAIL = "email";
 	public static final String PASSWORD_REPEAT = "passwordRepeat";
 	public static final String NEW_PASSWORD_REPEAT = "newPasswordRepeat";
-	public static final String PASSWORD = "password";
 	public static final String OLD_PASSWORD = "oldPassword";
 	public static final String NEW_PASSWORD = "newPassword";
-	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
-	public static final String PASSWORDS_ARENT_THE_SAME = "Passwords aren't the same.";
-	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings.";
-	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email is already registered.";
 	public static final String COOKIE_EMAIL = "email";
 
 	@Transactional
@@ -89,22 +82,25 @@ public class Users extends Controller {
 		// Check if user with this email already exists.
 		UserModel newUser = form.get();
 		if (UserModel.findByEmail(newUser.getEmail()) != null) {
-			form.reject(EMAIL, THIS_EMAIL_IS_ALREADY_REGISTERED);
+			form.reject(UserModel.EMAIL,
+					ErrorMessages.THIS_EMAIL_IS_ALREADY_REGISTERED);
 		}
 
 		// Check for non empty passwords
 		DynamicForm requestData = Form.form().bindFromRequest();
-		String password = requestData.get(PASSWORD);
+		String password = requestData.get(UserModel.PASSWORD);
 		String passwordRepeat = requestData.get(PASSWORD_REPEAT);
 		if (password.trim().isEmpty() || passwordRepeat.trim().isEmpty()) {
-			form.reject(PASSWORD, PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+			form.reject(UserModel.PASSWORD,
+					ErrorMessages.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
 		}
 
 		// Check that both passwords are the same
 		String passwordHash = UserModel.getHashMDFive(password);
 		String passwordHashRepeat = UserModel.getHashMDFive(passwordRepeat);
 		if (!passwordHash.equals(passwordHashRepeat)) {
-			form.reject(PASSWORD, PASSWORDS_ARENT_THE_SAME);
+			form.reject(UserModel.PASSWORD,
+					ErrorMessages.PASSWORDS_ARENT_THE_SAME);
 		}
 
 		if (form.hasErrors()) {
@@ -188,7 +184,7 @@ public class Users extends Controller {
 			// Do not update 'email' since it's the id and should stay
 			// unaltered. For the password we have an extra form.
 			DynamicForm requestData = Form.form().bindFromRequest();
-			String name = requestData.get(NAME);
+			String name = requestData.get(UserModel.NAME);
 			user.update(name);
 			user.merge();
 			return redirect(routes.Users.profile(email));
@@ -250,14 +246,15 @@ public class Users extends Controller {
 		String oldPasswordHash = UserModel.getHashMDFive(requestData
 				.get(OLD_PASSWORD));
 		if (UserModel.authenticate(user.getEmail(), oldPasswordHash) == null) {
-			form.reject(OLD_PASSWORD, WRONG_OLD_PASSWORD);
+			form.reject(OLD_PASSWORD, ErrorMessages.WRONG_OLD_PASSWORD);
 		}
 
 		// Check for non empty passwords
 		String newPassword = requestData.get(NEW_PASSWORD);
 		String newPasswordRepeat = requestData.get(NEW_PASSWORD_REPEAT);
 		if (newPassword.trim().isEmpty() || newPasswordRepeat.trim().isEmpty()) {
-			form.reject(NEW_PASSWORD, PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
+			form.reject(NEW_PASSWORD,
+					ErrorMessages.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
 		}
 
 		// Check that both passwords are the same
@@ -265,7 +262,7 @@ public class Users extends Controller {
 		String newPasswordHashRepeat = UserModel
 				.getHashMDFive(newPasswordRepeat);
 		if (!newPasswordHash.equals(newPasswordHashRepeat)) {
-			form.reject(NEW_PASSWORD, PASSWORDS_ARENT_THE_SAME);
+			form.reject(NEW_PASSWORD, ErrorMessages.PASSWORDS_ARENT_THE_SAME);
 		}
 
 		if (form.hasErrors()) {

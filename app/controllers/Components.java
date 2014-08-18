@@ -21,11 +21,6 @@ import exceptions.ResultException;
 @Security.Authenticated(Secured.class)
 public class Components extends Controller {
 
-	public static final String TITLE = "title";
-	public static final String VIEW_URL = "viewUrl";
-	public static final String JSON_DATA = "jsonData";
-	public static final String RESULT = "result";
-	public static final String RELOADABLE = "reloadable";
 	public static final String COMPONENT = "component";
 
 	@Transactional
@@ -194,10 +189,10 @@ public class Components extends Controller {
 
 		// Update component in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
-		String title = requestData.get(TITLE);
-		String viewUrl = requestData.get(VIEW_URL);
-		String jsonData = requestData.get(JSON_DATA);
-		boolean reloadable = (requestData.get(RELOADABLE) != null);
+		String title = requestData.get(ComponentModel.TITLE);
+		String viewUrl = requestData.get(ComponentModel.VIEW_URL);
+		String jsonData = requestData.get(ComponentModel.JSON_DATA);
+		boolean reloadable = (requestData.get(ComponentModel.RELOADABLE) != null);
 		Persistance.updateComponent(component, title, reloadable, viewUrl,
 				jsonData);
 		return redirect(routes.Components.index(study.getId(), componentId));
@@ -269,7 +264,7 @@ public class Components extends Controller {
 		}
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
-		String[] checkedComponents = formMap.get(RESULT);
+		String[] checkedComponents = formMap.get(ComponentModel.RESULT);
 		if (checkedComponents != null) {
 			for (String resultIdStr : checkedComponents) {
 				Persistance.removeComponentResult(resultIdStr);

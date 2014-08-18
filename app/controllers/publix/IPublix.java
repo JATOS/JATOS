@@ -33,6 +33,13 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Ajax GET request<br>
+	 * Returns the data in JSON format that belong to the specified study.
+	 */
+	public Result getStudyData(Long studyId)
+			throws Exception;
+	
+	/**
+	 * HTTP type: Ajax GET request<br>
 	 * Returns the data in JSON format that belong to the specified component.
 	 */
 	public Result getComponentData(Long studyId, Long componentId)
