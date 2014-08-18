@@ -27,13 +27,14 @@
 
 &lt;div class=&quot;panel-body&quot;&gt;
 
-&lt;p id=&quot;studyDescription&quot;&gt;@study.getDescription()&lt;/p&gt;
+@if(study.getDescription() != null && !study.getDescription().isEmpty()) {
+	&lt;p id=&quot;studyDescription&quot;&gt;@study.getDescription()&lt;/p&gt;
+}
+	&lt;p id=&quot;previewHit&quot;&gt;This is a &lt;strong&gt;preview&lt;/strong&gt; of the study. When you&#39;ve accepted the HIT a link to the study will be shown. At the end of the study, you will receive a code to paste into the box below to receive credit for taking our study.&lt;/p&gt;
 
-&lt;p id=&quot;previewHit&quot;&gt;This is a &lt;strong&gt;preview&lt;/strong&gt; of the study. When you&#39;ve accepted the HIT a link to the study will be shown. At the end of the study, you will receive a code to paste into the box below to receive credit for taking our study.&lt;/p&gt;
+	&lt;p id=&quot;acceptedHit&quot; style=&quot;display: none&quot;&gt;Select the link below to complete the study. At the end of the study, you will receive a code to paste into the box below to receive credit for taking our study.&lt;/p&gt;
 
-&lt;p id=&quot;acceptedHit&quot; style=&quot;display: none&quot;&gt;Select the link below to complete the study. At the end of the study, you will receive a code to paste into the box below to receive credit for taking our study.&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;Make sure to leave this window open as you complete the study.&lt;/strong&gt; When you are finished, you will return to this page to paste the code into the box.&lt;/p&gt;
+	&lt;p&gt;&lt;strong&gt;Make sure to leave this window open as you complete the study.&lt;/strong&gt; When you are finished, you will return to this page to paste the code into the box.&lt;/p&gt;
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;!-- End Instruction --&gt;
@@ -46,7 +47,7 @@
 		&lt;/tr&gt;
 		&lt;tr&gt;
 			&lt;td&gt;&lt;strong&gt;Provide the study&#39;s confirmation code here to receive credits:&lt;/strong&gt;&lt;/td&gt;
-			&lt;td style=&quot;vertical-align: middle;&quot;&gt;&lt;input class=&quot;form-control&quot; id=&quot;surveycode&quot; name=&quot;surveycode&quot; placeholder=&quot;e.g. 123456&quot; type=&quot;text&quot; /&gt;&lt;/td&gt;
+			&lt;td style=&quot;vertical-align: middle;&quot;&gt;&lt;input class=&quot;form-control&quot; id=&quot;surveycode&quot; name=&quot;surveycode&quot; placeholder=&quot;e.g. ab123456-1234-1234-a123-a12b3ce4f567&quot; type=&quot;text&quot; /&gt;&lt;/td&gt;
 		&lt;/tr&gt;
 	&lt;/tbody&gt;
 &lt;/table&gt;
@@ -59,7 +60,7 @@
 &lt;script&gt;
 	// Hint: What&#39;s called an study in MA is called a survey in MT
 	var host = &quot;@hostname&quot;;
-	var studyPath = &quot;/ma/@study.getId()/start&quot;;
+	var studyPath = &quot;/publix/@study.getId()/start&quot;;
 	var query = document.URL.split(&#39;?&#39;)[1];
 
 	window.onload = function() {
@@ -74,7 +75,7 @@
 			document.getElementById(&quot;previewHit&quot;).style.display = &quot;none&quot;;
 			document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;block&quot;;
 			var studyUrlHref = &quot;http://&quot; + host + studyPath + &quot;?&quot; + query;
-			var studyUrlText = studyUrlHref;
+			var studyUrlText = &quot;link to HIT&quot;;
 		}
 		document.getElementById(&quot;studyUrl&quot;).setAttribute(&quot;href&quot;, studyUrlHref);
 		document.getElementById(&quot;studyUrl&quot;).innerHTML = studyUrlText;

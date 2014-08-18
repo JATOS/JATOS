@@ -94,6 +94,7 @@ public abstract class PublixUtils<T extends Worker> {
 			studyResult.setStudyState(StudyState.FAIL);
 		}
 		studyResult.merge();
+		Publix.session().remove(MAPublix.MECHARG_TRY);
 		return confirmationCode;
 	}
 
