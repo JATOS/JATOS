@@ -6,6 +6,7 @@ import java.util.Map;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
@@ -22,9 +23,12 @@ import exceptions.ResultException;
 public class Studies extends Controller {
 
 	public static final String STUDY = "study";
-	
+	private static final String CLASS_NAME = Studies.class.getSimpleName();
+
 	@Transactional
 	public static Result index(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -40,6 +44,8 @@ public class Studies extends Controller {
 
 	@Transactional
 	public static Result create() {
+		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
+				+ session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -55,6 +61,8 @@ public class Studies extends Controller {
 
 	@Transactional
 	public static Result submit() throws ResultException {
+		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
+				+ session(Users.COOKIE_EMAIL));
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -77,6 +85,8 @@ public class Studies extends Controller {
 
 	@Transactional
 	public static Result properties(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".properties: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -93,6 +103,8 @@ public class Studies extends Controller {
 
 	@Transactional
 	public static Result submitProperties(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".submitProperties: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -120,6 +132,8 @@ public class Studies extends Controller {
 
 	@Transactional
 	public static Result remove(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -132,6 +146,8 @@ public class Studies extends Controller {
 
 	@Transactional
 	public static Result changeMembers(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".changeMembers: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -149,6 +165,9 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result submitChangedMembers(Long studyId)
 			throws ResultException {
+		Logger.info(CLASS_NAME + ".submitChangedMembers: studyId " + studyId
+				+ ", " + "logged-in user's email "
+				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -178,6 +197,9 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result changeComponentOrder(Long studyId, Long componentId,
 			String direction) throws ResultException {
+		Logger.info(CLASS_NAME + ".changeComponentOrder: studyId " + studyId
+				+ ", " + "logged-in user's email "
+				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -222,6 +244,8 @@ public class Studies extends Controller {
 
 	@Transactional
 	public static Result tryStudy(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".tryStudy: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -248,6 +272,9 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result showMTurkSourceCode(Long studyId)
 			throws ResultException {
+		Logger.info(CLASS_NAME + ".showMTurkSourceCode: studyId " + studyId
+				+ ", " + "logged-in user's email "
+				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));

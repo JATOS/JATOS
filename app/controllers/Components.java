@@ -7,6 +7,7 @@ import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.results.ComponentResult;
+import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
@@ -22,10 +23,14 @@ import exceptions.ResultException;
 public class Components extends Controller {
 
 	public static final String COMPONENT = "component";
+	private static final String CLASS_NAME = Components.class.getSimpleName();
 
 	@Transactional
 	public static Result index(Long studyId, Long componentId)
 			throws ResultException {
+		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -49,6 +54,9 @@ public class Components extends Controller {
 	@Transactional
 	public static Result tryComponent(Long studyId, Long componentId)
 			throws ResultException {
+		Logger.info(CLASS_NAME + ".tryComponent: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
@@ -72,6 +80,8 @@ public class Components extends Controller {
 
 	@Transactional
 	public static Result create(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".create: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
@@ -98,6 +108,8 @@ public class Components extends Controller {
 
 	@Transactional
 	public static Result submit(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".submit: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
@@ -134,6 +146,9 @@ public class Components extends Controller {
 	@Transactional
 	public static Result edit(Long studyId, Long componentId)
 			throws ResultException {
+		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
@@ -160,6 +175,9 @@ public class Components extends Controller {
 	@Transactional
 	public static Result submitEdited(Long studyId, Long componentId)
 			throws ResultException {
+		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
@@ -201,6 +219,9 @@ public class Components extends Controller {
 	@Transactional
 	public static Result remove(Long studyId, Long componentId)
 			throws ResultException {
+		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
@@ -221,6 +242,9 @@ public class Components extends Controller {
 	@Transactional
 	public static Result removeResults(Long studyId, Long componentId)
 			throws ResultException {
+		Logger.info(CLASS_NAME + ".removeResults: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
@@ -250,6 +274,9 @@ public class Components extends Controller {
 	@Transactional
 	public static Result submitRemovedResults(Long studyId, Long componentId)
 			throws Exception {
+		Logger.info(CLASS_NAME + ".submitRemovedResults: studyId " + studyId
+				+ ", " + "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
