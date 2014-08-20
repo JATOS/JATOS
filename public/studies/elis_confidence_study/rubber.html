@@ -237,7 +237,7 @@
 				type: "POST",
 				contentType: "application/json",
 				success: function(url) {
-					window.location.href = "/publix/" + studyId + "/end";
+					window.location.href = "/publix/" + studyId + "/startNextComponent";
 				},
 				error: function(err) {
 					currentComponentState = componentState.RUNNING;

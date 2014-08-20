@@ -15,7 +15,6 @@
 </head>
 
 <body>
-
 	<img id="logoLeft" src="/assets/images/minerva.png" alt="Minerva Logo">
 	<img id="logoRight" src="/assets/images/MPIB_Logo_schwarz.png"
 		alt="MPIB Logo">
@@ -41,7 +40,8 @@
 			RUNNING : 0,
 			WAITING : 1,
 			ANSWER : 2,
-			FINISHED : 3
+			FINISHED : 3,
+			ERROR : 4
 		});
 		currentComponentState = componentState.RUNNING;
 
@@ -87,9 +87,6 @@
 							endAnswerState(event);
 						}
 						break;
-					case componentState.ERROR:
-						// TODO ???
-						break;
 					case componentState.WAITING:
 						// If we wait for an answer to an HTTP POST don't react to keys
 						break;
@@ -103,18 +100,16 @@
 				type : "GET",
 				dataType : 'json',
 				success : function(response) {
-					currentComponentState = componentState.RUNNING;
 					startComponent(response);
 				},
 				error : function(err) {
-					currentComponentState = componentState.ERROR;
-					showError(err.responseText);
-					// TODO ???
+					startErrorState(err.responseText);
 				}
 			});
 		}
 
 		function startComponent(response) {
+			currentComponentState = componentState.RUNNING;
 			componentData = response;
 			jsonData = $.parseJSON(componentData.jsonData);
 			document.title = componentData.title;
@@ -149,12 +144,22 @@
 		}
 
 		function endAnswerState(event) {
+			var timeEnd = performance.now();
+			var duration = Math.round(timeEnd - timeStart);
+			componentResult.duration = duration;
 			startFinishedState();
 		}
 		
 		function startFinishedState() {
 			currentComponentState = componentState.FINISHED;
 			endComponentAndNext();
+		}
+		
+		function startErrorState(errorMsg) {
+			currentComponentState = componentState.ERROR;
+			$("#error").html(errorMsg).show();
+			// The is a final state. From ERROR is no transition 
+			// to another state possible.
 		}
 
 		// Post results back to the server and move to the next component
@@ -171,16 +176,16 @@
 				contentType : "application/json",
 				success : function(url) {
 					currentComponentState = componentState.FINISHED;
-					window.location.href = "/publix/" + studyId + "/end";
+					window.location.href = "/publix/" + studyId + "/startNextComponent";
 				},
 				error : function(err) {
-					currentComponentState = componentState.ERROR;
-					showError(err.responseText);
+					startErrorState(err.responseText);
 				}
 			});
 		}
 		
 		function generateComponentResult() {
+			componentResult.lostFocus = lostFocus;
 			var cities = [];
 			$("#sortable li").each(function(index) {
 				cities.push($(this).text());
@@ -195,24 +200,20 @@
 			return roundedDuration;
 		}
 
-		function showError(errorMsg) {
-			$("#error").html(errorMsg).show();
-		}
-
 		function checkBrowser() {
 			var userAgent = navigator.userAgent;
 			var logErrorMsg;
 			// Check mobile phones and tablets
 			if (userAgent
 					.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)) {
-				showError("Sorry, you can't do this questionaire on a mobile or a tablet.");
+				startErrorState("Sorry, you can't do this questionaire on a mobile or a tablet.");
 				logErrorMsg = "Mobile phone browser not supported: component "
 						+ component.id + ", userAgent \"" + userAgent + "\"";
 			}
 
 			// Check if browser supports perfomance.now feature
 			if (!performance.now) {
-				showError("Sorry, you can't do this questionaire with this browser.");
+				startErrorState("Sorry, you can't do this questionaire with this browser.");
 				var logErrorMsg = "Browser doesn't support perfomance.now: component "
 						+ component.id + ", userAgent \"" + userAgent + "\"";
 			}

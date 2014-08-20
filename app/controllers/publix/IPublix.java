@@ -27,7 +27,10 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Normal GET request<br>
-	 * Starts the next component of the study with the given id.
+	 * Starts the next component of the study with the given id. Components
+	 * within a study are ordered. This method starts the component after the
+	 * current one. If there are no more components in the study, the study
+	 * will be finished successfully.
 	 */
 	public Result startNextComponent(Long studyId) throws Exception;
 
@@ -35,9 +38,8 @@ public interface IPublix {
 	 * HTTP type: Ajax GET request<br>
 	 * Returns the data in JSON format that belong to the specified study.
 	 */
-	public Result getStudyData(Long studyId)
-			throws Exception;
-	
+	public Result getStudyData(Long studyId) throws Exception;
+
 	/**
 	 * HTTP type: Ajax GET request<br>
 	 * Returns the data in JSON format that belong to the specified component.
@@ -65,7 +67,7 @@ public interface IPublix {
 	 * In case the client side wants to log an error.
 	 */
 	public Result logError();
-	
+
 	/**
 	 * HTTP type: Normal GET request<br>
 	 */

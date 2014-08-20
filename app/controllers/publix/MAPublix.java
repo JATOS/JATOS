@@ -108,6 +108,11 @@ public class MAPublix extends Publix implements IPublix {
 		}
 
 		ComponentModel nextComponent = utils.retrieveNextComponent(studyResult);
+		if (nextComponent == null) {
+			// Study has no more components
+			utils.finishStudy(true, studyResult);
+			return redirect(routes.Studies.index(study.getId()));
+		}
 		return startComponent(studyId, nextComponent.getId());
 	}
 	

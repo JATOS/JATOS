@@ -99,7 +99,13 @@ public class MTPublix extends Publix implements IPublix {
 		StudyModel study = utils.retrieveStudy(studyId);
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study);
+		
 		ComponentModel nextComponent = utils.retrieveNextComponent(studyResult);
+		if (nextComponent == null) {
+			// Study has no more components
+			utils.finishStudy(true, studyResult);
+			return finishStudy(studyId, true, null);
+		}
 		return startComponent(studyId, nextComponent.getId());
 	}
 

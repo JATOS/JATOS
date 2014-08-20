@@ -70,7 +70,9 @@ public abstract class PublixUtils<T extends Worker> {
 				studyResult.removeComponentResult(componentResult);
 			} else {
 				// Worker tried to reload a non-reloadable component -> end
-				// study with fail
+				// study and component with fail
+				componentResult.setComponentState(ComponentState.FAIL);
+				componentResult.merge();
 				exceptionalFinishStudy(studyResult);
 				throw new ForbiddenPublixException(
 						ErrorMessages.componentNotAllowedToReload(studyResult
@@ -111,8 +113,8 @@ public abstract class PublixUtils<T extends Worker> {
 	public void finishAllComponentResults(StudyResult studyResult) {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
-			if (componentResult.getComponentState() != ComponentState.FINISHED
-					|| componentResult.getComponentState() != ComponentState.FAIL) {
+			if (!(componentResult.getComponentState() == ComponentState.FINISHED
+					|| componentResult.getComponentState() == ComponentState.FAIL)) {
 				componentResult.setComponentState(ComponentState.FINISHED);
 				componentResult.merge();
 			}
@@ -275,9 +277,9 @@ public abstract class PublixUtils<T extends Worker> {
 		ComponentModel currentComponent = retrieveLastComponent(studyResult);
 		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
 				currentComponent);
-		if (nextComponent == null) {
-			throw new NotFoundPublixException(ErrorMessages.noMoreComponents());
-		}
+//		if (nextComponent == null) {
+//			throw new NotFoundPublixException(ErrorMessages.noMoreComponents());
+//		}
 		return nextComponent;
 	}
 
