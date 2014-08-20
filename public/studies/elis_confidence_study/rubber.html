@@ -142,8 +142,7 @@
 			componentData = response;
 			jsonData = $.parseJSON(componentData.jsonData);
 			slideList = jsonData.slideList;
-			componentResult = {studyId:studyId, 
-					componentId:componentId, slideResultList:[]};
+			componentResult = {slideResultList:[]};
 			document.title = componentData.title;
 			displaySlide();
 		}

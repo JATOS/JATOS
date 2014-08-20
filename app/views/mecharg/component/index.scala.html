@@ -30,7 +30,7 @@
 		<ul>
 			@for(result <- componentResultList) {
 				<li>
-					@result.asJson()
+					@services.JsonUtils.asJsonForMA(result)
 					<div class="removeResult">Remove</div>
 				</li>
 			}

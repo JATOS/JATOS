@@ -1,6 +1,5 @@
 package controllers;
 
-import controllers.publix.MAPublix;
 import models.UserModel;
 import play.Logger;
 import play.data.Form;

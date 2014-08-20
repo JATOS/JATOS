@@ -3,7 +3,6 @@ package models.results;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -22,9 +21,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 
 @Entity
 @JsonPropertyOrder(value = { "resultId", "startDate", "studyId", "componentId",
@@ -65,7 +62,12 @@ public class ComponentResult {
 	@JoinColumn(name = "studyResult_id")
 	private StudyResult studyResult;
 
+	/**
+	 * Result data string submitted from the client during running the
+	 * component. It can be any string and doesn't have to be in JSON format.
+	 */
 	@Lob
+	@JsonRawValue
 	private String data;
 
 	public ComponentResult() {
@@ -158,13 +160,6 @@ public class ComponentResult {
 			return false;
 		}
 		return true;
-	}
-
-	public String asJson() throws JsonProcessingException {
-		ObjectWriter objectWriter = new ObjectMapper().setTimeZone(
-				TimeZone.getDefault()).writer();
-		String resultAsJson = objectWriter.writeValueAsString(this);
-		return resultAsJson;
 	}
 
 	@JsonProperty("componentId")

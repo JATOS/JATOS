@@ -1,0 +1,85 @@
+body {
+	font: 20px "Lucida Grande", "Helvetica Neue", sans-serif;
+	margin: 0;
+	padding: 0;
+}
+
+#logoLeft {
+	width: 8%;
+	height: auto;
+	margin: 10px;
+	top: 0;
+	position: absolute;
+	float: left;
+}
+
+#logoRight {
+	width: 40%;
+	height: auto;
+	margin: 10px;
+	top: 0;
+	right: 0px;
+	position: absolute;
+	float: right;
+}
+
+#component {
+	margin-top: 6%;
+	margin-left: auto;
+	margin-right: auto;
+	width: 70%;
+	padding: 0;
+}
+
+#error {
+	margin: 0;
+	margin-top: 5%;
+	text-align: center;
+	font-size: 100%;
+	color: rgb(255, 0, 0);
+}
+
+#text {
+	margin: 0;
+	padding: 0;
+	margin-bottom: 10px;
+}
+
+#progress {
+	margin-bottom: 30px;
+}
+
+#progressBar {
+	height: 10px;
+}
+
+#progressBarText {
+	font-size: 16px;
+	margin: 0;
+}
+
+#nextComponent {
+	margin: 0;
+	padding: 0;
+	margin-top: 30px;
+	margin-bottom: 30px;
+	text-align: center;
+}
+
+#sortable {
+	margin: 0 auto;
+	list-style-type: none;
+	padding: 0;
+	width: 15em;
+}
+
+#sortable li {
+	margin: 0 3px 3px 3px;
+	padding: 1px;
+	padding-left: 1.5em;
+}
+
+#sortable li span {
+	position: absolute;
+	margin-left: -1.3em;
+}

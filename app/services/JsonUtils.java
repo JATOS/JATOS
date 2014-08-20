@@ -1,5 +1,7 @@
 package services;
 
+import java.util.TimeZone;
+
 import play.Logger;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -94,6 +96,19 @@ public class JsonUtils {
 				.writerWithView(JsonUtils.JsonForPublix.class);
 		String componentAsJson = objectWriter.writeValueAsString(obj);
 		return componentAsJson;
+	}
+
+	/**
+	 * Serializes an Object into an JSON string. It considers the default
+	 * timezone.
+	 * 
+	 * @throws JsonProcessingException
+	 */
+	public static String asJsonForMA(Object obj) throws JsonProcessingException {
+		ObjectWriter objectWriter = new ObjectMapper().setTimeZone(
+				TimeZone.getDefault()).writer();
+		String resultAsJson = objectWriter.writeValueAsString(obj);
+		return resultAsJson;
 	}
 
 }

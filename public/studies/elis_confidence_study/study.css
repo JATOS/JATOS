@@ -4,6 +4,15 @@ body {
 	padding: 0;
 }
 
+#logo {
+	width: 8%;
+	height: auto;
+	margin: 10px;
+	top: 0;
+	position: absolute;
+	float:left;
+}
+
 #component {
 	margin-top: 5%;
 	margin-left: auto;
@@ -114,6 +123,18 @@ body {
 }
 
 #nextSlide {
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+
+#endAnswer {
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+
+#nextComponent {
 	margin: 0;
 	padding: 0;
 	text-align: center;
