@@ -34,9 +34,8 @@ public class BadRequests extends Controller {
 		return new ResultException(result, errorMsg);
 	}
 
-	public static ResultException badRequestComponentNotExist(
-			Long componentId, StudyModel study, UserModel loggedInUser,
-			List<StudyModel> studyList) {
+	public static ResultException badRequestComponentNotExist(Long componentId,
+			StudyModel study, UserModel loggedInUser, List<StudyModel> studyList) {
 		String errorMsg = ErrorMessages.componentNotExist(componentId);
 		List<UserModel> userList = UserModel.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -50,8 +49,8 @@ public class BadRequests extends Controller {
 	public static ResultException badRequestComponentNotBelongToStudy(
 			StudyModel study, ComponentModel component, UserModel loggedInUser,
 			List<StudyModel> studyList) {
-		String errorMsg = ErrorMessages.componentNotBelongToStudy(study.getId(),
-				component.getId());
+		String errorMsg = ErrorMessages.componentNotBelongToStudy(
+				study.getId(), component.getId());
 		List<UserModel> userList = UserModel.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
@@ -101,16 +100,28 @@ public class BadRequests extends Controller {
 	}
 
 	public static ResultException badRequestMustBeLoggedInAsUser(
-			UserModel user, UserModel loggedInUser,
-			List<StudyModel> studyList) {
+			UserModel user, UserModel loggedInUser, List<StudyModel> studyList) {
 		String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
 		List<UserModel> userList = UserModel.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getUserBreadcrumb(user), "Change Password");
-		SimpleResult result = badRequest(views.html.mecharg.dashboard
-				.render(studyList, loggedInUser, breadcrumbs, userList,
-						errorMsg));
+		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+		return new ResultException(result, errorMsg);
+	}
+
+	public static ResultException badRequestComponentResultNotExist(
+			Long componentResultId, StudyModel study, UserModel loggedInUser,
+			List<StudyModel> studyList) {
+		String errorMsg = ErrorMessages
+				.componentResultNotExist(componentResultId);
+		List<UserModel> userList = UserModel.findAll();
+		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getStudyBreadcrumb(study));
+		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 

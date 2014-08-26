@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Eli's confidence study - study</title>
+<link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
+<link rel="stylesheet" href="/assets/stylesheets/jquery-ui-1.10.4.custom.min.css"/>
+<link rel="stylesheet" href="/studies/elis_confidence_study/css/study.css"/>
+<script src="/assets/javascripts/jquery-1.10.2.js"></script>
+<script src="/assets/javascripts/jquery-ui-1.10.4.custom.min.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+	<div id="component">
+		<p id="error"></p>
+		<div id="progress">
+			<p id="progressBarText">Your progress</p>
+			<div id="progressBar"></div>
+		</div>
+		<p id="text"></p>
+		<div id="answers">
+			<p id="answerLeft"></p>
+			<p id="answerRight"></p>
+			<div style="clear: both;"></div>
+			<p id="answerError">Only &#8592; or &#8594; allowed</p>
+		</div>
+		<div id="confidence">
+			<p id="confidenceQuestion">What's your confidence?</p>
+			<div id="confidenceScale">
+				<p class="confidenceScaleLeft">weak</p>
+				<p class="confidenceScaleRight">strong</p>
+				<div style="clear: both;"></div>
+			</div>
+			<div id="confidenceSlider"></div>
+		</div>
+		<p id="nextSlide">Press any key to go on.</p>
+	</div>
+
+	<script>
+		var studyId = 1;
+		var componentId = 4;
+		var componentData;
+		var jsonData;
+		var slideList;
+		var slideCount = 0;
+		var timeStart;
+		var lostFocus = false;
+		var slideState = Object.freeze({
+			NEW: 0, ANSWER: 1, CONFIDENCE: 2, FINISHED: 3, ERROR: 4
+		});
+		var currentSlideState = slideState.NEW;
+		var componentState = Object.freeze({
+			RUNNING: 0, WAITING: 1
+		});
+		currentComponentState = componentState.RUNNING;
+		var currentSlideResult = {};
+		
+		// The componentResult will be sent back to the server
+		var componentResult;
+		
+		// When the window is fully loaded get data and display the first slide
+		$(window).load(function() {
+			resetSlide();
+			if (!checkBrowser()) {
+				return;
+			}
+			getComponentData(studyId, componentId);
+		});
+		
+		// If the user leaves the browser's tab set lostFocus to true
+		$(window).blur(function(){
+			lostFocus = true;
+		});
+		
+		// Show alert msg if user wants to reload the page
+		window.onunload = window.onbeforeunload = (function() {
+			if (currentSlideState != slideState.FINISHED) {
+				return "It is important to do this survey all at once. A restart form the beginning is not allowed. If you reload the page during an component it will become invalid and you will NOT RECEIVE ANY PAY at Mechanical Turk for this survey.";
+			}
+		});
+
+		// Callback function when key is pressed
+		$(document).keydown(function(event) {
+			// Do nothing if key is Shift, Control or Alt (AltGr doesn't seem to
+			// work)
+			if (event.ctrlKey || event.altKey || event.altGraphKey 
+					|| event.shiftKey) {
+				return;	
+			}
+			
+			// If we wait for an answer to an HTTP POST don't react to keys
+			if (currentComponentState == componentState.WAITING) {
+				return;
+			}
+			
+			switch (currentSlideState) {
+			case slideState.ANSWER:
+				endAnswerState(event);
+				break;
+			case slideState.FINISHED:
+				nextSlide();
+				break;
+			case slideState.ERROR:
+				nextSlide();
+				break;
+			}
+		});
+
+		$(window).mousemove(function(event) {
+			if (currentSlideState == slideState.CONFIDENCE) {
+				moveConfidenceSlider(event.pageX);
+			}
+		});
+		
+		$(document).mousedown(function(event) {
+			if (currentSlideState != slideState.CONFIDENCE) {
+				return;
+			}
+			endConfidenceState();
+		});
+		
+		function getComponentData(studyId, componentId) {
+			currentComponentState = componentState.WAITING;
+			$.ajax({
+				url: "/publix/" + studyId + "/" + componentId + "/getData",
+				type: "GET",
+				dataType: 'json',
+				success: function(response) {
+					currentComponentState = componentState.RUNNING;
+					startComponent(response);
+				},
+				error: function(err) {
+					currentComponentState = componentState.RUNNING;
+					showError(err.responseText);
+				}
+			});
+		}
+		
+		function startComponent(response) {
+			componentData = response;
+			jsonData = $.parseJSON(componentData.jsonData);
+			slideList = jsonData.slideList;
+			componentResult = {slideResultList:[]};
+			document.title = componentData.title;
+			displaySlide();
+		}
+		
+		function displaySlide() {
+			currentSlideState = slideState.NEW;
+			resetSlide();
+			$("#progress").show();
+			var progressValue = ((slideCount + 1) / slideList.length) * 100;
+			$("#progressBar").progressbar({value: progressValue}).show();
+			startAnswerState();
+		}
+		
+		function startAnswerState() {
+			currentSlideState = slideState.ANSWER;
+			var text = slideList[slideCount].text;
+			var answerLeft = slideList[slideCount].answerLeft;
+			var answerRight = slideList[slideCount].answerRight;
+			$("#text").html(text).show();
+			$("#answers").show();
+			$("#answerLeft").html(answerLeft).show();
+			$("#answerRight").html(answerRight).show();
+			timeStart = performance.now();
+		}
+		
+		function endAnswerState(event) {
+			var keycode = (event.keyCode ? event.keyCode : event.which);
+			currentSlideResult.keycode = keycode;
+			currentSlideResult.questionDuration = getDuration();
+
+			// Check answer keycode (37 == arrow left, 39 == arrow right)
+			if (!(keycode == 37 || keycode == 39)) {
+				currentSlideResult.error = "wrong_key";
+				startErrorState();
+			} else {
+				if (keycode == 37) {
+					$("#answerLeft").css('background-color', '#dddddd');
+				}
+				if (keycode == 39) {
+					$("#answerRight").css('background-color', '#dddddd');
+				}
+				startConfidenceState();
+			}
+		}
+		
+		function startErrorState() {
+			currentSlideState = slideState.ERROR;
+			$("#answerError").show();
+			startFinishedState();
+		}
+
+		function startConfidenceState() {
+			currentSlideState = slideState.CONFIDENCE;
+			$("#confidence").show();
+			$("#confidenceSlider").show();
+			timeStart = performance.now();
+		}
+
+		function endConfidenceState() {
+			var confidence = Math.round($("#confidenceSlider")
+					.slider("value"));
+			currentSlideResult.confidence = confidence;
+			currentSlideResult.confidenceDuration = getDuration();
+			startFinishedState();
+		}
+		
+		function startFinishedState() {
+			currentSlideState = slideState.FINISHED;
+			$("#nextSlide").show();
+		}
+		
+		function nextSlide() {
+			currentSlideResult.lostFocus = lostFocus;
+			componentResult.slideResultList.push(currentSlideResult);
+			currentSlideResult = {};
+			slideCount++;
+			if (slideCount < slideList.length) {
+				displaySlide();
+			} else {
+				endComponentAndNext();
+			}
+		}
+		
+		// Post results back to the server and move to the next component
+		function endComponentAndNext() {
+			currentComponentState = componentState.WAITING;
+			var componentResultJson = JSON.stringify(componentResult);
+			var ajax = $.ajax({
+				url: "/publix/" + studyId + "/" + componentId + "/submitResultData",
+				data: componentResultJson,
+				processData: false,
+				type: "POST",
+				contentType: "application/json",
+				success: function(url) {
+					window.location.href = "/publix/" + studyId + "/startNextComponent";
+				},
+				error: function(err) {
+					currentComponentState = componentState.RUNNING;
+					showError(err.responseText);
+				}
+			});
+		}
+		
+		function moveConfidenceSlider(mouseX) {
+			var sliderLeft = $("#confidenceSlider").offset().left;
+			var sliderWidth = $("#confidenceSlider").width();
+			var confidenceValue = ((mouseX - sliderLeft) / (sliderWidth)) * 100;
+			$("#confidenceSlider").slider({step: 20, value: confidenceValue});
+		}
+		
+		function getDuration() {
+			var timeEnd = performance.now();
+			var duration = timeEnd - timeStart;
+			roundedDuration = Math.round(duration);
+			return roundedDuration;
+		}
+		
+		function resetSlide() {
+			lostFocus = false;
+			$("#component").children().hide();
+			$("#progressBar").progressbar({disabled: true});
+			var randomConfidenceValue = Math.random() * 100;
+			$("#confidenceSlider").slider({
+				disabled: true,
+				step: 20,
+				value: randomConfidenceValue});
+			$("#answerLeft").css('background-color', '');
+			$("#answerRight").css('background-color', '');
+			$("#answerError").hide();
+		}
+		
+		function showError(errorMsg) {
+			resetSlide();
+			$("#error").html(errorMsg).show();
+		}
+		
+		function checkBrowser() {
+			var userAgent = navigator.userAgent;
+			var logErrorMsg;
+			// Check mobile phones and tablets
+			if (userAgent.match(
+					/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)) {
+				showError("Sorry, you can't do this questionaire on a mobile or a tablet.");
+				logErrorMsg = "Mobile phone browser not supported: component "
+					+ component.id + ", userAgent \"" + userAgent + "\"";
+			}
+			
+			// Check if browser supports perfomance.now feature
+			if (!performance.now) {
+				showError("Sorry, you can't do this questionaire with this browser.");
+				var logErrorMsg = "Browser doesn't support perfomance.now: component "
+					+ component.id + ", userAgent \"" + userAgent + "\"";
+			}
+			
+			if (logErrorMsg) {
+				// Send error msg for logging to server
+				$.ajax({
+					url: "/publix/logError",
+					data: logErrorMsg,
+					processData: false,
+					type: "POST",
+					contentType: "text/plain"
+				});
+				return false;
+			}
+			return true;
+		}
+		
+	</script>
+</body>
+</html>

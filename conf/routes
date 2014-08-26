@@ -44,13 +44,14 @@ GET     /mecharg/:studyId/createComponent              controllers.Components.cr
 POST    /mecharg/:studyId/createComponent              controllers.Components.submit(studyId: Long)
 GET     /mecharg/:studyId/:componentId/edit            controllers.Components.edit(studyId: Long, componentId: Long)
 POST    /mecharg/:studyId/:componentId/edit            controllers.Components.submitEdited(studyId: Long, componentId: Long)
+DELETE  /mecharg/:studyId/:componentId/remove          controllers.Components.remove(studyId: Long, componentId: Long)
+DELETE  /mecharg/:studyId/:componentId/removeResult    controllers.Components.removeSingleResult(studyId: Long, componentId: Long, componentResultId: Long)
 GET     /mecharg/:studyId/:componentId/removeResults   controllers.Components.removeResults(studyId: Long, componentId: Long)
 POST    /mecharg/:studyId/:componentId/removeResults   controllers.Components.submitRemovedResults(studyId: Long, componentId: Long)
-DELETE  /mecharg/:studyId/:componentId/remove          controllers.Components.remove(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId/try             controllers.Components.tryComponent(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId                 controllers.Components.index(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId/                controllers.Components.index(studyId: Long, componentId: Long)
 
 # Static resources (not managed by the Play framework) from the /public folder
-GET     /assets/*file             controllers.Assets.at(path="/public", file)
-GET     /studies/*file            controllers.Assets.at(path="/public/studies", file)
+GET     /studies/*file            controllers.publix.ExternalAssets.at(path = "/studies", file)
+GET     /assets/*file             controllers.Assets.at(path = "/public", file)

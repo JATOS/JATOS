@@ -164,6 +164,7 @@
 				url : "/mecharg/@study.getId/"+ componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
+					// TODO Just remove the component dynamically - no reload
 					window.location.replace('@routes.Studies.index(study.getId())');
 				},
 				error : function(err) {

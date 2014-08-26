@@ -127,6 +127,13 @@ public class Persistance {
 		}
 		component.remove();
 	}
+	
+	public static void removeComponentResult(ComponentResult componentResult) {
+		StudyResult studyResult = componentResult.getStudyResult();
+		studyResult.removeComponentResult(componentResult);
+		studyResult.merge();
+		componentResult.remove();
+	}
 
 	public static void removeComponentResult(String componentResultIdStr)
 			throws NumberFormatException {
@@ -134,10 +141,7 @@ public class Persistance {
 		ComponentResult componentResult = ComponentResult
 				.findById(componentResultId);
 		if (componentResult != null) {
-			StudyResult studyResult = componentResult.getStudyResult();
-			studyResult.removeComponentResult(componentResult);
-			studyResult.merge();
-			componentResult.remove();
+			removeComponentResult(componentResult);
 		}
 	}
 

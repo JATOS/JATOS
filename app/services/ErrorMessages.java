@@ -156,6 +156,12 @@ public abstract class ErrorMessages<T extends Worker> {
 				+ " doesn't exist.";
 		return errorMsg;
 	}
+	
+	public static String componentResultNotExist(Long componentResultId) {
+		String errorMsg = "An component result with id " + componentResultId
+				+ " doesn't exist.";
+		return errorMsg;
+	}
 
 	public static String notMember(String username, String email, Long studyId,
 			String studyTitle) {

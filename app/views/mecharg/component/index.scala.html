@@ -1,21 +1,21 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
-	study: StudyModel, errorMsg: String, component: ComponentModel,
-	componentResultList: List[results.ComponentResult])
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs:
+String, study: StudyModel, errorMsg: String, component: ComponentModel,
+componentResultList: List[results.ComponentResult])
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
 <article class="component">
 
 	@if(errorMsg != null) {
-		<p class="error">@errorMsg</p>
+	<p class="error">@errorMsg</p>
 	}
-	
+
 	<div class="manageBox">
 		<header>
 			<h3>Manage Component</h3>
 			<div class="placeHolder">X</div>
 		</header>
-		<div class="tryComponent">Show</div>	
+		<div class="tryComponent">Show</div>
 		<div class="edit">Edit</div>
 		<div class="removeResults">Delete Results</div>
 		<div class="remove">Delete</div>
@@ -29,14 +29,10 @@
 
 		<ul>
 			@for(result <- componentResultList) {
-				<li>
-					@services.JsonUtils.asJsonForMA(result)
-					<div class="removeResult">Remove</div>
-				</li>
-			}
-			@if(componentResultList.isEmpty()) {
-				<li>None</li>
-			}
+			<li result-id="@result.getId()">@services.JsonUtils.asJsonForMA(result)
+				<div class="removeSingleResult">Remove</div>
+			</li> } @if(componentResultList.isEmpty()) {
+			<li>None</li> }
 		</ul>
 	</div>
 </article>
@@ -70,7 +66,7 @@
 					window.location.replace('@routes.Dashboard.dashboard()');
 				},
 				error : function(err) {
-					alert(err.responseText);
+					alert("Couldn't delete component \"@Html(component.getTitle())\" (id: @component.getId()).");
 				}
 			});
 		}
@@ -81,9 +77,31 @@
 				study.getId(), component.getId())";
 	});
 	
-	$(".removeResult").click(function(e) {
-		// TODO implement single result remove 
+	$(".removeSingleResult").click(function(e) {
+		var resultId = getResultId(e);
+		var conf = confirm("Are you sure you want to delete the result " +
+				"(id: " + resultId + ")?");
+		if (conf == true) {
+			$.ajax({
+				url : '@routes.Components.remove(
+						study.getId(), component.getId())',
+				type : 'DELETE',
+				success : function(result) {
+					window.location.replace('@routes.Dashboard.dashboard()');
+				},
+				error : function(err) {
+					alert("Couldn't delete result " + "(id: " + resultId + ")?");
+				}
+			});
+		}
 	});
+	
+	function getResultId(e) {
+		var resultElement = $(e.target).parent();
+		var resultId = resultElement.attr("result-id");
+		return resultId;
+	}
+	
 </script>
 
 }

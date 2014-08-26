@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Eli's confidence study - study</title>
+<link rel="shortcut icon" type="image/png"
+	href="/assets/images/favicon.png">
+<link rel="stylesheet"
+	href="/assets/stylesheets/jquery-ui-1.10.4.custom.min.css" />
+<link rel="stylesheet"
+	href="/studies/elis_confidence_study/css/sortable_list.css" />
+<script src="/assets/javascripts/jquery-1.10.2.js"></script>
+<script src="/assets/javascripts/jquery-ui-1.10.4.custom.min.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+	<img id="logoLeft" src="/studies/elis_confidence_study/images/minerva.png" alt="Minerva Logo">
+	<img id="logoRight" src="/studies/elis_confidence_study/images/MPIB_Logo_schwarz.png"
+		alt="MPIB Logo">
+	<div id="component">
+		<p id="error"></p>
+		<div id="progress">
+			<p id="progressBarText">Your progress</p>
+			<div id="progressBar"></div>
+		</div>
+		<p id="text"></p>
+		<ul id="sortable"></ul>
+		<p id="nextComponent">Press &darr; key to go on.</p>
+	</div>
+
+	<script>
+		var studyId = 1;
+		var componentId = 6;
+		var componentData;
+		var jsonData;
+		var timeStart;
+		var lostFocus = false;
+		var componentState = Object.freeze({
+			RUNNING : 0,
+			WAITING : 1,
+			ANSWER : 2,
+			FINISHED : 3,
+			ERROR : 4
+		});
+		currentComponentState = componentState.RUNNING;
+
+		// The componentResult will be sent back to the server
+		var componentResult;
+
+		// When the window is fully loaded get data and display stuff
+		$(window).load(function() {
+			if (!checkBrowser()) {
+				return;
+			}
+			getComponentData(studyId, componentId);
+		});
+
+		// If the user leaves the browser's tab set lostFocus to true
+		$(window).blur(function() {
+			lostFocus = true;
+		});
+
+		// Show alert msg if user wants to reload the page
+		window.onunload = window.onbeforeunload = (function() {
+			if (currentComponentState != componentState.FINISHED) {
+				return "It is important to do this study all at once. A restart form the beginning is not allowed. If you reload the page during an component it will become invalid and you will NOT RECEIVE ANY PAY at Mechanical Turk for this study.";
+			}
+		});
+
+		// Callback function when key is pressed
+		$(document).keydown(
+				function(event) {
+					// Do nothing if key is Shift, Control or Alt (AltGr doesn't seem to
+					// work)
+					if (event.ctrlKey || event.altKey || event.altGraphKey
+							|| event.shiftKey) {
+						return;
+					}
+
+					switch (currentComponentState) {
+					case componentState.ANSWER:
+						var keycode = (event.keyCode ? event.keyCode
+								: event.which);
+						// Check answer keycode (40 == arrow down)
+						if (keycode == 40) {
+							endAnswerState(event);
+						}
+						break;
+					case componentState.WAITING:
+						// If we wait for an answer to an HTTP POST don't react to keys
+						break;
+					}
+				});
+
+		function getComponentData(studyId, componentId) {
+			currentComponentState = componentState.WAITING;
+			$.ajax({
+				url : "/publix/" + studyId + "/" + componentId + "/getData",
+				type : "GET",
+				dataType : 'json',
+				success : function(response) {
+					startComponent(response);
+				},
+				error : function(err) {
+					startErrorState(err.responseText);
+				}
+			});
+		}
+
+		function startComponent(response) {
+			currentComponentState = componentState.RUNNING;
+			componentData = response;
+			jsonData = $.parseJSON(componentData.jsonData);
+			document.title = componentData.title;
+			componentResult = {};
+			$("#nextComponent").hide();
+			$("#progress").show();
+			var progressValue = 0.5 * 100;
+			$("#progressBar").progressbar({
+				value : progressValue
+			}).show();
+			startAnswerState();
+		}
+
+		function startAnswerState() {
+			currentComponentState = componentState.ANSWER;
+			var text = jsonData.text;
+			$("#text").html(text).show();
+			fillSortableList();
+			$("#sortable").sortable();
+			$("#sortable").disableSelection();
+			$("#nextComponent").show();
+			timeStart = performance.now();
+		}
+		
+		function fillSortableList() {
+			for (var i = 0; i < jsonData.cities.length; i++) {
+				$("#sortable")
+						.append(
+								'<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>'
+										+ jsonData.cities[i] + '</li>');
+			}
+		}
+
+		function endAnswerState(event) {
+			var timeEnd = performance.now();
+			var duration = Math.round(timeEnd - timeStart);
+			componentResult.duration = duration;
+			startFinishedState();
+		}
+		
+		function startFinishedState() {
+			currentComponentState = componentState.FINISHED;
+			endComponentAndNext();
+		}
+		
+		function startErrorState(errorMsg) {
+			currentComponentState = componentState.ERROR;
+			$("#error").html(errorMsg).show();
+			// The is a final state. From ERROR is no transition 
+			// to another state possible.
+		}
+
+		// Post results back to the server and move to the next component
+		function endComponentAndNext() {
+			generateComponentResult();
+			var componentResultJson = JSON.stringify(componentResult);
+			currentComponentState = componentState.WAITING;
+			var ajax = $.ajax({
+				url : "/publix/" + studyId + "/" + componentId
+						+ "/submitResultData",
+				data : componentResultJson,
+				processData : false,
+				type : "POST",
+				contentType : "application/json",
+				success : function(url) {
+					currentComponentState = componentState.FINISHED;
+					window.location.href = "/publix/" + studyId + "/startNextComponent";
+				},
+				error : function(err) {
+					startErrorState(err.responseText);
+				}
+			});
+		}
+		
+		function generateComponentResult() {
+			componentResult.lostFocus = lostFocus;
+			var cities = [];
+			$("#sortable li").each(function(index) {
+				cities.push($(this).text());
+			});
+			componentResult.cities = cities;
+		}
+
+		function getDuration() {
+			var timeEnd = performance.now();
+			var duration = timeEnd - timeStart;
+			roundedDuration = Math.round(duration);
+			return roundedDuration;
+		}
+
+		function checkBrowser() {
+			var userAgent = navigator.userAgent;
+			var logErrorMsg;
+			// Check mobile phones and tablets
+			if (userAgent
+					.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)) {
+				startErrorState("Sorry, you can't do this questionaire on a mobile or a tablet.");
+				logErrorMsg = "Mobile phone browser not supported: component "
+						+ component.id + ", userAgent \"" + userAgent + "\"";
+			}
+
+			// Check if browser supports perfomance.now feature
+			if (!performance.now) {
+				startErrorState("Sorry, you can't do this questionaire with this browser.");
+				var logErrorMsg = "Browser doesn't support perfomance.now: component "
+						+ component.id + ", userAgent \"" + userAgent + "\"";
+			}
+
+			if (logErrorMsg) {
+				// Send error msg for logging to server
+				$.ajax({
+					url : "/publix/logError",
+					data : logErrorMsg,
+					processData : false,
+					type : "POST",
+					contentType : "text/plain"
+				});
+				return false;
+			}
+			return true;
+		}
+	</script>
+</body>
+</html>

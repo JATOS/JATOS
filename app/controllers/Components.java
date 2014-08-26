@@ -15,6 +15,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
+import services.ErrorMessages;
 import services.Persistance;
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
@@ -237,6 +238,35 @@ public class Components extends Controller {
 
 		Persistance.removeComponent(study, component);
 		return redirect(routes.Studies.index(study.getId()));
+	}
+
+	@Transactional
+	public static Result removeSingleResult(Long studyId, Long componentId,
+			Long componentResultId) throws ResultException {
+		Logger.info(CLASS_NAME + ".removeSingleResult: studyId " + studyId
+				+ ", " + "componentId " + componentId + ", " + "resultId "
+				+ componentResultId + ", " + "logged-in user's email "
+				+ session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		ComponentModel component = ComponentModel.findById(componentId);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		List<StudyModel> studyList = StudyModel.findAll();
+		checkStandard(studyId, componentId, study, studyList, loggedInUser,
+				component);
+		if (!study.hasMember(loggedInUser)) {
+			return badRequest(ErrorMessages.notMember(loggedInUser.getName(),
+					loggedInUser.getEmail(), study.getId(), study.getTitle()));
+		}
+		
+		ComponentResult componentResult = ComponentResult
+				.findById(componentResultId);
+		if (component == null) {
+			throw BadRequests.badRequestComponentResultNotExist(
+					componentResultId, study, loggedInUser, studyList);
+		}
+		Persistance.removeComponentResult(componentResult);
+		return ok();
 	}
 
 	@Transactional

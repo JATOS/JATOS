@@ -1,0 +1,142 @@
+body {
+	font: 20px "Lucida Grande","Helvetica Neue", sans-serif;
+	margin: 0;
+	padding: 0;
+}
+
+#logo {
+	width: 8%;
+	height: auto;
+	margin: 10px;
+	top: 0;
+	position: absolute;
+	float:left;
+}
+
+#component {
+	margin-top: 5%;
+	margin-left: auto;
+	margin-right: auto;
+	width: 80%;
+	padding: 0;
+}
+
+#error {
+	margin: 0;
+	margin-top: 5%;
+	text-align: center;
+	font-size: 100%;
+	color: rgb(255, 0, 0);
+}
+
+#text {
+	margin: 0;
+	padding: 0;
+	margin-bottom: 10px;
+}
+
+#answers {
+	padding-left: 10px;
+	padding-right: 10px;
+	margin-bottom: 30px;
+}
+
+#answerLeft {
+	margin: 0;
+	margin-left: 20%;
+	padding: 4px;
+	border: 1px solid;
+	border-color: #aaaaaa;
+	border-radius: 4px 4px 4px 4px;
+	float: left;
+}
+
+#answerRight {
+	margin: 0;
+	margin-right: 20%;
+	padding: 4px;
+	border: 1px solid;
+	border-color: #aaaaaa;
+	border-radius: 4px 4px 4px 4px;
+	float: right;
+}
+
+#answerError {
+	margin: 0;
+	color: rgb(255, 0, 0);
+	text-align: center;
+}
+
+#image {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	background: url('../images/ajax-loader.gif') no-repeat;
+}
+
+#progress {
+	margin-bottom: 30px;
+}
+
+#progressBar {
+	height: 10px;
+}
+
+#progressBarText {
+	font-size: 16px;
+	margin: 0;
+}
+
+#confidence {
+	margin-bottom: 30px;
+}
+
+#confidenceQuestion {
+	margin: 0;
+	text-align: center;
+}
+
+#confidenceScale {
+	font-size: 16px;
+	padding: 0;
+	margin: 0;
+	margin-left: 30%;
+	margin-right: 30%;
+}
+
+.confidenceScaleLeft {
+	margin: 0;
+	float: left;
+}
+
+.confidenceScaleRight {
+	margin: 0;
+	float: right;
+}
+
+#confidenceSlider {
+	margin-top: 10px;
+	margin-left: 30%;
+	margin-right: 30%;
+	background-color: #ffffee;
+	opacity: 1.0;
+}
+
+#nextSlide {
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+
+#endAnswer {
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+
+#nextComponent {
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+
