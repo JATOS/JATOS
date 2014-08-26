@@ -2,12 +2,21 @@ package services;
 
 import java.util.TimeZone;
 
+import models.results.ComponentResult;
+import models.results.StudyResult;
+import models.workers.Worker;
+
+import org.hibernate.Hibernate;
+import org.hibernate.proxy.HibernateProxy;
+
 import play.Logger;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import controllers.publix.Publix;
 
@@ -93,7 +102,7 @@ public class JsonUtils {
 	public static String asJsonForPublix(Object obj)
 			throws JsonProcessingException {
 		ObjectWriter objectWriter = new ObjectMapper()
-				.writerWithView(JsonUtils.JsonForPublix.class);
+				.writerWithView(JsonForPublix.class);
 		String componentAsJson = objectWriter.writeValueAsString(obj);
 		return componentAsJson;
 	}
@@ -105,10 +114,61 @@ public class JsonUtils {
 	 * @throws JsonProcessingException
 	 */
 	public static String asJsonForMA(Object obj) throws JsonProcessingException {
-		ObjectWriter objectWriter = new ObjectMapper().setTimeZone(
-				TimeZone.getDefault()).writer();
+		ObjectWriter objectWriter = new ObjectMapper()
+				.setTimeZone(TimeZone.getDefault())
+				.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+				.writerWithView(JsonForMA.class);
 		String resultAsJson = objectWriter.writeValueAsString(obj);
 		return resultAsJson;
+	}
+
+	/**
+	 * Serializes a ComponentResult into an JSON string. It considers the default
+	 * timezone.
+	 * 
+	 * @throws JsonProcessingException
+	 */
+	public static String componentResultAsJsonForMA(
+			ComponentResult componentResult) throws JsonProcessingException {
+		ObjectMapper objectMapper = new ObjectMapper().setTimeZone(
+				TimeZone.getDefault()).configure(
+				SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+		objectMapper.getSerializationConfig().withView(JsonForMA.class);
+		ObjectNode componentResultNode = objectMapper
+				.valueToTree(componentResult);
+		
+		// Add studyId and componentId
+		componentResultNode.put("studyId", componentResult.getComponent()
+				.getStudy().getId());
+		componentResultNode.put("componentId", componentResult.getComponent()
+				.getId());
+		
+		// Add worker
+		StudyResult studyResult = componentResult.getStudyResult();
+		Worker worker = initializeAndUnproxy(studyResult.getWorker());
+		ObjectNode workerNode = objectMapper.valueToTree(worker);
+		componentResultNode.with("worker").putAll(workerNode);
+		
+		// Write as string
+		String resultAsJson = objectMapper
+				.writeValueAsString(componentResultNode);
+		
+		// Add componentResult's data to the end
+		resultAsJson = resultAsJson.substring(0, resultAsJson.length() - 1);
+		resultAsJson = resultAsJson + ",\"data\":" + componentResult.getData()
+				+ "}";
+		
+		return resultAsJson;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> T initializeAndUnproxy(T obj) {
+		Hibernate.initialize(obj);
+		if (obj instanceof HibernateProxy) {
+			obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()
+					.getImplementation();
+		}
+		return obj;
 	}
 
 }

@@ -16,6 +16,8 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.TypedQuery;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import models.workers.MAWorker;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -33,6 +35,7 @@ public class UserModel {
 
 	private String name;
 
+	@JsonIgnore
 	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private MAWorker worker;
 

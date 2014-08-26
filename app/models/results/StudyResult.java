@@ -60,7 +60,7 @@ public class StudyResult {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "worker_id")
-	private Worker worker;
+	private Worker worker;	
 
 	private String confirmationCode;
 

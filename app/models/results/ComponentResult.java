@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonRawValue;
 
 @Entity
 @JsonPropertyOrder(value = { "resultId", "startDate", "studyId", "componentId",
@@ -67,7 +66,7 @@ public class ComponentResult {
 	 * component. It can be any string and doesn't have to be in JSON format.
 	 */
 	@Lob
-	@JsonRawValue
+	@JsonIgnore
 	private String data;
 
 	public ComponentResult() {
@@ -160,16 +159,6 @@ public class ComponentResult {
 			return false;
 		}
 		return true;
-	}
-
-	@JsonProperty("componentId")
-	private Long getComponentId() {
-		return component.getId();
-	}
-
-	@JsonProperty("studyId")
-	private Long getStudyId() {
-		return component.getStudy().getId();
 	}
 
 	public static ComponentResult findById(Long id) {

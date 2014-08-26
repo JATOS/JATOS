@@ -20,6 +20,11 @@ import javax.persistence.OrderColumn;
 import models.StudyModel;
 import models.results.StudyResult;
 import play.db.jpa.JPA;
+import services.JsonUtils;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -31,10 +36,13 @@ public abstract class Worker {
 
 	@Id
 	@GeneratedValue
+	@JsonView(JsonUtils.JsonForMA.class)
+	@JsonProperty("workerId")
 	private Long id;
 
 	private String workerType;
 
+	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "studyResultList_order")
 	@JoinColumn(name = "worker_id")

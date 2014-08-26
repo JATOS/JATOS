@@ -8,12 +8,15 @@ import javax.persistence.OneToOne;
 
 import models.UserModel;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @DiscriminatorValue(MAWorker.WORKER_TYPE)
 public class MAWorker extends Worker {
 	
 	public static final String WORKER_TYPE = "MA";
 
+	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_email")
 	private UserModel user;

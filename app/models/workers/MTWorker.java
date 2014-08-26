@@ -7,6 +7,10 @@ import javax.persistence.Entity;
 import javax.persistence.TypedQuery;
 
 import play.db.jpa.JPA;
+import services.JsonUtils;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
 
 @Entity
 @DiscriminatorValue(MTWorker.WORKER_TYPE)
@@ -14,6 +18,7 @@ public class MTWorker extends Worker {
 
 	public static final String WORKER_TYPE = "MT";
 
+	@JsonView(JsonUtils.JsonForMA.class)
 	private String mtWorkerId;
 	
 	public MTWorker() {
@@ -27,6 +32,7 @@ public class MTWorker extends Worker {
 		this.mtWorkerId = mtWorkerId;
 	}
 
+	@JsonIgnore
 	public String getMTWorkerId() {
 		return this.mtWorkerId;
 	}

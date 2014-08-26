@@ -26,17 +26,11 @@
 				visibility: hidden;
 			}
 		}
-		.tryComponent, .edit, .removeResults {
+		.tryComponent, .edit, .removeResults, .remove {
 			.button();
 			vertical-align: middle;
 			display: inline-block;
 			margin: 5px;
-		}
-		.remove {
-			.removeButton();
-			display: inline-block;
-			right: 0px;
-			vertical-align: middle;
 		}
 	}
 	.resultsBox {
@@ -60,7 +54,7 @@
 				border-bottom: 1px solid rgba(0,0,0,.05);
 				font-family: "Courier New", Courier, monospace;
 				-webkit-user-select: text;
-				.removeResult {
+				.removeSingleResult {
 					.removeButton();
 					right: 0px;
 					display: inline-block;

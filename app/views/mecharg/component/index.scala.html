@@ -29,7 +29,7 @@ componentResultList: List[results.ComponentResult])
 
 		<ul>
 			@for(result <- componentResultList) {
-			<li result-id="@result.getId()">@services.JsonUtils.asJsonForMA(result)
+			<li result-id="@result.getId()">@services.JsonUtils.componentResultAsJsonForMA(result)
 				<div class="removeSingleResult">Remove</div>
 			</li> } @if(componentResultList.isEmpty()) {
 			<li>None</li> }
@@ -78,29 +78,25 @@ componentResultList: List[results.ComponentResult])
 	});
 	
 	$(".removeSingleResult").click(function(e) {
-		var resultId = getResultId(e);
+		var componentResultElement = $(e.target).parent();
+		var componentResultId = componentResultElement.attr("result-id");
 		var conf = confirm("Are you sure you want to delete the result " +
-				"(id: " + resultId + ")?");
+				"(id: " + componentResultId + ")?");
+		var url = '/mecharg/' + @study.getId() + '/' + @component.getId()
+				+ '/removeResult?componentResultId=' + componentResultId;
 		if (conf == true) {
 			$.ajax({
-				url : '@routes.Components.remove(
-						study.getId(), component.getId())',
+				url : url,
 				type : 'DELETE',
 				success : function(result) {
-					window.location.replace('@routes.Dashboard.dashboard()');
+					componentResultElement.remove();
 				},
 				error : function(err) {
-					alert("Couldn't delete result " + "(id: " + resultId + ")?");
+					alert("Couldn't delete result " + "(id: " + componentResultId + ").");
 				}
 			});
 		}
 	});
-	
-	function getResultId(e) {
-		var resultElement = $(e.target).parent();
-		var resultId = resultElement.attr("result-id");
-		return resultId;
-	}
 	
 </script>
 

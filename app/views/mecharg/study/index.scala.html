@@ -17,7 +17,7 @@
 			<div class="tryStudy">Show Whole Study</div>	
 			<div class="updateStudy">Properties</div>
 			<div class="showMTurkSourceCode">MT Source Code</div>
-			<div class="removeStudy">Remove</div>
+			<div class="removeStudy">Delete</div>
 		</div>
 	
 		<div class="membersBox">
@@ -150,8 +150,9 @@
 	});
 	
 	$(".removeComponent").click(function(e) {
-		var componentId = getComponentId(e);
-		var componentTitle = getComponentTitle(e);
+		var componentElement = $(e.target).parent();
+		var componentId = componentElement.attr("component-id");
+		var componentTitle = componentElement.attr("component-title");
 		var conf = confirm("Are you sure you want to delete component \""
 				+ componentTitle + "\" (id: "+ componentId + ") with all it's results?");
 		if (conf == false) {
@@ -164,8 +165,7 @@
 				url : "/mecharg/@study.getId/"+ componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
-					// TODO Just remove the component dynamically - no reload
-					window.location.replace('@routes.Studies.index(study.getId())');
+					componentElement.remove();
 				},
 				error : function(err) {
 					alert(err.responseText);
