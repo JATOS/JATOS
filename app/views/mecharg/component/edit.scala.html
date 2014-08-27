@@ -7,6 +7,11 @@
 		<div class="folder">
 		
 			@helper.form(action = routes.Components.submitEdited(study.getId(), component.getId()), 'class -> "addTask") {
+				@if(form.hasErrors) {
+					<p class="error">
+						Component wasn't updated
+					</p>
+				}
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message

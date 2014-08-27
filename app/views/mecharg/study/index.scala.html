@@ -15,7 +15,7 @@
 				<div class="placeHolder">X</div>
 			</header>
 			<div class="tryStudy">Show Whole Study</div>	
-			<div class="updateStudy">Properties</div>
+			<div class="updateStudy">Edit</div>
 			<div class="showMTurkSourceCode">MT Source Code</div>
 			<div class="removeStudy">Delete</div>
 		</div>
@@ -101,7 +101,7 @@
 	});
 
 	$(".updateStudy").click(function(e) {
-		window.location.href = "@routes.Studies.properties(study.getId())";
+		window.location.href = "@routes.Studies.edit(study.getId())";
 	});
 	
 	$(".updateMembers").click(function(e) {

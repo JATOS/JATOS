@@ -7,6 +7,11 @@
 		<div class="folder">
 		
 			@helper.form(action = routes.Users.submitEditedProfile(user.getEmail()), 'class -> "addTask") {
+				@if(form.hasErrors) {
+					<p class="error">
+						User wasn't updated
+					</p>
+				}
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message

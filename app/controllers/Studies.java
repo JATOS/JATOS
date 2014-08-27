@@ -84,8 +84,8 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	public static Result properties(Long studyId) throws ResultException {
-		Logger.info(CLASS_NAME + ".properties: studyId " + studyId + ", "
+	public static Result edit(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
@@ -96,14 +96,14 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study), "Properties");
-		return ok(views.html.mecharg.study.properties.render(studyList,
+				Breadcrumbs.getStudyBreadcrumb(study), "Edit");
+		return ok(views.html.mecharg.study.edit.render(studyList,
 				loggedInUser, breadcrumbs, study, form));
 	}
 
 	@Transactional
-	public static Result submitProperties(Long studyId) throws ResultException {
-		Logger.info(CLASS_NAME + ".submitProperties: studyId " + studyId + ", "
+	public static Result submitEdited(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
@@ -115,8 +115,8 @@ public class Studies extends Controller {
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 					Breadcrumbs.getDashboardBreadcrumb(),
-					Breadcrumbs.getStudyBreadcrumb(study), "Properties");
-			SimpleResult result = badRequest(views.html.mecharg.study.properties
+					Breadcrumbs.getStudyBreadcrumb(study), "Edit");
+			SimpleResult result = badRequest(views.html.mecharg.study.edit
 					.render(studyList, loggedInUser, breadcrumbs, study, form));
 			throw new ResultException(result);
 		}

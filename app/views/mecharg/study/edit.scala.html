@@ -6,7 +6,12 @@
 	<article class="tasks" id="tasks">
 		<div class="folder">
 		
-			@helper.form(action = routes.Studies.submitProperties(study.getId()), 'class -> "addTask") {
+			@helper.form(action = routes.Studies.submitEdited(study.getId()), 'class -> "addTask") {
+				@if(form.hasErrors) {
+					<p class="error">
+						Study wasn't updated
+					</p>
+				}
 				@if(form.hasGlobalErrors) {
 					<p class="error">
 						@form.globalError.message
