@@ -1,11 +1,14 @@
 package controllers;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import models.results.StudyResult;
+import models.workers.MAWorker;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -35,11 +38,24 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAll();
 		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 
+		List<StudyResult> studyResultList = getStudyResultsNotDoneByMA(study);
+
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
 		return ok(views.html.mecharg.study.index.render(studyList,
-				loggedInUser, breadcrumbs, null, study));
+				loggedInUser, breadcrumbs, null, study, studyResultList));
+	}
+
+	private static List<StudyResult> getStudyResultsNotDoneByMA(StudyModel study) {
+		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
+		Iterator<StudyResult> iter = studyResultList.iterator();
+		while (iter.hasNext()) {
+			if (iter.next().getWorker() instanceof MAWorker) {
+				iter.remove();
+			}
+		}
+		return studyResultList;
 	}
 
 	@Transactional
@@ -97,8 +113,8 @@ public class Studies extends Controller {
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study), "Edit");
-		return ok(views.html.mecharg.study.edit.render(studyList,
-				loggedInUser, breadcrumbs, study, form));
+		return ok(views.html.mecharg.study.edit.render(studyList, loggedInUser,
+				breadcrumbs, study, form));
 	}
 
 	@Transactional

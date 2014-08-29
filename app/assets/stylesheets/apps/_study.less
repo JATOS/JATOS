@@ -66,59 +66,97 @@
 				}
 			}
 		}
-	}
-	.componentsBox {
-		.box();
-		> header {
-			h3 {
-				vertical-align: middle;
-				padding-right: 5px;
-			}
-			.addComponent {
-				.button();
-				vertical-align: middle;
-				display: inline-block;
-			}
-		}
-		> ul {
-			> li {
-				position: relative;
-				padding: 4px 20px 4px 7px;
-				border-bottom: 1px solid rgba(0,0,0,.05);
-				-webkit-user-select: text;
-				.arrows {
-					overflow:hidden;
-					display: inline-block;
+		.componentsBox {
+			.box();
+			width: 49%;
+			float: left;
+			> header {
+				h3 {
 					vertical-align: middle;
-					.upArrow, .downArrow {
-						cursor: pointer;
-						color: @arrow;
-						p:hover {
-							color: @arrowHover;
-						}
-					}
-				}
-				a {
-					vertical-align: middle;
-					padding-left: 5px;
 					padding-right: 5px;
 				}
-				.tryComponent {
+				.addComponent {
 					.button();
-					display: inline-block;
 					vertical-align: middle;
-					margin-right: 5px;
+					display: inline-block;
 				}
-				.showResults {
+			}
+			> ul {
+				> li {
+					position: relative;
+					padding: 4px 20px 4px 7px;
+					border-bottom: 1px solid rgba(0,0,0,.05);
+					-webkit-user-select: text;
+					.arrows {
+						overflow:hidden;
+						display: inline-block;
+						vertical-align: middle;
+						.upArrow, .downArrow {
+							cursor: pointer;
+							color: @arrow;
+							p:hover {
+								color: @arrowHover;
+							}
+						}
+					}
+					a {
+						vertical-align: middle;
+						padding-left: 5px;
+						padding-right: 5px;
+					}
+					.tryComponent {
+						.button();
+						display: inline-block;
+						vertical-align: middle;
+						margin-right: 5px;
+					}
+					.showResults {
+						.button();
+						display: inline-block;
+						vertical-align: middle;
+					}
+					.removeComponent {
+						.removeButton();
+						right: 0px;
+						display: inline-block;
+						vertical-align: middle;
+					}
+				}
+			}
+		}
+		.workerBox {
+			.box();
+			width: 49%;
+			float: right;
+			> header {
+				h3 {
+					vertical-align: middle;
+					padding-right: 5px;
+				}
+				.placeHolder {
 					.button();
-					display: inline-block;
 					vertical-align: middle;
+					display: inline-block;
+					visibility: hidden;
 				}
-				.removeComponent {
-					.removeButton();
-					right: 0px;
-					display: inline-block;
-					vertical-align: middle;
+			}
+			> ul {
+				> li {
+					position: relative;
+					padding: 4px 20px 4px 7px;
+					border-bottom: 1px solid rgba(0,0,0,.05);
+					-webkit-user-select: text;
+					a {
+						vertical-align: middle;
+					}
+					> table {
+						.workerFirstRow {
+							font-size: 12px;
+						}
+						.workerSecondRow {
+							font-size: 16px;
+						}
+					}
 				}
 			}
 		}

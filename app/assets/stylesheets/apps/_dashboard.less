@@ -37,7 +37,35 @@
 				margin: 5px;
 			}
 		}
-		.userBox, .workerBox {
+		.userBox {
+			.box();
+			width: 49%;
+			float: right;
+			> header {
+				h3 {
+					vertical-align: middle;
+					padding-right: 5px;
+				}
+				.placeHolder {
+					.button();
+					vertical-align: middle;
+					display: inline-block;
+					visibility: hidden;
+				}
+			}
+			> ul {
+				> li {
+					position: relative;
+					padding: 4px 20px 4px 7px;
+					border-bottom: 1px solid rgba(0,0,0,.05);
+					-webkit-user-select: text;
+					a {
+						vertical-align: middle;
+					}
+				}
+			}
+		}
+		.workerBox {
 			.box();
 			width: 49%;
 			float: right;

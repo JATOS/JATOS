@@ -137,6 +137,12 @@ public abstract class Worker {
 				"SELECT e FROM Worker e", Worker.class);
 		return query.getResultList();
 	}
+	
+	public static List<Worker> findByStudy(Long studyId) {
+		TypedQuery<Worker> query = JPA.em().createQuery(
+				"SELECT e FROM Worker e", Worker.class);
+		return query.getResultList();
+	}
 
 	public void persist() {
 		JPA.em().persist(this);
