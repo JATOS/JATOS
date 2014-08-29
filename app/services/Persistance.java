@@ -64,7 +64,7 @@ public class Persistance {
 
 	public static void addMemberToStudy(StudyModel study, UserModel member) {
 		study.addMember(member);
-		study.persist();
+		study.merge();
 	}
 
 	public static void updateStudy(StudyModel study, String title,

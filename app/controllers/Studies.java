@@ -94,6 +94,7 @@ public class Studies extends Controller {
 			throw new ResultException(result);
 		} else {
 			StudyModel study = form.get();
+			study.persist();
 			Persistance.addMemberToStudy(study, loggedInUser);
 			return redirect(routes.Studies.index(study.getId()));
 		}
@@ -158,6 +159,22 @@ public class Studies extends Controller {
 
 		Persistance.removeStudy(study);
 		return redirect(routes.Dashboard.dashboard());
+	}
+	
+	@Transactional
+	public static Result cloneStudy(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".cloneStudy: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		List<StudyModel> studyList = StudyModel.findAll();
+		checkStandardForStudy(study, studyId, loggedInUser, studyList);
+
+		StudyModel clone = new StudyModel(study);
+		clone.addMember(loggedInUser);
+		clone.persist();
+		return redirect(routes.Studies.index(clone.getId()));
 	}
 
 	@Transactional

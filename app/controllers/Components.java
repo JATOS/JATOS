@@ -35,8 +35,8 @@ public class Components extends Controller {
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		ComponentModel component = ComponentModel.findById(componentId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
-				component);
+		checkStandardForComponents(studyId, componentId, study, studyList,
+				loggedInUser, component);
 
 		List<ComponentResult> componentResultList = ComponentResult
 				.findAllByComponent(component);
@@ -61,8 +61,8 @@ public class Components extends Controller {
 		StudyModel study = StudyModel.findById(studyId);
 		ComponentModel component = ComponentModel.findById(componentId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
-				component);
+		checkStandardForComponents(studyId, componentId, study, studyList,
+				loggedInUser, component);
 
 		if (!study.hasMember(loggedInUser)) {
 			throw BadRequests
@@ -153,8 +153,8 @@ public class Components extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
-				component);
+		checkStandardForComponents(studyId, componentId, study, studyList,
+				loggedInUser, component);
 
 		if (!study.hasMember(loggedInUser)) {
 			throw BadRequests
@@ -182,8 +182,8 @@ public class Components extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
-				component);
+		checkStandardForComponents(studyId, componentId, study, studyList,
+				loggedInUser, component);
 
 		if (!study.hasMember(loggedInUser)) {
 			throw BadRequests
@@ -215,6 +215,25 @@ public class Components extends Controller {
 		return redirect(routes.Components.index(study.getId(), componentId));
 	}
 
+	@Transactional
+	public static Result cloneComponent(Long studyId, Long componentId)
+			throws ResultException {
+		Logger.info(CLASS_NAME + ".cloneComponent: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		List<StudyModel> studyList = StudyModel.findAll();
+		ComponentModel component = ComponentModel.findById(componentId);
+		checkStandardForComponents(studyId, componentId, study, studyList,
+				loggedInUser, component);
+
+		ComponentModel clone = new ComponentModel(component);
+		Persistance.addComponent(study, clone);
+		return redirect(routes.Components.index(studyId, clone.getId()));
+	}
+
 	/**
 	 * HTTP Ajax request
 	 */
@@ -229,8 +248,8 @@ public class Components extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
-				component);
+		checkStandardForComponents(studyId, componentId, study, studyList,
+				loggedInUser, component);
 
 		if (!study.hasMember(loggedInUser)) {
 			throw BadRequests
@@ -241,8 +260,8 @@ public class Components extends Controller {
 		return ok();
 	}
 
-	public static void checkStandardForComponents(Long studyId, Long componentId,
-			StudyModel study, List<StudyModel> studyList,
+	public static void checkStandardForComponents(Long studyId,
+			Long componentId, StudyModel study, List<StudyModel> studyList,
 			UserModel loggedInUser, ComponentModel component)
 			throws ResultException {
 		if (loggedInUser == null) {

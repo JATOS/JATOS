@@ -17,6 +17,7 @@ componentResultList: List[results.ComponentResult])
 		</header>
 		<div class="tryComponent">Show</div>
 		<div class="edit">Edit</div>
+		<div class="clone">Clone</div>
 		<div class="removeResults">Delete Results</div>
 		<div class="remove">Delete</div>
 	</div>
@@ -46,6 +47,11 @@ componentResultList: List[results.ComponentResult])
 
 	$(".edit").click(function(e) {
 		window.location.href = "@routes.Components.edit(
+				study.getId(), component.getId())";
+	});
+	
+	$(".clone").click(function(e) {
+		window.location.href = "@routes.Components.cloneComponent(
 				study.getId(), component.getId())";
 	});
 	

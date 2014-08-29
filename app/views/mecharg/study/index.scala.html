@@ -15,7 +15,8 @@
 				<div class="placeHolder">X</div>
 			</header>
 			<div class="tryStudy">Show Whole Study</div>	
-			<div class="updateStudy">Edit</div>
+			<div class="editStudy">Edit</div>
+			<div class="cloneStudy">Clone</div>
 			<div class="showMTurkSourceCode">MT Source Code</div>
 			<div class="removeStudy">Delete</div>
 		</div>
@@ -145,6 +146,10 @@
 	
 	$(".tryStudy").click(function(e) {
 		window.location.href = "@routes.Studies.tryStudy(study.getId())";
+	});
+	
+	$(".cloneStudy").click(function(e) {
+		window.location.href = "@routes.Studies.cloneStudy(study.getId())";
 	});
 
 	$(".updateStudy").click(function(e) {

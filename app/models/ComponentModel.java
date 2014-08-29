@@ -65,6 +65,14 @@ public class ComponentModel {
 
 	public ComponentModel() {
 	}
+	
+	public ComponentModel(ComponentModel component) {
+		this.study = component.study;
+		this.title = component.title;
+		this.viewUrl = component.viewUrl;
+		this.reloadable = component.reloadable;
+		this.jsonData = component.jsonData;
+	}
 
 	public void setId(Long id) {
 		this.id = id;

@@ -67,6 +67,22 @@ public class StudyModel {
 
 	public StudyModel() {
 	}
+	
+	/**
+	 * Constructor for cloning (without members)
+	 */
+	public StudyModel(StudyModel study) {
+		// Don't clone members
+		this.description = study.description;
+		this.jsonData = study.jsonData;
+		this.title = study.title;
+		ComponentModel clone;
+		for (ComponentModel component : study.componentList) {
+			clone = new ComponentModel(component);
+			clone.setStudy(this);
+			componentList.add(clone);
+		}
+	}
 
 	public void setId(Long id) {
 		this.id = id;
