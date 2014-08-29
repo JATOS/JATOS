@@ -5,6 +5,8 @@ import java.util.List;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import models.workers.MAWorker;
+import models.workers.Worker;
 import play.mvc.Controller;
 import play.mvc.SimpleResult;
 import services.ErrorMessages;
@@ -16,10 +18,12 @@ public class BadRequests extends Controller {
 			UserModel loggedInUser, List<StudyModel> studyList) {
 		String errorMsg = ErrorMessages.studyNotExist(studyId);
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
 				.getDashboardBreadcrumb());
 		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
-				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 
@@ -27,10 +31,25 @@ public class BadRequests extends Controller {
 			UserModel loggedInUser, List<StudyModel> studyList) {
 		String errorMsg = ErrorMessages.userNotExist(email);
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
 				.getDashboardBreadcrumb());
 		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
-				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
+		return new ResultException(result, errorMsg);
+	}
+
+	public static ResultException badRequestWorkerNotExist(Long workerId,
+			UserModel loggedInUser, List<StudyModel> studyList) {
+		String errorMsg = ErrorMessages.workerNotExist(workerId);
+		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
+		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
+				.getDashboardBreadcrumb());
+		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 
@@ -38,11 +57,13 @@ public class BadRequests extends Controller {
 			StudyModel study, UserModel loggedInUser, List<StudyModel> studyList) {
 		String errorMsg = ErrorMessages.componentNotExist(componentId);
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
 		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
-				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 
@@ -52,11 +73,13 @@ public class BadRequests extends Controller {
 		String errorMsg = ErrorMessages.componentNotBelongToStudy(
 				study.getId(), component.getId());
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
 		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
-				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 
@@ -65,11 +88,28 @@ public class BadRequests extends Controller {
 		String errorMsg = ErrorMessages.notMember(loggedInUser.getName(),
 				loggedInUser.getEmail(), study.getId(), study.getTitle());
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
 		SimpleResult result = forbidden(views.html.mecharg.dashboard.render(
-				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
+		return new ResultException(result, errorMsg);
+	}
+
+	public static ResultException forbiddenRemoveMAWorker(MAWorker worker,
+			UserModel loggedInUser, List<StudyModel> studyList) {
+		String errorMsg = ErrorMessages.removeMAWorker(worker.getId(), worker
+				.getUser().getName(), worker.getUser().getEmail());
+		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
+		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+				Breadcrumbs.getDashboardBreadcrumb(), 
+				Breadcrumbs.getWorkerBreadcrumb(worker));
+		SimpleResult result = forbidden(views.html.mecharg.dashboard.render(
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 
@@ -78,12 +118,14 @@ public class BadRequests extends Controller {
 			List<StudyModel> studyList) {
 		String errorMsg = ErrorMessages.urlViewEmpty(component.getId());
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study),
 				Breadcrumbs.getComponentBreadcrumb(study, component));
 		SimpleResult result = forbidden(views.html.mecharg.dashboard.render(
-				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 
@@ -91,11 +133,13 @@ public class BadRequests extends Controller {
 			UserModel loggedInUser, StudyModel study, List<StudyModel> studyList) {
 		String errorMsg = ErrorMessages.studyAtLeastOneMember();
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study), "Change Members");
 		SimpleResult result = forbidden(views.html.mecharg.dashboard.render(
-				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 
@@ -103,11 +147,13 @@ public class BadRequests extends Controller {
 			UserModel user, UserModel loggedInUser, List<StudyModel> studyList) {
 		String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getUserBreadcrumb(user), "Change Password");
 		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
-				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 
@@ -117,11 +163,13 @@ public class BadRequests extends Controller {
 		String errorMsg = ErrorMessages
 				.componentResultNotExist(componentResultId);
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
 		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
-				studyList, loggedInUser, breadcrumbs, userList, errorMsg));
+				studyList, loggedInUser, breadcrumbs, userList, workerList,
+				errorMsg));
 		return new ResultException(result, errorMsg);
 	}
 

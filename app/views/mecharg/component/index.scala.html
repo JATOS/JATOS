@@ -51,7 +51,7 @@ componentResultList: List[results.ComponentResult])
 	
 	$(".remove").click(function(e) {
 		var conf = confirm("Are you sure you want to delete component " +
-				"\"@Html(component.getTitle())\" (id: @component.getId()) with all it's results?");
+				"\"@Html(component.getTitle())\" (ID: @component.getId()) with all it's results?");
 		if (conf == false) {
 			return
 		}
@@ -63,17 +63,17 @@ componentResultList: List[results.ComponentResult])
 						study.getId(), component.getId())',
 				type : 'DELETE',
 				success : function(result) {
-					window.location.replace('@routes.Dashboard.dashboard()');
+					window.location.replace('@routes.Studies.index(study.getId())');
 				},
 				error : function(err) {
-					alert("Couldn't delete component \"@Html(component.getTitle())\" (id: @component.getId()).");
+					alert("Couldn't delete component \"@Html(component.getTitle())\" (ID: @component.getId()).");
 				}
 			});
 		}
 	});
 	
 	$(".removeResults").click(function(e) {
-		window.location.href = "@routes.Components.removeResults(
+		window.location.href = "@routes.ComponentResults.removeResults(
 				study.getId(), component.getId())";
 	});
 	
@@ -81,9 +81,8 @@ componentResultList: List[results.ComponentResult])
 		var componentResultElement = $(e.target).parent();
 		var componentResultId = componentResultElement.attr("result-id");
 		var conf = confirm("Are you sure you want to delete the result " +
-				"(id: " + componentResultId + ")?");
-		var url = '/mecharg/' + @study.getId() + '/' + @component.getId()
-				+ '/removeResult?componentResultId=' + componentResultId;
+				"(ID: " + componentResultId + ")?");
+		var url = '/mecharg/componentresult/' + componentResultId + '/remove';
 		if (conf == true) {
 			$.ajax({
 				url : url,
@@ -92,7 +91,7 @@ componentResultList: List[results.ComponentResult])
 					componentResultElement.remove();
 				},
 				error : function(err) {
-					alert("Couldn't delete result " + "(id: " + componentResultId + ").");
+					alert("Couldn't delete result " + "(ID: " + componentResultId + ").");
 				}
 			});
 		}

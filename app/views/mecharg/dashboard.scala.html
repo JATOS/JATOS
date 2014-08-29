@@ -1,5 +1,5 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
-	userList: List[UserModel], errorMsg: String)
+	userList: List[UserModel], workerList: List[workers.Worker], errorMsg: String)
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
@@ -28,12 +28,69 @@
 			<ul>
 				@for(user <- userList) {
 					<li>
-						<a class="name" href="@routes.Users.profile(user.getEmail())">
+						<a href="@routes.Users.profile(user.getEmail())">
 								@user.toString()
 						</a>
 					</li>
 				}
 				@if(userList.isEmpty()) {
+					<li>none</li>
+				}
+			</ul>
+		</div>
+		
+	</div>
+	
+	<div class="boxRow">
+		<div class="workerBox">
+			<header>
+				<h3>Workers</h3>
+				<div class="placeHolder">X</div>
+			</header>
+	
+			<ul>
+				<li>
+					<table width="100%">
+						<tbody>
+							<tr>
+								<td valign="top" width="33%">
+									<p class="workerFirstRow">ID</p>
+								</td>
+								<td valign="top" width="33%">
+									<p class="workerFirstRow">Type</p>
+								</td>
+								<td valign="top" width="33%">
+									<p class="workerFirstRow">Studies</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</li>
+			
+				@for(worker <- workerList) {
+					<li>
+						<table width="100%">
+							<tbody>
+								<tr>
+									<td valign="top" width="33%">
+										<p class="workerSecondRow"><a href="@routes.Workers.index(worker.getId())">@worker.getId()</a></p>
+									</td>
+									<td valign="top" width="33%">
+										<p class="workerSecondRow">@worker.getWorkerType()</p>
+									</td>
+									<td valign="top" width="33%">
+										<p class="workerSecondRow">
+											@for(studyResult <- worker.getStudyResultList()) {
+												@studyResult.getStudy().getId()
+											}
+										</p>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</li>
+				}
+				@if(workerList.isEmpty()) {
 					<li>none</li>
 				}
 			</ul>

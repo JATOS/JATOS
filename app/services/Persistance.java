@@ -127,7 +127,7 @@ public class Persistance {
 		}
 		component.remove();
 	}
-	
+
 	public static void removeComponentResult(ComponentResult componentResult) {
 		StudyResult studyResult = componentResult.getStudyResult();
 		studyResult.removeComponentResult(componentResult);
@@ -143,6 +143,41 @@ public class Persistance {
 		if (componentResult != null) {
 			removeComponentResult(componentResult);
 		}
+	}
+
+	public static void removeStudyResult(StudyResult studyResult) {
+		// Remove all component results of this study result
+		for (ComponentResult componentResult : studyResult
+				.getComponentResultList()) {
+			componentResult.remove();
+		}
+
+		// Remove study result from worker
+		Worker worker = studyResult.getWorker();
+		worker.removeStudyResult(studyResult);
+		worker.merge();
+
+		// Remove studyResult
+		studyResult.remove();
+	}
+
+	public static void removeWorker(Worker worker) {
+		// Don't remove MA's own workers
+		if (worker instanceof MAWorker) {
+			return;
+		}
+
+		// Remove all studyResults and their componentResults
+		for (StudyResult studyResult : worker.getStudyResultList()) {
+			for (ComponentResult componentResult : studyResult
+					.getComponentResultList()) {
+				componentResult.remove();
+			}
+			studyResult.remove();
+		}
+		
+		// Remove worker
+		worker.remove();
 	}
 
 }

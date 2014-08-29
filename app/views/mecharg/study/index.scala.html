@@ -50,7 +50,7 @@
 					</div>
 					<a class="name"
 							href="@routes.Components.index(study.getId(), component.getId())">
-							@component.getTitle() (id: @component.getId())
+							@component.getTitle() (ID: @component.getId())
 					</a>
 					<div class="tryComponent">Show</div>
 					<div class="showResults">Results (@results.ComponentResult.findAllByComponent(component).size())</div>
@@ -114,7 +114,7 @@
 	
 	$(".removeStudy").click(function(e) {
 		var conf = confirm("Are you sure you want to delete study "
-				+ "\"@Html(study.getTitle())\" (id: @study.getId()) " +
+				+ "\"@Html(study.getTitle())\" (ID: @study.getId()) " +
 				"with all it's components and results?");
 		if (conf == false) {
 			return;
@@ -154,7 +154,7 @@
 		var componentId = componentElement.attr("component-id");
 		var componentTitle = componentElement.attr("component-title");
 		var conf = confirm("Are you sure you want to delete component \""
-				+ componentTitle + "\" (id: "+ componentId + ") with all it's results?");
+				+ componentTitle + "\" (ID: "+ componentId + ") with all it's results?");
 		if (conf == false) {
 			return
 		}

@@ -1,7 +1,6 @@
 package controllers;
 
 import java.util.List;
-import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
@@ -15,7 +14,6 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
-import services.ErrorMessages;
 import services.Persistance;
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
@@ -37,7 +35,7 @@ public class Components extends Controller {
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		ComponentModel component = ComponentModel.findById(componentId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(studyId, componentId, study, studyList, loggedInUser,
+		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
 				component);
 
 		List<ComponentResult> componentResultList = ComponentResult
@@ -63,7 +61,7 @@ public class Components extends Controller {
 		StudyModel study = StudyModel.findById(studyId);
 		ComponentModel component = ComponentModel.findById(componentId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(studyId, componentId, study, studyList, loggedInUser,
+		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
 				component);
 
 		if (!study.hasMember(loggedInUser)) {
@@ -155,7 +153,7 @@ public class Components extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandard(studyId, componentId, study, studyList, loggedInUser,
+		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
 				component);
 
 		if (!study.hasMember(loggedInUser)) {
@@ -184,7 +182,7 @@ public class Components extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandard(studyId, componentId, study, studyList, loggedInUser,
+		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
 				component);
 
 		if (!study.hasMember(loggedInUser)) {
@@ -217,6 +215,9 @@ public class Components extends Controller {
 		return redirect(routes.Components.index(study.getId(), componentId));
 	}
 
+	/**
+	 * HTTP Ajax request
+	 */
 	@Transactional
 	public static Result remove(Long studyId, Long componentId)
 			throws ResultException {
@@ -228,7 +229,7 @@ public class Components extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandard(studyId, componentId, study, studyList, loggedInUser,
+		checkStandardForComponents(studyId, componentId, study, studyList, loggedInUser,
 				component);
 
 		if (!study.hasMember(loggedInUser)) {
@@ -237,101 +238,10 @@ public class Components extends Controller {
 		}
 
 		Persistance.removeComponent(study, component);
-		return redirect(routes.Studies.index(study.getId()));
-	}
-
-	@Transactional
-	public static Result removeSingleResult(Long studyId, Long componentId,
-			Long componentResultId) throws ResultException {
-		Logger.info(CLASS_NAME + ".removeSingleResult: studyId " + studyId
-				+ ", " + "componentId " + componentId + ", " + "resultId "
-				+ componentResultId + ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		ComponentModel component = ComponentModel.findById(componentId);
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
-		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(studyId, componentId, study, studyList, loggedInUser,
-				component);
-		if (!study.hasMember(loggedInUser)) {
-			return badRequest(ErrorMessages.notMember(loggedInUser.getName(),
-					loggedInUser.getEmail(), study.getId(), study.getTitle()));
-		}
-		
-		ComponentResult componentResult = ComponentResult
-				.findById(componentResultId);
-		if (component == null) {
-			throw BadRequests.badRequestComponentResultNotExist(
-					componentResultId, study, loggedInUser, studyList);
-		}
-		Persistance.removeComponentResult(componentResult);
 		return ok();
 	}
 
-	@Transactional
-	public static Result removeResults(Long studyId, Long componentId)
-			throws ResultException {
-		Logger.info(CLASS_NAME + ".removeResults: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
-		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandard(studyId, componentId, study, studyList, loggedInUser,
-				component);
-
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
-
-		List<ComponentResult> componentResultList = ComponentResult
-				.findAllByComponent(component);
-
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study),
-				Breadcrumbs.getComponentBreadcrumb(study, component),
-				"Delete Results");
-		return ok(views.html.mecharg.component.removeResults.render(studyList,
-				loggedInUser, breadcrumbs, component, study,
-				componentResultList));
-	}
-
-	@Transactional
-	public static Result submitRemovedResults(Long studyId, Long componentId)
-			throws Exception {
-		Logger.info(CLASS_NAME + ".submitRemovedResults: studyId " + studyId
-				+ ", " + "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
-		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandard(studyId, componentId, study, studyList, loggedInUser,
-				component);
-
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
-
-		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
-		String[] checkedComponents = formMap.get(ComponentModel.RESULT);
-		if (checkedComponents != null) {
-			for (String resultIdStr : checkedComponents) {
-				Persistance.removeComponentResult(resultIdStr);
-			}
-		}
-
-		return redirect(routes.Components.index(study.getId(), componentId));
-	}
-
-	private static void checkStandard(Long studyId, Long componentId,
+	public static void checkStandardForComponents(Long studyId, Long componentId,
 			StudyModel study, List<StudyModel> studyList,
 			UserModel loggedInUser, ComponentModel component)
 			throws ResultException {

@@ -23,8 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @Entity
-@JsonPropertyOrder(value = { "resultId", "startDate", "studyId", "componentId",
-		"componentState", "data" })
+@JsonPropertyOrder(value = { "resultId", "startDate", "componentState"})
 public class ComponentResult {
 
 	@Id

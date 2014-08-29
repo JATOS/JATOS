@@ -33,7 +33,7 @@
 				@for(study <- user.getStudyList()) {
 					<li>
 						<a href="@routes.Studies.index(study.getId())">
-							@study.getTitle() (id: @study.getId())
+							@study.getTitle() (ID: @study.getId())
 						</a>
 					</li>
 				}

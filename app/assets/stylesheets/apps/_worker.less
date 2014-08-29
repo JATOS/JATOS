@@ -1,0 +1,92 @@
+// -----------------------------------
+// With many thanks to the author of the CSS of ZenTask
+// mda@zenexity.com
+// -----------------------------------
+
+.worker {
+	p.error {
+		width: inherit;
+		margin: 5px 0;
+		color: #c00;
+		text-shadow: 1px 1px rgba(0,0,0,.1);
+	}
+	.manageBox {
+		.box();
+		width: 49%;
+		position: relative;
+		> header {
+			h3 {
+				padding-right: 5px;
+				vertical-align: middle;
+			}
+			.placeHolder {
+				.button();
+				vertical-align: middle;
+				display: inline-block;
+				visibility: hidden;
+			}
+		}
+		.tryComponent, .edit, .removeResults, .remove {
+			.button();
+			vertical-align: middle;
+			display: inline-block;
+			margin: 5px;
+		}
+	}
+	.resultsBox {
+		.box();
+		> header {
+			h3 {
+				vertical-align: middle;
+				padding-right: 5px;
+			}
+			.placeHolder {
+				.button();
+				vertical-align: middle;
+				display: inline-block;
+				visibility: hidden;
+			}
+		}
+		> ul {
+			> li {
+				position: relative;
+				padding: 4px 20px 20px 7px;
+				-webkit-user-select: text;
+				.removeStudyResult {
+					.removeButton();
+					right: 0px;
+					display: inline-block;
+					vertical-align: middle;
+				}
+				> table {
+					border-bottom: 1px solid rgba(0,0,0,.05);
+					.studyResultFirstRow {
+						font-size: 12px;
+					}
+					.studyResultSecondRow {
+						font-size: 16px;
+					}
+					.confirmationCode {
+						font-family: "Courier New", Courier, monospace;
+						font-size: 16px;
+					}
+				}
+				> ul {
+					> li {
+						position: relative;
+						padding: 4px 20px 4px 7px;
+						border-bottom: 1px solid rgba(0,0,0,.05);
+						font-family: "Courier New", Courier, monospace;
+						-webkit-user-select: text;
+						.removeComponentResult {
+							.removeButton();
+							right: 0px;
+							display: inline-block;
+							vertical-align: middle;
+						}
+					} 
+				}
+			}
+		}
+	}
+}

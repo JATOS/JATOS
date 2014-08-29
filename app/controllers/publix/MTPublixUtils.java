@@ -30,7 +30,7 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 	public MTWorker retrieveWorker(MediaType errorMediaType) throws Exception {
 		String workerIdStr = Publix.session(Publix.WORKER_ID);
 		if (workerIdStr == null) {
-			// No worker id in session -> study never started
+			// No worker ID in session -> study never started
 			throw new ForbiddenPublixException(
 					ErrorMessages.noWorkerIdInSession(), errorMediaType);
 		}

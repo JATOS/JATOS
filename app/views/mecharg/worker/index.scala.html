@@ -1,0 +1,137 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs:
+String, errorMsg: String, worker: workers.Worker,
+studyResultList: List[results.StudyResult])
+
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
+
+<article class="worker">
+
+	@if(errorMsg != null) {
+		<p class="error">@errorMsg</p>
+	}
+
+	<div class="manageBox">
+		<header>
+			<h3>Manage Worker</h3>
+			<div class="placeHolder">X</div>
+		</header>
+		<div class="remove">Delete</div>
+	</div>
+
+	<div class="resultsBox">
+		<header>
+			<h3>Results</h3>
+			<div class="placeHolder">X</div>
+		</header>
+
+		<ul>
+			@for(studyResult <- studyResultList) {
+				<li study-result-id="@studyResult.getId()">
+					<table width="100%">
+						<tbody>
+							<tr>
+								<td valign="top" width="30%">
+									<p class="studyResultFirstRow">Study</p>
+									<p class="studyResultSecondRow">@studyResult.getStudy().getTitle() (ID: @studyResult.getStudy().getId())</p>
+								</td>
+								<td valign="top" width="20%">
+									<p class="studyResultFirstRow">Time</p>
+									<p class="studyResultSecondRow">@studyResult.getStartDate()</p>
+								</td>
+								<td valign="top" width="40%">
+									<p class="studyResultFirstRow">Confirmation Code</p>
+									<p class="confirmationCode">@studyResult.getConfirmationCode()</p>
+								</td>
+								<td valign="top" width="10%">
+									<div class="removeStudyResult">Remove</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					
+					<ul>
+						@for(componentResult <- studyResult.getComponentResultList()) {
+							<li component-result-id="@componentResult.getId()">@services.JsonUtils.componentResultAsJsonForMA(componentResult)
+								<div class="removeComponentResult">Remove</div>
+							</li>
+						}
+						@if(studyResult.getComponentResultList().isEmpty()) {
+							<li>None</li>
+						}
+					</ul>
+				</li>
+			}
+			@if(studyResultList.isEmpty()) {
+				<li>None</li>
+			}
+		</ul>
+	</div>
+</article>
+
+<script type="text/javascript">
+
+	$(".remove").click(function(e) {
+		var conf = confirm("Are you sure you want to delete worker " +
+				"(ID: @worker.getId()) with all his results?");
+		if (conf == false) {
+			return
+		}
+		conf = confirm("If you confirm, this worker INCLUDING all his " +
+				"RESULTS will be unrecoverably deleted!");
+		if (conf == true) {
+			$.ajax({
+				url : '@routes.Workers.remove(worker.getId())',
+				type : 'DELETE',
+				success : function(result) {
+					window.location.replace('@routes.Dashboard.dashboard()');
+				},
+				error : function(err) {
+					alert("Couldn't delete worker (ID: @worker.getId()).");
+				}
+			});
+		}
+	});
+
+	$(".removeComponentResult").click(function(e) {
+		var componentResultElement = $(e.target).parent();
+		var componentResultId = componentResultElement.attr("component-result-id");
+		var conf = confirm("Are you sure you want to delete the component result " +
+				"(ID: " + componentResultId + ")?");
+		var url = '/mecharg/componentresult/' + componentResultId + '/remove';
+		if (conf == true) {
+			$.ajax({
+				url : url,
+				type : 'DELETE',
+				success : function(result) {
+					componentResultElement.remove();
+				},
+				error : function(err) {
+					alert("Couldn't delete component result " + "(ID: " + componentResultId + ").");
+				}
+			});
+		}
+	});
+	
+	$(".removeStudyResult").click(function(e) {
+		var studyResultElement = $(e.target).parent().parent().parent().parent().parent();
+		var studyResultId = studyResultElement.attr("study-result-id");
+		var conf = confirm("Are you sure you want to delete the study result " +
+				"(ID: " + studyResultId + ") with all its component results?");
+		var url = '/mecharg/studyresult/' + studyResultId + '/remove';
+		if (conf == true) {
+			$.ajax({
+				url : url,
+				type : 'DELETE',
+				success : function(result) {
+					studyResultElement.remove();
+				},
+				error : function(err) {
+					alert("Couldn't delete study result " + "(ID: " + studyResultId + ").");
+				}
+			});
+		}
+	});
+
+</script>
+
+}

@@ -4,6 +4,7 @@ import java.util.List;
 
 import models.StudyModel;
 import models.UserModel;
+import models.workers.Worker;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -26,10 +27,11 @@ public class Dashboard extends Controller {
 			return redirect(routes.Authentication.login());
 		}
 		List<UserModel> userList = UserModel.findAll();
+		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs
 				.generateBreadcrumbs(Breadcrumbs.getDashboardBreadcrumb());
 		return ok(views.html.mecharg.dashboard.render(studyList, loggedInUser,
-				breadcrumbs, userList, null));
+				breadcrumbs, userList, workerList, null));
 	}
 
 }

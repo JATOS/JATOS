@@ -7,7 +7,7 @@
 	<article class="tasks" id="tasks">
 		
 		<form class="addTask" method="POST"
-			action="@routes.Components.submitRemovedResults(study.getId(), component.getId())"
+			action="@routes.ComponentResults.submitRemovedResults(study.getId(), component.getId())"
 			onSubmit="return confirm('Are you sure you want to remove those results?');">
 			<div class="folder" data-folder-id="@component.getId()">
 				<header>

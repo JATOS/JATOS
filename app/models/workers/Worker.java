@@ -16,6 +16,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
+import javax.persistence.TypedQuery;
 
 import models.StudyModel;
 import models.results.StudyResult;
@@ -129,6 +130,12 @@ public abstract class Worker {
 
 	public static Worker findById(Long id) {
 		return JPA.em().find(Worker.class, id);
+	}
+	
+	public static List<Worker> findAll() {
+		TypedQuery<Worker> query = JPA.em().createQuery(
+				"SELECT e FROM Worker e", Worker.class);
+		return query.getResultList();
 	}
 
 	public void persist() {

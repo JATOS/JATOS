@@ -27,14 +27,14 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String PASSWORDS_ARENT_THE_SAME = "Passwords aren't the same.";
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings.";
 	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email is already registered.";
-	
+
 	public static String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
 		return errorMsg;
 	}
 
 	public static String noWorkerIdInSession() {
-		String errorMsg = "No worker id in session. Was the study started?";
+		String errorMsg = "No worker ID in session. Was the study started?";
 		return errorMsg;
 	}
 
@@ -43,39 +43,39 @@ public abstract class ErrorMessages<T extends Worker> {
 	}
 
 	public static String workerNotExist(String workerIdStr) {
-		String errorMsg = "A worker with id " + workerIdStr + " doesn't exist.";
+		String errorMsg = "A worker with ID " + workerIdStr + " doesn't exist.";
 		return errorMsg;
 	}
 
 	public static String studyNotExist(Long studyId) {
-		String errorMsg = "An study with id " + studyId + " doesn't exist.";
+		String errorMsg = "An study with ID " + studyId + " doesn't exist.";
 		return errorMsg;
 	}
 
 	public static String studyHasNoComponents(Long studyId) {
-		String errorMsg = "The study with id " + studyId
+		String errorMsg = "The study with ID " + studyId
 				+ " has no components.";
 		return errorMsg;
 	}
 
 	public static String componentNotExist(Long studyId, Long componentId) {
-		String errorMsg = "An component with id " + componentId + " of study "
+		String errorMsg = "An component with ID " + componentId + " of study "
 				+ studyId + " doesn't exist.";
 		return errorMsg;
 	}
 
 	public static String componentNotBelongToStudy(Long studyId,
 			Long componentId) {
-		String errorMsg = "There is no study with id " + studyId
-				+ " that has a component with id " + componentId + ".";
+		String errorMsg = "There is no study with ID " + studyId
+				+ " that has a component with ID " + componentId + ".";
 		return errorMsg;
 	}
 
 	public static String componentNotAllowedToReload(Long studyId,
 			Long componentId) {
-		String errorMsg = "It's not allowed to reload this component (id: "
+		String errorMsg = "It's not allowed to reload this component (ID: "
 				+ componentId + "). Unfortunately it is neccessary to finish "
-				+ "this study (id: " + studyId + ") at this point.";
+				+ "this study (ID: " + studyId + ") at this point.";
 		return errorMsg;
 	}
 
@@ -131,7 +131,7 @@ public abstract class ErrorMessages<T extends Worker> {
 	}
 
 	public static String assignmentIdNotSpecified() {
-		String errorMsg = "No assignment id specified in query parameters.";
+		String errorMsg = "No assignment ID specified in query parameters.";
 		return errorMsg;
 	}
 
@@ -141,7 +141,7 @@ public abstract class ErrorMessages<T extends Worker> {
 	}
 
 	public static String workerNotFromMTurk(Long workerId) {
-		String errorMsg = "The worker with id " + workerId
+		String errorMsg = "The worker with ID " + workerId
 				+ " isn't a MTurk worker.";
 		return errorMsg;
 	}
@@ -152,13 +152,19 @@ public abstract class ErrorMessages<T extends Worker> {
 	}
 
 	public static String componentNotExist(Long componentId) {
-		String errorMsg = "An component with id " + componentId
+		String errorMsg = "An component with ID " + componentId
 				+ " doesn't exist.";
 		return errorMsg;
 	}
-	
+
 	public static String componentResultNotExist(Long componentResultId) {
-		String errorMsg = "An component result with id " + componentResultId
+		String errorMsg = "An component result with ID " + componentResultId
+				+ " doesn't exist.";
+		return errorMsg;
+	}
+
+	public static String studyResultNotExist(Long studyResultId) {
+		String errorMsg = "A study result with ID " + studyResultId
 				+ " doesn't exist.";
 		return errorMsg;
 	}
@@ -167,6 +173,14 @@ public abstract class ErrorMessages<T extends Worker> {
 			String studyTitle) {
 		String errorMsg = username + " (" + email + ") isn't member of study "
 				+ studyId + " \"" + studyTitle + "\".";
+		return errorMsg;
+	}
+
+	public static String removeMAWorker(Long workerId, String username,
+			String email) {
+		String errorMsg = "Worker (ID: " + workerId + ") is a worker of the "
+				+ "Mechanical Argentinian, associated to the user "
+				+ username + " (" + email + ") and can't be deleted.";
 		return errorMsg;
 	}
 

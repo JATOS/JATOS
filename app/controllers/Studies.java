@@ -33,7 +33,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(study, studyId, loggedInUser, studyList);
+		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getDashboardBreadcrumb(),
@@ -91,7 +91,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(study, studyId, loggedInUser, studyList);
+		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -109,7 +109,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(study, studyId, loggedInUser, studyList);
+		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
 		if (form.hasErrors()) {
@@ -138,7 +138,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(study, studyId, loggedInUser, studyList);
+		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 
 		Persistance.removeStudy(study);
 		return redirect(routes.Dashboard.dashboard());
@@ -152,7 +152,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(study, studyId, loggedInUser, studyList);
+		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 
 		List<UserModel> userList = UserModel.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -172,7 +172,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(study, studyId, loggedInUser, studyList);
+		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
 		String[] checkedUsers = formMap.get(StudyModel.MEMBERS);
@@ -279,7 +279,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkStandard(study, studyId, loggedInUser, studyList);
+		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 
 		String hostname = request().host();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -290,7 +290,7 @@ public class Studies extends Controller {
 				loggedInUser, breadcrumbs, null, study, hostname));
 	}
 
-	private static void checkStandard(StudyModel study, Long studyId,
+	public static void checkStandardForStudy(StudyModel study, Long studyId,
 			UserModel loggedInUser, List<StudyModel> studyList)
 			throws ResultException {
 		if (loggedInUser == null) {

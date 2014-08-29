@@ -3,6 +3,7 @@ package controllers;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import models.workers.Worker;
 import play.mvc.Controller;
 
 public class Breadcrumbs extends Controller {
@@ -52,6 +53,16 @@ public class Breadcrumbs extends Controller {
 		sb.append(" (");
 		sb.append(user.getEmail());
 		sb.append(")");
+		sb.append("</a>");
+		return sb.toString();
+	}
+	
+	public static String getWorkerBreadcrumb(Worker worker) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("<a href=\"");
+		sb.append(routes.Workers.index(worker.getId()));
+		sb.append("\">");
+		sb.append(worker.getId());
 		sb.append("</a>");
 		return sb.toString();
 	}

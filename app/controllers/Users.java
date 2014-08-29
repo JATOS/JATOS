@@ -195,7 +195,7 @@ public class Users extends Controller {
 			throw new ResultException(result);
 		} else {
 			// Update user in database
-			// Do not update 'email' since it's the id and should stay
+			// Do not update 'email' since it's the ID and should stay
 			// unaltered. For the password we have an extra form.
 			DynamicForm requestData = Form.form().bindFromRequest();
 			String name = requestData.get(UserModel.NAME);

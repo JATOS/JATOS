@@ -123,8 +123,8 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Serializes a ComponentResult into an JSON string. It considers the default
-	 * timezone.
+	 * Serializes a ComponentResult into an JSON string. It considers the
+	 * default timezone.
 	 * 
 	 * @throws JsonProcessingException
 	 */
@@ -133,31 +133,30 @@ public class JsonUtils {
 		ObjectMapper objectMapper = new ObjectMapper().setTimeZone(
 				TimeZone.getDefault()).configure(
 				SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-		objectMapper.getSerializationConfig().withView(JsonForMA.class);
 		ObjectNode componentResultNode = objectMapper
 				.valueToTree(componentResult);
-		
+
 		// Add studyId and componentId
 		componentResultNode.put("studyId", componentResult.getComponent()
 				.getStudy().getId());
 		componentResultNode.put("componentId", componentResult.getComponent()
 				.getId());
-		
+
 		// Add worker
 		StudyResult studyResult = componentResult.getStudyResult();
 		Worker worker = initializeAndUnproxy(studyResult.getWorker());
 		ObjectNode workerNode = objectMapper.valueToTree(worker);
 		componentResultNode.with("worker").putAll(workerNode);
-		
+
 		// Write as string
 		String resultAsJson = objectMapper
 				.writeValueAsString(componentResultNode);
-		
+
 		// Add componentResult's data to the end
 		resultAsJson = resultAsJson.substring(0, resultAsJson.length() - 1);
 		resultAsJson = resultAsJson + ",\"data\":" + componentResult.getData()
 				+ "}";
-		
+
 		return resultAsJson;
 	}
 
