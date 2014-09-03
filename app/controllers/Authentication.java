@@ -28,7 +28,6 @@ public class Authentication extends Controller {
 	@Transactional
 	public static Result authenticate() {
 		Form<Login> loginForm = Form.form(Login.class).bindFromRequest();
-		Logger.info(CLASS_NAME + ".authenticate: " + loginForm.get().email);
 		
 		if (loginForm.hasErrors()) {
 			return badRequest(views.html.mecharg.auth.login.render(loginForm));

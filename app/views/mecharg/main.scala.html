@@ -15,7 +15,7 @@
 
 <body>
 	<header>
-		<a href="@routes.Dashboard.dashboard" id="logo"><span>Mechanical</span>Argentinian</a>
+		<a id="logo" href="@routes.Dashboard.dashboard"><span>Mechanical</span>Argentinian</a>
 		<dl id="user">
 			<dt>
 				<a href="@routes.Users.profile(user.getEmail())">
@@ -52,9 +52,7 @@
 
 	<section id="main">
 		<header>
-			<hgroup>
-				<h2>@Html(breadcrumbs)</h2>
-			</hgroup>
+			<p>@Html(breadcrumbs)</p>
 		</header>
 		@body
 	</section>

@@ -31,7 +31,6 @@ p.note {
     padding: 20px;
     text-align: center;
     color: #445868;
-    text-shadow: 1px 1px rgba(255,255,255,.6);
     em {
         font-weight: bold;
     }
@@ -42,13 +41,13 @@ form {
     width: 300px;
     padding: 20px;
     background: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,.3);
+    border-radius: 0px;
+    border: 1px solid @folderBorder;
     text-align: center;
     h1 {
         margin: 0 0 10px;
-        font-size: 20px;
-        font-weight: bold;
+        font-size: @headerFont;
+        color: @folderTitle;
     }
     p {
         width: inherit;
@@ -58,12 +57,10 @@ form {
     p.error {
         color: #c00;
         margin-bottom: 10px;
-        text-shadow: 1px 1px rgba(0,0,0,.1);
     }
     p.success {
         color: #83BD41; 
         margin-bottom: 10px;
-        text-shadow: 1px 1px rgba(0,0,0,.1);
     }
     input {
         display: block;
@@ -71,9 +68,6 @@ form {
         padding: 2px;
         background: rgba(0,0,0,.05);
         border: 1px solid rgba(0,0,0,.15);
-        box-shadow: 0 1px 2px rgba(0,0,0,.1) inset;
-        border-radius: 3px;
-        font-size: 14px;
         &:invalid:not(:focus) {
             border-color: red;
         }

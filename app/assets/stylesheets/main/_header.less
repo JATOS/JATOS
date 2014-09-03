@@ -10,9 +10,6 @@ body {
         padding: 10px;
         z-index: 9;
         .gradient(@headerLight, @headerDark);
-        box-shadow: 0 0 7px rgba(0,0,0,.8),
-                    inset 0 1px 0 rgba(255,255,255,.2),
-                    inset 0 -1px 0 rgba(0,0,0,.8);
     }
 }
 
@@ -36,15 +33,29 @@ body {
         display: inline-block;
     }
     dt {
-        color: #fff;
-        span {
-            opacity: .5;
-            font-size: 11px;
+        a {
+            margin-right: 10px;
+            color: @links + #333;
+            &:hover {
+                color: @links + #555;
+            }
+            span {
+                opacity: .7;
+                font-size: 11px;
+            }
         }
     }
     dd {
         a , button {
             .button();
+            border: 1px solid @mainColor + #222;
+            background-color: @mainColor + #111;
+            color: #bbb;
+            &:hover {
+            	border: 1px solid @mainColor + #444;
+                background-color: @mainColor + #333;
+                color: #ddd;
+            }
         }
     }
 }

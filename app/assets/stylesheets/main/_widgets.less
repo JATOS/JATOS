@@ -57,20 +57,14 @@
 
 .button() {
     padding: 2px 5px;
-    border-radius: 3px;
-    border: 1px solid @headerDark - #111;
-    .gradient(fadeout(#bff, 80%), fadeout(#bff, 100%));
+    border-radius: 0px;
+    border: 1px solid @buttonBorder;
     background-color: @buttonBackground;
-    box-shadow: 0 1px 4px rgba(0,0,0,.3),
-                inset 0 1px 0 rgba(255,255,255,.2),
-                inset 0 -1px 0 rgba(0,0,0,.2);
-    text-shadow: -1px -1px 0 rgba(0,0,0,.3);
-    color: @buttonColor;
+    color: @textColor;
     cursor: pointer;
     &:hover {
-        .gradient(fadeout(#bff, 70%), fadeout(#bff, 100%));
-        background-color: @headerDark;
-        color: @buttonHover;
+        background-color: @buttonBackground - #222;
+        color: @textColor - #222;
     }
 }
 
@@ -93,19 +87,16 @@
 .box() {
     border: 1px solid @folderBorder;
     background: @folderBackground;
-    border-radius: 5px;
-    margin: 0 0 20px;
+    border-radius: 0px;
+    margin: 0 0 10px;
     > header {
         border-radius: 5px 5px 0 0;
-        .gradient(@folderHeaderLight, @folderHeaderDark);
         border-bottom: inherit;
-        padding: 4px 7px;
+        padding: 6px 6px 3px 13px;
         h3 {
             display: inline-block;
-            font-size: 15px;
-            font-weight: bold;
+            font-size: @headerFont;
             color: @folderTitle;
-            text-shadow: 1px 1px 0 #fff;
         }
     }
 }
@@ -162,7 +153,6 @@
 .counter {
     color: #888;
     font-size: 11px;
-    text-shadow: 1px 1px 0 rgba(255,255,255,.7);
     margin: 2px 5px;
     padding: 0px 3px;
     background: rgba(0,0,0,.05);

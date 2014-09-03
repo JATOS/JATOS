@@ -56,7 +56,7 @@ public class StudyModel {
 
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "email") })
+	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id")}, inverseJoinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "email")})
 	private Set<UserModel> memberList = new HashSet<UserModel>();
 
 	@JsonIgnore

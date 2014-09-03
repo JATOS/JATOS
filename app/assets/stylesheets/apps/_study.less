@@ -8,14 +8,13 @@
 		width: inherit;
 		margin: 5px 0;
 		color: #c00;
-		text-shadow: 1px 1px rgba(0,0,0,.1);
 	}
 	.boxRow {
 		overflow: hidden;
 		width: 100%;
 		.studyBox {
 			.box();
-			width: 49%;
+			width: 49.5%;
 			overflow: hidden;
 			float: left;
 			> header {
@@ -39,7 +38,7 @@
 		}
 		.membersBox {
 			.box();
-			width: 49%;
+			width: 49.5%;
 			float: right;
 			> header {
 				h3 {
@@ -68,7 +67,7 @@
 		}
 		.componentsBox {
 			.box();
-			width: 49%;
+			width: 49.5%;
 			float: left;
 			> header {
 				h3 {
@@ -93,9 +92,9 @@
 						vertical-align: middle;
 						.upArrow, .downArrow {
 							cursor: pointer;
-							color: @arrow;
+							color: @textColor;
 							p:hover {
-								color: @arrowHover;
+								color: @textColor - #222;
 							}
 						}
 					}
@@ -126,7 +125,7 @@
 		}
 		.workerBox {
 			.box();
-			width: 49%;
+			width: 49.5%;
 			float: right;
 			> header {
 				h3 {
