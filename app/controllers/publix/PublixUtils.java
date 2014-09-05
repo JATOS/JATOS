@@ -67,7 +67,7 @@ public abstract class PublixUtils<T extends Worker> {
 			// by the same worker. Exception: If a component is reloadable,
 			// the old component result will be deleted and a new one generated.
 			if (component.isReloadable()) {
-				studyResult.removeComponentResult(componentResult);
+				Persistance.removeComponentResult(componentResult);
 			} else {
 				// Worker tried to reload a non-reloadable component -> end
 				// study and component with fail

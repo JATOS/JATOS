@@ -1,0 +1,42 @@
+// -----------------------------------
+// With many thanks to the author of the CSS of ZenTask
+// mda@zenexity.com
+// -----------------------------------
+
+.removeResults {
+	.resultsBox {
+		.box();
+		> header {
+			h3 {
+				vertical-align: middle;
+				padding-right: 5px;
+			}
+		}
+		.toggleAll {
+			padding: 4px 0px 4px 0px;
+			display: block;
+			input {
+				vertical-align: middle;
+				position: relative;
+				bottom: 1px;
+			}
+		}
+		table {
+			> tbody {
+				> tr {
+					border-bottom: 1px solid rgba(0,0,0,.05);
+					> td {
+						padding: 4px 0px 4px 0px;
+						vertical-align:middle;
+					}
+				}
+			}
+			.resultFirstRow {
+				font-size: @tableHeaderFont;
+			}
+			.resultSecondRow {
+				font-size: @defaultFont;
+			}
+		}
+	}
+}
