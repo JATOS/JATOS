@@ -7,21 +7,13 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
-import services.Persistance;
 
 public class Authentication extends Controller {
 	
 	private static final String CLASS_NAME = Authentication.class.getSimpleName();
 
-	@Transactional
-	public static Result login() throws Exception {
+	public static Result login() {
 		Logger.info(CLASS_NAME + ".login");
-		// Check for user admin: In case the app is started the first time we
-		// need an initial user: admin. If admin can't be found, create one.
-		UserModel admin = UserModel.findByEmail("admin");
-		if (admin == null) {
-			Persistance.createAdmin();
-		}
 		return ok(views.html.mecharg.auth.login.render(Form.form(Login.class)));
 	}
 	

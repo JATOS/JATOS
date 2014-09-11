@@ -3,9 +3,6 @@ package services;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
-import play.Logger;
-import play.db.jpa.JPA;
-import controllers.publix.PublixUtils;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -23,8 +20,6 @@ import models.workers.Worker;
  */
 public class Persistance {
 
-	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
-	
 	public static StudyResult createStudyResult(StudyModel study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);
 		studyResult.persist();
@@ -41,10 +36,6 @@ public class Persistance {
 		studyResult.addComponentResult(componentResult);
 		studyResult.merge();
 		componentResult.merge();
-//		if (JPA.em().getTransaction().isActive()) {
-//			JPA.em().flush();
-//			JPA.em().getTransaction().commit();
-//		}
 		return componentResult;
 	}
 
@@ -186,7 +177,7 @@ public class Persistance {
 			}
 			studyResult.remove();
 		}
-		
+
 		// Remove worker
 		worker.remove();
 	}
