@@ -15,3 +15,4 @@ dist
 /RUNNING_PID
 /.settings
 /start.sh~
+/application.secret

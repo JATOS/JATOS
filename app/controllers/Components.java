@@ -212,6 +212,11 @@ public class Components extends Controller {
 		boolean reloadable = (requestData.get(ComponentModel.RELOADABLE) != null);
 		Persistance.updateComponent(component, title, reloadable, viewUrl,
 				jsonData);
+		
+		String[] postAction = request().body().asFormUrlEncoded().get("action");
+		if ("UpdateAndShow".equals(postAction[0])) {
+			return tryComponent(studyId, componentId);
+		}
 		return redirect(routes.Components.index(study.getId(), componentId));
 	}
 
