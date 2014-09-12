@@ -18,8 +18,8 @@ import play.mvc.Result;
  */
 public class ExternalAssets extends Controller {
 
-	private static final String APPLICATION_CONF = "/conf/mecharg.conf";
-	private static final String PROPERTY_STUDIESPATH = "studiespath";
+	private static final String APPLICATION_CONF = "/conf/application.conf";
+	private static final String PROPERTY_STUDIESPATH = "mecharg.studiespath";
 	private static final String CLASS_NAME = ExternalAssets.class
 			.getSimpleName();
 	private static final String DEFAULT_STUDIES_PATH = "/studies";

@@ -14,3 +14,5 @@ libraryDependencies ++= Seq(
 playAssetsDirectories <+= baseDirectory / "studies"
 
 play.Project.playJavaSettings
+
+mappings in Universal += file(baseDirectory.value + "/start.sh") -> ("start.sh")
