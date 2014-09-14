@@ -341,4 +341,14 @@ public abstract class PublixUtils<T extends Worker> {
 		return data;
 	}
 
+	public static String getUrlWithRequestQueryString(String requestUrl,
+			String url) {
+		int queryBegin = requestUrl.lastIndexOf("?");
+		if (queryBegin > 0) {
+			String queryString = requestUrl.substring(queryBegin + 1);
+			url = url + "?" + queryString;
+		}
+		return url;
+	}
+
 }

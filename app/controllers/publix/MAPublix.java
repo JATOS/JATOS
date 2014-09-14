@@ -85,7 +85,9 @@ public class MAPublix extends Publix implements IPublix {
 
 		utils.startComponent(component, studyResult);
 
-		return redirect(component.getViewUrl());
+		String redirectUrl = PublixUtils.getUrlWithRequestQueryString(request()
+				.uri(), component.getViewUrl());
+		return redirect(redirectUrl);
 	}
 
 	@Override

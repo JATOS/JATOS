@@ -1,10 +1,11 @@
 package controllers.publix;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import exceptions.PublixException;
 
 /**
@@ -50,16 +51,16 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return mtPublix.startNextComponent(studyId);
 		}
 	}
-	
+
 	@Override
 	@Transactional
 	public Result getStudyData(Long studyId) throws PublixException,
 			JsonProcessingException {
-	if (isFromMechArg()) {
-		return maPublix.getStudyData(studyId);
-	} else {
-		return mtPublix.getStudyData(studyId);
-	}
+		if (isFromMechArg()) {
+			return maPublix.getStudyData(studyId);
+		} else {
+			return mtPublix.getStudyData(studyId);
+		}
 	}
 
 	@Override
@@ -103,7 +104,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return mtPublix.logError();
 		}
 	}
-	
+
 	@Override
 	public Result teapot() {
 		if (isFromMechArg()) {
