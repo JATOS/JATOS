@@ -1,5 +1,7 @@
 package controllers.publix;
 
+import java.util.ListIterator;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -42,7 +44,7 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 
 	@Override
 	public MAWorker retrieveWorker(MediaType errorMediaType)
-			throws BadRequestPublixException  {
+			throws BadRequestPublixException {
 		String email = Publix.session(Users.COOKIE_EMAIL);
 		if (email == null) {
 			throw new BadRequestPublixException(ErrorMessages.noUserLoggedIn(),
@@ -68,12 +70,19 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 			StudyModel study, MediaType mediaType)
 			throws ForbiddenPublixException {
 		StudyResult studyResult = null;
-		for (StudyResult studyResultTemp : worker.getStudyResultList()) {
+		
+		// Iterate reversely through the worker's study result list and
+		// take the first one with the right study ID and that is in state
+		// STARTED or DATA_RETRIEVED.
+		ListIterator<StudyResult> li = worker.getStudyResultList()
+				.listIterator(worker.getStudyResultList().size());
+		while (li.hasPrevious()) {
+			StudyResult studyResultTemp = li.previous();
+			StudyState studyState = studyResultTemp.getStudyState();
 			if (studyResultTemp.getStudy().getId() == study.getId()
-					&& studyResultTemp.getStudyState() == StudyState.STARTED) {
-				// Since there is only one study result of the same study
-				// allowed to be in STARTED, return the first one
+					&& (studyState == StudyState.STARTED || studyState == StudyState.DATA_RETRIEVED)) {
 				studyResult = studyResultTemp;
+				break;
 			}
 		}
 
