@@ -36,12 +36,13 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 	}
 
 	@Override
-	public MAWorker retrieveWorker() throws Exception {
+	public MAWorker retrieveWorker() throws BadRequestPublixException {
 		return retrieveWorker(MediaType.HTML_UTF_8);
 	}
 
 	@Override
-	public MAWorker retrieveWorker(MediaType errorMediaType) throws Exception {
+	public MAWorker retrieveWorker(MediaType errorMediaType)
+			throws BadRequestPublixException  {
 		String email = Publix.session(Users.COOKIE_EMAIL);
 		if (email == null) {
 			throw new BadRequestPublixException(ErrorMessages.noUserLoggedIn(),

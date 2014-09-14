@@ -9,9 +9,10 @@ import com.google.common.net.MediaType;
 
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
+import exceptions.PublixException;
 
 /**
- * Special PublixUtils for MTPublix (studies started via MTurk). 
+ * Special PublixUtils for MTPublix (studies started via MTurk).
  * 
  * @author madsen
  */
@@ -22,12 +23,13 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 	}
 
 	@Override
-	public MTWorker retrieveWorker() throws Exception {
+	public MTWorker retrieveWorker() throws PublixException {
 		return retrieveWorker(MediaType.HTML_UTF_8);
 	}
-	
+
 	@Override
-	public MTWorker retrieveWorker(MediaType errorMediaType) throws Exception {
+	public MTWorker retrieveWorker(MediaType errorMediaType)
+			throws PublixException {
 		String workerIdStr = Publix.session(Publix.WORKER_ID);
 		if (workerIdStr == null) {
 			// No worker ID in session -> study never started

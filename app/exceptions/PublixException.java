@@ -33,39 +33,39 @@ public class PublixException extends Exception {
 		this.httpStatus = httpStatus;
 	}
 
-	public SimpleResult getSimpleResult(String message) {
+	public SimpleResult getSimpleResult() {
 		if (mediaType == MediaType.HTML_UTF_8) {
 			switch (httpStatus) {
 			case HttpStatus.SC_BAD_REQUEST:
 				return Results.badRequest(views.html.publix.error
-						.render(message));
+						.render(getMessage()));
 			case HttpStatus.SC_FORBIDDEN:
 				return Results.forbidden(views.html.publix.error
-						.render(message));
+						.render(getMessage()));
 			case HttpStatus.SC_NOT_FOUND:
 				return Results
-						.notFound(views.html.publix.error.render(message));
+						.notFound(views.html.publix.error.render(getMessage()));
 			case HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE:
 				return Results.status(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE,
-						views.html.publix.error.render(message));
+						views.html.publix.error.render(getMessage()));
 			default:
 				return Results.internalServerError(views.html.publix.error
-						.render(message));
+						.render(getMessage()));
 			}
 		}
 
 		switch (httpStatus) {
 		case HttpStatus.SC_BAD_REQUEST:
-			return Results.badRequest(message);
+			return Results.badRequest(getMessage());
 		case HttpStatus.SC_FORBIDDEN:
-			return Results.forbidden(message);
+			return Results.forbidden(getMessage());
 		case HttpStatus.SC_NOT_FOUND:
-			return Results.notFound(message);
+			return Results.notFound(getMessage());
 		case HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE:
 			return Results
-					.status(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, message);
+					.status(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, getMessage());
 		default:
-			return Results.internalServerError(message);
+			return Results.internalServerError(getMessage());
 		}
 	}
 

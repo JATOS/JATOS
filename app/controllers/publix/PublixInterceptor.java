@@ -1,8 +1,11 @@
 package controllers.publix;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import exceptions.PublixException;
 
 /**
  * Interceptor for Publix: it intercepts requests for MechArg's public API and
@@ -19,7 +22,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result startStudy(Long studyId) throws Exception {
+	public Result startStudy(Long studyId) throws PublixException {
 		if (isFromMechArg()) {
 			return maPublix.startStudy(studyId);
 		} else {
@@ -30,7 +33,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public Result startComponent(Long studyId, Long componentId)
-			throws Exception {
+			throws PublixException {
 		if (isFromMechArg()) {
 			return maPublix.startComponent(studyId, componentId);
 		} else {
@@ -40,7 +43,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result startNextComponent(Long studyId) throws Exception {
+	public Result startNextComponent(Long studyId) throws PublixException {
 		if (isFromMechArg()) {
 			return maPublix.startNextComponent(studyId);
 		} else {
@@ -50,7 +53,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 	
 	@Override
 	@Transactional
-	public Result getStudyData(Long studyId) throws Exception {
+	public Result getStudyData(Long studyId) throws PublixException,
+			JsonProcessingException {
 	if (isFromMechArg()) {
 		return maPublix.getStudyData(studyId);
 	} else {
@@ -61,7 +65,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public Result getComponentData(Long studyId, Long componentId)
-			throws Exception {
+			throws PublixException, JsonProcessingException {
 		if (isFromMechArg()) {
 			return maPublix.getComponentData(studyId, componentId);
 		} else {
@@ -72,7 +76,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public Result submitResultData(Long studyId, Long componentId)
-			throws Exception {
+			throws PublixException {
 		if (isFromMechArg()) {
 			return maPublix.submitResultData(studyId, componentId);
 		} else {
@@ -83,7 +87,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
-			throws Exception {
+			throws PublixException {
 		if (isFromMechArg()) {
 			return maPublix.finishStudy(studyId, successful, errorMsg);
 		} else {

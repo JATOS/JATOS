@@ -16,10 +16,12 @@ import services.JsonUtils;
 import services.MTErrorMessages;
 import services.Persistance;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
 
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
+import exceptions.PublixException;
 
 /**
  * Implementation of MechArg's public API for studies that are started via
@@ -37,7 +39,7 @@ public class MTPublix extends Publix implements IPublix {
 
 	@Override
 	@Transactional
-	public Result startStudy(Long studyId) throws Exception {
+	public Result startStudy(Long studyId) throws PublixException {
 		// Get MTurk query parameters
 		// Hint: Don't confuse MTurk's workerId with MechArg's workerId. They
 		// aren't the same. MechArg's workerId is automatically generated
@@ -75,7 +77,7 @@ public class MTPublix extends Publix implements IPublix {
 	@Override
 	@Transactional
 	public Result startComponent(Long studyId, Long componentId)
-			throws Exception {
+			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
@@ -92,14 +94,14 @@ public class MTPublix extends Publix implements IPublix {
 
 	@Override
 	@Transactional
-	public Result startNextComponent(Long studyId) throws Exception {
+	public Result startNextComponent(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
 				+ ", " + "workerId " + session(WORKER_ID));
 		MTWorker worker = utils.retrieveWorker();
 		StudyModel study = utils.retrieveStudy(studyId);
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study);
-		
+
 		ComponentModel nextComponent = utils.retrieveNextComponent(studyResult);
 		if (nextComponent == null) {
 			// Study has no more components
@@ -111,7 +113,8 @@ public class MTPublix extends Publix implements IPublix {
 
 	@Override
 	@Transactional
-	public Result getStudyData(Long studyId) throws Exception {
+	public Result getStudyData(Long studyId) throws PublixException,
+			JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
 		MTWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
@@ -119,7 +122,7 @@ public class MTPublix extends Publix implements IPublix {
 				MediaType.TEXT_JAVASCRIPT_UTF_8);
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		
+
 		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
 		studyResult.merge();
 		return ok(JsonUtils.asJsonForPublix(study));
@@ -128,7 +131,7 @@ public class MTPublix extends Publix implements IPublix {
 	@Override
 	@Transactional
 	public Result getComponentData(Long studyId, Long componentId)
-			throws Exception {
+			throws PublixException, JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getComponentData: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
@@ -154,7 +157,7 @@ public class MTPublix extends Publix implements IPublix {
 	@Override
 	@Transactional
 	public Result submitResultData(Long studyId, Long componentId)
-			throws Exception {
+			throws PublixException {
 		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
@@ -181,7 +184,7 @@ public class MTPublix extends Publix implements IPublix {
 	@Override
 	@Transactional
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
-			throws Exception {
+			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");

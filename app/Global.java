@@ -59,13 +59,13 @@ public class Global extends GlobalSettings {
 		if (cause instanceof PublixException) {
 			PublixException publixException = (PublixException) cause;
 			SimpleResult result = publixException
-					.getSimpleResult(publixException.getMessage());
+					.getSimpleResult();
 			return Promise.<SimpleResult> pure(result);
 		}
 		if (causeCause instanceof PublixException) {
 			PublixException publixException = (PublixException) causeCause;
 			SimpleResult result = publixException
-					.getSimpleResult(publixException.getMessage());
+					.getSimpleResult();
 			return Promise.<SimpleResult> pure(result);
 		}
 		if (cause instanceof ResultException) {

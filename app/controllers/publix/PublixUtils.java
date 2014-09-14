@@ -31,6 +31,7 @@ import com.google.common.net.MediaType;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
 import exceptions.NotFoundPublixException;
+import exceptions.PublixException;
 import exceptions.UnsupportedMediaTypePublixException;
 
 /**
@@ -113,8 +114,8 @@ public abstract class PublixUtils<T extends Worker> {
 	public void finishAllComponentResults(StudyResult studyResult) {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
-			if (!(componentResult.getComponentState() == ComponentState.FINISHED
-					|| componentResult.getComponentState() == ComponentState.FAIL)) {
+			if (!(componentResult.getComponentState() == ComponentState.FINISHED || componentResult
+					.getComponentState() == ComponentState.FAIL)) {
 				componentResult.setComponentState(ComponentState.FINISHED);
 				componentResult.merge();
 			}
@@ -158,9 +159,10 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 	}
 
-	public abstract T retrieveWorker() throws Exception;
+	public abstract T retrieveWorker() throws PublixException;
 
-	public abstract T retrieveWorker(MediaType errorMediaType) throws Exception;
+	public abstract T retrieveWorker(MediaType errorMediaType)
+			throws PublixException;
 
 	public StudyResult retrieveWorkersStartedStudyResult(T worker,
 			StudyModel study) throws ForbiddenPublixException {
@@ -277,19 +279,19 @@ public abstract class PublixUtils<T extends Worker> {
 		ComponentModel currentComponent = retrieveLastComponent(studyResult);
 		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
 				currentComponent);
-//		if (nextComponent == null) {
-//			throw new NotFoundPublixException(ErrorMessages.noMoreComponents());
-//		}
+		// if (nextComponent == null) {
+		// throw new NotFoundPublixException(ErrorMessages.noMoreComponents());
+		// }
 		return nextComponent;
 	}
 
 	public ComponentModel retrieveComponent(StudyModel study, Long componentId)
-			throws Exception {
+			throws BadRequestPublixException {
 		return retrieveComponent(study, componentId, MediaType.HTML_UTF_8);
 	}
 
 	public ComponentModel retrieveComponent(StudyModel study, Long componentId,
-			MediaType errorMediaType) throws Exception {
+			MediaType errorMediaType) throws BadRequestPublixException {
 		ComponentModel component = ComponentModel.findById(componentId);
 		if (component == null) {
 			throw new BadRequestPublixException(
@@ -304,12 +306,13 @@ public abstract class PublixUtils<T extends Worker> {
 		return component;
 	}
 
-	public StudyModel retrieveStudy(Long studyId) throws Exception {
+	public StudyModel retrieveStudy(Long studyId)
+			throws BadRequestPublixException {
 		return retrieveStudy(studyId, MediaType.HTML_UTF_8);
 	}
 
 	public StudyModel retrieveStudy(Long studyId, MediaType errorMediaType)
-			throws Exception {
+			throws BadRequestPublixException {
 		StudyModel study = StudyModel.findById(studyId);
 		if (study == null) {
 			throw new BadRequestPublixException(

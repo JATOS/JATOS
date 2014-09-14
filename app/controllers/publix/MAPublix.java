@@ -16,6 +16,7 @@ import services.JsonUtils;
 import services.MAErrorMessages;
 import services.Persistance;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
 
 import controllers.Components;
@@ -42,7 +43,7 @@ public class MAPublix extends Publix implements IPublix {
 
 	@Override
 	@Transactional
-	public Result startStudy(Long studyId) throws Exception {
+	public Result startStudy(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
@@ -63,7 +64,7 @@ public class MAPublix extends Publix implements IPublix {
 	@Override
 	@Transactional
 	public Result startComponent(Long studyId, Long componentId)
-			throws Exception {
+			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
@@ -89,7 +90,7 @@ public class MAPublix extends Publix implements IPublix {
 
 	@Override
 	@Transactional
-	public Result startNextComponent(Long studyId) throws Exception {
+	public Result startNextComponent(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
@@ -115,10 +116,11 @@ public class MAPublix extends Publix implements IPublix {
 		}
 		return startComponent(studyId, nextComponent.getId());
 	}
-	
+
 	@Override
 	@Transactional
-	public Result getStudyData(Long studyId) throws Exception {
+	public Result getStudyData(Long studyId) throws PublixException,
+			JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
 		MAWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
@@ -126,7 +128,7 @@ public class MAPublix extends Publix implements IPublix {
 				MediaType.TEXT_JAVASCRIPT_UTF_8);
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		
+
 		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
 		studyResult.merge();
 		return ok(JsonUtils.asJsonForPublix(study));
@@ -135,7 +137,7 @@ public class MAPublix extends Publix implements IPublix {
 	@Override
 	@Transactional
 	public Result getComponentData(Long studyId, Long componentId)
-			throws Exception {
+			throws PublixException, JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getComponentData: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "logged-in user email "
 				+ session(Users.COOKIE_EMAIL));
@@ -163,7 +165,7 @@ public class MAPublix extends Publix implements IPublix {
 	@Override
 	@Transactional
 	public Result submitResultData(Long studyId, Long componentId)
-			throws Exception {
+			throws PublixException {
 		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "logged-in user email "
 				+ session(Users.COOKIE_EMAIL));
@@ -193,7 +195,7 @@ public class MAPublix extends Publix implements IPublix {
 	@Override
 	@Transactional
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
-			throws Exception {
+			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
 				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
 				+ "successful " + successful + ", " + "errorMsg \"" + errorMsg
