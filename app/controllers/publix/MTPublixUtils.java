@@ -9,6 +9,7 @@ import com.google.common.net.MediaType;
 
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
+import exceptions.NotFoundPublixException;
 import exceptions.PublixException;
 
 /**
@@ -46,11 +47,11 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 
 		Worker worker = Worker.findById(workerId);
 		if (worker == null) {
-			throw new BadRequestPublixException(
+			throw new NotFoundPublixException(
 					ErrorMessages.workerNotExist(workerId), errorMediaType);
 		}
 		if (!(worker instanceof MTWorker)) {
-			throw new BadRequestPublixException(
+			throw new NotFoundPublixException(
 					ErrorMessages.workerNotFromMTurk(workerId), errorMediaType);
 		}
 		return (MTWorker) worker;

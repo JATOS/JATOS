@@ -264,37 +264,44 @@ public abstract class PublixUtils<T extends Worker> {
 		return null;
 	}
 
-	public ComponentModel retrieveFirstComponent(StudyModel study)
-			throws BadRequestPublixException {
+	public ComponentModel retrieveFirstActiveComponent(StudyModel study)
+			throws NotFoundPublixException {
 		ComponentModel component = study.getFirstComponent();
+		// Find first active component or null if study has no active components
+		while (component != null && !component.isActive()) {
+			component = study.getNextComponent(component);
+		}
 		if (component == null) {
-			throw new BadRequestPublixException(
-					ErrorMessages.studyHasNoComponents(study.getId()));
+			throw new NotFoundPublixException(
+					ErrorMessages.studyHasNoActiveComponents(study.getId()));
 		}
 		return component;
 	}
 
-	public ComponentModel retrieveNextComponent(StudyResult studyResult)
-			throws NotFoundPublixException {
+	public ComponentModel retrieveNextActiveComponent(StudyResult studyResult) {
 		ComponentModel currentComponent = retrieveLastComponent(studyResult);
 		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
 				currentComponent);
-		// if (nextComponent == null) {
-		// throw new NotFoundPublixException(ErrorMessages.noMoreComponents());
-		// }
+		// Find next active component or null if study has no more components
+		while (nextComponent != null && !nextComponent.isActive()) {
+			nextComponent = studyResult.getStudy().getNextComponent(
+					nextComponent);
+		}
 		return nextComponent;
 	}
 
 	public ComponentModel retrieveComponent(StudyModel study, Long componentId)
-			throws BadRequestPublixException {
+			throws NotFoundPublixException, BadRequestPublixException,
+			ForbiddenPublixException {
 		return retrieveComponent(study, componentId, MediaType.HTML_UTF_8);
 	}
 
 	public ComponentModel retrieveComponent(StudyModel study, Long componentId,
-			MediaType errorMediaType) throws BadRequestPublixException {
+			MediaType errorMediaType) throws NotFoundPublixException,
+			BadRequestPublixException, ForbiddenPublixException {
 		ComponentModel component = ComponentModel.findById(componentId);
 		if (component == null) {
-			throw new BadRequestPublixException(
+			throw new NotFoundPublixException(
 					ErrorMessages.componentNotExist(study.getId(), componentId),
 					errorMediaType);
 		}
@@ -303,19 +310,24 @@ public abstract class PublixUtils<T extends Worker> {
 					ErrorMessages.componentNotBelongToStudy(study.getId(),
 							componentId), errorMediaType);
 		}
+		if (!component.isActive()) {
+			throw new ForbiddenPublixException(
+					ErrorMessages.componentNotActive(study.getId(),
+							componentId), errorMediaType);
+		}
 		return component;
 	}
 
 	public StudyModel retrieveStudy(Long studyId)
-			throws BadRequestPublixException {
+			throws NotFoundPublixException {
 		return retrieveStudy(studyId, MediaType.HTML_UTF_8);
 	}
 
 	public StudyModel retrieveStudy(Long studyId, MediaType errorMediaType)
-			throws BadRequestPublixException {
+			throws NotFoundPublixException {
 		StudyModel study = StudyModel.findById(studyId);
 		if (study == null) {
-			throw new BadRequestPublixException(
+			throw new NotFoundPublixException(
 					ErrorMessages.studyNotExist(studyId), errorMediaType);
 		}
 		return study;

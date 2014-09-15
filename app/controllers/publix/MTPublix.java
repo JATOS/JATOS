@@ -70,7 +70,8 @@ public class MTPublix extends Publix implements IPublix {
 
 		Persistance.createStudyResult(study, worker);
 
-		ComponentModel firstComponent = utils.retrieveFirstComponent(study);
+		ComponentModel firstComponent = utils
+				.retrieveFirstActiveComponent(study);
 		return startComponent(studyId, firstComponent.getId());
 	}
 
@@ -89,7 +90,7 @@ public class MTPublix extends Publix implements IPublix {
 				worker, study);
 
 		utils.startComponent(component, studyResult);
-		
+
 		String redirectUrl = PublixUtils.getUrlWithRequestQueryString(request()
 				.uri(), component.getViewUrl());
 		return redirect(redirectUrl);
@@ -105,7 +106,8 @@ public class MTPublix extends Publix implements IPublix {
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study);
 
-		ComponentModel nextComponent = utils.retrieveNextComponent(studyResult);
+		ComponentModel nextComponent = utils
+				.retrieveNextActiveComponent(studyResult);
 		if (nextComponent == null) {
 			// Study has no more components
 			utils.finishStudy(true, studyResult);

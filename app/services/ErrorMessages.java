@@ -52,9 +52,9 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String studyHasNoComponents(Long studyId) {
+	public static String studyHasNoActiveComponents(Long studyId) {
 		String errorMsg = "The study with ID " + studyId
-				+ " has no components.";
+				+ " has no active components.";
 		return errorMsg;
 	}
 
@@ -68,6 +68,13 @@ public abstract class ErrorMessages<T extends Worker> {
 			Long componentId) {
 		String errorMsg = "There is no study with ID " + studyId
 				+ " that has a component with ID " + componentId + ".";
+		return errorMsg;
+	}
+	
+	public static String componentNotActive(Long studyId,
+			Long componentId) {
+		String errorMsg = "Component with ID " + componentId
+				+ " in study with ID " + studyId + " is not active.";
 		return errorMsg;
 	}
 

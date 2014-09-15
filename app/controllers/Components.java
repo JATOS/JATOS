@@ -212,12 +212,37 @@ public class Components extends Controller {
 		boolean reloadable = (requestData.get(ComponentModel.RELOADABLE) != null);
 		Persistance.updateComponent(component, title, reloadable, viewUrl,
 				jsonData);
-		
+
 		String[] postAction = request().body().asFormUrlEncoded().get("action");
 		if ("UpdateAndShow".equals(postAction[0])) {
 			return tryComponent(studyId, componentId);
 		}
 		return redirect(routes.Components.index(study.getId(), componentId));
+	}
+
+	@Transactional
+	public static Result changeProperty(Long studyId, Long componentId,
+			Boolean active) throws ResultException {
+		Logger.info(CLASS_NAME + ".changeProperty: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", " + "active " + active
+				+ ", " + "logged-in user's email "
+				+ session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		List<StudyModel> studyList = StudyModel.findAll();
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		ComponentModel component = ComponentModel.findById(componentId);
+		checkStandardForComponents(studyId, componentId, study, studyList,
+				loggedInUser, component);
+		if (!study.hasMember(loggedInUser)) {
+			throw BadRequests
+					.forbiddenNotMember(loggedInUser, study, studyList);
+		}
+		
+		if (active != null) {
+			Persistance.changeActive(component, active);
+		}
+		return ok();
 	}
 
 	@Transactional

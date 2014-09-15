@@ -21,6 +21,7 @@ import controllers.Studies;
 import controllers.Users;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
+import exceptions.NotFoundPublixException;
 
 /**
  * Special PublixUtils for MAPublix (studies or components started via MechArg's
@@ -38,13 +39,14 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 	}
 
 	@Override
-	public MAWorker retrieveWorker() throws BadRequestPublixException {
+	public MAWorker retrieveWorker() throws BadRequestPublixException,
+			NotFoundPublixException {
 		return retrieveWorker(MediaType.HTML_UTF_8);
 	}
 
 	@Override
 	public MAWorker retrieveWorker(MediaType errorMediaType)
-			throws BadRequestPublixException {
+			throws BadRequestPublixException, NotFoundPublixException {
 		String email = Publix.session(Users.COOKIE_EMAIL);
 		if (email == null) {
 			throw new BadRequestPublixException(ErrorMessages.noUserLoggedIn(),
@@ -52,7 +54,7 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 		}
 		UserModel loggedInUser = UserModel.findByEmail(email);
 		if (loggedInUser == null) {
-			throw new BadRequestPublixException(ErrorMessages.userNotExists(),
+			throw new NotFoundPublixException(ErrorMessages.userNotExists(),
 					errorMediaType);
 		}
 		return loggedInUser.getWorker();
@@ -128,14 +130,14 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 	}
 
 	public void checkMembership(StudyModel study, UserModel loggedInUser)
-			throws BadRequestPublixException {
+			throws ForbiddenPublixException {
 		checkMembership(study, loggedInUser, MediaType.HTML_UTF_8);
 	}
 
 	public void checkMembership(StudyModel study, UserModel loggedInUser,
-			MediaType errorMediaType) throws BadRequestPublixException {
+			MediaType errorMediaType) throws ForbiddenPublixException {
 		if (!study.hasMember(loggedInUser)) {
-			throw new BadRequestPublixException(ErrorMessages.notMember(
+			throw new ForbiddenPublixException(ErrorMessages.notMember(
 					loggedInUser.getName(), loggedInUser.getEmail(),
 					study.getId(), study.getTitle()), errorMediaType);
 		}

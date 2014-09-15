@@ -59,13 +59,21 @@ public class ComponentModel {
 	@JsonView(JsonUtils.JsonForPublix.class)
 	private boolean reloadable;
 
+	/**
+	 * An inactive component can't be used within a study - it generates an
+	 * error message if one try. Further it's skipped if one uses
+	 * startNextComponent from the public API.
+	 */
+	@JsonView(JsonUtils.JsonForMA.class)
+	private boolean active;
+
 	@JsonView(JsonUtils.JsonForPublix.class)
 	@Lob
 	private String jsonData;
 
 	public ComponentModel() {
 	}
-	
+
 	public ComponentModel(ComponentModel component) {
 		this.study = component.study;
 		this.title = component.title;
@@ -137,6 +145,14 @@ public class ComponentModel {
 
 	public void setReloadable(boolean reloadable) {
 		this.reloadable = reloadable;
+	}
+	
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
 	public List<ValidationError> validate() {

@@ -48,7 +48,7 @@ public class MAPublix extends Publix implements IPublix {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
 		MAWorker worker = utils.retrieveWorker();
-		ComponentModel firstComponent = utils.retrieveFirstComponent(study);
+		ComponentModel firstComponent = utils.retrieveFirstActiveComponent(study);
 		checkStandard(study, worker.getUser(), firstComponent);
 
 		String mechArgTry = utils.retrieveMechArgTry();
@@ -110,7 +110,8 @@ public class MAPublix extends Publix implements IPublix {
 			return redirect(routes.Studies.index(study.getId()));
 		}
 
-		ComponentModel nextComponent = utils.retrieveNextComponent(studyResult);
+		ComponentModel nextComponent = utils
+				.retrieveNextActiveComponent(studyResult);
 		if (nextComponent == null) {
 			// Study has no more components
 			utils.finishStudy(true, studyResult);

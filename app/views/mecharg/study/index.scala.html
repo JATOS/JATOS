@@ -50,6 +50,9 @@
 							<div class="upArrow" component-id="@component.getId()"><p>&#9650;</p></div>
 							<div class="downArrow" component-id="@component.getId()"><p>&#9660;</p></div>
 						</div>
+						<input class="active" type="checkbox" name="active" 
+							@if(component.isActive()) {checked}
+						/>
 						<a class="name"
 								href="@routes.Components.index(study.getId(), component.getId())">
 								@component.getTitle() (ID: @component.getId())
@@ -138,6 +141,23 @@
 					liElement.insertAfter(liElement.next());
 				}
 			},
+			error: function(err) {
+				alert(err.responseText);
+			}
+		});
+	}
+	
+	$(".active").click(function(e) {
+		var componentElement = $(e.target).parent();
+		var componentId = componentElement.attr("component-id");
+		var active = $(e.target).prop('checked');
+		ajaxChangeActive(componentId, active, componentElement);
+	});
+	
+	function ajaxChangeActive(componentId, active, componentElement) {
+		var ajax = $.ajax({
+			url: "/mecharg/@study.getId()/" + componentId + "/changeProperty?active=" + active,
+			type: "POST",
 			error: function(err) {
 				alert(err.responseText);
 			}

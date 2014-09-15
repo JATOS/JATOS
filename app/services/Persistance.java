@@ -113,6 +113,11 @@ public class Persistance {
 		component.setJsonData(jsonData);
 		component.merge();
 	}
+	
+	public static void changeActive(ComponentModel component, boolean active) {
+		component.setActive(active);
+		component.merge();
+	}
 
 	public static void removeComponent(StudyModel study,
 			ComponentModel component) {

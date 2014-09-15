@@ -48,6 +48,7 @@ GET     /mecharg/:studyId/createComponent              controllers.Components.cr
 POST    /mecharg/:studyId/createComponent              controllers.Components.submit(studyId: Long)
 GET     /mecharg/:studyId/:componentId/edit            controllers.Components.edit(studyId: Long, componentId: Long)
 POST    /mecharg/:studyId/:componentId/edit            controllers.Components.submitEdited(studyId: Long, componentId: Long)
+POST    /mecharg/:studyId/:componentId/changeProperty  controllers.Components.changeProperty(studyId: Long, componentId: Long, active: Boolean)
 DELETE  /mecharg/:studyId/:componentId/remove          controllers.Components.remove(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId/removeResults   controllers.ComponentResults.removeResults(studyId: Long, componentId: Long)
 POST    /mecharg/:studyId/:componentId/removeResults   controllers.ComponentResults.submitRemovedResults(studyId: Long, componentId: Long)
