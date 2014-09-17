@@ -186,7 +186,7 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String removeMAWorker(Long workerId, String username,
 			String email) {
 		String errorMsg = "Worker (ID: " + workerId + ") is a worker of the "
-				+ "Mechanical Argentinian, associated to the user "
+				+ "Mechanical Argentine, associated to the user "
 				+ username + " (" + email + ") and can't be deleted.";
 		return errorMsg;
 	}
