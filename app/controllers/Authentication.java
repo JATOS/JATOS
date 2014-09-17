@@ -25,7 +25,7 @@ public class Authentication extends Controller {
 			return badRequest(views.html.mecharg.auth.login.render(loginForm));
 		} else {
 			session(Users.COOKIE_EMAIL, loginForm.get().email);
-			return redirect(routes.Dashboard.dashboard());
+			return redirect(routes.Home.home());
 		}
 	}
 

@@ -12,13 +12,13 @@ import play.mvc.Result;
 import play.mvc.Security;
 
 @Security.Authenticated(Secured.class)
-public class Dashboard extends Controller {
+public class Home extends Controller {
 	
-	private static final String CLASS_NAME = Dashboard.class.getSimpleName();
+	private static final String CLASS_NAME = Home.class.getSimpleName();
 
 	@Transactional
-	public static Result dashboard() {
-		Logger.info(CLASS_NAME + ".dashboard: "
+	public static Result home() {
+		Logger.info(CLASS_NAME + ".home: "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = UserModel
@@ -29,8 +29,8 @@ public class Dashboard extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs
-				.generateBreadcrumbs(Breadcrumbs.getDashboardBreadcrumb());
-		return ok(views.html.mecharg.dashboard.render(studyList, loggedInUser,
+				.generateBreadcrumbs(Breadcrumbs.getHomeBreadcrumb());
+		return ok(views.html.mecharg.home.render(studyList, loggedInUser,
 				breadcrumbs, userList, workerList, null));
 	}
 

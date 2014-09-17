@@ -16,7 +16,7 @@
 
 <body>
 	<header>
-		<a id="logo" href="@routes.Dashboard.dashboard"><span>Mechanical</span>Argentine</a>
+		<a id="logo" href="@routes.Home.home"><span>Mechanical</span>Argentine</a>
 		<dl id="user">
 			<dt>
 				<a href="@routes.Users.profile(user.getEmail())">
@@ -30,7 +30,7 @@
 	</header>
 
 	<nav>
-		<h4><a href="@routes.Dashboard.dashboard()">Dashboard</a></h4>
+		<h4><a href="@routes.Home.home()">Home</a></h4>
 		<ul id="studies">
 			@for(study <- studyList) {
 				<li>

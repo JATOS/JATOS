@@ -8,8 +8,8 @@ import play.mvc.Controller;
 
 public class Breadcrumbs extends Controller {
 
-	public static String getDashboardBreadcrumb() {
-		return "<a href=\"" + routes.Dashboard.dashboard() + "\">" + "/" + "</a>";
+	public static String getHomeBreadcrumb() {
+		return "<a href=\"" + routes.Home.home() + "\">" + "/" + "</a>";
 	}
 
 	public static String generateBreadcrumbs(String... crumbs) {

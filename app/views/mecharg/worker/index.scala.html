@@ -83,7 +83,7 @@ studyResultList: List[results.StudyResult])
 				url : '@routes.Workers.remove(worker.getId())',
 				type : 'DELETE',
 				success : function(result) {
-					window.location.replace('@routes.Dashboard.dashboard()');
+					window.location.replace('@routes.Home.home()');
 				},
 				error : function(err) {
 					alert("Couldn't delete worker (ID: @worker.getId()).");

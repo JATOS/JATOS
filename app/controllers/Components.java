@@ -42,7 +42,7 @@ public class Components extends Controller {
 				.findAllByComponent(component);
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study),
 				Breadcrumbs.getComponentBreadcrumb(study, component));
 		return ok(views.html.mecharg.component.index.render(studyList,
@@ -98,7 +98,7 @@ public class Components extends Controller {
 		}
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study), "New Component");
 		return ok(views.html.mecharg.component.create.render(studyList,
 				loggedInUser, breadcrumbs, study,
@@ -129,7 +129,7 @@ public class Components extends Controller {
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getDashboardBreadcrumb(),
+					Breadcrumbs.getHomeBreadcrumb(),
 					Breadcrumbs.getStudyBreadcrumb(study), "New Component");
 			SimpleResult result = badRequest(views.html.mecharg.component.create
 					.render(studyList, loggedInUser, breadcrumbs, study, form));
@@ -164,7 +164,7 @@ public class Components extends Controller {
 		Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 				component);
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study),
 				Breadcrumbs.getComponentBreadcrumb(study, component), "Edit");
 		return ok(views.html.mecharg.component.edit.render(studyList,
@@ -194,7 +194,7 @@ public class Components extends Controller {
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getDashboardBreadcrumb(),
+					Breadcrumbs.getHomeBreadcrumb(),
 					Breadcrumbs.getStudyBreadcrumb(study),
 					Breadcrumbs.getComponentBreadcrumb(study, component),
 					"Edit");

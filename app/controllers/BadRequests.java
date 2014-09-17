@@ -20,8 +20,8 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
-				.getDashboardBreadcrumb());
-		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+				.getHomeBreadcrumb());
+		SimpleResult result = badRequest(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -33,8 +33,8 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
-				.getDashboardBreadcrumb());
-		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+				.getHomeBreadcrumb());
+		SimpleResult result = badRequest(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -46,8 +46,8 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
-				.getDashboardBreadcrumb());
-		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+				.getHomeBreadcrumb());
+		SimpleResult result = badRequest(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -59,9 +59,9 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
-		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+		SimpleResult result = badRequest(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -75,9 +75,9 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
-		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+		SimpleResult result = badRequest(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -90,9 +90,9 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
-		SimpleResult result = forbidden(views.html.mecharg.dashboard.render(
+		SimpleResult result = forbidden(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -105,9 +105,9 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(), 
+				Breadcrumbs.getHomeBreadcrumb(), 
 				Breadcrumbs.getWorkerBreadcrumb(worker));
-		SimpleResult result = forbidden(views.html.mecharg.dashboard.render(
+		SimpleResult result = forbidden(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -120,10 +120,10 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study),
 				Breadcrumbs.getComponentBreadcrumb(study, component));
-		SimpleResult result = forbidden(views.html.mecharg.dashboard.render(
+		SimpleResult result = forbidden(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -135,9 +135,9 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study), "Change Members");
-		SimpleResult result = forbidden(views.html.mecharg.dashboard.render(
+		SimpleResult result = forbidden(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -149,9 +149,9 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getUserBreadcrumb(user), "Change Password");
-		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+		SimpleResult result = badRequest(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);
@@ -165,9 +165,9 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
-		SimpleResult result = badRequest(views.html.mecharg.dashboard.render(
+		SimpleResult result = badRequest(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,
 				errorMsg));
 		return new ResultException(result, errorMsg);

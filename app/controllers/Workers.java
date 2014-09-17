@@ -47,7 +47,7 @@ public class Workers extends Controller {
 		}
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(), "Worker",
+				Breadcrumbs.getHomeBreadcrumb(), "Worker",
 				Breadcrumbs.getWorkerBreadcrumb(worker));
 		return ok(views.html.mecharg.worker.index
 				.render(studyList, loggedInUser, breadcrumbs, null, worker,

@@ -46,7 +46,7 @@ public class Users extends Controller {
 		}
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getUserBreadcrumb(user));
 		return ok(views.html.mecharg.user.profile.render(studyList,
 				loggedInUser, breadcrumbs, null, user));
@@ -63,7 +63,7 @@ public class Users extends Controller {
 			return redirect(routes.Authentication.login());
 		}
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(), "New User");
+				Breadcrumbs.getHomeBreadcrumb(), "New User");
 		return ok(views.html.mecharg.user.create.render(studyList,
 				loggedInUser, breadcrumbs, Form.form(UserModel.class)));
 	}
@@ -82,7 +82,7 @@ public class Users extends Controller {
 
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getDashboardBreadcrumb(), "New User");
+					Breadcrumbs.getHomeBreadcrumb(), "New User");
 			SimpleResult result = badRequest(views.html.mecharg.user.create
 					.render(studyList, loggedInUser, breadcrumbs, form));
 			throw new ResultException(result);
@@ -114,7 +114,7 @@ public class Users extends Controller {
 
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getDashboardBreadcrumb(), "New User");
+					Breadcrumbs.getHomeBreadcrumb(), "New User");
 			SimpleResult result = badRequest(views.html.mecharg.user.create
 					.render(studyList, loggedInUser, breadcrumbs, form));
 			throw new ResultException(result);
@@ -154,7 +154,7 @@ public class Users extends Controller {
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getUserBreadcrumb(user), "Edit Profile");
 		return ok(views.html.mecharg.user.editProfile.render(studyList,
 				loggedInUser, breadcrumbs, user, form));
@@ -188,7 +188,7 @@ public class Users extends Controller {
 
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getDashboardBreadcrumb(),
+					Breadcrumbs.getHomeBreadcrumb(),
 					Breadcrumbs.getUserBreadcrumb(user), "Edit Profile");
 			SimpleResult result = badRequest(views.html.mecharg.user.editProfile
 					.render(studyList, loggedInUser, breadcrumbs, user, form));
@@ -230,7 +230,7 @@ public class Users extends Controller {
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getUserBreadcrumb(user), "Change Password");
 		return ok(views.html.mecharg.user.changePassword.render(studyList,
 				loggedInUser, breadcrumbs, form));
@@ -286,7 +286,7 @@ public class Users extends Controller {
 
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getDashboardBreadcrumb(),
+					Breadcrumbs.getHomeBreadcrumb(),
 					Breadcrumbs.getUserBreadcrumb(user), "Change Password");
 			SimpleResult result = badRequest(views.html.mecharg.user.changePassword
 					.render(studyList, loggedInUser, breadcrumbs, form));

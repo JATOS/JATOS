@@ -41,7 +41,7 @@ public class Studies extends Controller {
 		List<StudyResult> studyResultList = getStudyResultsNotDoneByMA(study);
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
 		return ok(views.html.mecharg.study.index.render(studyList,
 				loggedInUser, breadcrumbs, null, study, studyResultList));
@@ -70,7 +70,7 @@ public class Studies extends Controller {
 		}
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(), "New Study");
+				Breadcrumbs.getHomeBreadcrumb(), "New Study");
 		return ok(views.html.mecharg.study.create.render(studyList,
 				loggedInUser, breadcrumbs, Form.form(StudyModel.class)));
 	}
@@ -88,7 +88,7 @@ public class Studies extends Controller {
 		if (form.hasErrors()) {
 			List<StudyModel> studyList = StudyModel.findAll();
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getDashboardBreadcrumb(), "New Study");
+					Breadcrumbs.getHomeBreadcrumb(), "New Study");
 			SimpleResult result = badRequest(views.html.mecharg.study.create
 					.render(studyList, loggedInUser, breadcrumbs, form));
 			throw new ResultException(result);
@@ -112,7 +112,7 @@ public class Studies extends Controller {
 
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study), "Edit");
 		return ok(views.html.mecharg.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, study, form));
@@ -131,7 +131,7 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getDashboardBreadcrumb(),
+					Breadcrumbs.getHomeBreadcrumb(),
 					Breadcrumbs.getStudyBreadcrumb(study), "Edit");
 			SimpleResult result = badRequest(views.html.mecharg.study.edit
 					.render(studyList, loggedInUser, breadcrumbs, study, form));
@@ -158,7 +158,7 @@ public class Studies extends Controller {
 		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 
 		Persistance.removeStudy(study);
-		return redirect(routes.Dashboard.dashboard());
+		return redirect(routes.Home.home());
 	}
 	
 	@Transactional
@@ -189,7 +189,7 @@ public class Studies extends Controller {
 
 		List<UserModel> userList = UserModel.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study), "Change Members");
 		return ok(views.html.mecharg.study.changeMembers.render(studyList,
 				loggedInUser, breadcrumbs, study, userList, null));
@@ -316,7 +316,7 @@ public class Studies extends Controller {
 
 		String hostname = request().host();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study),
 				"Mechanical Turk HIT layout source code");
 		return ok(views.html.mecharg.study.mTurkSourceCode.render(studyList,

@@ -77,7 +77,7 @@ public class ComponentResults extends Controller {
 				.findAllByComponent(component);
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getDashboardBreadcrumb(),
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study),
 				Breadcrumbs.getComponentBreadcrumb(study, component),
 				"Delete Results");
