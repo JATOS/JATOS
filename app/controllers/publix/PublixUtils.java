@@ -61,12 +61,12 @@ public abstract class PublixUtils<T extends Worker> {
 	public ComponentResult startComponent(ComponentModel component,
 			StudyResult studyResult, MediaType errorMediaType)
 			throws ForbiddenPublixException {
-		ComponentResult componentResult = retrieveComponentResult(component,
-				studyResult);
+		// Only one component of the same kind can be done at the same time
+		// by the same worker. Exception: If a component is reloadable,
+		// the old component result will be deleted and a new one generated.
+		ComponentResult componentResult = retrieveOpenComponentResult(
+				component, studyResult);
 		if (componentResult != null) {
-			// Only one component of the same kind can be done in the same study
-			// by the same worker. Exception: If a component is reloadable,
-			// the old component result will be deleted and a new one generated.
 			if (component.isReloadable()) {
 				Persistance.removeComponentResult(componentResult);
 			} else {
@@ -80,8 +80,10 @@ public abstract class PublixUtils<T extends Worker> {
 								.getStudy().getId(), component.getId()));
 			}
 		}
-		// Only one ComponentResult can be in state started at the same time.
-		// To start a new ComponentResult, finish all other ones.
+		// Only one ComponentResult can be open (not in state FINISHED or FAIL
+		// at the same time. To start a new ComponentResult, finish all other
+		// ones. This is probably redundant but it good to know that at this
+		// point all componentResults are finished.
 		finishAllComponentResults(studyResult);
 		return Persistance.createComponentResult(studyResult, component);
 	}
@@ -114,8 +116,8 @@ public abstract class PublixUtils<T extends Worker> {
 	public void finishAllComponentResults(StudyResult studyResult) {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
-			if (!(componentResult.getComponentState() == ComponentState.FINISHED || componentResult
-					.getComponentState() == ComponentState.FAIL)) {
+			ComponentState state = componentResult.getComponentState();
+			if (!(state == ComponentState.FINISHED || state == ComponentState.FAIL)) {
 				componentResult.setComponentState(ComponentState.FINISHED);
 				componentResult.merge();
 			}
@@ -208,11 +210,22 @@ public abstract class PublixUtils<T extends Worker> {
 				worker, study.getId()), errorMediaType);
 	}
 
-	public ComponentResult retrieveComponentResult(ComponentModel component,
-			StudyResult studyResult) {
-		for (ComponentResult componentResult : studyResult
-				.getComponentResultList()) {
-			if (componentResult.getComponent().getId() == component.getId()) {
+	/**
+	 * Get the last open (not FINISHED and not in state FAILED) componentResult
+	 * of this component in this studyResult.
+	 */
+	public ComponentResult retrieveOpenComponentResult(
+			ComponentModel component, StudyResult studyResult) {
+		// Iterate reversely through the list of componentResults (the open one
+		// should be the last of this component)
+		int componentResultListSize = studyResult.getComponentResultList()
+				.size();
+		ComponentResult componentResult;
+		for (int i = (componentResultListSize - 1); i >= 0; i--) {
+			componentResult = studyResult.getComponentResultList().get(i);
+			ComponentState state = componentResult.getComponentState();
+			if (componentResult.getComponent().getId() == component.getId()
+					&& !(state == ComponentState.FINISHED || state == ComponentState.FAIL)) {
 				return componentResult;
 			}
 		}
@@ -231,20 +244,15 @@ public abstract class PublixUtils<T extends Worker> {
 			ComponentModel component, StudyResult studyResult,
 			ComponentState maxAllowedComponentState, MediaType errorMediaType)
 			throws ForbiddenPublixException {
-		ComponentResult componentResult = retrieveComponentResult(component,
-				studyResult);
+		ComponentResult componentResult = retrieveOpenComponentResult(
+				component, studyResult);
 		if (componentResult == null) {
 			// If component was never started, conveniently start it
 			componentResult = startComponent(component, studyResult,
 					errorMediaType);
 		}
-		if (componentResult.getComponentState() == ComponentState.FINISHED
-				|| componentResult.getComponentState() == ComponentState.FAIL) {
-			throw new ForbiddenPublixException(
-					ErrorMessages.componentAlreadyFinishedOrFailed(component
-							.getStudy().getId(), component.getId()),
-					errorMediaType);
-		}
+		// The states of a componentResult are ordered, e.g. it's forbidden to
+		// put DATA_RETRIEVED after RESULTDATA_POSTED.
 		if (componentResult.getComponentState().ordinal() > maxAllowedComponentState
 				.ordinal()) {
 			// Restart component
@@ -301,9 +309,8 @@ public abstract class PublixUtils<T extends Worker> {
 			BadRequestPublixException, ForbiddenPublixException {
 		ComponentModel component = ComponentModel.findById(componentId);
 		if (component == null) {
-			throw new NotFoundPublixException(
-					ErrorMessages.componentNotExist(study.getId(), componentId),
-					errorMediaType);
+			throw new NotFoundPublixException(ErrorMessages.componentNotExist(
+					study.getId(), componentId), errorMediaType);
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
 			throw new BadRequestPublixException(
@@ -312,8 +319,9 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 		if (!component.isActive()) {
 			throw new ForbiddenPublixException(
-					ErrorMessages.componentNotActive(study.getId(),
-							componentId), errorMediaType);
+					ErrorMessages
+							.componentNotActive(study.getId(), componentId),
+					errorMediaType);
 		}
 		return component;
 	}
