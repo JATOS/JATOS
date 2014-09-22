@@ -2,6 +2,7 @@ package controllers.publix;
 
 import java.io.StringWriter;
 import java.util.List;
+import java.util.ListIterator;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -99,7 +100,6 @@ public abstract class PublixUtils<T extends Worker> {
 			studyResult.setStudyState(StudyState.FAIL);
 		}
 		studyResult.merge();
-		Publix.session().remove(MAPublix.MECHARG_TRY);
 		return confirmationCode;
 	}
 
@@ -175,14 +175,20 @@ public abstract class PublixUtils<T extends Worker> {
 	public StudyResult retrieveWorkersStartedStudyResult(T worker,
 			StudyModel study, MediaType errorMediaType)
 			throws ForbiddenPublixException {
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().getId() == study.getId()
-					&& studyResult.getStudyState() == StudyState.STARTED) {
-				// Since there is only one study result of the same study
-				// allowed to be in STARTED, return the first one
-				return studyResult;
+		// Iterate reversely through the worker's study result list and
+		// take the first one with the right study ID and that is in state
+		// STARTED or DATA_RETRIEVED.
+		ListIterator<StudyResult> li = worker.getStudyResultList()
+				.listIterator(worker.getStudyResultList().size());
+		while (li.hasPrevious()) {
+			StudyResult studyResultTemp = li.previous();
+			StudyState studyState = studyResultTemp.getStudyState();
+			if (studyResultTemp.getStudy().getId() == study.getId()
+					&& (studyState == StudyState.STARTED || studyState == StudyState.DATA_RETRIEVED)) {
+				return studyResultTemp;
 			}
 		}
+
 		// Worker never started the study
 		throw new ForbiddenPublixException(
 				errorMessages.workerNeverStartedStudy(worker, study.getId()),

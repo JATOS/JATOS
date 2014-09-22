@@ -48,7 +48,8 @@ public class MAPublix extends Publix implements IPublix {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
 		MAWorker worker = utils.retrieveWorker();
-		ComponentModel firstComponent = utils.retrieveFirstActiveComponent(study);
+		ComponentModel firstComponent = utils
+				.retrieveFirstActiveComponent(study);
 		checkStandard(study, worker.getUser(), firstComponent);
 
 		String mechArgTry = utils.retrieveMechArgTry();
@@ -78,9 +79,9 @@ public class MAPublix extends Publix implements IPublix {
 
 		String mechArgTry = utils.retrieveMechArgTry();
 		if (mechArgTry.equals(Components.COMPONENT)) {
-			// Single component try: stop study after first component.
-			utils.finishStudy(true, studyResult);
-			return redirect(routes.Studies.index(study.getId()));
+			// Single component try: finish study after first component.
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, true, null));
 		}
 
 		utils.startComponent(component, studyResult);
@@ -105,17 +106,17 @@ public class MAPublix extends Publix implements IPublix {
 
 		String mechArgTry = utils.retrieveMechArgTry();
 		if (mechArgTry.equals(Components.COMPONENT)) {
-			// Single component try: stop study after first component.
-			utils.finishStudy(true, studyResult);
-			return redirect(routes.Studies.index(study.getId()));
+			// Single component try: finish study after first component.
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, true, null));
 		}
 
 		ComponentModel nextComponent = utils
 				.retrieveNextActiveComponent(studyResult);
 		if (nextComponent == null) {
-			// Study has no more components
-			utils.finishStudy(true, studyResult);
-			return redirect(routes.Studies.index(study.getId()));
+			// Study has no more components -> finish it
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, true, null));
 		}
 		return startComponent(studyId, nextComponent.getId());
 	}
@@ -209,8 +210,10 @@ public class MAPublix extends Publix implements IPublix {
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
-		if (studyResult.getStudyState() == StudyState.STARTED) {
+		StudyState state = studyResult.getStudyState();
+		if (!(state == StudyState.FINISHED || state == StudyState.FAIL)) {
 			utils.finishStudy(successful, studyResult);
+			Publix.session().remove(MAPublix.MECHARG_TRY);
 		}
 		return redirect(routes.Studies.index(study.getId()));
 	}

@@ -3,6 +3,8 @@ package services;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
+import org.apache.commons.lang3.StringUtils;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -10,6 +12,7 @@ import models.results.ComponentResult;
 import models.results.StudyResult;
 import models.workers.MAWorker;
 import models.workers.MTSandboxWorker;
+import models.workers.MTTesterWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
 
@@ -42,7 +45,10 @@ public class Persistance {
 	public static MTWorker createMTWorker(String mtWorkerId,
 			boolean mTurkSandbox) {
 		MTWorker worker;
-		if (mTurkSandbox) {
+		if (StringUtils.containsIgnoreCase(mtWorkerId,
+				MTTesterWorker.WORKER_TYPE)) {
+			worker = new MTTesterWorker(mtWorkerId.toLowerCase());
+		} else if (mTurkSandbox) {
 			worker = new MTSandboxWorker(mtWorkerId);
 		} else {
 			worker = new MTWorker(mtWorkerId);
@@ -113,7 +119,7 @@ public class Persistance {
 		component.setJsonData(jsonData);
 		component.merge();
 	}
-	
+
 	public static void changeActive(ComponentModel component, boolean active) {
 		component.setActive(active);
 		component.merge();

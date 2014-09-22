@@ -7,6 +7,7 @@ import models.results.ComponentResult.ComponentState;
 import models.results.StudyResult;
 import models.results.StudyResult.StudyState;
 import models.workers.MTSandboxWorker;
+import models.workers.MTTesterWorker;
 import models.workers.MTWorker;
 import play.Logger;
 import play.db.jpa.Transactional;
@@ -109,9 +110,9 @@ public class MTPublix extends Publix implements IPublix {
 		ComponentModel nextComponent = utils
 				.retrieveNextActiveComponent(studyResult);
 		if (nextComponent == null) {
-			// Study has no more components
-			utils.finishStudy(true, studyResult);
-			return finishStudy(studyId, true, null);
+			// Study has no more components -> finish it
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, true, null));
 		}
 		return startComponent(studyId, nextComponent.getId());
 	}
@@ -199,7 +200,8 @@ public class MTPublix extends Publix implements IPublix {
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
 		String confirmationCode;
-		if (studyResult.getStudyState() == StudyState.STARTED) {
+		StudyState state = studyResult.getStudyState();
+		if (!(state == StudyState.FINISHED || state == StudyState.FAIL)) {
 			confirmationCode = utils.finishStudy(successful, studyResult);
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
@@ -213,11 +215,8 @@ public class MTPublix extends Publix implements IPublix {
 
 	private void checkForMTurkPreview(Long studyId, String mtAssignmentId)
 			throws BadRequestPublixException {
-		if (mtAssignmentId == null) {
-			throw new BadRequestPublixException(
-					ErrorMessages.assignmentIdNotSpecified());
-		}
-		if (mtAssignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
+		if (mtAssignmentId != null
+				&& mtAssignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
 			// It's a preview coming from Mechanical Turk -> no previews
 			throw new BadRequestPublixException(
 					ErrorMessages.noPreviewAvailable(studyId));
@@ -238,7 +237,8 @@ public class MTPublix extends Publix implements IPublix {
 
 	private void checkWorkerAllowedToStartStudy(MTWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
-		if (worker instanceof MTSandboxWorker) {
+		if (worker instanceof MTSandboxWorker
+				|| worker instanceof MTTesterWorker) {
 			return;
 		}
 		if (worker.didStudy(study)) {

@@ -1,14 +1,11 @@
 package controllers.publix;
 
-import java.util.ListIterator;
-
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.results.ComponentResult;
 import models.results.ComponentResult.ComponentState;
 import models.results.StudyResult;
-import models.results.StudyResult.StudyState;
 import models.workers.MAWorker;
 import services.ErrorMessages;
 import services.MAErrorMessages;
@@ -22,6 +19,7 @@ import controllers.Users;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
 import exceptions.NotFoundPublixException;
+import exceptions.PublixException;
 
 /**
  * Special PublixUtils for MAPublix (studies or components started via MechArg's
@@ -72,22 +70,13 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 			StudyModel study, MediaType mediaType)
 			throws ForbiddenPublixException {
 		StudyResult studyResult = null;
-		
-		// Iterate reversely through the worker's study result list and
-		// take the first one with the right study ID and that is in state
-		// STARTED or DATA_RETRIEVED.
-		ListIterator<StudyResult> li = worker.getStudyResultList()
-				.listIterator(worker.getStudyResultList().size());
-		while (li.hasPrevious()) {
-			StudyResult studyResultTemp = li.previous();
-			StudyState studyState = studyResultTemp.getStudyState();
-			if (studyResultTemp.getStudy().getId() == study.getId()
-					&& (studyState == StudyState.STARTED || studyState == StudyState.DATA_RETRIEVED)) {
-				studyResult = studyResultTemp;
-				break;
-			}
+		try {
+			studyResult = super.retrieveWorkersStartedStudyResult(
+					worker, study, mediaType);
+		} catch (PublixException e) {
+			// Do nothing
 		}
-
+		
 		String mechArgTry = retrieveMechArgTry(mediaType);
 		if (studyResult == null) {
 			if (mechArgTry.equals(Studies.STUDY)) {

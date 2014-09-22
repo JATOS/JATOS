@@ -41,8 +41,19 @@ public class MTWorker extends Worker {
 	public String toString() {
 		return mtWorkerId + ", " + super.toString();
 	}
-
+	
 	public static MTWorker findByMTWorkerId(String mtWorkerId) {
+		String queryStr = "SELECT e FROM Worker e WHERE "
+				+ "e.mtWorkerId=:mtWorkerId";
+		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
+		List<Worker> workerList = query.setParameter("mtWorkerId", mtWorkerId)
+				.getResultList();
+		MTWorker worker = workerList.isEmpty() ? null : (MTWorker) workerList
+				.get(0);
+		return worker;
+	}
+
+	public static MTWorker findByMTWorkerIdAndWorkerType(String mtWorkerId) {
 		return findByMTWorkerId(mtWorkerId, WORKER_TYPE);
 	}
 
