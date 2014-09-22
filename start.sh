@@ -3,7 +3,7 @@
 studiespath="~/mecharg_studies"
 dbuser="mecharguser"
 dbpassword="zaq12wsx"
-port="9000"
+port="1024"
 address="127.0.0.1"
 
 # Get application secret
