@@ -40,7 +40,11 @@ studyResultList: List[results.StudyResult])
 								</td>
 								<td valign="top" width="40%">
 									<p class="studyResultFirstRow">Confirmation Code</p>
-									<p class="confirmationCode">@studyResult.getConfirmationCode()</p>
+									@if(studyResult.getConfirmationCode() == null || studyResult.getConfirmationCode().isEmpty()) {
+										<p class="studyResultSecondRow">none</p>
+									}else{
+										<p class="confirmationCode">@studyResult.getConfirmationCode()</p>
+									}
 								</td>
 								<td valign="top" width="10%">
 									<div class="removeStudyResult">Remove</div>
