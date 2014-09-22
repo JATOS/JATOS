@@ -1,7 +1,9 @@
 package controllers.publix;
 
+import play.api.mvc.Cookie;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -118,9 +120,12 @@ public class PublixInterceptor extends Controller implements IPublix {
 	 * Check if this request originates from within MechArg.
 	 */
 	private boolean isFromMechArg() {
-		String playCookie = request().cookie("PLAY_SESSION").value();
-		boolean isFromMechArg = playCookie.contains(MAPublix.MECHARG_TRY);
-		return isFromMechArg;
+		Http.Cookie playCookie = request().cookie("PLAY_SESSION");
+		if (playCookie != null
+				&& playCookie.value().contains(MAPublix.MECHARG_TRY)) {
+			return true;
+		}
+		return false;
 	}
 
 }
