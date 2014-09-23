@@ -71,19 +71,20 @@ public class MAPublix extends Publix implements IPublix {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
 		MAWorker worker = utils.retrieveWorker();
-		ComponentModel component = utils.retrieveComponent(study, componentId);
-		checkStandard(study, worker.getUser(), component);
 
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study);
-
+		// Check if it's a single component try.
 		String mechArgTry = utils.retrieveMechArgTry();
 		if (mechArgTry.equals(Components.COMPONENT)) {
-			// Single component try: finish study after first component.
+			// Finish study after first component
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
 
+		ComponentModel component = utils.retrieveComponent(study, componentId);
+		checkStandard(study, worker.getUser(), component);
+		
+		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
+				worker, study);
 		utils.startComponent(component, studyResult);
 
 		String redirectUrl = PublixUtils.getUrlWithRequestQueryString(request()
@@ -104,9 +105,10 @@ public class MAPublix extends Publix implements IPublix {
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study);
 
+		// Check if it's a single component try.
 		String mechArgTry = utils.retrieveMechArgTry();
 		if (mechArgTry.equals(Components.COMPONENT)) {
-			// Single component try: finish study after first component.
+			// Finish study after first component
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}

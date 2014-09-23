@@ -1,6 +1,5 @@
 package controllers.publix;
 
-import play.api.mvc.Cookie;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
