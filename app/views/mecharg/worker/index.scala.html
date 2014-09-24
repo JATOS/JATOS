@@ -47,7 +47,7 @@ studyResultList: List[results.StudyResult])
 									}
 								</td>
 								<td valign="top" width="10%">
-									<div class="removeStudyResult">Remove</div>
+									<div class="removeStudyResult"></div>
 								</td>
 							</tr>
 						</tbody>
@@ -56,7 +56,7 @@ studyResultList: List[results.StudyResult])
 					<ul>
 						@for(componentResult <- studyResult.getComponentResultList()) {
 							<li component-result-id="@componentResult.getId()">@services.JsonUtils.componentResultAsJsonForMA(componentResult)
-								<div class="removeComponentResult">Remove</div>
+								<div class="removeComponentResult"></div>
 							</li>
 						}
 						@if(studyResult.getComponentResultList().isEmpty()) {
