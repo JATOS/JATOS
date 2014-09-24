@@ -18,6 +18,11 @@ body {
         left: 0;
         width: @drawerWidth;
         box-sizing: border-box;
+        overflow: visible;
+        padding: 10px 0 0;
+        background: @drawerBackground;
+        border-right: 1px solid @layoutBorderColor;
+        border-bottom: 1px solid @layoutBorderColor;
     }
     & > section {
         position: absolute;
@@ -43,5 +48,5 @@ body {
     bottom: 0;
     right: 0;
     padding: 10px;
-    overflow: auto;
+    overflow: visible;
 }

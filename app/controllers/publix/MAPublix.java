@@ -127,8 +127,7 @@ public class MAPublix extends Publix implements IPublix {
 	@Transactional
 	public Result getStudyData(Long studyId) throws PublixException,
 			JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID));
+		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId);
 		MAWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
 		StudyModel study = utils.retrieveStudy(studyId,
 				MediaType.TEXT_JAVASCRIPT_UTF_8);
