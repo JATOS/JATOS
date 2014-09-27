@@ -9,7 +9,6 @@ import models.results.StudyResult;
 import models.results.StudyResult.StudyState;
 import models.workers.MAWorker;
 import play.Logger;
-import play.db.jpa.Transactional;
 import play.mvc.Result;
 import services.ErrorMessages;
 import services.JsonUtils;
@@ -42,7 +41,6 @@ public class MAPublix extends Publix implements IPublix {
 	private MAPublixUtils utils = new MAPublixUtils(errorMessages);
 
 	@Override
-	@Transactional
 	public Result startStudy(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
@@ -59,11 +57,11 @@ public class MAPublix extends Publix implements IPublix {
 		}
 
 		Persistance.createStudyResult(study, worker);
-		return startComponent(studyId, firstComponent.getId());
+		return redirect(controllers.publix.routes.PublixInterceptor
+				.startComponent(studyId, firstComponent.getId()));
 	}
 
 	@Override
-	@Transactional
 	public Result startComponent(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
@@ -82,7 +80,7 @@ public class MAPublix extends Publix implements IPublix {
 
 		ComponentModel component = utils.retrieveComponent(study, componentId);
 		checkStandard(study, worker.getUser(), component);
-		
+
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study);
 		utils.startComponent(component, studyResult);
@@ -93,7 +91,6 @@ public class MAPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	@Transactional
 	public Result startNextComponent(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
 				+ ", " + "logged-in user's email "
@@ -120,11 +117,11 @@ public class MAPublix extends Publix implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
-		return startComponent(studyId, nextComponent.getId());
+		return redirect(controllers.publix.routes.PublixInterceptor
+				.startComponent(studyId, nextComponent.getId()));
 	}
 
 	@Override
-	@Transactional
 	public Result getStudyData(Long studyId) throws PublixException,
 			JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId);
@@ -140,7 +137,6 @@ public class MAPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	@Transactional
 	public Result getComponentData(Long studyId, Long componentId)
 			throws PublixException, JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getComponentData: studyId " + studyId + ", "
@@ -168,7 +164,6 @@ public class MAPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	@Transactional
 	public Result submitResultData(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
@@ -198,7 +193,6 @@ public class MAPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	@Transactional
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "

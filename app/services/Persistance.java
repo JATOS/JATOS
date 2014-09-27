@@ -2,8 +2,7 @@ package services;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
-
-import org.apache.commons.lang3.StringUtils;
+import java.util.List;
 
 import models.ComponentModel;
 import models.StudyModel;
@@ -15,6 +14,8 @@ import models.workers.MTSandboxWorker;
 import models.workers.MTTesterWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Utility class that provides persistence methods.
@@ -90,17 +91,8 @@ public class Persistance {
 		}
 		// Remove study's StudyResults and ComponentResults
 		for (StudyResult studyResult : StudyResult.findAllByStudy(study)) {
-			for (ComponentResult componentResult : studyResult
-					.getComponentResultList()) {
-				componentResult.remove();
-			}
-			// Remove StudyResult from worker
-			Worker worker = studyResult.getWorker();
-			worker.removeStudyResult(studyResult);
-			worker.merge();
-			studyResult.remove();
+			removeStudyResult(studyResult);
 		}
-
 		study.remove();
 	}
 
@@ -172,6 +164,17 @@ public class Persistance {
 
 		// Remove studyResult
 		studyResult.remove();
+	}
+
+	/**
+	 * Removes all StudyResults including their ComponentResult of the specified
+	 * study.
+	 */
+	public static void removeAllStudyResults(StudyModel study) {
+		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
+		for (StudyResult studyResult : studyResultList) {
+				removeStudyResult(studyResult);
+		}
 	}
 
 	public static void removeWorker(Worker worker) {

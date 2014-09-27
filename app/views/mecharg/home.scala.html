@@ -15,8 +15,10 @@
 				<h3>Manage</h3>
 				<div class="placeHolder">X</div>
 			</header>
-			<div class="newStudy">New Study</div>	
-			<div class="newUser">New User</div>
+			<div class="boxContent">
+				<div class="newStudy">New Study</div>	
+				<div class="newUser">New User</div>
+			</div>
 		</div>
 		
 		<div class="userBox">
@@ -80,8 +82,12 @@
 									</td>
 									<td valign="top" width="33%">
 										<p class="workerSecondRow">
-											@for(studyResult <- worker.getStudyResultList()) {
-												@studyResult.getStudy().getId()
+											@if(!worker.getStudyResultList().isEmpty()) {
+												@for(studyResult <- worker.getStudyResultList()) {
+													@studyResult.getStudy().getId()
+												}
+											}else{
+												none
 											}
 										</p>
 									</td>

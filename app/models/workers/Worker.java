@@ -79,7 +79,7 @@ public abstract class Worker {
 	public void addStudyResult(StudyResult studyResult) {
 		studyResultList.add(studyResult);
 	}
-	
+
 	public void removeStudyResult(StudyResult studyResult) {
 		studyResultList.remove(studyResult);
 	}
@@ -97,7 +97,7 @@ public abstract class Worker {
 	public String toString() {
 		return String.valueOf(id);
 	}
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -131,13 +131,13 @@ public abstract class Worker {
 	public static Worker findById(Long id) {
 		return JPA.em().find(Worker.class, id);
 	}
-	
+
 	public static List<Worker> findAll() {
 		TypedQuery<Worker> query = JPA.em().createQuery(
 				"SELECT e FROM Worker e", Worker.class);
 		return query.getResultList();
 	}
-	
+
 	public static List<Worker> findByStudy(Long studyId) {
 		TypedQuery<Worker> query = JPA.em().createQuery(
 				"SELECT e FROM Worker e", Worker.class);

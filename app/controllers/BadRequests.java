@@ -12,6 +12,13 @@ import play.mvc.SimpleResult;
 import services.ErrorMessages;
 import exceptions.ResultException;
 
+/**
+ * Helper class with functions that generate whole error pages (not just the
+ * error message) and return them wrapped in a ResultException. The
+ * ResultException is then caught in Global.
+ * 
+ * @author madsen
+ */
 public class BadRequests extends Controller {
 
 	public static ResultException badRequestStudyNotExist(Long studyId,
@@ -105,7 +112,7 @@ public class BadRequests extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(), 
+				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getWorkerBreadcrumb(worker));
 		SimpleResult result = forbidden(views.html.mecharg.home.render(
 				studyList, loggedInUser, breadcrumbs, userList, workerList,

@@ -160,7 +160,24 @@ public class Studies extends Controller {
 		Persistance.removeStudy(study);
 		return redirect(routes.Home.home());
 	}
-	
+
+	/**
+	 * Ajax DELETE request to remove all study results including their component
+	 * results.
+	 */
+	@Transactional
+	public static Result removeAllResults(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".removeAllResults: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = UserModel
+				.findByEmail(session(Users.COOKIE_EMAIL));
+		checkStandardForStudyAjax(study, studyId, loggedInUser);
+
+		Persistance.removeAllStudyResults(study);
+		return ok();
+	}
+
 	@Transactional
 	public static Result cloneStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".cloneStudy: studyId " + studyId + ", "
@@ -236,20 +253,7 @@ public class Studies extends Controller {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
-		if (loggedInUser == null) {
-			return redirect(routes.Authentication.login());
-		}
-		if (study == null) {
-			String errorMsg = ErrorMessages.studyNotExist(studyId);
-			SimpleResult result = badRequest(errorMsg);
-			throw new ResultException(result, errorMsg);
-		}
-		if (!study.hasMember(loggedInUser)) {
-			String errorMsg = ErrorMessages.notMember(loggedInUser.getName(),
-					loggedInUser.getEmail(), study.getId(), study.getTitle());
-			SimpleResult result = forbidden(errorMsg);
-			throw new ResultException(result, errorMsg);
-		}
+		checkStandardForStudyAjax(study, studyId, loggedInUser);
 
 		ComponentModel component = ComponentModel.findById(componentId);
 		if (component == null) {
@@ -336,6 +340,25 @@ public class Studies extends Controller {
 		if (!study.hasMember(loggedInUser)) {
 			throw BadRequests
 					.forbiddenNotMember(loggedInUser, study, studyList);
+		}
+	}
+
+	public static void checkStandardForStudyAjax(StudyModel study,
+			Long studyId, UserModel loggedInUser)
+			throws ResultException {
+		if (loggedInUser == null) {
+			throw new ResultException(redirect(routes.Authentication.login()));
+		}
+		if (study == null) {
+			String errorMsg = ErrorMessages.studyNotExist(studyId);
+			SimpleResult result = badRequest(errorMsg);
+			throw new ResultException(result, errorMsg);
+		}
+		if (!study.hasMember(loggedInUser)) {
+			String errorMsg = ErrorMessages.notMember(loggedInUser.getName(),
+					loggedInUser.getEmail(), study.getId(), study.getTitle());
+			SimpleResult result = forbidden(errorMsg);
+			throw new ResultException(result, errorMsg);
 		}
 	}
 

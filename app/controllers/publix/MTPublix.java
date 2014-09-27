@@ -10,7 +10,6 @@ import models.workers.MTSandboxWorker;
 import models.workers.MTTesterWorker;
 import models.workers.MTWorker;
 import play.Logger;
-import play.db.jpa.Transactional;
 import play.mvc.Result;
 import services.ErrorMessages;
 import services.JsonUtils;
@@ -39,7 +38,6 @@ public class MTPublix extends Publix implements IPublix {
 	private MTPublixUtils utils = new MTPublixUtils(errorMessages);
 
 	@Override
-	@Transactional
 	public Result startStudy(Long studyId) throws PublixException {
 		// Get MTurk query parameters
 		// Hint: Don't confuse MTurk's workerId with MechArg's workerId. They
@@ -73,11 +71,11 @@ public class MTPublix extends Publix implements IPublix {
 
 		ComponentModel firstComponent = utils
 				.retrieveFirstActiveComponent(study);
-		return startComponent(studyId, firstComponent.getId());
+		return redirect(controllers.publix.routes.PublixInterceptor
+				.startComponent(studyId, firstComponent.getId()));
 	}
 
 	@Override
-	@Transactional
 	public Result startComponent(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
@@ -98,7 +96,6 @@ public class MTPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	@Transactional
 	public Result startNextComponent(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
 				+ ", " + "workerId " + session(WORKER_ID));
@@ -114,11 +111,11 @@ public class MTPublix extends Publix implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
-		return startComponent(studyId, nextComponent.getId());
+		return redirect(controllers.publix.routes.PublixInterceptor
+				.startComponent(studyId, nextComponent.getId()));
 	}
 
 	@Override
-	@Transactional
 	public Result getStudyData(Long studyId) throws PublixException,
 			JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId + ", "
@@ -135,7 +132,6 @@ public class MTPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	@Transactional
 	public Result getComponentData(Long studyId, Long componentId)
 			throws PublixException, JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getComponentData: studyId " + studyId + ", "
@@ -161,7 +157,6 @@ public class MTPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	@Transactional
 	public Result submitResultData(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
@@ -188,7 +183,6 @@ public class MTPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	@Transactional
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "

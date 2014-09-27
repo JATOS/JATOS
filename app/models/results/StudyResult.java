@@ -30,7 +30,7 @@ public class StudyResult {
 	@Id
 	@GeneratedValue
 	private Long id;
-
+	
 	/**
 	 * Time and date when the study was started.
 	 */
@@ -60,7 +60,7 @@ public class StudyResult {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "worker_id")
-	private Worker worker;	
+	private Worker worker;
 
 	private String confirmationCode;
 
@@ -179,6 +179,13 @@ public class StudyResult {
 
 	public static StudyResult findById(Long id) {
 		return JPA.em().find(StudyResult.class, id);
+	}
+	
+	public static List<StudyResult> findAll() {
+		String queryStr = "SELECT e FROM StudyResult e";
+		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
+				StudyResult.class);
+		return query.getResultList();
 	}
 
 	public static List<StudyResult> findAllByStudy(StudyModel study) {

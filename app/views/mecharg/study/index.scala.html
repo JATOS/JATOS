@@ -14,11 +14,14 @@
 				<h3>Manage Study</h3>
 				<div class="placeHolder">X</div>
 			</header>
-			<div class="tryStudy">Show Whole Study</div>	
-			<div class="editStudy">Edit</div>
-			<div class="cloneStudy">Clone</div>
-			<div class="showMTurkSourceCode">MT Source Code</div>
-			<div class="removeStudy">Delete</div>
+			<div class="boxContent">
+				<div class="tryStudy">Show Whole Study</div>	
+				<div class="editStudy">Edit</div>
+				<div class="cloneStudy">Clone</div>
+				<div class="showMTurkSourceCode">MT Source Code</div>
+				<div class="removeAllResults">Delete All Results</div>
+				<div class="removeStudy">Delete</div>
+			</div>
 		</div>
 	
 		<div class="membersBox">
@@ -87,7 +90,7 @@
 				</li>
 			
 				@for(studyResult <- studyResultList) {
-					<li>
+					<li class="worker">
 						<table width="100%">
 							<tbody>
 								<tr>
@@ -182,6 +185,25 @@
 	
 	$(".showMTurkSourceCode").click(function(e) {
 		window.location.href = "@routes.Studies.showMTurkSourceCode(study.getId())";
+	});
+	
+	$(".removeAllResults").click(function(e) {
+		var conf = confirm("Are you sure you want to delete ALL results of EACH component of this study?");
+		if (conf == true) {
+			$.ajax({
+				url : '@routes.Studies.removeAllResults(study.getId())',
+				type : 'DELETE',
+				success : function(result) {
+					$(".showResults").each(function(index) {
+						$(this).text("Results (0)");
+					});
+					$(".worker").remove();
+				},
+				error : function(err) {
+					alert(err.responseText);
+				}
+			});
+		}
 	});
 	
 	$(".removeStudy").click(function(e) {

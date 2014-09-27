@@ -1,8 +1,8 @@
 package controllers.publix;
 
+import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,6 +15,9 @@ import exceptions.PublixException;
  * implementations exists: MTPublix for studies originating from MTurk and
  * MAPublix for studies and components started from within MechArg's UI.
  * 
+ * TODO: Move @Transactional out of controller and get rid off synchronisation
+ * and JPA transaction handling
+ * 
  * @author madsen
  */
 public class PublixInterceptor extends Controller implements IPublix {
@@ -22,13 +25,22 @@ public class PublixInterceptor extends Controller implements IPublix {
 	private IPublix maPublix = new MAPublix();
 	private IPublix mtPublix = new MTPublix();
 
+	private static Object lock = new Object();
+
 	@Override
 	@Transactional
 	public Result startStudy(Long studyId) throws PublixException {
-		if (isFromMechArg()) {
-			return maPublix.startStudy(studyId);
-		} else {
-			return mtPublix.startStudy(studyId);
+		synchronized (lock) {
+			Result result;
+			if (isFromMechArg()) {
+				result = maPublix.startStudy(studyId);
+			} else {
+				result = mtPublix.startStudy(studyId);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
 		}
 	}
 
@@ -36,20 +48,34 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Transactional
 	public Result startComponent(Long studyId, Long componentId)
 			throws PublixException {
-		if (isFromMechArg()) {
-			return maPublix.startComponent(studyId, componentId);
-		} else {
-			return mtPublix.startComponent(studyId, componentId);
+		synchronized (lock) {
+			Result result;
+			if (isFromMechArg()) {
+				result = maPublix.startComponent(studyId, componentId);
+			} else {
+				result = mtPublix.startComponent(studyId, componentId);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
 		}
 	}
 
 	@Override
 	@Transactional
 	public Result startNextComponent(Long studyId) throws PublixException {
-		if (isFromMechArg()) {
-			return maPublix.startNextComponent(studyId);
-		} else {
-			return mtPublix.startNextComponent(studyId);
+		synchronized (lock) {
+			Result result;
+			if (isFromMechArg()) {
+				result = maPublix.startNextComponent(studyId);
+			} else {
+				result = mtPublix.startNextComponent(studyId);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
 		}
 	}
 
@@ -57,10 +83,17 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Transactional
 	public Result getStudyData(Long studyId) throws PublixException,
 			JsonProcessingException {
-		if (isFromMechArg()) {
-			return maPublix.getStudyData(studyId);
-		} else {
-			return mtPublix.getStudyData(studyId);
+		synchronized (lock) {
+			Result result;
+			if (isFromMechArg()) {
+				result = maPublix.getStudyData(studyId);
+			} else {
+				result = mtPublix.getStudyData(studyId);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
 		}
 	}
 
@@ -68,10 +101,17 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Transactional
 	public Result getComponentData(Long studyId, Long componentId)
 			throws PublixException, JsonProcessingException {
-		if (isFromMechArg()) {
-			return maPublix.getComponentData(studyId, componentId);
-		} else {
-			return mtPublix.getComponentData(studyId, componentId);
+		synchronized (lock) {
+			Result result;
+			if (isFromMechArg()) {
+				result = maPublix.getComponentData(studyId, componentId);
+			} else {
+				result = mtPublix.getComponentData(studyId, componentId);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
 		}
 	}
 
@@ -79,10 +119,17 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Transactional
 	public Result submitResultData(Long studyId, Long componentId)
 			throws PublixException {
-		if (isFromMechArg()) {
-			return maPublix.submitResultData(studyId, componentId);
-		} else {
-			return mtPublix.submitResultData(studyId, componentId);
+		synchronized (lock) {
+			Result result;
+			if (isFromMechArg()) {
+				result = maPublix.submitResultData(studyId, componentId);
+			} else {
+				result = mtPublix.submitResultData(studyId, componentId);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
 		}
 	}
 
@@ -90,10 +137,17 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Transactional
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
-		if (isFromMechArg()) {
-			return maPublix.finishStudy(studyId, successful, errorMsg);
-		} else {
-			return mtPublix.finishStudy(studyId, successful, errorMsg);
+		synchronized (lock) {
+			Result result;
+			if (isFromMechArg()) {
+				result = maPublix.finishStudy(studyId, successful, errorMsg);
+			} else {
+				result = mtPublix.finishStudy(studyId, successful, errorMsg);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
 		}
 	}
 
@@ -119,9 +173,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	 * Check if this request originates from within MechArg.
 	 */
 	private boolean isFromMechArg() {
-		Http.Cookie playCookie = request().cookie("PLAY_SESSION");
-		if (playCookie != null
-				&& playCookie.value().contains(MAPublix.MECHARG_TRY)) {
+		if (session(MAPublix.MECHARG_TRY) != null) {
 			return true;
 		}
 		return false;
