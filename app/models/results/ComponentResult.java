@@ -42,6 +42,7 @@ public class ComponentResult {
 		DATA_RETRIEVED, // Component's jsonData were retrieved
 		RESULTDATA_POSTED, // Result data were posted
 		FINISHED, // Component was finished
+		RELOADED, // Component was reloaded
 		FAIL // Something went wrong
 	};
 

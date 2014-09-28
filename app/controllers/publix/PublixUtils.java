@@ -62,14 +62,16 @@ public abstract class PublixUtils<T extends Worker> {
 	public ComponentResult startComponent(ComponentModel component,
 			StudyResult studyResult, MediaType errorMediaType)
 			throws ForbiddenPublixException {
-		// Only one component of the same kind can be done at the same time
+		// Only one component of the same kind can be done in the same study
 		// by the same worker. Exception: If a component is reloadable,
 		// the old component result will be deleted and a new one generated.
 		ComponentResult componentResult = retrieveOpenComponentResult(
 				component, studyResult);
 		if (componentResult != null) {
 			if (component.isReloadable()) {
-				Persistance.removeComponentResult(componentResult);
+				// Persistance.removeComponentResult(componentResult);
+				componentResult.setComponentState(ComponentState.RELOADED);
+				componentResult.merge();
 			} else {
 				// Worker tried to reload a non-reloadable component -> end
 				// study and component with fail
@@ -117,7 +119,8 @@ public abstract class PublixUtils<T extends Worker> {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
 			ComponentState state = componentResult.getComponentState();
-			if (!(state == ComponentState.FINISHED || state == ComponentState.FAIL)) {
+			if (!(state == ComponentState.FINISHED
+					|| state == ComponentState.FAIL || state == ComponentState.RELOADED)) {
 				componentResult.setComponentState(ComponentState.FINISHED);
 				componentResult.merge();
 			}
@@ -231,7 +234,8 @@ public abstract class PublixUtils<T extends Worker> {
 			componentResult = studyResult.getComponentResultList().get(i);
 			ComponentState state = componentResult.getComponentState();
 			if (componentResult.getComponent().getId() == component.getId()
-					&& !(state == ComponentState.FINISHED || state == ComponentState.FAIL)) {
+					&& !(state == ComponentState.FINISHED
+							|| state == ComponentState.FAIL || state == ComponentState.RELOADED)) {
 				return componentResult;
 			}
 		}
