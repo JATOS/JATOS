@@ -45,28 +45,38 @@
 				<h3>Components</h3>
 				<div class="addComponent">+</div>
 			</header>
-	
-			<ul>
-				@for(component <- study.getComponentList()) {
-					<li component-id="@component.getId()" component-title="@component.getTitle()">
-						<div class="arrows">
-							<div class="upArrow" component-id="@component.getId()"><p>&#9650;</p></div>
-							<div class="downArrow" component-id="@component.getId()"><p>&#9660;</p></div>
-						</div>
-						<input class="active" type="checkbox" name="active" 
-							@if(component.isActive()) {checked}
-						/>
-						<a class="name"
-								href="@routes.Components.index(study.getId(), component.getId())">
-								@component.getTitle() (ID: @component.getId())
-						</a>
-						<div class="tryComponent">Show</div>
-						<div class="showResults">Results (@results.ComponentResult.findAllByComponent(component).size())</div>
-						<div class="removeComponent"></div>
-					</li>
-				}
-			</ul>
+			
+			<table width="100%">
+				<tbody>
+					@for(component <- study.getComponentList()) {
+						<tr>
+							<td class="arrows">
+								<div class="upArrow" component-id="@component.getId()"><p>&#9650;</p></div>
+								<div class="downArrow" component-id="@component.getId()"><p>&#9660;</p></div>
+							</td>
+							<td>
+								<input class="active" component-id="@component.getId()" type="checkbox" name="active" @if(component.isActive()) {checked}/>
+							</td>
+							<td class="componentTitle" width="100%">
+								<a href="@routes.Components.index(study.getId(), component.getId())">
+										@component.getTitle() (ID:&nbsp;@component.getId())
+								</a>
+							</td>
+							<td>
+								<div class="tryComponent" component-id="@component.getId()">Show</div>
+							</td>
+							<td>
+								<div class="showResults" component-id="@component.getId()">Results&nbsp;(@results.ComponentResult.findAllByComponent(component).size())</div>
+							</td>
+							<td>
+								<div class="removeComponent" component-id="@component.getId()" component-title="@component.getTitle()"></div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
 		</div>
+		
 		<div class="workerBox">
 			<header>
 				<h3>Workers (non MA)</h3>
@@ -136,12 +146,12 @@
 				+ "?componentId=" + componentId + "&direction=" + direction,
 			type: "POST",
 			success: function(response) {
-				var liElement = componentElement.parent().parent();
+				var trElement = componentElement.parent().parent();
 				if (direction == "up") {
-					liElement.insertBefore(liElement.prev());
+					trElement.insertBefore(trElement.prev());
 				}
 				if (direction == "down") {
-					liElement.insertAfter(liElement.next());
+					trElement.insertAfter(trElement.next());
 				}
 			},
 			error: function(err) {
@@ -151,9 +161,9 @@
 	}
 	
 	$(".active").click(function(e) {
-		var componentElement = $(e.target).parent();
+		var componentElement = $(e.target);
 		var componentId = componentElement.attr("component-id");
-		var active = $(e.target).prop('checked');
+		var active = componentElement.prop('checked');
 		ajaxChangeActive(componentId, active, componentElement);
 	});
 	
@@ -244,7 +254,7 @@
 	});
 	
 	$(".removeComponent").click(function(e) {
-		var componentElement = $(e.target).parent();
+		var componentElement = $(e.target);
 		var componentId = componentElement.attr("component-id");
 		var componentTitle = componentElement.attr("component-title");
 		var conf = confirm("Are you sure you want to delete component \""
@@ -259,7 +269,7 @@
 				url : "/mecharg/@study.getId/"+ componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
-					componentElement.remove();
+					componentElement.parent().parent().remove();
 				},
 				error : function(err) {
 					alert(err.responseText);
@@ -269,13 +279,13 @@
 	});
 	
 	function getComponentId(e) {
-		var componentElement = $(e.target).parent();
+		var componentElement = $(e.target);
 		var componentId = componentElement.attr("component-id");
 		return componentId;
 	}
 	
 	function getComponentTitle(e) {
-		var componentElement = $(e.target).parent();
+		var componentElement = $(e.target);
 		var componentTitle = componentElement.attr("component-title");
 		return componentTitle;
 	}

@@ -80,48 +80,40 @@
 					display: inline-block;
 				}
 			}
-			> ul {
-				> li {
-					position: relative;
-					padding: 4px 20px 4px 7px;
-					border-bottom: 1px solid rgba(0,0,0,.05);
-					-webkit-user-select: text;
-					.arrows {
-						overflow:hidden;
-						display: inline-block;
-						vertical-align: middle;
-						.upArrow, .downArrow {
-							cursor: pointer;
-							color: @textColor;
-							p:hover {
-								color: @textColor - #222;
+			> table {
+				> tbody {
+					> tr {
+						border-bottom: 1px solid rgba(0,0,0,.05);
+						.arrows {
+							.upArrow, .downArrow {
+								cursor: pointer;
+								color: @textColor;
+								p:hover {
+									color: @textColor - #222;
+								}
 							}
 						}
-					}
-					.active {
-						vertical-align: middle;
-					}
-					a {
-						vertical-align: middle;
-						padding-left: 5px;
-						padding-right: 5px;
-					}
-					.tryComponent {
-						.button();
-						display: inline-block;
-						vertical-align: middle;
-						margin-right: 5px;
-					}
-					.showResults {
-						.button();
-						display: inline-block;
-						vertical-align: middle;
-					}
-					.removeComponent {
-						.removeButton();
-						right: 0px;
-						display: inline-block;
-						vertical-align: middle;
+						.componentTitle {
+							display: block;
+							padding: 5px 0 5px 5px;
+						}
+						> td {
+							padding: 0 0 0 5px;
+							vertical-align: middle;
+							.tryComponent {
+								.button();
+								display: inline-block;
+							}
+							.showResults {
+								.button();
+								display: inline-block;
+							}
+							.removeComponent {
+								.removeButton();
+								display: inline-block;
+								white-space: nowrap;
+							}
+						}
 					}
 				}
 			}
