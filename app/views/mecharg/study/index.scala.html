@@ -173,6 +173,7 @@
 			type: "POST",
 			error: function(err) {
 				alert(err.responseText);
+				componentElement.prop("checked", !componentElement.is(":checked"));
 			}
 		});
 	}
