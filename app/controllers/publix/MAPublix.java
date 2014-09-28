@@ -207,6 +207,7 @@ public class MAPublix extends Publix implements IPublix {
 				study);
 		StudyState state = studyResult.getStudyState();
 		if (!(state == StudyState.FINISHED || state == StudyState.FAIL)) {
+			utils.finishAllComponentResults(studyResult);
 			utils.finishStudy(successful, studyResult);
 			Publix.session().remove(MAPublix.MECHARG_TRY);
 		}
