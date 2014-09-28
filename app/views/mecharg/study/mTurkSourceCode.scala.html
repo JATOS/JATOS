@@ -3,21 +3,17 @@
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
-<article class="tasks" id="tasks">
+<article class="mTurkSourceCode">
 	@if(errorMsg != null) {
 		<p class="error">@errorMsg</p>
 	}
 
-	@for(member <- study.getMemberList()) {
-		<p class="owner"> @member.getName() (@member.getEmail())</p>
-	}
-
-	<div class="folder" data-folder-id="@study.getId()">
+	<div class="sourceCodeBox">
 		<header>
 			<h3>Source code for Mechanical Turk</h3>
-			<h4>Copy & paste this code into the 'source' field of your study's design layout in Mechanical Turk</h4>
+			<p class="instruction">Copy & paste this code into the 'source' field of your study's design layout in Mechanical Turk</h4>
 		</header>
-
+		
 		<pre class="sourceCode"><code>
 &lt;link href=&quot;https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot; /&gt;
 &lt;section class=&quot;container&quot; id=&quot;SurveyLink&quot; style=&quot;margin-bottom:15px; padding: 10px 10px; font-family: Verdana, Geneva, sans-serif; color:#333333; font-size:0.9em;&quot;&gt;

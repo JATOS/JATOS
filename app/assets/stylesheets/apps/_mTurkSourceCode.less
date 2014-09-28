@@ -1,0 +1,30 @@
+// -----------------------------------
+// With many thanks to the author of the CSS of ZenTask
+// mda@zenexity.com
+// -----------------------------------
+
+.mTurkSourceCode {
+	p.error {
+		width: inherit;
+		margin: 5px 0;
+		color: #c00;
+	}
+
+	.sourceCodeBox {
+		.box();
+		> header {
+			.instruction {
+				padding-top: 5px;
+				font-weight: bold;
+			}
+		}
+		.sourceCode {
+			margin: 5px;
+			width: 99%;
+			font: @monospaceFont;
+			overflow-x: scroll;
+			overflow-y: hidden;
+			-webkit-user-select: text;
+		}
+	}
+}
