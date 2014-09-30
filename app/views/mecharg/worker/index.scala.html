@@ -8,6 +8,8 @@ studyResultList: List[results.StudyResult])
 
 	@if(errorMsg != null) {
 		<p class="error">@errorMsg</p>
+	}else{
+		<p class="error" style="display:none;"></p>
 	}
 
 	<div class="manageBox">
@@ -92,7 +94,7 @@ studyResultList: List[results.StudyResult])
 					window.location.replace('@routes.Home.home()');
 				},
 				error : function(err) {
-					alert("Couldn't delete worker (ID: @worker.getId()).");
+					$(".error").text(err.responseText).show();
 				}
 			});
 		}
@@ -112,7 +114,7 @@ studyResultList: List[results.StudyResult])
 					componentResultElement.remove();
 				},
 				error : function(err) {
-					alert("Couldn't delete component result " + "(ID: " + componentResultId + ").");
+					$(".error").text(err.responseText).show();
 				}
 			});
 		}
@@ -132,7 +134,7 @@ studyResultList: List[results.StudyResult])
 					studyResultElement.remove();
 				},
 				error : function(err) {
-					alert("Couldn't delete study result " + "(ID: " + studyResultId + ").");
+					$(".error").text(err.responseText).show();
 				}
 			});
 		}

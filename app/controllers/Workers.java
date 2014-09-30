@@ -11,8 +11,11 @@ import models.workers.Worker;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
+import play.mvc.SimpleResult;
+import services.ErrorMessages;
 import services.Persistance;
 import exceptions.ResultException;
 
@@ -25,17 +28,10 @@ public class Workers extends Controller {
 	public static Result index(Long workerId) throws ResultException {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
 		Worker worker = Worker.findById(workerId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		if (loggedInUser == null) {
-			return redirect(routes.Authentication.login());
-		}
-		if (worker == null) {
-			throw BadRequests.badRequestWorkerNotExist(workerId, loggedInUser,
-					studyList);
-		}
+		checkWorker(worker, workerId);
 
 		// Generate the list of StudyResults that the logged-in user is allowed
 		// to see
@@ -62,34 +58,38 @@ public class Workers extends Controller {
 		Logger.info(CLASS_NAME + ".remove: workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		Worker worker = Worker.findById(workerId);
-		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
-		if (loggedInUser == null) {
-			return redirect(routes.Authentication.login());
-		}
-		if (worker == null) {
-			throw BadRequests.badRequestWorkerNotExist(workerId, loggedInUser,
-					studyList);
-		}
+		UserModel loggedInUser = Users.getLoggedInUser();
+		checkWorker(worker, workerId);
 
 		if (worker instanceof MAWorker) {
 			MAWorker maWorker = (MAWorker) worker;
-			throw BadRequests.forbiddenRemoveMAWorker(maWorker, loggedInUser,
-					studyList);
+			String errorMsg = ErrorMessages.removeMAWorker(worker.getId(), maWorker
+					.getUser().getName(), maWorker.getUser().getEmail());
+			SimpleResult result = forbidden(errorMsg);
+			throw new ResultException(result, errorMsg);
 		}
 
-		// Check for every study the worker participated in whether the
-		// logged-in user is member of this study and deny if not.
+		// Check for every study if removal is allowed
+		StudyModel study;
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (!studyResult.getStudy().hasMember(loggedInUser)) {
-				throw BadRequests.forbiddenNotMember(loggedInUser,
-						studyResult.getStudy(), studyList);
-			}
+			study = studyResult.getStudy();
+			Studies.checkStandardForStudyAjax(study, study.getId(),
+					loggedInUser);
+			Studies.checkStudyLockedAjax(study);
 		}
 
 		Persistance.removeWorker(worker);
 		return ok();
+	}
+	
+	public static void checkWorker(Worker worker, Long workerId)
+			throws ResultException {
+		if (worker == null) {
+			String errorMsg = ErrorMessages.workerNotExist(workerId);
+			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+					Http.Status.BAD_REQUEST);
+			throw new ResultException(result, errorMsg);
+		}
 	}
 
 }

@@ -49,6 +49,9 @@ public class StudyModel {
 
 	@JsonView(JsonUtils.JsonForMA.class)
 	private Timestamp date;
+	
+	@JsonView(JsonUtils.JsonForMA.class)
+	private boolean locked = false;
 
 	@Lob
 	@JsonView(JsonUtils.JsonForPublix.class)
@@ -72,10 +75,11 @@ public class StudyModel {
 	 * Constructor for cloning (without members)
 	 */
 	public StudyModel(StudyModel study) {
-		// Don't clone members
+		// Don't clone members and field 'locked'
 		this.description = study.description;
 		this.jsonData = study.jsonData;
 		this.title = study.title;
+		this.locked = false;
 		ComponentModel clone;
 		for (ComponentModel component : study.componentList) {
 			clone = new ComponentModel(component);
@@ -114,6 +118,14 @@ public class StudyModel {
 
 	public Timestamp getDate() {
 		return this.date;
+	}
+	
+	public void setLocked(boolean locked) {
+		this.locked = locked;
+	}
+
+	public boolean isLocked() {
+		return this.locked;
 	}
 
 	public String getJsonData() {

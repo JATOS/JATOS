@@ -25,22 +25,13 @@ public class StudyResults extends Controller {
 		Logger.info(CLASS_NAME + ".remove: studyResultId " + studyResultId
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
-		if (loggedInUser == null) {
-			throw new ResultException(redirect(routes.Authentication.login()));
-		}
-
+		UserModel loggedInUser = Users.getLoggedInUser();
 		StudyResult studyResult = StudyResult.findById(studyResultId);
 		if (studyResult == null) {
 			return badRequest(ErrorMessages.studyResultNotExist(studyResultId));
 		}
-		// Check that logged-in user is member of the study
 		StudyModel study = studyResult.getStudy();
-		if (!study.hasMember(loggedInUser)) {
-			return badRequest(ErrorMessages.notMember(loggedInUser.getName(),
-					loggedInUser.getEmail(), study.getId(), study.getTitle()));
-		}
+		Studies.checkStandardForStudyAjax(study, study.getId(), loggedInUser);
 		
 		Persistance.removeStudyResult(studyResult);
 		return ok();

@@ -58,12 +58,6 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String componentNotExist(Long studyId, Long componentId) {
-		String errorMsg = "An component with ID " + componentId + " of study "
-				+ studyId + " doesn't exist.";
-		return errorMsg;
-	}
-
 	public static String componentNotBelongToStudy(Long studyId,
 			Long componentId) {
 		String errorMsg = "There is no study with ID " + studyId
@@ -122,11 +116,6 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String userNotExists() {
-		String errorMsg = "User doesn't exists.";
-		return errorMsg;
-	}
-
 	public static String noMechArgTry() {
 		String errorMsg = "This study or component was never started from within MechArg.";
 		return errorMsg;
@@ -161,6 +150,12 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String componentNotExist(Long componentId) {
 		String errorMsg = "An component with ID " + componentId
 				+ " doesn't exist.";
+		return errorMsg;
+	}
+	
+	public static String componentNotExist(Long studyId, Long componentId) {
+		String errorMsg = "An component with ID " + componentId + " of study "
+				+ studyId + " doesn't exist.";
 		return errorMsg;
 	}
 
@@ -204,6 +199,10 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String mustBeLoggedInAsUser(UserModel user) {
 		return "You must be logged in as " + user.toString()
 				+ " to update this user.";
+	}
+	
+	public static String studyLocked(Long studyId) {
+		return "Study " + studyId + " is locked. Unlock it if you want to make changes.";
 	}
 
 }

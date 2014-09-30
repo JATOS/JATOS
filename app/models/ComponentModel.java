@@ -57,7 +57,7 @@ public class ComponentModel {
 	private String viewUrl; // URL or local path
 
 	@JsonView(JsonUtils.JsonForPublix.class)
-	private boolean reloadable;
+	private boolean reloadable = false;
 
 	/**
 	 * An inactive component can't be used within a study - it generates an
@@ -65,7 +65,7 @@ public class ComponentModel {
 	 * startNextComponent from the public API.
 	 */
 	@JsonView(JsonUtils.JsonForMA.class)
-	private boolean active;
+	private boolean active = true;
 
 	@JsonView(JsonUtils.JsonForPublix.class)
 	@Lob
@@ -74,11 +74,15 @@ public class ComponentModel {
 	public ComponentModel() {
 	}
 
+	/**
+	 * Constructor for cloning
+	 */
 	public ComponentModel(ComponentModel component) {
 		this.study = component.study;
 		this.title = component.title;
 		this.viewUrl = component.viewUrl;
 		this.reloadable = component.reloadable;
+		this.active = component.active;
 		this.jsonData = component.jsonData;
 	}
 

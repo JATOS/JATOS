@@ -11,9 +11,11 @@ import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
+import services.ErrorMessages;
 import services.Persistance;
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
@@ -25,14 +27,13 @@ public class Components extends Controller {
 	private static final String CLASS_NAME = Components.class.getSimpleName();
 
 	@Transactional
-	public static Result index(Long studyId, Long componentId)
-			throws ResultException {
+	public static Result index(Long studyId, Long componentId, String errorMsg,
+			int httpStatus) throws ResultException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		checkStandardForComponents(studyId, componentId, study, studyList,
@@ -45,9 +46,15 @@ public class Components extends Controller {
 				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study),
 				Breadcrumbs.getComponentBreadcrumb(study, component));
-		return ok(views.html.mecharg.component.index.render(studyList,
-				loggedInUser, breadcrumbs, study, null, component,
-				componentResultList));
+		return status(httpStatus, views.html.mecharg.component.index.render(
+				studyList, loggedInUser, breadcrumbs, study, errorMsg,
+				component, componentResultList));
+	}
+
+	@Transactional
+	public static Result index(Long studyId, Long componentId)
+			throws ResultException {
+		return index(studyId, componentId, null, Http.Status.OK);
 	}
 
 	@Transactional
@@ -56,22 +63,19 @@ public class Components extends Controller {
 		Logger.info(CLASS_NAME + ".tryComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
 		StudyModel study = StudyModel.findById(studyId);
 		ComponentModel component = ComponentModel.findById(componentId);
 		List<StudyModel> studyList = StudyModel.findAll();
 		checkStandardForComponents(studyId, componentId, study, studyList,
 				loggedInUser, component);
-
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
+		Studies.checkStudyLocked(study);
 
 		if (component.getViewUrl() == null || component.getViewUrl().isEmpty()) {
-			throw BadRequests.badRequestUrlViewEmpty(loggedInUser, study,
-					component, studyList);
+			String errorMsg = ErrorMessages.urlViewEmpty(componentId);
+			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+					Http.Status.BAD_REQUEST);
+			throw new ResultException(result, errorMsg);
 		}
 		session(MAPublix.MECHARG_TRY, COMPONENT);
 		return redirect(component.getViewUrl());
@@ -82,20 +86,10 @@ public class Components extends Controller {
 		Logger.info(CLASS_NAME + ".create: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAll();
-		if (loggedInUser == null) {
-			return redirect(routes.Authentication.login());
-		}
-		if (study == null) {
-			throw BadRequests.badRequestStudyNotExist(studyId, loggedInUser,
-					studyList);
-		}
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
+		Studies.checkStandardForStudy(study, studyId, loggedInUser, studyList);
+		Studies.checkStudyLocked(study);
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getHomeBreadcrumb(),
@@ -111,19 +105,9 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
-		if (loggedInUser == null) {
-			return redirect(routes.Authentication.login());
-		}
-		if (study == null) {
-			throw BadRequests.badRequestStudyNotExist(studyId, loggedInUser,
-					studyList);
-		}
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
+		UserModel loggedInUser = Users.getLoggedInUser();
+		Studies.checkStandardForStudy(study, studyId, loggedInUser, studyList);
+		Studies.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
 				.bindFromRequest();
@@ -150,16 +134,11 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		checkStandardForComponents(studyId, componentId, study, studyList,
 				loggedInUser, component);
-
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
+		Studies.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 				component);
@@ -179,16 +158,11 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		checkStandardForComponents(studyId, componentId, study, studyList,
 				loggedInUser, component);
-
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
+		Studies.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
 				.bindFromRequest();
@@ -220,6 +194,10 @@ public class Components extends Controller {
 		return redirect(routes.Components.index(study.getId(), componentId));
 	}
 
+	/**
+	 * Ajax POST request to change a single property. So far the only property
+	 * possible to change is 'active'.
+	 */
 	@Transactional
 	public static Result changeProperty(Long studyId, Long componentId,
 			Boolean active) throws ResultException {
@@ -228,17 +206,12 @@ public class Components extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUserAjax();
 		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandardForComponents(studyId, componentId, study, studyList,
+		checkStandardForComponentsAjax(studyId, componentId, study,
 				loggedInUser, component);
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
-		
+		Studies.checkStudyLockedAjax(study);
+
 		if (active != null) {
 			Persistance.changeActive(component, active);
 		}
@@ -252,12 +225,12 @@ public class Components extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAll();
 		ComponentModel component = ComponentModel.findById(componentId);
 		checkStandardForComponents(studyId, componentId, study, studyList,
 				loggedInUser, component);
+		Studies.checkStudyLocked(study);
 
 		ComponentModel clone = new ComponentModel(component);
 		Persistance.addComponent(study, clone);
@@ -274,17 +247,11 @@ public class Components extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUserAjax();
 		ComponentModel component = ComponentModel.findById(componentId);
-		checkStandardForComponents(studyId, componentId, study, studyList,
+		checkStandardForComponentsAjax(studyId, componentId, study,
 				loggedInUser, component);
-
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
+		Studies.checkStudyLockedAjax(study);
 
 		Persistance.removeComponent(study, component);
 		return ok();
@@ -294,24 +261,36 @@ public class Components extends Controller {
 			Long componentId, StudyModel study, List<StudyModel> studyList,
 			UserModel loggedInUser, ComponentModel component)
 			throws ResultException {
-		if (loggedInUser == null) {
-			throw new ResultException(redirect(routes.Authentication.login()));
-		}
-		if (study == null) {
-			throw BadRequests.badRequestStudyNotExist(studyId, loggedInUser,
-					studyList);
-		}
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
+		Studies.checkStandardForStudy(study, studyId, loggedInUser, studyList);
 		if (component == null) {
-			throw BadRequests.badRequestComponentNotExist(componentId, study,
-					loggedInUser, studyList);
+			String errorMsg = ErrorMessages.componentNotExist(componentId);
+			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+					Http.Status.BAD_REQUEST);
+			throw new ResultException(result, errorMsg);
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
-			throw BadRequests.badRequestComponentNotBelongToStudy(study,
-					component, loggedInUser, studyList);
+			String errorMsg = ErrorMessages.componentNotBelongToStudy(studyId,
+					componentId);
+			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+					Http.Status.BAD_REQUEST);
+			throw new ResultException(result, errorMsg);
+		}
+	}
+
+	public static void checkStandardForComponentsAjax(Long studyId,
+			Long componentId, StudyModel study, UserModel loggedInUser,
+			ComponentModel component) throws ResultException {
+		Studies.checkStandardForStudyAjax(study, studyId, loggedInUser);
+		if (component == null) {
+			String errorMsg = ErrorMessages.componentNotExist(componentId);
+			SimpleResult result = badRequest(errorMsg);
+			throw new ResultException(result, errorMsg);
+		}
+		if (!component.getStudy().getId().equals(study.getId())) {
+			String errorMsg = ErrorMessages.componentNotBelongToStudy(studyId,
+					componentId);
+			SimpleResult result = badRequest(errorMsg);
+			throw new ResultException(result, errorMsg);
 		}
 	}
 

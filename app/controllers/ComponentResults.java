@@ -30,25 +30,16 @@ public class ComponentResults extends Controller {
 		Logger.info(CLASS_NAME + ".remove: componentResultId "
 				+ componentResultId + ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
-		if (loggedInUser == null) {
-			throw new ResultException(redirect(routes.Authentication.login()));
-		}
-
+		UserModel loggedInUser = Users.getLoggedInUser();
 		ComponentResult componentResult = ComponentResult
 				.findById(componentResultId);
 		if (componentResult == null) {
 			return badRequest(ErrorMessages
 					.componentResultNotExist(componentResultId));
 		}
-		// Check that logged-in user is member of the study the component
-		// belongs too
 		StudyModel study = componentResult.getStudyResult().getStudy();
-		if (!study.hasMember(loggedInUser)) {
-			return badRequest(ErrorMessages.notMember(loggedInUser.getName(),
-					loggedInUser.getEmail(), study.getId(), study.getTitle()));
-		}
+		Studies.checkStandardForStudyAjax(study, study.getId(), loggedInUser);
+		Studies.checkStudyLockedAjax(study);
 
 		Persistance.removeComponentResult(componentResult);
 		return ok();
@@ -62,16 +53,11 @@ public class ComponentResults extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		Components.checkStandardForComponents(studyId, componentId, study,
 				studyList, loggedInUser, component);
-
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
+		Studies.checkStudyLocked(study);
 
 		List<ComponentResult> componentResultList = ComponentResult
 				.findAllByComponent(component);
@@ -94,16 +80,11 @@ public class ComponentResults extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		Components.checkStandardForComponents(studyId, componentId, study,
 				studyList, loggedInUser, component);
-
-		if (!study.hasMember(loggedInUser)) {
-			throw BadRequests
-					.forbiddenNotMember(loggedInUser, study, studyList);
-		}
+		Studies.checkStudyLocked(study);
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
 		String[] checkedComponents = formMap.get(ComponentModel.RESULT);

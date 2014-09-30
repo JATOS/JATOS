@@ -7,12 +7,16 @@ componentResultList: List[results.ComponentResult])
 <article class="component">
 
 	@if(errorMsg != null) {
-	<p class="error">@errorMsg</p>
+		<p class="error">@errorMsg</p>
+	}else{
+		<p class="error" style="display:none;"></p>
 	}
 
 	<div class="manageBox">
 		<header>
-			<h3>Manage Component</h3>
+			<h3>Manage Component
+				<span id="lockedStudySign" @if(!study.isLocked()){style="display: none;"}>(Locked)</span>
+			</h3>
 			<div class="placeHolder">X</div>
 		</header>
 			<div class="boxContent">
@@ -78,7 +82,7 @@ componentResultList: List[results.ComponentResult])
 					window.location.replace('@routes.Studies.index(study.getId())');
 				},
 				error : function(err) {
-					alert("Couldn't delete component \"@Html(component.getTitle())\" (ID: @component.getId()).");
+					$(".error").text(err.responseText).show();
 				}
 			});
 		}
@@ -103,7 +107,7 @@ componentResultList: List[results.ComponentResult])
 					componentResultElement.remove();
 				},
 				error : function(err) {
-					alert("Couldn't delete result " + "(ID: " + componentResultId + ").");
+					$(".error").text(err.responseText).show();
 				}
 			});
 		}

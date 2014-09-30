@@ -52,7 +52,7 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 		}
 		UserModel loggedInUser = UserModel.findByEmail(email);
 		if (loggedInUser == null) {
-			throw new NotFoundPublixException(ErrorMessages.userNotExists(),
+			throw new NotFoundPublixException(ErrorMessages.userNotExist(email),
 					errorMediaType);
 		}
 		return loggedInUser.getWorker();
