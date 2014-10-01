@@ -6,7 +6,7 @@ import models.workers.Worker;
 /**
  * Helper class with methods that generate error strings.
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public abstract class ErrorMessages<T extends Worker> {
 

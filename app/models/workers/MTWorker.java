@@ -12,6 +12,11 @@ import services.JsonUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
+/**
+ * Concrete worker who originates from the MTurk.
+ * 
+ * @author Kristian Lange
+ */
 @Entity
 @DiscriminatorValue(MTWorker.WORKER_TYPE)
 public class MTWorker extends Worker {

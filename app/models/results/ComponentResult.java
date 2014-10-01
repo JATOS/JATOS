@@ -22,6 +22,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+/**
+ * Domain model and DAO of a component result.
+ * 
+ * @author Kristian Lange
+ */
 @Entity
 @JsonPropertyOrder(value = { "resultId", "startDate", "componentState"})
 public class ComponentResult {

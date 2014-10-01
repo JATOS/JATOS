@@ -10,6 +10,11 @@ import models.UserModel;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+/**
+ * Concrete worker who originates from the MechArg itself.
+ * 
+ * @author Kristian Lange
+ */
 @Entity
 @DiscriminatorValue(MAWorker.WORKER_TYPE)
 public class MAWorker extends Worker {

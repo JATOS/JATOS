@@ -18,7 +18,7 @@ import exceptions.PublixException;
  * TODO: Move @Transactional out of controller and get rid off synchronisation
  * and JPA transaction handling
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public class PublixInterceptor extends Controller implements IPublix {
 

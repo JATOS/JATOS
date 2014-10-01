@@ -24,6 +24,11 @@ import services.JsonUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
+/**
+ * Domain model and DAO of a component.
+ * 
+ * @author Kristian Lange
+ */
 @Entity
 public class ComponentModel {
 

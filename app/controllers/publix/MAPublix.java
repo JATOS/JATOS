@@ -30,7 +30,7 @@ import exceptions.PublixException;
  * Implementation of MechArg's public API for studies and components that are
  * started via MechArg's UI.
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public class MAPublix extends Publix implements IPublix {
 

@@ -24,6 +24,11 @@ import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+/**
+ * Domain model and DAO of a study result.
+ * 
+ * @author Kristian Lange
+ */
 @Entity
 public class StudyResult {
 

@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Utility class that provides persistence methods.
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public class PersistanceUtils {
 

@@ -10,7 +10,7 @@ import play.mvc.Result;
  * on the client side can communicate (start, finish components/studies,
  * retrieve/persist data) with the MechArg running on the server side.
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public interface IPublix {
 

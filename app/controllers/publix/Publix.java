@@ -8,7 +8,7 @@ import play.mvc.Result;
  * Abstract controller class for all controller that implement the IPublix
  * interface. It defines common methods and constants.
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public abstract class Publix extends Controller implements IPublix {
 

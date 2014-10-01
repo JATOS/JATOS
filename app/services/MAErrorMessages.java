@@ -6,7 +6,7 @@ import models.workers.MAWorker;
  * Special ErrorMessages for MAPublix (studies or components started via
  * MechArg's UI).
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public class MAErrorMessages extends ErrorMessages<MAWorker> {
 

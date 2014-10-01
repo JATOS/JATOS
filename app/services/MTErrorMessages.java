@@ -5,7 +5,7 @@ import models.workers.MTWorker;
 /**
  * Special ErrorMessages for MTPublix (studies started via MTurk).
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public class MTErrorMessages extends ErrorMessages<MTWorker> {
 

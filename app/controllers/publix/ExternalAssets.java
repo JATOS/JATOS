@@ -14,7 +14,7 @@ import play.mvc.Result;
 /**
  * Manages access to external files that are outside of MechArg's packed Jar.
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public class ExternalAssets extends Controller {
 

@@ -27,7 +27,7 @@ import exceptions.PublixException;
  * Implementation of MechArg's public API for studies that are started via
  * MTurk.
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public class MTPublix extends Publix implements IPublix {
 

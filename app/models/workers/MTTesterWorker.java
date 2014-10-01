@@ -3,6 +3,11 @@ package models.workers;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+/**
+ * MTWorker for testing purpose.
+ * 
+ * @author Kristian Lange
+ */
 @Entity
 @DiscriminatorValue(MTTesterWorker.WORKER_TYPE)
 public class MTTesterWorker extends MTWorker {

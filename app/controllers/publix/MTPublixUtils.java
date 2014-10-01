@@ -15,7 +15,7 @@ import exceptions.PublixException;
 /**
  * Special PublixUtils for MTPublix (studies started via MTurk).
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public class MTPublixUtils extends PublixUtils<MTWorker> {
 

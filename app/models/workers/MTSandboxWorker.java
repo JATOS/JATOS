@@ -3,6 +3,11 @@ package models.workers;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+/**
+ * Concrete worker who originates from the MTurk Sandbox.
+ * 
+ * @author Kristian Lange
+ */
 @Entity
 @DiscriminatorValue(MTSandboxWorker.WORKER_TYPE)
 public class MTSandboxWorker extends MTWorker {

@@ -39,7 +39,7 @@ import exceptions.UnsupportedMediaTypePublixException;
  * Utilility class with functions that are common for all classes that extend
  * Publix and don't belong in a controller.
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public abstract class PublixUtils<T extends Worker> {
 

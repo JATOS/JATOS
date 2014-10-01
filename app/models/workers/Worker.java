@@ -27,6 +27,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 
+/**
+ * Abstract domain model and DAO of a worker. Workers are doing studies (and their
+ * components) and produce study results (and their component results).
+ * 
+ * @author Kristian Lange
+ */
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = Worker.DESCRIMINATOR)

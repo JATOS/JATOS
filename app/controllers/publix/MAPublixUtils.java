@@ -25,7 +25,7 @@ import exceptions.PublixException;
  * Special PublixUtils for MAPublix (studies or components started via MechArg's
  * UI).
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 public class MAPublixUtils extends PublixUtils<MAWorker> {
 

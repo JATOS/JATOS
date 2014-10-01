@@ -23,6 +23,11 @@ import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 import services.ErrorMessages;
 
+/**
+ * Domain model and DAO of a user.
+ * 
+ * @author Kristian Lange
+ */
 @Entity
 public class UserModel {
 
