@@ -52,6 +52,9 @@ public class StudyModel {
 	@JsonView(JsonUtils.JsonForPublix.class)
 	private String description;
 
+	/**
+	 * Timestamp of the creation or the last update of this study
+	 */
 	@JsonView(JsonUtils.JsonForMA.class)
 	private Timestamp date;
 	
