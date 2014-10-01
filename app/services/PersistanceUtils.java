@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
  * 
  * @author madsen
  */
-public class Persistance {
+public class PersistanceUtils {
 
 	public static StudyResult createStudyResult(StudyModel study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);

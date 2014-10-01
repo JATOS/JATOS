@@ -16,7 +16,7 @@ import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
 import services.ErrorMessages;
-import services.Persistance;
+import services.PersistanceUtils;
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
 
@@ -121,7 +121,7 @@ public class Components extends Controller {
 		}
 
 		ComponentModel component = form.get();
-		Persistance.addComponent(study, component);
+		PersistanceUtils.addComponent(study, component);
 		return redirect(routes.Components.index(study.getId(),
 				component.getId()));
 	}
@@ -184,7 +184,7 @@ public class Components extends Controller {
 		String viewUrl = requestData.get(ComponentModel.VIEW_URL);
 		String jsonData = requestData.get(ComponentModel.JSON_DATA);
 		boolean reloadable = (requestData.get(ComponentModel.RELOADABLE) != null);
-		Persistance.updateComponent(component, title, reloadable, viewUrl,
+		PersistanceUtils.updateComponent(component, title, reloadable, viewUrl,
 				jsonData);
 
 		String[] postAction = request().body().asFormUrlEncoded().get("action");
@@ -213,7 +213,7 @@ public class Components extends Controller {
 		Studies.checkStudyLockedAjax(study);
 
 		if (active != null) {
-			Persistance.changeActive(component, active);
+			PersistanceUtils.changeActive(component, active);
 		}
 		return ok();
 	}
@@ -233,7 +233,7 @@ public class Components extends Controller {
 		Studies.checkStudyLocked(study);
 
 		ComponentModel clone = new ComponentModel(component);
-		Persistance.addComponent(study, clone);
+		PersistanceUtils.addComponent(study, clone);
 		return redirect(routes.Components.index(studyId, clone.getId()));
 	}
 
@@ -253,7 +253,7 @@ public class Components extends Controller {
 				loggedInUser, component);
 		Studies.checkStudyLockedAjax(study);
 
-		Persistance.removeComponent(study, component);
+		PersistanceUtils.removeComponent(study, component);
 		return ok();
 	}
 

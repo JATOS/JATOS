@@ -9,7 +9,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import services.ErrorMessages;
-import services.Persistance;
+import services.PersistanceUtils;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
@@ -33,7 +33,7 @@ public class StudyResults extends Controller {
 		StudyModel study = studyResult.getStudy();
 		Studies.checkStandardForStudyAjax(study, study.getId(), loggedInUser);
 		
-		Persistance.removeStudyResult(studyResult);
+		PersistanceUtils.removeStudyResult(studyResult);
 		return ok();
 	}
 

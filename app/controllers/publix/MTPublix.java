@@ -14,7 +14,7 @@ import play.mvc.Result;
 import services.ErrorMessages;
 import services.JsonUtils;
 import services.MTErrorMessages;
-import services.Persistance;
+import services.PersistanceUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
@@ -61,13 +61,13 @@ public class MTPublix extends Publix implements IPublix {
 		}
 		MTWorker worker = MTWorker.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
-			worker = Persistance.createMTWorker(mtWorkerId,
+			worker = PersistanceUtils.createMTWorker(mtWorkerId,
 					isRequestFromMTurkSandbox());
 		}
 		checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));
 
-		Persistance.createStudyResult(study, worker);
+		PersistanceUtils.createStudyResult(study, worker);
 
 		ComponentModel firstComponent = utils
 				.retrieveFirstActiveComponent(study);

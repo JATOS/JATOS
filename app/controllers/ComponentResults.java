@@ -13,7 +13,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import services.ErrorMessages;
-import services.Persistance;
+import services.PersistanceUtils;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
@@ -41,7 +41,7 @@ public class ComponentResults extends Controller {
 		Studies.checkStandardForStudyAjax(study, study.getId(), loggedInUser);
 		Studies.checkStudyLockedAjax(study);
 
-		Persistance.removeComponentResult(componentResult);
+		PersistanceUtils.removeComponentResult(componentResult);
 		return ok();
 	}
 
@@ -90,7 +90,7 @@ public class ComponentResults extends Controller {
 		String[] checkedComponents = formMap.get(ComponentModel.RESULT);
 		if (checkedComponents != null) {
 			for (String resultIdStr : checkedComponents) {
-				Persistance.removeComponentResult(resultIdStr);
+				PersistanceUtils.removeComponentResult(resultIdStr);
 			}
 		}
 

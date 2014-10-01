@@ -19,7 +19,7 @@ import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
 import services.ErrorMessages;
-import services.Persistance;
+import services.PersistanceUtils;
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
 
@@ -94,7 +94,7 @@ public class Studies extends Controller {
 		} else {
 			StudyModel study = form.get();
 			study.persist();
-			Persistance.addMemberToStudy(study, loggedInUser);
+			PersistanceUtils.addMemberToStudy(study, loggedInUser);
 			return redirect(routes.Studies.index(study.getId()));
 		}
 	}
@@ -142,7 +142,7 @@ public class Studies extends Controller {
 		String title = requestData.get(StudyModel.TITLE);
 		String description = requestData.get(StudyModel.DESCRIPTION);
 		String jsonData = requestData.get(StudyModel.JSON_DATA);
-		Persistance.updateStudy(study, title, description, jsonData);
+		PersistanceUtils.updateStudy(study, title, description, jsonData);
 		return redirect(routes.Studies.index(studyId));
 	}
 
@@ -174,7 +174,7 @@ public class Studies extends Controller {
 		checkStandardForStudyAjax(study, studyId, loggedInUser);
 		checkStudyLockedAjax(study);
 
-		Persistance.removeStudy(study);
+		PersistanceUtils.removeStudy(study);
 		return ok();
 	}
 
@@ -191,7 +191,7 @@ public class Studies extends Controller {
 		checkStandardForStudyAjax(study, studyId, loggedInUser);
 		checkStudyLockedAjax(study);
 
-		Persistance.removeAllStudyResults(study);
+		PersistanceUtils.removeAllStudyResults(study);
 		return ok();
 	}
 
@@ -257,7 +257,7 @@ public class Studies extends Controller {
 		for (String email : checkedUsers) {
 			UserModel user = UserModel.findByEmail(email);
 			if (user != null) {
-				Persistance.addMemberToStudy(study, user);
+				PersistanceUtils.addMemberToStudy(study, user);
 			}
 		}
 

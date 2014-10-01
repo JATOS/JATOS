@@ -24,7 +24,7 @@ import play.Logger;
 import play.db.jpa.JPA;
 import play.mvc.Http.RequestBody;
 import services.ErrorMessages;
-import services.Persistance;
+import services.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.net.MediaType;
@@ -88,7 +88,7 @@ public abstract class PublixUtils<T extends Worker> {
 		// ones. This is probably redundant but it good to know that at this
 		// point all componentResults are finished.
 		finishAllComponentResults(studyResult);
-		return Persistance.createComponentResult(studyResult, component);
+		return PersistanceUtils.createComponentResult(studyResult, component);
 	}
 
 	public String finishStudy(Boolean successful, StudyResult studyResult) {

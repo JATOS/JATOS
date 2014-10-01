@@ -7,7 +7,7 @@ import play.libs.F.Promise;
 import play.mvc.Http.RequestHeader;
 import play.mvc.Results;
 import play.mvc.SimpleResult;
-import services.Persistance;
+import services.PersistanceUtils;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -46,7 +46,7 @@ public class Global extends GlobalSettings {
 			public void invoke() throws Throwable {
 				UserModel admin = UserModel.findByEmail("admin");
 				if (admin == null) {
-					Persistance.createAdmin();
+					PersistanceUtils.createAdmin();
 				}
 			}
 		});

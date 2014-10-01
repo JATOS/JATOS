@@ -13,7 +13,7 @@ import play.mvc.Result;
 import services.ErrorMessages;
 import services.JsonUtils;
 import services.MAErrorMessages;
-import services.Persistance;
+import services.PersistanceUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
@@ -56,7 +56,7 @@ public class MAPublix extends Publix implements IPublix {
 					ErrorMessages.noMechArgStudyTry());
 		}
 
-		Persistance.createStudyResult(study, worker);
+		PersistanceUtils.createStudyResult(study, worker);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, firstComponent.getId()));
 	}

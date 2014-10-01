@@ -16,7 +16,7 @@ import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
 import services.ErrorMessages;
-import services.Persistance;
+import services.PersistanceUtils;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
@@ -78,7 +78,7 @@ public class Workers extends Controller {
 			Studies.checkStudyLockedAjax(study);
 		}
 
-		Persistance.removeWorker(worker);
+		PersistanceUtils.removeWorker(worker);
 		return ok();
 	}
 	

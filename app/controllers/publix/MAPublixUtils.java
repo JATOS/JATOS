@@ -9,7 +9,7 @@ import models.results.StudyResult;
 import models.workers.MAWorker;
 import services.ErrorMessages;
 import services.MAErrorMessages;
-import services.Persistance;
+import services.PersistanceUtils;
 
 import com.google.common.net.MediaType;
 
@@ -87,7 +87,7 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 			if (mechArgTry.equals(Components.COMPONENT)) {
 				// Try-out of a single component: Just create a StudyResult for
 				// this. The StudyResult will have only one ComponentResult.
-				studyResult = Persistance.createStudyResult(study, worker);
+				studyResult = PersistanceUtils.createStudyResult(study, worker);
 			}
 		}
 		return studyResult;
