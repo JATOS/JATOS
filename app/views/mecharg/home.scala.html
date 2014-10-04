@@ -19,6 +19,10 @@
 			</header>
 			<div class="boxContent">
 				<div class="newStudy">New Study</div>	
+				<form id="importForm" action="@routes.Studies.importStudy()" method="post" enctype="multipart/form-data">
+					<div id="importButton" type="file">Import Study</div>
+					<input id="importBrowser" type="file" name="component" accept="application/json">
+				</form>
 				<div class="newUser">New User</div>
 			</div>
 		</div>
@@ -115,6 +119,13 @@
 	
 	$(".newUser").click(function(e) {
 		window.location.href = "@routes.Users.create()";
+	});
+	
+	$("#importButton").click(function() {
+		$("#importBrowser").trigger("click");
+		$('#importBrowser').change(function() {
+			$("#importForm").submit();
+		});
 	});
 
 </script>

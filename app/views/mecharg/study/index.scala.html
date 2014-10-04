@@ -22,6 +22,7 @@
 				<div class="tryStudy">Show Whole Study</div>	
 				<div class="editStudy">Edit</div>
 				<div class="cloneStudy">Clone</div>
+				<div class="export">Export</div>
 				<div class="lockStudy">@if(study.isLocked()){Unlock}else{Lock}</div>
 				<div class="showMTurkSourceCode">MT Source Code</div>
 				<div class="removeAllResults">Delete All Results</div>
@@ -49,6 +50,10 @@
 			<header>
 				<h3>Components</h3>
 				<div class="addComponent">+</div>
+				<form id="importForm" action="@routes.Components.importComponent(study.getId())" method="post" enctype="multipart/form-data">
+					<div id="importButton" type="file">Import</div>
+					<input id="importBrowser" type="file" name="component" accept="application/json">
+				</form>
 			</header>
 			
 			<table width="100%">
@@ -213,6 +218,10 @@
 	$(".cloneStudy").click(function(e) {
 		window.location.href = "@routes.Studies.cloneStudy(study.getId())";
 	});
+	
+	$(".export").click(function(e) {
+		window.location.href = "@routes.Studies.export(study.getId())";
+	});
 
 	$(".editStudy").click(function(e) {
 		window.location.href = "@routes.Studies.edit(study.getId())";
@@ -318,6 +327,13 @@
 		var componentTitle = componentElement.attr("component-title");
 		return componentTitle;
 	}
+	
+	$("#importButton").click(function() {
+		$("#importBrowser").trigger("click");
+		$('#importBrowser').change(function() {
+			$("#importForm").submit();
+		});
+	});
 	
 </script>
 

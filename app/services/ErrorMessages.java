@@ -58,15 +58,20 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
+	public static String componentExportFailure(Long componentId) {
+		String errorMsg = "Failure during export of component with ID "
+				+ componentId + ".";
+		return errorMsg;
+	}
+
 	public static String componentNotBelongToStudy(Long studyId,
 			Long componentId) {
 		String errorMsg = "There is no study with ID " + studyId
 				+ " that has a component with ID " + componentId + ".";
 		return errorMsg;
 	}
-	
-	public static String componentNotActive(Long studyId,
-			Long componentId) {
+
+	public static String componentNotActive(Long studyId, Long componentId) {
 		String errorMsg = "Component with ID " + componentId
 				+ " in study with ID " + studyId + " is not active.";
 		return errorMsg;
@@ -152,7 +157,7 @@ public abstract class ErrorMessages<T extends Worker> {
 				+ " doesn't exist.";
 		return errorMsg;
 	}
-	
+
 	public static String componentNotExist(Long studyId, Long componentId) {
 		String errorMsg = "An component with ID " + componentId + " of study "
 				+ studyId + " doesn't exist.";
@@ -162,6 +167,11 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String componentResultNotExist(Long componentResultId) {
 		String errorMsg = "An component result with ID " + componentResultId
 				+ " doesn't exist.";
+		return errorMsg;
+	}
+	
+	public static String componentIsntValid() {
+		String errorMsg = "Component isn't valid.";
 		return errorMsg;
 	}
 
@@ -181,8 +191,8 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String removeMAWorker(Long workerId, String username,
 			String email) {
 		String errorMsg = "Worker (ID: " + workerId + ") is a worker of the "
-				+ "Mechanical Argentine, associated to the user "
-				+ username + " (" + email + ") and can't be deleted.";
+				+ "Mechanical Argentine, associated to the user " + username
+				+ " (" + email + ") and can't be deleted.";
 		return errorMsg;
 	}
 
@@ -195,14 +205,33 @@ public abstract class ErrorMessages<T extends Worker> {
 		String errorMsg = "An study should have at least one member.";
 		return errorMsg;
 	}
+	
+	public static String studyExportFailure(Long studyId) {
+		String errorMsg = "Failure during export of study with ID "
+				+ studyId + ".";
+		return errorMsg;
+	}
 
 	public static String mustBeLoggedInAsUser(UserModel user) {
 		return "You must be logged in as " + user.toString()
 				+ " to update this user.";
 	}
-	
+
 	public static String studyLocked(Long studyId) {
-		return "Study " + studyId + " is locked. Unlock it if you want to make changes.";
+		return "Study " + studyId
+				+ " is locked. Unlock it if you want to make changes.";
+	}
+	
+	public static String couldntReadJson() {
+		return "Couldn't read JSON string.";
+	}
+	
+	public static String couldntReadFile() {
+		return "Couldn't read file.";
+	}
+	
+	public static String fileMissing() {
+		return "File missing.";
 	}
 
 }

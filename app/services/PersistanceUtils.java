@@ -70,6 +70,11 @@ public class PersistanceUtils {
 		adminWorker.merge();
 		return adminUser;
 	}
+	
+	public static void addStudy(StudyModel study, UserModel loggedInUser) {
+		study.persist();
+		PersistanceUtils.addMemberToStudy(study, loggedInUser);
+	}
 
 	public static void addMemberToStudy(StudyModel study, UserModel member) {
 		study.addMember(member);

@@ -6,17 +6,25 @@ import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.results.ComponentResult;
+
+import org.apache.commons.lang3.StringUtils;
+
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
+import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
 import services.ErrorMessages;
+import services.JsonUtils;
 import services.PersistanceUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
 
@@ -73,8 +81,8 @@ public class Components extends Controller {
 
 		if (component.getViewUrl() == null || component.getViewUrl().isEmpty()) {
 			String errorMsg = ErrorMessages.urlViewEmpty(componentId);
-			SimpleResult result = (SimpleResult) Home.home(errorMsg,
-					Http.Status.BAD_REQUEST);
+			SimpleResult result = (SimpleResult) Components.index(studyId,
+					componentId, errorMsg, Http.Status.BAD_REQUEST);
 			throw new ResultException(result, errorMsg);
 		}
 		session(MAPublix.MECHARG_TRY, COMPONENT);
@@ -235,6 +243,67 @@ public class Components extends Controller {
 		ComponentModel clone = new ComponentModel(component);
 		PersistanceUtils.addComponent(study, clone);
 		return redirect(routes.Components.index(studyId, clone.getId()));
+	}
+
+	@Transactional
+	public static Result export(Long studyId, Long componentId)
+			throws ResultException {
+		Logger.info(CLASS_NAME + ".export: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = Users.getLoggedInUser();
+		ComponentModel component = ComponentModel.findById(componentId);
+		checkStandardForComponentsAjax(studyId, componentId, study,
+				loggedInUser, component);
+
+		String componentAsJson;
+		try {
+			componentAsJson = JsonUtils.asJsonForIO(component);
+		} catch (JsonProcessingException e) {
+			String errorMsg = ErrorMessages.componentExportFailure(componentId);
+			SimpleResult result = internalServerError(errorMsg);
+			throw new ResultException(result, errorMsg);
+		}
+
+		response().setContentType("application/x-download");
+		String filename = component.getTitle().trim()
+				.replaceAll("[^a-zA-Z0-9\\.\\-]", "_").toLowerCase();
+		filename = StringUtils.left(filename, 250).concat(".mac");
+		response().setHeader("Content-disposition",
+				"attachment; filename=" + filename);
+		return ok(componentAsJson);
+	}
+
+	@Transactional
+	public static Result importComponent(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".importComponent: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = Users.getLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAll();
+		Studies.checkStandardForStudy(study, studyId, loggedInUser, studyList);
+		Studies.checkStudyLocked(study);
+
+		ComponentModel component;
+		try {
+			MultipartFormData mfd = request().body().asMultipartFormData();
+			component = JsonUtils.rippingObjectFromJsonUploadRequest(mfd,
+					ComponentModel.class);
+		} catch (ResultException e) {
+			SimpleResult result = (SimpleResult) Studies.index(study.getId(),
+					e.getMessage(), Http.Status.BAD_REQUEST);
+			e.setResult(result);
+			throw e;
+		}
+		if (component.validate() != null) {
+			String errorMsg = ErrorMessages.componentIsntValid();
+			SimpleResult result = (SimpleResult) Studies.index(study.getId(),
+					errorMsg, Http.Status.BAD_REQUEST);
+			throw new ResultException(result, errorMsg);
+		}
+		PersistanceUtils.addComponent(study, component);
+		return redirect(routes.Studies.index(studyId));
 	}
 
 	/**

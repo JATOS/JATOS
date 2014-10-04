@@ -32,7 +32,7 @@
 					color: #c00;
 				}
 			}
-			.tryStudy, .editStudy, .cloneStudy, .lockStudy, .showMTurkSourceCode, .removeAllResults, .removeStudy {
+			.tryStudy, .editStudy, .cloneStudy, .export, .lockStudy, .showMTurkSourceCode, .removeAllResults, .removeStudy {
 				.button();
 				vertical-align: middle;
 				display: inline-block;
@@ -77,10 +77,19 @@
 					vertical-align: middle;
 					padding-right: 5px;
 				}
-				.addComponent {
+				.addComponent, #importButton {
 					.button();
 					vertical-align: middle;
 					display: inline-block;
+					margin: 0 5px 5px 0;
+				}
+				#importForm {
+					display: inline-block;
+					margin: 0;
+					padding: 0;
+				}
+				#importBrowser {
+					display: none;
 				}
 			}
 			> table {

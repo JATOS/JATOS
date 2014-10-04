@@ -45,11 +45,11 @@ public class StudyModel {
 	@JsonView(JsonUtils.JsonForPublix.class)
 	private Long id;
 
-	@JsonView(JsonUtils.JsonForPublix.class)
+	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
 	private String title;
 
 	@Lob
-	@JsonView(JsonUtils.JsonForPublix.class)
+	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
 	private String description;
 
 	/**
@@ -62,7 +62,7 @@ public class StudyModel {
 	private boolean locked = false;
 
 	@Lob
-	@JsonView(JsonUtils.JsonForPublix.class)
+	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
 	private String jsonData;
 
 	@JsonIgnore
@@ -70,7 +70,7 @@ public class StudyModel {
 	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id")}, inverseJoinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "email")})
 	private Set<UserModel> memberList = new HashSet<UserModel>();
 
-	@JsonIgnore
+	@JsonView(JsonUtils.JsonForIO.class)
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")

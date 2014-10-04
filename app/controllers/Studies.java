@@ -4,6 +4,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -18,7 +22,9 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
+import play.mvc.Http.MultipartFormData;
 import services.ErrorMessages;
+import services.JsonUtils;
 import services.PersistanceUtils;
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
@@ -93,10 +99,36 @@ public class Studies extends Controller {
 			throw new ResultException(result);
 		} else {
 			StudyModel study = form.get();
-			study.persist();
-			PersistanceUtils.addMemberToStudy(study, loggedInUser);
+			PersistanceUtils.addStudy(study, loggedInUser);
 			return redirect(routes.Studies.index(study.getId()));
 		}
+	}
+
+	@Transactional
+	public static Result importStudy() throws ResultException {
+		Logger.info(CLASS_NAME + ".importStudy: " + "logged-in user's email "
+				+ session(Users.COOKIE_EMAIL));
+		UserModel loggedInUser = Users.getLoggedInUser();
+
+		StudyModel study;
+		try {
+			MultipartFormData mfd = request().body().asMultipartFormData();
+			study = JsonUtils.rippingObjectFromJsonUploadRequest(mfd,
+					StudyModel.class);
+		} catch (ResultException e) {
+			SimpleResult result = (SimpleResult) Home.home(e.getMessage(),
+					Http.Status.BAD_REQUEST);
+			e.setResult(result);
+			throw e;
+		}
+		if (study.validate() != null) {
+			String errorMsg = ErrorMessages.componentIsntValid();
+			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+					Http.Status.BAD_REQUEST);
+			throw new ResultException(result, errorMsg);
+		}
+		PersistanceUtils.addStudy(study, loggedInUser);
+		return redirect(routes.Home.home());
 	}
 
 	@Transactional
@@ -208,6 +240,32 @@ public class Studies extends Controller {
 		clone.addMember(loggedInUser);
 		clone.persist();
 		return redirect(routes.Studies.index(clone.getId()));
+	}
+
+	@Transactional
+	public static Result export(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".export: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = Users.getLoggedInUser();
+		checkStandardForStudyAjax(study, studyId, loggedInUser);
+
+		String studyAsJson;
+		try {
+			studyAsJson = JsonUtils.asJsonForIO(study);
+		} catch (JsonProcessingException e) {
+			String errorMsg = ErrorMessages.studyExportFailure(studyId);
+			SimpleResult result = internalServerError(errorMsg);
+			throw new ResultException(result, errorMsg);
+		}
+
+		response().setContentType("application/x-download");
+		String filename = study.getTitle().trim()
+				.replaceAll("[^a-zA-Z0-9\\.\\-]", "_").toLowerCase();
+		filename = StringUtils.left(filename, 250).concat(".mas");
+		response().setHeader("Content-disposition",
+				"attachment; filename=" + filename);
+		return ok(studyAsJson);
 	}
 
 	@Transactional

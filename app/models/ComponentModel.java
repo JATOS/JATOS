@@ -49,7 +49,7 @@ public class ComponentModel {
 	@JoinColumn(name = "study_id")
 	private StudyModel study;
 
-	@JsonView(JsonUtils.JsonForPublix.class)
+	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
 	private String title;
 
 	/**
@@ -58,10 +58,10 @@ public class ComponentModel {
 	@JsonView(JsonUtils.JsonForMA.class)
 	private Timestamp date;
 
-	@JsonView(JsonUtils.JsonForPublix.class)
+	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
 	private String viewUrl; // URL or local path
 
-	@JsonView(JsonUtils.JsonForPublix.class)
+	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
 	private boolean reloadable = false;
 
 	/**
@@ -69,10 +69,10 @@ public class ComponentModel {
 	 * error message if one try. Further it's skipped if one uses
 	 * startNextComponent from the public API.
 	 */
-	@JsonView(JsonUtils.JsonForMA.class)
+	@JsonView({JsonUtils.JsonForMA.class, JsonUtils.JsonForIO.class})
 	private boolean active = true;
 
-	@JsonView(JsonUtils.JsonForPublix.class)
+	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
 	@Lob
 	private String jsonData;
 

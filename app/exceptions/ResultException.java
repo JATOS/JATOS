@@ -17,8 +17,16 @@ public class ResultException extends Exception {
 		this.result = result;
 	}
 	
+	public ResultException(String message) {
+		super(message);
+	}
+	
 	public SimpleResult getResult() {
 		return result;
+	}
+	
+	public void setResult(SimpleResult result) {
+		this.result =  result;
 	}
 
 }
