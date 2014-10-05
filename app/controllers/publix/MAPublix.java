@@ -18,8 +18,6 @@ import services.PersistanceUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
 
-import controllers.Components;
-import controllers.Studies;
 import controllers.Users;
 import controllers.routes;
 import exceptions.BadRequestPublixException;
@@ -51,7 +49,7 @@ public class MAPublix extends Publix implements IPublix {
 		checkStandard(study, worker.getUser(), firstComponent);
 
 		String mechArgTry = utils.retrieveMechArgTry();
-		if (!mechArgTry.equals(Studies.STUDY)) {
+		if (!mechArgTry.equals(StudyModel.STUDY)) {
 			throw new ForbiddenPublixException(
 					ErrorMessages.noMechArgStudyTry());
 		}
@@ -72,7 +70,7 @@ public class MAPublix extends Publix implements IPublix {
 
 		// Check if it's a single component try.
 		String mechArgTry = utils.retrieveMechArgTry();
-		if (mechArgTry.equals(Components.COMPONENT)) {
+		if (mechArgTry.equals(ComponentModel.COMPONENT)) {
 			// Finish study after first component
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
@@ -104,7 +102,7 @@ public class MAPublix extends Publix implements IPublix {
 
 		// Check if it's a single component try.
 		String mechArgTry = utils.retrieveMechArgTry();
-		if (mechArgTry.equals(Components.COMPONENT)) {
+		if (mechArgTry.equals(ComponentModel.COMPONENT)) {
 			// Finish study after first component
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));

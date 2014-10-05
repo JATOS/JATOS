@@ -13,8 +13,6 @@ import services.PersistanceUtils;
 
 import com.google.common.net.MediaType;
 
-import controllers.Components;
-import controllers.Studies;
 import controllers.Users;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
@@ -79,12 +77,12 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 		
 		String mechArgTry = retrieveMechArgTry(mediaType);
 		if (studyResult == null) {
-			if (mechArgTry.equals(Studies.STUDY)) {
+			if (mechArgTry.equals(StudyModel.STUDY)) {
 				throw new ForbiddenPublixException(
 						errorMessages.workerNeverStartedStudy(worker,
 								study.getId()), mediaType);
 			}
-			if (mechArgTry.equals(Components.COMPONENT)) {
+			if (mechArgTry.equals(ComponentModel.COMPONENT)) {
 				// Try-out of a single component: Just create a StudyResult for
 				// this. The StudyResult will have only one ComponentResult.
 				studyResult = PersistanceUtils.createStudyResult(study, worker);

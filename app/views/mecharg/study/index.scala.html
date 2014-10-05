@@ -52,7 +52,7 @@
 				<div class="addComponent">+</div>
 				<form id="importForm" action="@routes.Components.importComponent(study.getId())" method="post" enctype="multipart/form-data">
 					<div id="importButton" type="file">Import</div>
-					<input id="importBrowser" type="file" name="component" accept="application/json">
+					<input id="importBrowser" type="file" name="@ComponentModel.COMPONENT" accept="application/json">
 				</form>
 			</header>
 			
@@ -243,7 +243,7 @@
 				type : 'DELETE',
 				success : function(result) {
 					$(".showResults").each(function(index) {
-						$(this).text("Results (0)");
+						$(this).html("Results&nbsp;(0)");
 					});
 					$(".worker").remove();
 				},

@@ -16,6 +16,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData;
+import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
@@ -31,7 +32,6 @@ import exceptions.ResultException;
 @Security.Authenticated(Secured.class)
 public class Components extends Controller {
 
-	public static final String COMPONENT = "component";
 	private static final String CLASS_NAME = Components.class.getSimpleName();
 
 	@Transactional
@@ -85,7 +85,7 @@ public class Components extends Controller {
 					componentId, errorMsg, Http.Status.BAD_REQUEST);
 			throw new ResultException(result, errorMsg);
 		}
-		session(MAPublix.MECHARG_TRY, COMPONENT);
+		session(MAPublix.MECHARG_TRY, ComponentModel.COMPONENT);
 		return redirect(component.getViewUrl());
 	}
 
@@ -288,7 +288,8 @@ public class Components extends Controller {
 		ComponentModel component;
 		try {
 			MultipartFormData mfd = request().body().asMultipartFormData();
-			component = JsonUtils.rippingObjectFromJsonUploadRequest(mfd,
+			FilePart filePart = mfd.getFile(ComponentModel.COMPONENT);
+			component = JsonUtils.rippingObjectFromJsonUploadRequest(filePart,
 					ComponentModel.class);
 		} catch (ResultException e) {
 			SimpleResult result = (SimpleResult) Studies.index(study.getId(),

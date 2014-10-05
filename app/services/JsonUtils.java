@@ -14,7 +14,6 @@ import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 
 import play.Logger;
-import play.mvc.Http.MultipartFormData;
 import play.mvc.Http.MultipartFormData.FilePart;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -194,9 +193,8 @@ public class JsonUtils {
 		return object;
 	}
 
-	public static <T> T rippingObjectFromJsonUploadRequest(MultipartFormData mfd,
+	public static <T> T rippingObjectFromJsonUploadRequest(FilePart filePart,
 			Class<T> model) throws ResultException {
-		FilePart filePart = mfd.getFile("component");
 		String errorMsg = null;
 		T object = null;
 		if (filePart != null) {

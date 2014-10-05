@@ -39,6 +39,7 @@ public class StudyModel {
 	public static final String TITLE = "title";
 	public static final String JSON_DATA = "jsonData";
 	public static final String DESCRIPTION = "description";
+	public static final String STUDY = "study";
 
 	@Id
 	@GeneratedValue

@@ -23,6 +23,7 @@ import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
 import play.mvc.Http.MultipartFormData;
+import play.mvc.Http.MultipartFormData.FilePart;
 import services.ErrorMessages;
 import services.JsonUtils;
 import services.PersistanceUtils;
@@ -32,7 +33,6 @@ import exceptions.ResultException;
 @Security.Authenticated(Secured.class)
 public class Studies extends Controller {
 
-	public static final String STUDY = "study";
 	private static final String CLASS_NAME = Studies.class.getSimpleName();
 
 	@Transactional
@@ -113,7 +113,8 @@ public class Studies extends Controller {
 		StudyModel study;
 		try {
 			MultipartFormData mfd = request().body().asMultipartFormData();
-			study = JsonUtils.rippingObjectFromJsonUploadRequest(mfd,
+			FilePart filePart = mfd.getFile(StudyModel.STUDY);
+			study = JsonUtils.rippingObjectFromJsonUploadRequest(filePart,
 					StudyModel.class);
 		} catch (ResultException e) {
 			SimpleResult result = (SimpleResult) Home.home(e.getMessage(),
@@ -360,7 +361,7 @@ public class Studies extends Controller {
 		checkStandardForStudy(study, studyId, loggedInUser, studyList);
 		checkStudyLocked(study);
 
-		session(MAPublix.MECHARG_TRY, Studies.STUDY);
+		session(MAPublix.MECHARG_TRY, StudyModel.STUDY);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startStudy(study.getId()));
 	}
