@@ -23,49 +23,56 @@ public class ExternalAssets extends Controller {
 	private static final String CLASS_NAME = ExternalAssets.class
 			.getSimpleName();
 	private static final String DEFAULT_STUDIES_PATH = "/studies";
+	private static final String BASEPATH = Play.application().path().getPath();
+	private static final String CONFIGPATH = BASEPATH + APPLICATION_CONF;
+	private static final Config CONFIG = ConfigFactory.parseFile(new File(
+			CONFIGPATH));
 
-	private static String basePath = Play.application().path().getPath();
-	private static String configPath = basePath + APPLICATION_CONF;
-	private static Config config = ConfigFactory
-			.parseFile(new File(configPath));
+	private static String STUDIESPATH;
+	static {
+		try {
+			String rawStudiesPath = CONFIG.getString(PROPERTY_STUDIESPATH);
+			STUDIESPATH = rawStudiesPath.replace("~",
+					System.getProperty("user.home"));
+			Logger.info(CLASS_NAME + ": Path to studies is " + STUDIESPATH);
+		} catch (ConfigException e) {
+			Logger.info(CLASS_NAME + ": Path to studies in property "
+					+ PROPERTY_STUDIESPATH + " in config file " + CONFIGPATH
+					+ " doesn't exist.");
+		}
+	}
 
 	/**
-	 * If the "studiespath" is defined in mecharg.conf then use it
-	 * as the base path. If the file can't be found there, try MechArg's base
-	 * path + "studies" instead.
+	 * If the PROPERTY_STUDIESPATH is defined in the configuration file then use
+	 * it as the base path. If PROPERTY_STUDIESPATH isn't defined, try in
+	 * default study path instead.
 	 */
 	public static Result at(String fileStr) {
-		String studiesPath = null;
-		try {
-			studiesPath = config.getString(PROPERTY_STUDIESPATH);
-		} catch (ConfigException e) {
-			Logger.info(CLASS_NAME + ".at: Property " + PROPERTY_STUDIESPATH
-					+ " in config file " + configPath + " doesn't exist.");
-		}
-		if (studiesPath != null) {
-			studiesPath = studiesPath.replace("~",
-					System.getProperty("user.home"));
-			String fullPath = studiesPath + "/" + fileStr;
+		if (STUDIESPATH != null) {
+			// Try in location in PROPERTY_STUDIESPATH from config file
+			String fullPath = STUDIESPATH + "/" + fileStr;
 			File file = new File(fullPath);
 			if (file.exists() && !file.isDirectory()) {
 				Logger.info(CLASS_NAME + ".at: loading file " + fullPath + ".");
 				return ok(file, true);
+			} else {
+				Logger.info(CLASS_NAME + ".at: failed loading from path "
+						+ STUDIESPATH + "/" + fileStr + " specified "
+						+ "in config " + CONFIGPATH + ".");
+			}
+		} else {
+			// Try in default location
+			String fullPath = BASEPATH + DEFAULT_STUDIES_PATH + "/" + fileStr;
+			File file = new File(fullPath);
+			if (file.exists() && !file.isDirectory()) {
+				Logger.info(CLASS_NAME + ".at: loading file " + fullPath + ".");
+				return ok(file, true);
+			} else {
+				Logger.info(CLASS_NAME
+						+ ".at: failed loading file from default path "
+						+ fullPath + ".");
 			}
 		}
-		Logger.info(CLASS_NAME + ".at: failed loading from path " + studiesPath
-				+ "/" + fileStr + " specified " + "in config " + configPath
-				+ ".");
-
-		// Try in default location
-		String fullPath = basePath + DEFAULT_STUDIES_PATH + "/" + fileStr;
-		File file = new File(fullPath);
-		if (file.exists() && !file.isDirectory()) {
-			Logger.info(CLASS_NAME + ".at: loading file " + fullPath + ".");
-			return ok(file, true);
-		}
-
-		Logger.info(CLASS_NAME + ".at: failed loading file from default path "
-				+ fullPath + ".");
 		return notFound(views.html.publix.error.render("Resource \"" + fileStr
 				+ "\" couldn't be found."));
 	}
