@@ -24,7 +24,7 @@ public class Home extends Controller {
 		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<UserModel> userList = UserModel.findAll();
 		List<Worker> workerList = Worker.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs

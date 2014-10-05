@@ -30,7 +30,7 @@ public class ComponentResults extends Controller {
 		Logger.info(CLASS_NAME + ".remove: componentResultId "
 				+ componentResultId + ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		ComponentResult componentResult = ComponentResult
 				.findById(componentResultId);
 		if (componentResult == null) {
@@ -38,8 +38,9 @@ public class ComponentResults extends Controller {
 					.componentResultNotExist(componentResultId));
 		}
 		StudyModel study = componentResult.getStudyResult().getStudy();
-		Studies.checkStandardForStudyAjax(study, study.getId(), loggedInUser);
-		Studies.checkStudyLockedAjax(study);
+		ControllerUtils.checkStandardForStudyAjax(study, study.getId(),
+				loggedInUser);
+		ControllerUtils.checkStudyLockedAjax(study);
 
 		PersistanceUtils.removeComponentResult(componentResult);
 		return ok();
@@ -53,11 +54,11 @@ public class ComponentResults extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		Components.checkStandardForComponents(studyId, componentId, study,
+		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				studyList, loggedInUser, component);
-		Studies.checkStudyLocked(study);
+		ControllerUtils.checkStudyLocked(study);
 
 		List<ComponentResult> componentResultList = ComponentResult
 				.findAllByComponent(component);
@@ -80,11 +81,11 @@ public class ComponentResults extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		Components.checkStandardForComponents(studyId, componentId, study,
+		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				studyList, loggedInUser, component);
-		Studies.checkStudyLocked(study);
+		ControllerUtils.checkStudyLocked(study);
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
 		String[] checkedComponents = formMap.get(ComponentModel.RESULT);

@@ -33,8 +33,8 @@ public class Users extends Controller {
 	public static Result profile(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".profile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		UserModel user = getUser(email);
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel user = ControllerUtils.getUser(email);
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAll();
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -49,7 +49,7 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getHomeBreadcrumb(), "New User");
 		return ok(views.html.mecharg.user.create.render(studyList,
@@ -62,7 +62,7 @@ public class Users extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		List<StudyModel> studyList = StudyModel.findAll();
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -117,8 +117,8 @@ public class Users extends Controller {
 	public static Result editProfile(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".editProfile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		UserModel user = getUser(email);
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel user = ControllerUtils.getUser(email);
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAll();
 
 		// To change a user this user must be logged in.
@@ -143,8 +143,8 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".submitEditedProfile: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		UserModel user = getUser(email);
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel user = ControllerUtils.getUser(email);
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAll();
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
@@ -176,8 +176,8 @@ public class Users extends Controller {
 	public static Result changePassword(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".changePassword: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		UserModel user = getUser(email);
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel user = ControllerUtils.getUser(email);
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAll();
 
 		// To change a user's password this user must be logged in.
@@ -201,9 +201,9 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".submitChangedPassword: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		UserModel user = getUser(email);
+		UserModel user = ControllerUtils.getUser(email);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAll();
 		DynamicForm requestData = Form.form().bindFromRequest();
 
@@ -248,39 +248,6 @@ public class Users extends Controller {
 			user.merge();
 			return redirect(routes.Users.profile(email));
 		}
-	}
-
-	public static UserModel getUser(String email) throws ResultException {
-		UserModel user = UserModel.findByEmail(email);
-		if (user == null) {
-			String errorMsg = ErrorMessages.userNotExist(email);
-			SimpleResult result = (SimpleResult) Home.home(errorMsg,
-					Http.Status.BAD_REQUEST);
-			throw new ResultException(result, errorMsg);
-		}
-		return user;
-	}
-
-	public static UserModel getLoggedInUser() throws ResultException {
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
-		if (loggedInUser == null) {
-			String errorMsg = ErrorMessages.noUserLoggedIn();
-			throw new ResultException(redirect(routes.Authentication.login()),
-					errorMsg);
-		}
-		return loggedInUser;
-	}
-
-	public static UserModel getLoggedInUserAjax() throws ResultException {
-		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
-		if (loggedInUser == null) {
-			String errorMsg = ErrorMessages.noUserLoggedIn();
-			SimpleResult result = badRequest(errorMsg);
-			throw new ResultException(result, errorMsg);
-		}
-		return loggedInUser;
 	}
 
 }

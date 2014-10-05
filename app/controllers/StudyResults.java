@@ -25,14 +25,15 @@ public class StudyResults extends Controller {
 		Logger.info(CLASS_NAME + ".remove: studyResultId " + studyResultId
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		StudyResult studyResult = StudyResult.findById(studyResultId);
 		if (studyResult == null) {
 			return badRequest(ErrorMessages.studyResultNotExist(studyResultId));
 		}
 		StudyModel study = studyResult.getStudy();
-		Studies.checkStandardForStudyAjax(study, study.getId(), loggedInUser);
-		
+		ControllerUtils.checkStandardForStudyAjax(study, study.getId(),
+				loggedInUser);
+
 		PersistanceUtils.removeStudyResult(studyResult);
 		return ok();
 	}

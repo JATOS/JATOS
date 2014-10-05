@@ -11,7 +11,6 @@ import models.workers.Worker;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
@@ -28,10 +27,10 @@ public class Workers extends Controller {
 	public static Result index(Long workerId) throws ResultException {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = Users.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		Worker worker = Worker.findById(workerId);
 		List<StudyModel> studyList = StudyModel.findAll();
-		checkWorker(worker, workerId);
+		ControllerUtils.checkWorker(worker, workerId);
 
 		// Generate the list of StudyResults that the logged-in user is allowed
 		// to see
@@ -58,13 +57,14 @@ public class Workers extends Controller {
 		Logger.info(CLASS_NAME + ".remove: workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		Worker worker = Worker.findById(workerId);
-		UserModel loggedInUser = Users.getLoggedInUser();
-		checkWorker(worker, workerId);
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		ControllerUtils.checkWorker(worker, workerId);
 
 		if (worker instanceof MAWorker) {
 			MAWorker maWorker = (MAWorker) worker;
-			String errorMsg = ErrorMessages.removeMAWorker(worker.getId(), maWorker
-					.getUser().getName(), maWorker.getUser().getEmail());
+			String errorMsg = ErrorMessages
+					.removeMAWorker(worker.getId(), maWorker.getUser()
+							.getName(), maWorker.getUser().getEmail());
 			SimpleResult result = forbidden(errorMsg);
 			throw new ResultException(result, errorMsg);
 		}
@@ -73,23 +73,13 @@ public class Workers extends Controller {
 		StudyModel study;
 		for (StudyResult studyResult : worker.getStudyResultList()) {
 			study = studyResult.getStudy();
-			Studies.checkStandardForStudyAjax(study, study.getId(),
+			ControllerUtils.checkStandardForStudyAjax(study, study.getId(),
 					loggedInUser);
-			Studies.checkStudyLockedAjax(study);
+			ControllerUtils.checkStudyLockedAjax(study);
 		}
 
 		PersistanceUtils.removeWorker(worker);
 		return ok();
-	}
-	
-	public static void checkWorker(Worker worker, Long workerId)
-			throws ResultException {
-		if (worker == null) {
-			String errorMsg = ErrorMessages.workerNotExist(workerId);
-			SimpleResult result = (SimpleResult) Home.home(errorMsg,
-					Http.Status.BAD_REQUEST);
-			throw new ResultException(result, errorMsg);
-		}
 	}
 
 }
