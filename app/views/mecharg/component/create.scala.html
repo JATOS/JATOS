@@ -20,21 +20,33 @@
 					class="formTop" placeholder="Title"
 					value="@form(ComponentModel.TITLE).value">
 				
-				<!-- We need a hidden input field.
-				 http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-				<input type="checkbox" class="reloadable" name="@ComponentModel.RELOADABLE" value="true"
-					@if("true".equals(form("reloadable").value)) {
-						checked="checked"
-					}>
-				<input type="hidden" name="@ComponentModel.RELOADABLE" value="false" />
-				<p class="reloadable">Allow participants to reload</p>
+				<p class="reloadable">
+					<input type="checkbox" name="@ComponentModel.RELOADABLE" value="true"
+						@if("true".equals(form("reloadable").value)) {
+							checked="checked"
+						}>
+					<!-- We need a hidden input field.
+					 http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+					<input type="hidden" name="@ComponentModel.RELOADABLE" value="false" />
+					Allow participants to reload
+				</p>
 				
-				@for(error <- form(ComponentModel.VIEW_URL).errors) {
+				@for(error <- form(ComponentModel.FILE_PATH).errors) {
 					<p class="error">@error.message</p>
 				}
-				<input type="text" name="@ComponentModel.VIEW_URL"
-					class="formMiddle" placeholder="URL or path of the actual component"
-					value="@form(ComponentModel.VIEW_URL).value">
+				<table class="filePathTable">
+					<tbody>
+						<tr>
+							<td class="filePathLabel">URL&nbsp;path:&nbsp;</td>
+							<td class="studyPath">/@controllers.publix.ExternalAssets.URL_STUDIES_PATH/@study.getId()/</td>
+							<td>
+								<input class="filePathInput" type="text" name="@ComponentModel.FILE_PATH"
+									placeholder="Path to the actual component HTML file"
+									value="@form(ComponentModel.FILE_PATH).value">
+							</td>
+						</tr>
+					</tbody>
+				</table>
 				
 				@for(error <- form(ComponentModel.JSON_DATA).errors) {
 					<p class="error">@error.message</p>

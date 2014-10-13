@@ -6,24 +6,13 @@ import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.Worker;
-
-import org.apache.commons.lang3.StringUtils;
-
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.SimpleResult;
 import services.ErrorMessages;
-import controllers.routes;
 import exceptions.ResultException;
 
 public class ControllerUtils extends Controller {
-
-	public static String generateFileName(String rawName, Long id) {
-		String filename = rawName.trim().replace("\\", "")
-				.replaceAll("\\s", "_").toLowerCase();
-		filename = StringUtils.left(filename, 35).concat("_" + id + ".mac");
-		return filename;
-	}
 
 	public static void checkStudyLocked(StudyModel study)
 			throws ResultException {
@@ -140,7 +129,7 @@ public class ControllerUtils extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			String errorMsg = ErrorMessages.noUserLoggedIn();
+			String errorMsg = ErrorMessages.NO_USER_LOGGED_IN;
 			throw new ResultException(redirect(routes.Authentication.login()),
 					errorMsg);
 		}
@@ -151,7 +140,7 @@ public class ControllerUtils extends Controller {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
-			String errorMsg = ErrorMessages.noUserLoggedIn();
+			String errorMsg = ErrorMessages.NO_USER_LOGGED_IN;
 			SimpleResult result = badRequest(errorMsg);
 			throw new ResultException(result, errorMsg);
 		}

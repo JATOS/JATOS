@@ -29,7 +29,7 @@ public class Breadcrumbs extends Controller {
 		sb.append("<a href=\"");
 		sb.append(routes.Components.index(study.getId(), component.getId()));
 		sb.append("\">");
-		sb.append(component.getTitle());
+		sb.append(component.getTitle() + " (ID: " + component.getId() + ")");
 		sb.append("</a>");
 		return sb.toString();
 	}
@@ -39,7 +39,7 @@ public class Breadcrumbs extends Controller {
 		sb.append("<a href=\"");
 		sb.append(routes.Studies.index(study.getId()));
 		sb.append("\">");
-		sb.append(study.getTitle());
+		sb.append(study.getTitle() + " (ID: " + study.getId() + ")");
 		sb.append("</a>");
 		return sb.toString();
 	}

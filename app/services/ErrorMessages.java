@@ -16,25 +16,46 @@ public abstract class ErrorMessages<T extends Worker> {
 
 	public abstract String workerNotAllowedStudy(T worker, Long studyId);
 
-	public static final String PROBLEMS_DESERIALIZING_JSON_DATA_STRING_INVALID_JSON_FORMAT = "Problems deserializing JSON data string: invalid JSON format.";
+	// General
 	public static final String MISSING_TITLE = "Missing title";
-	public static final String MISSING_URL = "Missing URL";
+	public static final String MISSING_FILE_PATH = "Missing file path";
 	public static final String MISSING_NAME = "Missing name";
 	public static final String MISSING_EMAIL = "Missing email";
-	public static final String NEITHER_A_PATH_NOR_AN_URL_YOU_CAN_LEAVE_IT_EMPTY = "Neither a path nor an URL (you can leave it empty)";
+	public static final String NO_USER_LOGGED_IN = "No user logged in.";
+	
+	// Edit HTML forms
+	public static final String INVALID_JSON_FORMAT = "Problems deserializing JSON data string: invalid JSON format.";
+	public static final String NO_HTML_ALLOWED = "No HTML allowed";
+	public static final String NOT_A_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a path (you can leave it empty)";
 	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format.";
+	public static final String STUDY_AT_LEAST_ONE_MEMBER = "An study should have at least one member.";
+	
+	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_ARENT_THE_SAME = "Passwords aren't the same.";
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings.";
 	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email is already registered.";
 
+	// Export / import
+	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components.";
+	public static final String COULDNT_READ_JSON = "Couldn't read JSON string.";
+	public static final String COULDNT_READ_FILE = "Couldn't read file.";
+	public static final String FILE_MISSING = "File missing.";
+	public static final String FILE_NOT_EXIST_OR_DIR = "File doesn't exists or is a directory.";
+	public static final String IMPORT_OF_STUDY_FAILED = "Import of study failed.";
+	
+	// Publix
+	public static final String COMPONENT_INVALID = "Component is invalid.";
+	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
+	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_MECHARG = "This study or component was never started from within MechArg.";
+	public static final String STUDY_NEVER_STARTED_FROM_MECHARG = "This study was never started from within MechArg.";
+	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters.";
+	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
+	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
+
+
 	public static String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
-		return errorMsg;
-	}
-
-	public static String noWorkerIdInSession() {
-		String errorMsg = "No worker ID in session. Was the study started?";
 		return errorMsg;
 	}
 
@@ -111,36 +132,6 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String noMoreComponents() {
-		String errorMsg = "There aren't any more components in this study.";
-		return errorMsg;
-	}
-
-	public static String noUserLoggedIn() {
-		String errorMsg = "No user logged in.";
-		return errorMsg;
-	}
-
-	public static String noMechArgTry() {
-		String errorMsg = "This study or component was never started from within MechArg.";
-		return errorMsg;
-	}
-
-	public static String noMechArgStudyTry() {
-		String errorMsg = "This study was never started from within MechArg.";
-		return errorMsg;
-	}
-
-	public static String assignmentIdNotSpecified() {
-		String errorMsg = "No assignment ID specified in query parameters.";
-		return errorMsg;
-	}
-
-	public static String workerNotInQueryParameter(String mtWorkerId) {
-		String errorMsg = "MTurk's workerId is missing in the query parameters.";
-		return errorMsg;
-	}
-
 	public static String workerNotFromMTurk(Long workerId) {
 		String errorMsg = "The worker with ID " + workerId
 				+ " isn't a MTurk worker.";
@@ -167,11 +158,6 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String componentResultNotExist(Long componentResultId) {
 		String errorMsg = "An component result with ID " + componentResultId
 				+ " doesn't exist.";
-		return errorMsg;
-	}
-	
-	public static String componentIsntValid() {
-		String errorMsg = "Component isn't valid.";
 		return errorMsg;
 	}
 
@@ -201,14 +187,8 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String studyAtLeastOneMember() {
-		String errorMsg = "An study should have at least one member.";
-		return errorMsg;
-	}
-	
 	public static String studyExportFailure(Long studyId) {
-		String errorMsg = "Failure during export of study with ID "
-				+ studyId + ".";
+		String errorMsg = "Export of study with ID " + studyId + " failed.";
 		return errorMsg;
 	}
 
@@ -221,17 +201,38 @@ public abstract class ErrorMessages<T extends Worker> {
 		return "Study " + studyId
 				+ " is locked. Unlock it if you want to make changes.";
 	}
-	
-	public static String couldntReadJson() {
-		return "Couldn't read JSON string.";
+
+	public static String couldntGeneratePathToFileOrDir(String fileStr) {
+		return "Couldn't generate path to file or directory " + fileStr + ".";
 	}
-	
-	public static String couldntReadFile() {
-		return "Couldn't read file.";
+
+	public static String couldntGenerateStudysDir(String path) {
+		return "Couldn't generate path to study directory (" + path + ").";
 	}
-	
-	public static String fileMissing() {
-		return "File missing.";
+
+	public static String studysDirPathIsntDir(String dirName) {
+		return "Study's directory path doesn't lead to " + "a directory ("
+				+ dirName + ").";
+	}
+
+	public static String clonedStudysDirNotCreatedBecauseExists(String dirName) {
+		return "Cloned study's directory (" + dirName
+				+ ") couldn't be created because it already exists.";
+	}
+
+	public static String studysDirNotCreatedBecauseExists(String dirName) {
+		return "Study's directory (" + dirName
+				+ ") couldn't be created because it already exists.";
+	}
+
+	public static String studysDirNotRenamed(String oldDirName,
+			String newDirName) {
+		return "Couldn't rename study's directory from " + oldDirName
+				+ " to " + newDirName + ".";
+	}
+
+	public static String studysDirNotCreated(String dirName) {
+		return "Couldn't create new study's directory (" + dirName + ").";
 	}
 
 }

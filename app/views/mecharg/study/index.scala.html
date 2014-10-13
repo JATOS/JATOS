@@ -33,7 +33,7 @@
 		<div class="membersBox">
 			<header>
 				<h3>Members</h3>
-				<div class="updateMembers">Change Members</div>
+				<div class="updateMembers">Change</div>
 			</header>
 			<ul>
 				@for(member <- study.getMemberList()) {
@@ -52,7 +52,7 @@
 				<div class="addComponent">+</div>
 				<form id="importForm" action="@routes.Components.importComponent(study.getId())" method="post" enctype="multipart/form-data">
 					<div id="importButton" type="file">Import</div>
-					<input id="importBrowser" type="file" name="@ComponentModel.COMPONENT" accept="application/json">
+					<input id="importBrowser" type="file" name="@ComponentModel.COMPONENT" multiple>
 				</form>
 			</header>
 			
@@ -220,7 +220,7 @@
 	});
 	
 	$(".export").click(function(e) {
-		window.location.href = "@routes.Studies.export(study.getId())";
+		window.location.href = "@routes.Studies.exportStudy(study.getId())";
 	});
 
 	$(".editStudy").click(function(e) {
@@ -255,9 +255,9 @@
 	});
 	
 	$(".removeStudy").click(function(e) {
-		var conf = confirm("Are you sure you want to delete study "
-				+ "\"@Html(study.getTitle())\" (ID: @study.getId()) " +
-				"with all it's components and results?");
+		var conf = confirm('Are you sure you want to delete study '
+				+ '\"@study.getTitle()\" (ID: @study.getId()) '
+				+ 'with all it\'s components and results?');
 		if (conf == false) {
 			return;
 		}

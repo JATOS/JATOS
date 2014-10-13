@@ -51,7 +51,7 @@ public class MAPublix extends Publix implements IPublix {
 		String mechArgTry = utils.retrieveMechArgTry();
 		if (!mechArgTry.equals(StudyModel.STUDY)) {
 			throw new ForbiddenPublixException(
-					ErrorMessages.noMechArgStudyTry());
+					ErrorMessages.STUDY_NEVER_STARTED_FROM_MECHARG);
 		}
 
 		PersistanceUtils.createStudyResult(study, worker);
@@ -83,8 +83,9 @@ public class MAPublix extends Publix implements IPublix {
 				worker, study);
 		utils.startComponent(component, studyResult);
 
+		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
 		String redirectUrl = PublixUtils.getUrlWithRequestQueryString(request()
-				.uri(), component.getViewUrl());
+				.uri(), urlPath);
 		return redirect(redirectUrl);
 	}
 

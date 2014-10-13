@@ -45,13 +45,13 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 			throws BadRequestPublixException, NotFoundPublixException {
 		String email = Publix.session(Users.COOKIE_EMAIL);
 		if (email == null) {
-			throw new BadRequestPublixException(ErrorMessages.noUserLoggedIn(),
-					errorMediaType);
+			throw new BadRequestPublixException(
+					ErrorMessages.NO_USER_LOGGED_IN, errorMediaType);
 		}
 		UserModel loggedInUser = UserModel.findByEmail(email);
 		if (loggedInUser == null) {
-			throw new NotFoundPublixException(ErrorMessages.userNotExist(email),
-					errorMediaType);
+			throw new NotFoundPublixException(
+					ErrorMessages.userNotExist(email), errorMediaType);
 		}
 		return loggedInUser.getWorker();
 	}
@@ -69,12 +69,12 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 			throws ForbiddenPublixException {
 		StudyResult studyResult = null;
 		try {
-			studyResult = super.retrieveWorkersStartedStudyResult(
-					worker, study, mediaType);
+			studyResult = super.retrieveWorkersStartedStudyResult(worker,
+					study, mediaType);
 		} catch (PublixException e) {
 			// Do nothing
 		}
-		
+
 		String mechArgTry = retrieveMechArgTry(mediaType);
 		if (studyResult == null) {
 			if (mechArgTry.equals(StudyModel.STUDY)) {
@@ -138,7 +138,8 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 			throws ForbiddenPublixException {
 		String mechArgTry = Publix.session(MAPublix.MECHARG_TRY);
 		if (mechArgTry == null) {
-			throw new ForbiddenPublixException(ErrorMessages.noMechArgTry(),
+			throw new ForbiddenPublixException(
+					ErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_MECHARG,
 					mediaType);
 		}
 		return mechArgTry;

@@ -44,7 +44,7 @@ POST    /mecharg/:studyId/changeComponentOrder         controllers.Studies.chang
 GET     /mecharg/:studyId/mturk                        controllers.Studies.showMTurkSourceCode(studyId: Long)
 GET     /mecharg/:studyId/try                          controllers.Studies.tryStudy(studyId: Long)
 GET     /mecharg/:studyId/clone                        controllers.Studies.cloneStudy(studyId: Long)
-GET     /mecharg/:studyId/export                       controllers.Studies.export(studyId: Long)
+GET     /mecharg/:studyId/export                       controllers.Studies.exportStudy(studyId: Long)
 POST    /mecharg/:studyId/swapLock                     controllers.Studies.swapLock(studyId: Long)
 GET     /mecharg/:studyId                              controllers.Studies.index(studyId: Long)
 GET     /mecharg/:studyId/                             controllers.Studies.index(studyId: Long)
@@ -59,10 +59,10 @@ GET     /mecharg/:studyId/:componentId/removeResults   controllers.ComponentResu
 POST    /mecharg/:studyId/:componentId/removeResults   controllers.ComponentResults.submitRemovedResults(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId/try             controllers.Components.tryComponent(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId/clone           controllers.Components.cloneComponent(studyId: Long, componentId: Long)
-GET     /mecharg/:studyId/:componentId/export          controllers.Components.export(studyId: Long, componentId: Long)
+GET     /mecharg/:studyId/:componentId/export          controllers.Components.exportComponent(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId                 controllers.Components.index(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId/                controllers.Components.index(studyId: Long, componentId: Long)
 
 # Static resources (not managed by the Play framework) from the /public folder
-GET     /studies/*file            controllers.publix.ExternalAssets.at(file)
-GET     /assets/*file             controllers.Assets.at(path = "/public", file)
+GET     /studies/:studyId/*file            controllers.publix.ExternalAssets.at(studyId: Long, file)
+GET     /assets/*file                      controllers.Assets.at(path = "/public", file)

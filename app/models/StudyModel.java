@@ -19,6 +19,9 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.TypedQuery;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 import services.ErrorMessages;
@@ -46,11 +49,11 @@ public class StudyModel {
 	@JsonView(JsonUtils.JsonForPublix.class)
 	private Long id;
 
-	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String title;
 
 	@Lob
-	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String description;
 
 	/**
@@ -58,17 +61,17 @@ public class StudyModel {
 	 */
 	@JsonView(JsonUtils.JsonForMA.class)
 	private Timestamp date;
-	
+
 	@JsonView(JsonUtils.JsonForMA.class)
 	private boolean locked = false;
 
 	@Lob
-	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String jsonData;
 
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id")}, inverseJoinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "email")})
+	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "email") })
 	private Set<UserModel> memberList = new HashSet<UserModel>();
 
 	@JsonView(JsonUtils.JsonForIO.class)
@@ -79,7 +82,7 @@ public class StudyModel {
 
 	public StudyModel() {
 	}
-	
+
 	/**
 	 * Constructor for cloning (without members)
 	 */
@@ -128,7 +131,7 @@ public class StudyModel {
 	public Timestamp getDate() {
 		return this.date;
 	}
-	
+
 	public void setLocked(boolean locked) {
 		this.locked = locked;
 	}
@@ -237,15 +240,22 @@ public class StudyModel {
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
-		if (this.title == null || this.title.isEmpty()) {
+		if (title == null || title.isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
 					ErrorMessages.MISSING_TITLE));
 		}
-		if (this.jsonData != null && !JsonUtils.isValidJSON(this.jsonData)) {
-			errorList
-					.add(new ValidationError(
-							JSON_DATA,
-							ErrorMessages.PROBLEMS_DESERIALIZING_JSON_DATA_STRING_INVALID_JSON_FORMAT));
+		if (!Jsoup.isValid(title, Whitelist.none())) {
+			errorList.add(new ValidationError(TITLE,
+					ErrorMessages.NO_HTML_ALLOWED));
+		}
+		if (description != null
+				&& !Jsoup.isValid(description, Whitelist.none())) {
+			errorList.add(new ValidationError(DESCRIPTION,
+					ErrorMessages.NO_HTML_ALLOWED));
+		}
+		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
+			errorList.add(new ValidationError(JSON_DATA,
+					ErrorMessages.INVALID_JSON_FORMAT));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}

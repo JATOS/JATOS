@@ -16,6 +16,9 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.TypedQuery;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import models.workers.MAWorker;
@@ -150,13 +153,21 @@ public class UserModel {
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
-		if (this.email == null || this.email.isEmpty()) {
+		if (email == null || email.isEmpty()) {
 			errorList.add(new ValidationError("email",
 					ErrorMessages.MISSING_EMAIL));
 		}
-		if (this.name == null || this.name.isEmpty()) {
+		if (!Jsoup.isValid(email, Whitelist.none())) {
+			errorList.add(new ValidationError(EMAIL,
+					ErrorMessages.NO_HTML_ALLOWED));
+		}
+		if (name == null || name.isEmpty()) {
 			errorList.add(new ValidationError("name",
 					ErrorMessages.MISSING_NAME));
+		}
+		if (!Jsoup.isValid(name, Whitelist.none())) {
+			errorList.add(new ValidationError(NAME,
+					ErrorMessages.NO_HTML_ALLOWED));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}

@@ -81,6 +81,7 @@
             position: relative;
             padding: 5px 5px 5px 5px;
             background: white;
+            width: 100%;
             &:after {
                 content: " ";
                 display: block;
@@ -127,12 +128,25 @@
                 border: 1px solid @dueDateBorder;
                 width: 100%;
             }
-            input.reloadable {
+            .reloadable {
             	vertical-align: middle;
             }
-            p.reloadable {
-            	display: inline-block;
-            	vertical-align: middle;
+            .filePathTable {
+            	table-layout: auto;
+            	width: 100%;
+            	.filePathLabel {
+            		width: 1%;
+            	}
+            	.studyPath {
+            		width: 1%;
+            	}
+            	td {
+		            vertical-align: middle;
+		            .filePathInput {
+		            	border: 1px solid @dueDateBorder;
+		            	width: 100%;
+		            }
+            	}
             }
             .dueDate {
                 position: absolute;

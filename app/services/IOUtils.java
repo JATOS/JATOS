@@ -1,0 +1,255 @@
+package services;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import models.StudyModel;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import controllers.publix.ExternalAssets;
+
+public class IOUtils {
+
+	public static final String STUDY_DIR_PREFIX = "study_";
+	public static final String STUDY_FILE_SUFFIX = "mas";
+	public static final String COMPONENT_FILE_SUFFIX = "mac";
+	public static final String ZIP_FILE_SUFFIX = "zip";
+
+	private static final int FILENAME_LENGTH = 35;
+
+/**
+	 * Illegal characters or strings in file or directory name '/', '\n', '\r',
+	 * '//', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':',
+	 * '~', '!', '§', '$', '%', '&' 
+	 */
+	private static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&]";
+
+	/**
+	 * Unmarshalling of an JSON string without throwing an exception. Instead
+	 * error message and Exception are stored within the instance.
+	 * 
+	 * @author Kristian Lange
+	 */
+	public static class UploadUnmarshaller {
+
+		private String errorMsg;
+		private Exception exception;
+
+		public String getErrorMsg() {
+			return errorMsg;
+		}
+
+		public Exception getException() {
+			return exception;
+		}
+
+		public <T> T unmarshalling(File file, Class<T> modelClass) {
+			T object = null;
+			String jsonStr = null;
+			try {
+				jsonStr = readFile(file);
+			} catch (IOException e) {
+				errorMsg = ErrorMessages.COULDNT_READ_FILE;
+				exception = e;
+				return null;
+			}
+			try {
+				object = JsonUtils.unmarshalling(jsonStr, modelClass);
+			} catch (IOException e) {
+				errorMsg = ErrorMessages.COULDNT_READ_JSON;
+				exception = e;
+				return null;
+			}
+			return object;
+		}
+	}
+
+	public static boolean validateUrl(String url) {
+		try {
+			new URL(url);
+		} catch (MalformedURLException malformedURLException) {
+			return false;
+		}
+		return true;
+	}
+
+	public static String readFile(File file) throws IOException {
+		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+			StringBuilder sb = new StringBuilder();
+			String line = br.readLine();
+
+			while (line != null) {
+				sb.append(line);
+				sb.append(System.lineSeparator());
+				line = br.readLine();
+			}
+			return sb.toString();
+		}
+	}
+
+	/**
+	 * Gets the File object while preventing a path traversal attack.
+	 */
+	public static File getFileSecurely(String path, String filePath)
+			throws IOException {
+		String fullPath = path + File.separator + filePath;
+		String pureFilename = (new File(fullPath)).getName();
+		String purePath = (new File(fullPath)).getParentFile()
+				.getCanonicalPath();
+		File file = new File(purePath, pureFilename);
+		if (!file.getAbsolutePath().equals(fullPath)) {
+			throw new IOException(
+					ErrorMessages.couldntGeneratePathToFileOrDir(filePath));
+		}
+		return file;
+	}
+
+	/**
+	 * Gets the File object while preventing a path traversal attack and checks
+	 * whether the file exists and is no directory.
+	 */
+	public static File getExistingFileSecurely(String path, String filePath)
+			throws IOException {
+		File file = getFileSecurely(path, filePath);
+		if (file == null || !file.exists() || file.isDirectory()) {
+			throw new IOException(ErrorMessages.FILE_NOT_EXIST_OR_DIR);
+		}
+		return file;
+	}
+
+	/**
+	 * Gets the File object which resides under filePath within the study's
+	 * directory.
+	 */
+	public static File getFileInStudyDir(StudyModel study, String filePath)
+			throws IOException {
+		String studyPath = generateStudysPath(study.getId());
+		File file = getFileSecurely(studyPath, filePath);
+		return file;
+	}
+
+	/**
+	 * Generates a filename from the title and the id in a specified length and
+	 * adds the suffix. If the id is null it uses the title only. If the suffix
+	 * is null it won't have a file suffix.
+	 */
+	public static String generateFileName(String rawName, Long id, String suffix) {
+		String filename = rawName.trim()
+				.replaceAll(REGEX_ILLEGAL_IN_FILENAME, "_").toLowerCase();
+		filename = StringUtils.left(filename, FILENAME_LENGTH);
+		if (id != null) {
+			filename = filename.concat("_" + id);
+		}
+		if (suffix != null) {
+			filename = filename.concat("." + suffix);
+		}
+		return filename;
+	}
+
+	/**
+	 * Generates a filename from the title in a specified length.
+	 */
+	public static String generateFileName(String rawName) {
+		return generateFileName(rawName, null, null);
+	}
+
+	/**
+	 * Generates a filename from the title in a specified length and adds the
+	 * suffix.
+	 */
+	public static String generateFileName(String rawName, String suffix) {
+		return generateFileName(rawName, null, suffix);
+	}
+
+	/**
+	 * Generates a study directory name.
+	 */
+	public static String generateStudyDirName(Long studyId) {
+		return STUDY_DIR_PREFIX + studyId;
+	}
+
+	/**
+	 * Generates a study directory name.
+	 */
+	public static String generateStudysPath(Long studyId) {
+		return ExternalAssets.STUDIESPATH + File.separator
+				+ generateStudyDirName(studyId);
+	}
+
+	public static void removeStudyDirectory(StudyModel study)
+			throws IOException {
+		String dirName = generateStudyDirName(study.getId());
+		File dir = getFileSecurely(ExternalAssets.STUDIESPATH, dirName);
+		if (!dir.exists()) {
+			return;
+		}
+		if (!dir.isDirectory()) {
+			throw new IOException(ErrorMessages.studysDirPathIsntDir(dir
+					.getName()));
+		}
+		FileUtils.deleteDirectory(dir);
+	}
+
+	public static void copyStudyDirectory(StudyModel srcStudy,
+			StudyModel destStudy) throws IOException {
+		String srcDirName = generateStudyDirName(srcStudy.getId());
+		String destDirName = generateStudyDirName(destStudy.getId());
+		File srcDir = getFileSecurely(ExternalAssets.STUDIESPATH, srcDirName);
+		File destDir = getFileSecurely(ExternalAssets.STUDIESPATH, destDirName);
+		if (!srcDir.isDirectory()) {
+			throw new IOException(ErrorMessages.studysDirPathIsntDir(srcDir
+					.getName()));
+		}
+		if (destDir.exists()) {
+			throw new IOException(
+					ErrorMessages
+							.clonedStudysDirNotCreatedBecauseExists(destDir
+									.getName()));
+		}
+		FileUtils.copyDirectory(srcDir, destDir);
+	}
+
+	public static void moveStudyDirectory(File srcDir, StudyModel study)
+			throws IOException {
+		File studyDir = new File(IOUtils.generateStudysPath(study.getId()));
+		FileUtils.moveDirectory(srcDir, studyDir);
+	}
+
+	public static void createStudyDir(StudyModel study) throws IOException {
+		String dirName = generateStudyDirName(study.getId());
+		File dir = getFileSecurely(ExternalAssets.STUDIESPATH, dirName);
+		if (dir.exists()) {
+			throw new IOException(
+					ErrorMessages.studysDirNotCreatedBecauseExists(dir
+							.getName()));
+		}
+		boolean result = dir.mkdirs();
+		if (!result) {
+			throw new IOException(ErrorMessages.studysDirNotCreated(dir
+					.getName()));
+		}
+	}
+
+	/**
+	 * Returns all files within this directory that have the prefix and the
+	 * suffix.
+	 */
+	public static File[] findFiles(File dir, final String prefix,
+			final String suffix) {
+
+		File[] matches = dir.listFiles(new FilenameFilter() {
+			public boolean accept(File dir, String name) {
+				return name.startsWith(prefix) && name.endsWith(suffix);
+			}
+		});
+		return matches;
+	}
+
+}

@@ -1,12 +1,10 @@
 package controllers;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import models.ComponentModel;
 import models.StudyModel;
@@ -19,14 +17,17 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
+import play.mvc.Http.MultipartFormData;
+import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
-import play.mvc.Http.MultipartFormData;
-import play.mvc.Http.MultipartFormData.FilePart;
 import services.ErrorMessages;
+import services.IOUtils;
 import services.JsonUtils;
+import services.IOUtils.UploadUnmarshaller;
 import services.PersistanceUtils;
+import services.ZipUtil;
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
 
@@ -91,18 +92,31 @@ public class Studies extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAll();
 		if (form.hasErrors()) {
-			List<StudyModel> studyList = StudyModel.findAll();
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 					Breadcrumbs.getHomeBreadcrumb(), "New Study");
 			SimpleResult result = badRequest(views.html.mecharg.study.create
 					.render(studyList, loggedInUser, breadcrumbs, form));
 			throw new ResultException(result);
-		} else {
-			StudyModel study = form.get();
-			PersistanceUtils.addStudy(study, loggedInUser);
-			return redirect(routes.Studies.index(study.getId()));
 		}
+
+		// Persist in DB
+		StudyModel study = form.get();
+		PersistanceUtils.addStudy(study, loggedInUser);
+
+		// Create study's dir
+		try {
+			IOUtils.createStudyDir(study);
+		} catch (IOException e) {
+			form.reject(e.getMessage());
+			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+					Breadcrumbs.getHomeBreadcrumb(), "New Study");
+			SimpleResult result = badRequest(views.html.mecharg.study.create
+					.render(studyList, loggedInUser, breadcrumbs, form));
+			throw new ResultException(result);
+		}
+		return redirect(routes.Studies.index(study.getId()));
 	}
 
 	@Transactional
@@ -111,25 +125,52 @@ public class Studies extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 
-		StudyModel study;
+		// Unzip uploaded file into a temp directory
+		MultipartFormData mfd = request().body().asMultipartFormData();
+		FilePart filePart = mfd.getFile(StudyModel.STUDY);
+		File tempDir;
 		try {
-			MultipartFormData mfd = request().body().asMultipartFormData();
-			FilePart filePart = mfd.getFile(StudyModel.STUDY);
-			study = JsonUtils.rippingObjectFromJsonUploadRequest(filePart,
-					StudyModel.class);
-		} catch (ResultException e) {
-			SimpleResult result = (SimpleResult) Home.home(e.getMessage(),
-					Http.Status.BAD_REQUEST);
-			e.setResult(result);
-			throw e;
+			tempDir = ZipUtil.unzip(filePart.getFile());
+		} catch (IOException e1) {
+			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
+			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
+			throw new ResultException(result, errorMsg);
+		}
+
+		// Unmarshal the study data and persist the new StudyModel
+		File studyFile = IOUtils.findFiles(tempDir, "",
+				IOUtils.STUDY_FILE_SUFFIX)[0];
+		UploadUnmarshaller uploadUnmarshaller = new IOUtils.UploadUnmarshaller();
+		StudyModel study = uploadUnmarshaller.unmarshalling(studyFile,
+				StudyModel.class);
+		if (study == null) {
+			SimpleResult result = (SimpleResult) Home.home(
+					uploadUnmarshaller.getErrorMsg(), Http.Status.BAD_REQUEST);
+			throw new ResultException(result, uploadUnmarshaller.getErrorMsg());
 		}
 		if (study.validate() != null) {
-			String errorMsg = ErrorMessages.componentIsntValid();
+			String errorMsg = ErrorMessages.COMPONENT_INVALID;
 			SimpleResult result = (SimpleResult) Home.home(errorMsg,
 					Http.Status.BAD_REQUEST);
 			throw new ResultException(result, errorMsg);
 		}
 		PersistanceUtils.addStudy(study, loggedInUser);
+		studyFile.delete();
+
+		// Move and rename temporary study dir
+		try {
+			File studyDir = IOUtils.findFiles(tempDir,
+					IOUtils.STUDY_DIR_PREFIX, "")[0];
+			IOUtils.moveStudyDirectory(studyDir, study);
+		} catch (IOException e) {
+			String errorMsg = ErrorMessages.studysDirNotCreated(IOUtils
+					.generateStudysPath(study.getId()));
+			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
+			throw new ResultException(result, errorMsg);
+		}
+
 		return redirect(routes.Home.home());
 	}
 
@@ -211,6 +252,15 @@ public class Studies extends Controller {
 		ControllerUtils.checkStudyLockedAjax(study);
 
 		PersistanceUtils.removeStudy(study);
+
+		// Remove study's dir
+		try {
+			IOUtils.removeStudyDirectory(study);
+		} catch (IOException e) {
+			String errorMsg = e.getMessage();
+			SimpleResult result = internalServerError(errorMsg);
+			throw new ResultException(result, errorMsg);
+		}
 		return ok();
 	}
 
@@ -244,33 +294,49 @@ public class Studies extends Controller {
 		StudyModel clone = new StudyModel(study);
 		clone.addMember(loggedInUser);
 		clone.persist();
+
+		// Copy study's dir and it's content to cloned study's dir
+		try {
+			IOUtils.copyStudyDirectory(study, clone);
+		} catch (IOException e) {
+			String errorMsg = e.getMessage();
+			SimpleResult result = (SimpleResult) Studies.index(studyId,
+					errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
+			throw new ResultException(result, errorMsg);
+		}
 		return redirect(routes.Studies.index(clone.getId()));
 	}
 
 	@Transactional
-	public static Result export(Long studyId) throws ResultException {
-		Logger.info(CLASS_NAME + ".export: studyId " + studyId + ", "
+	public static Result exportStudy(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		ControllerUtils.checkStandardForStudyAjax(study, studyId, loggedInUser);
 
-		String studyAsJson;
+		File zipFile;
 		try {
-			studyAsJson = JsonUtils.asJsonForIO(study);
-		} catch (JsonProcessingException e) {
+			File studyAsJsonFile = File.createTempFile(
+					IOUtils.generateFileName(study.getTitle()), "."
+							+ IOUtils.STUDY_FILE_SUFFIX);
+			JsonUtils.asJsonForIO(study, studyAsJsonFile);
+			String studyDirPath = IOUtils.generateStudysPath(study.getId());
+			zipFile = ZipUtil.zipStudy(studyDirPath,
+					studyAsJsonFile.getAbsolutePath());
+			studyAsJsonFile.delete();
+		} catch (IOException e) {
 			String errorMsg = ErrorMessages.studyExportFailure(studyId);
 			SimpleResult result = internalServerError(errorMsg);
 			throw new ResultException(result, errorMsg);
 		}
 
+		String zipFileName = IOUtils.generateFileName(study.getTitle(),
+				IOUtils.ZIP_FILE_SUFFIX);
 		response().setContentType("application/x-download");
-		String filename = study.getTitle().trim()
-				.replaceAll("[^a-zA-Z0-9\\.\\-]", "_").toLowerCase();
-		filename = StringUtils.left(filename, 250).concat(".mas");
 		response().setHeader("Content-disposition",
-				"attachment; filename=" + filename);
-		return ok(studyAsJson);
+				"attachment; filename=" + zipFileName);
+		return ok(zipFile);
 	}
 
 	@Transactional
@@ -313,7 +379,7 @@ public class Studies extends Controller {
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
 		String[] checkedUsers = formMap.get(StudyModel.MEMBERS);
 		if (checkedUsers == null || checkedUsers.length < 1) {
-			String errorMsg = ErrorMessages.studyAtLeastOneMember();
+			String errorMsg = ErrorMessages.STUDY_AT_LEAST_ONE_MEMBER;
 			SimpleResult result = (SimpleResult) changeMembers(studyId,
 					errorMsg, Http.Status.BAD_REQUEST);
 			throw new ResultException(result, errorMsg);
@@ -343,8 +409,8 @@ public class Studies extends Controller {
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForStudyAjax(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLockedAjax(study);
-		ControllerUtils.checkStandardForComponentsAjax(studyId, componentId, study,
-				loggedInUser, component);
+		ControllerUtils.checkStandardForComponentsAjax(studyId, componentId,
+				study, loggedInUser, component);
 
 		if (direction.equals("up")) {
 			study.componentOrderMinusOne(component);

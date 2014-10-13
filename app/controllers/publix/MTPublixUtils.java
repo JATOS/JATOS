@@ -35,7 +35,7 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 		if (workerIdStr == null) {
 			// No worker ID in session -> study never started
 			throw new ForbiddenPublixException(
-					ErrorMessages.noWorkerIdInSession(), errorMediaType);
+					ErrorMessages.NO_WORKERID_IN_SESSION, errorMediaType);
 		}
 		long workerId;
 		try {

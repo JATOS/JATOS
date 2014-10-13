@@ -8,14 +8,12 @@
 		
 			@helper.form(action = routes.Studies.submitEdited(study.getId()), 'class -> "addTask") {
 				@if(form.hasErrors) {
-					<p class="error">
-						Study wasn't updated
-					</p>
+					<p class="error">Study wasn't updated</p>
 				}
 				@if(form.hasGlobalErrors) {
-					<p class="error">
-						@form.globalError.message
-					</p>
+					@for(error <- form.globalErrors) {
+						<p class="error">@error.message</p>
+					}
 				}
 				@for(error <- form(StudyModel.TITLE).errors) {
 					<p class="error">@error.message</p>

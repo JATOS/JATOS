@@ -1,7 +1,5 @@
 package models;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +13,9 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
@@ -33,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 public class ComponentModel {
 
 	public static final String TITLE = "title";
-	public static final String VIEW_URL = "viewUrl";
+	public static final String FILE_PATH = "filePath";
 	public static final String JSON_DATA = "jsonData";
 	public static final String RESULT = "result";
 	public static final String RELOADABLE = "reloadable";
@@ -49,7 +50,7 @@ public class ComponentModel {
 	@JoinColumn(name = "study_id")
 	private StudyModel study;
 
-	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String title;
 
 	/**
@@ -58,10 +59,15 @@ public class ComponentModel {
 	@JsonView(JsonUtils.JsonForMA.class)
 	private Timestamp date;
 
-	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
-	private String viewUrl; // URL or local path
+	/**
+	 * Local path to component's HTML file in the study's directory. File
+	 * separators are stored as '/'.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+	@JoinColumn(name = "viewUrl")
+	private String filePath;
 
-	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private boolean reloadable = false;
 
 	/**
@@ -69,10 +75,10 @@ public class ComponentModel {
 	 * error message if one try. Further it's skipped if one uses
 	 * startNextComponent from the public API.
 	 */
-	@JsonView({JsonUtils.JsonForMA.class, JsonUtils.JsonForIO.class})
+	@JsonView({ JsonUtils.JsonForMA.class, JsonUtils.JsonForIO.class })
 	private boolean active = true;
 
-	@JsonView({JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class})
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	@Lob
 	private String jsonData;
 
@@ -85,7 +91,7 @@ public class ComponentModel {
 	public ComponentModel(ComponentModel component) {
 		this.study = component.study;
 		this.title = component.title;
-		this.viewUrl = component.viewUrl;
+		this.filePath = component.filePath;
 		this.reloadable = component.reloadable;
 		this.active = component.active;
 		this.jsonData = component.jsonData;
@@ -123,12 +129,12 @@ public class ComponentModel {
 		return this.date;
 	}
 
-	public void setViewUrl(String viewUrl) {
-		this.viewUrl = viewUrl;
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
 	}
 
-	public String getViewUrl() {
-		return this.viewUrl;
+	public String getFilePath() {
+		return this.filePath;
 	}
 
 	public String getJsonData() {
@@ -155,7 +161,7 @@ public class ComponentModel {
 	public void setReloadable(boolean reloadable) {
 		this.reloadable = reloadable;
 	}
-	
+
 	public boolean isActive() {
 		return active;
 	}
@@ -166,38 +172,29 @@ public class ComponentModel {
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
-		if (this.title == null || this.title.isEmpty()) {
+		if (title == null || title.isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
 					ErrorMessages.MISSING_TITLE));
 		}
-		if (this.viewUrl == null) {
-			errorList.add(new ValidationError(VIEW_URL,
-					ErrorMessages.MISSING_URL));
+		if (!Jsoup.isValid(title, Whitelist.none())) {
+			errorList.add(new ValidationError(TITLE,
+					ErrorMessages.NO_HTML_ALLOWED));
 		}
+		if (filePath == null) {
+			errorList.add(new ValidationError(FILE_PATH,
+					ErrorMessages.MISSING_FILE_PATH));
+		}
+		String slashFilePath = "/" + filePath.replace("\\", "/");
 		String pathRegEx = "^(\\/\\w+)+\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
-		if (!(validateUrl(this.viewUrl) || this.viewUrl.matches(pathRegEx) || this.viewUrl
-				.isEmpty())) {
-			errorList
-					.add(new ValidationError(
-							VIEW_URL,
-							ErrorMessages.NEITHER_A_PATH_NOR_AN_URL_YOU_CAN_LEAVE_IT_EMPTY));
+		if (!(slashFilePath.matches(pathRegEx) || filePath.isEmpty())) {
+			errorList.add(new ValidationError(FILE_PATH,
+					ErrorMessages.NOT_A_PATH_YOU_CAN_LEAVE_IT_EMPTY));
 		}
-		if (this.jsonData != null && !JsonUtils.isValidJSON(this.jsonData)) {
-			errorList
-					.add(new ValidationError(
-							JSON_DATA,
-							ErrorMessages.PROBLEMS_DESERIALIZING_JSON_DATA_STRING_INVALID_JSON_FORMAT));
+		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
+			errorList.add(new ValidationError(JSON_DATA,
+					ErrorMessages.INVALID_JSON_FORMAT));
 		}
 		return errorList.isEmpty() ? null : errorList;
-	}
-
-	private boolean validateUrl(String url) {
-		try {
-			new URL(url);
-		} catch (MalformedURLException malformedURLException) {
-			return false;
-		}
-		return true;
 	}
 
 	@Override

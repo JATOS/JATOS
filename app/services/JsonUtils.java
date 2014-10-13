@@ -1,8 +1,6 @@
 package services;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.TimeZone;
 
@@ -14,7 +12,6 @@ import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 
 import play.Logger;
-import play.mvc.Http.MultipartFormData.FilePart;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -24,12 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import controllers.publix.Publix;
-import exceptions.ResultException;
-
 public class JsonUtils {
 
-	private static final String CLASS_NAME = Publix.class.getSimpleName();
+	private static final String CLASS_NAME = JsonUtils.class.getSimpleName();
 	private static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
 			.setTimeZone(TimeZone.getDefault());
 
@@ -180,6 +174,9 @@ public class JsonUtils {
 		return obj;
 	}
 
+	/**
+	 * Marshals the given object into JSON and returns it as String.
+	 */
 	public static String asJsonForIO(Object obj) throws JsonProcessingException {
 		ObjectWriter objectWriter = OBJECTMAPPER
 				.writerWithView(JsonForIO.class);
@@ -187,52 +184,19 @@ public class JsonUtils {
 		return objectAsJson;
 	}
 
-	public static <T> T unmarshalling(String jsonStr, Class<T> model)
+	/**
+	 * Marshals the given object into JSON and saves it into the given File.
+	 */
+	public static void asJsonForIO(Object obj, File file) throws IOException {
+		ObjectWriter objectWriter = OBJECTMAPPER
+				.writerWithView(JsonForIO.class);
+		objectWriter.writeValue(file, obj);
+	}
+
+	public static <T> T unmarshalling(String jsonStr, Class<T> modelClass)
 			throws JsonParseException, JsonMappingException, IOException {
-		T object = OBJECTMAPPER.readValue(jsonStr, model);
+		T object = OBJECTMAPPER.readValue(jsonStr, modelClass);
 		return object;
-	}
-
-	public static <T> T rippingObjectFromJsonUploadRequest(FilePart filePart,
-			Class<T> model) throws ResultException {
-		String errorMsg = null;
-		T object = null;
-		if (filePart != null) {
-			File file = filePart.getFile();
-			String jsonStr = null;
-			try {
-				jsonStr = readFile(file);
-			} catch (IOException e1) {
-				errorMsg = ErrorMessages.couldntReadFile();
-			}
-			try {
-				object = JsonUtils.unmarshalling(jsonStr, model);
-			} catch (IOException e) {
-				errorMsg = ErrorMessages.couldntReadJson();
-			}
-		} else {
-			errorMsg = ErrorMessages.fileMissing();
-		}
-
-		if (object != null) {
-			return object;
-		} else {
-			throw new ResultException(errorMsg);
-		}
-	}
-
-	public static String readFile(File file) throws IOException {
-		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-			StringBuilder sb = new StringBuilder();
-			String line = br.readLine();
-
-			while (line != null) {
-				sb.append(line);
-				sb.append(System.lineSeparator());
-				line = br.readLine();
-			}
-			return sb.toString();
-		}
 	}
 
 }

@@ -57,7 +57,7 @@ public class MTPublix extends Publix implements IPublix {
 		// Check worker
 		if (mtWorkerId == null) {
 			throw new BadRequestPublixException(
-					ErrorMessages.workerNotInQueryParameter(mtWorkerId));
+					ErrorMessages.NO_MTURK_WORKERID);
 		}
 		MTWorker worker = MTWorker.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
@@ -90,8 +90,9 @@ public class MTPublix extends Publix implements IPublix {
 
 		utils.startComponent(component, studyResult);
 
+		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
 		String redirectUrl = PublixUtils.getUrlWithRequestQueryString(request()
-				.uri(), component.getViewUrl());
+				.uri(), urlPath);
 		return redirect(redirectUrl);
 	}
 
