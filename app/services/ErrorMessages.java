@@ -230,6 +230,12 @@ public abstract class ErrorMessages<T extends Worker> {
 		return "Couldn't rename study's directory from " + oldDirName
 				+ " to " + newDirName + ".";
 	}
+	
+	public static String fileNotRenamed(String oldFileName,
+			String newFileName) {
+		return "Couldn't rename file from " + oldFileName
+				+ " to " + newFileName + ".";
+	}
 
 	public static String studysDirNotCreated(String dirName) {
 		return "Couldn't create new study's directory (" + dirName + ").";

@@ -13,6 +13,7 @@ import models.StudyModel;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import play.mvc.Http.MultipartFormData.FilePart;
 import controllers.publix.ExternalAssets;
 
 public class IOUtils {
@@ -250,6 +251,18 @@ public class IOUtils {
 			}
 		});
 		return matches;
+	}
+
+	public static void moveFileIntoStudyFolder(FilePart filePart,
+			StudyModel study) throws IOException {
+		File file = filePart.getFile();
+		File destPath = IOUtils
+				.getFileInStudyDir(study, filePart.getFilename());
+		boolean result = file.renameTo(destPath);
+		if (!result) {
+			throw new IOException(ErrorMessages.fileNotRenamed(file.getName(),
+					destPath.getName()));
+		}
 	}
 
 }

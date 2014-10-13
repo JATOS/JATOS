@@ -1,6 +1,5 @@
 package controllers;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -260,16 +259,18 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAll();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponentsAjax(studyId, componentId,
-				study, loggedInUser, component);
+		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+				studyList, loggedInUser, component);
 
 		String componentAsJson;
 		try {
 			componentAsJson = JsonUtils.asJsonForIO(component);
 		} catch (JsonProcessingException e) {
 			String errorMsg = ErrorMessages.componentExportFailure(componentId);
-			SimpleResult result = internalServerError(errorMsg);
+			SimpleResult result = (SimpleResult) Components.index(studyId,
+					componentId, errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
 			throw new ResultException(result, errorMsg);
 		}
 
@@ -281,6 +282,11 @@ public class Components extends Controller {
 		return ok(componentAsJson);
 	}
 
+	/**
+	 * Imports a arbitrary number of components and files. A component is
+	 * persisted into the DB. All other files are just stored in the study's
+	 * folder.
+	 */
 	@Transactional
 	public static Result importComponent(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".importComponent: studyId " + studyId + ", "
@@ -292,6 +298,7 @@ public class Components extends Controller {
 				studyList);
 		ControllerUtils.checkStudyLocked(study);
 
+		// Loop through all uploaded files
 		MultipartFormData mfd = request().body().asMultipartFormData();
 		List<FilePart> filePartList = mfd.getFiles();
 		for (FilePart filePart : filePartList) {
@@ -327,10 +334,7 @@ public class Components extends Controller {
 	private static void moveFileIntoStudyFolder(FilePart filePart,
 			StudyModel study) throws ResultException {
 		try {
-			File file = filePart.getFile();
-			File destPath = IOUtils.getFileInStudyDir(study,
-					filePart.getFilename());
-			file.renameTo(destPath);
+			IOUtils.moveFileIntoStudyFolder(filePart, study);
 		} catch (IOException e) {
 			SimpleResult result = (SimpleResult) Studies.index(study.getId(),
 					e.getMessage(), Http.Status.BAD_REQUEST);

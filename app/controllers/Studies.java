@@ -125,20 +125,30 @@ public class Studies extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 
-		// Unzip uploaded file into a temp directory
-		MultipartFormData mfd = request().body().asMultipartFormData();
-		FilePart filePart = mfd.getFile(StudyModel.STUDY);
-		File tempDir;
+		File tempDir = unzipUploadedFile();
+		StudyModel study = unmarshalStudy(tempDir);
+		PersistanceUtils.addStudy(study, loggedInUser);
+		moveStudyDir(tempDir, study);
+		return redirect(routes.Home.home());
+	}
+
+	private static void moveStudyDir(File tempDir, StudyModel study)
+			throws ResultException {
 		try {
-			tempDir = ZipUtil.unzip(filePart.getFile());
-		} catch (IOException e1) {
-			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
+			File studyDir = IOUtils.findFiles(tempDir,
+					IOUtils.STUDY_DIR_PREFIX, "")[0];
+			IOUtils.moveStudyDirectory(studyDir, study);
+		} catch (IOException e) {
+			String errorMsg = ErrorMessages.studysDirNotCreated(IOUtils
+					.generateStudysPath(study.getId()));
 			SimpleResult result = (SimpleResult) Home.home(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 			throw new ResultException(result, errorMsg);
 		}
+	}
 
-		// Unmarshal the study data and persist the new StudyModel
+	private static StudyModel unmarshalStudy(File tempDir)
+			throws ResultException {
 		File studyFile = IOUtils.findFiles(tempDir, "",
 				IOUtils.STUDY_FILE_SUFFIX)[0];
 		UploadUnmarshaller uploadUnmarshaller = new IOUtils.UploadUnmarshaller();
@@ -155,23 +165,23 @@ public class Studies extends Controller {
 					Http.Status.BAD_REQUEST);
 			throw new ResultException(result, errorMsg);
 		}
-		PersistanceUtils.addStudy(study, loggedInUser);
 		studyFile.delete();
+		return study;
+	}
 
-		// Move and rename temporary study dir
+	private static File unzipUploadedFile() throws ResultException {
+		MultipartFormData mfd = request().body().asMultipartFormData();
+		FilePart filePart = mfd.getFile(StudyModel.STUDY);
+		File tempDir;
 		try {
-			File studyDir = IOUtils.findFiles(tempDir,
-					IOUtils.STUDY_DIR_PREFIX, "")[0];
-			IOUtils.moveStudyDirectory(studyDir, study);
-		} catch (IOException e) {
-			String errorMsg = ErrorMessages.studysDirNotCreated(IOUtils
-					.generateStudysPath(study.getId()));
+			tempDir = ZipUtil.unzip(filePart.getFile());
+		} catch (IOException e1) {
+			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
 			SimpleResult result = (SimpleResult) Home.home(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 			throw new ResultException(result, errorMsg);
 		}
-
-		return redirect(routes.Home.home());
+		return tempDir;
 	}
 
 	@Transactional
@@ -313,7 +323,9 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		ControllerUtils.checkStandardForStudyAjax(study, studyId, loggedInUser);
+		List<StudyModel> studyList = StudyModel.findAll();
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
+				studyList);
 
 		File zipFile;
 		try {
@@ -327,7 +339,8 @@ public class Studies extends Controller {
 			studyAsJsonFile.delete();
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.studyExportFailure(studyId);
-			SimpleResult result = internalServerError(errorMsg);
+			SimpleResult result = (SimpleResult) Studies.index(studyId,
+					errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
 			throw new ResultException(result, errorMsg);
 		}
 
