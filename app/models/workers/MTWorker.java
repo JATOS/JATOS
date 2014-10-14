@@ -7,10 +7,8 @@ import javax.persistence.Entity;
 import javax.persistence.TypedQuery;
 
 import play.db.jpa.JPA;
-import services.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Concrete worker who originates from the MTurk.
@@ -23,7 +21,9 @@ public class MTWorker extends Worker {
 
 	public static final String WORKER_TYPE = "MT";
 
-	@JsonView(JsonUtils.JsonForMA.class)
+	/**
+	 * Worker ID from MTurk
+	 */
 	private String mtWorkerId;
 	
 	public MTWorker() {

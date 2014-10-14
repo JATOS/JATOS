@@ -14,6 +14,7 @@ import models.workers.MAWorker;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
+import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -135,12 +136,11 @@ public class Studies extends Controller {
 	private static void moveStudyDir(File tempDir, StudyModel study)
 			throws ResultException {
 		try {
-			File studyDir = IOUtils.findFiles(tempDir,
-					IOUtils.STUDY_DIR_PREFIX, "")[0];
+			File studyDir = IOUtils.findDirectories(tempDir)[0];
 			IOUtils.moveStudyDirectory(studyDir, study);
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.studysDirNotCreated(IOUtils
-					.generateStudysPath(study.getId()));
+					.generateStudysPath(study));
 			SimpleResult result = (SimpleResult) Home.home(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 			throw new ResultException(result, errorMsg);
@@ -228,8 +228,25 @@ public class Studies extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String title = requestData.get(StudyModel.TITLE);
 		String description = requestData.get(StudyModel.DESCRIPTION);
+		String dirNamePrefix = requestData.get(StudyModel.DIRNAME_PREFIX);
 		String jsonData = requestData.get(StudyModel.JSON_DATA);
-		PersistanceUtils.updateStudy(study, title, description, jsonData);
+		String oldDirNamePrefix = study.getDirNamePrefix();
+		PersistanceUtils.updateStudy(study, title, description, dirNamePrefix,
+				jsonData);
+		try {
+			IOUtils.renameStudyDir(oldDirNamePrefix, study.getDirNamePrefix(),
+					study.getId());
+		} catch (IOException e) {
+			form.reject(new ValidationError(StudyModel.DIRNAME_PREFIX, e
+					.getMessage()));
+			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+					Breadcrumbs.getHomeBreadcrumb(),
+					Breadcrumbs.getStudyBreadcrumb(study), "Edit");
+			SimpleResult result = badRequest(views.html.mecharg.study.edit
+					.render(studyList, loggedInUser, breadcrumbs, study, form));
+			throw new ResultException(result);
+		}
+
 		return redirect(routes.Studies.index(studyId));
 	}
 
@@ -333,8 +350,8 @@ public class Studies extends Controller {
 					IOUtils.generateFileName(study.getTitle()), "."
 							+ IOUtils.STUDY_FILE_SUFFIX);
 			JsonUtils.asJsonForIO(study, studyAsJsonFile);
-			String studyDirPath = IOUtils.generateStudysPath(study.getId());
-			zipFile = ZipUtil.zipStudy(studyDirPath,
+			String studyDirPath = IOUtils.generateStudysPath(study);
+			zipFile = ZipUtil.zipStudy(studyDirPath, study.getDirNamePrefix(),
 					studyAsJsonFile.getAbsolutePath());
 			studyAsJsonFile.delete();
 		} catch (IOException e) {

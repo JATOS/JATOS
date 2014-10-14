@@ -64,5 +64,5 @@ GET     /mecharg/:studyId/:componentId                 controllers.Components.in
 GET     /mecharg/:studyId/:componentId/                controllers.Components.index(studyId: Long, componentId: Long)
 
 # Static resources (not managed by the Play framework) from the /public folder
-GET     /studies/:studyId/*file            controllers.publix.ExternalAssets.at(studyId: Long, file)
+GET     /studies/*file                     controllers.publix.ExternalAssets.at(file)
 GET     /assets/*file                      controllers.Assets.at(path = "/public", file)

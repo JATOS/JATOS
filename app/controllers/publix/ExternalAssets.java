@@ -37,47 +37,48 @@ public class ExternalAssets extends Controller {
 	private static final String APPLICATION_CONF = "/conf/application.conf";
 
 	/**
-	 * Property name in application config for studies path
+	 * Property name in application config for the path to the directory where
+	 * all studies are located
 	 */
-	private static final String PROPERTY_STUDIESPATH = "mecharg.studiespath";
+	private static final String PROPERTY_STUDIES_ROOT_PATH = "mecharg.studiesRootPath";
 
 	/**
 	 * Default path to the studies directory in case it wasn't specified in the
 	 * config
 	 */
-	private static final String DEFAULT_STUDIES_PATH = "/studies";
+	private static final String DEFAULT_STUDIES_ROOT_PATH = "/studies";
 	private static final String BASEPATH = Play.application().path().getPath();
 	private static final String CONFIGPATH = BASEPATH + APPLICATION_CONF;
 	private static final Config CONFIG = ConfigFactory.parseFile(new File(
 			CONFIGPATH));
 
 	/**
-	 * If the PROPERTY_STUDIESPATH is defined in the configuration file then use
-	 * it as the base path. If PROPERTY_STUDIESPATH isn't defined, try in
-	 * default study path instead.
+	 * If the PROPERTY_STUDIES_ROOT_PATH is defined in the configuration file
+	 * then use it as the base path. If PROPERTY_STUDIES_ROOT_PATH isn't
+	 * defined, try in default study path instead.
 	 */
-	public static String STUDIESPATH;
+	public static String STUDIES_ROOT_PATH;
 	static {
-		String rawConfigStudiesPath = CONFIG.getString(PROPERTY_STUDIESPATH);
+		String rawConfigStudiesPath = CONFIG
+				.getString(PROPERTY_STUDIES_ROOT_PATH);
 		if (rawConfigStudiesPath != null && !rawConfigStudiesPath.isEmpty()) {
-			STUDIESPATH = rawConfigStudiesPath.replace("~",
+			STUDIES_ROOT_PATH = rawConfigStudiesPath.replace("~",
 					System.getProperty("user.home"));
 		} else {
-			STUDIESPATH = BASEPATH + DEFAULT_STUDIES_PATH;
+			STUDIES_ROOT_PATH = BASEPATH + DEFAULT_STUDIES_ROOT_PATH;
 		}
-		Logger.info(CLASS_NAME + ": Path to studies is " + STUDIESPATH);
+		Logger.info(CLASS_NAME + ": Path to studies is " + STUDIES_ROOT_PATH);
 	}
 
-	public static Result at(Long studyId, String filePath) {
+	public static Result at(String filePath) {
 		File file;
 		try {
-			String studyPath = IOUtils.generateStudysPath(studyId);
-			file = IOUtils.getExistingFileSecurely(studyPath, filePath);
+			file = IOUtils.getExistingFileSecurely(STUDIES_ROOT_PATH, filePath);
 			Logger.info(CLASS_NAME + ".at: loading file " + file.getPath()
 					+ ".");
 		} catch (IOException e) {
 			Logger.info(CLASS_NAME + ".at: failed loading from path "
-					+ STUDIESPATH + File.separator + filePath);
+					+ STUDIES_ROOT_PATH + File.separator + filePath);
 			return notFound(views.html.publix.error.render("Resource \""
 					+ filePath + "\" couldn't be found."));
 		}
@@ -86,7 +87,8 @@ public class ExternalAssets extends Controller {
 
 	public static String getComponentUrlPath(StudyModel study,
 			ComponentModel component) {
-		return "/" + URL_STUDIES_PATH + "/" + study.getId() + "/"
+		return "/" + URL_STUDIES_PATH + "/"
+				+ IOUtils.generateStudyDirName(study) + "/"
 				+ component.getFilePath();
 	}
 }

@@ -5,8 +5,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import models.StudyModel;
 
@@ -18,19 +16,18 @@ import controllers.publix.ExternalAssets;
 
 public class IOUtils {
 
-	public static final String STUDY_DIR_PREFIX = "study_";
 	public static final String STUDY_FILE_SUFFIX = "mas";
 	public static final String COMPONENT_FILE_SUFFIX = "mac";
 	public static final String ZIP_FILE_SUFFIX = "zip";
-
-	private static final int FILENAME_LENGTH = 35;
 
 /**
 	 * Illegal characters or strings in file or directory name '/', '\n', '\r',
 	 * '//', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':',
 	 * '~', '!', '§', '$', '%', '&' 
 	 */
-	private static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&]";
+	public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&]";
+
+	private static final int FILENAME_LENGTH = 35;
 
 	/**
 	 * Unmarshalling of an JSON string without throwing an exception. Instead
@@ -70,15 +67,6 @@ public class IOUtils {
 			}
 			return object;
 		}
-	}
-
-	public static boolean validateUrl(String url) {
-		try {
-			new URL(url);
-		} catch (MalformedURLException malformedURLException) {
-			return false;
-		}
-		return true;
 	}
 
 	public static String readFile(File file) throws IOException {
@@ -131,7 +119,7 @@ public class IOUtils {
 	 */
 	public static File getFileInStudyDir(StudyModel study, String filePath)
 			throws IOException {
-		String studyPath = generateStudysPath(study.getId());
+		String studyPath = generateStudysPath(study);
 		File file = getFileSecurely(studyPath, filePath);
 		return file;
 	}
@@ -172,22 +160,37 @@ public class IOUtils {
 	/**
 	 * Generates a study directory name.
 	 */
-	public static String generateStudyDirName(Long studyId) {
-		return STUDY_DIR_PREFIX + studyId;
+	public static String generateStudyDirName(String dirNamePrefix, Long studyId) {
+		return dirNamePrefix + "_" + studyId;
 	}
 
 	/**
 	 * Generates a study directory name.
 	 */
-	public static String generateStudysPath(Long studyId) {
-		return ExternalAssets.STUDIESPATH + File.separator
-				+ generateStudyDirName(studyId);
+	public static String generateStudyDirName(StudyModel study) {
+		return study.getDirNamePrefix() + "_" + study.getId();
+	}
+
+	/**
+	 * Generates a study directory name.
+	 */
+	public static String generateStudysPath(String dirNamePrefix, Long studyId) {
+		return ExternalAssets.STUDIES_ROOT_PATH + File.separator
+				+ generateStudyDirName(dirNamePrefix, studyId);
+	}
+
+	/**
+	 * Generates a study directory name.
+	 */
+	public static String generateStudysPath(StudyModel study) {
+		return ExternalAssets.STUDIES_ROOT_PATH + File.separator
+				+ generateStudyDirName(study);
 	}
 
 	public static void removeStudyDirectory(StudyModel study)
 			throws IOException {
-		String dirName = generateStudyDirName(study.getId());
-		File dir = getFileSecurely(ExternalAssets.STUDIESPATH, dirName);
+		String dirName = generateStudyDirName(study);
+		File dir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH, dirName);
 		if (!dir.exists()) {
 			return;
 		}
@@ -200,10 +203,12 @@ public class IOUtils {
 
 	public static void copyStudyDirectory(StudyModel srcStudy,
 			StudyModel destStudy) throws IOException {
-		String srcDirName = generateStudyDirName(srcStudy.getId());
-		String destDirName = generateStudyDirName(destStudy.getId());
-		File srcDir = getFileSecurely(ExternalAssets.STUDIESPATH, srcDirName);
-		File destDir = getFileSecurely(ExternalAssets.STUDIESPATH, destDirName);
+		String srcDirName = generateStudyDirName(srcStudy);
+		String destDirName = generateStudyDirName(destStudy);
+		File srcDir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH,
+				srcDirName);
+		File destDir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH,
+				destDirName);
 		if (!srcDir.isDirectory()) {
 			throw new IOException(ErrorMessages.studysDirPathIsntDir(srcDir
 					.getName()));
@@ -219,13 +224,14 @@ public class IOUtils {
 
 	public static void moveStudyDirectory(File srcDir, StudyModel study)
 			throws IOException {
-		File studyDir = new File(IOUtils.generateStudysPath(study.getId()));
+		File studyDir = new File(IOUtils.generateStudysPath(study));
 		FileUtils.moveDirectory(srcDir, studyDir);
 	}
 
-	public static void createStudyDir(StudyModel study) throws IOException {
-		String dirName = generateStudyDirName(study.getId());
-		File dir = getFileSecurely(ExternalAssets.STUDIESPATH, dirName);
+	public static void createStudyDir(String dirNamePrefix, Long studyId)
+			throws IOException {
+		String dirName = generateStudyDirName(dirNamePrefix, studyId);
+		File dir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH, dirName);
 		if (dir.exists()) {
 			throw new IOException(
 					ErrorMessages.studysDirNotCreatedBecauseExists(dir
@@ -238,16 +244,31 @@ public class IOUtils {
 		}
 	}
 
+	public static void createStudyDir(StudyModel study) throws IOException {
+		createStudyDir(study.getDirNamePrefix(), study.getId());
+	}
+
 	/**
 	 * Returns all files within this directory that have the prefix and the
 	 * suffix.
 	 */
 	public static File[] findFiles(File dir, final String prefix,
 			final String suffix) {
-
 		File[] matches = dir.listFiles(new FilenameFilter() {
-			public boolean accept(File dir, String name) {
+			public boolean accept(File file, String name) {
 				return name.startsWith(prefix) && name.endsWith(suffix);
+			}
+		});
+		return matches;
+	}
+
+	/**
+	 * Returns all directories within this directory.
+	 */
+	public static File[] findDirectories(File dir) {
+		File[] matches = dir.listFiles(new FilenameFilter() {
+			public boolean accept(File file, String name) {
+				return file.isDirectory();
 			}
 		});
 		return matches;
@@ -262,6 +283,26 @@ public class IOUtils {
 		if (!result) {
 			throw new IOException(ErrorMessages.fileNotRenamed(file.getName(),
 					destPath.getName()));
+		}
+	}
+
+	public static void renameStudyDir(String oldDirNamePrefix,
+			String newDirNamePrefix, Long studyId) throws IOException {
+		File oldDir = new File(IOUtils.generateStudysPath(oldDirNamePrefix,
+				studyId));
+		File newDir = new File(IOUtils.generateStudysPath(newDirNamePrefix,
+				studyId));
+		if (newDir.exists()) {
+			return;
+		}
+		if (!oldDir.exists()) {
+			createStudyDir(newDirNamePrefix, studyId);
+			return;
+		}
+		boolean result = oldDir.renameTo(newDir);
+		if (!result) {
+			throw new IOException(ErrorMessages.studysDirNotRenamed(
+					oldDir.getName(), newDir.getName()));
 		}
 	}
 

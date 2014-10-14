@@ -56,7 +56,6 @@ public class ComponentModel {
 	/**
 	 * Timestamp of the creation or the last update of this component
 	 */
-	@JsonView(JsonUtils.JsonForMA.class)
 	private Timestamp date;
 
 	/**
@@ -75,7 +74,7 @@ public class ComponentModel {
 	 * error message if one try. Further it's skipped if one uses
 	 * startNextComponent from the public API.
 	 */
-	@JsonView({ JsonUtils.JsonForMA.class, JsonUtils.JsonForIO.class })
+	@JsonView(JsonUtils.JsonForIO.class)
 	private boolean active = true;
 
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
@@ -180,15 +179,13 @@ public class ComponentModel {
 			errorList.add(new ValidationError(TITLE,
 					ErrorMessages.NO_HTML_ALLOWED));
 		}
-		if (filePath == null) {
-			errorList.add(new ValidationError(FILE_PATH,
-					ErrorMessages.MISSING_FILE_PATH));
-		}
-		String slashFilePath = "/" + filePath.replace("\\", "/");
-		String pathRegEx = "^(\\/\\w+)+\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
-		if (!(slashFilePath.matches(pathRegEx) || filePath.isEmpty())) {
-			errorList.add(new ValidationError(FILE_PATH,
-					ErrorMessages.NOT_A_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+		if (filePath != null && !filePath.isEmpty()) {
+			String slashFilePath = "/" + filePath.replace("\\", "/");
+			String pathRegEx = "^(\\/\\w+)+\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
+			if (!(slashFilePath.matches(pathRegEx) || filePath.isEmpty())) {
+				errorList.add(new ValidationError(FILE_PATH,
+						ErrorMessages.NOT_A_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+			}
 		}
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,

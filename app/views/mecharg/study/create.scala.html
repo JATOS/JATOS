@@ -24,6 +24,12 @@
 					placeholder="Description"
 					>@form(StudyModel.DESCRIPTION).value</textarea>
 				
+				@for(error <- form(StudyModel.DIRNAME_PREFIX).errors) {
+					<p class="error">@error.message</p>
+				}
+				<input name="@StudyModel.DIRNAME_PREFIX" type="text" class="formTop" placeholder="Directory name" value="@form(StudyModel.DIRNAME_PREFIX).value">
+				
+				
 				<textarea name="@StudyModel.JSON_DATA" class="formJsonData"
 					placeholder="JSON data - put your JSON string here."
 				>@form(StudyModel.JSON_DATA).value</textarea>

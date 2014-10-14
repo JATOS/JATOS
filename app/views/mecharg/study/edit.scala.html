@@ -15,6 +15,7 @@
 						<p class="error">@error.message</p>
 					}
 				}
+				
 				@for(error <- form(StudyModel.TITLE).errors) {
 					<p class="error">@error.message</p>
 				}
@@ -27,6 +28,11 @@
 				<textarea name="@StudyModel.DESCRIPTION" class="formDescription" rows="3"
 					placeholder="Description"
 					>@form(StudyModel.DESCRIPTION).value</textarea>
+				
+				@for(error <- form(StudyModel.DIRNAME_PREFIX).errors) {
+					<p class="error">@error.message</p>
+				}
+				<input name="@StudyModel.DIRNAME_PREFIX" type="text" class="formTop" placeholder="Directory name" value="@form(StudyModel.DIRNAME_PREFIX).value">
 				
 				@for(error <- form(StudyModel.JSON_DATA).errors) {
 					<p class="error">@error.message</p>

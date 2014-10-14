@@ -47,14 +47,15 @@ public class ZipUtil {
 		return tempDir;
 	}
 
-	static public File zipStudy(String studyDirPath, String studyAsJsonPath)
-			throws IOException {
-		File zipFile = File.createTempFile("study", "." + IOUtils.ZIP_FILE_SUFFIX);
+	static public File zipStudy(String studyDirPath, String studyDirNameInZip,
+			String studyAsJsonPath) throws IOException {
+		File zipFile = File.createTempFile("study", "."
+				+ IOUtils.ZIP_FILE_SUFFIX);
 		FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
 		ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
 
 		// Add the study's directory to zip
-		addDirectoryToZip("", studyDirPath, zipOutputStream);
+		addDirectoryToZip("", studyDirNameInZip, studyDirPath, zipOutputStream);
 
 		// Add study's data as JSON file to zip
 		addFileToZip("", studyAsJsonPath, zipOutputStream);
@@ -64,13 +65,14 @@ public class ZipUtil {
 		return zipFile;
 	}
 
-	static private void addDirectoryToZip(String dirPathInZip, String dirPath,
-			ZipOutputStream zipOutputStream) throws IOException {
+	static private void addDirectoryToZip(String dirPathInZip,
+			String dirNameInZip, String dirPath, ZipOutputStream zipOutputStream)
+			throws IOException {
 		File dir = new File(dirPath);
 		for (String fileName : dir.list()) {
 			String filePathInZip;
 			if (dirPathInZip.equals("")) {
-				filePathInZip = dir.getName();
+				filePathInZip = dirNameInZip;
 			} else {
 				filePathInZip = dirPathInZip + File.separator + dir.getName();
 			}
@@ -84,7 +86,7 @@ public class ZipUtil {
 
 		File file = new File(filePath);
 		if (file.isDirectory()) {
-			addDirectoryToZip(filePathInZip, file.getAbsolutePath(),
+			addDirectoryToZip(filePathInZip, "", file.getAbsolutePath(),
 					zipOutputStream);
 		} else {
 			FileInputStream fileInputStream = null;

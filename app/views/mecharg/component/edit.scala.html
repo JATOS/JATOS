@@ -38,10 +38,10 @@
 					<tbody>
 						<tr>
 							<td class="filePathLabel">URL&nbsp;path:&nbsp;</td>
-							<td class="studyPath">/@controllers.publix.ExternalAssets.URL_STUDIES_PATH/@study.getId()/</td>
+							<td class="studyPath">/@controllers.publix.ExternalAssets.URL_STUDIES_PATH/@services.IOUtils.generateStudyDirName(study)/</td>
 							<td>
 								<input class="filePathInput" type="text" name="@ComponentModel.FILE_PATH"
-									placeholder="Path to the actual component HTML file"
+									placeholder="Path to the actual HTML file"
 									value="@form(ComponentModel.FILE_PATH).value">
 							</td>
 						</tr>

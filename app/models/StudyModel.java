@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -25,6 +27,7 @@ import org.jsoup.safety.Whitelist;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 import services.ErrorMessages;
+import services.IOUtils;
 import services.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -42,6 +45,7 @@ public class StudyModel {
 	public static final String TITLE = "title";
 	public static final String JSON_DATA = "jsonData";
 	public static final String DESCRIPTION = "description";
+	public static final String DIRNAME_PREFIX = "dirNamePrefix";
 	public static final String STUDY = "study";
 
 	@Id
@@ -59,11 +63,18 @@ public class StudyModel {
 	/**
 	 * Timestamp of the creation or the last update of this study
 	 */
-	@JsonView(JsonUtils.JsonForMA.class)
 	private Timestamp date;
 
-	@JsonView(JsonUtils.JsonForMA.class)
+	/**
+	 * If a study is locked, it can't be changed.
+	 */
 	private boolean locked = false;
+
+	/**
+	 * Prefix of the directory name of this study
+	 */
+	@JsonView(JsonUtils.JsonForIO.class)
+	private String dirNamePrefix;
 
 	@Lob
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
@@ -89,6 +100,7 @@ public class StudyModel {
 	public StudyModel(StudyModel study) {
 		// Don't clone members and field 'locked'
 		this.description = study.description;
+		this.dirNamePrefix = study.dirNamePrefix;
 		this.jsonData = study.jsonData;
 		this.title = study.title;
 		this.locked = false;
@@ -122,6 +134,14 @@ public class StudyModel {
 
 	public String getDescription() {
 		return this.description;
+	}
+
+	public void setDirNamePrefix(String dirNamePrefix) {
+		this.dirNamePrefix = dirNamePrefix;
+	}
+
+	public String getDirNamePrefix() {
+		return this.dirNamePrefix;
 	}
 
 	public void setDate(Timestamp timestamp) {
@@ -252,6 +272,16 @@ public class StudyModel {
 				&& !Jsoup.isValid(description, Whitelist.none())) {
 			errorList.add(new ValidationError(DESCRIPTION,
 					ErrorMessages.NO_HTML_ALLOWED));
+		}
+		if (dirNamePrefix == null || dirNamePrefix.isEmpty()) {
+			errorList.add(new ValidationError(DIRNAME_PREFIX,
+					ErrorMessages.MISSING_DIRNAME));
+		}
+		Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
+		Matcher matcher = pattern.matcher(dirNamePrefix);
+		if (dirNamePrefix != null && matcher.find()) {
+			errorList.add(new ValidationError(DIRNAME_PREFIX,
+					ErrorMessages.INVALID_DIR_NAME));
 		}
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,

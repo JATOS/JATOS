@@ -37,14 +37,6 @@ public class JsonUtils {
 
 	/**
 	 * Helper class for selectively marshaling an Object to JSON. Only fields of
-	 * that Object that are annotated with this class will be serialised. The
-	 * intended use is in the MechArg.
-	 */
-	public static class JsonForMA extends JsonForPublix {
-	}
-
-	/**
-	 * Helper class for selectively marshaling an Object to JSON. Only fields of
 	 * that Object that are annotated with this class will be serialised.
 	 * Intended use: import/export between different instances of the MechArg.
 	 */
@@ -114,19 +106,6 @@ public class JsonUtils {
 				.writerWithView(JsonForPublix.class);
 		String componentAsJson = objectWriter.writeValueAsString(obj);
 		return componentAsJson;
-	}
-
-	/**
-	 * Marshalling an Object into an JSON string. It considers the default
-	 * timezone.
-	 * 
-	 * @throws JsonProcessingException
-	 */
-	public static String asJsonForMA(Object obj) throws JsonProcessingException {
-		ObjectWriter objectWriter = OBJECTMAPPER
-				.writerWithView(JsonForMA.class);
-		String resultAsJson = objectWriter.writeValueAsString(obj);
-		return resultAsJson;
 	}
 
 	/**

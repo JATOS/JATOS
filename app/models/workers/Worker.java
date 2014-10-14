@@ -21,11 +21,9 @@ import javax.persistence.TypedQuery;
 import models.StudyModel;
 import models.results.StudyResult;
 import play.db.jpa.JPA;
-import services.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Abstract domain model and DAO of a worker. Workers are doing studies (and their
@@ -43,7 +41,6 @@ public abstract class Worker {
 
 	@Id
 	@GeneratedValue
-	@JsonView(JsonUtils.JsonForMA.class)
 	@JsonProperty("workerId")
 	private Long id;
 

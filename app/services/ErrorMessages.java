@@ -21,15 +21,17 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String MISSING_FILE_PATH = "Missing file path";
 	public static final String MISSING_NAME = "Missing name";
 	public static final String MISSING_EMAIL = "Missing email";
-	public static final String NO_USER_LOGGED_IN = "No user logged in.";
-	
+	public static final String NO_USER_LOGGED_IN = "No user logged in";
+	public static final String MISSING_DIRNAME = "Missing directory name";
+	public static final String INVALID_DIR_NAME = "Invalid directory name";
+
 	// Edit HTML forms
 	public static final String INVALID_JSON_FORMAT = "Problems deserializing JSON data string: invalid JSON format.";
 	public static final String NO_HTML_ALLOWED = "No HTML allowed";
 	public static final String NOT_A_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a path (you can leave it empty)";
 	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format.";
 	public static final String STUDY_AT_LEAST_ONE_MEMBER = "An study should have at least one member.";
-	
+
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_ARENT_THE_SAME = "Passwords aren't the same.";
@@ -43,7 +45,7 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String FILE_MISSING = "File missing.";
 	public static final String FILE_NOT_EXIST_OR_DIR = "File doesn't exists or is a directory.";
 	public static final String IMPORT_OF_STUDY_FAILED = "Import of study failed.";
-	
+
 	// Publix
 	public static final String COMPONENT_INVALID = "Component is invalid.";
 	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
@@ -52,7 +54,6 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters.";
 	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
-
 
 	public static String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
@@ -203,7 +204,8 @@ public abstract class ErrorMessages<T extends Worker> {
 	}
 
 	public static String couldntGeneratePathToFileOrDir(String fileStr) {
-		return "Couldn't generate path to file or directory " + fileStr + ".";
+		return "Couldn't generate path to file or directory \"" + fileStr
+				+ "\".";
 	}
 
 	public static String couldntGenerateStudysDir(String path) {
@@ -227,14 +229,13 @@ public abstract class ErrorMessages<T extends Worker> {
 
 	public static String studysDirNotRenamed(String oldDirName,
 			String newDirName) {
-		return "Couldn't rename study's directory from " + oldDirName
-				+ " to " + newDirName + ".";
+		return "Couldn't rename study's directory from \"" + oldDirName
+				+ "\" to \"" + newDirName + "\".";
 	}
-	
-	public static String fileNotRenamed(String oldFileName,
-			String newFileName) {
-		return "Couldn't rename file from " + oldFileName
-				+ " to " + newFileName + ".";
+
+	public static String fileNotRenamed(String oldFileName, String newFileName) {
+		return "Couldn't rename file from \"" + oldFileName + "\" to \""
+				+ newFileName + "\".";
 	}
 
 	public static String studysDirNotCreated(String dirName) {
