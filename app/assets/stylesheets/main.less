@@ -17,6 +17,11 @@ body {
     -webkit-user-select: none;
 }
 
+input, textarea {
+	color: @textColor;
+	font: @defaultFont;
+}
+
 a {
     color: @links;
     text-decoration: none;
@@ -33,6 +38,7 @@ a {
 @import 'main/_breadcrumb.less';    // Breadcrumb + App menu
 @import 'apps/_tasks.less';         // Tasks 
 @import 'apps/_study.less';         // Study 
+@import 'apps/_formStudy.less';     // Create and edit study 
 @import 'apps/_component.less';     // Component 
 @import 'apps/_user.less';          // User
 @import 'apps/_worker.less';        // Worker
