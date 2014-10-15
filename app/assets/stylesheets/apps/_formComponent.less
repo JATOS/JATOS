@@ -3,7 +3,7 @@
 // mda@zenexity.com
 // -----------------------------------
 
-.formStudy {
+.formComponent {
 	form {
 		.box();
 		padding: 5px;
@@ -30,19 +30,36 @@
 		}
 		.formText {
 		}
-		.formDescription { 
+		.label {
+			margin: 0 0 10px 0;
+			.checkbox {
+				width: auto;
+				padding: 0;
+				margin: 0;
+				vertical-align: bottom;
+			}
+		}
+		.formComments { 
 			border: 1px solid @lineColor;
 			width: 100%;
 			margin: 0 0 10px 0;
 			font: @defaultFont;
 		}
-		.label {
+		.filePathTable {
+			table-layout: auto;
+			width: 100%;
 			margin: 0 0 10px 0;
-			.checkbox {
-				width: 20px;
-				padding: 0;
-				margin: 0;
-				vertical-align: bottom;
+			.studyPath {
+				width: 1%;
+			}
+			td {
+				vertical-align: middle;
+				padding-right: 3px;
+				.filePathInput {
+					margin: 0;
+					border: 1px solid @lineColor;
+					width: 100%;
+				}
 			}
 		}
 		button {

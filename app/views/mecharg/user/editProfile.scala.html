@@ -3,31 +3,25 @@
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
-	<article class="tasks" id="tasks">
-		<div class="folder">
-		
-			@helper.form(action = routes.Users.submitEditedProfile(user.getEmail()), 'class -> "addTask") {
-				@if(form.hasErrors) {
-					<p class="error">
-						User wasn't updated
-					</p>
-				}
-				@if(form.hasGlobalErrors) {
-					<p class="error">
-						@form.globalError.message
-					</p>
-				}
+<article class="formUser">
+	@helper.form(action = routes.Users.submitEditedProfile(user.getEmail())) {
+		@if(form.hasErrors) {
+			<p class="globalError">User wasn't saved</p>
+		}
+		@if(form.hasGlobalErrors) {
+			<p class="globalError">@form.globalError.message</p>
+		}
 
-				@for(error <- form(UserModel.NAME).errors) {
-					<p class="error">@error.message</p>
-				}
-				<input name="@UserModel.NAME" type="text" class="formSingle" placeholder="Name" value="@form(UserModel.NAME).value">
-				
-				<input name="@UserModel.EMAIL" type="hidden" value="@form(UserModel.EMAIL).value">
-				
-				<button id="newGroup" type="submit">Update</button>
-			}
-		</div>
-	</article>
+		<p class="formText">Name:</p>
+		@for(error <- form(UserModel.NAME).errors) {
+			<p class="error">@error.message</p>
+		}
+		<input name="@UserModel.NAME" type="text" placeholder="Name" value="@form(UserModel.NAME).value">
+		
+		<input name="@UserModel.EMAIL" type="hidden" value="@form(UserModel.EMAIL).value">
+		
+		<button class="button" type="submit">Update</button>
+	}
+</article>
 
 }

@@ -123,7 +123,7 @@ public class Users extends Controller {
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(loggedInUser);
+			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
 			SimpleResult result = (SimpleResult) Home.home(errorMsg,
 					Http.Status.BAD_REQUEST);
 			throw new ResultException(result, errorMsg);
@@ -182,7 +182,7 @@ public class Users extends Controller {
 
 		// To change a user's password this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(loggedInUser);
+			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
 			SimpleResult result = (SimpleResult) Home.home(errorMsg,
 					Http.Status.BAD_REQUEST);
 			throw new ResultException(result, errorMsg);

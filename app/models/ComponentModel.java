@@ -38,6 +38,7 @@ public class ComponentModel {
 	public static final String JSON_DATA = "jsonData";
 	public static final String RESULT = "result";
 	public static final String RELOADABLE = "reloadable";
+	public static final String COMMENTS = "comments";
 	public static final String COMPONENT = "component";
 
 	@Id
@@ -77,6 +78,14 @@ public class ComponentModel {
 	@JsonView(JsonUtils.JsonForIO.class)
 	private boolean active = true;
 
+	/**
+	 * User comments, reminders, something to share with others. They have no 
+	 * further meaning.
+	 */
+	@Lob
+	@JsonView({ JsonUtils.JsonForIO.class })
+	private String comments;
+	
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	@Lob
 	private String jsonData;
@@ -135,6 +144,14 @@ public class ComponentModel {
 	public String getFilePath() {
 		return this.filePath;
 	}
+	
+	public void setComments(String comments) {
+		this.comments = comments;
+	}
+
+	public String getComments() {
+		return this.comments;
+	}
 
 	public String getJsonData() {
 		if (this.jsonData == null) {
@@ -186,6 +203,10 @@ public class ComponentModel {
 				errorList.add(new ValidationError(FILE_PATH,
 						ErrorMessages.NOT_A_PATH_YOU_CAN_LEAVE_IT_EMPTY));
 			}
+		}
+		if (!Jsoup.isValid(comments, Whitelist.none())) {
+			errorList.add(new ValidationError(COMMENTS,
+					ErrorMessages.NO_HTML_ALLOWED));
 		}
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,

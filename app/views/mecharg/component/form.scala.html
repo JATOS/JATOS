@@ -1,0 +1,62 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+	study: StudyModel, form: Form[ComponentModel])
+
+@if(form.hasErrors) {
+	<p class="globalError">Component wasn't saved</p>
+}
+@if(form.hasGlobalErrors) {
+	<p class="error">
+		@form.globalError.message
+	</p>
+}
+
+<p class="formText">Title:</p>
+@for(error <- form(ComponentModel.TITLE).errors) {
+	<p class="error">@error.message</p>
+}
+<input type="text" name="@ComponentModel.TITLE" placeholder="Your title"
+	value="@form(ComponentModel.TITLE).value">
+
+<p class="label">Allow participants to reload:
+	<input class="checkbox" type="checkbox" name="@ComponentModel.RELOADABLE" value="true"
+		@if("true".equals(form("reloadable").value)) {
+			checked="checked"
+		}>
+	<!-- We need a hidden input field.
+	 http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+	<input type="hidden" name="@ComponentModel.RELOADABLE" value="false" />
+</p>
+
+<p class="formText">URL path:</p>
+@for(error <- form(ComponentModel.FILE_PATH).errors) {
+	<p class="error">@error.message</p>
+}
+<table class="filePathTable">
+	<tbody>
+		<tr>
+			<td class="studyPath">/@controllers.publix.ExternalAssets.URL_STUDIES_PATH/@services.IOUtils.generateStudyDirName(study)/</td>
+			<td>
+				<input class="filePathInput" type="text" name="@ComponentModel.FILE_PATH"
+					placeholder="Path to the actual HTML file"
+					value="@form(ComponentModel.FILE_PATH).value">
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<p class="formText">Comments:</p>
+@for(error <- form(ComponentModel.COMMENTS).errors) {
+	<p class="error">@error.message</p>
+}
+<textarea class="formComments" name="@ComponentModel.COMMENTS" rows="3"
+	placeholder="Something you want to share or just don't want to forget?"
+	>@form(ComponentModel.COMMENTS).value</textarea>
+
+<p class="formText">JSON data:</p>
+@for(error <- form(ComponentModel.JSON_DATA).errors) {
+	<p class="error">@error.message</p>
+}
+<textarea name="@ComponentModel.JSON_DATA" class="formJsonData"
+	placeholder="Put your JSON string here"
+	>@form(ComponentModel.JSON_DATA).value</textarea>
+

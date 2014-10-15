@@ -3,27 +3,20 @@
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
-	<article class="tasks" id="tasks">
-		<div class="folder">
+<article class="formStudy">
+	@helper.form(action = routes.Studies.submitChangedMembers(study.getId()), 'class -> "addTask") {
+		@if(formError != null) {
+			<p class="globalError">Members weren't saved</p>
+			<p class="globalError">@formError</p>
+		}
 		
-			@helper.form(action = routes.Studies.submitChangedMembers(study.getId()), 'class -> "addTask") {
-				@if(formError != null) {
-					<p class="error">
-						@formError
-					</p>
-				}
-				
-				@for(user <- userList) {
-					<input type="checkbox" name="@StudyModel.MEMBERS" value="@user.getEmail()" 
-					@if(study.hasMember(user)) {
-						checked
-					}
-					>@user.toString()<br>
-				}
-				<button id="newGroup" type="submit">Update</button>
-			}
-			
-		</div>
-	</article>
-
+		@for(user <- userList) {
+			<p class="label">
+				<input class="checkbox" type="checkbox" name="@StudyModel.MEMBERS" value="@user.getEmail()" 
+				@if(study.hasMember(user)) {checked}>@user.toString()
+			</p>
+		}
+		<button class="button" type="submit">Update</button>
+	}
+</article>
 }

@@ -3,38 +3,38 @@
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
-	<article class="tasks" id="tasks">
-		<div class="folder">
+<article class="formUser">
+	@helper.form(action = routes.Users.submit()) {
+
+		@if(form.hasErrors) {
+			<p class="globalError">User wasn't saved</p>
+		}
+		@if(form.hasGlobalErrors) {
+			<p class="globalError">@form.globalError.message</p>
+		}
 		
-			@helper.form(action = routes.Users.submit(), 'class -> "addTask") {
-				<p>The email adress will be your username.</p>
+		<p class="formText">Email address (will be your username):</p>
+		@for(error <- form(UserModel.EMAIL).errors) {
+			<p class="error">@error.message</p>
+		}
+		<input type="email" name="@UserModel.EMAIL" value="@form(UserModel.EMAIL).value">
 
-				@if(form.hasGlobalErrors) {
-					<p class="error">
-						@form.globalError.message
-					</p>
-				}
-				
-				@for(error <- form(UserModel.EMAIL).errors) {
-					<p class="error">@error.message</p>
-				}
-				<input type="email" name="@UserModel.EMAIL" class="formTop" placeholder="Email" value="@form(UserModel.EMAIL).value">
+		<p class="formText">Name:</p>
+		@for(error <- form(UserModel.NAME).errors) {
+			<p class="error">@error.message</p>
+		}
+		<input type="text" name="@UserModel.NAME" placeholder="Your name" value="@form(UserModel.NAME).value">
 
-				@for(error <- form(UserModel.NAME).errors) {
-					<p class="error">@error.message</p>
-				}
-				<input type="text" name="@UserModel.NAME" class="formMiddle" placeholder="Name" value="@form(UserModel.NAME).value">
+		<p class="formText">Password:</p>
+		@for(error <- form(UserModel.PASSWORD).errors) {
+			<p class="error">@error.message</p>
+		}
+		<input class="password" type="password" name="@UserModel.PASSWORD" placeholder="Password" value="">
+		<input type="password" name="@Users.PASSWORD_REPEAT" placeholder="Repeat password" value="">
 
-				@for(error <- form(UserModel.PASSWORD).errors) {
-					<p class="error">@error.message</p>
-				}
-				<input type="password" name="@UserModel.PASSWORD" class="formMiddle" placeholder="Password" value="">
-				<input type="password" name="@Users.PASSWORD_REPEAT" class="formBottom" placeholder="Repeat password" value="">
-
-				<button id="newGroup" type="submit">Create</button>
-			}
-		
-		</div>
-	</article>
+		<button class="button" type="submit">Create</button>
+	}
+	
+</article>
 
 }

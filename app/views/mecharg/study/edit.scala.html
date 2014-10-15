@@ -1,7 +1,13 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
 	study: StudyModel, form: Form[StudyModel])
 
-@views.html.mecharg.study.form(studyList: List[StudyModel],
-	loggedInUser: UserModel, breadcrumbs: String,
-	form: Form[StudyModel], "Edit"){
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
+	<article class="formStudy">
+		@helper.form(action = routes.Studies.submitEdited(study.getId())) {
+			@views.html.mecharg.study.form(studyList: List[StudyModel],
+				loggedInUser: UserModel, breadcrumbs: String,
+				form: Form[StudyModel])
+			<button type="submit">Edit</button>
+		}
+	</article>
 }

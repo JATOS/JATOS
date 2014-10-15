@@ -3,61 +3,13 @@
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
-	<article class="tasks" id="tasks">
-		<div class="folder">
-		
-			@helper.form(action = routes.Components.submit(study.getId()), 'class -> "addTask") {
-				@if(form.hasGlobalErrors) {
-					<p class="error">
-						@form.globalError.message
-					</p>
-				}
-				
-				@for(error <- form(ComponentModel.TITLE).errors) {
-					<p class="error">@error.message</p>
-				}
-				<input type="text" name="@ComponentModel.TITLE"
-					class="formTop" placeholder="Title"
-					value="@form(ComponentModel.TITLE).value">
-				
-				<p class="reloadable">
-					<input type="checkbox" name="@ComponentModel.RELOADABLE" value="true"
-						@if("true".equals(form("reloadable").value)) {
-							checked="checked"
-						}>
-					<!-- We need a hidden input field.
-					 http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-					<input type="hidden" name="@ComponentModel.RELOADABLE" value="false" />
-					Allow participants to reload
-				</p>
-				
-				@for(error <- form(ComponentModel.FILE_PATH).errors) {
-					<p class="error">@error.message</p>
-				}
-				<table class="filePathTable">
-					<tbody>
-						<tr>
-							<td class="filePathLabel">URL&nbsp;path:&nbsp;</td>
-							<td class="studyPath">/@controllers.publix.ExternalAssets.URL_STUDIES_PATH/@services.IOUtils.generateStudyDirName(study)/</td>
-							<td>
-								<input class="filePathInput" type="text" name="@ComponentModel.FILE_PATH"
-									placeholder="Path to the actual HTML file"
-									value="@form(ComponentModel.FILE_PATH).value">
-							</td>
-						</tr>
-					</tbody>
-				</table>
-				
-				@for(error <- form(ComponentModel.JSON_DATA).errors) {
-					<p class="error">@error.message</p>
-				}
-				<textarea name="@ComponentModel.JSON_DATA" class="formJsonData"
-					placeholder="JSON data - put your JSON string here."
-					>@form(ComponentModel.JSON_DATA).value</textarea>
-				
-				<button id="newGroup" type="submit">Create</button>
-			}
-		</div>
+	<article class="formComponent">
+		@helper.form(action = routes.Components.submit(study.getId()), 'class -> "addTask") {
+			@views.html.mecharg.component.form(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+				study: StudyModel, form: Form[ComponentModel])
+
+			<button id="newGroup" type="submit">Create</button>
+		}
 	</article>
 
 }
