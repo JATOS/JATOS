@@ -198,7 +198,7 @@ public class ComponentModel {
 					ErrorMessages.NO_HTML_ALLOWED));
 		}
 		if (htmlFilePath != null && !htmlFilePath.isEmpty()) {
-			String pathRegEx = "^(\\w+\\/\\w+)+\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
+			String pathRegEx = "^(\\w+)(\\/\\w+)?\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
 			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.isEmpty())) {
 				errorList.add(new ValidationError(HTML_FILE_PATH,
 						ErrorMessages.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));

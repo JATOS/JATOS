@@ -454,8 +454,8 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	public static Result tryStudy(Long studyId) throws ResultException {
-		Logger.info(CLASS_NAME + ".tryStudy: studyId " + studyId + ", "
+	public static Result showStudy(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".showStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
@@ -464,7 +464,7 @@ public class Studies extends Controller {
 				studyList);
 		ControllerUtils.checkStudyLocked(study);
 
-		session(MAPublix.MECHARG_TRY, StudyModel.STUDY);
+		session(MAPublix.MECHARG_SHOW, StudyModel.STUDY);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startStudy(study.getId()));
 	}

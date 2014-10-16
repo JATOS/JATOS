@@ -173,7 +173,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	 * Check if this request originates from within MechArg.
 	 */
 	private boolean isFromMechArg() {
-		if (session(MAPublix.MECHARG_TRY) != null) {
+		if (session(MAPublix.MECHARG_SHOW) != null) {
 			return true;
 		}
 		return false;

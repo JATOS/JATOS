@@ -32,7 +32,7 @@ import exceptions.PublixException;
  */
 public class MAPublix extends Publix implements IPublix {
 
-	public static final String MECHARG_TRY = "mecharg_try";
+	public static final String MECHARG_SHOW = "mecharg_show";
 	private static final String CLASS_NAME = MAPublix.class.getSimpleName();
 
 	private MAErrorMessages errorMessages = new MAErrorMessages();
@@ -48,8 +48,8 @@ public class MAPublix extends Publix implements IPublix {
 				.retrieveFirstActiveComponent(study);
 		checkStandard(study, worker.getUser(), firstComponent);
 
-		String mechArgTry = utils.retrieveMechArgTry();
-		if (!mechArgTry.equals(StudyModel.STUDY)) {
+		String mechArgShow = utils.retrieveMechArgShow();
+		if (!mechArgShow.equals(StudyModel.STUDY)) {
 			throw new ForbiddenPublixException(
 					ErrorMessages.STUDY_NEVER_STARTED_FROM_MECHARG);
 		}
@@ -68,9 +68,9 @@ public class MAPublix extends Publix implements IPublix {
 		StudyModel study = utils.retrieveStudy(studyId);
 		MAWorker worker = utils.retrieveWorker();
 
-		// Check if it's a single component try.
-		String mechArgTry = utils.retrieveMechArgTry();
-		if (mechArgTry.equals(ComponentModel.COMPONENT)) {
+		// Check if it's a single component show.
+		String mechArgShow = utils.retrieveMechArgShow();
+		if (mechArgShow.equals(ComponentModel.COMPONENT)) {
 			// Finish study after first component
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
@@ -101,9 +101,9 @@ public class MAPublix extends Publix implements IPublix {
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study);
 
-		// Check if it's a single component try.
-		String mechArgTry = utils.retrieveMechArgTry();
-		if (mechArgTry.equals(ComponentModel.COMPONENT)) {
+		// Check if it's a single component show.
+		String mechArgShow = utils.retrieveMechArgShow();
+		if (mechArgShow.equals(ComponentModel.COMPONENT)) {
 			// Finish study after first component
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
@@ -208,7 +208,7 @@ public class MAPublix extends Publix implements IPublix {
 		if (!(state == StudyState.FINISHED || state == StudyState.FAIL)) {
 			utils.finishAllComponentResults(studyResult);
 			utils.finishStudy(successful, studyResult);
-			Publix.session().remove(MAPublix.MECHARG_TRY);
+			Publix.session().remove(MAPublix.MECHARG_SHOW);
 		}
 		return redirect(routes.Studies.index(study.getId()));
 	}

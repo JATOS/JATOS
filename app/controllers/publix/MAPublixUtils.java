@@ -75,15 +75,15 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 			// Do nothing
 		}
 
-		String mechArgTry = retrieveMechArgTry(mediaType);
+		String mechArgShow = retrieveMechArgShow(mediaType);
 		if (studyResult == null) {
-			if (mechArgTry.equals(StudyModel.STUDY)) {
+			if (mechArgShow.equals(StudyModel.STUDY)) {
 				throw new ForbiddenPublixException(
 						errorMessages.workerNeverStartedStudy(worker,
 								study.getId()), mediaType);
 			}
-			if (mechArgTry.equals(ComponentModel.COMPONENT)) {
-				// Try-out of a single component: Just create a StudyResult for
+			if (mechArgShow.equals(ComponentModel.COMPONENT)) {
+				// Show of a single component: Just create a StudyResult for
 				// this. The StudyResult will have only one ComponentResult.
 				studyResult = PersistanceUtils.createStudyResult(study, worker);
 			}
@@ -130,19 +130,19 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 		}
 	}
 
-	public String retrieveMechArgTry() throws ForbiddenPublixException {
-		return retrieveMechArgTry(MediaType.HTML_UTF_8);
+	public String retrieveMechArgShow() throws ForbiddenPublixException {
+		return retrieveMechArgShow(MediaType.HTML_UTF_8);
 	}
 
-	public String retrieveMechArgTry(MediaType mediaType)
+	public String retrieveMechArgShow(MediaType mediaType)
 			throws ForbiddenPublixException {
-		String mechArgTry = Publix.session(MAPublix.MECHARG_TRY);
-		if (mechArgTry == null) {
+		String mechArgShow = Publix.session(MAPublix.MECHARG_SHOW);
+		if (mechArgShow == null) {
 			throw new ForbiddenPublixException(
 					ErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_MECHARG,
 					mediaType);
 		}
-		return mechArgTry;
+		return mechArgShow;
 	}
 
 }

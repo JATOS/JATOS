@@ -20,7 +20,7 @@ componentResultList: List[results.ComponentResult])
 			<div class="placeHolder">X</div>
 		</header>
 			<div class="boxContent">
-			<div class="tryComponent">Show</div>
+			<div class="showComponent">Show</div>
 			<div class="edit">Edit</div>
 			<div class="clone">Clone</div>
 			<div class="export">Export</div>
@@ -51,8 +51,8 @@ componentResultList: List[results.ComponentResult])
 
 <script type="text/javascript">
 
-	$(".tryComponent").click(function(e) {
-		window.location.href = "@routes.Components.tryComponent(
+	$(".showComponent").click(function(e) {
+		window.location.href = "@routes.Components.showComponent(
 			study.getId, component.getId())";
 	});
 

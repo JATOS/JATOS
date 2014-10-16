@@ -19,7 +19,7 @@
 				<div class="placeHolder">X</div>
 			</header>
 			<div class="boxContent">
-				<div class="tryStudy">Show Whole Study</div>	
+				<div class="showStudy">Show Whole Study</div>	
 				<div class="editStudy">Edit</div>
 				<div class="cloneStudy">Clone</div>
 				<div class="export">Export</div>
@@ -73,7 +73,7 @@
 								</a>
 							</td>
 							<td>
-								<div class="tryComponent" component-id="@component.getId()">Show</div>
+								<div class="showComponent" component-id="@component.getId()">Show</div>
 							</td>
 							<td>
 								<div class="showResults" component-id="@component.getId()">Results&nbsp;(@results.ComponentResult.findAllByComponent(component).size())</div>
@@ -211,8 +211,8 @@
 		});
 	}
 	
-	$(".tryStudy").click(function(e) {
-		window.location.href = "@routes.Studies.tryStudy(study.getId())";
+	$(".showStudy").click(function(e) {
+		window.location.href = "@routes.Studies.showStudy(study.getId())";
 	});
 	
 	$(".cloneStudy").click(function(e) {
@@ -281,9 +281,9 @@
 		window.location.href = "/mecharg/@study.getId/createComponent";
 	});
 	
-	$(".tryComponent").click(function(e) {
+	$(".showComponent").click(function(e) {
 		var componentId = getComponentId(e);
-		window.location.href = "/mecharg/@study.getId/"+ componentId + "/try";
+		window.location.href = "/mecharg/@study.getId/"+ componentId + "/show";
 	});
 	
 	$(".showResults").click(function(e) {

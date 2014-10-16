@@ -66,9 +66,9 @@ public class Components extends Controller {
 	}
 
 	@Transactional
-	public static Result tryComponent(Long studyId, Long componentId)
+	public static Result showComponent(Long studyId, Long componentId)
 			throws ResultException {
-		Logger.info(CLASS_NAME + ".tryComponent: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".showComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
@@ -86,7 +86,7 @@ public class Components extends Controller {
 					componentId, errorMsg, Http.Status.BAD_REQUEST);
 			throw new ResultException(result, errorMsg);
 		}
-		session(MAPublix.MECHARG_TRY, ComponentModel.COMPONENT);
+		session(MAPublix.MECHARG_SHOW, ComponentModel.COMPONENT);
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
 		return redirect(urlPath);
 	}
@@ -203,7 +203,7 @@ public class Components extends Controller {
 		// "Update" button)
 		String[] postAction = request().body().asFormUrlEncoded().get("action");
 		if ("UpdateAndShow".equals(postAction[0])) {
-			return tryComponent(studyId, componentId);
+			return showComponent(studyId, componentId);
 		}
 		return redirect(routes.Components.index(study.getId(), componentId));
 	}
