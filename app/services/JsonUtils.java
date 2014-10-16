@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,6 +25,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class JsonUtils {
 
 	private static final String CLASS_NAME = JsonUtils.class.getSimpleName();
+	
+	/**
+	 * ObjectMapper from Jackson JSON library to marshal/unmarshal. It considers
+	 * the default timezone.
+	 */
 	private static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
 			.setTimeZone(TimeZone.getDefault());
 
@@ -109,13 +115,13 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Marshalling a ComponentResult into an JSON string. It considers the
-	 * default timezone.
+	 * Marshalling a ComponentResult and some additional data like studyId and
+	 * componentId into an JSON string.
 	 * 
-	 * @throws JsonProcessingException
+	 * @throws IOException
 	 */
 	public static String componentResultAsJsonForMA(
-			ComponentResult componentResult) throws JsonProcessingException {
+			ComponentResult componentResult) throws IOException {
 		ObjectNode componentResultNode = OBJECTMAPPER
 				.valueToTree(componentResult);
 
@@ -131,14 +137,16 @@ public class JsonUtils {
 		ObjectNode workerNode = OBJECTMAPPER.valueToTree(worker);
 		componentResultNode.with("worker").putAll(workerNode);
 
+		// Add componentResult's data to the end (it's a JSON string itself)
+		JsonNode jsonDataNode = null;
+		if (componentResult.getData() != null) {
+			jsonDataNode = OBJECTMAPPER.readTree(componentResult.getData());
+		}
+		componentResultNode.put("data", jsonDataNode);
+
 		// Write as string
 		String resultAsJson = OBJECTMAPPER
 				.writeValueAsString(componentResultNode);
-
-		// Add componentResult's data to the end
-		resultAsJson = resultAsJson.substring(0, resultAsJson.length() - 1);
-		resultAsJson = resultAsJson + ",\"data\":" + componentResult.getData()
-				+ "}";
 
 		return resultAsJson;
 	}
