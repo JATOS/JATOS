@@ -89,6 +89,6 @@ public class ExternalAssets extends Controller {
 			ComponentModel component) {
 		return "/" + URL_STUDIES_PATH + "/"
 				+ IOUtils.generateStudyDirName(study) + "/"
-				+ component.getFilePath();
+				+ component.getHtmlFilePath();
 	}
 }

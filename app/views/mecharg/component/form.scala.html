@@ -28,7 +28,7 @@
 </p>
 
 <p class="formText">URL path:</p>
-@for(error <- form(ComponentModel.FILE_PATH).errors) {
+@for(error <- form(ComponentModel.HTML_FILE_PATH).errors) {
 	<p class="error">@error.message</p>
 }
 <table class="filePathTable">
@@ -36,9 +36,9 @@
 		<tr>
 			<td class="studyPath">/@controllers.publix.ExternalAssets.URL_STUDIES_PATH/@services.IOUtils.generateStudyDirName(study)/</td>
 			<td>
-				<input class="filePathInput" type="text" name="@ComponentModel.FILE_PATH"
+				<input class="filePathInput" type="text" name="@ComponentModel.HTML_FILE_PATH"
 					placeholder="Path to the actual HTML file"
-					value="@form(ComponentModel.FILE_PATH).value">
+					value="@form(ComponentModel.HTML_FILE_PATH).value">
 			</td>
 		</tr>
 	</tbody>

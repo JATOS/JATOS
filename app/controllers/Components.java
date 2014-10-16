@@ -79,8 +79,8 @@ public class Components extends Controller {
 				studyList, loggedInUser, component);
 		ControllerUtils.checkStudyLocked(study);
 
-		if (component.getFilePath() == null
-				|| component.getFilePath().isEmpty()) {
+		if (component.getHtmlFilePath() == null
+				|| component.getHtmlFilePath().isEmpty()) {
 			String errorMsg = ErrorMessages.urlViewEmpty(componentId);
 			SimpleResult result = (SimpleResult) Components.index(studyId,
 					componentId, errorMsg, Http.Status.BAD_REQUEST);
@@ -193,7 +193,7 @@ public class Components extends Controller {
 		// Update component in DB
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String title = requestData.get(ComponentModel.TITLE);
-		String filePath = requestData.get(ComponentModel.FILE_PATH);
+		String filePath = requestData.get(ComponentModel.HTML_FILE_PATH);
 		String jsonData = requestData.get(ComponentModel.JSON_DATA);
 		boolean reloadable = (requestData.get(ComponentModel.RELOADABLE) != null);
 		PersistanceUtils.updateComponent(component, title, reloadable,

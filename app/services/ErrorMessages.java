@@ -28,7 +28,7 @@ public abstract class ErrorMessages<T extends Worker> {
 	// Edit HTML forms
 	public static final String INVALID_JSON_FORMAT = "Problems deserializing JSON data string: invalid JSON format.";
 	public static final String NO_HTML_ALLOWED = "No HTML allowed";
-	public static final String NOT_A_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a path (you can leave it empty)";
+	public static final String NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a valid path (\"/\" as File separator; You can leave it empty)";
 	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format.";
 	public static final String STUDY_AT_LEAST_ONE_MEMBER = "An study should have at least one member.";
 

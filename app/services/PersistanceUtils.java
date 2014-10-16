@@ -113,7 +113,7 @@ public class PersistanceUtils {
 			boolean reloadable, String filePath, String jsonData) {
 		component.setTitle(title);
 		component.setReloadable(reloadable);
-		component.setFilePath(filePath);
+		component.setHtmlFilePath(filePath);
 		component.setJsonData(jsonData);
 		component.merge();
 	}

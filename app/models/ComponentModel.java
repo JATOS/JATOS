@@ -1,5 +1,6 @@
 package models;
 
+import java.io.File;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 public class ComponentModel {
 
 	public static final String TITLE = "title";
-	public static final String FILE_PATH = "filePath";
+	public static final String HTML_FILE_PATH = "htmlFilePath";
 	public static final String JSON_DATA = "jsonData";
 	public static final String RESULT = "result";
 	public static final String RELOADABLE = "reloadable";
@@ -61,11 +62,11 @@ public class ComponentModel {
 
 	/**
 	 * Local path to component's HTML file in the study's directory. File
-	 * separators are stored as '/'.
+	 * separators are persisted as '/'.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	@JoinColumn(name = "viewUrl")
-	private String filePath;
+	private String htmlFilePath;
 
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private boolean reloadable = false;
@@ -99,7 +100,7 @@ public class ComponentModel {
 	public ComponentModel(ComponentModel component) {
 		this.study = component.study;
 		this.title = component.title;
-		this.filePath = component.filePath;
+		this.htmlFilePath = component.htmlFilePath;
 		this.reloadable = component.reloadable;
 		this.active = component.active;
 		this.jsonData = component.jsonData;
@@ -137,12 +138,12 @@ public class ComponentModel {
 		return this.date;
 	}
 
-	public void setFilePath(String filePath) {
-		this.filePath = filePath;
+	public void setHtmlFilePath(String htmlFilePath) {
+		this.htmlFilePath = htmlFilePath;
 	}
 
-	public String getFilePath() {
-		return this.filePath;
+	public String getHtmlFilePath() {
+		return this.htmlFilePath.replace('/', File.separatorChar);
 	}
 	
 	public void setComments(String comments) {
@@ -196,12 +197,11 @@ public class ComponentModel {
 			errorList.add(new ValidationError(TITLE,
 					ErrorMessages.NO_HTML_ALLOWED));
 		}
-		if (filePath != null && !filePath.isEmpty()) {
-			String slashFilePath = "/" + filePath.replace("\\", "/");
-			String pathRegEx = "^(\\/\\w+)+\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
-			if (!(slashFilePath.matches(pathRegEx) || filePath.isEmpty())) {
-				errorList.add(new ValidationError(FILE_PATH,
-						ErrorMessages.NOT_A_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+		if (htmlFilePath != null && !htmlFilePath.isEmpty()) {
+			String pathRegEx = "^(\\w+\\/\\w+)+\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
+			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.isEmpty())) {
+				errorList.add(new ValidationError(HTML_FILE_PATH,
+						ErrorMessages.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
 			}
 		}
 		if (!Jsoup.isValid(comments, Whitelist.none())) {
