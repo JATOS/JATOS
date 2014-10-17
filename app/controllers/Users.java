@@ -35,7 +35,8 @@ public class Users extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		UserModel user = ControllerUtils.getUser(email);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getHomeBreadcrumb(),
@@ -48,8 +49,9 @@ public class Users extends Controller {
 	public static Result create() throws ResultException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getHomeBreadcrumb(), "New User");
 		return ok(views.html.mecharg.user.create.render(studyList,
@@ -61,8 +63,9 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
-		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -119,7 +122,8 @@ public class Users extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		UserModel user = ControllerUtils.getUser(email);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 
 		// To change a user this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
@@ -145,7 +149,8 @@ public class Users extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		UserModel user = ControllerUtils.getUser(email);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		// To change a user this user must be logged in.
@@ -178,7 +183,8 @@ public class Users extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		UserModel user = ControllerUtils.getUser(email);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 
 		// To change a user's password this user must be logged in.
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
@@ -204,7 +210,8 @@ public class Users extends Controller {
 		UserModel user = ControllerUtils.getUser(email);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		DynamicForm requestData = Form.form().bindFromRequest();
 
 		// To change a user this user must be logged in.

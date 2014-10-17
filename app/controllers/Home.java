@@ -2,16 +2,15 @@ package controllers;
 
 import java.util.List;
 
-import exceptions.ResultException;
 import models.StudyModel;
 import models.UserModel;
-import models.workers.Worker;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
+import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
 public class Home extends Controller {
@@ -23,14 +22,12 @@ public class Home extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<UserModel> userList = UserModel.findAll();
-		List<Worker> workerList = Worker.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser.getEmail());
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
 				.getHomeBreadcrumb());
 		return status(httpStatus, views.html.mecharg.home.render(studyList,
-				loggedInUser, breadcrumbs, userList, workerList, errorMsg));
+				loggedInUser, breadcrumbs, errorMsg));
 	}
 
 	@Transactional

@@ -53,8 +53,9 @@ public class ComponentResults extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				studyList, loggedInUser, component);
@@ -80,8 +81,9 @@ public class ComponentResults extends Controller {
 				+ ", " + "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				studyList, loggedInUser, component);

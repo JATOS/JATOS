@@ -44,7 +44,8 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 
@@ -78,8 +79,9 @@ public class Studies extends Controller {
 	public static Result create() throws ResultException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		List<StudyModel> studyList = StudyModel.findAll();
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getHomeBreadcrumb(), "New Study");
@@ -93,7 +95,8 @@ public class Studies extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		if (form.hasErrors()) {
 			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 					Breadcrumbs.getHomeBreadcrumb(), "New Study");
@@ -190,7 +193,8 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 		ControllerUtils.checkStudyLocked(study);
@@ -209,7 +213,8 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 		ControllerUtils.checkStudyLocked(study);
@@ -314,7 +319,8 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 
@@ -340,7 +346,8 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 
@@ -381,7 +388,8 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 
@@ -402,7 +410,8 @@ public class Studies extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 
@@ -459,7 +468,8 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 		ControllerUtils.checkStudyLocked(study);
@@ -477,7 +487,8 @@ public class Studies extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 

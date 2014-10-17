@@ -335,6 +335,14 @@ public class StudyModel {
 		return query.getResultList();
 	}
 
+	public static List<StudyModel> findAllByUser(String memberEmail) {
+		TypedQuery<StudyModel> query = JPA.em().createQuery(
+				"SELECT DISTINCT g FROM UserModel u LEFT JOIN u.studyList g "
+						+ "WHERE u.email = :member", StudyModel.class);
+		query.setParameter("member", memberEmail);
+		return query.getResultList();
+	}
+
 	public void persist() {
 		JPA.em().persist(this);
 	}

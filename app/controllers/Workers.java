@@ -29,7 +29,8 @@ public class Workers extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		Worker worker = Worker.findById(workerId);
-		List<StudyModel> studyList = StudyModel.findAll();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
 		ControllerUtils.checkWorker(worker, workerId);
 
 		// Generate the list of StudyResults that the logged-in user is allowed
