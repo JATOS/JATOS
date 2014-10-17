@@ -3,10 +3,10 @@
 ### Setup parameters ###
 # Path to your study's HTML, JavaScript, and CSS files
 studiespath="~/mecharg_studies"
-# username to access your database
+# Username to access your database
 dbuser="mecharguser"
 # Password to access your database
-dbpassword="zaq12wsx"
+dbpassword="mypassword"
 # Port MechArg should listen on (e.g. 80 or 8080)
 port="1024"
 # IP address MechArg should listen on
