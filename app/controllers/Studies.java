@@ -2,6 +2,7 @@ package controllers;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import models.StudyModel;
 import models.UserModel;
 import models.results.StudyResult;
 import models.workers.MAWorker;
+import models.workers.Worker;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -49,14 +51,15 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
 
-		List<StudyResult> studyResultList = getStudyResultsNotDoneByMA(study);
+		Map<Long, String> workerMap = getStudyResultsNotDoneByMA(study);
+//		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
 		return status(httpStatus, views.html.mecharg.study.index.render(
 				studyList, loggedInUser, breadcrumbs, errorMsg, study,
-				studyResultList));
+				workerMap));
 	}
 
 	@Transactional
@@ -64,15 +67,14 @@ public class Studies extends Controller {
 		return index(studyId, null, Http.Status.OK);
 	}
 
-	private static List<StudyResult> getStudyResultsNotDoneByMA(StudyModel study) {
+	private static Map<Long, String> getStudyResultsNotDoneByMA(StudyModel study) {
 		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
-		Iterator<StudyResult> iter = studyResultList.iterator();
-		while (iter.hasNext()) {
-			if (iter.next().getWorker() instanceof MAWorker) {
-				iter.remove();
-			}
+		Map<Long, String> workerMap = new HashMap<>();
+		for (StudyResult studyResult : studyResultList){
+			Worker worker = studyResult.getWorker();
+			workerMap.put(worker.getId(), worker.getWorkerType());
 		}
-		return studyResultList;
+		return workerMap;
 	}
 
 	@Transactional

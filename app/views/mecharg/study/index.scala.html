@@ -1,5 +1,5 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
-	errorMsg: String, study: StudyModel, studyResultList: List[results.StudyResult])
+	errorMsg: String, study: StudyModel, workerMap: Map[Long,String])
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
@@ -89,7 +89,7 @@
 		
 		<div class="workerBox">
 			<header>
-				<h3>Workers (non MA)</h3>
+				<h3>Workers</h3>
 				<div class="placeHolder">X</div>
 			</header>
 	
@@ -109,25 +109,25 @@
 					</table>
 				</li>
 			
-				@for(studyResult <- studyResultList) {
+				@for(workerId <- workerMap.keySet()) {
 					<li class="worker">
 						<table width="100%">
 							<tbody>
 								<tr>
 									<td valign="top" width="33%">
 										<p class="workerSecondRow">
-											<a href="@routes.Workers.index(studyResult.getWorker().getId())">@studyResult.getWorker().getId()</a>
+											<a href="@routes.Workers.index(workerId)">@workerId</a>
 										</p>
 									</td>
 									<td valign="top" width="33%">
-										<p class="workerSecondRow">@studyResult.getWorker().getWorkerType()</p>
+										<p class="workerSecondRow">@workerMap.get(workerId)</p>
 									</td>
 								</tr>
 							</tbody>
 						</table>
 					</li>
 				}
-				@if(studyResultList.isEmpty()) {
+				@if(workerMap.isEmpty()) {
 					<li>none</li>
 				}
 			</ul>
