@@ -205,6 +205,14 @@ public class StudyModel {
 		return this.componentList;
 	}
 
+	/**
+	 * Gets the component of this study at the given position. The smallest
+	 * position is 1 (and not 0 as in an array).
+	 */
+	public ComponentModel getComponent(int position) {
+		return componentList.get(position - 1);
+	}
+
 	public void addComponent(ComponentModel component) {
 		componentList.add(component);
 	}

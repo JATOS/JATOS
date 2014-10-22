@@ -3,6 +3,7 @@ package controllers.publix;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import exceptions.PublixException;
+import play.libs.F.Promise;
 import play.mvc.Result;
 
 /**
@@ -25,8 +26,16 @@ public interface IPublix {
 	 * Starts the component with the given componentId that belongs to the study
 	 * with the studyId.
 	 */
-	public Result startComponent(Long studyId, Long componentId)
+	public Promise<Result> startComponent(Long studyId, Long componentId)
 			throws PublixException;
+
+	/**
+	 * HTTP type: Normal GET request<br>
+	 * Starts the component in the given position that belongs to the study with
+	 * the studyId.
+	 */
+	public Promise<Result> startComponentByPosition(Long studyId,
+			Integer position) throws PublixException;
 
 	/**
 	 * HTTP type: Normal GET request<br>
@@ -46,16 +55,34 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Ajax GET request<br>
-	 * Returns the data in JSON format that belong to the specified component.
+	 * Returns the data in JSON format that belong to the component specified by
+	 * its ID.
 	 */
 	public Result getComponentData(Long studyId, Long componentId)
 			throws PublixException, JsonProcessingException;
 
 	/**
+	 * HTTP type: Ajax GET request<br>
+	 * Returns the data in JSON format that belong to component specified by the
+	 * position within the study.
+	 */
+	public Result getComponentDataByPosition(Long studyId, Integer position)
+			throws PublixException, JsonProcessingException;
+
+	/**
 	 * HTTP type: Ajax POST request<br>
-	 * Persists the submitted data together with the component.
+	 * Persists the submitted data together with the component specified by its
+	 * ID.
 	 */
 	public Result submitResultData(Long studyId, Long componentId)
+			throws PublixException;
+
+	/**
+	 * HTTP type: Ajax POST request<br>
+	 * Persists the submitted data together with the component specified by its
+	 * position within the study.
+	 */
+	public Result submitResultDataByPosition(Long studyId, Integer position)
 			throws PublixException;
 
 	/**

@@ -54,7 +54,8 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters.";
 	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
-
+	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
+	
 	public static String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
 		return errorMsg;
@@ -153,6 +154,12 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String componentNotExist(Long studyId, Long componentId) {
 		String errorMsg = "An component with ID " + componentId + " of study "
 				+ studyId + " doesn't exist.";
+		return errorMsg;
+	}
+	
+	public static String noComponentAtPosition(Long studyId, Integer position) {
+		String errorMsg = "There is no component at position " + position + " in study "
+				+ studyId + ".";
 		return errorMsg;
 	}
 

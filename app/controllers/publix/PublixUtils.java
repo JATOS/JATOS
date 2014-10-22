@@ -12,6 +12,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import models.ComponentModel;
 import models.StudyModel;
+import models.UserModel;
 import models.results.ComponentResult;
 import models.results.ComponentResult.ComponentState;
 import models.results.StudyResult;
@@ -22,6 +23,7 @@ import org.w3c.dom.Document;
 
 import play.Logger;
 import play.db.jpa.JPA;
+import play.mvc.Http.Request;
 import play.mvc.Http.RequestBody;
 import services.ErrorMessages;
 import services.PersistanceUtils;
@@ -336,6 +338,31 @@ public abstract class PublixUtils<T extends Worker> {
 		return component;
 	}
 
+	public ComponentModel retrieveComponentByPosition(Long studyId,
+			Integer position) throws PublixException {
+		return retrieveComponentByPosition(studyId, position,
+				MediaType.HTML_UTF_8);
+	}
+
+	public ComponentModel retrieveComponentByPosition(Long studyId,
+			Integer position, MediaType errorMediaType) throws PublixException {
+		StudyModel study = retrieveStudy(studyId);
+		if (position == null) {
+			throw new BadRequestPublixException(
+					ErrorMessages.COMPONENTS_POSITION_NOT_NULL);
+		}
+		ComponentModel component;
+		try {
+			component = study.getComponent(position);
+		} catch (IndexOutOfBoundsException e) {
+			throw new NotFoundPublixException(
+					ErrorMessages
+							.noComponentAtPosition(study.getId(), position),
+					errorMediaType);
+		}
+		return component;
+	}
+
 	public StudyModel retrieveStudy(Long studyId)
 			throws NotFoundPublixException {
 		return retrieveStudy(studyId, MediaType.HTML_UTF_8);
@@ -371,14 +398,49 @@ public abstract class PublixUtils<T extends Worker> {
 		return data;
 	}
 
-	public static String getUrlWithRequestQueryString(String requestUrl,
-			String url) {
-		int queryBegin = requestUrl.lastIndexOf("?");
+	/**
+	 * Generates an URL with protocol HTTP, request's hostname, given urlPath,
+	 * and requests query string.
+	 */
+	public static String getUrlWithRequestQueryString(Request request,
+			String urlPath) {
+		String requestUrlPath = request.uri();
+		String requestHostName = request.host();
+		int queryBegin = requestUrlPath.lastIndexOf("?");
 		if (queryBegin > 0) {
-			String queryString = requestUrl.substring(queryBegin + 1);
-			url = url + "?" + queryString;
+			String queryString = requestUrlPath.substring(queryBegin + 1);
+			urlPath = urlPath + "?" + queryString;
 		}
-		return url;
+		return "http://" + requestHostName + urlPath;
+	}
+	
+	public void checkMembership(StudyModel study, UserModel loggedInUser)
+			throws ForbiddenPublixException {
+		checkMembership(study, loggedInUser, MediaType.HTML_UTF_8);
+	}
+
+	public void checkMembership(StudyModel study, UserModel loggedInUser,
+			MediaType errorMediaType) throws ForbiddenPublixException {
+		if (!study.hasMember(loggedInUser)) {
+			throw new ForbiddenPublixException(ErrorMessages.notMember(
+					loggedInUser.getName(), loggedInUser.getEmail(),
+					study.getId(), study.getTitle()), errorMediaType);
+		}
+	}
+
+	public String retrieveMechArgShow() throws ForbiddenPublixException {
+		return retrieveMechArgShow(MediaType.HTML_UTF_8);
+	}
+
+	public String retrieveMechArgShow(MediaType mediaType)
+			throws ForbiddenPublixException {
+		String mechArgShow = Publix.session(MAPublix.MECHARG_SHOW);
+		if (mechArgShow == null) {
+			throw new ForbiddenPublixException(
+					ErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_MECHARG,
+					mediaType);
+		}
+		return mechArgShow;
 	}
 
 }

@@ -116,33 +116,4 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 		return componentResult;
 	}
 
-	public void checkMembership(StudyModel study, UserModel loggedInUser)
-			throws ForbiddenPublixException {
-		checkMembership(study, loggedInUser, MediaType.HTML_UTF_8);
-	}
-
-	public void checkMembership(StudyModel study, UserModel loggedInUser,
-			MediaType errorMediaType) throws ForbiddenPublixException {
-		if (!study.hasMember(loggedInUser)) {
-			throw new ForbiddenPublixException(ErrorMessages.notMember(
-					loggedInUser.getName(), loggedInUser.getEmail(),
-					study.getId(), study.getTitle()), errorMediaType);
-		}
-	}
-
-	public String retrieveMechArgShow() throws ForbiddenPublixException {
-		return retrieveMechArgShow(MediaType.HTML_UTF_8);
-	}
-
-	public String retrieveMechArgShow(MediaType mediaType)
-			throws ForbiddenPublixException {
-		String mechArgShow = Publix.session(MAPublix.MECHARG_SHOW);
-		if (mechArgShow == null) {
-			throw new ForbiddenPublixException(
-					ErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_MECHARG,
-					mediaType);
-		}
-		return mechArgShow;
-	}
-
 }

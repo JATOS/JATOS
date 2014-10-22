@@ -10,6 +10,7 @@ import models.workers.MTSandboxWorker;
 import models.workers.MTTesterWorker;
 import models.workers.MTWorker;
 import play.Logger;
+import play.libs.F.Promise;
 import play.mvc.Result;
 import services.ErrorMessages;
 import services.JsonUtils;
@@ -34,8 +35,13 @@ public class MTPublix extends Publix implements IPublix {
 	public static final String ASSIGNMENT_ID_NOT_AVAILABLE = "ASSIGNMENT_ID_NOT_AVAILABLE";
 	private static final String CLASS_NAME = MTPublix.class.getSimpleName();
 
-	private MTErrorMessages errorMessages = new MTErrorMessages();
-	private MTPublixUtils utils = new MTPublixUtils(errorMessages);
+	protected static final MTErrorMessages errorMessages = new MTErrorMessages();
+	protected static final MTPublixUtils utils = new MTPublixUtils(
+			errorMessages);
+
+	public MTPublix() {
+		super(utils);
+	}
 
 	@Override
 	public Result startStudy(Long studyId) throws PublixException {
@@ -56,8 +62,7 @@ public class MTPublix extends Publix implements IPublix {
 
 		// Check worker
 		if (mtWorkerId == null) {
-			throw new BadRequestPublixException(
-					ErrorMessages.NO_MTURK_WORKERID);
+			throw new BadRequestPublixException(ErrorMessages.NO_MTURK_WORKERID);
 		}
 		MTWorker worker = MTWorker.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
@@ -76,7 +81,7 @@ public class MTPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	public Result startComponent(Long studyId, Long componentId)
+	public Promise<Result> startComponent(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
@@ -91,9 +96,9 @@ public class MTPublix extends Publix implements IPublix {
 		utils.startComponent(component, studyResult);
 
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
-		String redirectUrl = PublixUtils.getUrlWithRequestQueryString(request()
-				.uri(), urlPath);
-		return redirect(redirectUrl);
+		String urlWithQueryStr = PublixUtils.getUrlWithRequestQueryString(
+				request(), urlPath);
+		return forwardTo(urlWithQueryStr);
 	}
 
 	@Override

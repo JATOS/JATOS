@@ -9,6 +9,7 @@ import models.results.StudyResult;
 import models.results.StudyResult.StudyState;
 import models.workers.MAWorker;
 import play.Logger;
+import play.libs.F.Promise;
 import play.mvc.Result;
 import services.ErrorMessages;
 import services.JsonUtils;
@@ -35,8 +36,12 @@ public class MAPublix extends Publix implements IPublix {
 	public static final String MECHARG_SHOW = "mecharg_show";
 	private static final String CLASS_NAME = MAPublix.class.getSimpleName();
 
-	private MAErrorMessages errorMessages = new MAErrorMessages();
-	private MAPublixUtils utils = new MAPublixUtils(errorMessages);
+	protected static final MAErrorMessages errorMessages = new MAErrorMessages();
+	protected static final MAPublixUtils utils = new MAPublixUtils(errorMessages);
+	
+	public MAPublix() {
+		super(utils);
+	}
 
 	@Override
 	public Result startStudy(Long studyId) throws PublixException {
@@ -60,7 +65,7 @@ public class MAPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	public Result startComponent(Long studyId, Long componentId)
+	public Promise<Result> startComponent(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
@@ -72,8 +77,9 @@ public class MAPublix extends Publix implements IPublix {
 		String mechArgShow = utils.retrieveMechArgShow();
 		if (mechArgShow.equals(ComponentModel.COMPONENT)) {
 			// Finish study after first component
-			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, true, null));
+			return Promise
+					.pure((Result) redirect(controllers.publix.routes.PublixInterceptor
+							.finishStudy(studyId, true, null)));
 		}
 
 		ComponentModel component = utils.retrieveComponent(study, componentId);
@@ -84,9 +90,9 @@ public class MAPublix extends Publix implements IPublix {
 		utils.startComponent(component, studyResult);
 
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
-		String redirectUrl = PublixUtils.getUrlWithRequestQueryString(request()
-				.uri(), urlPath);
-		return redirect(redirectUrl);
+		String urlWithQueryStr = PublixUtils.getUrlWithRequestQueryString(
+				request(), urlPath);
+		return forwardTo(urlWithQueryStr);
 	}
 
 	@Override

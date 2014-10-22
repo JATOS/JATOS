@@ -3,15 +3,14 @@ package controllers;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import models.results.ComponentResult;
 import models.results.StudyResult;
-import models.workers.MAWorker;
 import models.workers.Worker;
 import play.Logger;
 import play.data.DynamicForm;
@@ -27,8 +26,8 @@ import play.mvc.Security;
 import play.mvc.SimpleResult;
 import services.ErrorMessages;
 import services.IOUtils;
-import services.JsonUtils;
 import services.IOUtils.UploadUnmarshaller;
+import services.JsonUtils;
 import services.PersistanceUtils;
 import services.ZipUtil;
 import controllers.publix.MAPublix;
@@ -50,10 +49,7 @@ public class Studies extends Controller {
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
 				studyList);
-
-		Map<Long, String> workerMap = getStudyResultsNotDoneByMA(study);
-//		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
-
+		Map<Long, String> workerMap = retrieveWorkerMap(study);
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study));
@@ -67,10 +63,10 @@ public class Studies extends Controller {
 		return index(studyId, null, Http.Status.OK);
 	}
 
-	private static Map<Long, String> getStudyResultsNotDoneByMA(StudyModel study) {
+	private static Map<Long, String> retrieveWorkerMap(StudyModel study) {
 		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
 		Map<Long, String> workerMap = new HashMap<>();
-		for (StudyResult studyResult : studyResultList){
+		for (StudyResult studyResult : studyResultList) {
 			Worker worker = studyResult.getWorker();
 			workerMap.put(worker.getId(), worker.getWorkerType());
 		}
@@ -501,6 +497,36 @@ public class Studies extends Controller {
 				"Mechanical Turk HIT layout source code");
 		return ok(views.html.mecharg.study.mTurkSourceCode.render(studyList,
 				loggedInUser, breadcrumbs, null, study, hostname));
+	}
+
+	@Transactional
+	public static Result exportAllResults(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".exportAllResults: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
+				studyList);
+
+		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
+		StringBuilder sb = new StringBuilder();
+		try {
+			for (StudyResult studyResult : studyResultList) {
+				for (ComponentResult componentResult : studyResult
+						.getComponentResultList()) {
+					sb.append(JsonUtils
+							.componentResultAsJsonForMA(componentResult));
+					sb.append("\n");
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return ok(sb.toString());
 	}
 
 }

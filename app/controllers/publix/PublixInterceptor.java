@@ -2,6 +2,7 @@ package controllers.publix;
 
 import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
+import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -15,7 +16,7 @@ import exceptions.PublixException;
  * implementations exists: MTPublix for studies originating from MTurk and
  * MAPublix for studies and components started from within MechArg's UI.
  * 
- * TODO: Move @Transactional out of controller and get rid off synchronisation
+ * TODO: Move @Transactional out of controller and get rid of synchronisation
  * and JPA transaction handling
  * 
  * @author Kristian Lange
@@ -26,7 +27,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	private IPublix mtPublix = new MTPublix();
 
 	private static Object lock = new Object();
-
+	
 	@Override
 	@Transactional
 	public Result startStudy(Long studyId) throws PublixException {
@@ -46,10 +47,10 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result startComponent(Long studyId, Long componentId)
+	public Promise<Result> startComponent(Long studyId, Long componentId)
 			throws PublixException {
 		synchronized (lock) {
-			Result result;
+			Promise<Result> result;
 			if (isFromMechArg()) {
 				result = maPublix.startComponent(studyId, componentId);
 			} else {
@@ -60,6 +61,21 @@ public class PublixInterceptor extends Controller implements IPublix {
 			JPA.em().getTransaction().begin();
 			return result;
 		}
+	}
+
+	@Override
+	@Transactional
+	public Promise<Result> startComponentByPosition(Long studyId,
+			Integer position) throws PublixException {
+		// This method calls startComponent(). Therefore no synchronisation
+		// and JPA transaction handling 
+		Promise<Result> result;
+		if (isFromMechArg()) {
+			result = maPublix.startComponentByPosition(studyId, position);
+		} else {
+			result = mtPublix.startComponentByPosition(studyId, position);
+		}
+		return result;
 	}
 
 	@Override
@@ -114,6 +130,21 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return result;
 		}
 	}
+	
+	@Override
+	@Transactional
+	public Result getComponentDataByPosition(Long studyId, Integer position)
+			throws PublixException, JsonProcessingException {
+		// This method calls getComponentData(). Therefore no synchronisation
+		// and JPA transaction handling 
+		Result result;
+		if (isFromMechArg()) {
+			result = maPublix.getComponentDataByPosition(studyId, position);
+		} else {
+			result = mtPublix.getComponentDataByPosition(studyId, position);
+		}
+		return result;
+	}
 
 	@Override
 	@Transactional
@@ -131,6 +162,21 @@ public class PublixInterceptor extends Controller implements IPublix {
 			JPA.em().getTransaction().begin();
 			return result;
 		}
+	}
+	
+	@Override
+	@Transactional
+	public Result submitResultDataByPosition(Long studyId, Integer position)
+			throws PublixException {
+		// This method calls submitResultData(). Therefore no synchronisation
+		// and JPA transaction handling 
+		Result result;
+		if (isFromMechArg()) {
+			result = maPublix.submitResultDataByPosition(studyId, position);
+		} else {
+			result = mtPublix.submitResultDataByPosition(studyId, position);
+		}
+		return result;
 	}
 
 	@Override
