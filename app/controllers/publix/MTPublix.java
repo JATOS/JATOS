@@ -94,10 +94,10 @@ public class MTPublix extends Publix implements IPublix {
 				worker, study);
 
 		utils.startComponent(component, studyResult);
-
+		PublixUtils.setIdCookie(study, component);
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
 		String urlWithQueryStr = PublixUtils.getUrlWithRequestQueryString(
-				request(), urlPath);
+				urlPath);
 		return forwardTo(urlWithQueryStr);
 	}
 
@@ -210,6 +210,7 @@ public class MTPublix extends Publix implements IPublix {
 		if (!successful) {
 			return ok(views.html.publix.error.render(errorMsg));
 		}
+		PublixUtils.discardIdCookie();
 		return ok(views.html.publix.confirmationCode.render(confirmationCode));
 	}
 

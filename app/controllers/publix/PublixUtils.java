@@ -93,6 +93,26 @@ public abstract class PublixUtils<T extends Worker> {
 		return PersistanceUtils.createComponentResult(studyResult, component);
 	}
 
+	/**
+	 * Sets cookie with studyId and componentId so the component script has them
+	 * too.
+	 */
+	public static void setIdCookie(StudyModel study, ComponentModel component) {
+		String cookieStr = Publix.STUDY_ID + "="
+				+ String.valueOf(study.getId()) + "&" + Publix.COMPONENT_ID
+				+ "=" + String.valueOf(component.getId()) + "&"
+				+ Publix.POSITION + "="
+				+ String.valueOf(study.getComponentPosition(component));
+		Publix.response().setCookie(Publix.ID_COOKIE_NAME, cookieStr);
+	}
+
+	/**
+	 * Discard cookie with studyId and componentId.
+	 */
+	public static void discardIdCookie() {
+		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
+	}
+
 	public String finishStudy(Boolean successful, StudyResult studyResult) {
 		finishAllComponentResults(studyResult);
 		String confirmationCode;
@@ -402,10 +422,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Generates an URL with protocol HTTP, request's hostname, given urlPath,
 	 * and requests query string.
 	 */
-	public static String getUrlWithRequestQueryString(Request request,
-			String urlPath) {
-		String requestUrlPath = request.uri();
-		String requestHostName = request.host();
+	public static String getUrlWithRequestQueryString(String urlPath) {
+		String requestUrlPath = Publix.request().uri();
+		String requestHostName = Publix.request().host();
 		int queryBegin = requestUrlPath.lastIndexOf("?");
 		if (queryBegin > 0) {
 			String queryString = requestUrlPath.substring(queryBegin + 1);
@@ -413,7 +432,7 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 		return "http://" + requestHostName + urlPath;
 	}
-	
+
 	public void checkMembership(StudyModel study, UserModel loggedInUser)
 			throws ForbiddenPublixException {
 		checkMembership(study, loggedInUser, MediaType.HTML_UTF_8);

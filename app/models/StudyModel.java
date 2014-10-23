@@ -76,15 +76,24 @@ public class StudyModel {
 	@JsonView(JsonUtils.JsonForIO.class)
 	private String dirNamePrefix;
 
+	/**
+	 * Data in JSON format that are responded after public APIs 'getData' call.
+	 */
 	@Lob
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String jsonData;
 
+	/**
+	 * List of users that are members of this study (have access rights).
+	 */
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "email") })
 	private Set<UserModel> memberList = new HashSet<UserModel>();
 
+	/**
+	 * Ordered list of component of this study
+	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentList_order")
@@ -211,6 +220,19 @@ public class StudyModel {
 	 */
 	public ComponentModel getComponent(int position) {
 		return componentList.get(position - 1);
+	}
+
+	/**
+	 * Returns the position (index+1) of the component in the list of
+	 * components of this study or null if it doesn't exist.
+	 */
+	public Integer getComponentPosition(ComponentModel component) {
+		int index = componentList.indexOf(component);
+		if (index != -1) {
+			return index + 1;
+		} else {
+			return null;
+		}
 	}
 
 	public void addComponent(ComponentModel component) {

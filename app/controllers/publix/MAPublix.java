@@ -88,10 +88,10 @@ public class MAPublix extends Publix implements IPublix {
 		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
 				worker, study);
 		utils.startComponent(component, studyResult);
-
+		PublixUtils.setIdCookie(study, component);
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
 		String urlWithQueryStr = PublixUtils.getUrlWithRequestQueryString(
-				request(), urlPath);
+				urlPath);
 		return forwardTo(urlWithQueryStr);
 	}
 
@@ -216,6 +216,7 @@ public class MAPublix extends Publix implements IPublix {
 			utils.finishStudy(successful, studyResult);
 			Publix.session().remove(MAPublix.MECHARG_SHOW);
 		}
+		PublixUtils.discardIdCookie();
 		return redirect(routes.Studies.index(study.getId()));
 	}
 
