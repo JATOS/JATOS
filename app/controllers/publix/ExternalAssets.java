@@ -15,7 +15,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 /**
- * Manages access to files in the external studies directory (outside of
+ * Manages web-access to files in the external studies directory (outside of
  * MechArg's packed Jar).
  * 
  * @author Kristian Lange
@@ -23,8 +23,7 @@ import com.typesafe.config.ConfigFactory;
 public class ExternalAssets extends Controller {
 
 	/**
-	 * Part of the URL path that defines the location of the studies (isn't
-	 * necessarily the same as DEFAULT_STUDIES_PATH)
+	 * Part of the URL path that defines the location of the studies
 	 */
 	public static final String URL_STUDIES_PATH = "studies";
 
@@ -70,6 +69,10 @@ public class ExternalAssets extends Controller {
 		Logger.info(CLASS_NAME + ": Path to studies is " + STUDIES_ROOT_PATH);
 	}
 
+	/**
+	 * Called while routing. Translates the given file path from the URL into a
+	 * file path of the OS's file system and returns the file.
+	 */
 	public static Result at(String filePath) {
 		File file;
 		try {
@@ -90,5 +93,24 @@ public class ExternalAssets extends Controller {
 		return "/" + URL_STUDIES_PATH + "/"
 				+ IOUtils.generateStudyDirName(study) + "/"
 				+ component.getHtmlFilePath();
+	}
+
+	/**
+	 * Generates an URL with protocol HTTP, request's hostname, given urlPath,
+	 * and requests query string.
+	 */
+	public static String getUrlWithRequestQueryString(String urlPath) {
+		String requestUrlPath = Publix.request().uri();
+		int queryBegin = requestUrlPath.lastIndexOf("?");
+		if (queryBegin > 0) {
+			String queryString = requestUrlPath.substring(queryBegin + 1);
+			urlPath = urlPath + "?" + queryString;
+		}
+		return getUrl(urlPath);
+	}
+
+	public static String getUrl(String urlPath) {
+		String requestHostName = Publix.request().host();
+		return "http://" + requestHostName + urlPath;
 	}
 }

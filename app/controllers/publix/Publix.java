@@ -21,8 +21,7 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
-public abstract class Publix extends Controller implements
-		IPublix {
+public abstract class Publix extends Controller implements IPublix {
 
 	// ID cookie name and value names
 	public static final String ID_COOKIE_NAME = "MechArg_IDs";
@@ -30,7 +29,7 @@ public abstract class Publix extends Controller implements
 	public static final String STUDY_ID = "studyId";
 	public static final String COMPONENT_ID = "componentId";
 	public static final String POSITION = "position";
-
+	
 	private static final String CLASS_NAME = Publix.class.getSimpleName();
 
 	protected PublixUtils<? extends Worker> utils;
@@ -84,6 +83,10 @@ public abstract class Publix extends Controller implements
 		return status(418, "I'm a teapot");
 	}
 
+	/**
+	 * Like an internal redirect or an proxy. The URL in the browser doesn't
+	 * change.
+	 */
 	public static Promise<Result> forwardTo(String url) {
 		Promise<WS.Response> response = WS.url(url).get();
 		return response.map(new Function<WS.Response, Result>() {

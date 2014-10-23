@@ -23,7 +23,6 @@ import org.w3c.dom.Document;
 
 import play.Logger;
 import play.db.jpa.JPA;
-import play.mvc.Http.Request;
 import play.mvc.Http.RequestBody;
 import services.ErrorMessages;
 import services.PersistanceUtils;
@@ -416,21 +415,6 @@ public abstract class PublixUtils<T extends Worker> {
 					errorMediaType);
 		}
 		return data;
-	}
-
-	/**
-	 * Generates an URL with protocol HTTP, request's hostname, given urlPath,
-	 * and requests query string.
-	 */
-	public static String getUrlWithRequestQueryString(String urlPath) {
-		String requestUrlPath = Publix.request().uri();
-		String requestHostName = Publix.request().host();
-		int queryBegin = requestUrlPath.lastIndexOf("?");
-		if (queryBegin > 0) {
-			String queryString = requestUrlPath.substring(queryBegin + 1);
-			urlPath = urlPath + "?" + queryString;
-		}
-		return "http://" + requestHostName + urlPath;
 	}
 
 	public void checkMembership(StudyModel study, UserModel loggedInUser)

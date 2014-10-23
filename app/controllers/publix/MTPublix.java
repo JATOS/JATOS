@@ -96,7 +96,7 @@ public class MTPublix extends Publix implements IPublix {
 		utils.startComponent(component, studyResult);
 		PublixUtils.setIdCookie(study, component);
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
-		String urlWithQueryStr = PublixUtils.getUrlWithRequestQueryString(
+		String urlWithQueryStr = ExternalAssets.getUrlWithRequestQueryString(
 				urlPath);
 		return forwardTo(urlWithQueryStr);
 	}

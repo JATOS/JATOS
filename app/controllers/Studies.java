@@ -472,7 +472,7 @@ public class Studies extends Controller {
 				studyList);
 		ControllerUtils.checkStudyLocked(study);
 
-		session(MAPublix.MECHARG_SHOW, StudyModel.STUDY);
+		session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_STUDY);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startStudy(study.getId()));
 	}

@@ -25,7 +25,6 @@ import services.PersistanceUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import controllers.publix.ExternalAssets;
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
 
@@ -88,9 +87,9 @@ public class Components extends Controller {
 					componentId, errorMsg, Http.Status.BAD_REQUEST);
 			throw new ResultException(result, errorMsg);
 		}
-		session(MAPublix.MECHARG_SHOW, ComponentModel.COMPONENT);
-		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
-		return redirect(urlPath);
+		session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_COMPONENT_START);
+		return redirect(controllers.publix.routes.PublixInterceptor
+				.startComponent(studyId, componentId));
 	}
 
 	@Transactional
@@ -209,7 +208,8 @@ public class Components extends Controller {
 		// "Update" button)
 		String[] postAction = request().body().asFormUrlEncoded().get("action");
 		if ("UpdateAndShow".equals(postAction[0])) {
-			return showComponent(studyId, componentId);
+			return redirect(routes.Components.showComponent(studyId,
+					componentId));
 		}
 		return redirect(routes.Components.index(study.getId(), componentId));
 	}

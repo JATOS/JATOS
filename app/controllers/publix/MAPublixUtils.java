@@ -77,12 +77,12 @@ public class MAPublixUtils extends PublixUtils<MAWorker> {
 
 		String mechArgShow = retrieveMechArgShow(mediaType);
 		if (studyResult == null) {
-			if (mechArgShow.equals(StudyModel.STUDY)) {
+			if (mechArgShow.equals(MAPublix.SHOW_STUDY)) {
 				throw new ForbiddenPublixException(
 						errorMessages.workerNeverStartedStudy(worker,
 								study.getId()), mediaType);
 			}
-			if (mechArgShow.equals(ComponentModel.COMPONENT)) {
+			if (mechArgShow.equals(MAPublix.SHOW_COMPONENT_START)) {
 				// Show of a single component: Just create a StudyResult for
 				// this. The StudyResult will have only one ComponentResult.
 				studyResult = PersistanceUtils.createStudyResult(study, worker);

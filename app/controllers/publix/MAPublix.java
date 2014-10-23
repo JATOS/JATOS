@@ -34,11 +34,16 @@ import exceptions.PublixException;
 public class MAPublix extends Publix implements IPublix {
 
 	public static final String MECHARG_SHOW = "mecharg_show";
+	public static final String SHOW_STUDY = "full_study";
+	public static final String SHOW_COMPONENT_START = "single_component_start";
+	public static final String SHOW_COMPONENT_FINISHED = "single_component_finished";
+
 	private static final String CLASS_NAME = MAPublix.class.getSimpleName();
 
 	protected static final MAErrorMessages errorMessages = new MAErrorMessages();
-	protected static final MAPublixUtils utils = new MAPublixUtils(errorMessages);
-	
+	protected static final MAPublixUtils utils = new MAPublixUtils(
+			errorMessages);
+
 	public MAPublix() {
 		super(utils);
 	}
@@ -54,7 +59,7 @@ public class MAPublix extends Publix implements IPublix {
 		checkStandard(study, worker.getUser(), firstComponent);
 
 		String mechArgShow = utils.retrieveMechArgShow();
-		if (!mechArgShow.equals(StudyModel.STUDY)) {
+		if (!mechArgShow.equals(SHOW_STUDY)) {
 			throw new ForbiddenPublixException(
 					ErrorMessages.STUDY_NEVER_STARTED_FROM_MECHARG);
 		}
@@ -75,7 +80,9 @@ public class MAPublix extends Publix implements IPublix {
 
 		// Check if it's a single component show.
 		String mechArgShow = utils.retrieveMechArgShow();
-		if (mechArgShow.equals(ComponentModel.COMPONENT)) {
+		if (mechArgShow.equals(SHOW_COMPONENT_START)) {
+			session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
+		} else if (mechArgShow.equals(SHOW_COMPONENT_FINISHED)) {
 			// Finish study after first component
 			return Promise
 					.pure((Result) redirect(controllers.publix.routes.PublixInterceptor
@@ -90,8 +97,8 @@ public class MAPublix extends Publix implements IPublix {
 		utils.startComponent(component, studyResult);
 		PublixUtils.setIdCookie(study, component);
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
-		String urlWithQueryStr = PublixUtils.getUrlWithRequestQueryString(
-				urlPath);
+		String urlWithQueryStr = ExternalAssets
+				.getUrlWithRequestQueryString(urlPath);
 		return forwardTo(urlWithQueryStr);
 	}
 
@@ -109,7 +116,7 @@ public class MAPublix extends Publix implements IPublix {
 
 		// Check if it's a single component show.
 		String mechArgShow = utils.retrieveMechArgShow();
-		if (mechArgShow.equals(ComponentModel.COMPONENT)) {
+		if (mechArgShow.equals(SHOW_COMPONENT_FINISHED)) {
 			// Finish study after first component
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
