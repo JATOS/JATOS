@@ -58,7 +58,7 @@
 			
 			<table width="100%">
 				<tbody>
-					@for(component <- study.getComponentList()) {
+					@for((component, index) <- study.getComponentList().zipWithIndex) {
 						<tr>
 							<td class="arrows">
 								<div class="upArrow" component-id="@component.getId()"><p>&#9650;</p></div>
@@ -66,6 +66,9 @@
 							</td>
 							<td>
 								<input class="active" component-id="@component.getId()" type="checkbox" name="active" @if(component.isActive()) {checked}/>
+							</td>
+							<td class="position">
+								@{index + 1}.
 							</td>
 							<td class="componentTitle" width="100%">
 								<a href="@routes.Components.index(study.getId(), component.getId())">
@@ -158,9 +161,11 @@
 			success: function(response) {
 				var trElement = componentElement.parent().parent();
 				if (direction == "up") {
+					swapTrContent(trElement, trElement.prev());
 					trElement.insertBefore(trElement.prev());
 				}
 				if (direction == "down") {
+					swapTrContent(trElement, trElement.next());
 					trElement.insertAfter(trElement.next());
 				}
 			},
@@ -168,6 +173,14 @@
 				$(".error").text(err.responseText).show();
 			}
 		});
+	}
+	
+	function swapTrContent(tr1, tr2) {
+		var td1 = tr1.find(".position");
+		var td2 = tr2.find(".position");
+		var tmpContent = td1.html();
+		td1.text(td2.html());
+		td2.text(tmpContent);
 	}
 	
 	$(".active").click(function(e) {
