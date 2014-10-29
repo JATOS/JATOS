@@ -11,6 +11,8 @@ import models.workers.Worker;
 public abstract class ErrorMessages<T extends Worker> {
 
 	public abstract String workerNeverStartedStudy(T worker, Long studyId);
+	
+	public abstract String workerFinishedStudyAlready(T worker, Long studyId);
 
 	public abstract String workerNeverDidStudy(T worker, Long studyId);
 
@@ -51,6 +53,7 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
 	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_MECHARG = "This study or component was never started from within MechArg.";
 	public static final String STUDY_NEVER_STARTED_FROM_MECHARG = "This study was never started from within MechArg.";
+	public static final String STUDY_NEVER_FINSHED = "Study never finished, but new study started by the same worker";
 	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters.";
 	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
@@ -174,7 +177,7 @@ public abstract class ErrorMessages<T extends Worker> {
 				+ " doesn't exist.";
 		return errorMsg;
 	}
-
+	
 	public static String notMember(String username, String email, Long studyId,
 			String studyTitle) {
 		String errorMsg = username + " (" + email + ") isn't member of study "

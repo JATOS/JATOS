@@ -2,26 +2,17 @@ package controllers.publix;
 
 import models.ComponentModel;
 import models.StudyModel;
-import models.results.ComponentResult;
-import models.results.ComponentResult.ComponentState;
 import models.results.StudyResult;
 import models.results.StudyResult.StudyState;
-import models.workers.MTSandboxWorker;
-import models.workers.MTTesterWorker;
 import models.workers.MTWorker;
 import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Result;
 import services.ErrorMessages;
-import services.JsonUtils;
 import services.MTErrorMessages;
 import services.PersistanceUtils;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.net.MediaType;
-
 import exceptions.BadRequestPublixException;
-import exceptions.ForbiddenPublixException;
+import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
 
 /**
@@ -30,8 +21,10 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
-public class MTPublix extends Publix implements IPublix {
+public class MTPublix extends Publix<MTWorker> implements IPublix {
 
+	private static final String SANDBOX = "sandbox";
+	private static final String TURK_SUBMIT_TO = "turkSubmitTo";
 	public static final String ASSIGNMENT_ID_NOT_AVAILABLE = "ASSIGNMENT_ID_NOT_AVAILABLE";
 	private static final String CLASS_NAME = MTPublix.class.getSimpleName();
 
@@ -69,9 +62,10 @@ public class MTPublix extends Publix implements IPublix {
 			worker = PersistanceUtils.createMTWorker(mtWorkerId,
 					isRequestFromMTurkSandbox());
 		}
-		checkWorkerAllowedToStartStudy(worker, study);
+		utils.checkWorkerAllowedToDoStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));
 
+		utils.finishAllPriorStudyResults(worker, study);
 		PersistanceUtils.createStudyResult(study, worker);
 
 		ComponentModel firstComponent = utils
@@ -90,14 +84,20 @@ public class MTPublix extends Publix implements IPublix {
 		MTWorker worker = utils.retrieveWorker();
 		StudyModel study = utils.retrieveStudy(studyId);
 		ComponentModel component = utils.retrieveComponent(study, componentId);
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study);
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
 
-		utils.startComponent(component, studyResult);
+		try {
+			utils.startComponent(component, studyResult);
+		} catch (ForbiddenReloadException e) {
+			return Promise
+					.pure((Result) redirect(controllers.publix.routes.PublixInterceptor
+							.finishStudy(studyId, false, e.getMessage())));
+		}
 		PublixUtils.setIdCookie(study, component);
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
-		String urlWithQueryStr = ExternalAssets.getUrlWithRequestQueryString(
-				urlPath);
+		String urlWithQueryStr = ExternalAssets
+				.getUrlWithRequestQueryString(urlPath);
 		return forwardTo(urlWithQueryStr);
 	}
 
@@ -107,8 +107,8 @@ public class MTPublix extends Publix implements IPublix {
 				+ ", " + "workerId " + session(WORKER_ID));
 		MTWorker worker = utils.retrieveWorker();
 		StudyModel study = utils.retrieveStudy(studyId);
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study);
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
 
 		ComponentModel nextComponent = utils
 				.retrieveNextActiveComponent(studyResult);
@@ -122,96 +122,33 @@ public class MTPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	public Result getStudyData(Long studyId) throws PublixException,
-			JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID));
-		MTWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyModel study = utils.retrieveStudy(studyId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
-		studyResult.merge();
-		return ok(JsonUtils.asJsonForPublix(study));
-	}
-
-	@Override
-	public Result getComponentData(Long studyId, Long componentId)
-			throws PublixException, JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getComponentData: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "workerId "
-				+ session(WORKER_ID));
-
-		MTWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyModel study = utils.retrieveStudy(studyId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentModel component = utils.retrieveComponent(study, componentId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentState maxAllowedComponentState = ComponentState.STARTED;
-		ComponentResult componentResult = utils.retrieveStartedComponentResult(
-				component, studyResult, maxAllowedComponentState,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
-		componentResult.merge();
-
-		return ok(JsonUtils.asJsonForPublix(component));
-	}
-
-	@Override
-	public Result submitResultData(Long studyId, Long componentId)
-			throws PublixException {
-		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "workerId "
-				+ session(WORKER_ID));
-		MTWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyModel study = utils.retrieveStudy(studyId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentModel component = utils.retrieveComponent(study, componentId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentState maxAllowedComponentState = ComponentState.DATA_RETRIEVED;
-		ComponentResult componentResult = utils.retrieveStartedComponentResult(
-				component, studyResult, maxAllowedComponentState,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		String data = utils.getDataFromRequestBody(request().body(), component,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		componentResult.setData(data);
-		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
-		componentResult.merge();
-		return ok();
-	}
-
-	@Override
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
-		MTWorker worker = utils.retrieveWorker();
 		StudyModel study = utils.retrieveStudy(studyId);
+		MTWorker worker = utils.retrieveWorker();
+		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
 		String confirmationCode;
 		StudyState state = studyResult.getStudyState();
 		if (!(state == StudyState.FINISHED || state == StudyState.FAIL)) {
-			confirmationCode = utils.finishStudy(successful, studyResult);
+			confirmationCode = utils.finishStudy(successful, errorMsg,
+					studyResult);
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
 
+		PublixUtils.discardIdCookie();
 		if (!successful) {
 			return ok(views.html.publix.error.render(errorMsg));
+		} else {
+			return ok(views.html.publix.confirmationCode
+					.render(confirmationCode));
 		}
-		PublixUtils.discardIdCookie();
-		return ok(views.html.publix.confirmationCode.render(confirmationCode));
 	}
 
 	private void checkForMTurkPreview(Long studyId, String mtAssignmentId)
@@ -229,24 +166,11 @@ public class MTPublix extends Publix implements IPublix {
 	 * false otherwise.
 	 */
 	private boolean isRequestFromMTurkSandbox() {
-		String turkSubmitTo = request().getQueryString("turkSubmitTo");
-		if (turkSubmitTo != null && turkSubmitTo.contains("sandbox")) {
+		String turkSubmitTo = request().getQueryString(TURK_SUBMIT_TO);
+		if (turkSubmitTo != null && turkSubmitTo.contains(SANDBOX)) {
 			return true;
 		}
 		return false;
-	}
-
-	private void checkWorkerAllowedToStartStudy(MTWorker worker,
-			StudyModel study) throws ForbiddenPublixException {
-		if (worker instanceof MTSandboxWorker
-				|| worker instanceof MTTesterWorker) {
-			return;
-		}
-		if (worker.didStudy(study)) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerNotAllowedStudy(worker, study.getId()));
-		}
-		;
 	}
 
 }

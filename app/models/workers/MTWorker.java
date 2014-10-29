@@ -1,6 +1,7 @@
 package models.workers;
 
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -45,6 +46,11 @@ public class MTWorker extends Worker {
 	@Override
 	public String toString() {
 		return mtWorkerId + ", " + super.toString();
+	}
+	
+	@Override
+	public String generateConfirmationCode() {
+		return UUID.randomUUID().toString();
 	}
 	
 	public static MTWorker findByMTWorkerId(String mtWorkerId) {

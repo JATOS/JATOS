@@ -18,7 +18,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.TypedQuery;
 
-import models.StudyModel;
 import models.results.StudyResult;
 import play.db.jpa.JPA;
 
@@ -26,8 +25,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Abstract domain model and DAO of a worker. Workers are doing studies (and their
- * components) and produce study results (and their component results).
+ * Abstract domain model and DAO of a worker. Workers are doing studies (and
+ * their components) and produce study results (and their component results).
  * 
  * @author Kristian Lange
  */
@@ -54,6 +53,8 @@ public abstract class Worker {
 
 	public Worker() {
 	}
+
+	public abstract String generateConfirmationCode();
 
 	public void setId(Long id) {
 		this.id = id;
@@ -85,15 +86,6 @@ public abstract class Worker {
 
 	public void removeStudyResult(StudyResult studyResult) {
 		studyResultList.remove(studyResult);
-	}
-
-	public boolean didStudy(StudyModel study) {
-		for (StudyResult studyResult : studyResultList) {
-			if (studyResult.getStudy().equals(study)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@Override

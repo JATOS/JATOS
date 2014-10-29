@@ -4,7 +4,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -35,7 +34,7 @@ public class StudyResult {
 	@Id
 	@GeneratedValue
 	private Long id;
-	
+
 	/**
 	 * Time and date when the study was started.
 	 */
@@ -68,6 +67,12 @@ public class StudyResult {
 	private Worker worker;
 
 	private String confirmationCode;
+
+	/**
+	 * Error message in case something went wrong with the study (state is
+	 * FAIL). Can be left null.
+	 */
+	private String errorMsg;
 
 	public StudyResult() {
 	}
@@ -109,17 +114,20 @@ public class StudyResult {
 	public StudyModel getStudy() {
 		return this.study;
 	}
+	
+	public void setErrorMsg(String errorMsg) {
+		this.errorMsg = errorMsg;
+	}
+
+	public String getErrorMsg() {
+		return this.errorMsg;
+	}
 
 	public void setConfirmationCode(String confirmationCode) {
 		this.confirmationCode = confirmationCode;
 	}
 
 	public String getConfirmationCode() {
-		return this.confirmationCode;
-	}
-
-	public String generateConfirmationCode() {
-		this.confirmationCode = UUID.randomUUID().toString();
 		return this.confirmationCode;
 	}
 
@@ -185,7 +193,7 @@ public class StudyResult {
 	public static StudyResult findById(Long id) {
 		return JPA.em().find(StudyResult.class, id);
 	}
-	
+
 	public static List<StudyResult> findAll() {
 		String queryStr = "SELECT e FROM StudyResult e";
 		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,

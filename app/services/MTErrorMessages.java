@@ -32,5 +32,13 @@ public class MTErrorMessages extends ErrorMessages<MTWorker> {
 				+ "study " + studyId + ".";
 		return errorMsg;
 	}
+	
+	@Override
+	public String workerFinishedStudyAlready(MTWorker worker, Long studyId) {
+		String errorMsg = "Worker " + worker.getId() + " ("
+				+ worker.getMTWorkerId() + ")" + " finished study "
+				+ studyId + " already.";
+		return errorMsg;
+	}
 
 }

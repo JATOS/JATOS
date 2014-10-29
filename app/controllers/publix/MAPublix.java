@@ -2,9 +2,7 @@ package controllers.publix;
 
 import models.ComponentModel;
 import models.StudyModel;
-import models.UserModel;
 import models.results.ComponentResult;
-import models.results.ComponentResult.ComponentState;
 import models.results.StudyResult;
 import models.results.StudyResult.StudyState;
 import models.workers.MAWorker;
@@ -12,17 +10,13 @@ import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Result;
 import services.ErrorMessages;
-import services.JsonUtils;
 import services.MAErrorMessages;
 import services.PersistanceUtils;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.net.MediaType;
-
+import controllers.ControllerUtils;
 import controllers.Users;
 import controllers.routes;
-import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
+import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
 
 /**
@@ -31,7 +25,7 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
-public class MAPublix extends Publix implements IPublix {
+public class MAPublix extends Publix<MAWorker> implements IPublix {
 
 	public static final String MECHARG_SHOW = "mecharg_show";
 	public static final String SHOW_STUDY = "full_study";
@@ -56,14 +50,14 @@ public class MAPublix extends Publix implements IPublix {
 		MAWorker worker = utils.retrieveWorker();
 		ComponentModel firstComponent = utils
 				.retrieveFirstActiveComponent(study);
-		checkStandard(study, worker.getUser(), firstComponent);
+		utils.checkWorkerAllowedToDoStudy(worker, study);
 
-		String mechArgShow = utils.retrieveMechArgShow();
+		String mechArgShow = utils.retrieveMechArgShowCookie();
 		if (!mechArgShow.equals(SHOW_STUDY)) {
 			throw new ForbiddenPublixException(
 					ErrorMessages.STUDY_NEVER_STARTED_FROM_MECHARG);
 		}
-
+		utils.finishAllPriorStudyResults(worker, study);
 		PersistanceUtils.createStudyResult(study, worker);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, firstComponent.getId()));
@@ -77,29 +71,50 @@ public class MAPublix extends Publix implements IPublix {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
 		MAWorker worker = utils.retrieveWorker();
+		ComponentModel component = utils.retrieveComponent(study, componentId);
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+		utils.checkComponentBelongsToStudy(study, component);
 
-		// Check if it's a single component show.
-		String mechArgShow = utils.retrieveMechArgShow();
-		if (mechArgShow.equals(SHOW_COMPONENT_START)) {
+		// Check if it's a single component show or a whole study show
+		String mechArgShow = utils.retrieveMechArgShowCookie();
+		StudyResult studyResult = null;
+		switch (mechArgShow) {
+		case SHOW_STUDY:
+			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
+			break;
+		case SHOW_COMPONENT_START:
+			// Just create a StudyResult for this.
+			studyResult = PersistanceUtils.createStudyResult(study, worker);
 			session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
-		} else if (mechArgShow.equals(SHOW_COMPONENT_FINISHED)) {
-			// Finish study after first component
-			return Promise
-					.pure((Result) redirect(controllers.publix.routes.PublixInterceptor
-							.finishStudy(studyId, true, null)));
+			break;
+		case SHOW_COMPONENT_FINISHED:
+			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
+			ComponentResult lastComponentResult = utils
+					.retrieveLastComponentResult(studyResult);
+			if (!lastComponentResult.getComponent().equals(component)) {
+				// It's already the second component (first is finished and it
+				// isn't a reload of the same one). Finish study after first
+				// component.
+				return Promise
+						.pure((Result) redirect(controllers.publix.routes.PublixInterceptor
+								.finishStudy(studyId, true, null)));
+			}
+			break;
 		}
 
-		ComponentModel component = utils.retrieveComponent(study, componentId);
-		checkStandard(study, worker.getUser(), component);
+		try {
+			utils.startComponent(component, studyResult);
+		} catch (ForbiddenReloadException e) {
+			return Promise
+					.pure((Result) redirect(controllers.publix.routes.PublixInterceptor
+							.finishStudy(studyId, false, e.getMessage())));
+		}
 
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study);
-		utils.startComponent(component, studyResult);
 		PublixUtils.setIdCookie(study, component);
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
 		String urlWithQueryStr = ExternalAssets
 				.getUrlWithRequestQueryString(urlPath);
-		return forwardTo(urlWithQueryStr);
+		 return forwardTo(urlWithQueryStr);
 	}
 
 	@Override
@@ -109,15 +124,25 @@ public class MAPublix extends Publix implements IPublix {
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
 		MAWorker worker = utils.retrieveWorker();
-		utils.checkMembership(study, worker.getUser());
+		utils.checkWorkerAllowedToDoStudy(worker, study);
 
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study);
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
 
-		// Check if it's a single component show.
-		String mechArgShow = utils.retrieveMechArgShow();
-		if (mechArgShow.equals(SHOW_COMPONENT_FINISHED)) {
-			// Finish study after first component
+		// Check if it's a single component show or a whole study show
+		String mechArgShow = utils.retrieveMechArgShowCookie();
+		switch (mechArgShow) {
+		case SHOW_STUDY:
+			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
+			break;
+		case SHOW_COMPONENT_START:
+			// Should never happen
+			session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, null));
+		case SHOW_COMPONENT_FINISHED:
+			// It's already the second component (first is finished). Finish
+			// study after first component.
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
@@ -134,77 +159,6 @@ public class MAPublix extends Publix implements IPublix {
 	}
 
 	@Override
-	public Result getStudyData(Long studyId) throws PublixException,
-			JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId);
-		MAWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyModel study = utils.retrieveStudy(studyId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
-		studyResult.merge();
-		return ok(JsonUtils.asJsonForPublix(study));
-	}
-
-	@Override
-	public Result getComponentData(Long studyId, Long componentId)
-			throws PublixException, JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getComponentData: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "logged-in user email "
-				+ session(Users.COOKIE_EMAIL));
-		MAWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
-		StudyModel study = utils.retrieveStudy(studyId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentModel component = utils.retrieveComponent(study, componentId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		checkStandard(study, worker.getUser(), component,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentState maxAllowedComponentState = ComponentState.STARTED;
-		ComponentResult componentResult = utils.retrieveStartedComponentResult(
-				component, studyResult, maxAllowedComponentState,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
-		componentResult.merge();
-
-		return ok(JsonUtils.asJsonForPublix(component));
-	}
-
-	@Override
-	public Result submitResultData(Long studyId, Long componentId)
-			throws PublixException {
-		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "logged-in user email "
-				+ session(Users.COOKIE_EMAIL));
-		StudyModel study = utils.retrieveStudy(studyId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		MAWorker worker = utils.retrieveWorker(MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentModel component = utils.retrieveComponent(study, componentId,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		checkStandard(study, worker.getUser(), component,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		StudyResult studyResult = utils.retrieveWorkersStartedStudyResult(
-				worker, study, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		ComponentState maxAllowedComponentState = ComponentState.DATA_RETRIEVED;
-		ComponentResult componentResult = utils.retrieveStartedComponentResult(
-				component, studyResult, maxAllowedComponentState,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-
-		String data = utils.getDataFromRequestBody(request().body(), component,
-				MediaType.TEXT_JAVASCRIPT_UTF_8);
-		componentResult.setData(data);
-		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
-		componentResult.merge();
-		return ok();
-	}
-
-	@Override
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
@@ -213,33 +167,20 @@ public class MAPublix extends Publix implements IPublix {
 				+ "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
 		MAWorker worker = utils.retrieveWorker();
-		utils.checkMembership(study, worker.getUser());
+		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
 		StudyState state = studyResult.getStudyState();
 		if (!(state == StudyState.FINISHED || state == StudyState.FAIL)) {
-			utils.finishAllComponentResults(studyResult);
-			utils.finishStudy(successful, studyResult);
+			utils.finishStudy(successful, errorMsg, studyResult);
 			Publix.session().remove(MAPublix.MECHARG_SHOW);
 		}
 		PublixUtils.discardIdCookie();
-		return redirect(routes.Studies.index(study.getId()));
-	}
-
-	private void checkStandard(StudyModel study, UserModel loggedInUser,
-			ComponentModel component) throws PublixException {
-		checkStandard(study, loggedInUser, component, MediaType.HTML_UTF_8);
-	}
-
-	private void checkStandard(StudyModel study, UserModel loggedInUser,
-			ComponentModel component, MediaType errorMediaType)
-			throws PublixException {
-		utils.checkMembership(study, loggedInUser, errorMediaType);
-		if (!component.getStudy().equals(study)) {
-			throw new BadRequestPublixException(
-					ErrorMessages.componentNotBelongToStudy(study.getId(),
-							component.getId()), errorMediaType);
+		if (ControllerUtils.isAjax()) {
+			return ok(errorMsg);
+		} else {
+			return redirect(routes.Studies.index(study.getId(), errorMsg));
 		}
 	}
 

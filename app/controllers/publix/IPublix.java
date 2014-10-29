@@ -62,27 +62,11 @@ public interface IPublix {
 			throws PublixException, JsonProcessingException;
 
 	/**
-	 * HTTP type: Ajax GET request<br>
-	 * Returns the data in JSON format that belong to component specified by the
-	 * position within the study.
-	 */
-	public Result getComponentDataByPosition(Long studyId, Integer position)
-			throws PublixException, JsonProcessingException;
-
-	/**
 	 * HTTP type: Ajax POST request<br>
 	 * Persists the submitted data together with the component specified by its
 	 * ID.
 	 */
 	public Result submitResultData(Long studyId, Long componentId)
-			throws PublixException;
-
-	/**
-	 * HTTP type: Ajax POST request<br>
-	 * Persists the submitted data together with the component specified by its
-	 * position within the study.
-	 */
-	public Result submitResultDataByPosition(Long studyId, Integer position)
 			throws PublixException;
 
 	/**
@@ -97,7 +81,7 @@ public interface IPublix {
 	 * HTTP type: Ajax POST request<br>
 	 * In case the client side wants to log an error.
 	 */
-	public Result logError();
+	public Result logError(Long studyId, Long componentId);
 
 	/**
 	 * HTTP type: Normal GET request<br>

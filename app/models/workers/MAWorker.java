@@ -46,4 +46,9 @@ public class MAWorker extends Worker {
 		return user.getEmail() + ", " + super.toString();
 	}
 	
+	@Override
+	public String generateConfirmationCode() {
+		return "none";
+	}
+	
 }

@@ -27,7 +27,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	private IPublix mtPublix = new MTPublix();
 
 	private static Object lock = new Object();
-	
+
 	@Override
 	@Transactional
 	public Result startStudy(Long studyId) throws PublixException {
@@ -68,7 +68,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Promise<Result> startComponentByPosition(Long studyId,
 			Integer position) throws PublixException {
 		// This method calls startComponent(). Therefore no synchronisation
-		// and JPA transaction handling 
+		// and JPA transaction handling
 		Promise<Result> result;
 		if (isFromMechArg()) {
 			result = maPublix.startComponentByPosition(studyId, position);
@@ -130,21 +130,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return result;
 		}
 	}
-	
-	@Override
-	@Transactional
-	public Result getComponentDataByPosition(Long studyId, Integer position)
-			throws PublixException, JsonProcessingException {
-		// This method calls getComponentData(). Therefore no synchronisation
-		// and JPA transaction handling 
-		Result result;
-		if (isFromMechArg()) {
-			result = maPublix.getComponentDataByPosition(studyId, position);
-		} else {
-			result = mtPublix.getComponentDataByPosition(studyId, position);
-		}
-		return result;
-	}
 
 	@Override
 	@Transactional
@@ -162,21 +147,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 			JPA.em().getTransaction().begin();
 			return result;
 		}
-	}
-	
-	@Override
-	@Transactional
-	public Result submitResultDataByPosition(Long studyId, Integer position)
-			throws PublixException {
-		// This method calls submitResultData(). Therefore no synchronisation
-		// and JPA transaction handling 
-		Result result;
-		if (isFromMechArg()) {
-			result = maPublix.submitResultDataByPosition(studyId, position);
-		} else {
-			result = mtPublix.submitResultDataByPosition(studyId, position);
-		}
-		return result;
 	}
 
 	@Override
@@ -198,11 +168,11 @@ public class PublixInterceptor extends Controller implements IPublix {
 	}
 
 	@Override
-	public Result logError() {
+	public Result logError(Long studyId, Long componentId) {
 		if (isFromMechArg()) {
-			return maPublix.logError();
+			return maPublix.logError(studyId, componentId);
 		} else {
-			return mtPublix.logError();
+			return mtPublix.logError(studyId, componentId);
 		}
 	}
 

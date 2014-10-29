@@ -200,7 +200,7 @@ public class Components extends Controller {
 		String title = requestData.get(ComponentModel.TITLE);
 		String filePath = requestData.get(ComponentModel.HTML_FILE_PATH);
 		String jsonData = requestData.get(ComponentModel.JSON_DATA);
-		boolean reloadable = (requestData.get(ComponentModel.RELOADABLE) != null);
+		boolean reloadable = (Boolean.valueOf(requestData.get(ComponentModel.RELOADABLE)));
 		PersistanceUtils.updateComponent(component, title, reloadable,
 				filePath, jsonData);
 
@@ -337,7 +337,7 @@ public class Components extends Controller {
 			}
 		}
 
-		return redirect(routes.Studies.index(studyId));
+		return redirect(routes.Studies.index(studyId, null));
 	}
 
 	private static void moveFileIntoStudyFolder(FilePart filePart,

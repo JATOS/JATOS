@@ -59,6 +59,12 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
+	public static Result index(Long studyId, String errorMsg)
+			throws ResultException {
+		return index(studyId, errorMsg, Http.Status.OK);
+	}
+
+	@Transactional
 	public static Result index(Long studyId) throws ResultException {
 		return index(studyId, null, Http.Status.OK);
 	}
@@ -118,7 +124,7 @@ public class Studies extends Controller {
 					.render(studyList, loggedInUser, breadcrumbs, form));
 			throw new ResultException(result);
 		}
-		return redirect(routes.Studies.index(study.getId()));
+		return redirect(routes.Studies.index(study.getId(), null));
 	}
 
 	@Transactional
@@ -250,7 +256,7 @@ public class Studies extends Controller {
 			throw new ResultException(result);
 		}
 
-		return redirect(routes.Studies.index(studyId));
+		return redirect(routes.Studies.index(studyId, null));
 	}
 
 	/**
@@ -335,7 +341,7 @@ public class Studies extends Controller {
 					errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
 			throw new ResultException(result, errorMsg);
 		}
-		return redirect(routes.Studies.index(clone.getId()));
+		return redirect(routes.Studies.index(clone.getId(), null));
 	}
 
 	@Transactional
@@ -429,7 +435,7 @@ public class Studies extends Controller {
 			}
 		}
 
-		return redirect(routes.Studies.index(studyId));
+		return redirect(routes.Studies.index(studyId, null));
 	}
 
 	/**

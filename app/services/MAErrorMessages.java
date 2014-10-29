@@ -34,4 +34,12 @@ public class MAErrorMessages extends ErrorMessages<MAWorker> {
 		return errorMsg;
 	}
 
+	@Override
+	public String workerFinishedStudyAlready(MAWorker worker, Long studyId) {
+		String errorMsg = "Worker " + worker.getId() + " ("
+				+ worker.getUser().getEmail() + ")" + " finished study "
+				+ studyId + " already.";
+		return errorMsg;
+	}
+
 }

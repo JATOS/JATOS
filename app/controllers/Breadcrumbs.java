@@ -37,7 +37,7 @@ public class Breadcrumbs extends Controller {
 	public static String getStudyBreadcrumb(StudyModel study) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("<a href=\"");
-		sb.append(routes.Studies.index(study.getId()));
+		sb.append(routes.Studies.index(study.getId(), null));
 		sb.append("\">");
 		sb.append(study.getTitle() + " (ID: " + study.getId() + ")");
 		sb.append("</a>");

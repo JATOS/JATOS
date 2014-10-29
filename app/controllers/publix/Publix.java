@@ -1,6 +1,11 @@
 package controllers.publix;
 
 import models.ComponentModel;
+import models.StudyModel;
+import models.results.ComponentResult;
+import models.results.ComponentResult.ComponentState;
+import models.results.StudyResult;
+import models.results.StudyResult.StudyState;
 import models.workers.Worker;
 import play.Logger;
 import play.libs.F.Function;
@@ -8,11 +13,12 @@ import play.libs.F.Promise;
 import play.libs.WS;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.net.MediaType;
 
 import controllers.Users;
+import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
 
 /**
@@ -21,7 +27,8 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
-public abstract class Publix extends Controller implements IPublix {
+public abstract class Publix<T extends Worker> extends Controller implements
+		IPublix {
 
 	// ID cookie name and value names
 	public static final String ID_COOKIE_NAME = "MechArg_IDs";
@@ -29,13 +36,85 @@ public abstract class Publix extends Controller implements IPublix {
 	public static final String STUDY_ID = "studyId";
 	public static final String COMPONENT_ID = "componentId";
 	public static final String POSITION = "position";
-	
+
 	private static final String CLASS_NAME = Publix.class.getSimpleName();
 
-	protected PublixUtils<? extends Worker> utils;
+	protected PublixUtils<T> utils;
 
-	public Publix(PublixUtils<? extends Worker> utils) {
+	public Publix(PublixUtils<T> utils) {
 		this.utils = utils;
+	}
+
+	@Override
+	public Result getStudyData(Long studyId) throws PublixException,
+			JsonProcessingException {
+		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId);
+		T worker = utils.retrieveWorker();
+		StudyModel study = utils.retrieveStudy(studyId);
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
+		studyResult.merge();
+		return ok(JsonUtils.asJsonForPublix(study));
+	}
+
+	@Override
+	public Result getComponentData(Long studyId, Long componentId)
+			throws PublixException, JsonProcessingException {
+		Logger.info(CLASS_NAME + ".getComponentData: studyId " + studyId + ", "
+				+ "componentId " + componentId);
+		T worker = utils.retrieveWorker();
+		StudyModel study = utils.retrieveStudy(studyId);
+		ComponentModel component = utils.retrieveComponent(study, componentId);
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+		utils.checkComponentBelongsToStudy(study, component);
+
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		ComponentState maxAllowedComponentState = ComponentState.STARTED;
+		ComponentResult componentResult;
+		try {
+			componentResult = utils.retrieveStartedComponentResult(component,
+					studyResult, maxAllowedComponentState);
+		} catch (ForbiddenReloadException e) {
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, e.getMessage()));
+		}
+
+		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
+		componentResult.merge();
+		return ok(JsonUtils.asJsonForPublix(component));
+	}
+
+	@Override
+	public Result submitResultData(Long studyId, Long componentId)
+			throws PublixException {
+		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
+				+ "componentId " + componentId);
+		StudyModel study = utils.retrieveStudy(studyId);
+		T worker = utils.retrieveWorker();
+		ComponentModel component = utils.retrieveComponent(study, componentId);
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+		utils.checkComponentBelongsToStudy(study, component);
+
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		ComponentState maxAllowedComponentState = ComponentState.DATA_RETRIEVED;
+		ComponentResult componentResult;
+		try {
+			componentResult = utils.retrieveStartedComponentResult(component,
+					studyResult, maxAllowedComponentState);
+		} catch (ForbiddenReloadException e) {
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, e.getMessage()));
+		}
+
+		String data = utils.getDataFromRequestBody(request().body(), component);
+		componentResult.setData(data);
+		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
+		componentResult.merge();
+		return ok();
 	}
 
 	@Override
@@ -50,31 +129,11 @@ public abstract class Publix extends Controller implements IPublix {
 	}
 
 	@Override
-	public Result getComponentDataByPosition(Long studyId, Integer position)
-			throws PublixException, JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getComponentDataByPosition: studyId "
-				+ studyId + ", " + "position " + position + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		ComponentModel component = utils.retrieveComponentByPosition(studyId,
-				position, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		return getComponentData(studyId, component.getId());
-	}
-
-	@Override
-	public Result submitResultDataByPosition(Long studyId, Integer position)
-			throws PublixException {
-		Logger.info(CLASS_NAME + ".submitResultDataByPosition: studyId "
-				+ studyId + ", " + "position " + position + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		ComponentModel component = utils.retrieveComponentByPosition(studyId,
-				position, MediaType.TEXT_JAVASCRIPT_UTF_8);
-		return submitResultData(studyId, component.getId());
-	}
-
-	@Override
-	public Result logError() {
+	public Result logError(Long studyId, Long componentId) {
 		String msg = request().body().asText();
-		Logger.error(CLASS_NAME + " - logging client-side error: " + msg);
+		Logger.error(CLASS_NAME + " - logging component script error: studyId "
+				+ studyId + ", " + "componentId " + componentId + ", "
+				+ "error message \"" + msg + "\".");
 		return ok();
 	}
 

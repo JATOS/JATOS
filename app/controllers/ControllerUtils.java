@@ -14,6 +14,17 @@ import exceptions.ResultException;
 
 public class ControllerUtils extends Controller {
 
+	/**
+	 * Check if the request was made via Ajax or not.
+	 */
+	public static Boolean isAjax() {
+		String requestWithHeader = "X-Requested-With";
+		String requestWithHeaderValueForAjax = "XMLHttpRequest";
+		String[] value = request().headers().get(requestWithHeader);
+		return value != null && value.length > 0
+				&& value[0].equals(requestWithHeaderValueForAjax);
+	}
+
 	public static void checkStudyLocked(StudyModel study)
 			throws ResultException {
 		if (study.isLocked()) {
@@ -65,7 +76,7 @@ public class ControllerUtils extends Controller {
 			throw new ResultException(result, errorMsg);
 		}
 	}
-	
+
 	public static void checkStandardForComponents(Long studyId,
 			Long componentId, StudyModel study, List<StudyModel> studyList,
 			UserModel loggedInUser, ComponentModel component)
@@ -103,7 +114,7 @@ public class ControllerUtils extends Controller {
 			throw new ResultException(result, errorMsg);
 		}
 	}
-	
+
 	public static void checkWorker(Worker worker, Long workerId)
 			throws ResultException {
 		if (worker == null) {
@@ -113,7 +124,7 @@ public class ControllerUtils extends Controller {
 			throw new ResultException(result, errorMsg);
 		}
 	}
-	
+
 	public static UserModel getUser(String email) throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
 		if (user == null) {
@@ -146,5 +157,5 @@ public class ControllerUtils extends Controller {
 		}
 		return loggedInUser;
 	}
-	
+
 }

@@ -147,7 +147,6 @@ public class JsonUtils {
 		// Write as string
 		String resultAsJson = OBJECTMAPPER
 				.writeValueAsString(componentResultNode);
-
 		return resultAsJson;
 	}
 
