@@ -38,9 +38,9 @@ public class ComponentResults extends Controller {
 					.componentResultNotExist(componentResultId));
 		}
 		StudyModel study = componentResult.getStudyResult().getStudy();
-		ControllerUtils.checkStandardForStudyAjax(study, study.getId(),
+		ControllerUtils.checkStandardForStudy(study, study.getId(),
 				loggedInUser);
-		ControllerUtils.checkStudyLockedAjax(study);
+		ControllerUtils.checkStudyLocked(study);
 
 		PersistanceUtils.removeComponentResult(componentResult);
 		return ok();
@@ -58,7 +58,7 @@ public class ComponentResults extends Controller {
 				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				studyList, loggedInUser, component);
+				loggedInUser, component);
 		ControllerUtils.checkStudyLocked(study);
 
 		List<ComponentResult> componentResultList = ComponentResult
@@ -82,11 +82,9 @@ public class ComponentResults extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				studyList, loggedInUser, component);
+				loggedInUser, component);
 		ControllerUtils.checkStudyLocked(study);
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();

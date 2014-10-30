@@ -45,7 +45,7 @@ public class Components extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				studyList, loggedInUser, component);
+				loggedInUser, component);
 
 		List<ComponentResult> componentResultList = ComponentResult
 				.findAllByComponent(component);
@@ -74,10 +74,8 @@ public class Components extends Controller {
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		StudyModel study = StudyModel.findById(studyId);
 		ComponentModel component = ComponentModel.findById(componentId);
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				studyList, loggedInUser, component);
+				loggedInUser, component);
 		ControllerUtils.checkStudyLocked(study);
 
 		if (component.getHtmlFilePath() == null
@@ -100,8 +98,7 @@ public class Components extends Controller {
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -120,8 +117,7 @@ public class Components extends Controller {
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
@@ -153,7 +149,7 @@ public class Components extends Controller {
 				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				studyList, loggedInUser, component);
+				loggedInUser, component);
 		ControllerUtils.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
@@ -178,7 +174,7 @@ public class Components extends Controller {
 				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				studyList, loggedInUser, component);
+				loggedInUser, component);
 		ControllerUtils.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
@@ -200,7 +196,8 @@ public class Components extends Controller {
 		String title = requestData.get(ComponentModel.TITLE);
 		String filePath = requestData.get(ComponentModel.HTML_FILE_PATH);
 		String jsonData = requestData.get(ComponentModel.JSON_DATA);
-		boolean reloadable = (Boolean.valueOf(requestData.get(ComponentModel.RELOADABLE)));
+		boolean reloadable = (Boolean.valueOf(requestData
+				.get(ComponentModel.RELOADABLE)));
 		PersistanceUtils.updateComponent(component, title, reloadable,
 				filePath, jsonData);
 
@@ -226,11 +223,11 @@ public class Components extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUserAjax();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponentsAjax(studyId, componentId,
+		ControllerUtils.checkStandardForComponents(studyId, componentId,
 				study, loggedInUser, component);
-		ControllerUtils.checkStudyLockedAjax(study);
+		ControllerUtils.checkStudyLocked(study);
 
 		if (active != null) {
 			PersistanceUtils.changeActive(component, active);
@@ -246,11 +243,9 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				studyList, loggedInUser, component);
+				loggedInUser, component);
 		ControllerUtils.checkStudyLocked(study);
 
 		ComponentModel clone = new ComponentModel(component);
@@ -266,11 +261,9 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				studyList, loggedInUser, component);
+				loggedInUser, component);
 
 		String componentAsJson;
 		try {
@@ -301,10 +294,7 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
 		// Loop through all uploaded files
@@ -361,11 +351,11 @@ public class Components extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUserAjax();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponentsAjax(studyId, componentId,
-				study, loggedInUser, component);
-		ControllerUtils.checkStudyLockedAjax(study);
+		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+				loggedInUser, component);
+		ControllerUtils.checkStudyLocked(study);
 
 		PersistanceUtils.removeComponent(study, component);
 		return ok();

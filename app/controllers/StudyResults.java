@@ -31,7 +31,7 @@ public class StudyResults extends Controller {
 			return badRequest(ErrorMessages.studyResultNotExist(studyResultId));
 		}
 		StudyModel study = studyResult.getStudy();
-		ControllerUtils.checkStandardForStudyAjax(study, study.getId(),
+		ControllerUtils.checkStandardForStudy(study, study.getId(),
 				loggedInUser);
 
 		PersistanceUtils.removeStudyResult(studyResult);

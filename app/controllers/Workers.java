@@ -74,9 +74,9 @@ public class Workers extends Controller {
 		StudyModel study;
 		for (StudyResult studyResult : worker.getStudyResultList()) {
 			study = studyResult.getStudy();
-			ControllerUtils.checkStandardForStudyAjax(study, study.getId(),
+			ControllerUtils.checkStandardForStudy(study, study.getId(),
 					loggedInUser);
-			ControllerUtils.checkStudyLockedAjax(study);
+			ControllerUtils.checkStudyLocked(study);
 		}
 
 		PersistanceUtils.removeWorker(worker);

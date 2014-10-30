@@ -47,8 +47,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		Map<Long, String> workerMap = retrieveWorkerMap(study);
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getHomeBreadcrumb(),
@@ -199,8 +198,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
@@ -219,8 +217,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
@@ -267,8 +264,8 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".swapLock: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUserAjax();
-		ControllerUtils.checkStandardForStudyAjax(study, studyId, loggedInUser);
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		study.setLocked(!study.isLocked());
 		study.merge();
@@ -283,9 +280,9 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUserAjax();
-		ControllerUtils.checkStandardForStudyAjax(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLockedAjax(study);
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		ControllerUtils.checkStudyLocked(study);
 
 		PersistanceUtils.removeStudy(study);
 
@@ -309,9 +306,9 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".removeAllResults: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUserAjax();
-		ControllerUtils.checkStandardForStudyAjax(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLockedAjax(study);
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		ControllerUtils.checkStudyLocked(study);
 
 		PersistanceUtils.removeAllStudyResults(study);
 		return ok();
@@ -323,10 +320,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		StudyModel clone = new StudyModel(study);
 		clone.addMember(loggedInUser);
@@ -350,10 +344,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		File zipFile;
 		try {
@@ -394,8 +385,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		List<UserModel> userList = UserModel.findAll();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -414,10 +404,7 @@ public class Studies extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
 		String[] checkedUsers = formMap.get(StudyModel.MEMBERS);
@@ -448,11 +435,11 @@ public class Studies extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUserAjax();
+		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForStudyAjax(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLockedAjax(study);
-		ControllerUtils.checkStandardForComponentsAjax(studyId, componentId,
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		ControllerUtils.checkStudyLocked(study);
+		ControllerUtils.checkStandardForComponents(studyId, componentId,
 				study, loggedInUser, component);
 
 		if (direction.equals("up")) {
@@ -472,10 +459,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
 		session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_STUDY);
@@ -493,8 +477,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		String hostname = request().host();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
@@ -511,10 +494,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser,
-				studyList);
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
 		StringBuilder sb = new StringBuilder();
