@@ -13,8 +13,7 @@ function onload() {
 }
 
 /**
- * Reads MechArg's ID cookie and stores the studyId into mecharg.sid,
- * componentId into mecharg.cid, and the componentPosition into mecharg.pos.
+ * Reads MechArg's ID cookie and stores all key-value pairs into mecharg scope
  * This function is automatically called after the page is loaded, so it's not
  * necessary to call it again.
  */
@@ -27,19 +26,20 @@ mecharg.readIdCookie = function() {
 			c = c.substring(1, c.length);
 		}
 		if (c.indexOf(nameEQ) === 0) {
-			var cookieStr = unescape(c.substring(nameEQ.length, c.length));
+			var cookieStr = unescape(c.substring(nameEQ.length + 1,
+					c.length - 1));
 			var idMap = cookieStr.split("&");
-			var mechArgIds = {};
-			mecharg.sid = parseInt(idMap[0].split("=")[1]);
-			mecharg.cid = parseInt(idMap[1].split("=")[1]);
-			mecharg.pos = parseInt(idMap[2].split("=")[1]);
+			idMap.forEach(function(entry) {
+				var keyValuePair = entry.split("=");
+				mecharg[keyValuePair[0]] = keyValuePair[1];
+			});
 		}
 	}
 }
 
 /**
  * Gets the study's data from the MechArg server and stores them in
- * mecharg.sData (the whole data) and mecharg.sJsonData (just the JSON data).
+ * mecharg.studyData (the whole data) and mecharg.studyJsonData (just the JSON data).
  * 
  * @param {optional
  *            Function} success - Function to be called in case of success.
@@ -49,12 +49,12 @@ mecharg.readIdCookie = function() {
  */
 mecharg.getStudyData = function(success, error) {
 	$.ajax({
-		url : "/publix/" + mecharg.sid + "/getData",
+		url : "/publix/" + mecharg.studyId + "/getData",
 		type : "GET",
 		dataType : 'json',
 		success : function(response) {
-			mecharg.sData = response;
-			mecharg.sJsonData = $.parseJSON(mecharg.sData.jsonData);
+			mecharg.studyData = response;
+			mecharg.studyJsonData = $.parseJSON(mecharg.studyData.jsonData);
 			if (success) {
 				success(response)
 			}
@@ -71,7 +71,7 @@ mecharg.getStudyData = function(success, error) {
 
 /**
  * Gets the component's data from the MechArg server and stores them in
- * mecharg.cData (the whole data) and mecharg.cJsonData (just the JSON data).
+ * mecharg.componentData (the whole data) and mecharg.componentJsonData (just the JSON data).
  * 
  * @param {optional
  *            Function} success - Function to be called in case of success.
@@ -81,12 +81,13 @@ mecharg.getStudyData = function(success, error) {
  */
 mecharg.getComponentData = function(success, error) {
 	$.ajax({
-		url : "/publix/" + mecharg.sid + "/" + mecharg.cid + "/getData",
+		url : "/publix/" + mecharg.studyId + "/" + mecharg.componentId
+				+ "/getData",
 		type : "GET",
 		dataType : 'json',
 		success : function(response) {
-			mecharg.cData = response;
-			mecharg.cJsonData = $.parseJSON(mecharg.cData.jsonData);
+			mecharg.componentData = response;
+			mecharg.componentJsonData = $.parseJSON(mecharg.componentData.jsonData);
 			if (success) {
 				success(response)
 			}
@@ -115,13 +116,14 @@ mecharg.getComponentData = function(success, error) {
  */
 mecharg.submitResultData = function(resultData, success, error) {
 	var resultJson = JSON.stringify(resultData);
+	
 	$.ajax({
-		url : "/publix/" + mecharg.sid + "/" + mecharg.cid
+		url : "/publix/" + mecharg.studyId + "/" + mecharg.componentId
 				+ "/submitResultData",
 		data : resultJson,
 		processData : false,
 		type : "POST",
-		contentType : "application/json",
+		contentType : "text/plain", //"application/json",
 		success : function(response) {
 			if (success) {
 				success(response)
@@ -142,7 +144,7 @@ mecharg.submitResultData = function(resultData, success, error) {
  * position + 1.
  */
 mecharg.startNextComponent = function() {
-	window.location.href = "/publix/" + mecharg.sid + "/startNextComponent";
+	window.location.href = "/publix/" + mecharg.studyId + "/startNextComponent";
 }
 
 /**
@@ -157,10 +159,10 @@ mecharg.startNextComponent = function() {
  */
 mecharg.endStudy = function(successful, errorMsg) {
 	if (undefined == successful || undefined == errorMsg) {
-		window.location.href = "/publix/" + mecharg.sid + "/end";
+		window.location.href = "/publix/" + mecharg.studyId + "/end";
 	} else {
-		window.location.href = "/publix/" + mecharg.sid + "/end?successful="
-				+ successful + "&errorMsg=" + errorMsg;
+		window.location.href = "/publix/" + mecharg.studyId
+				+ "/end?successful=" + successful + "&errorMsg=" + errorMsg;
 	}
 }
 
@@ -169,7 +171,8 @@ mecharg.endStudy = function(successful, errorMsg) {
  */
 mecharg.logError = function(logErrorMsg) {
 	$.ajax({
-		url : "/publix/" + mecharg.sid + "/" + mecharg.cid + "/logError",
+		url : "/publix/" + mecharg.studyId + "/" + mecharg.componentId
+				+ "/logError",
 		data : logErrorMsg,
 		processData : false,
 		type : "POST",

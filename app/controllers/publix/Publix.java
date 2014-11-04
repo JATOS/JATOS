@@ -35,6 +35,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public static final String WORKER_ID = "workerId";
 	public static final String STUDY_ID = "studyId";
 	public static final String COMPONENT_ID = "componentId";
+	public static final String STUDY_RESULT_ID = "studyResultId";
+	public static final String COMPONENT_RESULT_ID = "componentResultId";
 	public static final String POSITION = "position";
 
 	private static final String CLASS_NAME = Publix.class.getSimpleName();

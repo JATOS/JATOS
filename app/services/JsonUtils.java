@@ -2,30 +2,31 @@ package services;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TimeZone;
 
+import models.ComponentModel;
+import models.StudyModel;
+import models.UserModel;
 import models.results.ComponentResult;
 import models.results.StudyResult;
 import models.workers.Worker;
-
-import org.hibernate.Hibernate;
-import org.hibernate.proxy.HibernateProxy;
-
 import play.Logger;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class JsonUtils {
 
 	private static final String CLASS_NAME = JsonUtils.class.getSimpleName();
-	
+
 	/**
 	 * ObjectMapper from Jackson JSON library to marshal/unmarshal. It considers
 	 * the default timezone.
@@ -51,8 +52,8 @@ public class JsonUtils {
 
 	/**
 	 * Turns a JSON string into a 'pretty' formatted JSON string suitable for
-	 * presentation in a UI. The JSON itself (semantics) aren't changed. If the
-	 * JSON string isn't valid it returns null.
+	 * presentation in the UI. The JSON itself (semantics) aren't changed. If
+	 * the JSON string isn't valid it returns null.
 	 */
 	public static String makePretty(String jsonData) {
 		String jsonDataPretty = null;
@@ -115,12 +116,106 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Marshalling a ComponentResult and some additional data like studyId and
-	 * componentId into an JSON string.
-	 * 
-	 * @throws IOException
+	 * Returns the data string of a componentResult limited to
+	 * MAX_CHAR_PER_RESULT characters.
 	 */
-	public static String componentResultAsJsonForMA(
+	public static String componentResultDataForUI(
+			ComponentResult componentResult) throws IOException {
+		final int MAX_CHAR_PER_RESULT = 1000;
+		String data = componentResult.getData();
+		if (data != null) {
+			if (data.length() < MAX_CHAR_PER_RESULT) {
+				return data;
+			} else {
+				return data.substring(0, MAX_CHAR_PER_RESULT) + " ...";
+			}
+		} else {
+			return "none";
+		}
+	}
+
+	/**
+	 * Returns all studyResults of a study as a JSON string. It's including the
+	 * studyResult's componentResults.
+	 */
+	public static String allStudyResultsForUI(StudyModel study)
+			throws IOException {
+		ObjectNode allStudyResultsNode = OBJECTMAPPER.createObjectNode();
+		ArrayNode arrayNode = allStudyResultsNode.arrayNode();
+		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
+		for (StudyResult studyResult : studyResultList) {
+			ObjectNode studyResultNode = studyResultAsJsonNode(studyResult);
+			arrayNode.add(studyResultNode);
+		}
+		allStudyResultsNode.put("data", arrayNode);
+		String asJsonStr = OBJECTMAPPER.writeValueAsString(allStudyResultsNode);
+		return asJsonStr;
+	}
+
+	public static String allStudyResultsByWorkerForUI(Worker worker,
+			UserModel loggedInUser) throws IOException {
+		ObjectNode allStudyResultsNode = OBJECTMAPPER.createObjectNode();
+		ArrayNode arrayNode = allStudyResultsNode.arrayNode();
+
+		// Generate the list of StudyResults that the logged-in user is allowed
+		// to see
+		List<StudyResult> allowedStudyResultList = new ArrayList<StudyResult>();
+		for (StudyResult studyResult : worker.getStudyResultList()) {
+			if (studyResult.getStudy().hasMember(loggedInUser)) {
+				allowedStudyResultList.add(studyResult);
+			}
+		}
+
+		// Marshal to JSON
+		for (StudyResult studyResult : allowedStudyResultList) {
+			ObjectNode studyResultNode = studyResultAsJsonNode(studyResult);
+			arrayNode.add(studyResultNode);
+		}
+		allStudyResultsNode.put("data", arrayNode);
+		String asJsonStr = OBJECTMAPPER.writeValueAsString(allStudyResultsNode);
+		return asJsonStr;
+	}
+
+	/**
+	 * Returns all componentResults of a component as a JSON string.
+	 */
+	public static String allComponentResultsForUI(ComponentModel component)
+			throws IOException {
+		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
+		ArrayNode arrayNode = allComponentResultsNode.arrayNode();
+		List<ComponentResult> componentResultList = ComponentResult
+				.findAllByComponent(component);
+		for (ComponentResult componentResult : componentResultList) {
+			ObjectNode componentResultNode = componentResultAsJsonNode(componentResult);
+			arrayNode.add(componentResultNode);
+		}
+		allComponentResultsNode.put("data", arrayNode);
+		String asJsonStr = OBJECTMAPPER
+				.writeValueAsString(allComponentResultsNode);
+		return asJsonStr;
+	}
+
+	private static ObjectNode studyResultAsJsonNode(StudyResult studyResult)
+			throws IOException {
+		ObjectNode studyResultNode = OBJECTMAPPER.valueToTree(studyResult);
+
+		// Add study's ID and title
+		studyResultNode.put("studyId", studyResult.getStudy().getId());
+		studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
+
+		// Add all componentResults
+		ArrayNode arrayNode = studyResultNode.arrayNode();
+		for (ComponentResult componentResult : studyResult
+				.getComponentResultList()) {
+			ObjectNode componentResultNode = componentResultAsJsonNode(componentResult);
+			arrayNode.add(componentResultNode);
+		}
+		studyResultNode.put("componentResults", arrayNode);
+
+		return studyResultNode;
+	}
+
+	private static ObjectNode componentResultAsJsonNode(
 			ComponentResult componentResult) throws IOException {
 		ObjectNode componentResultNode = OBJECTMAPPER
 				.valueToTree(componentResult);
@@ -131,33 +226,11 @@ public class JsonUtils {
 		componentResultNode.put("componentId", componentResult.getComponent()
 				.getId());
 
-		// Add worker
-		StudyResult studyResult = componentResult.getStudyResult();
-		Worker worker = initializeAndUnproxy(studyResult.getWorker());
-		ObjectNode workerNode = OBJECTMAPPER.valueToTree(worker);
-		componentResultNode.with("worker").putAll(workerNode);
+		// Add componentResult's data
+		componentResultNode.put("data",
+				componentResultDataForUI(componentResult));
 
-		// Add componentResult's data to the end (it's a JSON string itself)
-		JsonNode jsonDataNode = null;
-		if (componentResult.getData() != null) {
-			jsonDataNode = OBJECTMAPPER.readTree(componentResult.getData());
-		}
-		componentResultNode.put("data", jsonDataNode);
-
-		// Write as string
-		String resultAsJson = OBJECTMAPPER
-				.writeValueAsString(componentResultNode);
-		return resultAsJson;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T> T initializeAndUnproxy(T obj) {
-		Hibernate.initialize(obj);
-		if (obj instanceof HibernateProxy) {
-			obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()
-					.getImplementation();
-		}
-		return obj;
+		return componentResultNode;
 	}
 
 	/**

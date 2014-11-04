@@ -40,7 +40,7 @@ public class Components extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
@@ -71,7 +71,7 @@ public class Components extends Controller {
 		Logger.info(CLASS_NAME + ".showComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		StudyModel study = StudyModel.findById(studyId);
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
@@ -95,7 +95,7 @@ public class Components extends Controller {
 		Logger.info(CLASS_NAME + ".create: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -114,7 +114,7 @@ public class Components extends Controller {
 		Logger.info(CLASS_NAME + ".submit: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -144,7 +144,7 @@ public class Components extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
@@ -169,7 +169,7 @@ public class Components extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
@@ -223,7 +223,7 @@ public class Components extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId,
 				study, loggedInUser, component);
@@ -242,7 +242,7 @@ public class Components extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
@@ -260,7 +260,7 @@ public class Components extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
@@ -293,7 +293,7 @@ public class Components extends Controller {
 		Logger.info(CLASS_NAME + ".importComponent: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
@@ -351,7 +351,7 @@ public class Components extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);

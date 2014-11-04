@@ -1,5 +1,5 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs:
-String, errorMsg: String, worker: workers.Worker,
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+errorMsg: String, worker: workers.Worker,
 studyResultList: List[results.StudyResult])
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
@@ -59,7 +59,7 @@ studyResultList: List[results.StudyResult])
 					
 					<ul>
 						@for(componentResult <- studyResult.getComponentResultList()) {
-							<li component-result-id="@componentResult.getId()">@services.JsonUtils.componentResultAsJsonForMA(componentResult)
+							<li component-result-id="@componentResult.getId()">
 								<div class="removeComponentResult"></div>
 							</li>
 						}

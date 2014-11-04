@@ -16,6 +16,7 @@ import javax.persistence.TypedQuery;
 
 import models.ComponentModel;
 import play.db.jpa.JPA;
+import services.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -28,18 +29,20 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * @author Kristian Lange
  */
 @Entity
-@JsonPropertyOrder(value = { "resultId", "startDate", "componentState"})
+@JsonPropertyOrder(value = { "id", "startDate", "workerId", "workerType",
+		"componentState" })
 public class ComponentResult {
 
+	public static final String COMPONENT_RESULTS = "componentResults";
+
 	@Id
-	@JsonProperty("resultId")
 	@GeneratedValue
 	private Long id;
 
 	/**
 	 * Time and date when the component was started.
 	 */
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd,HH:mm:ss")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateUtils.DATE_FORMAT_UI)
 	private Timestamp startDate;
 
 	public enum ComponentState {
@@ -81,6 +84,16 @@ public class ComponentResult {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.component = component;
 		this.componentState = ComponentState.STARTED;
+	}
+
+	@JsonProperty("workerId")
+	public Long getWorkerId() {
+		return studyResult.getWorker().getId();
+	}
+
+	@JsonProperty("workerType")
+	public String getWorkerType() {
+		return studyResult.getWorker().getWorkerType();
 	}
 
 	public void setId(Long id) {

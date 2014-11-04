@@ -102,15 +102,15 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 			break;
 		}
 
+		ComponentResult componentResult = null;
 		try {
-			utils.startComponent(component, studyResult);
+			componentResult = utils.startComponent(component, studyResult);
 		} catch (ForbiddenReloadException e) {
 			return Promise
 					.pure((Result) redirect(controllers.publix.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-
-		PublixUtils.setIdCookie(study, component);
+		PublixUtils.setIdCookie(studyResult, componentResult, worker);
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
 		String urlWithQueryStr = ExternalAssets
 				.getUrlWithRequestQueryString(urlPath);

@@ -24,29 +24,10 @@ componentResultList: List[results.ComponentResult])
 			<div class="edit">Edit</div>
 			<div class="clone">Clone</div>
 			<div class="export">Export</div>
-			<div class="removeResults">Delete Results</div>
 			<div class="remove">Delete</div>
 		</div>
 	</div>
 
-	<div class="resultsBox">
-		<header>
-			<h3>Results</h3>
-			<div class="placeHolder">X</div>
-		</header>
-
-		<ul>
-			@for(result <- componentResultList) {
-				<li result-id="@result.getId()">
-					@services.JsonUtils.componentResultAsJsonForMA(result)
-					<div class="removeSingleResult"/>
-				</li>
-			}
-			@if(componentResultList.isEmpty()) {
-				<li>None</li>
-			}
-		</ul>
-	</div>
 </article>
 
 <script type="text/javascript">
@@ -92,11 +73,6 @@ componentResultList: List[results.ComponentResult])
 				}
 			});
 		}
-	});
-	
-	$(".removeResults").click(function(e) {
-		window.location.href = "@routes.ComponentResults.removeResults(
-				study.getId(), component.getId())";
 	});
 	
 	$(".removeSingleResult").click(function(e) {

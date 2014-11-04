@@ -4,7 +4,7 @@
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
 
 <article class="formStudy">
-	@helper.form(action = routes.Studies.submitChangedMembers(study.getId()), 'class -> "addTask") {
+	@helper.form(action = routes.Studies.submitChangedMembers(study.getId())) {
 		@if(formError != null) {
 			<p class="globalError">Members weren't saved</p>
 			<p class="globalError">@formError</p>

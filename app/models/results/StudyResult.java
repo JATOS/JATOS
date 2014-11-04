@@ -20,8 +20,12 @@ import javax.persistence.TypedQuery;
 import models.StudyModel;
 import models.workers.Worker;
 import play.db.jpa.JPA;
+import services.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * Domain model and DAO of a study result.
@@ -29,6 +33,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * @author Kristian Lange
  */
 @Entity
+@JsonPropertyOrder(value = { "id", "startDate", "workerId", "workerType",
+		"confirmationCode", "studyState", "errorMsg" })
 public class StudyResult {
 
 	@Id
@@ -38,7 +44,7 @@ public class StudyResult {
 	/**
 	 * Time and date when the study was started.
 	 */
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd,HH:mm:ss")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateUtils.DATE_FORMAT_UI)
 	private Timestamp startDate;
 
 	public enum StudyState {
@@ -53,15 +59,18 @@ public class StudyResult {
 	 */
 	private StudyState studyState;
 
+	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "study_id")
 	private StudyModel study;
 
+	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentResultList_order")
 	@JoinColumn(name = "studyResult_id")
 	private List<ComponentResult> componentResultList = new ArrayList<ComponentResult>();
 
+	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "worker_id")
 	private Worker worker;
@@ -81,6 +90,16 @@ public class StudyResult {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.study = study;
 		this.studyState = StudyState.STARTED;
+	}
+	
+	@JsonProperty("workerId")
+	public Long getWorkerId() {
+		return worker.getId();
+	}
+
+	@JsonProperty("workerType")
+	public String getWorkerType() {
+		return worker.getWorkerType();
 	}
 
 	public void setId(Long id) {
@@ -114,7 +133,7 @@ public class StudyResult {
 	public StudyModel getStudy() {
 		return this.study;
 	}
-	
+
 	public void setErrorMsg(String errorMsg) {
 		this.errorMsg = errorMsg;
 	}

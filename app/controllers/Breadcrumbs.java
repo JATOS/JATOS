@@ -62,7 +62,7 @@ public class Breadcrumbs extends Controller {
 		sb.append("<a href=\"");
 		sb.append(routes.Workers.index(worker.getId()));
 		sb.append("\">");
-		sb.append(worker.getId());
+		sb.append("Worker " + worker.getId());
 		sb.append("</a>");
 		return sb.toString();
 	}

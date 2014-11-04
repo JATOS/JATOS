@@ -1,5 +1,8 @@
 package controllers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -87,13 +90,50 @@ public class ControllerUtils extends Controller {
 		if (isAjax()) {
 			result = badRequest(errorMsg);
 		} else {
-			result = (SimpleResult) Home.home(errorMsg,
-					Http.Status.BAD_REQUEST);
+			result = (SimpleResult) Home
+					.home(errorMsg, Http.Status.BAD_REQUEST);
 		}
 		throw new ResultException(result, errorMsg);
 	}
 
-	public static UserModel getUser(String email) throws ResultException {
+	public static void throwWorkerException(String errorMsg, int httpStatus,
+			Long workerId) throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus, errorMsg);
+		} else {
+			result = (SimpleResult) Workers.index(workerId, errorMsg,
+					httpStatus);
+		}
+		throw new ResultException(result, errorMsg);
+	}
+
+	public static void throwStudyResultException(String errorMsg,
+			int httpStatus, Long studyId) throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus, errorMsg);
+		} else {
+			result = (SimpleResult) StudyResults.index(studyId, errorMsg,
+					httpStatus);
+		}
+		throw new ResultException(result, errorMsg);
+	}
+
+	public static void throwComponentResultException(String errorMsg,
+			int httpStatus, Long studyId, Long componentId)
+			throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus, errorMsg);
+		} else {
+			result = (SimpleResult) ComponentResults.index(studyId,
+					componentId, errorMsg, httpStatus);
+		}
+		throw new ResultException(result, errorMsg);
+	}
+
+	public static UserModel retrieveUser(String email) throws ResultException {
 		UserModel user = UserModel.findByEmail(email);
 		if (user == null) {
 			String errorMsg = ErrorMessages.userNotExist(email);
@@ -102,7 +142,7 @@ public class ControllerUtils extends Controller {
 		return user;
 	}
 
-	public static UserModel getLoggedInUser() throws ResultException {
+	public static UserModel retrieveLoggedInUser() throws ResultException {
 		UserModel loggedInUser = UserModel
 				.findByEmail(session(Users.COOKIE_EMAIL));
 		if (loggedInUser == null) {
@@ -116,6 +156,30 @@ public class ControllerUtils extends Controller {
 			throw new ResultException(result, errorMsg);
 		}
 		return loggedInUser;
+	}
+
+	public static List<Long> extractResultIds(String resultIds)
+			throws ResultException {
+		String[] resultIdStrArray = resultIds.split(",");
+		List<Long> resultIdList = new ArrayList<>();
+		for (String idStr : resultIdStrArray) {
+			try {
+				if (idStr.isEmpty()) {
+					continue;
+				}
+				resultIdList.add(Long.parseLong(idStr));
+			} catch (NumberFormatException e) {
+				String errorMsg = ErrorMessages.resultNotExist(idStr);
+				SimpleResult result = notFound(errorMsg);
+				throw new ResultException(result, errorMsg);
+			}
+		}
+		if (resultIdList.size() < 1) {
+			String errorMsg = ErrorMessages.NO_RESULTS_SELECTED;
+			SimpleResult result = badRequest(errorMsg);
+			throw new ResultException(result, errorMsg);
+		}
+		return resultIdList;
 	}
 
 }

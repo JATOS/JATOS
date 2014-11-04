@@ -23,9 +23,9 @@
 				<div class="editStudy">Edit</div>
 				<div class="cloneStudy">Clone</div>
 				<div class="export">Export</div>
+				<div class="results">Results</div>
 				<div class="lockStudy">@if(study.isLocked()){Unlock}else{Lock}</div>
 				<div class="showMTurkSourceCode">MT Source Code</div>
-				<div class="removeAllResults">Delete All Results</div>
 				<div class="removeStudy">Delete</div>
 			</div>
 		</div>
@@ -79,7 +79,7 @@
 								<div class="showComponent" component-id="@component.getId()">Show</div>
 							</td>
 							<td>
-								<div class="showResults" component-id="@component.getId()">Results&nbsp;(@results.ComponentResult.findAllByComponent(component).size())</div>
+								<div class="componentResults" component-id="@component.getId()">Results&nbsp;(@results.ComponentResult.findAllByComponent(component).size())</div>
 							</td>
 							<td>
 								<div class="removeComponent" component-id="@component.getId()" component-title="@component.getTitle()"></div>
@@ -235,6 +235,10 @@
 	$(".export").click(function(e) {
 		window.location.href = "@routes.Studies.exportStudy(study.getId())";
 	});
+	
+	$(".results").click(function(e) {
+		window.location.href = "@routes.StudyResults.index(study.getId())";
+	});
 
 	$(".editStudy").click(function(e) {
 		window.location.href = "@routes.Studies.edit(study.getId())";
@@ -246,25 +250,6 @@
 	
 	$(".showMTurkSourceCode").click(function(e) {
 		window.location.href = "@routes.Studies.showMTurkSourceCode(study.getId())";
-	});
-	
-	$(".removeAllResults").click(function(e) {
-		var conf = confirm("Are you sure you want to delete ALL results of EACH component of this study?");
-		if (conf == true) {
-			$.ajax({
-				url : '@routes.Studies.removeAllResults(study.getId())',
-				type : 'DELETE',
-				success : function(result) {
-					$(".showResults").each(function(index) {
-						$(this).html("Results&nbsp;(0)");
-					});
-					$(".worker").remove();
-				},
-				error : function(err) {
-					$(".error").text(err.responseText).show();
-				}
-			});
-		}
 	});
 	
 	$(".removeStudy").click(function(e) {
@@ -299,9 +284,9 @@
 		window.location.href = "/mecharg/@study.getId/"+ componentId + "/show";
 	});
 	
-	$(".showResults").click(function(e) {
+	$(".componentResults").click(function(e) {
 		var componentId = getComponentId(e);
-		window.location.href = "/mecharg/@study.getId/"+ componentId + "/";
+		window.location.href = "/mecharg/@study.getId/"+ componentId + "/results";
 	});
 	
 	$(".removeComponent").click(function(e) {

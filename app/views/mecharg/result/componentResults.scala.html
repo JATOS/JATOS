@@ -1,0 +1,186 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: String,
+study: StudyModel, component: ComponentModel, errorMsg: String)
+
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs){
+
+<article class="result">
+
+	@if(errorMsg != null) {
+		<p class="error">@errorMsg</p>
+	}else{
+		<p class="error" style="display:none;"></p>
+	}
+
+	<div class="resultsBox">
+		<header>
+			<h3>Results</h3>
+			<div class="placeHolder">X</div>
+		</header>
+
+		<table id="resultsTable" class="stripe hover row-border" cellspacing="0" width="100%">
+			<thead>
+				<tr>
+					<th></th>
+					<th>ID</th>
+					<th>Time</th>
+					<th>Worker ID</th>
+					<th>Worker Type</th>
+					<th>State</th>
+					<th></th>
+				</tr>
+			</thead>
+ 
+			<tfoot>
+				<tr>
+					<th></th>
+					<th>ID</th>
+					<th>Time</th>
+					<th>Worker ID</th>
+					<th>Worker Type</th>
+					<th>State</th>
+					<th></th>
+				</tr>
+			</tfoot>
+		</table>
+		<div class="exportData">Export Data</div>
+		<div class="remove">Delete</div>
+	</div>
+</article>
+
+<script type="text/javascript">
+var resultsTable;
+
+$(document).ready(function() {
+	resultsTable = $('#resultsTable').DataTable({
+		"ajax": "@routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
+		"order": [[ 2, "desc" ]],
+		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+		"pageLength": 10,
+		"columns": [
+			{
+				"class": 'details-control',
+				"orderable": false,
+				"data": null,
+				"defaultContent": ''
+			},
+			{ "data": "id" },
+			{
+				"class": 'time',
+				"data": "startDate"
+			},
+			{ "data": "workerId" },
+			{ "data": "workerType" },
+			{ "data": "componentState" },
+			{
+				"class": 'delete-control',
+				"orderable": false,
+				"data": null,
+				"defaultContent": '',
+				"render": function ( data, type, full, meta ) {
+					return '<div class="removeResult"></div>';
+				}
+			}
+		],
+		"dom": 'T<"clear">lfrtip',
+		"tableTools": {
+			"sRowSelect": "multi",
+			"aButtons": [ "select_all", "select_none" ],
+			"sRowSelector": "td:not(:first-child):not(:last-child)"
+		}
+	});
+	
+	$('#resultsTable tbody').on('click', 'td.details-control', function() {
+		var tr = $(this).closest('tr');
+		var row = resultsTable.row(tr);
+
+		if (row.child.isShown()) {
+			// This row is already open - close it
+			row.child.hide();
+			tr.removeClass('shown');
+		}
+		else {
+			// Open this row
+			row.child(childRowFormat(row.data())).show();
+			tr.addClass('shown');
+		}
+	});
+	
+	$('#resultsTable tbody').on('click', 'td.delete-control', function() {
+		var tr = $(this).closest('tr');
+		var rowData = resultsTable.row(tr).data();
+		var componentResultId = rowData.id;
+		var conf = confirm("Are you sure you want to delete the result " +
+				"(ID: " + componentResultId + ")?");
+		var url = '/mecharg/componentresult/remove?componentResultIds=' + componentResultId;
+		if (conf == true) {
+			$.ajax({
+				url : url,
+				type : 'GET',
+				success : function(result) {
+					resultsTable.row(tr).remove().draw();
+				},
+				error : function(err) {
+					$(".error").text(err.responseText).show();
+				}
+			});
+		}
+	});
+	
+});
+
+$(".exportData").click(function(e) {
+	var oTT = TableTools.fnGetInstance('resultsTable');
+	var selectedTrs = oTT.fnGetSelected();
+	var ids = [];
+	selectedTrs.forEach(function(selectedTr) {
+		var rowData = resultsTable.row(selectedTr).data();
+		ids.push(rowData.id);
+	});
+	if(ids.length > 0) {
+		window.location.href = '/mecharg/componentresult/'
+				+ 'exportData?componentResultIds=' + ids.toString();
+	} else {
+		$(".error").text("No results selected").show();
+	}
+});
+
+$(".remove").click(function(e) {
+	var oTT = TableTools.fnGetInstance('resultsTable');
+	var selectedTrs = oTT.fnGetSelected();
+	var ids = [];
+	selectedTrs.forEach(function(selectedTr) {
+		var rowData = resultsTable.row(selectedTr).data();
+		ids.push(rowData.id);
+	});
+	if(ids.length > 0) {
+		var url = '/mecharg/componentresult/'
+				+ 'remove?componentResultIds=' + ids.toString();
+		var conf = confirm("Are you sure you want to delete the results " +
+				"(IDs: " + ids.toString() + ")?");
+		if (conf == true) {
+			$.ajax({
+				url : url,
+				type : 'GET',
+				success : function(result) {
+					selectedTrs.forEach(function(selectedTr) {
+						resultsTable.row(selectedTr).remove().draw();
+					});
+				},
+				error : function(err) {
+					$(".error").text(err.responseText).show();
+				}
+			});
+		}
+	} else {
+		$(".error").text("No results selected").show();
+	}
+});
+
+function childRowFormat(data) {
+	// `data` is the original data object for the row
+	return '<p class="details details-data">' + data.data + '</p>';
+}
+
+</script>
+
+}

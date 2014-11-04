@@ -146,16 +146,6 @@ public class PersistanceUtils {
 		componentResult.remove();
 	}
 
-	public static void removeComponentResult(String componentResultIdStr)
-			throws NumberFormatException {
-		Long componentResultId = Long.valueOf(componentResultIdStr);
-		ComponentResult componentResult = ComponentResult
-				.findById(componentResultId);
-		if (componentResult != null) {
-			removeComponentResult(componentResult);
-		}
-	}
-
 	public static void removeStudyResult(StudyResult studyResult) {
 		// Remove all component results of this study result
 		for (ComponentResult componentResult : studyResult

@@ -11,7 +11,7 @@ import models.workers.Worker;
 public abstract class ErrorMessages<T extends Worker> {
 
 	public abstract String workerNeverStartedStudy(T worker, Long studyId);
-	
+
 	public abstract String workerFinishedStudyAlready(T worker, Long studyId);
 
 	public abstract String workerNeverDidStudy(T worker, Long studyId);
@@ -28,37 +28,39 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String INVALID_DIR_NAME = "Invalid directory name";
 
 	// Edit HTML forms
-	public static final String INVALID_JSON_FORMAT = "Problems deserializing JSON data string: invalid JSON format.";
+	public static final String INVALID_JSON_FORMAT = "Problems deserializing JSON data string: invalid JSON format";
 	public static final String NO_HTML_ALLOWED = "No HTML allowed";
 	public static final String NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a valid path (\"/\" as File separator; You can leave it empty)";
-	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format.";
+	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format";
 	public static final String STUDY_AT_LEAST_ONE_MEMBER = "An study should have at least one member.";
 
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_ARENT_THE_SAME = "Passwords aren't the same.";
-	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings.";
-	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email is already registered.";
+	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";
+	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email address is already registered.";
 
 	// Export / import
-	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components.";
-	public static final String COULDNT_READ_JSON = "Couldn't read JSON string.";
-	public static final String COULDNT_READ_FILE = "Couldn't read file.";
-	public static final String FILE_MISSING = "File missing.";
-	public static final String FILE_NOT_EXIST_OR_DIR = "File doesn't exists or is a directory.";
-	public static final String IMPORT_OF_STUDY_FAILED = "Import of study failed.";
+	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
+	public static final String COULDNT_READ_JSON = "Couldn't read JSON string";
+	public static final String COULDNT_READ_FILE = "Couldn't read file";
+	public static final String FILE_MISSING = "File missing";
+	public static final String FILE_NOT_EXIST_OR_DIR = "File doesn't exists or is a directory";
+	public static final String IMPORT_OF_STUDY_FAILED = "Import of study failed";
+	public static final String NO_RESULTS_SELECTED = "No results selected";
+	public static final String PROBLEM_GENERATING_JSON_DATA = "Problem generate JSON data";
 
 	// Publix
-	public static final String COMPONENT_INVALID = "Component is invalid.";
+	public static final String COMPONENT_INVALID = "Component is invalid";
 	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
 	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_MECHARG = "This study or component was never started from within MechArg.";
 	public static final String STUDY_NEVER_STARTED_FROM_MECHARG = "This study was never started from within MechArg.";
 	public static final String STUDY_NEVER_FINSHED = "Study never finished, but new study started by the same worker";
-	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters.";
+	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters";
 	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
-	
+
 	public static String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
 		return errorMsg;
@@ -159,10 +161,10 @@ public abstract class ErrorMessages<T extends Worker> {
 				+ studyId + " doesn't exist.";
 		return errorMsg;
 	}
-	
+
 	public static String noComponentAtPosition(Long studyId, Integer position) {
-		String errorMsg = "There is no component at position " + position + " in study "
-				+ studyId + ".";
+		String errorMsg = "There is no component at position " + position
+				+ " in study " + studyId + ".";
 		return errorMsg;
 	}
 
@@ -172,12 +174,37 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
+	public static String componentResultNotExist(String componentResultIdStr) {
+		String errorMsg = "An component result with ID \""
+				+ componentResultIdStr + "\" doesn't exist.";
+		return errorMsg;
+	}
+
+	public static String resultNotExist(String resultIdStr) {
+		String errorMsg = "An result with ID \"" + resultIdStr
+				+ "\" doesn't exist.";
+		return errorMsg;
+	}
+
+	public static String studyResultNotFromWorker(Long studyResultId,
+			Long workerId) {
+		String errorMsg = "Study result (ID " + studyResultId
+				+ ") doesn't belong to worker (ID " + workerId + ")";
+		return errorMsg;
+	}
+
 	public static String studyResultNotExist(Long studyResultId) {
 		String errorMsg = "A study result with ID " + studyResultId
 				+ " doesn't exist.";
 		return errorMsg;
 	}
-	
+
+	public static String studyResultNotExist(String studyResultIdStr) {
+		String errorMsg = "A study result with ID \"" + studyResultIdStr
+				+ "\" doesn't exist.";
+		return errorMsg;
+	}
+
 	public static String notMember(String username, String email, Long studyId,
 			String studyTitle) {
 		String errorMsg = username + " (" + email + ") isn't member of study "

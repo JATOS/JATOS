@@ -2,6 +2,7 @@ package controllers.publix;
 
 import models.ComponentModel;
 import models.StudyModel;
+import models.results.ComponentResult;
 import models.results.StudyResult;
 import models.results.StudyResult.StudyState;
 import models.workers.MTWorker;
@@ -86,15 +87,15 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		ComponentModel component = utils.retrieveComponent(study, componentId);
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
-
+		ComponentResult componentResult = null;
 		try {
-			utils.startComponent(component, studyResult);
+			componentResult = utils.startComponent(component, studyResult);
 		} catch (ForbiddenReloadException e) {
 			return Promise
 					.pure((Result) redirect(controllers.publix.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		PublixUtils.setIdCookie(study, component);
+		PublixUtils.setIdCookie(studyResult, componentResult, worker);
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
 		String urlWithQueryStr = ExternalAssets
 				.getUrlWithRequestQueryString(urlPath);

@@ -9,7 +9,6 @@ import java.util.Map;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.results.ComponentResult;
 import models.results.StudyResult;
 import models.workers.Worker;
 import play.Logger;
@@ -44,7 +43,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -82,7 +81,7 @@ public class Studies extends Controller {
 	public static Result create() throws ResultException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 
@@ -97,7 +96,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		if (form.hasErrors()) {
@@ -130,7 +129,7 @@ public class Studies extends Controller {
 	public static Result importStudy() throws ResultException {
 		Logger.info(CLASS_NAME + ".importStudy: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
 		File tempDir = unzipUploadedFile();
 		StudyModel study = unmarshalStudy(tempDir);
@@ -195,7 +194,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -214,7 +213,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -264,7 +263,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".swapLock: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		study.setLocked(!study.isLocked());
@@ -280,7 +279,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
@@ -306,7 +305,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".removeAllResults: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
@@ -319,7 +318,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".cloneStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		StudyModel clone = new StudyModel(study);
@@ -343,7 +342,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		File zipFile;
@@ -382,7 +381,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".changeMembers: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -403,7 +402,7 @@ public class Studies extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
@@ -435,7 +434,7 @@ public class Studies extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
@@ -458,7 +457,7 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".showStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
@@ -474,7 +473,7 @@ public class Studies extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -486,33 +485,6 @@ public class Studies extends Controller {
 				"Mechanical Turk HIT layout source code");
 		return ok(views.html.mecharg.study.mTurkSourceCode.render(studyList,
 				loggedInUser, breadcrumbs, null, study, hostname));
-	}
-
-	@Transactional
-	public static Result exportAllResults(Long studyId) throws ResultException {
-		Logger.info(CLASS_NAME + ".exportAllResults: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-
-		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
-		StringBuilder sb = new StringBuilder();
-		try {
-			for (StudyResult studyResult : studyResultList) {
-				for (ComponentResult componentResult : studyResult
-						.getComponentResultList()) {
-					sb.append(JsonUtils
-							.componentResultAsJsonForMA(componentResult));
-					sb.append("\n");
-				}
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return ok(sb.toString());
 	}
 
 }

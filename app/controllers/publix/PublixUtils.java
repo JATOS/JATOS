@@ -1,7 +1,11 @@
 package controllers.publix;
 
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -93,13 +97,29 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Sets cookie with studyId and componentId so the component script has them
 	 * too.
 	 */
-	public static void setIdCookie(StudyModel study, ComponentModel component) {
-		String cookieStr = Publix.STUDY_ID + "="
-				+ String.valueOf(study.getId()) + "&" + Publix.COMPONENT_ID
-				+ "=" + String.valueOf(component.getId()) + "&"
-				+ Publix.POSITION + "="
-				+ String.valueOf(study.getComponentPosition(component));
-		Publix.response().setCookie(Publix.ID_COOKIE_NAME, cookieStr);
+	public static void setIdCookie(StudyResult studyResult,
+			ComponentResult componentResult, Worker worker) {
+		StudyModel study = studyResult.getStudy();
+		ComponentModel component = componentResult.getComponent();
+		Map<String, String> cookieMap = new HashMap<String, String>();
+		cookieMap.put(Publix.WORKER_ID, String.valueOf(worker.getId()));
+		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
+		cookieMap.put(Publix.STUDY_RESULT_ID, String.valueOf(studyResult.getId()));
+		cookieMap.put(Publix.COMPONENT_ID, String.valueOf(component.getId()));
+		cookieMap.put(Publix.COMPONENT_RESULT_ID, String.valueOf(componentResult.getId()));
+		cookieMap.put(Publix.POSITION, String.valueOf(study.getComponentPosition(component)));
+		StringBuilder sb = new StringBuilder();
+		Iterator<Entry<String, String>> iterator = cookieMap.entrySet().iterator();
+		while (iterator.hasNext()) {
+			Entry<String, String> entry = iterator.next();
+			sb.append(entry.getKey());
+			sb.append("=");
+			sb.append(entry.getValue());
+			if (iterator.hasNext()) {
+				sb.append("&");
+			}
+		}
+		Publix.response().setCookie(Publix.ID_COOKIE_NAME, sb.toString());
 	}
 
 	/**

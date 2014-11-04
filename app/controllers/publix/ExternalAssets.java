@@ -110,7 +110,7 @@ public class ExternalAssets extends Controller {
 	}
 
 	public static String getUrl(String urlPath) {
-		String requestHostName = Publix.request().host();
+		String requestHostName = Publix.request().host(); // includes port
 		return "http://" + requestHostName + urlPath;
 	}
 }

@@ -22,7 +22,7 @@ public class Home extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = ControllerUtils.getLoggedInUser();
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser.getEmail());
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
 				.getHomeBreadcrumb());
