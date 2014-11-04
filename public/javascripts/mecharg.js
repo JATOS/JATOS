@@ -10,25 +10,28 @@ var onLoadCallback;
 
 window.addEventListener('load', onload);
 
-mecharg.onError = function(callback) {
-	onErrorCallback = callback;
-}
-
+/**
+ * Defines callback function that is to be called when mecharg.js is finished
+ * its initialisation.
+ */
 mecharg.onLoad = function(callback) {
 	onLoadCallback = callback;
 }
 
+/**
+ * Defines callback function that is to be called in case mecharg.js produces an
+ * error.
+ */
+mecharg.onError = function(callback) {
+	onErrorCallback = callback;
+}
+
+/**
+ * Initialising mecharg.js.
+ */
 function onload() {
 	var studyDataReady = false;
 	var componentDataReady = false;
-
-	ready = function() {
-		if (studyDataReady && componentDataReady) {
-			if (onLoadCallback) {
-				onLoadCallback();
-			}
-		}
-	}
 
 	/**
 	 * Reads MechArg's ID cookie and stores all key-value pairs into mecharg
@@ -51,6 +54,17 @@ function onload() {
 					var keyValuePair = entry.split("=");
 					mecharg[keyValuePair[0]] = keyValuePair[1];
 				});
+			}
+		}
+	}
+
+	/**
+	 * Checks whether study's data and component's data are finished loading
+	 */
+	ready = function() {
+		if (studyDataReady && componentDataReady) {
+			if (onLoadCallback) {
+				onLoadCallback();
 			}
 		}
 	}
@@ -120,10 +134,11 @@ function onload() {
  * @param {optional
  *            Function} success - Function to be called in case of successful
  *            submit
+ * @param {optional
+ *            Function} error - Function to be called in case of error
  */
-mecharg.submitResultData = function(resultData, success) {
+mecharg.submitResultData = function(resultData, success, error) {
 	var resultJson = JSON.stringify(resultData);
-
 	$.ajax({
 		url : "/publix/" + mecharg.studyId + "/" + mecharg.componentId
 				+ "/submitResultData",
@@ -139,6 +154,9 @@ mecharg.submitResultData = function(resultData, success) {
 		error : function(err) {
 			if (onErrorCallback) {
 				onErrorCallback(err.responseText);
+			}
+			if (error) {
+				error(response)
 			}
 		}
 	});
