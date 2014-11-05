@@ -151,6 +151,26 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
+	public Result finishComponent(Long studyId, Long componentId,
+			Boolean successful, String errorMsg) throws PublixException {
+		synchronized (lock) {
+			Result result;
+			if (isFromMechArg()) {
+				result = maPublix.finishComponent(studyId, componentId,
+						successful, errorMsg);
+			} else {
+				result = mtPublix.finishComponent(studyId, componentId,
+						successful, errorMsg);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
+		}
+	}
+
+	@Override
+	@Transactional
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		synchronized (lock) {

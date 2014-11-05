@@ -114,7 +114,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 		String urlPath = ExternalAssets.getComponentUrlPath(study, component);
 		String urlWithQueryStr = ExternalAssets
 				.getUrlWithRequestQueryString(urlPath);
-		 return forwardTo(urlWithQueryStr);
+		return forwardTo(urlWithQueryStr);
 	}
 
 	@Override

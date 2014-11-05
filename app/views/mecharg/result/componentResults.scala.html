@@ -26,6 +26,7 @@ study: StudyModel, component: ComponentModel, errorMsg: String)
 					<th>Worker ID</th>
 					<th>Worker Type</th>
 					<th>State</th>
+					<th>Error Message</th>
 					<th></th>
 				</tr>
 			</thead>
@@ -38,6 +39,7 @@ study: StudyModel, component: ComponentModel, errorMsg: String)
 					<th>Worker ID</th>
 					<th>Worker Type</th>
 					<th>State</th>
+					<th>Error Message</th>
 					<th></th>
 				</tr>
 			</tfoot>
@@ -71,6 +73,7 @@ $(document).ready(function() {
 			{ "data": "workerId" },
 			{ "data": "workerType" },
 			{ "data": "componentState" },
+			{ "data": "errorMsg", "width": "20%" },
 			{
 				"class": 'delete-control',
 				"orderable": false,

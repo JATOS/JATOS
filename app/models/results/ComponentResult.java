@@ -76,6 +76,12 @@ public class ComponentResult {
 	@Lob
 	@JsonIgnore
 	private String data;
+	
+	/**
+	 * Error message in case something went wrong with the component (state is
+	 * FAIL). Can be left null.
+	 */
+	private String errorMsg;
 
 	public ComponentResult() {
 	}
@@ -134,6 +140,14 @@ public class ComponentResult {
 
 	public String getData() {
 		return this.data;
+	}
+	
+	public void setErrorMsg(String errorMsg) {
+		this.errorMsg = errorMsg;
+	}
+
+	public String getErrorMsg() {
+		return this.errorMsg;
 	}
 
 	public void setStudyResult(StudyResult studyResult) {

@@ -171,6 +171,57 @@ mecharg.startNextComponent = function() {
 }
 
 /**
+ * Finishes component. Usually this is not necessary because the last component
+ * is automatically finished if the new component is started. Nevertheless it's
+ * useful to explicitly tell about a FAIL and submit an error message. Finishing
+ * the component doesn't finish the study.
+ * 
+ * @param {optional
+ *            Boolean} successful - 'true' if study should finish successful and
+ *            the participant should get the confirmation code - 'false'
+ *            otherwise.
+ * @param {optional
+ *            String} errorMsg - Error message that should be logged.
+ * @param {optional
+ *            Function} success - Function to be called in case of successful
+ *            submit
+ * @param {optional
+ *            Function} error - Function to be called in case of error
+ */
+ */
+mecharg.endComponent = function(successful, errorMsg, success, error) {
+	var url = "/publix/" + mecharg.studyId + "/" + mecharg.componentId + "/end";
+	var fullUrl;
+	if (undefined == successful || undefined == errorMsg) {
+		fullUrl = url;
+	} else if (undefined == successful) {
+		fullUrl = url + "?errorMsg=" + errorMsg;
+	} else if (undefined == errorMsg) {
+		fullUrl = url + "?successful=" + successful;
+	} else {
+		fullUrl = url + "?successful=" + successful + "&errorMsg=" + errorMsg;
+	}
+	$.ajax({
+		url : fullUrl,
+		processData : false,
+		type : "GET",
+		success : function(response) {
+			if (success) {
+				success(response)
+			}
+		},
+		error : function(err) {
+			if (onErrorCallback) {
+				onErrorCallback(err.responseText);
+			}
+			if (error) {
+				error(response)
+			}
+		}
+	});
+}
+
+/**
  * Ends study.
  * 
  * @param {optional
@@ -181,11 +232,16 @@ mecharg.startNextComponent = function() {
  *            String} errorMsg - Error message that should be logged.
  */
 mecharg.endStudy = function(successful, errorMsg) {
+	var url = "/publix/" + mecharg.studyId + "/end";
 	if (undefined == successful || undefined == errorMsg) {
-		window.location.href = "/publix/" + mecharg.studyId + "/end";
+		window.location.href = url;
+	} else if (undefined == successful) {
+		window.location.href = url + "?errorMsg=" + errorMsg;
+	} else if (undefined == errorMsg) {
+		window.location.href = url + "?successful=" + successful;
 	} else {
-		window.location.href = "/publix/" + mecharg.studyId
-				+ "/end?successful=" + successful + "&errorMsg=" + errorMsg;
+		window.location.href = url + "?successful=" + successful + "&errorMsg="
+				+ errorMsg;
 	}
 }
 

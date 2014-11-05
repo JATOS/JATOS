@@ -70,6 +70,14 @@ public interface IPublix {
 			throws PublixException;
 
 	/**
+	 * HTTP type: Ajax GET request<br>
+	 * Finishes the component with the given id. Optionally it can be specified
+	 * whether the component was successful and and error message.
+	 */
+	public Result finishComponent(Long studyId, Long componentId,
+			Boolean successful, String errorMsg) throws PublixException;
+
+	/**
 	 * HTTP type: Normal GET request<br>
 	 * Finishes the study with the given id. Optionally it can be specified
 	 * whether the study was successful and and error message.

@@ -118,6 +118,35 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		componentResult.merge();
 		return ok();
 	}
+	
+	@Override
+	public Result finishComponent(Long studyId, Long componentId,
+			Boolean successful, String errorMsg) throws PublixException {
+		Logger.info(CLASS_NAME + ".finishComponent: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", " + "logged-in user email "
+				+ session(Users.COOKIE_EMAIL) + ", " + "successful "
+				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
+		StudyModel study = utils.retrieveStudy(studyId);
+		T worker = utils.retrieveWorker();
+		ComponentModel component = utils.retrieveComponent(study, componentId);
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+		utils.checkComponentBelongsToStudy(study, component);
+		
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		ComponentResult componentResult = utils.retrieveOpenComponentResult(
+					studyResult);
+		
+		if (successful) {
+			componentResult.setComponentState(ComponentState.FINISHED);
+			componentResult.setErrorMsg(errorMsg);
+		} else {
+			componentResult.setComponentState(ComponentState.FAIL);
+			componentResult.setErrorMsg(errorMsg);
+		}
+		componentResult.merge();
+		return ok();
+	}
 
 	@Override
 	public Promise<Result> startComponentByPosition(Long studyId,
