@@ -1,6 +1,7 @@
 package controllers;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,7 +17,9 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
+import services.DateUtils;
 import services.ErrorMessages;
+import services.IOUtils;
 import services.JsonUtils;
 import services.PersistanceUtils;
 import exceptions.ResultException;
@@ -37,8 +40,6 @@ public class StudyResults extends Controller {
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		String tableDataUrl = routes.StudyResults.tableDataByStudy(studyId)
-				.url();
 		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
 				Breadcrumbs.getHomeBreadcrumb(),
 				Breadcrumbs.getStudyBreadcrumb(study), "Results");
@@ -179,6 +180,12 @@ public class StudyResults extends Controller {
 
 		String studyResultDataAsStr = getStudyResultData(studyResultIds,
 				loggedInUser);
+
+		response().setContentType("application/x-download");
+		String filename = "results_" + DateUtils.getDateForFile(new Date())
+				+ "." + IOUtils.TXT_FILE_SUFFIX;
+		response().setHeader("Content-disposition",
+				"attachment; filename=" + filename);
 		return ok(studyResultDataAsStr);
 	}
 

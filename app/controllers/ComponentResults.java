@@ -1,6 +1,7 @@
 package controllers;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -15,7 +16,9 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
+import services.DateUtils;
 import services.ErrorMessages;
+import services.IOUtils;
 import services.JsonUtils;
 import services.PersistanceUtils;
 import exceptions.ResultException;
@@ -122,13 +125,18 @@ public class ComponentResults extends Controller {
 	@Transactional
 	public static Result exportData(String componentResultIds)
 			throws ResultException {
-		Logger.info(CLASS_NAME + ".exportResultData: componentResultIds "
+		Logger.info(CLASS_NAME + ".exportData: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
 		String componentResultDataAsStr = getComponentResultData(
 				componentResultIds, loggedInUser);
+		response().setContentType("application/x-download");
+		String filename = "results_" + DateUtils.getDateForFile(new Date())
+				+ "." + IOUtils.TXT_FILE_SUFFIX;
+		response().setHeader("Content-disposition",
+				"attachment; filename=" + filename);
 		return ok(componentResultDataAsStr);
 	}
 

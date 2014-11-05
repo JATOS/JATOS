@@ -19,6 +19,7 @@ public class IOUtils {
 	public static final String STUDY_FILE_SUFFIX = "mas";
 	public static final String COMPONENT_FILE_SUFFIX = "mac";
 	public static final String ZIP_FILE_SUFFIX = "zip";
+	public static final String TXT_FILE_SUFFIX = "txt";
 
 /**
 	 * Illegal characters or strings in file or directory name '/', '\n', '\r',
@@ -125,8 +126,8 @@ public class IOUtils {
 	}
 
 	/**
-	 * Generates a filename from the title and the id in a specified length and
-	 * adds the suffix. If the id is null it uses the title only. If the suffix
+	 * Generates a filename from a name and an ID in a specified length and
+	 * adds the suffix. If the ID is null it uses the title only. If the suffix
 	 * is null it won't have a file suffix.
 	 */
 	public static String generateFileName(String rawName, Long id, String suffix) {
@@ -143,14 +144,14 @@ public class IOUtils {
 	}
 
 	/**
-	 * Generates a filename from the title in a specified length.
+	 * Generates a filename from a name in a specified length.
 	 */
 	public static String generateFileName(String rawName) {
 		return generateFileName(rawName, null, null);
 	}
 
 	/**
-	 * Generates a filename from the title in a specified length and adds the
+	 * Generates a filename from a name in a specified length and adds the
 	 * suffix.
 	 */
 	public static String generateFileName(String rawName, String suffix) {
