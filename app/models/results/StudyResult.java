@@ -34,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  */
 @Entity
 @JsonPropertyOrder(value = { "id", "startDate", "workerId", "workerType",
-		"confirmationCode", "studyState", "errorMsg" })
+		"confirmationCode", "studyState", "errorMsg", "abortMsg" })
 public class StudyResult {
 
 	@Id
@@ -50,7 +50,8 @@ public class StudyResult {
 	public enum StudyState {
 		STARTED, // Study was started
 		DATA_RETRIEVED, // Study's jsonData were retrieved
-		FINISHED, // Study finished
+		FINISHED, // Study successfully finished
+		ABORTED, // Study aborted by worker
 		FAIL // Something went wrong
 	};
 
@@ -82,6 +83,12 @@ public class StudyResult {
 	 * FAIL). Can be left null.
 	 */
 	private String errorMsg;
+	
+	/**
+	 * Message in case the study was aborted (state is
+	 * ABORTED). Can be left null.
+	 */
+	private String abortMsg;
 
 	public StudyResult() {
 	}
@@ -140,6 +147,14 @@ public class StudyResult {
 
 	public String getErrorMsg() {
 		return this.errorMsg;
+	}
+	
+	public void setAbortMsg(String abortMsg) {
+		this.abortMsg = abortMsg;
+	}
+
+	public String getAbortMsg() {
+		return this.abortMsg;
 	}
 
 	public void setConfirmationCode(String confirmationCode) {

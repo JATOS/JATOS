@@ -134,7 +134,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
-		ComponentResult componentResult = utils.retrieveOpenComponentResult(
+		ComponentResult componentResult = utils.retrieveCurrentComponentResult(
 					studyResult);
 		
 		if (successful) {

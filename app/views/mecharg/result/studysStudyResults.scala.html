@@ -27,7 +27,7 @@ study: StudyModel, errorMsg: String)
 					<th>Worker Type</th>
 					<th>Confirmation Code</th>
 					<th>State</th>
-					<th>Error Message</th>
+					<th>Messages</th>
 					<th></th>
 				</tr>
 			</thead>
@@ -41,7 +41,7 @@ study: StudyModel, errorMsg: String)
 					<th>Worker Type</th>
 					<th>Confirmation Code</th>
 					<th>State</th>
-					<th>Error Message</th>
+					<th>Messages</th>
 					<th></th>
 				</tr>
 			</tfoot>
@@ -74,9 +74,12 @@ $(document).ready(function() {
 			},
 			{ "data": "workerId" },
 			{ "data": "workerType" },
-			{ "data": "confirmationCode" },
+			{ "data": getConfirmationCode },
 			{ "data": "studyState" },
-			{ "data": "errorMsg", "width": "20%" },
+			{ 
+				"data": getMessages,
+				"width": "20%"
+			},
 			{
 				"class": 'delete-control',
 				"orderable": false,
@@ -94,6 +97,22 @@ $(document).ready(function() {
 			"sRowSelector": "td:not(:first-child):not(:last-child)"
 		}
 	});
+	
+	function getConfirmationCode(data, type, dataToSet) {
+		return (data.confirmationCode != null) ? data.confirmationCode : "none";
+	}
+	
+	function getMessages(data, type, dataToSet) {
+		var messages = [];
+		if (data.errorMsg != null) {
+			messages.push(data.errorMsg);
+			messages.push("<br>");
+		}
+		if (data.abortMsg != null) {
+			messages.push(data.abortMsg);
+		}
+		return messages.join("");
+	}
 	
 	$('#resultsTable tbody').on('click', 'td.details-control', function() {
 		var tr = $(this).closest('tr');

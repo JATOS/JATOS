@@ -17,7 +17,7 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Normal GET request<br>
-	 * Starts the study with the given id, then starts it's first component.
+	 * Starts the study with the given ID, then starts it's first component.
 	 */
 	public Result startStudy(Long studyId) throws PublixException;
 
@@ -39,7 +39,7 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Normal GET request<br>
-	 * Starts the next component of the study with the given id. Components
+	 * Starts the next component of the study with the given ID. Components
 	 * within a study are ordered. This method starts the component after the
 	 * current one. If there are no more components in the study, the study will
 	 * be finished successfully.
@@ -71,16 +71,26 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Ajax GET request<br>
-	 * Finishes the component with the given id. Optionally it can be specified
+	 * Finishes the component with the given ID. Optionally it can be specified
 	 * whether the component was successful and and error message.
 	 */
 	public Result finishComponent(Long studyId, Long componentId,
 			Boolean successful, String errorMsg) throws PublixException;
 
 	/**
-	 * HTTP type: Normal GET request<br>
-	 * Finishes the study with the given id. Optionally it can be specified
-	 * whether the study was successful and and error message.
+	 * HTTP type: Normal or Ajax GET request<br>
+	 * Aborts the study with the given ID (StudyResult state will be ABORTED).
+	 * Optionally a message can be given describing the reasons for the
+	 * abortion.
+	 */
+	public Result abortStudy(Long studyId, String message)
+			throws PublixException;
+
+	/**
+	 * HTTP type: Normal or Ajax GET request<br>
+	 * Finishes the study with the given ID (StudyResult state will be FINISHED
+	 * or FAIL). Optionally it can be specified whether the study was successful
+	 * and an error message.
 	 */
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException;

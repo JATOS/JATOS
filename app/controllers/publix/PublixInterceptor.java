@@ -168,6 +168,24 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return result;
 		}
 	}
+	
+	@Override
+	@Transactional
+	public Result abortStudy(Long studyId, String message)
+			throws PublixException {
+		synchronized (lock) {
+			Result result;
+			if (isFromMechArg()) {
+				result = maPublix.abortStudy(studyId, message);
+			} else {
+				result = mtPublix.abortStudy(studyId, message);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
+		}
+	}
 
 	@Override
 	@Transactional

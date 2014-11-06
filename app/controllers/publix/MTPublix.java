@@ -4,7 +4,6 @@ import models.ComponentModel;
 import models.StudyModel;
 import models.results.ComponentResult;
 import models.results.StudyResult;
-import models.results.StudyResult.StudyState;
 import models.workers.MTWorker;
 import play.Logger;
 import play.libs.F.Promise;
@@ -12,6 +11,8 @@ import play.mvc.Result;
 import services.ErrorMessages;
 import services.MTErrorMessages;
 import services.PersistanceUtils;
+import controllers.ControllerUtils;
+import controllers.Users;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
@@ -123,6 +124,30 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	}
 
 	@Override
+	public Result abortStudy(Long studyId, String message)
+			throws PublixException {
+		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
+				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
+				+ "message \"" + message + "\"");
+		StudyModel study = utils.retrieveStudy(studyId);
+		MTWorker worker = utils.retrieveWorker();
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		if (!utils.studyDone(studyResult)) {
+			utils.abortStudy(message, studyResult);
+		}
+
+		PublixUtils.discardIdCookie();
+		if (ControllerUtils.isAjax()) {
+			return ok();
+		} else {
+			return ok(views.html.publix.abort.render());
+		}
+	}
+
+	@Override
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
@@ -135,8 +160,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
 		String confirmationCode;
-		StudyState state = studyResult.getStudyState();
-		if (!(state == StudyState.FINISHED || state == StudyState.FAIL)) {
+		if (!utils.studyDone(studyResult)) {
 			confirmationCode = utils.finishStudy(successful, errorMsg,
 					studyResult);
 		} else {
@@ -144,11 +168,15 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		}
 
 		PublixUtils.discardIdCookie();
-		if (!successful) {
-			return ok(views.html.publix.error.render(errorMsg));
+		if (ControllerUtils.isAjax()) {
+			return ok(confirmationCode);
 		} else {
-			return ok(views.html.publix.confirmationCode
-					.render(confirmationCode));
+			if (!successful) {
+				return ok(views.html.publix.error.render(errorMsg));
+			} else {
+				return ok(views.html.publix.confirmationCode
+						.render(confirmationCode));
+			}
 		}
 	}
 

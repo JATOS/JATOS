@@ -35,42 +35,4 @@
 			margin: 0 5px 5px 0;
 		}
 	}
-	.resultsBox {
-		.box();
-		> header {
-			h3 {
-				vertical-align: middle;
-				padding-right: 5px;
-			}
-			.placeHolder {
-				.button();
-				vertical-align: middle;
-				display: inline-block;
-				visibility: hidden;
-			}
-		}
-		> ul {
-			> li {
-				position: relative;
-				padding: 4px 20px 4px 7px;
-				border-bottom: 1px solid @lineColor;
-				font: @monospaceFont;
-				white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
-				white-space: -pre-wrap;      /* Opera 4-6 */
-				white-space: -o-pre-wrap;    /* Opera 7 */
-				white-space: pre-wrap;       /* css-3 */
-				word-wrap: break-word;       /* Internet Explorer 5.5+ */
-				word-break: break-all;
-				white-space: normal;
-				-webkit-user-select: text;
-				.removeSingleResult {
-					.removeButton();
-					right: 0px;
-					display: inline-block;
-					position: absolute;
-					vertical-align: middle;
-				}
-			}
-		}
-	}
 }

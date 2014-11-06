@@ -1,8 +1,6 @@
 package controllers.publix;
 
 import models.StudyModel;
-import models.results.StudyResult;
-import models.results.StudyResult.StudyState;
 import models.workers.MTSandboxWorker;
 import models.workers.MTTesterWorker;
 import models.workers.MTWorker;
@@ -63,20 +61,10 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 				|| worker instanceof MTTesterWorker) {
 			return;
 		}
-		if (finishedStudyAlready(worker, study)) {
+		if (didStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotAllowedStudy(worker, study.getId()));
 		}
 	}
 
-	public boolean finishedStudyAlready(MTWorker worker, StudyModel study) {
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			StudyState state = studyResult.getStudyState();
-			if (studyResult.getStudy().equals(study)
-					&& (state == StudyState.FINISHED || state == StudyState.FAIL)) {
-				return true;
-			}
-		}
-		return false;
-	}
 }

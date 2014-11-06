@@ -51,6 +51,7 @@ public class ComponentResult {
 		RESULTDATA_POSTED, // Result data were posted
 		FINISHED, // Component was finished
 		RELOADED, // Component was reloaded
+		ABORTED, // Component aborted by worker
 		FAIL // Something went wrong
 	};
 

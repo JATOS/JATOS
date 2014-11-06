@@ -4,7 +4,6 @@ import models.ComponentModel;
 import models.StudyModel;
 import models.results.ComponentResult;
 import models.results.StudyResult;
-import models.results.StudyResult.StudyState;
 import models.workers.MAWorker;
 import play.Logger;
 import play.libs.F.Promise;
@@ -159,6 +158,31 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 	}
 
 	@Override
+	public Result abortStudy(Long studyId, String message)
+			throws PublixException {
+		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
+				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
+				+ "message \"" + message + "\"");
+		StudyModel study = utils.retrieveStudy(studyId);
+		MAWorker worker = utils.retrieveWorker();
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		if (!utils.studyDone(studyResult)) {
+			utils.abortStudy(message, studyResult);
+			Publix.session().remove(MAPublix.MECHARG_SHOW);
+		}
+
+		PublixUtils.discardIdCookie();
+		if (ControllerUtils.isAjax()) {
+			return ok();
+		} else {
+			return redirect(routes.Studies.index(study.getId(), message));
+		}
+	}
+
+	@Override
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
@@ -171,8 +195,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
-		StudyState state = studyResult.getStudyState();
-		if (!(state == StudyState.FINISHED || state == StudyState.FAIL)) {
+		if (!utils.studyDone(studyResult)) {
 			utils.finishStudy(successful, errorMsg, studyResult);
 			Publix.session().remove(MAPublix.MECHARG_SHOW);
 		}

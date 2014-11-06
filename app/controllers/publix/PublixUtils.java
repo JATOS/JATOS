@@ -104,12 +104,16 @@ public abstract class PublixUtils<T extends Worker> {
 		Map<String, String> cookieMap = new HashMap<String, String>();
 		cookieMap.put(Publix.WORKER_ID, String.valueOf(worker.getId()));
 		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
-		cookieMap.put(Publix.STUDY_RESULT_ID, String.valueOf(studyResult.getId()));
+		cookieMap.put(Publix.STUDY_RESULT_ID,
+				String.valueOf(studyResult.getId()));
 		cookieMap.put(Publix.COMPONENT_ID, String.valueOf(component.getId()));
-		cookieMap.put(Publix.COMPONENT_RESULT_ID, String.valueOf(componentResult.getId()));
-		cookieMap.put(Publix.POSITION, String.valueOf(study.getComponentPosition(component)));
+		cookieMap.put(Publix.COMPONENT_RESULT_ID,
+				String.valueOf(componentResult.getId()));
+		cookieMap.put(Publix.POSITION,
+				String.valueOf(study.getComponentPosition(component)));
 		StringBuilder sb = new StringBuilder();
-		Iterator<Entry<String, String>> iterator = cookieMap.entrySet().iterator();
+		Iterator<Entry<String, String>> iterator = cookieMap.entrySet()
+				.iterator();
 		while (iterator.hasNext()) {
 			Entry<String, String> entry = iterator.next();
 			sb.append(entry.getKey());
@@ -129,6 +133,28 @@ public abstract class PublixUtils<T extends Worker> {
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 	}
 
+	public void abortStudy(String message, StudyResult studyResult) {
+		// Put current ComponentResult into state ABORTED
+		ComponentResult currentComponentResult = retrieveCurrentComponentResult(studyResult);
+		currentComponentResult.setComponentState(ComponentState.ABORTED);
+		currentComponentResult.merge();
+
+		// Finish the other ComponentResults
+		finishAllComponentResults(studyResult);
+
+		// Clear all data from all ComponentResults of this StudyResult.
+		for (ComponentResult componentResult : studyResult
+				.getComponentResultList()) {
+			componentResult.setData(null);
+			componentResult.merge();
+		}
+
+		// Set StudyResult to state ABORTED and set message
+		studyResult.setStudyState(StudyState.ABORTED);
+		studyResult.setAbortMsg(message);
+		studyResult.merge();
+	}
+
 	public String finishStudy(Boolean successful, String errorMsg,
 			StudyResult studyResult) {
 		finishAllComponentResults(studyResult);
@@ -138,7 +164,7 @@ public abstract class PublixUtils<T extends Worker> {
 					.generateConfirmationCode();
 			studyResult.setStudyState(StudyState.FINISHED);
 		} else {
-			confirmationCode = "fail";
+			confirmationCode = null;
 			studyResult.setStudyState(StudyState.FAIL);
 		}
 		studyResult.setConfirmationCode(confirmationCode);
@@ -150,9 +176,7 @@ public abstract class PublixUtils<T extends Worker> {
 	public void finishAllComponentResults(StudyResult studyResult) {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
-			ComponentState state = componentResult.getComponentState();
-			if (!(state == ComponentState.FINISHED
-					|| state == ComponentState.FAIL || state == ComponentState.RELOADED)) {
+			if (!componentDone(componentResult)) {
 				componentResult.setComponentState(ComponentState.FINISHED);
 				componentResult.merge();
 			}
@@ -205,7 +229,7 @@ public abstract class PublixUtils<T extends Worker> {
 		List<StudyResult> studyResultList = worker.getStudyResultList();
 		for (StudyResult studyResult : studyResultList) {
 			if (studyResult.getStudy().getId() == study.getId()
-					&& studyResult.getStudyState() != StudyState.FINISHED) {
+					&& !studyDone(studyResult)) {
 				finishStudy(false, ErrorMessages.STUDY_NEVER_FINSHED,
 						studyResult);
 			}
@@ -222,8 +246,7 @@ public abstract class PublixUtils<T extends Worker> {
 		for (int i = (studyResultListSize - 1); i >= 0; i--) {
 			studyResult = worker.getStudyResultList().get(i);
 			if (studyResult.getStudy().getId() == study.getId()) {
-				if (studyResult.getStudyState() == StudyState.FINISHED
-						|| studyResult.getStudyState() == StudyState.FAIL) {
+				if (studyDone(studyResult)) {
 					throw new ForbiddenPublixException(
 							errorMessages.workerFinishedStudyAlready(worker,
 									study.getId()));
@@ -246,13 +269,13 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Get the open (not FINISHED, FAILED, or RELOADED) componentResult of this
-	 * studyResult.
+	 * Returns the last ComponentResult of this studyResult if it's not
+	 * FINISHED, FAILED, ABORTED or RELOADED. Returns null it it doesn't exists.
 	 */
-	public ComponentResult retrieveOpenComponentResult(StudyResult studyResult) {
+	public ComponentResult retrieveCurrentComponentResult(
+			StudyResult studyResult) {
 		ComponentResult componentResult = retrieveLastComponentResult(studyResult);
-		ComponentState state = componentResult.getComponentState();
-		if (!(state == ComponentState.FINISHED || state == ComponentState.FAIL || state == ComponentState.RELOADED)) {
+		if (!componentDone(componentResult)) {
 			return componentResult;
 		}
 		return null;
@@ -262,7 +285,7 @@ public abstract class PublixUtils<T extends Worker> {
 			ComponentModel component, StudyResult studyResult,
 			ComponentState maxAllowedComponentState)
 			throws ForbiddenPublixException, ForbiddenReloadException {
-		ComponentResult componentResult = retrieveOpenComponentResult(studyResult);
+		ComponentResult componentResult = retrieveCurrentComponentResult(studyResult);
 		// Start the component if it was never started (== null) or if it's
 		// a restart of the component (The states of a componentResult are
 		// ordered, e.g. it's forbidden to put DATA_RETRIEVED after
@@ -386,6 +409,32 @@ public abstract class PublixUtils<T extends Worker> {
 					ErrorMessages.componentNotBelongToStudy(study.getId(),
 							component.getId()));
 		}
+	}
+
+	/**
+	 * Checks if the worker did this study already.
+	 */
+	public boolean didStudyAlready(T worker, StudyModel study) {
+		for (StudyResult studyResult : worker.getStudyResultList()) {
+			if (studyResult.getStudy().equals(study) && studyDone(studyResult)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean studyDone(StudyResult studyResult) {
+		StudyState state = studyResult.getStudyState();
+		return state == StudyState.FINISHED || state == StudyState.ABORTED
+				|| state == StudyState.FAIL;
+	}
+
+	public boolean componentDone(ComponentResult componentResult) {
+		ComponentState state = componentResult.getComponentState();
+		return state == ComponentState.FINISHED
+				|| state == ComponentState.ABORTED
+				|| state == ComponentState.FAIL
+				|| state == ComponentState.RELOADED;
 	}
 
 }

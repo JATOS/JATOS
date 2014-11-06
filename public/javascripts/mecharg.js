@@ -138,14 +138,15 @@ function onload() {
  *            Function} error - Function to be called in case of error
  */
 mecharg.submitResultData = function(resultData, success, error) {
-	var resultJson = JSON.stringify(resultData);
+	var resultJson = resultData;
+//	var resultJson = JSON.stringify(resultData);
 	$.ajax({
 		url : "/publix/" + mecharg.studyId + "/" + mecharg.componentId
 				+ "/submitResultData",
 		data : resultJson,
 		processData : false,
 		type : "POST",
-		contentType : "application/json",
+		contentType : "text/plain",
 		success : function(response) {
 			if (success) {
 				success(response)
@@ -188,7 +189,6 @@ mecharg.startNextComponent = function() {
  * @param {optional
  *            Function} error - Function to be called in case of error
  */
- */
 mecharg.endComponent = function(successful, errorMsg, success, error) {
 	var url = "/publix/" + mecharg.studyId + "/" + mecharg.componentId + "/end";
 	var fullUrl;
@@ -200,6 +200,108 @@ mecharg.endComponent = function(successful, errorMsg, success, error) {
 		fullUrl = url + "?successful=" + successful;
 	} else {
 		fullUrl = url + "?successful=" + successful + "&errorMsg=" + errorMsg;
+	}
+	$.ajax({
+		url : fullUrl,
+		processData : false,
+		type : "GET",
+		success : function(response) {
+			if (success) {
+				success(response)
+			}
+		},
+		error : function(err) {
+			if (onErrorCallback) {
+				onErrorCallback(err.responseText);
+			}
+			if (error) {
+				error(response)
+			}
+		}
+	});
+}
+
+/**
+ * Aborts study. All previously submitted data will be deleted. 
+ * 
+ * @param {optional
+ *            String} message - Message that should be logged
+ * @param {optional
+ *            Function} success - Function to be called in case of successful
+ *            submit
+ * @param {optional
+ *            Function} error - Function to be called in case of error
+ */
+mecharg.abortStudyAjax = function(message, success, error) {
+	var url = "/publix/" + mecharg.studyId + "/abort";
+	var fullUrl;
+	if (undefined == message) {
+		fullUrl = url;
+	} else {
+		fullUrl = url + "?message=" + message;
+	}
+	$.ajax({
+		url : fullUrl,
+		processData : false,
+		type : "GET",
+		success : function(response) {
+			if (success) {
+				success(response)
+			}
+		},
+		error : function(err) {
+			if (onErrorCallback) {
+				onErrorCallback(err.responseText);
+			}
+			if (error) {
+				error(response)
+			}
+		}
+	});
+}
+
+/**
+ * Aborts study. All previously submitted data will be deleted. 
+ * 
+ * @param {optional
+ *            String} message - Message that should be logged
+ */
+mecharg.abortStudy = function(message) {
+	var url = "/publix/" + mecharg.studyId + "/abort";
+	if (undefined == message) {
+		window.location.href = url;
+	} else {
+		window.location.href = url + "?message=" + message;
+	}
+}
+
+/**
+ * Ends study.
+ * 
+ * @param {optional
+ *            Boolean} successful - 'true' if study should finish successful and
+ *            the participant should get the confirmation code - 'false'
+ *            otherwise.
+ * @param {optional
+ *            String} errorMsg - Error message that should be logged.
+ * @param {optional
+ *            Function} success - Function to be called in case of successful
+ *            submit
+ * @param {optional
+ *            Function} error - Function to be called in case of error
+ */
+mecharg.endStudyAjax = function(successful, errorMsg, success, error) {
+	var url = "/publix/" + mecharg.studyId + "/end";
+	var fullUrl;
+	if (undefined == successful || undefined == errorMsg) {
+		fullUrl = url;
+	} else if (undefined == successful) {
+		fullUrl = url + "?errorMsg=" + errorMsg;
+	} else if (undefined == errorMsg) {
+		fullUrl = url + "?successful=" + successful;
+	} else {
+		fullUrl = url + "?successful=" + successful + "&errorMsg="
+				+ errorMsg;
 	}
 	$.ajax({
 		url : fullUrl,

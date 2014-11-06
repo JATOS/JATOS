@@ -48,7 +48,7 @@ public class MAWorker extends Worker {
 	
 	@Override
 	public String generateConfirmationCode() {
-		return "none";
+		return null;
 	}
 	
 }
