@@ -127,10 +127,10 @@ function onload() {
 }
 
 /**
- * Posts resultData as JSON back to the MechArg server.
+ * Posts resultData back to the MechArg server.
  * 
  * @param {Object}
- *            resultData - JS object. Will be turned into an JSON string.
+ *            resultData - String to be submitted
  * @param {optional
  *            Function} success - Function to be called in case of successful
  *            submit
@@ -138,12 +138,10 @@ function onload() {
  *            Function} error - Function to be called in case of error
  */
 mecharg.submitResultData = function(resultData, success, error) {
-	var resultJson = resultData;
-//	var resultJson = JSON.stringify(resultData);
 	$.ajax({
 		url : "/publix/" + mecharg.studyId + "/" + mecharg.componentId
 				+ "/submitResultData",
-		data : resultJson,
+		data : resultData,
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
