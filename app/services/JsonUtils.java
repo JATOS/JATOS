@@ -176,9 +176,6 @@ public class JsonUtils {
 		return asJsonStr;
 	}
 
-	/**
-	 * Returns all componentResults of a component as a JSON string.
-	 */
 	public static String allComponentResultsForUI(ComponentModel component)
 			throws IOException {
 		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
@@ -233,8 +230,37 @@ public class JsonUtils {
 		return componentResultNode;
 	}
 
+	public static String studyForUI(StudyModel study)
+			throws JsonProcessingException {
+		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
+		studyNode.put("resultCount", StudyResult.countByStudy(study));
+		String asJsonStr = OBJECTMAPPER.writeValueAsString(studyNode);
+		return asJsonStr;
+	}
+
+	public static String allComponentsForUI(List<ComponentModel> componentList)
+			throws JsonProcessingException {
+		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
+		for (ComponentModel component : componentList) {
+			ObjectNode componentNode = OBJECTMAPPER.valueToTree(component);
+			// Add count of component's results
+			componentNode.put("resultCount",
+					ComponentResult.countByComponent(component));
+			arrayNode.add(componentNode);
+		}
+		String asJsonStr = OBJECTMAPPER.writeValueAsString(arrayNode);
+		return asJsonStr;
+	}
+
+	public static String asJson(Object obj) throws JsonProcessingException {
+		ObjectWriter objectWriter = OBJECTMAPPER.writer();
+		String objectAsJson = objectWriter.writeValueAsString(obj);
+		return objectAsJson;
+	}
+
 	/**
-	 * Marshals the given object into JSON and returns it as String.
+	 * Marshals the given object into JSON and returns it as String. It uses the
+	 * view JsonForIO.
 	 */
 	public static String asJsonForIO(Object obj) throws JsonProcessingException {
 		ObjectWriter objectWriter = OBJECTMAPPER
@@ -244,7 +270,8 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Marshals the given object into JSON and saves it into the given File.
+	 * Marshals the given object into JSON and saves it into the given File. It
+	 * uses the view JsonForIO.
 	 */
 	public static void asJsonForIO(Object obj, File file) throws IOException {
 		ObjectWriter objectWriter = OBJECTMAPPER

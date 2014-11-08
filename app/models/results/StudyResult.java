@@ -15,6 +15,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import models.StudyModel;
@@ -83,10 +84,10 @@ public class StudyResult {
 	 * FAIL). Can be left null.
 	 */
 	private String errorMsg;
-	
+
 	/**
-	 * Message in case the study was aborted (state is
-	 * ABORTED). Can be left null.
+	 * Message in case the study was aborted (state is ABORTED). Can be left
+	 * null.
 	 */
 	private String abortMsg;
 
@@ -98,7 +99,7 @@ public class StudyResult {
 		this.study = study;
 		this.studyState = StudyState.STARTED;
 	}
-	
+
 	@JsonProperty("workerId")
 	public Long getWorkerId() {
 		return worker.getId();
@@ -148,7 +149,7 @@ public class StudyResult {
 	public String getErrorMsg() {
 		return this.errorMsg;
 	}
-	
+
 	public void setAbortMsg(String abortMsg) {
 		this.abortMsg = abortMsg;
 	}
@@ -233,6 +234,14 @@ public class StudyResult {
 		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
 				StudyResult.class);
 		return query.getResultList();
+	}
+
+	public static int countByStudy(StudyModel study) {
+		String queryStr = "SELECT COUNT(e) FROM StudyResult e WHERE e.study=:studyId";
+		Query query = JPA.em().createQuery(queryStr);
+		Number result = (Number) query.setParameter("studyId", study)
+				.getSingleResult();
+		return result.intValue();
 	}
 
 	public static List<StudyResult> findAllByStudy(StudyModel study) {

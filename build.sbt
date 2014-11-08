@@ -10,7 +10,9 @@ libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "5.1.18",
   "com.google.inject" % "guice" % "3.0",
   "org.jsoup" % "jsoup" % "1.8.1",
-  "commons-io" % "commons-io" % "2.4"
+  "commons-io" % "commons-io" % "2.4",
+  "org.webjars" %% "webjars-play" % "2.2.2-1",
+  "org.webjars" % "bootstrap" % "3.3.0"
 )
 
 playAssetsDirectories <+= baseDirectory / "studies"

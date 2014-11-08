@@ -12,9 +12,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import models.ComponentModel;
+import models.StudyModel;
 import play.db.jpa.JPA;
 import services.DateUtils;
 
@@ -77,7 +79,7 @@ public class ComponentResult {
 	@Lob
 	@JsonIgnore
 	private String data;
-	
+
 	/**
 	 * Error message in case something went wrong with the component (state is
 	 * FAIL). Can be left null.
@@ -142,7 +144,7 @@ public class ComponentResult {
 	public String getData() {
 		return this.data;
 	}
-	
+
 	public void setErrorMsg(String errorMsg) {
 		this.errorMsg = errorMsg;
 	}
@@ -196,6 +198,14 @@ public class ComponentResult {
 
 	public static ComponentResult findById(Long id) {
 		return JPA.em().find(ComponentResult.class, id);
+	}
+
+	public static int countByComponent(ComponentModel component) {
+		String queryStr = "SELECT COUNT(e) FROM ComponentResult e WHERE e.component=:componentId";
+		Query query = JPA.em().createQuery(queryStr);
+		Number result = (Number) query.setParameter("componentId", component)
+				.getSingleResult();
+		return result.intValue();
 	}
 
 	public static List<ComponentResult> findAllByComponent(

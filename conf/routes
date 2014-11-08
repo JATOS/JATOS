@@ -22,7 +22,7 @@ POST    /mecharg/login                                 controllers.Authenticatio
 GET     /mecharg/logout                                controllers.Authentication.logout()
 GET     /mecharg                                       controllers.Home.home()
 GET     /mecharg/                                      controllers.Home.home()
-GET     /                                              controllers.Home.home()
+GET     /                                              controllers.Home.home2()
 GET     /mecharg/user/create                           controllers.Users.create()
 POST    /mecharg/user/create                           controllers.Users.submit()
 GET     /mecharg/user/:email/editProfile               controllers.Users.editProfile(email: String)
@@ -73,3 +73,4 @@ GET     /mecharg/:studyId/:componentId/                controllers.Components.in
 # Static resources (not managed by the Play framework) from the /public folder
 GET     /studies/*file                     controllers.publix.ExternalAssets.at(file)
 GET     /assets/*file                      controllers.Assets.at(path = "/public", file)
+GET     /webjars/*file                     controllers.WebJarAssets.at(file)

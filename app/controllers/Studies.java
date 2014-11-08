@@ -27,6 +27,7 @@ import services.ErrorMessages;
 import services.IOUtils;
 import services.IOUtils.UploadUnmarshaller;
 import services.JsonUtils;
+import services.Messages;
 import services.PersistanceUtils;
 import services.ZipUtil;
 import controllers.publix.MAPublix;
@@ -48,11 +49,19 @@ public class Studies extends Controller {
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		Map<Long, String> workerMap = retrieveWorkerMap(study);
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study));
-		return status(httpStatus, views.html.mecharg.study.index.render(
-				studyList, loggedInUser, breadcrumbs, errorMsg, study,
+		Messages messages = new Messages().error(errorMsg);
+		messages.error("This is dangerous!")
+				.error("This is even more dangerous!")
+				.warning("A warning from a friend").info("Just an info")
+				.success("You were successful!");
+		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs().put(
+				"Home", routes.Home.home()).put(study.getTitle(),
+				routes.Studies.index(study.getId(), null)).put("Index", "");
+		// String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
+		// Breadcrumbs.getHomeBreadcrumb(),
+		// Breadcrumbs.getStudyBreadcrumb(study));
+		return status(httpStatus, views.html.mecharg.study.index2.render(
+				studyList, loggedInUser, breadcrumbs, messages, study,
 				workerMap));
 	}
 
@@ -438,8 +447,8 @@ public class Studies extends Controller {
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
-		ControllerUtils.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+				loggedInUser, component);
 
 		if (direction.equals("up")) {
 			study.componentOrderMinusOne(component);

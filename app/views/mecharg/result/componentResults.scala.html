@@ -50,8 +50,8 @@ study: StudyModel, component: ComponentModel, errorMsg: String)
 </article>
 
 <script type="text/javascript">
-var resultsTable;
 
+var resultsTable;
 $(document).ready(function() {
 	resultsTable = $('#resultsTable').DataTable({
 		"ajax": "@routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
