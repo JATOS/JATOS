@@ -1,0 +1,400 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: services.Breadcrumbs,
+messages: services.Messages, study: StudyModel, workerMap: Map[Long,String])
+
+@views.html.mecharg.main2(studyList, loggedInUser, breadcrumbs, messages){
+
+<!-- Toolbar -->
+<div class="btn-toolbar" role="toolbar">
+	<div class="btn-group">
+		<button id="showStudy" type="button" class="btn btn-default">Show</button>
+		<button id="studyResults" type="button" class="btn btn-default">Results <span class="badge">@results.StudyResult.countByStudy(study)</span></button>
+		<button type="button" class="btn btn-default">Worker <span class="badge">@workerMap.size()</button>
+		<button id="editStudy" type="button" class="btn btn-default">Edit</button>
+		<button id="lockStudy" type="button" class="btn btn-default">@if(study.isLocked()){Unlock}else{Lock}</button>
+		<div class="btn-group">
+			<button type="button" class="btn btn-default dropdown-toggle"
+				data-toggle="dropdown">
+				Other <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu" role="menu">
+				<li><a href="@routes.Studies.exportStudy(study.getId())">Export</a></li>
+				<li><a href="@routes.Studies.cloneStudy(study.getId())">Clone</a></li>
+				<li><a href="@routes.Studies.showMTurkSourceCode(study.getId())">MT Source Code</a></li>
+				<li class="divider"></li>
+				<li><a id="removeStudy" href="#">Delete</a></li>
+			</ul>
+		</div>
+	</div>
+	<div class="btn-group">
+		<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+				Components <span class="caret"></span>
+		</button>
+		<ul class="dropdown-menu" role="menu">
+			<li><a href="@routes.Components.create(study.getId())">Add</a></li>
+			<li><a href="#">Import</a></li>
+		</ul>
+	</div>
+	
+	<div class="btn-group">
+		<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+				Members <span class="caret"></span>
+		</button>
+		<ul class="dropdown-menu" role="menu">
+			@for(member <- study.getMemberList()) {
+			<li><a href="@routes.Users.profile(member.getEmail())">@member.getName() (@member.getEmail())</a></li>
+			}
+			<li class="divider"></li>
+			<li><a href="@routes.Studies.changeMembers(study.getId())">Change</a></li>
+		</ul>
+	</div>
+</div>
+
+<!-- Confirmation  Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title" id="modalTitle">Confirm</h4>
+			</div>
+			<div class="modal-body">
+				<p id="modalText"></p>
+				<p>Do you want to proceed?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button id="modalConfirm" type="button" class="btn btn-primary">Delete</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Components Table -->
+<h3>Components</h3>
+<table id="componentTable" class="table table-striped table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+	<thead>
+		<tr>
+			<th></th>
+			<th></th>
+			<th>ID</th>
+			<th>Title</th>
+			<th></th>
+		</tr>
+	</thead>
+</table>
+
+<!-- Template for button toolbar in Component's row -->
+<div id="componentToolbar" style="display: none">
+	<div class="componentBtnGroup btn-group" aria-hidden="true">
+		<button type="button" class="showComponent btn btn-default">Show</button>
+		<button type="button" class="componentResults btn btn-default">Results <span class="resultsBadge badge"></span></button>
+		<button type="button" class="editComponent btn btn-default">Edit</button>
+		<div class="btn-group">
+			<button type="button" class="btn btn-default dropdown-toggle"
+				data-toggle="dropdown">
+				Other <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu" role="menu">
+				<li><a class="exportComponent" href="#">Export</a></li>
+				<li><a class="cloneComponent" href="#">Clone</a></li>
+				<li class="divider"></li>
+				<li><a class="removeComponent" href="#">Delete</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+
+var studyData = @Html(services.JsonUtils.studyForUI(study));
+var componentsData = @Html(services.JsonUtils.allComponentsForUI(study.getComponentList()));
+
+var componentTable;
+$(document).ready(function() {
+	componentTable = $('#componentTable').DataTable({
+		"data": componentsData,
+		"paging": false,
+		"info": false,
+		"filter": false,
+		"columnDefs": [ {
+			"searchable": false,
+			"orderable": false,
+			"targets": 0
+		} ],
+		"columns": [
+			{
+				"orderable": false,
+				"data": null,
+				"defaultContent": '',
+				"width": "1px",
+				"render": function (data, type, full, meta) {
+					return '<div class="upArrow"></div>'
+						+ '<div class="downArrow"></div>';
+				}
+			},
+			{
+				"class": 'position',
+				"data": null,
+				"orderable": false,
+				"width": "1px"
+			},
+			{
+				"data": "id",
+				"orderable": false,
+				"width": "1px"
+			},
+			{ 
+				"data": "title",
+				"orderable": false
+			},
+			{
+				"orderable": false,
+				"data": null,
+				"defaultContent": '',
+				"width": "1%",
+				"render": function (data, type, full, meta) {
+					var toolbar = $('#componentToolbar').clone().show();
+					$(toolbar).find('.resultsBadge').text(data.resultCount);
+					return toolbar.html();
+				}
+			}
+		]
+	});
+	
+	componentTable.on( 'order.dt search.dt', function () {
+		componentTable.column(1, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+			cell.innerHTML = i + 1;
+		});
+	}).draw();
+
+	// Don't remove. It readjusts the columns width after writing the component's positions
+	componentTable.columns.adjust().draw();
+	
+	$('#componentTable tbody').on('click', '.showComponent', function() {
+		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/show";
+	});
+	
+	$('#componentTable tbody').on('click', '.componentResults', function() {
+		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/results";
+	});
+	
+	$('#componentTable tbody').on('click', '.editComponent', function() {
+		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/edit";
+	});
+	
+	$('#componentTable tbody').on('click', '.exportComponent', function() {
+		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/export";
+	});
+	
+	$('#componentTable tbody').on('click', '.cloneComponent', function() {
+		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/clone";
+	});
+	
+	$('#componentTable tbody').on('click', '.removeComponent', function() {
+		var element = this;
+		var componentId = getComponentId(this);
+		if (!componentId) {return} // should never happen
+		var componentTitle = getComponentTitle(this);
+		var title = "Confirm Delete";
+		var text = "You are about to delete component \"" + componentTitle 
+			+ "\" (ID " + componentId + ") <b>with all its results</b>.";
+		$('#confirmationModal').find('#modalTitle').html(title);
+		$('#confirmationModal').find('#modalText').html(text);
+		$('#confirmationModal').modal('show');
+		$('#modalConfirm').click(function(e){
+			$('#confirmationModal').modal('hide');
+			$.ajax({
+				url : "/mecharg/@study.getId/" + componentId + "/remove",
+				type : 'DELETE',
+				success : function(result) {
+					var tr = $(element).closest('tr');
+					componentTable.row(tr).remove().draw();
+				},
+				error : function(err) {
+					showError(err.responseText);
+				}
+			});
+		});
+	});
+	
+	$('#componentTable tbody').on('click', '.upArrow', function() {
+		var tr = $(this).closest('tr');
+		var componentId = getComponentId(this);
+		ajaxChangeComponentOrder(componentId, "up", tr);
+	});
+
+	$('#componentTable tbody').on('click', '.downArrow', function() {
+		var tr = $(this).closest('tr');
+		var componentId = getComponentId(this);
+		ajaxChangeComponentOrder(componentId, "down", tr);
+	});
+	
+	function getComponentId(element) {
+		var tr = $(element).closest('tr');
+		var rowData = componentTable.row(tr).data();
+		return rowData.id;
+	}
+	
+	function getComponentTitle(element) {
+		var tr = $(element).closest('tr');
+		var rowData = componentTable.row(tr).data();
+		return rowData.title;
+	}
+	
+});
+
+function ajaxChangeComponentOrder(componentId, direction, tr) {
+	$.ajax({
+		url : "/mecharg/" + studyData.id + "/changeComponentOrder"
+				+ "?componentId=" + componentId + "&direction="
+				+ direction,
+		type : "POST",
+		success : function(response) {
+			if (direction == "up") {
+				var clickedRow = componentTable.row(tr);
+				var clickedRowIndex = clickedRow.index();
+				if (clickedRowIndex < 1) { return }
+				var previousRow = componentTable.row(clickedRowIndex - 1);
+				swapRowData(clickedRow, previousRow);
+			}
+			if (direction == "down") {
+				var clickedRow = componentTable.row(tr);
+				var clickedRowIndex = clickedRow.index();
+				if (clickedRowIndex > componentTable.rows({page:'current'}).data().length - 2) { return }
+				var nextRow = componentTable.row(clickedRowIndex + 1);
+				swapRowData(clickedRow, nextRow);
+			}
+			componentTable.draw();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
+function swapRowData(row1, row2) {
+	var row1Data = row1.data();
+	var row2Data = row2.data();
+	row1.data(row2Data);
+	row2.data(row1Data);
+}
+
+function swapTrContent(tr1, tr2) {
+	var td1 = tr1.find(".position");
+	var td2 = tr2.find(".position");
+	var tmpContent = td1.html();
+	td1.text(td2.html());
+	td2.text(tmpContent);
+}
+
+$(".active").click(function(e) {
+	var componentElement = $(e.target);
+	var componentId = componentElement.attr("component-id");
+	var active = componentElement.prop('checked');
+	ajaxChangeActive(componentId, active, componentElement);
+});
+
+function ajaxChangeActive(componentId, active, componentElement) {
+	$.ajax({
+		url : "/mecharg/@study.getId()/" + componentId
+				+ "/changeProperty?active=" + active,
+		type : "POST",
+		error : function(err) {
+			$(".error").text(err.responseText).show();
+			componentElement.prop("checked", !componentElement
+					.is(":checked"));
+		}
+	});
+}
+
+$("#lockStudy").click(function(e) {
+	$.ajax({
+		url : "/mecharg/@study.getId()/swapLock",
+		type : "POST",
+		success : function(response) {
+			if (response == 'true') {
+				$("#lockStudy").text("Unlock");
+			} else {
+				$("#lockStudy").text("Lock");
+			}
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+$("#showStudy").click(function(e) {
+	window.location.href = "@routes.Studies.showStudy(study.getId())";
+});
+
+$("#cloneStudy").click(function(e) {
+	window.location.href = "@routes.Studies.cloneStudy(study.getId())";
+});
+
+$("#exportStudy").click(function(e) {
+	window.location.href = "@routes.Studies.exportStudy(study.getId())";
+});
+
+$("#studyResults").click(function(e) {
+	window.location.href = "@routes.StudyResults.index(study.getId())";
+});
+
+$("#editStudy").click(function(e) {
+	window.location.href = "@routes.Studies.edit(study.getId())";
+});
+
+$("#changeMembers").click(function(e) {
+	window.location.href = "@routes.Studies.changeMembers(study.getId())";
+});
+
+$("#showMTurkSourceCode").click(function(e) {
+	window.location.href = "@routes.Studies.showMTurkSourceCode(study.getId())";
+});
+
+$('#removeStudy').click(function(e){
+	var title = "Confirm Delete";
+	var text = "You are about to delete the study \"" + studyData.title 
+		+ "\" (ID " + studyData.id + ") "
+		+ "<b>with all its components and results</b>.";
+	$('#confirmationModal').find('#modalTitle').html(title);
+	$('#confirmationModal').find('#modalText').html(text);
+	$('#confirmationModal').modal('show');
+	$('#modalConfirm').click(function(e){
+		$('#confirmationModal').modal('hide');
+		removeStudy();
+	});
+});
+
+function removeStudy() {
+	$.ajax({
+		url : '@routes.Studies.remove(study.getId())',
+		type : 'DELETE',
+		success : function(result) {
+			window.location.replace('@routes.Home.home()');
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
+$(".addComponent").click(function(e) {
+	window.location.href = "/mecharg/@study.getId/createComponent";
+});
+
+function getComponentId(e) {
+	var componentElement = $(e.target);
+	var componentId = componentElement.attr("component-id");
+	return componentId;
+}
+
+function getComponentTitle(e) {
+	var componentElement = $(e.target);
+	var componentTitle = componentElement.attr("component-title");
+	return componentTitle;
+}
+
+</script>
+
+}

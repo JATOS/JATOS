@@ -1,0 +1,45 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs: services.Breadcrumbs, messages: services.Messages)
+
+@views.html.mecharg.main2(studyList, loggedInUser, breadcrumbs, messages){
+
+<article class="home">
+
+	<div class="boxRow">
+		<div class="manageBox">
+			<header>
+				<h3>Manage</h3>
+				<div class="placeHolder">X</div>
+			</header>
+			<div class="boxContent">
+				<div class="newStudy">New Study</div>	
+				<form id="importForm" action="@routes.Studies.importStudy()" method="post" enctype="multipart/form-data">
+					<div id="importButton" type="file">Import Study</div>
+					<input id="importBrowser" type="file" name="@StudyModel.STUDY" accept="application/json">
+				</form>
+				<div class="newUser">New User</div>
+			</div>
+		</div>
+	</div>	
+	
+</article>
+
+<script type="text/javascript">
+
+	$(".newStudy").click(function(e) {
+		window.location.href = "@routes.Studies.create()";
+	});
+	
+	$(".newUser").click(function(e) {
+		window.location.href = "@routes.Users.create()";
+	});
+	
+	$("#importButton").click(function() {
+		$("#importBrowser").trigger("click");
+		$('#importBrowser').change(function() {
+			$("#importForm").submit();
+		});
+	});
+
+</script>
+}
