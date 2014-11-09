@@ -204,7 +204,7 @@ public class ComponentModel {
 						ErrorMessages.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
 			}
 		}
-		if (!Jsoup.isValid(comments, Whitelist.none())) {
+		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENTS,
 					ErrorMessages.NO_HTML_ALLOWED));
 		}

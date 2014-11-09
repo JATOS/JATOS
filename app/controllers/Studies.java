@@ -48,18 +48,12 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		
 		Map<Long, String> workerMap = retrieveWorkerMap(study);
 		Messages messages = new Messages().error(errorMsg);
-		messages.error("This is dangerous!")
-				.error("This is even more dangerous!")
-				.warning("A warning from a friend").info("Just an info")
-				.success("You were successful!");
 		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs().put(
 				"Home", routes.Home.home()).put(study.getTitle(),
 				routes.Studies.index(study.getId(), null)).put("Index", "");
-		// String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-		// Breadcrumbs.getHomeBreadcrumb(),
-		// Breadcrumbs.getStudyBreadcrumb(study));
 		return status(httpStatus, views.html.mecharg.study.index2.render(
 				studyList, loggedInUser, breadcrumbs, messages, study,
 				workerMap));
@@ -494,6 +488,25 @@ public class Studies extends Controller {
 				"Mechanical Turk HIT layout source code");
 		return ok(views.html.mecharg.study.mTurkSourceCode.render(studyList,
 				loggedInUser, breadcrumbs, null, study, hostname));
+	}
+	
+	/**
+	 * HTTP Ajax request
+	 */
+	@Transactional
+	public static Result tableDataByStudy(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		String dataAsJson = null;
+		try {
+			dataAsJson = JsonUtils.allComponentsForUI(study.getComponentList());
+		} catch (IOException e) {
+			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
+		}
+		return ok(dataAsJson);
 	}
 
 }

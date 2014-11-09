@@ -250,8 +250,8 @@ public abstract class ErrorMessages<T extends Worker> {
 	}
 
 	public static String studysDirPathIsntDir(String dirName) {
-		return "Study's directory path doesn't lead to " + "a directory ("
-				+ dirName + ").";
+		return "Study's directory path \""
+				+ dirName + "\"doesn't lead to a directory.";
 	}
 
 	public static String clonedStudysDirNotCreatedBecauseExists(String dirName) {
@@ -277,6 +277,10 @@ public abstract class ErrorMessages<T extends Worker> {
 
 	public static String studysDirNotCreated(String dirName) {
 		return "Couldn't create new study's directory (" + dirName + ").";
+	}
+	
+	public static String fileNotUploaded(String fileName) {
+		return "Couldn't upload file " + fileName + ".";
 	}
 
 }

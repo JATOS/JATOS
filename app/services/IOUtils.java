@@ -85,10 +85,12 @@ public class IOUtils {
 	}
 
 	/**
-	 * Gets the File object while preventing a path traversal attack.
+	 * Gets the File object (can be an directory) while preventing a path
+	 * traversal attack.
 	 */
 	public static File getFileSecurely(String path, String filePath)
 			throws IOException {
+		path = getStudyDirSecurely(path).getAbsolutePath();
 		String fullPath = path + File.separator + filePath;
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
@@ -97,6 +99,25 @@ public class IOUtils {
 		if (!file.getAbsolutePath().equals(fullPath)) {
 			throw new IOException(
 					ErrorMessages.couldntGeneratePathToFileOrDir(filePath));
+		}
+		return file;
+	}
+
+	/**
+	 * Gets the File object of the study directory while preventing a path
+	 * traversal attack and checks if the directory actually exists.
+	 */
+	public static File getStudyDirSecurely(String fullPath) throws IOException {
+		String pureFilename = (new File(fullPath)).getName();
+		String purePath = (new File(fullPath)).getParentFile()
+				.getCanonicalPath();
+		File file = new File(purePath, pureFilename);
+		if (!file.getAbsolutePath().equals(fullPath)) {
+			throw new IOException(
+					ErrorMessages.couldntGeneratePathToFileOrDir(fullPath));
+		}
+		if (file == null || !file.exists() || !file.isDirectory()) {
+			throw new IOException(ErrorMessages.studysDirPathIsntDir(fullPath));
 		}
 		return file;
 	}
@@ -126,9 +147,9 @@ public class IOUtils {
 	}
 
 	/**
-	 * Generates a filename from a name and an ID in a specified length and
-	 * adds the suffix. If the ID is null it uses the title only. If the suffix
-	 * is null it won't have a file suffix.
+	 * Generates a filename from a name and an ID in a specified length and adds
+	 * the suffix. If the ID is null it uses the title only. If the suffix is
+	 * null it won't have a file suffix.
 	 */
 	public static String generateFileName(String rawName, Long id, String suffix) {
 		String filename = rawName.trim()
@@ -278,8 +299,7 @@ public class IOUtils {
 	public static void moveFileIntoStudyFolder(FilePart filePart,
 			StudyModel study) throws IOException {
 		File file = filePart.getFile();
-		File destPath = IOUtils
-				.getFileInStudyDir(study, filePart.getFilename());
+		File destPath = getFileInStudyDir(study, filePart.getFilename());
 		boolean result = file.renameTo(destPath);
 		if (!result) {
 			throw new IOException(ErrorMessages.fileNotRenamed(file.getName(),

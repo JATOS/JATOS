@@ -248,7 +248,9 @@ public class JsonUtils {
 					ComponentResult.countByComponent(component));
 			arrayNode.add(componentNode);
 		}
-		String asJsonStr = OBJECTMAPPER.writeValueAsString(arrayNode);
+		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
+		componentsNode.put("data", arrayNode);
+		String asJsonStr = OBJECTMAPPER.writeValueAsString(componentsNode);
 		return asJsonStr;
 	}
 

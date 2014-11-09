@@ -1,18 +1,19 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs: services.Breadcrumbs,
-messages: services.Messages, study: StudyModel, workerMap: Map[Long,String])
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+study: StudyModel, workerMap: Map[Long,String])
 
 @views.html.mecharg.main2(studyList, loggedInUser, breadcrumbs, messages){
 
 <!-- Toolbar -->
-<div class="btn-toolbar" role="toolbar">
+<div id="studyToolbar" class="btn-toolbar" role="toolbar">
 	<div class="btn-group">
-		<button id="showStudy" type="button" class="btn btn-default">Show</button>
-		<button id="studyResults" type="button" class="btn btn-default">Results <span class="badge">@results.StudyResult.countByStudy(study)</span></button>
-		<button type="button" class="btn btn-default">Worker <span class="badge">@workerMap.size()</button>
-		<button id="editStudy" type="button" class="btn btn-default">Edit</button>
-		<button id="lockStudy" type="button" class="btn btn-default">@if(study.isLocked()){Unlock}else{Lock}</button>
+		<button id="showStudy" type="button" class="btn btn-primary">Show</button>
+		<button id="studyResults" type="button" class="btn btn-primary">Results <span class="badge">@results.StudyResult.countByStudy(study)</span></button>
+		<button type="button" class="btn btn-primary">Worker <span class="badge">@workerMap.size()</button>
+		<button id="editStudy" type="button" class="btn btn-primary">Edit</button>
+		<button id="lockStudy" type="button" class="btn btn-primary">@if(study.isLocked()){Unlock}else{Lock}</button>
 		<div class="btn-group">
-			<button type="button" class="btn btn-default dropdown-toggle"
+			<button type="button" class="btn btn-primary dropdown-toggle"
 				data-toggle="dropdown">
 				Other <span class="caret"></span>
 			</button>
@@ -26,17 +27,18 @@ messages: services.Messages, study: StudyModel, workerMap: Map[Long,String])
 		</div>
 	</div>
 	<div class="btn-group">
-		<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+		<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
 				Components <span class="caret"></span>
 		</button>
 		<ul class="dropdown-menu" role="menu">
 			<li><a href="@routes.Components.create(study.getId())">Add</a></li>
-			<li><a href="#">Import</a></li>
+			<input id="importBrowser" type="file" name="@ComponentModel.COMPONENT" multiple style="display: none;">
+			<li><a id="importButton" href="#">Import</a></li>
 		</ul>
 	</div>
 	
 	<div class="btn-group">
-		<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+		<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
 				Members <span class="caret"></span>
 		</button>
 		<ul class="dropdown-menu" role="menu">
@@ -49,33 +51,14 @@ messages: services.Messages, study: StudyModel, workerMap: Map[Long,String])
 	</div>
 </div>
 
-<!-- Confirmation  Modal -->
-<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-				<h4 class="modal-title" id="modalTitle">Confirm</h4>
-			</div>
-			<div class="modal-body">
-				<p id="modalText"></p>
-				<p>Do you want to proceed?</p>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button id="modalConfirm" type="button" class="btn btn-primary">Delete</button>
-			</div>
-		</div>
-	</div>
-</div>
-
 <!-- Components Table -->
 <h3>Components</h3>
-<table id="componentTable" class="table table-striped table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+<table id="componentTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
 		<tr>
 			<th></th>
-			<th></th>
+			<th>Active</th>
+			<th>#</th>
 			<th>ID</th>
 			<th>Title</th>
 			<th></th>
@@ -107,12 +90,11 @@ messages: services.Messages, study: StudyModel, workerMap: Map[Long,String])
 <script type="text/javascript">
 
 var studyData = @Html(services.JsonUtils.studyForUI(study));
-var componentsData = @Html(services.JsonUtils.allComponentsForUI(study.getComponentList()));
 
 var componentTable;
 $(document).ready(function() {
 	componentTable = $('#componentTable').DataTable({
-		"data": componentsData,
+		"ajax": '@routes.Studies.tableDataByStudy(study.getId())',
 		"paging": false,
 		"info": false,
 		"filter": false,
@@ -130,6 +112,19 @@ $(document).ready(function() {
 				"render": function (data, type, full, meta) {
 					return '<div class="upArrow"></div>'
 						+ '<div class="downArrow"></div>';
+				}
+			},
+			{
+				"class": 'activeComponent',
+				"orderable": false,
+				"data": null,
+				"defaultContent": '',
+				"width": "1px",
+				"render": function (data, type, full, meta) {
+					var html = '<input class="activeCheckbox" type="checkbox"';
+					if (data.active) {html += 'checked'}
+					html += '>';
+					return html;
 				}
 			},
 			{
@@ -162,7 +157,7 @@ $(document).ready(function() {
 	});
 	
 	componentTable.on( 'order.dt search.dt', function () {
-		componentTable.column(1, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+		componentTable.column(2, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
 			cell.innerHTML = i + 1;
 		});
 	}).draw();
@@ -171,23 +166,28 @@ $(document).ready(function() {
 	componentTable.columns.adjust().draw();
 	
 	$('#componentTable tbody').on('click', '.showComponent', function() {
-		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/show";
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/show";
 	});
 	
 	$('#componentTable tbody').on('click', '.componentResults', function() {
-		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/results";
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/results";
 	});
 	
 	$('#componentTable tbody').on('click', '.editComponent', function() {
-		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/edit";
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/edit";
 	});
 	
 	$('#componentTable tbody').on('click', '.exportComponent', function() {
-		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/export";
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/export";
 	});
 	
 	$('#componentTable tbody').on('click', '.cloneComponent', function() {
-		window.location.href = "/mecharg/@study.getId/" + getComponentId(this) + "/clone";
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/clone";
 	});
 	
 	$('#componentTable tbody').on('click', '.removeComponent', function() {
@@ -198,13 +198,9 @@ $(document).ready(function() {
 		var title = "Confirm Delete";
 		var text = "You are about to delete component \"" + componentTitle 
 			+ "\" (ID " + componentId + ") <b>with all its results</b>.";
-		$('#confirmationModal').find('#modalTitle').html(title);
-		$('#confirmationModal').find('#modalText').html(text);
-		$('#confirmationModal').modal('show');
-		$('#modalConfirm').click(function(e){
-			$('#confirmationModal').modal('hide');
+		askConfirmation(title, text, 'Delete', function() {
 			$.ajax({
-				url : "/mecharg/@study.getId/" + componentId + "/remove",
+				url : "/mecharg/" + studyData.id +"/" + componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
 					var tr = $(element).closest('tr');
@@ -227,6 +223,21 @@ $(document).ready(function() {
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
 		ajaxChangeComponentOrder(componentId, "down", tr);
+	});
+	
+	$('#componentTable tbody').on('click', '.activeCheckbox', function() {
+		var tr = $(this).closest('tr');
+		var componentId = getComponentId(this);
+		var active = $(this).prop('checked');
+		$.ajax({
+			url : "/mecharg/" + studyData.id +"/" + componentId
+					+ "/changeProperty?active=" + active,
+			type : "POST",
+			error : function(err) {
+				$(this).prop("checked", !$(this).is(":checked"));
+				showError(err.responseText);
+			}
+		});
 	});
 	
 	function getComponentId(element) {
@@ -279,37 +290,9 @@ function swapRowData(row1, row2) {
 	row2.data(row1Data);
 }
 
-function swapTrContent(tr1, tr2) {
-	var td1 = tr1.find(".position");
-	var td2 = tr2.find(".position");
-	var tmpContent = td1.html();
-	td1.text(td2.html());
-	td2.text(tmpContent);
-}
-
-$(".active").click(function(e) {
-	var componentElement = $(e.target);
-	var componentId = componentElement.attr("component-id");
-	var active = componentElement.prop('checked');
-	ajaxChangeActive(componentId, active, componentElement);
-});
-
-function ajaxChangeActive(componentId, active, componentElement) {
-	$.ajax({
-		url : "/mecharg/@study.getId()/" + componentId
-				+ "/changeProperty?active=" + active,
-		type : "POST",
-		error : function(err) {
-			$(".error").text(err.responseText).show();
-			componentElement.prop("checked", !componentElement
-					.is(":checked"));
-		}
-	});
-}
-
 $("#lockStudy").click(function(e) {
 	$.ajax({
-		url : "/mecharg/@study.getId()/swapLock",
+		url : "/mecharg/" + studyData.id +"/swapLock",
 		type : "POST",
 		success : function(response) {
 			if (response == 'true') {
@@ -317,6 +300,7 @@ $("#lockStudy").click(function(e) {
 			} else {
 				$("#lockStudy").text("Lock");
 			}
+			$('#lockStudy').removeClass('btn-warning');
 		},
 		error : function(err) {
 			showError(err.responseText);
@@ -328,14 +312,6 @@ $("#showStudy").click(function(e) {
 	window.location.href = "@routes.Studies.showStudy(study.getId())";
 });
 
-$("#cloneStudy").click(function(e) {
-	window.location.href = "@routes.Studies.cloneStudy(study.getId())";
-});
-
-$("#exportStudy").click(function(e) {
-	window.location.href = "@routes.Studies.exportStudy(study.getId())";
-});
-
 $("#studyResults").click(function(e) {
 	window.location.href = "@routes.StudyResults.index(study.getId())";
 });
@@ -344,43 +320,23 @@ $("#editStudy").click(function(e) {
 	window.location.href = "@routes.Studies.edit(study.getId())";
 });
 
-$("#changeMembers").click(function(e) {
-	window.location.href = "@routes.Studies.changeMembers(study.getId())";
-});
-
-$("#showMTurkSourceCode").click(function(e) {
-	window.location.href = "@routes.Studies.showMTurkSourceCode(study.getId())";
-});
-
 $('#removeStudy').click(function(e){
 	var title = "Confirm Delete";
 	var text = "You are about to delete the study \"" + studyData.title 
 		+ "\" (ID " + studyData.id + ") "
 		+ "<b>with all its components and results</b>.";
-	$('#confirmationModal').find('#modalTitle').html(title);
-	$('#confirmationModal').find('#modalText').html(text);
-	$('#confirmationModal').modal('show');
-	$('#modalConfirm').click(function(e){
-		$('#confirmationModal').modal('hide');
-		removeStudy();
+	askConfirmation(title, text, 'Delete', function() {
+		$.ajax({
+			url : '@routes.Studies.remove(study.getId())',
+			type : 'DELETE',
+			success : function(result) {
+				window.location.replace('@routes.Home.home()');
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
 	});
-});
-
-function removeStudy() {
-	$.ajax({
-		url : '@routes.Studies.remove(study.getId())',
-		type : 'DELETE',
-		success : function(result) {
-			window.location.replace('@routes.Home.home()');
-		},
-		error : function(err) {
-			showError(err.responseText);
-		}
-	});
-}
-
-$(".addComponent").click(function(e) {
-	window.location.href = "/mecharg/@study.getId/createComponent";
 });
 
 function getComponentId(e) {
@@ -389,11 +345,32 @@ function getComponentId(e) {
 	return componentId;
 }
 
-function getComponentTitle(e) {
-	var componentElement = $(e.target);
-	var componentTitle = componentElement.attr("component-title");
-	return componentTitle;
-}
+$('#studyToolbar').on('click', '#importButton', function() {
+	$('#importBrowser').trigger("click");
+});
+
+$('#importBrowser').change(function() {
+	var data = new FormData();
+	var files = $('#importBrowser').prop('files');
+	$.each(files , function(index, value){
+		data.append('@ComponentModel.COMPONENT', value);
+	});
+	$.ajax({
+		url: '@routes.Components.importComponent(study.getId())',
+		data: data,
+		cache: false,
+		contentType: false,
+		processData: false,
+		type: 'POST',
+		success: function(data){
+			showSuccess("Component(s) or file(s) successfully imported.");
+			componentTable.ajax.reload();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
 
 </script>
 

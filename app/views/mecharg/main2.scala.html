@@ -25,122 +25,152 @@ messages: services.Messages)(body: Html)
 </head>
 
 <body>
-	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-		<div class="container-fluid">
-			<div class="navbar-header">
-				<button type="button" class="navbar-toggle collapsed"
-					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
-					aria-controls="navbar">
-					<span class="sr-only">Toggle navigation</span> <span
-						class="icon-bar"></span> <span class="icon-bar"></span> <span
-						class="icon-bar"></span>
-				</button>
-				<a class="navbar-brand" href="@routes.Home.home">Online Study
-					Alchemist</a>
-			</div>
-			<div id="navbar" class="navbar-collapse collapse">
-				<ul class="nav navbar-nav navbar-right">
-					<li><a href="@routes.Users.profile(user.getEmail())">@user.getName()
-							(@user.getEmail())</a></li>
-					<li><a href="@routes.Authentication.logout()">Logout</a></li>
-				</ul>
-			</div>
-		</div>
-	</nav>
-
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 	<div class="container-fluid">
-		<div class="row">
-			<div class="col-sm-3 col-md-2 sidebar">
-				<ul class="nav nav-sidebar">
-					@for(study <- studyList) {
-					<li><a href="@routes.Studies.index(study.getId())">@study.getTitle()</a></li>
-					<ul>
-						@for(component <- study.getComponentList()) {
-						<li>@component.getTitle()</li>
-						}
-					</ul>
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed"
+				data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+				aria-controls="navbar">
+				<span class="sr-only">Toggle navigation</span> <span
+					class="icon-bar"></span> <span class="icon-bar"></span> <span
+					class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="@routes.Home.home">Online Study
+				Alchemist</a>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+			<ul class="nav navbar-nav navbar-right">
+				<li><a href="@routes.Users.profile(user.getEmail())">@user.getName()
+						(@user.getEmail())</a></li>
+				<li><a href="@routes.Authentication.logout()">Logout</a></li>
+			</ul>
+		</div>
+	</div>
+</nav>
+
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-sm-3 col-md-2 sidebar">
+			<ul class="nav nav-sidebar">
+				@for(study <- studyList) {
+				<li><a href="@routes.Studies.index(study.getId())">@study.getTitle()</a></li>
+				<ul>
+					@for(component <- study.getComponentList()) {
+					<li>@component.getTitle()</li>
 					}
 				</ul>
+				}
+			</ul>
+		</div>
+	</div>
+</div>
+	
+<!-- Confirmation  Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title" id="modalTitle">Confirm</h4>
+			</div>
+			<div class="modal-body">
+				<p id="modalText"></p>
+				<p>Do you want to proceed?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button id="confirmButton" type="button" class="confirmed btn btn-primary"></button>
 			</div>
 		</div>
 	</div>
+</div>
 
+<!-- Main -->
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+	<ol id="breadcrumbs" class="breadcrumb"></ol>
+	@body
+</div>
+	
+<script>
+$('#confirmationModal').modal({show: false});
 
-	<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-	
-		<ol id="breadcrumbs" class="breadcrumb"></ol>
+var breadcrumbs = @Html(services.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
+var messages = @Html(services.JsonUtils.asJson(messages));
 
-		@body
+for (var key in breadcrumbs) {
+	var breadcrumb;
+	if (breadcrumbs[key] === null || breadcrumbs[key] === "") {
+		breadcrumb = '<li class="active">' + key + '</li>';
+	} else {
+		breadcrumb = '<li><a href="' + breadcrumbs[key] + '">' + key + '</a></li>';
+	}
+	$("#breadcrumbs").append(breadcrumb);
+}
 
-	</div>
+messages.successList.forEach(function(success) {
+	showSuccess(success);
+});
+
+messages.infoList.forEach(function(info) {
+	showInfo(info);
+});
+
+messages.warningList.forEach(function(warning) {
+	showWarning(warning);
+});
+
+messages.errorList.forEach(function(error) {
+	showError(error);
+});
+
+function showSuccess(msg) {
+	var html = '<div class="alert alert-success alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ msg + '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function showInfo(msg) {
+	var html = '<div class="alert alert-info alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ msg + '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function showWarning(msg) {
+	var html = '<div class="alert alert-warning alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ msg + '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function showError(msg) {
+	var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ msg + '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function askConfirmation(title, text, buttonText, action) {
+	$('#confirmationModal').find('#modalTitle').html(title);
+	$('#confirmationModal').find('#modalText').html(text);
+	$('#confirmationModal').find('#confirmButton').text(buttonText);
+	$('#confirmationModal').modal('show');
+	$('#confirmationModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
+		$('#confirmationModal').modal('hide');
+		action();
+	});
+}
 	
-	<script>
-	
-		var breadcrumbs = @Html(services.JsonUtils.asJson(breadcrumbs));
-		var messages = @Html(services.JsonUtils.asJson(messages));
-	
-		for (var key in breadcrumbs.breadcrumbs) {
-			var breadcrumb;
-			if (breadcrumbs[key] === null || breadcrumbs[key] === "") {
-				breadcrumb = '<li class="active">' + key + '</li>';
-			} else {
-				breadcrumb = '<li><a href="' + breadcrumbs[key] + '">' + key + '</a></li>';
-			}
-			$("#breadcrumbs").append(breadcrumb);
-		}
-		
-		messages.successList.forEach(function(success) {
-			showSuccess(success);
-		});
-		
-		messages.infoList.forEach(function(info) {
-			showInfo(info);
-		});
-		
-		messages.warningList.forEach(function(warning) {
-			showWarning(warning);
-		});
-		
-		messages.errorList.forEach(function(error) {
-			showError(error);
-		});
-		
-		function showSuccess(msg) {
-			var html = '<div class="alert alert-success alert-dismissible" role="alert">'
-				+ '<button type="button" class="close" data-dismiss="alert">'
-				+ '<span aria-hidden="true">&times;</span>'
-				+ '<span class="sr-only">Close</span></button>'
-				+ msg + '</div>';
-			$(html).insertAfter( "#breadcrumb" );
-		}
-		
-		function showInfo(msg) {
-			var html = '<div class="alert alert-info alert-dismissible" role="alert">'
-				+ '<button type="button" class="close" data-dismiss="alert">'
-				+ '<span aria-hidden="true">&times;</span>'
-				+ '<span class="sr-only">Close</span></button>'
-				+ msg + '</div>';
-			$(html).insertAfter( "#breadcrumb" );
-		}
-		
-		function showWarning(msg) {
-			var html = '<div class="alert alert-warning alert-dismissible" role="alert">'
-				+ '<button type="button" class="close" data-dismiss="alert">'
-				+ '<span aria-hidden="true">&times;</span>'
-				+ '<span class="sr-only">Close</span></button>'
-				+ msg + '</div>';
-			$(html).insertAfter( "#breadcrumb" );
-		}
-		
-		function showError(msg) {
-			var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
-				+ '<button type="button" class="close" data-dismiss="alert">'
-				+ '<span aria-hidden="true">&times;</span>'
-				+ '<span class="sr-only">Close</span></button>'
-				+ msg + '</div>';
-			$(html).insertAfter( "#breadcrumb" );
-		}
-	</script>
+</script>
 
 </body>
 </html>

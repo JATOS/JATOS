@@ -107,8 +107,33 @@ public class ControllerUtils extends Controller {
 		}
 		throw new ResultException(result, errorMsg);
 	}
+	
+	public static void throwStudiesResultException(String errorMsg,
+			int httpStatus, Long studyId) throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus, errorMsg);
+		} else {
+			result = (SimpleResult) Studies.index(studyId, errorMsg,
+					httpStatus);
+		}
+		throw new ResultException(result, errorMsg);
+	}
+	
+	public static void throwComponentsResultException(String errorMsg,
+			int httpStatus, Long studyId, Long componentId)
+			throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus, errorMsg);
+		} else {
+			result = (SimpleResult) Components.index(studyId,
+					componentId, errorMsg, httpStatus);
+		}
+		throw new ResultException(result, errorMsg);
+	}
 
-	public static void throwStudyResultException(String errorMsg,
+	public static void throwStudyResultsResultException(String errorMsg,
 			int httpStatus, Long studyId) throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
@@ -120,7 +145,7 @@ public class ControllerUtils extends Controller {
 		throw new ResultException(result, errorMsg);
 	}
 
-	public static void throwComponentResultException(String errorMsg,
+	public static void throwComponentResultsResultException(String errorMsg,
 			int httpStatus, Long studyId, Long componentId)
 			throws ResultException {
 		SimpleResult result = null;

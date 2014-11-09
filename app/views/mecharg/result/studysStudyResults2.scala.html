@@ -1,0 +1,194 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+study: StudyModel)
+
+@views.html.mecharg.main2(studyList, loggedInUser, breadcrumbs, messages){
+
+<!-- Toolbar -->
+<div id="resultsToolbar" class="btn-toolbar pull-right" role="toolbar">
+	<div class="componentBtnGroup btn-group" aria-hidden="true">
+		<button type="button" class="exportData btn btn-primary btn-sm">Export Data</button>
+		<button type="button" class="remove btn btn-primary btn-sm">Delete</button>
+	</div>
+</div>
+
+<!-- Results table -->
+<table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+	<thead>
+		<tr>
+			<th></th>
+			<th>ID</th>
+			<th>Time</th>
+			<th>Worker ID</th>
+			<th>Worker Type</th>
+			<th>Confirmation Code</th>
+			<th>State</th>
+			<th>Messages</th>
+		</tr>
+	</thead>
+	<tfoot>
+		<tr>
+			<th></th>
+			<th>ID</th>
+			<th>Time</th>
+			<th>Worker ID</th>
+			<th>Worker Type</th>
+			<th>Confirmation Code</th>
+			<th>State</th>
+			<th>Messages</th>
+		</tr>
+	</tfoot>
+</table>
+
+<script type="text/javascript">
+
+var resultsTable;
+$(document).ready(function() {
+	resultsTable = $('#resultsTable').DataTable({
+		"ajax": "@routes.StudyResults.tableDataByStudy(study.getId())",
+		"order": [[ 2, "desc" ]],
+		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+		"pageLength": 10,
+		"columns": [
+			{
+				"class": 'details-control',
+				"orderable": false,
+				"data": null,
+				"defaultContent": ''
+			},
+			{ "data": "id" },
+			{
+				"class": 'time',
+				"data": "startDate"
+			},
+			{ "data": "workerId" },
+			{ "data": "workerType" },
+			{ "data": getConfirmationCode },
+			{ "data": "studyState" },
+			{ 
+				"data": getMessages,
+				"width": "20%"
+			}
+		]
+	});
+	var tableTools = new $.fn.dataTable.TableTools(resultsTable, {
+		"sRowSelect": "multi",
+		"aButtons": [ "select_all", "select_none" ],
+		"sRowSelector": "td:not(:first-child):not(:last-child)"
+	});
+	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
+	
+	function getConfirmationCode(data, type, dataToSet) {
+		return (data.confirmationCode != null) ? data.confirmationCode : "none";
+	}
+	
+	function getMessages(data, type, dataToSet) {
+		var messages = [];
+		if (data.errorMsg != null) {
+			messages.push(data.errorMsg);
+			messages.push("<br>");
+		}
+		if (data.abortMsg != null) {
+			messages.push(data.abortMsg);
+		}
+		return messages.join("");
+	}
+	
+	$('#resultsTable tbody').on('click', 'td.details-control', function() {
+		var tr = $(this).closest('tr');
+		var row = resultsTable.row(tr);
+
+		if (row.child.isShown()) {
+			// This row is already open - close it
+			row.child.hide();
+			tr.removeClass('shown');
+		}
+		else {
+			// Open this row
+			row.child(childRowFormat(row.data())).show();
+			tr.addClass('shown');
+		}
+	});
+	
+});
+
+$(".exportData").click(function(e) {
+	var oTT = TableTools.fnGetInstance('resultsTable');
+	var aSelectedTrs = oTT.fnGetSelected();
+	var ids = [];
+	aSelectedTrs.forEach(function(aSelectedTr) {
+		var rowData = resultsTable.row(aSelectedTr).data();
+		ids.push(rowData.id);
+	});
+	if(ids.length > 0) {
+		window.location.href = '/mecharg/studyresult'
+			+ '/exportData?studyResultIds=' + ids.toString();
+	} else {
+		showError("No results selected");
+	}
+});
+
+$('#resultsToolbar').on('click', '.remove', function() {
+	var oTT = TableTools.fnGetInstance('resultsTable');
+	var selectedTrs = oTT.fnGetSelected();
+	var ids = [];
+	selectedTrs.forEach(function(selectedTr) {
+		var rowData = resultsTable.row(selectedTr).data();
+		ids.push(rowData.id);
+	});
+	if(ids.length <= 0) {
+		showError("No results selected");
+		return;
+	}
+	var title = "Confirm Delete";
+	var text = "You are about to delete the study results "
+		+ "(ID " + ids.toString() + ") " 
+		+ "<b>with all their component results</b>.";
+	askConfirmation(title, text, 'Delete', function() {
+		var url = '/mecharg/studyresult/remove?studyResultIds=' + ids.toString();
+		$.ajax({
+			url : url,
+			type : 'GET',
+			success : function(result) {
+				selectedTrs.forEach(function(selectedTr) {
+					resultsTable.row(selectedTr).remove().draw();
+				});
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
+});
+
+function childRowFormat(data) {
+	// `data` is the original data object for the row
+	var html = [];
+	html.push('<table class="details table table-condensed" cellpadding="5" cellspacing="0" border="0">',
+		'<tr>',
+		'<td><b>ID</b></td>',
+		'<td><b>Time</b></td>',
+		'<td><b>State</b></td>',
+		'<td><b>Data</b></td>',
+		'</tr>');
+		if(data.componentResults.length > 0) {
+			data.componentResults.forEach(function(componentResult) {
+				html.push('<tr>',
+					'<td>' + componentResult.id + '</td>',
+					'<td class="details-time">' + componentResult.startDate + '</td>',
+					'<td>' + componentResult.componentState + '</td>',
+					'<td class="details-data">' + componentResult.data + '</td>',
+					'</tr>');
+			});
+		} else {
+			html.push('<tr>',
+				'<td colspan="4">empty</td>',
+				'</tr>');
+		}
+		html.push('</table>');
+	return html.join("");
+}
+
+</script>
+
+}

@@ -225,8 +225,8 @@ public class Components extends Controller {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+				loggedInUser, component);
 		ControllerUtils.checkStudyLocked(study);
 
 		if (active != null) {
@@ -305,9 +305,8 @@ public class Components extends Controller {
 			// form
 			if (!filePart.getKey().equals(ComponentModel.COMPONENT)) {
 				String errorMsg = ErrorMessages.NO_COMPONENT_UPLOAD;
-				SimpleResult result = (SimpleResult) Studies.index(
-						study.getId(), errorMsg, Http.Status.BAD_REQUEST);
-				throw new ResultException(result, errorMsg);
+				ControllerUtils.throwStudiesResultException(errorMsg,
+						Http.Status.BAD_REQUEST, studyId);
 			}
 			// Try whether we have a component
 			ComponentModel component = new IOUtils.UploadUnmarshaller()
@@ -315,9 +314,8 @@ public class Components extends Controller {
 			if (component != null) {
 				if (component.validate() != null) {
 					String errorMsg = ErrorMessages.COMPONENT_INVALID;
-					SimpleResult result = (SimpleResult) Studies.index(
-							study.getId(), errorMsg, Http.Status.BAD_REQUEST);
-					throw new ResultException(result, errorMsg);
+					ControllerUtils.throwStudiesResultException(errorMsg,
+							Http.Status.BAD_REQUEST, studyId);
 				} else {
 					PersistanceUtils.addComponent(study, component);
 				}
@@ -335,9 +333,8 @@ public class Components extends Controller {
 		try {
 			IOUtils.moveFileIntoStudyFolder(filePart, study);
 		} catch (IOException e) {
-			SimpleResult result = (SimpleResult) Studies.index(study.getId(),
-					e.getMessage(), Http.Status.BAD_REQUEST);
-			throw new ResultException(result, e.getMessage());
+			ControllerUtils.throwStudiesResultException(e.getMessage(),
+					Http.Status.BAD_REQUEST, study.getId());
 		}
 	}
 
@@ -360,5 +357,5 @@ public class Components extends Controller {
 		PersistanceUtils.removeComponent(study, component);
 		return ok();
 	}
-
+	
 }

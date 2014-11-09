@@ -21,6 +21,7 @@ import services.DateUtils;
 import services.ErrorMessages;
 import services.IOUtils;
 import services.JsonUtils;
+import services.Messages;
 import services.PersistanceUtils;
 import exceptions.ResultException;
 
@@ -40,12 +41,19 @@ public class StudyResults extends Controller {
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study), "Results");
+		Messages messages = new Messages().error(errorMsg);
+		// messages.error("This is dangerous!")
+		// .error("This is even more dangerous!")
+		// .warning("A warning from a friend").info("Just an info")
+		// .success("You were successful!");
+		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
+				.put("Home", routes.Home.home())
+				.put(study.getTitle(), routes.Studies.index(studyId, null))
+				.put("Results", routes.StudyResults.index(studyId))
+				.put("Index", "");
 		return status(httpStatus,
-				views.html.mecharg.result.studysStudyResults.render(studyList,
-						loggedInUser, breadcrumbs, study, errorMsg));
+				views.html.mecharg.result.studysStudyResults2.render(studyList,
+						loggedInUser, breadcrumbs, messages, study));
 	}
 
 	@Transactional
@@ -133,7 +141,7 @@ public class StudyResults extends Controller {
 	 */
 	@Transactional
 	public static Result tableDataByStudy(Long studyId) throws ResultException {
-		Logger.info(CLASS_NAME + ".tableData: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
