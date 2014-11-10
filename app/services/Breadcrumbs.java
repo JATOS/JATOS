@@ -5,6 +5,7 @@ import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
+import models.UserModel;
 import controllers.routes;
 import play.mvc.Call;
 
@@ -29,6 +30,14 @@ public class Breadcrumbs {
 	public static Breadcrumbs generateForHome(String last) {
 		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
 				.put("Home", routes.Home.home())
+				.put(last, "");
+		return breadcrumbs;
+	}
+	
+	public static Breadcrumbs generateForUser(UserModel user, String last) {
+		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
+				.put("Home", routes.Home.home())
+				.put(user.toString(), routes.Users.profile(user.getEmail()))
 				.put(last, "");
 		return breadcrumbs;
 	}

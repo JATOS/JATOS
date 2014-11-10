@@ -3,43 +3,48 @@ breadcrumbs: services.Breadcrumbs, messages: services.Messages)
 
 @views.html.mecharg.main2(studyList, loggedInUser, breadcrumbs, messages){
 
-<article class="home">
-
-	<div class="boxRow">
-		<div class="manageBox">
-			<header>
-				<h3>Manage</h3>
-				<div class="placeHolder">X</div>
-			</header>
-			<div class="boxContent">
-				<div class="newStudy">New Study</div>	
-				<form id="importForm" action="@routes.Studies.importStudy()" method="post" enctype="multipart/form-data">
-					<div id="importButton" type="file">Import Study</div>
-					<input id="importBrowser" type="file" name="@StudyModel.STUDY" accept="application/json">
-				</form>
-				<div class="newUser">New User</div>
-			</div>
-		</div>
-	</div>	
-	
-</article>
+<div id="toolbar" class="btn-group">
+	<button id="newStudy" type="button" class="btn btn-primary">New Study</button>
+	<input id="importBrowser" type="file" name="@StudyModel.STUDY" multiple style="display: none;">
+	<button id="importButton" type="button" class="btn btn-primary">Import Study</button>
+	<button id="newUser" type="button" class="btn btn-primary">New User</button>
+</div>
 
 <script type="text/javascript">
 
-	$(".newStudy").click(function(e) {
-		window.location.href = "@routes.Studies.create()";
+$('#toolbar').on('click', '#newStudy', function() {
+	window.location.href = "@routes.Studies.create()";
+});
+
+$('#toolbar').on('click', '#newUser', function() {
+	window.location.href = "@routes.Users.create()";
+});
+
+$('#toolbar').on('click', '#importButton', function() {
+	$('#importBrowser').trigger("click");
+});
+
+$('#importBrowser').change(function() {
+	var data = new FormData();
+	var files = $('#importBrowser').prop('files');
+	$.each(files , function(index, value){
+		data.append('@StudyModel.STUDY', value);
 	});
-	
-	$(".newUser").click(function(e) {
-		window.location.href = "@routes.Users.create()";
+	$.ajax({
+		url: '@routes.Studies.importStudy()',
+		data: data,
+		cache: false,
+		contentType: false,
+		processData: false,
+		type: 'POST',
+		success: function(data){
+			window.location.href = "@routes.Home.home()";
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
 	});
-	
-	$("#importButton").click(function() {
-		$("#importBrowser").trigger("click");
-		$('#importBrowser').change(function() {
-			$("#importForm").submit();
-		});
-	});
+});
 
 </script>
 }

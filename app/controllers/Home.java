@@ -27,8 +27,8 @@ public class Home extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		Messages messages = new Messages().error(errorMsg);
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs().put(
-				"home", routes.Home.home());
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForHome("Index");
 		return status(httpStatus, views.html.mecharg.home2.render(studyList,
 				loggedInUser, breadcrumbs, messages));
 	}

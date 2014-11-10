@@ -45,7 +45,7 @@ public class ControllerUtils extends Controller {
 			UserModel loggedInUser) throws ResultException {
 		if (study == null) {
 			String errorMsg = ErrorMessages.studyNotExist(studyId);
-			throwBadReqHomeResultException(errorMsg);
+			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
 		}
 		if (!study.hasMember(loggedInUser)) {
 			String errorMsg = ErrorMessages.notMember(loggedInUser.getName(),
@@ -67,12 +67,12 @@ public class ControllerUtils extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		if (component == null) {
 			String errorMsg = ErrorMessages.componentNotExist(componentId);
-			throwBadReqHomeResultException(errorMsg);
+			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
 			String errorMsg = ErrorMessages.componentNotBelongToStudy(studyId,
 					componentId);
-			throwBadReqHomeResultException(errorMsg);
+			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
 		}
 	}
 
@@ -80,20 +80,16 @@ public class ControllerUtils extends Controller {
 			throws ResultException {
 		if (worker == null) {
 			String errorMsg = ErrorMessages.workerNotExist(workerId);
-			throwBadReqHomeResultException(errorMsg);
+			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
 		}
 	}
-
-	private static void throwBadReqHomeResultException(String errorMsg)
+	
+	public static void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
 			throws ResultException {
-		SimpleResult result = null;
-		if (isAjax()) {
-			result = badRequest(errorMsg);
-		} else {
-			result = (SimpleResult) Home
-					.home(errorMsg, Http.Status.BAD_REQUEST);
+		if (!user.getEmail().equals(loggedInUser.getEmail())) {
+			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
+			throwHomeResultException(errorMsg, Http.Status.FORBIDDEN);
 		}
-		throw new ResultException(result, errorMsg);
 	}
 
 	public static void throwWorkerException(String errorMsg, int httpStatus,
@@ -107,19 +103,30 @@ public class ControllerUtils extends Controller {
 		}
 		throw new ResultException(result, errorMsg);
 	}
-	
+
+	public static void throwHomeResultException(String errorMsg,
+			int httpStatus) throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus, errorMsg);
+		} else {
+			result = (SimpleResult) Home.home(errorMsg, httpStatus);
+		}
+		throw new ResultException(result, errorMsg);
+	}
+
 	public static void throwStudiesResultException(String errorMsg,
 			int httpStatus, Long studyId) throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) Studies.index(studyId, errorMsg,
-					httpStatus);
+			result = (SimpleResult) Studies
+					.index(studyId, errorMsg, httpStatus);
 		}
 		throw new ResultException(result, errorMsg);
 	}
-	
+
 	public static void throwComponentsResultException(String errorMsg,
 			int httpStatus, Long studyId, Long componentId)
 			throws ResultException {
@@ -127,8 +134,8 @@ public class ControllerUtils extends Controller {
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) Components.index(studyId,
-					componentId, errorMsg, httpStatus);
+			result = (SimpleResult) Components.index(studyId, componentId,
+					errorMsg, httpStatus);
 		}
 		throw new ResultException(result, errorMsg);
 	}
@@ -162,7 +169,7 @@ public class ControllerUtils extends Controller {
 		UserModel user = UserModel.findByEmail(email);
 		if (user == null) {
 			String errorMsg = ErrorMessages.userNotExist(email);
-			throwBadReqHomeResultException(errorMsg);
+			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
 		}
 		return user;
 	}

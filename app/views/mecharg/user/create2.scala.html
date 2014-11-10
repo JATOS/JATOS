@@ -1,0 +1,65 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+form: Form[UserModel])
+
+@views.html.mecharg.main2(studyList, loggedInUser, breadcrumbs, messages){
+
+@helper.form(action = routes.Users.submit(), 'class -> "form-horizontal", 'role -> "form") {
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="email">Email address:</label>
+	<div class="col-xs-10">
+		<input type="email" class="form-control" id="email" name="@UserModel.EMAIL" value="@form(UserModel.EMAIL).value" placeholder="Your email">
+		<span class="help-block">This will be your username.</span>
+	</div>
+</div>
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="name">Name:</label>
+	<div class="col-xs-10">
+		<input type="text" class="form-control" id="name" name="@UserModel.NAME" value="@form(UserModel.NAME).value" placeholder="Your name">
+	</div>
+</div>
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="password">Password:</label>
+	<div class="col-xs-10">
+		<input type="password" class="form-control" id="password" name="@UserModel.PASSWORD" placeholder="Your password">
+		<input type="password" class="form-control" id="repeatPassword" name="@UserModel.PASSWORD_REPEAT" placeholder="Repeat your password">
+	</div>
+</div>
+
+<div class="form-group">
+	<div class="col-xs-offset-2 col-xs-10">
+		<input type="submit" class="btn btn-primary" value="Submit">
+	</div>
+</div>
+
+}
+
+<script>
+@if(form.hasErrors) {
+	showWarning("User wasn't created");
+}
+@for(error <- form.globalErrors) {
+	showError("@error.message");
+}
+@for(error <- form(UserModel.NAME).errors) {
+	$('#name').closest(".form-group").addClass("has-error");
+	$('#name').after('<span class="help-block">@error.message</span>');
+}
+@for(error <- form(UserModel.EMAIL).errors) {
+	$('#email').closest(".form-group").addClass("has-error");
+	$('#email').after('<span class="help-block">@error.message</span>');
+}
+@for(error <- form(UserModel.PASSWORD).errors) {
+	$('#password').closest(".form-group").addClass("has-error");
+	$('#password').after('<span class="help-block">@error.message</span>');
+}
+@for(error <- form(UserModel.PASSWORD_REPEAT).errors) {
+	$('#repeatPassword').closest(".form-group").addClass("has-error");
+	$('#repeatPassword').after('<span class="help-block">@error.message</span>');
+}
+</script>
+
+}

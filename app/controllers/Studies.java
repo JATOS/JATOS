@@ -136,24 +136,46 @@ public class Studies extends Controller {
 				+ session(Users.COOKIE_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
-		File tempDir = unzipUploadedFile();
-		StudyModel study = unmarshalStudy(tempDir);
-		PersistanceUtils.addStudy(study, loggedInUser);
-		moveStudyDir(tempDir, study);
-		return redirect(routes.Home.home());
+		MultipartFormData mfd = request().body().asMultipartFormData();
+		List<FilePart> filePartList = mfd.getFiles();
+		for (FilePart filePart : filePartList) {
+			// If the key isn't right the upload doesn't come from the right
+			// form
+			if (!filePart.getKey().equals(StudyModel.STUDY)) {
+				String errorMsg = ErrorMessages.NO_STUDY_UPLOAD;
+				ControllerUtils.throwHomeResultException(errorMsg,
+						Http.Status.BAD_REQUEST);
+			}
+			File tempDir = unzipUploadedFile(filePart);
+			StudyModel study = unmarshalStudy(tempDir);
+			PersistanceUtils.addStudy(study, loggedInUser);
+			moveStudyDir(tempDir, study);
+		}
+		return ok();
 	}
 
 	private static void moveStudyDir(File tempDir, StudyModel study)
 			throws ResultException {
 		try {
-			File studyDir = IOUtils.findDirectories(tempDir)[0];
-			IOUtils.moveStudyDirectory(studyDir, study);
+			File[] dirArray = IOUtils.findDirectories(tempDir);
+			if (dirArray.length == 0) {
+				// If a study dir is missing, create a new one. 
+				IOUtils.createStudyDir(study);
+				// TODO send warning message
+			} else if (dirArray.length == 1) {
+				File studyDir = dirArray[0];
+				IOUtils.moveStudyDirectory(studyDir, study);
+			} else {
+				// More than one dir is forbidden
+				String errorMsg = ErrorMessages.MORE_THAN_ONE_DIR_IN_ZIP;
+				ControllerUtils.throwHomeResultException(errorMsg,
+						Http.Status.BAD_REQUEST);
+			}
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.studysDirNotCreated(IOUtils
 					.generateStudysPath(study));
-			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+			ControllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
-			throw new ResultException(result, errorMsg);
 		}
 	}
 
@@ -165,31 +187,27 @@ public class Studies extends Controller {
 		StudyModel study = uploadUnmarshaller.unmarshalling(studyFile,
 				StudyModel.class);
 		if (study == null) {
-			SimpleResult result = (SimpleResult) Home.home(
+			ControllerUtils.throwHomeResultException(
 					uploadUnmarshaller.getErrorMsg(), Http.Status.BAD_REQUEST);
-			throw new ResultException(result, uploadUnmarshaller.getErrorMsg());
 		}
 		if (study.validate() != null) {
 			String errorMsg = ErrorMessages.COMPONENT_INVALID;
-			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+			ControllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
-			throw new ResultException(result, errorMsg);
 		}
 		studyFile.delete();
 		return study;
 	}
 
-	private static File unzipUploadedFile() throws ResultException {
-		MultipartFormData mfd = request().body().asMultipartFormData();
-		FilePart filePart = mfd.getFile(StudyModel.STUDY);
-		File tempDir;
+	private static File unzipUploadedFile(FilePart filePart)
+			throws ResultException {
+		File tempDir = null;
 		try {
 			tempDir = ZipUtil.unzip(filePart.getFile());
 		} catch (IOException e1) {
 			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
-			SimpleResult result = (SimpleResult) Home.home(errorMsg,
+			ControllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
-			throw new ResultException(result, errorMsg);
 		}
 		return tempDir;
 	}
@@ -487,7 +505,8 @@ public class Studies extends Controller {
 
 		String hostname = request().host();
 		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForStudy(study, "Mechanical Turk HIT Layout Source Code");
+				.generateForStudy(study,
+						"Mechanical Turk HIT Layout Source Code");
 		return ok(views.html.mecharg.study.mTurkSourceCode2.render(studyList,
 				loggedInUser, breadcrumbs, null, study, hostname));
 	}

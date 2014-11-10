@@ -36,12 +36,14 @@ public abstract class ErrorMessages<T extends Worker> {
 
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
-	public static final String PASSWORDS_ARENT_THE_SAME = "Passwords aren't the same.";
+	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";
 	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email address is already registered.";
 
 	// Export / import
 	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
+	public static final String NO_STUDY_UPLOAD = "Uploaded file isn't intended for studies";
+	public static final String MORE_THAN_ONE_DIR_IN_ZIP = "There are more than one directory in the ZIP file.";
 	public static final String COULDNT_READ_JSON = "Couldn't read JSON string";
 	public static final String COULDNT_READ_FILE = "Couldn't read file";
 	public static final String FILE_MISSING = "File missing";
@@ -232,7 +234,7 @@ public abstract class ErrorMessages<T extends Worker> {
 
 	public static String mustBeLoggedInAsUser(UserModel user) {
 		return "You must be logged in as " + user.toString()
-				+ " to update this user.";
+				+ " to see the profile of this user.";
 	}
 
 	public static String studyLocked(Long studyId) {

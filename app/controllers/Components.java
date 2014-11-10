@@ -334,8 +334,7 @@ public class Components extends Controller {
 				moveFileIntoStudyFolder(filePart, study);
 			}
 		}
-
-		return redirect(routes.Studies.index(studyId, null));
+		return ok();
 	}
 
 	private static void moveFileIntoStudyFolder(FilePart filePart,

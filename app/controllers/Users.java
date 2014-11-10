@@ -2,8 +2,6 @@ package controllers;
 
 import java.util.List;
 
-import controllers.routes;
-import exceptions.ResultException;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.MAWorker;
@@ -12,22 +10,18 @@ import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
 import services.ErrorMessages;
+import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
 public class Users extends Controller {
 
-	public static final String PASSWORD_REPEAT = "passwordRepeat";
-	public static final String NEW_PASSWORD_REPEAT = "newPasswordRepeat";
-	public static final String OLD_PASSWORD = "oldPassword";
-	public static final String NEW_PASSWORD = "newPassword";
-	public static final String COOKIE_EMAIL = "email";
-
 	private static final String CLASS_NAME = Users.class.getSimpleName();
+
+	public static final String COOKIE_EMAIL = "email";
 
 	@Transactional
 	public static Result profile(String email) throws ResultException {
@@ -37,11 +31,11 @@ public class Users extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
+		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getUserBreadcrumb(user));
-		return ok(views.html.mecharg.user.profile.render(studyList,
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForUser(user, "Index");
+		return ok(views.html.mecharg.user.profile2.render(studyList,
 				loggedInUser, breadcrumbs, null, user));
 	}
 
@@ -52,10 +46,10 @@ public class Users extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(), "New User");
-		return ok(views.html.mecharg.user.create.render(studyList,
-				loggedInUser, breadcrumbs, Form.form(UserModel.class)));
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForHome("New User");
+		return ok(views.html.mecharg.user.create2.render(studyList,
+				loggedInUser, breadcrumbs, null, Form.form(UserModel.class)));
 	}
 
 	@Transactional
@@ -68,10 +62,10 @@ public class Users extends Controller {
 				.getEmail());
 
 		if (form.hasErrors()) {
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(), "New User");
-			SimpleResult result = badRequest(views.html.mecharg.user.create
-					.render(studyList, loggedInUser, breadcrumbs, form));
+			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+					.generateForHome("New User");
+			SimpleResult result = badRequest(views.html.mecharg.user.create2
+					.render(studyList, loggedInUser, breadcrumbs, null, form));
 			throw new ResultException(result);
 		}
 
@@ -85,7 +79,7 @@ public class Users extends Controller {
 		// Check for non empty passwords
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String password = requestData.get(UserModel.PASSWORD);
-		String passwordRepeat = requestData.get(PASSWORD_REPEAT);
+		String passwordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
 		if (password.trim().isEmpty() || passwordRepeat.trim().isEmpty()) {
 			form.reject(UserModel.PASSWORD,
 					ErrorMessages.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
@@ -95,15 +89,14 @@ public class Users extends Controller {
 		String passwordHash = UserModel.getHashMDFive(password);
 		String passwordHashRepeat = UserModel.getHashMDFive(passwordRepeat);
 		if (!passwordHash.equals(passwordHashRepeat)) {
-			form.reject(UserModel.PASSWORD,
-					ErrorMessages.PASSWORDS_ARENT_THE_SAME);
+			form.reject(UserModel.PASSWORD, ErrorMessages.PASSWORDS_DONT_MATCH);
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(), "New User");
-			SimpleResult result = badRequest(views.html.mecharg.user.create
-					.render(studyList, loggedInUser, breadcrumbs, form));
+			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+					.generateForHome("New User");
+			SimpleResult result = badRequest(views.html.mecharg.user.create2
+					.render(studyList, loggedInUser, breadcrumbs, null, form));
 			throw new ResultException(result);
 		} else {
 			MAWorker worker = new MAWorker(newUser);
@@ -112,7 +105,7 @@ public class Users extends Controller {
 			newUser.setWorker(worker);
 			newUser.persist();
 			worker.merge();
-			return redirect(routes.Users.profile(newUser.getEmail()));
+			return redirect(routes.Home.home());
 		}
 	}
 
@@ -124,21 +117,13 @@ public class Users extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-
-		// To change a user this user must be logged in.
-		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
-			SimpleResult result = (SimpleResult) Home.home(errorMsg,
-					Http.Status.BAD_REQUEST);
-			throw new ResultException(result, errorMsg);
-		}
+		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getUserBreadcrumb(user), "Edit Profile");
-		return ok(views.html.mecharg.user.editProfile.render(studyList,
-				loggedInUser, breadcrumbs, user, form));
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForUser(user, "Edit Profile");
+		return ok(views.html.mecharg.user.editProfile2.render(studyList,
+				loggedInUser, breadcrumbs, null, user, form));
 	}
 
 	@Transactional
@@ -151,19 +136,15 @@ public class Users extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
+		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
-		// To change a user this user must be logged in.
-		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			form.reject(ErrorMessages.mustBeLoggedInAsUser(user));
-		}
-
 		if (form.hasErrors()) {
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(),
-					Breadcrumbs.getUserBreadcrumb(user), "Edit Profile");
-			SimpleResult result = badRequest(views.html.mecharg.user.editProfile
-					.render(studyList, loggedInUser, breadcrumbs, user, form));
+			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+					.generateForUser(user, "Edit Profile");
+			SimpleResult result = badRequest(views.html.mecharg.user.editProfile2
+					.render(studyList, loggedInUser, breadcrumbs, null, user,
+							form));
 			throw new ResultException(result);
 		} else {
 			// Update user in database
@@ -185,21 +166,13 @@ public class Users extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-
-		// To change a user's password this user must be logged in.
-		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
-			SimpleResult result = (SimpleResult) Home.home(errorMsg,
-					Http.Status.BAD_REQUEST);
-			throw new ResultException(result, errorMsg);
-		}
+		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getUserBreadcrumb(user), "Change Password");
-		return ok(views.html.mecharg.user.changePassword.render(studyList,
-				loggedInUser, breadcrumbs, form));
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForUser(user, "Change Password");
+		return ok(views.html.mecharg.user.changePassword2.render(studyList,
+				loggedInUser, breadcrumbs, null, form));
 	}
 
 	@Transactional
@@ -212,25 +185,23 @@ public class Users extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		DynamicForm requestData = Form.form().bindFromRequest();
+		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
-		// To change a user this user must be logged in.
-		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			form.reject(ErrorMessages.mustBeLoggedInAsUser(user));
-		}
+		DynamicForm requestData = Form.form().bindFromRequest();
 
 		// Authenticate
 		String oldPasswordHash = UserModel.getHashMDFive(requestData
-				.get(OLD_PASSWORD));
+				.get(UserModel.OLD_PASSWORD));
 		if (UserModel.authenticate(user.getEmail(), oldPasswordHash) == null) {
-			form.reject(OLD_PASSWORD, ErrorMessages.WRONG_OLD_PASSWORD);
+			form.reject(UserModel.OLD_PASSWORD,
+					ErrorMessages.WRONG_OLD_PASSWORD);
 		}
 
 		// Check for non empty passwords
-		String newPassword = requestData.get(NEW_PASSWORD);
-		String newPasswordRepeat = requestData.get(NEW_PASSWORD_REPEAT);
+		String newPassword = requestData.get(UserModel.NEW_PASSWORD);
+		String newPasswordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
 		if (newPassword.trim().isEmpty() || newPasswordRepeat.trim().isEmpty()) {
-			form.reject(NEW_PASSWORD,
+			form.reject(UserModel.NEW_PASSWORD,
 					ErrorMessages.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
 		}
 
@@ -239,15 +210,15 @@ public class Users extends Controller {
 		String newPasswordHashRepeat = UserModel
 				.getHashMDFive(newPasswordRepeat);
 		if (!newPasswordHash.equals(newPasswordHashRepeat)) {
-			form.reject(NEW_PASSWORD, ErrorMessages.PASSWORDS_ARENT_THE_SAME);
+			form.reject(UserModel.NEW_PASSWORD,
+					ErrorMessages.PASSWORDS_DONT_MATCH);
 		}
 
 		if (form.hasErrors()) {
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(),
-					Breadcrumbs.getUserBreadcrumb(user), "Change Password");
-			SimpleResult result = badRequest(views.html.mecharg.user.changePassword
-					.render(studyList, loggedInUser, breadcrumbs, form));
+			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+					.generateForUser(user, "Change Password");
+			SimpleResult result = badRequest(views.html.mecharg.user.changePassword2
+					.render(studyList, loggedInUser, breadcrumbs, null, form));
 			throw new ResultException(result);
 		} else {
 			// Update password hash in DB

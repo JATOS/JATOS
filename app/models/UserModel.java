@@ -37,7 +37,10 @@ public class UserModel {
 	public static final String NAME = "name";
 	public static final String EMAIL = "email";
 	public static final String PASSWORD = "password";
-	
+	public static final String PASSWORD_REPEAT = "passwordRepeat";
+	public static final String OLD_PASSWORD = "oldPassword";
+	public static final String NEW_PASSWORD = "newPassword";
+
 	@Id
 	private String email;
 
@@ -108,7 +111,11 @@ public class UserModel {
 
 	@Override
 	public String toString() {
-		return name + ", " + email;
+		if (name != null && !name.isEmpty()) {
+			return name + " (" + email + ")";
+		} else {
+			return email;
+		}
 	}
 
 	@Override
@@ -162,8 +169,8 @@ public class UserModel {
 					ErrorMessages.NO_HTML_ALLOWED));
 		}
 		if (name == null || name.isEmpty()) {
-			errorList.add(new ValidationError(NAME,
-					ErrorMessages.MISSING_NAME));
+			errorList
+					.add(new ValidationError(NAME, ErrorMessages.MISSING_NAME));
 		}
 		if (name != null && !Jsoup.isValid(name, Whitelist.none())) {
 			errorList.add(new ValidationError(NAME,

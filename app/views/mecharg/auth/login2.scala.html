@@ -39,6 +39,7 @@
 	@helper.form(action = routes.Authentication.authenticate, 'class -> "form-signin", 'role -> "form") {
 	<h2 class="form-signin-heading">Please sign in</h2>
 	<div class="input-group">
+	<!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
 	<input type="text" name="email" id="email" class="form-control" placeholder="Email address" value="@form("email").value" required autofocus>
 	<input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
 	</div>
