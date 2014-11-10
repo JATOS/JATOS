@@ -12,6 +12,7 @@ import models.UserModel;
 import models.results.StudyResult;
 import models.workers.Worker;
 import play.Logger;
+import play.api.mvc.Call;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.data.validation.ValidationError;
@@ -48,12 +49,11 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		
+
 		Map<Long, String> workerMap = retrieveWorkerMap(study);
 		Messages messages = new Messages().error(errorMsg);
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs().put(
-				"Home", routes.Home.home()).put(study.getTitle(),
-				routes.Studies.index(study.getId(), null)).put("Index", "");
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForStudy(study, "Index");
 		return status(httpStatus, views.html.mecharg.study.index2.render(
 				studyList, loggedInUser, breadcrumbs, messages, study,
 				workerMap));
@@ -88,10 +88,12 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(), "New Study");
-		return ok(views.html.mecharg.study.create.render(studyList,
-				loggedInUser, breadcrumbs, Form.form(StudyModel.class)));
+		Form<StudyModel> form = Form.form(StudyModel.class);
+		Call submitAction = routes.Studies.submit();
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForHome("New Study");
+		return ok(views.html.mecharg.study.edit2.render(studyList,
+				loggedInUser, breadcrumbs, null, submitAction, form));
 	}
 
 	@Transactional
@@ -204,11 +206,11 @@ public class Studies extends Controller {
 		ControllerUtils.checkStudyLocked(study);
 
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study), "Edit");
-		return ok(views.html.mecharg.study.edit.render(studyList, loggedInUser,
-				breadcrumbs, study, form));
+		Call submitAction = routes.Studies.submitEdited(study.getId());
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForStudy(study, "Edit");
+		return ok(views.html.mecharg.study.edit2.render(studyList,
+				loggedInUser, breadcrumbs, null, submitAction, form));
 	}
 
 	@Transactional
@@ -224,11 +226,12 @@ public class Studies extends Controller {
 
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
 		if (form.hasErrors()) {
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(),
-					Breadcrumbs.getStudyBreadcrumb(study), "Edit");
-			SimpleResult result = badRequest(views.html.mecharg.study.edit
-					.render(studyList, loggedInUser, breadcrumbs, study, form));
+			Call submitAction = routes.Studies.submitEdited(study.getId());
+			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+					.generateForStudy(study, "Edit");
+			SimpleResult result = badRequest(views.html.mecharg.study.edit2
+					.render(studyList, loggedInUser, breadcrumbs, null,
+							submitAction, form));
 			throw new ResultException(result);
 		}
 
@@ -247,11 +250,12 @@ public class Studies extends Controller {
 		} catch (IOException e) {
 			form.reject(new ValidationError(StudyModel.DIRNAME_PREFIX, e
 					.getMessage()));
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(),
-					Breadcrumbs.getStudyBreadcrumb(study), "Edit");
-			SimpleResult result = badRequest(views.html.mecharg.study.edit
-					.render(studyList, loggedInUser, breadcrumbs, study, form));
+			Call submitAction = routes.Studies.submitEdited(study.getId());
+			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+					.generateForStudy(study, "Edit");
+			SimpleResult result = badRequest(views.html.mecharg.study.edit2
+					.render(studyList, loggedInUser, breadcrumbs, null,
+							submitAction, form));
 			throw new ResultException(result);
 		}
 
@@ -316,6 +320,9 @@ public class Studies extends Controller {
 		return ok();
 	}
 
+	/**
+	 * Ajax POST request
+	 */
 	@Transactional
 	public static Result cloneStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".cloneStudy: studyId " + studyId + ", "
@@ -332,12 +339,9 @@ public class Studies extends Controller {
 		try {
 			IOUtils.copyStudyDirectory(study, clone);
 		} catch (IOException e) {
-			String errorMsg = e.getMessage();
-			SimpleResult result = (SimpleResult) Studies.index(studyId,
-					errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
-			throw new ResultException(result, errorMsg);
+			return internalServerError(e.getMessage());
 		}
-		return redirect(routes.Studies.index(clone.getId(), null));
+		return ok();
 	}
 
 	@Transactional
@@ -390,12 +394,12 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		List<UserModel> userList = UserModel.findAll();
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study), "Change Members");
+		Messages messages = new Messages().error(errorMsg);
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForStudy(study, "Change Members");
 		return status(httpStatus,
-				views.html.mecharg.study.changeMembers.render(studyList,
-						loggedInUser, breadcrumbs, study, userList, errorMsg));
+				views.html.mecharg.study.changeMembers2.render(studyList,
+						loggedInUser, breadcrumbs, messages, study, userList));
 	}
 
 	@Transactional
@@ -482,14 +486,12 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		String hostname = request().host();
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study),
-				"Mechanical Turk HIT layout source code");
-		return ok(views.html.mecharg.study.mTurkSourceCode.render(studyList,
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForStudy(study, "Mechanical Turk HIT Layout Source Code");
+		return ok(views.html.mecharg.study.mTurkSourceCode2.render(studyList,
 				loggedInUser, breadcrumbs, null, study, hostname));
 	}
-	
+
 	/**
 	 * HTTP Ajax request
 	 */

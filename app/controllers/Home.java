@@ -26,23 +26,7 @@ public class Home extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
-				.getHomeBreadcrumb());
-		return status(httpStatus, views.html.mecharg.home.render(studyList,
-				loggedInUser, breadcrumbs, errorMsg));
-	}
-
-	@Transactional
-	public static Result home2(String errorMsg, int httpStatus)
-			throws ResultException {
-		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
 		Messages messages = new Messages().error(errorMsg);
-		// String breadcrumbs = Breadcrumbs.generateBreadcrumbs(Breadcrumbs
-		// .getHomeBreadcrumb());
 		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs().put(
 				"home", routes.Home.home());
 		return status(httpStatus, views.html.mecharg.home2.render(studyList,
@@ -52,11 +36,6 @@ public class Home extends Controller {
 	@Transactional
 	public static Result home() throws ResultException {
 		return home(null, Http.Status.OK);
-	}
-
-	@Transactional
-	public static Result home2() throws ResultException {
-		return home2(null, Http.Status.OK);
 	}
 
 }

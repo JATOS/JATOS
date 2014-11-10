@@ -294,7 +294,7 @@ public class StudyModel {
 			errorList.add(new ValidationError(TITLE,
 					ErrorMessages.MISSING_TITLE));
 		}
-		if (!Jsoup.isValid(title, Whitelist.none())) {
+		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
 					ErrorMessages.NO_HTML_ALLOWED));
 		}

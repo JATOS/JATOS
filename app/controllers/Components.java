@@ -8,6 +8,7 @@ import models.StudyModel;
 import models.UserModel;
 import models.results.ComponentResult;
 import play.Logger;
+import play.api.mvc.Call;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
@@ -101,12 +102,14 @@ public class Components extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study), "New Component");
-		return ok(views.html.mecharg.component.create.render(studyList,
-				loggedInUser, breadcrumbs, study,
-				Form.form(ComponentModel.class)));
+		Form<ComponentModel> form = Form.form(ComponentModel.class);
+		Call submitAction = routes.Components.submit(studyId);
+		String studyDirName = IOUtils.generateStudyDirName(study);
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForStudy(study, "New Component");
+		return ok(views.html.mecharg.component.edit2.render(studyList,
+				loggedInUser, breadcrumbs, null, submitAction, form,
+				studyDirName));
 	}
 
 	@Transactional
@@ -123,18 +126,19 @@ public class Components extends Controller {
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(),
-					Breadcrumbs.getStudyBreadcrumb(study), "New Component");
-			SimpleResult result = badRequest(views.html.mecharg.component.create
-					.render(studyList, loggedInUser, breadcrumbs, study, form));
+			Call submitAction = routes.Components.submit(studyId);
+			String studyDirName = IOUtils.generateStudyDirName(study);
+			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+					.generateForStudy(study, "New Component");
+			SimpleResult result = badRequest(views.html.mecharg.component.edit2
+					.render(studyList, loggedInUser, breadcrumbs, null,
+							submitAction, form, studyDirName));
 			throw new ResultException(result);
 		}
 
 		ComponentModel component = form.get();
 		PersistanceUtils.addComponent(study, component);
-		return redirect(routes.Components.index(study.getId(),
-				component.getId()));
+		return redirectAfterEdit(studyId, component.getId(), study);
 	}
 
 	@Transactional
@@ -154,12 +158,14 @@ public class Components extends Controller {
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 				component);
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study),
-				Breadcrumbs.getComponentBreadcrumb(study, component), "Edit");
-		return ok(views.html.mecharg.component.edit.render(studyList,
-				loggedInUser, breadcrumbs, component, study, form));
+		Call submitAction = routes.Components
+				.submitEdited(studyId, componentId);
+		String studyDirName = IOUtils.generateStudyDirName(study);
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForComponent(study, component, "Edit");
+		return ok(views.html.mecharg.component.edit2.render(studyList,
+				loggedInUser, breadcrumbs, null, submitAction, form,
+				studyDirName));
 	}
 
 	@Transactional
@@ -180,14 +186,14 @@ public class Components extends Controller {
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(),
-					Breadcrumbs.getStudyBreadcrumb(study),
-					Breadcrumbs.getComponentBreadcrumb(study, component),
-					"Edit");
-			SimpleResult result = badRequest(views.html.mecharg.component.edit
-					.render(studyList, loggedInUser, breadcrumbs, component,
-							study, form));
+			Call submitAction = routes.Components.submitEdited(studyId,
+					componentId);
+			String studyDirName = IOUtils.generateStudyDirName(study);
+			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+					.generateForComponent(study, component, "Edit");
+			SimpleResult result = badRequest(views.html.mecharg.component.edit2
+					.render(studyList, loggedInUser, breadcrumbs, null,
+							submitAction, form, studyDirName));
 			throw new ResultException(result);
 		}
 
@@ -200,15 +206,19 @@ public class Components extends Controller {
 				.get(ComponentModel.RELOADABLE)));
 		PersistanceUtils.updateComponent(component, title, reloadable,
 				filePath, jsonData);
+		return redirectAfterEdit(studyId, componentId, study);
+	}
 
-		// Check if "UpdateAndShow" submit button was pressed (instead of the
-		// "Update" button)
+	private static Result redirectAfterEdit(Long studyId, Long componentId,
+			StudyModel study) {
+		// Check which submit button was pressed: "Submit" or "Submit & Show".
 		String[] postAction = request().body().asFormUrlEncoded().get("action");
-		if ("UpdateAndShow".equals(postAction[0])) {
+		if (postAction[0].toLowerCase().contains("show")) {
 			return redirect(routes.Components.showComponent(studyId,
 					componentId));
+		} else {
+			return redirect(routes.Studies.index(study.getId(), null));
 		}
-		return redirect(routes.Components.index(study.getId(), componentId));
 	}
 
 	/**
@@ -250,7 +260,7 @@ public class Components extends Controller {
 
 		ComponentModel clone = new ComponentModel(component);
 		PersistanceUtils.addComponent(study, clone);
-		return redirect(routes.Components.index(studyId, clone.getId()));
+		return redirect(routes.Studies.index(studyId, null));
 	}
 
 	@Transactional
@@ -357,5 +367,5 @@ public class Components extends Controller {
 		PersistanceUtils.removeComponent(study, component);
 		return ok();
 	}
-	
+
 }

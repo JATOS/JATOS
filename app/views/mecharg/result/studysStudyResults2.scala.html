@@ -45,7 +45,13 @@ study: StudyModel)
 var resultsTable;
 $(document).ready(function() {
 	resultsTable = $('#resultsTable').DataTable({
-		"ajax": "@routes.StudyResults.tableDataByStudy(study.getId())",
+		"ajax": {
+			"type": "GET",
+			"url" : "@routes.StudyResults.tableDataByStudy(study.getId())",
+			"error": function(reason) {
+					showError("Couldn't read components data.")
+				}
+			},
 		"order": [[ 2, "desc" ]],
 		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
 		"pageLength": 10,

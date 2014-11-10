@@ -25,6 +25,44 @@ messages: services.Messages)(body: Html)
 </head>
 
 <body>
+<script>
+function showSuccess(msg) {
+	var html = '<div class="alert alert-success alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ msg + '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function showInfo(msg) {
+	var html = '<div class="alert alert-info alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ msg + '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function showWarning(msg) {
+	var html = '<div class="alert alert-warning alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ msg + '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function showError(msg) {
+	var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ msg + '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+</script>
+
 <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 	<div class="container-fluid">
 		<div class="navbar-header">
@@ -35,8 +73,7 @@ messages: services.Messages)(body: Html)
 					class="icon-bar"></span> <span class="icon-bar"></span> <span
 					class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="@routes.Home.home">Online Study
-				Alchemist</a>
+			<a class="navbar-brand" href="@routes.Home.home">Online Study Alchemist</a>
 		</div>
 		<div id="navbar" class="navbar-collapse collapse">
 			<ul class="nav navbar-nav navbar-right">
@@ -90,12 +127,28 @@ messages: services.Messages)(body: Html)
 	<ol id="breadcrumbs" class="breadcrumb"></ol>
 	@body
 </div>
-	
-<script>
-$('#confirmationModal').modal({show: false});
 
-var breadcrumbs = @Html(services.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
+<script>
 var messages = @Html(services.JsonUtils.asJson(messages));
+var breadcrumbs = @Html(services.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
+
+if (messages != null) {
+	messages.successList.forEach(function(success) {
+		showSuccess(success);
+	});
+	
+	messages.infoList.forEach(function(info) {
+		showInfo(info);
+	});
+	
+	messages.warningList.forEach(function(warning) {
+		showWarning(warning);
+	});
+	
+	messages.errorList.forEach(function(error) {
+		showError(error);
+	});
+}
 
 for (var key in breadcrumbs) {
 	var breadcrumb;
@@ -105,58 +158,6 @@ for (var key in breadcrumbs) {
 		breadcrumb = '<li><a href="' + breadcrumbs[key] + '">' + key + '</a></li>';
 	}
 	$("#breadcrumbs").append(breadcrumb);
-}
-
-messages.successList.forEach(function(success) {
-	showSuccess(success);
-});
-
-messages.infoList.forEach(function(info) {
-	showInfo(info);
-});
-
-messages.warningList.forEach(function(warning) {
-	showWarning(warning);
-});
-
-messages.errorList.forEach(function(error) {
-	showError(error);
-});
-
-function showSuccess(msg) {
-	var html = '<div class="alert alert-success alert-dismissible" role="alert">'
-		+ '<button type="button" class="close" data-dismiss="alert">'
-		+ '<span aria-hidden="true">&times;</span>'
-		+ '<span class="sr-only">Close</span></button>'
-		+ msg + '</div>';
-	$(html).insertAfter( "#breadcrumbs" );
-}
-
-function showInfo(msg) {
-	var html = '<div class="alert alert-info alert-dismissible" role="alert">'
-		+ '<button type="button" class="close" data-dismiss="alert">'
-		+ '<span aria-hidden="true">&times;</span>'
-		+ '<span class="sr-only">Close</span></button>'
-		+ msg + '</div>';
-	$(html).insertAfter( "#breadcrumbs" );
-}
-
-function showWarning(msg) {
-	var html = '<div class="alert alert-warning alert-dismissible" role="alert">'
-		+ '<button type="button" class="close" data-dismiss="alert">'
-		+ '<span aria-hidden="true">&times;</span>'
-		+ '<span class="sr-only">Close</span></button>'
-		+ msg + '</div>';
-	$(html).insertAfter( "#breadcrumbs" );
-}
-
-function showError(msg) {
-	var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
-		+ '<button type="button" class="close" data-dismiss="alert">'
-		+ '<span aria-hidden="true">&times;</span>'
-		+ '<span class="sr-only">Close</span></button>'
-		+ msg + '</div>';
-	$(html).insertAfter( "#breadcrumbs" );
 }
 
 function askConfirmation(title, text, buttonText, action) {
@@ -169,8 +170,7 @@ function askConfirmation(title, text, buttonText, action) {
 		action();
 	});
 }
-	
 </script>
-
+	
 </body>
 </html>

@@ -1,0 +1,61 @@
+@(form: Form[Authentication.Login])
+
+<html lang="en">
+<head>
+<title>OSA</title>
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-196x196.png")" sizes="196x196">
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-160x160.png")" sizes="160x160">
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-96x96.png")" sizes="96x96">
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-16x16.png")" sizes="16x16">
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-32x32.png")" sizes="32x32">
+<link rel="stylesheet" href="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.css"))">
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/login2.css")">
+<script src="@routes.Assets.at("javascripts/jquery-1.11.1.min.js")"></script>
+<script src="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.js"))"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="expires" content="0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+	<div class="container-fluid">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed"
+				data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+				aria-controls="navbar">
+				<span class="sr-only">Toggle navigation</span> <span
+					class="icon-bar"></span> <span class="icon-bar"></span> <span
+					class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="@routes.Home.home">Online Study Alchemist</a>
+		</div>
+	</div>
+</nav>
+
+<div class="container">
+
+	@helper.form(action = routes.Authentication.authenticate, 'class -> "form-signin", 'role -> "form") {
+	<h2 class="form-signin-heading">Please sign in</h2>
+	<div class="input-group">
+	<input type="text" name="email" id="email" class="form-control" placeholder="Email address" value="@form("email").value" required autofocus>
+	<input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
+	</div>
+	<button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+	}
+	
+</div>
+
+<script>
+
+@for(error <- form.globalErrors) {
+	$('#password').after('<p class="text-danger">@error.message</p>');
+}
+@if(flash.contains("success")) {
+	$('#password').after('<p class="text-success">@flash.get("success")</p>');
+}
+</script>
+
+</body>
+</html>

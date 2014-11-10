@@ -16,7 +16,6 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import models.ComponentModel;
-import models.StudyModel;
 import play.db.jpa.JPA;
 import services.DateUtils;
 

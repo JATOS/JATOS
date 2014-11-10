@@ -154,18 +154,18 @@ public class UserModel {
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (email == null || email.isEmpty()) {
-			errorList.add(new ValidationError("email",
+			errorList.add(new ValidationError(EMAIL,
 					ErrorMessages.MISSING_EMAIL));
 		}
-		if (!Jsoup.isValid(email, Whitelist.none())) {
+		if (email != null && !Jsoup.isValid(email, Whitelist.none())) {
 			errorList.add(new ValidationError(EMAIL,
 					ErrorMessages.NO_HTML_ALLOWED));
 		}
 		if (name == null || name.isEmpty()) {
-			errorList.add(new ValidationError("name",
+			errorList.add(new ValidationError(NAME,
 					ErrorMessages.MISSING_NAME));
 		}
-		if (!Jsoup.isValid(name, Whitelist.none())) {
+		if (name != null && !Jsoup.isValid(name, Whitelist.none())) {
 			errorList.add(new ValidationError(NAME,
 					ErrorMessages.NO_HTML_ALLOWED));
 		}

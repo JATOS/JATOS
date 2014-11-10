@@ -15,11 +15,11 @@ study: StudyModel, workerMap: Map[Long,String])
 		<div class="btn-group">
 			<button type="button" class="btn btn-primary dropdown-toggle"
 				data-toggle="dropdown">
-				Other <span class="caret"></span>
+				More <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
 				<li><a href="@routes.Studies.exportStudy(study.getId())">Export</a></li>
-				<li><a href="@routes.Studies.cloneStudy(study.getId())">Clone</a></li>
+				<li><a id="cloneStudy" href="#">Clone</a></li>
 				<li><a href="@routes.Studies.showMTurkSourceCode(study.getId())">MT Source Code</a></li>
 				<li class="divider"></li>
 				<li><a id="removeStudy" href="#">Delete</a></li>
@@ -31,7 +31,7 @@ study: StudyModel, workerMap: Map[Long,String])
 				Components <span class="caret"></span>
 		</button>
 		<ul class="dropdown-menu" role="menu">
-			<li><a href="@routes.Components.create(study.getId())">Add</a></li>
+			<li><a href="@routes.Components.create(study.getId())">New</a></li>
 			<input id="importBrowser" type="file" name="@ComponentModel.COMPONENT" multiple style="display: none;">
 			<li><a id="importButton" href="#">Import</a></li>
 		</ul>
@@ -75,7 +75,7 @@ study: StudyModel, workerMap: Map[Long,String])
 		<div class="btn-group">
 			<button type="button" class="btn btn-default dropdown-toggle"
 				data-toggle="dropdown">
-				Other <span class="caret"></span>
+				More <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
 				<li><a class="exportComponent" href="#">Export</a></li>
@@ -94,7 +94,13 @@ var studyData = @Html(services.JsonUtils.studyForUI(study));
 var componentTable;
 $(document).ready(function() {
 	componentTable = $('#componentTable').DataTable({
-		"ajax": '@routes.Studies.tableDataByStudy(study.getId())',
+		"ajax": {
+			"type": "GET",
+			"url" : '@routes.Studies.tableDataByStudy(study.getId())',
+			"error": function(reason) {
+					showError("Couldn't read components data.")
+				}
+			},
 		"paging": false,
 		"info": false,
 		"filter": false,
@@ -226,6 +232,7 @@ $(document).ready(function() {
 	});
 	
 	$('#componentTable tbody').on('click', '.activeCheckbox', function() {
+		var checkbox = this;
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
 		var active = $(this).prop('checked');
@@ -234,7 +241,7 @@ $(document).ready(function() {
 					+ "/changeProperty?active=" + active,
 			type : "POST",
 			error : function(err) {
-				$(this).prop("checked", !$(this).is(":checked"));
+				$(checkbox).prop("checked", !$(checkbox).is(":checked"));
 				showError(err.responseText);
 			}
 		});
@@ -290,7 +297,7 @@ function swapRowData(row1, row2) {
 	row2.data(row1Data);
 }
 
-$("#lockStudy").click(function(e) {
+$('#studyToolbar').on('click', '#lockStudy', function() {
 	$.ajax({
 		url : "/mecharg/" + studyData.id +"/swapLock",
 		type : "POST",
@@ -300,7 +307,6 @@ $("#lockStudy").click(function(e) {
 			} else {
 				$("#lockStudy").text("Lock");
 			}
-			$('#lockStudy').removeClass('btn-warning');
 		},
 		error : function(err) {
 			showError(err.responseText);
@@ -308,23 +314,24 @@ $("#lockStudy").click(function(e) {
 	});
 });
 
-$("#showStudy").click(function(e) {
+$('#studyToolbar').on('click', '#showStudy', function() {
 	window.location.href = "@routes.Studies.showStudy(study.getId())";
 });
 
-$("#studyResults").click(function(e) {
+$('#studyToolbar').on('click', '#studyResults', function() {
 	window.location.href = "@routes.StudyResults.index(study.getId())";
 });
 
-$("#editStudy").click(function(e) {
+$('#studyToolbar').on('click', '#editStudy', function() {
 	window.location.href = "@routes.Studies.edit(study.getId())";
 });
 
-$('#removeStudy').click(function(e){
+$('#studyToolbar').on('click', '#removeStudy', function() {
 	var title = "Confirm Delete";
 	var text = "You are about to delete the study \"" + studyData.title 
 		+ "\" (ID " + studyData.id + ") "
-		+ "<b>with all its components and results</b>.";
+		+ "<b>with all its components, results, and the entire study's directory, "
+		+ "including the HTML files</b>.";
 	askConfirmation(title, text, 'Delete', function() {
 		$.ajax({
 			url : '@routes.Studies.remove(study.getId())',
@@ -336,6 +343,19 @@ $('#removeStudy').click(function(e){
 				showError(err.responseText);
 			}
 		});
+	});
+});
+
+$('#studyToolbar').on('click', '#cloneStudy', function() {
+	$.ajax({
+		url : '@routes.Studies.cloneStudy(study.getId())',
+		type : 'GET',
+		success : function(result) {
+			window.location.replace('@routes.Studies.index(study.getId())');
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
 	});
 });
 

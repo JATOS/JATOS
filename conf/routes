@@ -22,7 +22,7 @@ POST    /mecharg/login                                 controllers.Authenticatio
 GET     /mecharg/logout                                controllers.Authentication.logout()
 GET     /mecharg                                       controllers.Home.home()
 GET     /mecharg/                                      controllers.Home.home()
-GET     /                                              controllers.Home.home2()
+GET     /                                              controllers.Home.home()
 GET     /mecharg/user/create                           controllers.Users.create()
 POST    /mecharg/user/create                           controllers.Users.submit()
 GET     /mecharg/user/:email/editProfile               controllers.Users.editProfile(email: String)
