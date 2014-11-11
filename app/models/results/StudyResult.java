@@ -21,7 +21,6 @@ import javax.persistence.TypedQuery;
 import models.StudyModel;
 import models.workers.Worker;
 import play.db.jpa.JPA;
-import services.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -45,7 +44,7 @@ public class StudyResult {
 	/**
 	 * Time and date when the study was started.
 	 */
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateUtils.DATE_FORMAT_UI)
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
 	private Timestamp startDate;
 
 	public enum StudyState {

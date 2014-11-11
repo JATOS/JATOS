@@ -2,14 +2,13 @@ package controllers;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.results.StudyResult;
 import models.workers.Worker;
 import play.Logger;
 import play.api.mvc.Call;
@@ -50,13 +49,13 @@ public class Studies extends Controller {
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		Map<Long, String> workerMap = retrieveWorkerMap(study);
+		Set<Worker> workerSet = ControllerUtils.retrieveWorkers(study);
 		Messages messages = new Messages().error(errorMsg);
 		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
 				.generateForStudy(study, "Index");
 		return status(httpStatus, views.html.mecharg.study.index2.render(
 				studyList, loggedInUser, breadcrumbs, messages, study,
-				workerMap));
+				workerSet));
 	}
 
 	@Transactional
@@ -68,16 +67,6 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result index(Long studyId) throws ResultException {
 		return index(studyId, null, Http.Status.OK);
-	}
-
-	private static Map<Long, String> retrieveWorkerMap(StudyModel study) {
-		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
-		Map<Long, String> workerMap = new HashMap<>();
-		for (StudyResult studyResult : studyResultList) {
-			Worker worker = studyResult.getWorker();
-			workerMap.put(worker.getId(), worker.getWorkerType());
-		}
-		return workerMap;
 	}
 
 	@Transactional
@@ -159,7 +148,7 @@ public class Studies extends Controller {
 		try {
 			File[] dirArray = IOUtils.findDirectories(tempDir);
 			if (dirArray.length == 0) {
-				// If a study dir is missing, create a new one. 
+				// If a study dir is missing, create a new one.
 				IOUtils.createStudyDir(study);
 				// TODO send warning message
 			} else if (dirArray.length == 1) {
@@ -528,6 +517,35 @@ public class Studies extends Controller {
 			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
 		}
 		return ok(dataAsJson);
+	}
+
+	@Transactional
+	public static Result workers(Long studyId, String errorMsg, int httpStatus)
+			throws ResultException {
+		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+				.getEmail());
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+
+		Messages messages = new Messages().error(errorMsg);
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForStudy(study, "Workers");
+		return status(httpStatus, views.html.mecharg.study.workers2.render(
+				studyList, loggedInUser, breadcrumbs, messages, study));
+	}
+
+	@Transactional
+	public static Result workers(Long studyId, String errorMsg)
+			throws ResultException {
+		return workers(studyId, errorMsg, Http.Status.OK);
+	}
+
+	@Transactional
+	public static Result workers(Long studyId) throws ResultException {
+		return workers(studyId, null, Http.Status.OK);
 	}
 
 }

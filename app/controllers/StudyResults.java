@@ -42,15 +42,8 @@ public class StudyResults extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Messages messages = new Messages().error(errorMsg);
-		// messages.error("This is dangerous!")
-		// .error("This is even more dangerous!")
-		// .warning("A warning from a friend").info("Just an info")
-		// .success("You were successful!");
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
-				.put("Home", routes.Home.home())
-				.put(study.getTitle(), routes.Studies.index(studyId, null))
-				.put("Results", routes.StudyResults.index(studyId))
-				.put("Index", "");
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForStudyResult(study, "Index");
 		return status(httpStatus,
 				views.html.mecharg.result.studysStudyResults2.render(studyList,
 						loggedInUser, breadcrumbs, messages, study));

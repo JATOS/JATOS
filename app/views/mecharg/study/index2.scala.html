@@ -1,6 +1,6 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel,
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
-study: StudyModel, workerMap: Map[Long,String])
+study: StudyModel, workerSet: Set[workers.Worker])
 
 @views.html.mecharg.main2(studyList, loggedInUser, breadcrumbs, messages){
 
@@ -9,7 +9,7 @@ study: StudyModel, workerMap: Map[Long,String])
 	<div class="btn-group">
 		<button id="showStudy" type="button" class="btn btn-primary">Show</button>
 		<button id="studyResults" type="button" class="btn btn-primary">Results <span class="badge">@results.StudyResult.countByStudy(study)</span></button>
-		<button type="button" class="btn btn-primary">Worker <span class="badge">@workerMap.size()</button>
+		<button id="workers" type="button" class="btn btn-primary">Workers <span class="badge">@workerSet.size()</button>
 		<button id="editStudy" type="button" class="btn btn-primary">Edit</button>
 		<button id="lockStudy" type="button" class="btn btn-primary">@if(study.isLocked()){Unlock}else{Lock}</button>
 		<div class="btn-group">
@@ -53,7 +53,7 @@ study: StudyModel, workerMap: Map[Long,String])
 
 <!-- Components Table -->
 <h3>Components</h3>
-<table id="componentTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+<table id="componentsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
 		<tr>
 			<th></th>
@@ -91,16 +91,16 @@ study: StudyModel, workerMap: Map[Long,String])
 
 var studyData = @Html(services.JsonUtils.studyForUI(study));
 
-var componentTable;
+var componentsTable;
 $(document).ready(function() {
-	componentTable = $('#componentTable').DataTable({
+	componentsTable = $('#componentsTable').DataTable({
 		"ajax": {
 			"type": "GET",
 			"url" : '@routes.Studies.tableDataByStudy(study.getId())',
 			"error": function(reason) {
 					showError("Couldn't read components data.")
-				}
-			},
+			}
+		},
 		"paging": false,
 		"info": false,
 		"filter": false,
@@ -111,7 +111,6 @@ $(document).ready(function() {
 		} ],
 		"columns": [
 			{
-				"orderable": false,
 				"data": null,
 				"defaultContent": '',
 				"width": "1px",
@@ -163,17 +162,17 @@ $(document).ready(function() {
 		]
 	});
 	
-	componentTable.on('order.dt search.dt', function () {
-		componentTable.column(2, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+	componentsTable.on('order.dt search.dt', function () {
+		componentsTable.column(2, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
 			cell.innerHTML = i + 1;
 		});
 	}).draw();
 
 	// Don't remove. It readjusts the columns width after writing the component's positions
-	componentTable.columns.adjust().draw();
+	componentsTable.columns.adjust().draw();
 	
 	// Adjust the width of every component's toolbar to the widest one
-	componentTable.on('column-sizing.dt', function (e, settings) {
+	componentsTable.on('column-sizing.dt', function (e, settings) {
 		var maxWidth = 0;
 		$('.componentResults').each(function(index) {
 			var width = $(this).width();
@@ -186,32 +185,32 @@ $(document).ready(function() {
 		});
 	});
 	
-	$('#componentTable tbody').on('click', '.showComponent', function() {
+	$('#componentsTable tbody').on('click', '.showComponent', function() {
 		window.location.href = "/mecharg/" + studyData.id +"/"
 			+ getComponentId(this) + "/show";
 	});
 	
-	$('#componentTable tbody').on('click', '.componentResults', function() {
+	$('#componentsTable tbody').on('click', '.componentResults', function() {
 		window.location.href = "/mecharg/" + studyData.id +"/"
 			+ getComponentId(this) + "/results";
 	});
 	
-	$('#componentTable tbody').on('click', '.editComponent', function() {
+	$('#componentsTable tbody').on('click', '.editComponent', function() {
 		window.location.href = "/mecharg/" + studyData.id +"/"
 			+ getComponentId(this) + "/edit";
 	});
 	
-	$('#componentTable tbody').on('click', '.exportComponent', function() {
+	$('#componentsTable tbody').on('click', '.exportComponent', function() {
 		window.location.href = "/mecharg/" + studyData.id +"/"
 			+ getComponentId(this) + "/export";
 	});
 	
-	$('#componentTable tbody').on('click', '.cloneComponent', function() {
+	$('#componentsTable tbody').on('click', '.cloneComponent', function() {
 		window.location.href = "/mecharg/" + studyData.id +"/"
 			+ getComponentId(this) + "/clone";
 	});
 	
-	$('#componentTable tbody').on('click', '.removeComponent', function() {
+	$('#componentsTable tbody').on('click', '.removeComponent', function() {
 		var element = this;
 		var componentId = getComponentId(this);
 		if (!componentId) {return} // should never happen
@@ -225,7 +224,7 @@ $(document).ready(function() {
 				type : 'DELETE',
 				success : function(result) {
 					var tr = $(element).closest('tr');
-					componentTable.row(tr).remove().draw();
+					componentsTable.row(tr).remove().draw();
 				},
 				error : function(err) {
 					showError(err.responseText);
@@ -234,19 +233,19 @@ $(document).ready(function() {
 		});
 	});
 	
-	$('#componentTable tbody').on('click', '.upArrow', function() {
+	$('#componentsTable tbody').on('click', '.upArrow', function() {
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
 		ajaxChangeComponentOrder(componentId, "up", tr);
 	});
 
-	$('#componentTable tbody').on('click', '.downArrow', function() {
+	$('#componentsTable tbody').on('click', '.downArrow', function() {
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
 		ajaxChangeComponentOrder(componentId, "down", tr);
 	});
 	
-	$('#componentTable tbody').on('click', '.activeCheckbox', function() {
+	$('#componentsTable tbody').on('click', '.activeCheckbox', function() {
 		var checkbox = this;
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
@@ -264,13 +263,13 @@ $(document).ready(function() {
 	
 	function getComponentId(element) {
 		var tr = $(element).closest('tr');
-		var rowData = componentTable.row(tr).data();
+		var rowData = componentsTable.row(tr).data();
 		return rowData.id;
 	}
 	
 	function getComponentTitle(element) {
 		var tr = $(element).closest('tr');
-		var rowData = componentTable.row(tr).data();
+		var rowData = componentsTable.row(tr).data();
 		return rowData.title;
 	}
 	
@@ -284,20 +283,20 @@ function ajaxChangeComponentOrder(componentId, direction, tr) {
 		type : "POST",
 		success : function(response) {
 			if (direction == "up") {
-				var clickedRow = componentTable.row(tr);
+				var clickedRow = componentsTable.row(tr);
 				var clickedRowIndex = clickedRow.index();
 				if (clickedRowIndex < 1) { return }
-				var previousRow = componentTable.row(clickedRowIndex - 1);
+				var previousRow = componentsTable.row(clickedRowIndex - 1);
 				swapRowData(clickedRow, previousRow);
 			}
 			if (direction == "down") {
-				var clickedRow = componentTable.row(tr);
+				var clickedRow = componentsTable.row(tr);
 				var clickedRowIndex = clickedRow.index();
-				if (clickedRowIndex > componentTable.rows({page:'current'}).data().length - 2) { return }
-				var nextRow = componentTable.row(clickedRowIndex + 1);
+				if (clickedRowIndex > componentsTable.rows({page:'current'}).data().length - 2) { return }
+				var nextRow = componentsTable.row(clickedRowIndex + 1);
 				swapRowData(clickedRow, nextRow);
 			}
-			componentTable.draw();
+			componentsTable.draw();
 		},
 		error : function(err) {
 			showError(err.responseText);
@@ -335,6 +334,10 @@ $('#studyToolbar').on('click', '#showStudy', function() {
 
 $('#studyToolbar').on('click', '#studyResults', function() {
 	window.location.href = "@routes.StudyResults.index(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#workers', function() {
+	window.location.href = "@routes.Studies.workers(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#editStudy', function() {
@@ -399,7 +402,7 @@ $('#importBrowser').change(function() {
 		type: 'POST',
 		success: function(data){
 			showSuccess("Component(s) or file(s) successfully imported.");
-			componentTable.ajax.reload();
+			componentsTable.ajax.reload();
 		},
 		error : function(err) {
 			showError(err.responseText);

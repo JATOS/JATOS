@@ -1,6 +1,6 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel,
+@(studyList: List[StudyModel], loggedInUser: UserModel, 
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
-study: StudyModel)
+study: StudyModel, component: ComponentModel)
 
 @views.html.mecharg.main2(studyList, loggedInUser, breadcrumbs, messages){
 
@@ -12,7 +12,6 @@ study: StudyModel)
 	</div>
 </div>
 
-<!-- Results table -->
 <table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
 		<tr>
@@ -21,9 +20,8 @@ study: StudyModel)
 			<th>Time</th>
 			<th>Worker ID</th>
 			<th>Worker Type</th>
-			<th>Confirmation Code</th>
 			<th>State</th>
-			<th>Messages</th>
+			<th>Error Message</th>
 		</tr>
 	</thead>
 	<tfoot>
@@ -33,9 +31,8 @@ study: StudyModel)
 			<th>Time</th>
 			<th>Worker ID</th>
 			<th>Worker Type</th>
-			<th>Confirmation Code</th>
 			<th>State</th>
-			<th>Messages</th>
+			<th>Error Message</th>
 		</tr>
 	</tfoot>
 </table>
@@ -47,11 +44,11 @@ $(document).ready(function() {
 	resultsTable = $('#resultsTable').DataTable({
 		"ajax": {
 			"type": "GET",
-			"url" : "@routes.StudyResults.tableDataByStudy(study.getId())",
+			"url" : "@routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
 			"error": function(reason) {
 					showError("Couldn't read results data.")
-				}
-			},
+			}
+		},
 		"order": [[ 2, "desc" ]],
 		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
 		"pageLength": 10,
@@ -63,8 +60,11 @@ $(document).ready(function() {
 				"defaultContent": ''
 			},
 			{ "data": "id" },
-			{ "data": "startDate" },
-			{ 
+			{
+				"class": 'time',
+				"data": "startDate"
+			},
+			{
 				"data": "workerId",
 				"render": function (data, type, full, meta) {
 					return '<a href="/mecharg/worker/'
@@ -72,10 +72,9 @@ $(document).ready(function() {
 				}
 			},
 			{ "data": "workerType" },
-			{ "data": getConfirmationCode },
-			{ "data": "studyState" },
+			{ "data": "componentState" },
 			{ 
-				"data": getMessages,
+				"data": "errorMsg",
 				"width": "20%"
 			}
 		]
@@ -86,22 +85,6 @@ $(document).ready(function() {
 		"sRowSelector": "td:not(:first-child):not(:last-child)"
 	});
 	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
-	
-	function getConfirmationCode(data, type, dataToSet) {
-		return (data.confirmationCode != null) ? data.confirmationCode : "none";
-	}
-	
-	function getMessages(data, type, dataToSet) {
-		var messages = [];
-		if (data.errorMsg != null) {
-			messages.push(data.errorMsg);
-			messages.push("<br>");
-		}
-		if (data.abortMsg != null) {
-			messages.push(data.abortMsg);
-		}
-		return messages.join("");
-	}
 	
 	$('#resultsTable tbody').on('click', 'td.details-control', function() {
 		var tr = $(this).closest('tr');
@@ -126,8 +109,8 @@ $(".exportData").click(function(e) {
 		ids.push(rowData.id);
 	});
 	if(ids.length > 0) {
-		window.location.href = '/mecharg/studyresult'
-			+ '/exportData?studyResultIds=' + ids.toString();
+		window.location.href = '/mecharg/componentresult/'
+				+ 'exportData?componentResultIds=' + ids.toString();
 	} else {
 		showError("No results selected");
 	}
@@ -146,11 +129,10 @@ $('#resultsToolbar').on('click', '.remove', function() {
 		return;
 	}
 	var title = "Confirm Delete";
-	var text = "You are about to delete the study results "
-		+ "(ID " + ids.toString() + ") " 
-		+ "<b>with all their component results</b>.";
+	var text = "You are about to delete the component results "
+		+ "(ID " + ids.toString() + ").";
 	askConfirmation(title, text, 'Delete', function() {
-		var url = '/mecharg/studyresult/remove?studyResultIds=' + ids.toString();
+		var url = '/mecharg/componentresult/remove?componentResultIds=' + ids.toString();
 		$.ajax({
 			url : url,
 			type : 'GET',
@@ -168,34 +150,7 @@ $('#resultsToolbar').on('click', '.remove', function() {
 
 function childRowFormat(data) {
 	// `data` is the original data object for the row
-	var html = [];
-	html.push('<table class="details table table-condensed" cellpadding="5" cellspacing="0" border="0">',
-		'<tr>',
-		'<td><b>Result ID</b></td>',
-		'<td><b>Comp. ID</b></td>',
-		'<td><b>Comp. Title</b></td>',
-		'<td><b>Time</b></td>',
-		'<td><b>State</b></td>',
-		'<td><b>Data</b></td>',
-		'</tr>');
-		if(data.componentResults.length > 0) {
-			data.componentResults.forEach(function(componentResult) {
-				html.push('<tr>',
-					'<td>' + componentResult.id + '</td>',
-					'<td>' + componentResult.componentId + '</td>',
-					'<td>' + componentResult.componentTitle + '</td>',
-					'<td>' + componentResult.startDate + '</td>',
-					'<td>' + componentResult.componentState + '</td>',
-					'<td class="details-data">' + componentResult.data + '</td>',
-					'</tr>');
-			});
-		} else {
-			html.push('<tr>',
-				'<td colspan="4">empty</td>',
-				'</tr>');
-		}
-		html.push('</table>');
-	return html.join("");
+	return '<p class="details details-data">' + data.data + '</p>';
 }
 
 </script>

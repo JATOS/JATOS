@@ -9,6 +9,7 @@ import javax.persistence.OneToOne;
 import models.UserModel;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Concrete worker who originates from the MechArg itself.
@@ -39,6 +40,11 @@ public class MAWorker extends Worker {
 
 	public UserModel getUser() {
 		return this.user;
+	}
+	
+	@JsonProperty("userEmail")
+	public String getUserEmail() {
+		return this.user.getEmail();
 	}
 
 	@Override

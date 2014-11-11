@@ -17,7 +17,6 @@ import javax.persistence.TypedQuery;
 
 import models.ComponentModel;
 import play.db.jpa.JPA;
-import services.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -43,7 +42,7 @@ public class ComponentResult {
 	/**
 	 * Time and date when the component was started.
 	 */
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateUtils.DATE_FORMAT_UI)
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
 	private Timestamp startDate;
 
 	public enum ComponentState {

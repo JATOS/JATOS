@@ -74,7 +74,7 @@ public class MTWorker extends Worker {
 				+ "e.mtWorkerId=:mtWorkerId and e.workerType=:workerType";
 		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
 		List<Worker> workerList = query.setParameter("mtWorkerId", mtWorkerId)
-				.setParameter(Worker.DESCRIMINATOR, workerType).getResultList();
+				.setParameter(Worker.DISCRIMINATOR, workerType).getResultList();
 		MTWorker worker = workerList.isEmpty() ? null : (MTWorker) workerList
 				.get(0);
 		return worker;

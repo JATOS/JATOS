@@ -6,8 +6,9 @@ import java.util.Map;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import controllers.routes;
+import models.workers.Worker;
 import play.mvc.Call;
+import controllers.routes;
 
 public class Breadcrumbs {
 
@@ -26,14 +27,13 @@ public class Breadcrumbs {
 		this.breadcrumbs.put(name, call.url());
 		return this;
 	}
-	
+
 	public static Breadcrumbs generateForHome(String last) {
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
-				.put("Home", routes.Home.home())
-				.put(last, "");
+		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs().put(
+				"Home", routes.Home.home()).put(last, "");
 		return breadcrumbs;
 	}
-	
+
 	public static Breadcrumbs generateForUser(UserModel user, String last) {
 		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
 				.put("Home", routes.Home.home())
@@ -51,6 +51,27 @@ public class Breadcrumbs {
 		return breadcrumbs;
 	}
 
+	public static Breadcrumbs generateForWorkerResult(Worker worker,
+			String last) {
+		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
+				.put("Home", routes.Home.home())
+				.put("Worker " + worker.getId(), "")
+				.put("Results", routes.Workers.index(worker.getId()))
+				.put(last, "");
+		return breadcrumbs;
+	}
+	
+	public static Breadcrumbs generateForStudyResult(StudyModel study,
+			String last) {
+		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
+				.put("Home", routes.Home.home())
+				.put(study.getTitle(),
+						routes.Studies.index(study.getId(), null))
+				.put("Results", routes.StudyResults.index(study.getId()))
+				.put(last, "");
+		return breadcrumbs;
+	}
+
 	public static Breadcrumbs generateForComponent(StudyModel study,
 			ComponentModel component, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs()
@@ -58,6 +79,19 @@ public class Breadcrumbs {
 				.put(study.getTitle(),
 						routes.Studies.index(study.getId(), null))
 				.put(component.getTitle(), "").put(last, "");
+		return breadcrumbs;
+	}
+
+	public static Breadcrumbs generateForComponentResult(StudyModel study,
+			ComponentModel component, String last) {
+		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
+				.put("Home", routes.Home.home())
+				.put(study.getTitle(),
+						routes.Studies.index(study.getId(), null))
+				.put(component.getTitle(), "")
+				.put("Results",
+						routes.ComponentResults.index(study.getId(),
+								component.getId())).put(last, "");
 		return breadcrumbs;
 	}
 

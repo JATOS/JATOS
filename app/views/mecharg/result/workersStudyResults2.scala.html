@@ -1,6 +1,6 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel,
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
-study: StudyModel)
+worker: workers.Worker)
 
 @views.html.mecharg.main2(studyList, loggedInUser, breadcrumbs, messages){
 
@@ -19,8 +19,8 @@ study: StudyModel)
 			<th></th>
 			<th>Result ID</th>
 			<th>Time</th>
-			<th>Worker ID</th>
-			<th>Worker Type</th>
+			<th>Study ID</th>
+			<th>Study Title</th>
 			<th>Confirmation Code</th>
 			<th>State</th>
 			<th>Messages</th>
@@ -31,8 +31,8 @@ study: StudyModel)
 			<th></th>
 			<th>Result ID</th>
 			<th>Time</th>
-			<th>Worker ID</th>
-			<th>Worker Type</th>
+			<th>Study ID</th>
+			<th>Study Title</th>
 			<th>Confirmation Code</th>
 			<th>State</th>
 			<th>Messages</th>
@@ -47,11 +47,11 @@ $(document).ready(function() {
 	resultsTable = $('#resultsTable').DataTable({
 		"ajax": {
 			"type": "GET",
-			"url" : "@routes.StudyResults.tableDataByStudy(study.getId())",
+			"url" : "@routes.StudyResults.tableDataByWorker(worker.getId())",
 			"error": function(reason) {
 					showError("Couldn't read results data.")
-				}
-			},
+			}
+		},
 		"order": [[ 2, "desc" ]],
 		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
 		"pageLength": 10,
@@ -63,15 +63,18 @@ $(document).ready(function() {
 				"defaultContent": ''
 			},
 			{ "data": "id" },
-			{ "data": "startDate" },
-			{ 
-				"data": "workerId",
+			{
+				"class": 'time',
+				"data": "startDate"
+			},
+			{
+				"data": "studyId",
 				"render": function (data, type, full, meta) {
-					return '<a href="/mecharg/worker/'
+					return '<a href="/mecharg/'
 						+ data + '">' + data + '</a>';
 				}
 			},
-			{ "data": "workerType" },
+			{ "data": "studyTitle" },
 			{ "data": getConfirmationCode },
 			{ "data": "studyState" },
 			{ 
@@ -184,7 +187,7 @@ function childRowFormat(data) {
 					'<td>' + componentResult.id + '</td>',
 					'<td>' + componentResult.componentId + '</td>',
 					'<td>' + componentResult.componentTitle + '</td>',
-					'<td>' + componentResult.startDate + '</td>',
+					'<td class="details-time">' + componentResult.startDate + '</td>',
 					'<td>' + componentResult.componentState + '</td>',
 					'<td class="details-data">' + componentResult.data + '</td>',
 					'</tr>');

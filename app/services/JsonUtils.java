@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
 
 import models.ComponentModel;
@@ -222,6 +223,8 @@ public class JsonUtils {
 				.getStudy().getId());
 		componentResultNode.put("componentId", componentResult.getComponent()
 				.getId());
+		componentResultNode.put("componentTitle", componentResult.getComponent()
+				.getTitle());
 
 		// Add componentResult's data
 		componentResultNode.put("data",
@@ -251,6 +254,19 @@ public class JsonUtils {
 		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
 		componentsNode.put("data", arrayNode);
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(componentsNode);
+		return asJsonStr;
+	}
+
+	public static String allWorkersForUI(Set<Worker> workerSet)
+			throws JsonProcessingException {
+		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
+		for (Worker worker : workerSet) {
+			ObjectNode workerNode = OBJECTMAPPER.valueToTree(worker);
+			arrayNode.add(workerNode);
+		}
+		ObjectNode workersNode = OBJECTMAPPER.createObjectNode();
+		workersNode.put("data", arrayNode);
+		String asJsonStr = OBJECTMAPPER.writeValueAsString(workersNode);
 		return asJsonStr;
 	}
 

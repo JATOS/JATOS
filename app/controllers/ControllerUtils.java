@@ -1,11 +1,14 @@
 package controllers;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import models.results.StudyResult;
 import models.workers.Worker;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -188,6 +191,15 @@ public class ControllerUtils extends Controller {
 			throw new ResultException(result, errorMsg);
 		}
 		return loggedInUser;
+	}
+	
+	public static Set<Worker> retrieveWorkers(StudyModel study) {
+		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
+		Set<Worker> workerSet = new HashSet<>();
+		for (StudyResult studyResult : studyResultList) {
+			workerSet.add(studyResult.getWorker());
+		}
+		return workerSet;
 	}
 
 	public static List<Long> extractResultIds(String resultIds)

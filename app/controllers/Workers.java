@@ -1,6 +1,8 @@
 package controllers;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import models.StudyModel;
 import models.UserModel;
@@ -15,6 +17,8 @@ import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.SimpleResult;
 import services.ErrorMessages;
+import services.JsonUtils;
+import services.Messages;
 import services.PersistanceUtils;
 import exceptions.ResultException;
 
@@ -34,12 +38,16 @@ public class Workers extends Controller {
 				.getEmail());
 		ControllerUtils.checkWorker(worker, workerId);
 
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getWorkerBreadcrumb(worker));
+		Messages messages = new Messages().error(errorMsg);
+//		messages.error("This is dangerous!")
+//				.error("This is even more dangerous!")
+//				.warning("A warning from a friend").info("Just an info")
+//				.success("You were successful!");
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForWorkerResult(worker, "Index");
 		return status(httpStatus,
-				views.html.mecharg.result.workersStudyResults.render(studyList,
-						loggedInUser, breadcrumbs, worker, errorMsg));
+				views.html.mecharg.result.workersStudyResults2.render(studyList,
+						loggedInUser, breadcrumbs, messages, worker));
 	}
 
 	@Transactional
@@ -84,6 +92,27 @@ public class Workers extends Controller {
 
 		PersistanceUtils.removeWorker(worker);
 		return ok();
+	}
+	
+	/**
+	 * HTTP Ajax request
+	 */
+	@Transactional
+	public static Result tableDataByStudy(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		
+		String dataAsJson = null;
+		try {
+			Set<Worker> workerSet = ControllerUtils.retrieveWorkers(study);
+			dataAsJson = JsonUtils.allWorkersForUI(workerSet);
+		} catch (IOException e) {
+			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
+		}
+		return ok(dataAsJson);
 	}
 
 }

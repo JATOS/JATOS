@@ -20,6 +20,7 @@ import services.DateUtils;
 import services.ErrorMessages;
 import services.IOUtils;
 import services.JsonUtils;
+import services.Messages;
 import services.PersistanceUtils;
 import exceptions.ResultException;
 
@@ -43,14 +44,12 @@ public class ComponentResults extends Controller {
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 
-		String breadcrumbs = Breadcrumbs
-				.generateBreadcrumbs(Breadcrumbs.getHomeBreadcrumb(),
-						Breadcrumbs.getStudyBreadcrumb(study),
-						Breadcrumbs.getComponentBreadcrumb(study, component),
-						"Results");
+		Messages messages = new Messages().error(errorMsg);
+		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+				.generateForComponentResult(study, component, "Index");
 		return status(httpStatus,
-				views.html.mecharg.result.componentResults.render(studyList,
-						loggedInUser, breadcrumbs, study, component, errorMsg));
+				views.html.mecharg.result.componentResults2.render(studyList,
+						loggedInUser, breadcrumbs, messages, study, component));
 	}
 
 	@Transactional

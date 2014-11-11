@@ -22,7 +22,6 @@ import models.results.StudyResult;
 import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Abstract domain model and DAO of a worker. Workers are doing studies (and
@@ -32,15 +31,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = Worker.DESCRIMINATOR)
-@AttributeOverride(name = Worker.DESCRIMINATOR, column = @Column(name = Worker.DESCRIMINATOR, nullable = false, insertable = false, updatable = false))
+@DiscriminatorColumn(name = Worker.DISCRIMINATOR)
+@AttributeOverride(name = Worker.DISCRIMINATOR, column = @Column(name = Worker.DISCRIMINATOR, nullable = false, insertable = false, updatable = false))
 public abstract class Worker {
 
-	public final static String DESCRIMINATOR = "workerType";
+	public final static String DISCRIMINATOR = "workerType";
 
 	@Id
 	@GeneratedValue
-	@JsonProperty("workerId")
 	private Long id;
 
 	private String workerType;
