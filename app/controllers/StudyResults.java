@@ -16,7 +16,6 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
-import play.mvc.SimpleResult;
 import services.DateUtils;
 import services.ErrorMessages;
 import services.IOUtils;
@@ -80,13 +79,13 @@ public class StudyResults extends Controller {
 			if (studyResult == null) {
 				String errorMsg = ErrorMessages
 						.studyResultNotExist(studyResultId);
-				ControllerUtils.throwWorkerException(errorMsg,
+				ControllerUtils.throwWorkerResultException(errorMsg,
 						Http.Status.NOT_FOUND, workerId);
 			}
 			if (studyResult.getWorkerId() != workerId) {
 				String errorMsg = ErrorMessages.studyResultNotFromWorker(
 						studyResultId, workerId);
-				ControllerUtils.throwWorkerException(errorMsg,
+				ControllerUtils.throwWorkerResultException(errorMsg,
 						Http.Status.FORBIDDEN, workerId);
 			}
 			StudyModel resultsStudy = studyResult.getStudy();
@@ -116,8 +115,8 @@ public class StudyResults extends Controller {
 			if (studyResult == null) {
 				String errorMsg = ErrorMessages
 						.studyResultNotExist(studyResultId);
-				SimpleResult result = notFound(errorMsg);
-				throw new ResultException(result, errorMsg);
+				ControllerUtils.throwAjaxResultException(errorMsg,
+						Http.Status.NOT_FOUND);
 			}
 			StudyModel resultsStudy = studyResult.getStudy();
 			ControllerUtils.checkStandardForStudy(resultsStudy,
@@ -143,7 +142,9 @@ public class StudyResults extends Controller {
 		try {
 			dataAsJson = JsonUtils.allStudyResultsForUI(study);
 		} catch (IOException e) {
-			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
+			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
+			ControllerUtils.throwAjaxResultException(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
 	}
@@ -166,17 +167,24 @@ public class StudyResults extends Controller {
 			dataAsJson = JsonUtils.allStudyResultsByWorkerForUI(worker,
 					loggedInUser);
 		} catch (IOException e) {
-			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
+			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
+			ControllerUtils.throwAjaxResultException(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
 	}
 
+	/**
+	 * HTTP Ajax request
+	 */
 	@Transactional
 	public static Result exportData(String studyResultIds)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".exportData: studyResultIds "
 				+ studyResultIds + ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
+		// Remove cookie of jQuery.fileDownload plugin
+		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
 		String studyResultDataAsStr = getStudyResultData(studyResultIds,
@@ -187,6 +195,9 @@ public class StudyResults extends Controller {
 				+ "." + IOUtils.TXT_FILE_SUFFIX;
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
+		// Set cookie for jQuery.fileDownload plugin
+		response().setCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME,
+				ControllerUtils.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(studyResultDataAsStr);
 	}
 
@@ -202,8 +213,8 @@ public class StudyResults extends Controller {
 			if (studyResult == null) {
 				String errorMsg = ErrorMessages
 						.studyResultNotExist(studyResultId);
-				SimpleResult result = notFound(errorMsg);
-				throw new ResultException(result, errorMsg);
+				ControllerUtils.throwAjaxResultException(errorMsg,
+						Http.Status.NOT_FOUND);
 			}
 			Iterator<ComponentResult> iterator = studyResult
 					.getComponentResultList().iterator();
@@ -218,7 +229,6 @@ public class StudyResults extends Controller {
 				}
 			}
 		}
-
 		return sb.toString();
 	}
 

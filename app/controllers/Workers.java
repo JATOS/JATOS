@@ -15,7 +15,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
-import play.mvc.SimpleResult;
+import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.JsonUtils;
 import services.Messages;
@@ -39,15 +39,15 @@ public class Workers extends Controller {
 		ControllerUtils.checkWorker(worker, workerId);
 
 		Messages messages = new Messages().error(errorMsg);
-//		messages.error("This is dangerous!")
-//				.error("This is even more dangerous!")
-//				.warning("A warning from a friend").info("Just an info")
-//				.success("You were successful!");
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForWorkerResult(worker, "Index");
+		// messages.error("This is dangerous!")
+		// .error("This is even more dangerous!")
+		// .warning("A warning from a friend").info("Just an info")
+		// .success("You were successful!");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorkerResult(worker,
+				"Index");
 		return status(httpStatus,
-				views.html.mecharg.result.workersStudyResults2.render(studyList,
-						loggedInUser, breadcrumbs, messages, worker));
+				views.html.mecharg.result.workersStudyResults2.render(
+						studyList, loggedInUser, breadcrumbs, messages, worker));
 	}
 
 	@Transactional
@@ -77,8 +77,8 @@ public class Workers extends Controller {
 			String errorMsg = ErrorMessages
 					.removeMAWorker(worker.getId(), maWorker.getUser()
 							.getName(), maWorker.getUser().getEmail());
-			SimpleResult result = forbidden(errorMsg);
-			throw new ResultException(result, errorMsg);
+			ControllerUtils.throwAjaxResultException(errorMsg,
+					Http.Status.FORBIDDEN);
 		}
 
 		// Check for every study if removal is allowed
@@ -93,7 +93,7 @@ public class Workers extends Controller {
 		PersistanceUtils.removeWorker(worker);
 		return ok();
 	}
-	
+
 	/**
 	 * HTTP Ajax request
 	 */
@@ -104,13 +104,15 @@ public class Workers extends Controller {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		
+
 		String dataAsJson = null;
 		try {
 			Set<Worker> workerSet = ControllerUtils.retrieveWorkers(study);
 			dataAsJson = JsonUtils.allWorkersForUI(workerSet);
 		} catch (IOException e) {
-			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
+			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
+			ControllerUtils.throwAjaxResultException(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
 	}

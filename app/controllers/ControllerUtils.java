@@ -10,13 +10,21 @@ import models.StudyModel;
 import models.UserModel;
 import models.results.StudyResult;
 import models.workers.Worker;
+import play.api.mvc.Call;
+import play.data.Form;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.SimpleResult;
+import services.Breadcrumbs;
 import services.ErrorMessages;
+import services.IOUtils;
 import exceptions.ResultException;
 
 public class ControllerUtils extends Controller {
+	
+	public static final String JQDOWNLOAD_COOKIE_NAME = "Set-Cookie";
+	public static final String JQDOWNLOAD_COOKIE_CONTENT = "fileDownload=true; path=/";
+	
 
 	/**
 	 * Check if the request was made via Ajax or not.
@@ -37,8 +45,7 @@ public class ControllerUtils extends Controller {
 			if (isAjax()) {
 				result = forbidden(errorMsg);
 			} else {
-				result = (SimpleResult) Studies.index(study.getId(), errorMsg,
-						Http.Status.FORBIDDEN);
+				result = redirect(routes.Studies.index(study.getId(), null));
 			}
 			throw new ResultException(result, errorMsg);
 		}
@@ -86,7 +93,7 @@ public class ControllerUtils extends Controller {
 			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
 		}
 	}
-	
+
 	public static void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
 			throws ResultException {
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
@@ -95,8 +102,14 @@ public class ControllerUtils extends Controller {
 		}
 	}
 
-	public static void throwWorkerException(String errorMsg, int httpStatus,
-			Long workerId) throws ResultException {
+	public static void throwAjaxResultException(String errorMsg, int httpStatus)
+			throws ResultException {
+		SimpleResult result = status(httpStatus, errorMsg);
+		throw new ResultException(result, errorMsg);
+	}
+
+	public static void throwWorkerResultException(String errorMsg,
+			int httpStatus, Long workerId) throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
@@ -107,8 +120,8 @@ public class ControllerUtils extends Controller {
 		throw new ResultException(result, errorMsg);
 	}
 
-	public static void throwHomeResultException(String errorMsg,
-			int httpStatus) throws ResultException {
+	public static void throwHomeResultException(String errorMsg, int httpStatus)
+			throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
@@ -130,15 +143,109 @@ public class ControllerUtils extends Controller {
 		throw new ResultException(result, errorMsg);
 	}
 
-	public static void throwComponentsResultException(String errorMsg,
-			int httpStatus, Long studyId, Long componentId)
+	/**
+	 * Error messages are within the form.
+	 */
+	public static void throwEditStudyResultException(
+			List<StudyModel> studyList, UserModel loggedInUser,
+			Form<StudyModel> form, int httpStatus, Breadcrumbs breadcrumbs,
+			Call submitAction) throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus);
+		} else {
+			result = status(httpStatus, views.html.mecharg.study.edit2.render(
+					studyList, loggedInUser, breadcrumbs, null, submitAction,
+					form));
+		}
+		throw new ResultException(result);
+	}
+
+	/**
+	 * Error messages are within the form.
+	 */
+	public static void throwEditComponentResultException(
+			List<StudyModel> studyList, UserModel loggedInUser,
+			Form<ComponentModel> form, int httpStatus, Breadcrumbs breadcrumbs,
+			Call submitAction, StudyModel study) throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus);
+		} else {
+			String studyDirName = IOUtils.generateStudyDirName(study);
+			result = status(httpStatus,
+					views.html.mecharg.component.edit2.render(studyList,
+							loggedInUser, breadcrumbs, null, submitAction,
+							form, studyDirName));
+		}
+		throw new ResultException(result);
+	}
+
+	/**
+	 * Error messages are within the form.
+	 */
+	public static void throwCreateUserResultException(
+			List<StudyModel> studyList, UserModel loggedInUser,
+			Form<UserModel> form, int httpStatus) throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus);
+		} else {
+			Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New User");
+			result = status(httpStatus, views.html.mecharg.user.create2.render(
+					studyList, loggedInUser, breadcrumbs, null, form));
+		}
+		throw new ResultException(result);
+	}
+
+	/**
+	 * Error messages are within the form.
+	 */
+	public static void throwEditUserResultException(List<StudyModel> studyList,
+			UserModel loggedInUser, Form<UserModel> form, UserModel user,
+			int httpStatus) throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus);
+		} else {
+			Breadcrumbs breadcrumbs = Breadcrumbs
+					.generateForUser(user, "Edit Profile");
+			result = status(httpStatus,
+					views.html.mecharg.user.editProfile2.render(studyList,
+							loggedInUser, breadcrumbs, null, user, form));
+		}
+		throw new ResultException(result);
+	}
+
+	/**
+	 * Error messages are within the form.
+	 */
+	public static void throwChangePasswordUserResultException(
+			List<StudyModel> studyList, UserModel loggedInUser,
+			Form<UserModel> form, int httpStatus, UserModel user)
+			throws ResultException {
+		SimpleResult result = null;
+		if (isAjax()) {
+			result = status(httpStatus);
+		} else {
+			Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
+					"Change Password");
+			result = status(httpStatus,
+					views.html.mecharg.user.changePassword2.render(studyList,
+							loggedInUser, breadcrumbs, null, form));
+		}
+		throw new ResultException(result);
+	}
+
+	public static void throwChangeMemberOfStudiesResultException(
+			String errorMsg, int httpStatus, Long studyId)
 			throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) Components.index(studyId, componentId,
-					errorMsg, httpStatus);
+			result = (SimpleResult) Studies.changeMembers(studyId, errorMsg,
+					httpStatus);
 		}
 		throw new ResultException(result, errorMsg);
 	}
@@ -192,7 +299,7 @@ public class ControllerUtils extends Controller {
 		}
 		return loggedInUser;
 	}
-	
+
 	public static Set<Worker> retrieveWorkers(StudyModel study) {
 		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
 		Set<Worker> workerSet = new HashSet<>();

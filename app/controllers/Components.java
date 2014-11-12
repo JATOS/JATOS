@@ -6,7 +6,6 @@ import java.util.List;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.results.ComponentResult;
 import play.Logger;
 import play.api.mvc.Call;
 import play.data.DynamicForm;
@@ -18,7 +17,7 @@ import play.mvc.Http.MultipartFormData;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import play.mvc.Security;
-import play.mvc.SimpleResult;
+import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.IOUtils;
 import services.JsonUtils;
@@ -33,38 +32,6 @@ import exceptions.ResultException;
 public class Components extends Controller {
 
 	private static final String CLASS_NAME = Components.class.getSimpleName();
-
-	@Transactional
-	public static Result index(Long studyId, Long componentId, String errorMsg,
-			int httpStatus) throws ResultException {
-		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ComponentModel component = ComponentModel.findById(componentId);
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
-				.getEmail());
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				loggedInUser, component);
-
-		List<ComponentResult> componentResultList = ComponentResult
-				.findAllByComponent(component);
-
-		String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-				Breadcrumbs.getHomeBreadcrumb(),
-				Breadcrumbs.getStudyBreadcrumb(study),
-				Breadcrumbs.getComponentBreadcrumb(study, component));
-		return status(httpStatus, views.html.mecharg.component.index.render(
-				studyList, loggedInUser, breadcrumbs, study, errorMsg,
-				component, componentResultList));
-	}
-
-	@Transactional
-	public static Result index(Long studyId, Long componentId)
-			throws ResultException {
-		return index(studyId, componentId, null, Http.Status.OK);
-	}
 
 	@Transactional
 	public static Result showComponent(Long studyId, Long componentId)
@@ -82,9 +49,8 @@ public class Components extends Controller {
 		if (component.getHtmlFilePath() == null
 				|| component.getHtmlFilePath().isEmpty()) {
 			String errorMsg = ErrorMessages.urlViewEmpty(componentId);
-			SimpleResult result = (SimpleResult) Components.index(studyId,
-					componentId, errorMsg, Http.Status.BAD_REQUEST);
-			throw new ResultException(result, errorMsg);
+			ControllerUtils.throwStudiesResultException(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
 		}
 		session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_COMPONENT_START);
 		return redirect(controllers.publix.routes.PublixInterceptor
@@ -105,7 +71,7 @@ public class Components extends Controller {
 		Form<ComponentModel> form = Form.form(ComponentModel.class);
 		Call submitAction = routes.Components.submit(studyId);
 		String studyDirName = IOUtils.generateStudyDirName(study);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForStudy(study, "New Component");
 		return ok(views.html.mecharg.component.edit2.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form,
@@ -127,13 +93,11 @@ public class Components extends Controller {
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			Call submitAction = routes.Components.submit(studyId);
-			String studyDirName = IOUtils.generateStudyDirName(study);
-			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+			Breadcrumbs breadcrumbs = Breadcrumbs
 					.generateForStudy(study, "New Component");
-			SimpleResult result = badRequest(views.html.mecharg.component.edit2
-					.render(studyList, loggedInUser, breadcrumbs, null,
-							submitAction, form, studyDirName));
-			throw new ResultException(result);
+			ControllerUtils.throwEditComponentResultException(studyList,
+					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
+					submitAction, study);
 		}
 
 		ComponentModel component = form.get();
@@ -161,7 +125,7 @@ public class Components extends Controller {
 		Call submitAction = routes.Components
 				.submitEdited(studyId, componentId);
 		String studyDirName = IOUtils.generateStudyDirName(study);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForComponent(study, component, "Edit");
 		return ok(views.html.mecharg.component.edit2.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form,
@@ -188,13 +152,11 @@ public class Components extends Controller {
 		if (form.hasErrors()) {
 			Call submitAction = routes.Components.submitEdited(studyId,
 					componentId);
-			String studyDirName = IOUtils.generateStudyDirName(study);
-			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+			Breadcrumbs breadcrumbs = Breadcrumbs
 					.generateForComponent(study, component, "Edit");
-			SimpleResult result = badRequest(views.html.mecharg.component.edit2
-					.render(studyList, loggedInUser, breadcrumbs, null,
-							submitAction, form, studyDirName));
-			throw new ResultException(result);
+			ControllerUtils.throwEditComponentResultException(studyList,
+					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
+					submitAction, study);
 		}
 
 		// Update component in DB
@@ -263,26 +225,30 @@ public class Components extends Controller {
 		return redirect(routes.Studies.index(studyId, null));
 	}
 
+	/**
+	 * HTTP Ajax request
+	 */
 	@Transactional
 	public static Result exportComponent(Long studyId, Long componentId)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".exportComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		// Remove cookie of jQuery.fileDownload plugin
+		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 
-		String componentAsJson;
+		String componentAsJson = null;
 		try {
 			componentAsJson = JsonUtils.asJsonForIO(component);
 		} catch (JsonProcessingException e) {
 			String errorMsg = ErrorMessages.componentExportFailure(componentId);
-			SimpleResult result = (SimpleResult) Components.index(studyId,
-					componentId, errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
-			throw new ResultException(result, errorMsg);
+			ControllerUtils.throwAjaxResultException(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 
 		response().setContentType("application/x-download");
@@ -290,10 +256,14 @@ public class Components extends Controller {
 				component.getId(), IOUtils.COMPONENT_FILE_SUFFIX);
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
+		// Set cookie for jQuery.fileDownload plugin
+		response().setCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME,
+				ControllerUtils.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(componentAsJson);
 	}
 
 	/**
+	 * HTTP Ajax request
 	 * Imports a arbitrary number of components and files. A component is
 	 * persisted into the DB. All other files are just stored in the study's
 	 * folder.

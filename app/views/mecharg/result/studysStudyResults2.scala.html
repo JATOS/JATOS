@@ -113,11 +113,12 @@ $(document).ready(function() {
 		else {
 			row.child(childRowFormat(row.data())).show();
 			tr.addClass('shown');
+			tr.next().addClass('info');
 		}
 	});
 });
 
-$(".exportData").click(function(e) {
+$('#resultsToolbar').on('click', '.exportData', function() {
 	var oTT = TableTools.fnGetInstance('resultsTable');
 	var selectedTrs = oTT.fnGetSelected();
 	var ids = [];
@@ -125,12 +126,15 @@ $(".exportData").click(function(e) {
 		var rowData = resultsTable.row(selectedTr).data();
 		ids.push(rowData.id);
 	});
-	if(ids.length > 0) {
-		window.location.href = '/mecharg/studyresult'
-			+ '/exportData?studyResultIds=' + ids.toString();
-	} else {
+	if(ids.length == 0) {
 		showError("No results selected");
+		return;
 	}
+	var url = '/mecharg/studyresult'
+		+ '/exportData?studyResultIds=' + ids.toString();
+	$.fileDownload(url)
+		.fail(function () { showError("Export of results failed"); });
+	return false; //this is critical to stop the click event which will trigger a normal file download
 });
 
 $('#resultsToolbar').on('click', '.remove', function() {
@@ -169,29 +173,29 @@ $('#resultsToolbar').on('click', '.remove', function() {
 function childRowFormat(data) {
 	// `data` is the original data object for the row
 	var html = [];
-	html.push('<table class="details table table-condensed" cellpadding="5" cellspacing="0" border="0">',
-		'<tr>',
+	html.push('<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
+		'<tr class="info">',
 		'<td><b>Result ID</b></td>',
 		'<td><b>Comp. ID</b></td>',
-		'<td><b>Comp. Title</b></td>',
+		'<td><b>Component Title</b></td>',
 		'<td><b>Time</b></td>',
 		'<td><b>State</b></td>',
-		'<td><b>Data</b></td>',
 		'</tr>');
 		if(data.componentResults.length > 0) {
 			data.componentResults.forEach(function(componentResult) {
-				html.push('<tr>',
+				html.push('<tr class="info">',
 					'<td>' + componentResult.id + '</td>',
 					'<td>' + componentResult.componentId + '</td>',
 					'<td>' + componentResult.componentTitle + '</td>',
 					'<td>' + componentResult.startDate + '</td>',
 					'<td>' + componentResult.componentState + '</td>',
-					'<td class="details-data">' + componentResult.data + '</td>',
+					'</tr><tr class="info">',
+					'<td colspan="5"><pre class="details-data">' + componentResult.data + '</pre></td>',
 					'</tr>');
 			});
 		} else {
-			html.push('<tr>',
-				'<td colspan="4">empty</td>',
+			html.push('<tr class="info">',
+				'<td colspan="5">empty</td>',
 				'</tr>');
 		}
 		html.push('</table>');

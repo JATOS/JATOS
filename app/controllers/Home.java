@@ -10,6 +10,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
+import services.Breadcrumbs;
 import services.Messages;
 import exceptions.ResultException;
 
@@ -27,8 +28,7 @@ public class Home extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		Messages messages = new Messages().error(errorMsg);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForHome("Index");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("Index");
 		return status(httpStatus, views.html.mecharg.home2.render(studyList,
 				loggedInUser, breadcrumbs, messages));
 	}

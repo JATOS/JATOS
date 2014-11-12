@@ -70,8 +70,6 @@ GET     /mecharg/:studyId/:componentId/tableData       controllers.ComponentResu
 GET     /mecharg/:studyId/:componentId/show            controllers.Components.showComponent(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId/clone           controllers.Components.cloneComponent(studyId: Long, componentId: Long)
 GET     /mecharg/:studyId/:componentId/export          controllers.Components.exportComponent(studyId: Long, componentId: Long)
-GET     /mecharg/:studyId/:componentId                 controllers.Components.index(studyId: Long, componentId: Long)
-GET     /mecharg/:studyId/:componentId/                controllers.Components.index(studyId: Long, componentId: Long)
 
 # Static resources (not managed by the Play framework) from the /public folder
 GET     /studies/*file                     controllers.publix.ExternalAssets.at(file)

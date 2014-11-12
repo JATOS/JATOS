@@ -22,7 +22,7 @@ import play.mvc.Http.MultipartFormData;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import play.mvc.Security;
-import play.mvc.SimpleResult;
+import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.IOUtils;
 import services.IOUtils.UploadUnmarshaller;
@@ -51,8 +51,7 @@ public class Studies extends Controller {
 
 		Set<Worker> workerSet = ControllerUtils.retrieveWorkers(study);
 		Messages messages = new Messages().error(errorMsg);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForStudy(study, "Index");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study, "Index");
 		return status(httpStatus, views.html.mecharg.study.index2.render(
 				studyList, loggedInUser, breadcrumbs, messages, study,
 				workerSet));
@@ -79,8 +78,7 @@ public class Studies extends Controller {
 
 		Form<StudyModel> form = Form.form(StudyModel.class);
 		Call submitAction = routes.Studies.submit();
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForHome("New Study");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New Study");
 		return ok(views.html.mecharg.study.edit2.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form));
 	}
@@ -94,11 +92,11 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		if (form.hasErrors()) {
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(), "New Study");
-			SimpleResult result = badRequest(views.html.mecharg.study.create
-					.render(studyList, loggedInUser, breadcrumbs, form));
-			throw new ResultException(result);
+			Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New Study");
+			Call submitAction = routes.Studies.submit();
+			ControllerUtils.throwEditStudyResultException(studyList,
+					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
+					submitAction);
 		}
 
 		// Persist in DB
@@ -110,15 +108,18 @@ public class Studies extends Controller {
 			IOUtils.createStudyDir(study);
 		} catch (IOException e) {
 			form.reject(e.getMessage());
-			String breadcrumbs = Breadcrumbs.generateBreadcrumbs(
-					Breadcrumbs.getHomeBreadcrumb(), "New Study");
-			SimpleResult result = badRequest(views.html.mecharg.study.create
-					.render(studyList, loggedInUser, breadcrumbs, form));
-			throw new ResultException(result);
+			Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New Study");
+			Call submitAction = routes.Studies.submit();
+			ControllerUtils.throwEditStudyResultException(studyList,
+					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
+					submitAction);
 		}
 		return redirect(routes.Studies.index(study.getId(), null));
 	}
 
+	/**
+	 * HTTP Ajax request
+	 */
 	@Transactional
 	public static Result importStudy() throws ResultException {
 		Logger.info(CLASS_NAME + ".importStudy: " + "logged-in user's email "
@@ -214,8 +215,7 @@ public class Studies extends Controller {
 
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = routes.Studies.submitEdited(study.getId());
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForStudy(study, "Edit");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study, "Edit");
 		return ok(views.html.mecharg.study.edit2.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form));
 	}
@@ -234,12 +234,11 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
 		if (form.hasErrors()) {
 			Call submitAction = routes.Studies.submitEdited(study.getId());
-			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-					.generateForStudy(study, "Edit");
-			SimpleResult result = badRequest(views.html.mecharg.study.edit2
-					.render(studyList, loggedInUser, breadcrumbs, null,
-							submitAction, form));
-			throw new ResultException(result);
+			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+					"Edit");
+			ControllerUtils.throwEditStudyResultException(studyList,
+					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
+					submitAction);
 		}
 
 		// Update study in DB
@@ -258,14 +257,12 @@ public class Studies extends Controller {
 			form.reject(new ValidationError(StudyModel.DIRNAME_PREFIX, e
 					.getMessage()));
 			Call submitAction = routes.Studies.submitEdited(study.getId());
-			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-					.generateForStudy(study, "Edit");
-			SimpleResult result = badRequest(views.html.mecharg.study.edit2
-					.render(studyList, loggedInUser, breadcrumbs, null,
-							submitAction, form));
-			throw new ResultException(result);
+			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+					"Edit");
+			ControllerUtils.throwEditStudyResultException(studyList,
+					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
+					submitAction);
 		}
-
 		return redirect(routes.Studies.index(studyId, null));
 	}
 
@@ -304,26 +301,9 @@ public class Studies extends Controller {
 			IOUtils.removeStudyDirectory(study);
 		} catch (IOException e) {
 			String errorMsg = e.getMessage();
-			SimpleResult result = internalServerError(errorMsg);
-			throw new ResultException(result, errorMsg);
+			ControllerUtils.throwAjaxResultException(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
 		}
-		return ok();
-	}
-
-	/**
-	 * Ajax DELETE request to remove all study results including their component
-	 * results.
-	 */
-	@Transactional
-	public static Result removeAllResults(Long studyId) throws ResultException {
-		Logger.info(CLASS_NAME + ".removeAllResults: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
-
-		PersistanceUtils.removeAllStudyResults(study);
 		return ok();
 	}
 
@@ -346,20 +326,26 @@ public class Studies extends Controller {
 		try {
 			IOUtils.copyStudyDirectory(study, clone);
 		} catch (IOException e) {
-			return internalServerError(e.getMessage());
+			ControllerUtils.throwAjaxResultException(e.getMessage(),
+					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok();
 	}
 
+	/**
+	 * HTTP Ajax request
+	 */
 	@Transactional
 	public static Result exportStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		// Remove cookie of jQuery.fileDownload plugin
+		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		File zipFile;
+		File zipFile = null;
 		try {
 			File studyAsJsonFile = File.createTempFile(
 					IOUtils.generateFileName(study.getTitle()), "."
@@ -371,9 +357,8 @@ public class Studies extends Controller {
 			studyAsJsonFile.delete();
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.studyExportFailure(studyId);
-			SimpleResult result = (SimpleResult) Studies.index(studyId,
-					errorMsg, Http.Status.INTERNAL_SERVER_ERROR);
-			throw new ResultException(result, errorMsg);
+			ControllerUtils.throwAjaxResultException(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 
 		String zipFileName = IOUtils.generateFileName(study.getTitle(),
@@ -381,6 +366,9 @@ public class Studies extends Controller {
 		response().setContentType("application/x-download");
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + zipFileName);
+		// Set cookie for jQuery.fileDownload plugin
+		response().setCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME,
+				ControllerUtils.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(zipFile);
 	}
 
@@ -402,8 +390,8 @@ public class Studies extends Controller {
 
 		List<UserModel> userList = UserModel.findAll();
 		Messages messages = new Messages().error(errorMsg);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForStudy(study, "Change Members");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+				"Change Members");
 		return status(httpStatus,
 				views.html.mecharg.study.changeMembers2.render(studyList,
 						loggedInUser, breadcrumbs, messages, study, userList));
@@ -423,9 +411,8 @@ public class Studies extends Controller {
 		String[] checkedUsers = formMap.get(StudyModel.MEMBERS);
 		if (checkedUsers == null || checkedUsers.length < 1) {
 			String errorMsg = ErrorMessages.STUDY_AT_LEAST_ONE_MEMBER;
-			SimpleResult result = (SimpleResult) changeMembers(studyId,
-					errorMsg, Http.Status.BAD_REQUEST);
-			throw new ResultException(result, errorMsg);
+			ControllerUtils.throwChangeMemberOfStudiesResultException(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
 		}
 		study.getMemberList().clear();
 		for (String email : checkedUsers) {
@@ -434,7 +421,6 @@ public class Studies extends Controller {
 				PersistanceUtils.addMemberToStudy(study, user);
 			}
 		}
-
 		return redirect(routes.Studies.index(studyId, null));
 	}
 
@@ -493,9 +479,8 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		String hostname = request().host();
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForStudy(study,
-						"Mechanical Turk HIT Layout Source Code");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+				"Mechanical Turk HIT Layout Source Code");
 		return ok(views.html.mecharg.study.mTurkSourceCode2.render(studyList,
 				loggedInUser, breadcrumbs, null, study, hostname));
 	}
@@ -514,7 +499,9 @@ public class Studies extends Controller {
 		try {
 			dataAsJson = JsonUtils.allComponentsForUI(study.getComponentList());
 		} catch (IOException e) {
-			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
+			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
+			ControllerUtils.throwAjaxResultException(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
 	}
@@ -531,7 +518,7 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Messages messages = new Messages().error(errorMsg);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForStudy(study, "Workers");
 		return status(httpStatus, views.html.mecharg.study.workers2.render(
 				studyList, loggedInUser, breadcrumbs, messages, study));

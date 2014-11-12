@@ -10,9 +10,9 @@ import play.data.DynamicForm;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
-import play.mvc.SimpleResult;
 import services.ErrorMessages;
 import exceptions.ResultException;
 
@@ -62,11 +62,8 @@ public class Users extends Controller {
 				.getEmail());
 
 		if (form.hasErrors()) {
-			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-					.generateForHome("New User");
-			SimpleResult result = badRequest(views.html.mecharg.user.create2
-					.render(studyList, loggedInUser, breadcrumbs, null, form));
-			throw new ResultException(result);
+			ControllerUtils.throwCreateUserResultException(studyList,
+					loggedInUser, form, Http.Status.BAD_REQUEST);
 		}
 
 		// Check if user with this email already exists.
@@ -93,20 +90,16 @@ public class Users extends Controller {
 		}
 
 		if (form.hasErrors()) {
-			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-					.generateForHome("New User");
-			SimpleResult result = badRequest(views.html.mecharg.user.create2
-					.render(studyList, loggedInUser, breadcrumbs, null, form));
-			throw new ResultException(result);
-		} else {
-			MAWorker worker = new MAWorker(newUser);
-			worker.persist();
-			newUser.setPasswordHash(passwordHash);
-			newUser.setWorker(worker);
-			newUser.persist();
-			worker.merge();
-			return redirect(routes.Home.home());
+			ControllerUtils.throwCreateUserResultException(studyList,
+					loggedInUser, form, Http.Status.BAD_REQUEST);
 		}
+		MAWorker worker = new MAWorker(newUser);
+		worker.persist();
+		newUser.setPasswordHash(passwordHash);
+		newUser.setWorker(worker);
+		newUser.persist();
+		worker.merge();
+		return redirect(routes.Home.home());
 	}
 
 	@Transactional
@@ -140,22 +133,17 @@ public class Users extends Controller {
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		if (form.hasErrors()) {
-			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-					.generateForUser(user, "Edit Profile");
-			SimpleResult result = badRequest(views.html.mecharg.user.editProfile2
-					.render(studyList, loggedInUser, breadcrumbs, null, user,
-							form));
-			throw new ResultException(result);
-		} else {
-			// Update user in database
-			// Do not update 'email' since it's the ID and should stay
-			// unaltered. For the password we have an extra form.
-			DynamicForm requestData = Form.form().bindFromRequest();
-			String name = requestData.get(UserModel.NAME);
-			user.update(name);
-			user.merge();
-			return redirect(routes.Users.profile(email));
+			ControllerUtils.throwEditUserResultException(studyList,
+					loggedInUser, form, loggedInUser, Http.Status.BAD_REQUEST);
 		}
+		// Update user in database
+		// Do not update 'email' since it's the ID and should stay
+		// unaltered. For the password we have an extra form.
+		DynamicForm requestData = Form.form().bindFromRequest();
+		String name = requestData.get(UserModel.NAME);
+		user.update(name);
+		user.merge();
+		return redirect(routes.Users.profile(email));
 	}
 
 	@Transactional
@@ -215,17 +203,13 @@ public class Users extends Controller {
 		}
 
 		if (form.hasErrors()) {
-			services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-					.generateForUser(user, "Change Password");
-			SimpleResult result = badRequest(views.html.mecharg.user.changePassword2
-					.render(studyList, loggedInUser, breadcrumbs, null, form));
-			throw new ResultException(result);
-		} else {
-			// Update password hash in DB
-			user.setPasswordHash(newPasswordHash);
-			user.merge();
-			return redirect(routes.Users.profile(email));
+			ControllerUtils.throwChangePasswordUserResultException(studyList,
+					loggedInUser, form, Http.Status.BAD_REQUEST, loggedInUser);
 		}
+		// Update password hash in DB
+		user.setPasswordHash(newPasswordHash);
+		user.merge();
+		return redirect(routes.Users.profile(email));
 	}
 
 }

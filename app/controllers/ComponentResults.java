@@ -15,7 +15,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
-import play.mvc.SimpleResult;
+import services.Breadcrumbs;
 import services.DateUtils;
 import services.ErrorMessages;
 import services.IOUtils;
@@ -45,7 +45,7 @@ public class ComponentResults extends Controller {
 				loggedInUser, component);
 
 		Messages messages = new Messages().error(errorMsg);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
+		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForComponentResult(study, component, "Index");
 		return status(httpStatus,
 				views.html.mecharg.result.componentResults2.render(studyList,
@@ -83,8 +83,8 @@ public class ComponentResults extends Controller {
 			if (componentResult == null) {
 				String errorMsg = ErrorMessages
 						.componentResultNotExist(componentResultId);
-				SimpleResult result = notFound(errorMsg);
-				throw new ResultException(result, errorMsg);
+				ControllerUtils.throwAjaxResultException(errorMsg,
+						Http.Status.NOT_FOUND);
 			}
 			ComponentModel resultsComponent = componentResult.getComponent();
 			StudyModel resultsStudy = resultsComponent.getStudy();
@@ -94,7 +94,6 @@ public class ComponentResults extends Controller {
 			ControllerUtils.checkStudyLocked(resultsStudy);
 			PersistanceUtils.removeComponentResult(componentResult);
 		}
-
 		return ok();
 	}
 
@@ -121,12 +120,17 @@ public class ComponentResults extends Controller {
 		return ok(dataAsJson);
 	}
 
+	/**
+	 * HTTP Ajax request
+	 */
 	@Transactional
 	public static Result exportData(String componentResultIds)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".exportData: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
+		// Remove cookie of jQuery.fileDownload plugin
+		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
 		String componentResultDataAsStr = getComponentResultData(
@@ -136,6 +140,9 @@ public class ComponentResults extends Controller {
 				+ "." + IOUtils.TXT_FILE_SUFFIX;
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
+		// Set cookie for jQuery.fileDownload plugin
+		response().setCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME,
+				ControllerUtils.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(componentResultDataAsStr);
 	}
 
@@ -154,8 +161,8 @@ public class ComponentResults extends Controller {
 			if (componentResult == null) {
 				String errorMsg = ErrorMessages
 						.componentResultNotExist(componentResultId);
-				SimpleResult result = badRequest(errorMsg);
-				throw new ResultException(result, errorMsg);
+				ControllerUtils.throwAjaxResultException(errorMsg,
+						Http.Status.BAD_REQUEST);
 			}
 			ComponentModel resultsComponent = componentResult.getComponent();
 			StudyModel resultsStudy = resultsComponent.getStudy();
@@ -170,7 +177,6 @@ public class ComponentResults extends Controller {
 				}
 			}
 		}
-
 		return sb.toString();
 	}
 

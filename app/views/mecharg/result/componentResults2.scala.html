@@ -96,11 +96,12 @@ $(document).ready(function() {
 		else {
 			row.child(childRowFormat(row.data())).show();
 			tr.addClass('shown');
+			tr.next().addClass('info');
 		}
 	});
 });
 
-$(".exportData").click(function(e) {
+$('#resultsToolbar').on('click', '.exportData', function() {
 	var oTT = TableTools.fnGetInstance('resultsTable');
 	var selectedTrs = oTT.fnGetSelected();
 	var ids = [];
@@ -108,12 +109,15 @@ $(".exportData").click(function(e) {
 		var rowData = resultsTable.row(selectedTr).data();
 		ids.push(rowData.id);
 	});
-	if(ids.length > 0) {
-		window.location.href = '/mecharg/componentresult/'
-				+ 'exportData?componentResultIds=' + ids.toString();
-	} else {
+	if(ids.length == 0) {
 		showError("No results selected");
+		return;
 	}
+	var url = '/mecharg/componentresult/'
+		+ 'exportData?componentResultIds=' + ids.toString();
+	$.fileDownload(url)
+		.fail(function () { showError("Export of results failed"); });
+	return false; //this is critical to stop the click event which will trigger a normal file download
 });
 
 $('#resultsToolbar').on('click', '.remove', function() {
@@ -150,7 +154,7 @@ $('#resultsToolbar').on('click', '.remove', function() {
 
 function childRowFormat(data) {
 	// `data` is the original data object for the row
-	return '<p class="details details-data">' + data.data + '</p>';
+	return '<p><pre class="details-data">' + data.data + '</pre></p>';
 }
 
 </script>
