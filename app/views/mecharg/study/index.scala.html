@@ -1,0 +1,415 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+study: StudyModel, workerSet: Set[workers.Worker])
+
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+
+<!-- Toolbar -->
+<div id="studyToolbar" class="btn-toolbar" role="toolbar">
+	<div class="btn-group">
+		<button id="showStudy" type="button" class="btn btn-primary">Show</button>
+		<button id="studyResults" type="button" class="btn btn-primary">Results <span class="badge">@results.StudyResult.countByStudy(study)</span></button>
+		<button id="workers" type="button" class="btn btn-primary">Workers <span class="badge">@workerSet.size()</button>
+		<button id="editStudy" type="button" class="btn btn-primary">Edit</button>
+		<button id="lockStudy" type="button" class="btn btn-primary">@if(study.isLocked()){Unlock}else{Lock}</button>
+		<div class="btn-group">
+			<button type="button" class="btn btn-primary dropdown-toggle"
+				data-toggle="dropdown">
+				More <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu" role="menu">
+				<li><a href="@routes.Studies.exportStudy(study.getId())">Export</a></li>
+				<li><a id="cloneStudy" href="#">Clone</a></li>
+				<li><a href="@routes.Studies.showMTurkSourceCode(study.getId())">MT Source Code</a></li>
+				<li class="divider"></li>
+				<li><a id="removeStudy" href="#">Delete</a></li>
+			</ul>
+		</div>
+	</div>
+	<div class="btn-group">
+		<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+				Components <span class="caret"></span>
+		</button>
+		<ul class="dropdown-menu" role="menu">
+			<li><a href="@routes.Components.create(study.getId())">New</a></li>
+			<input id="importBrowser" type="file" name="@ComponentModel.COMPONENT" multiple style="display: none;">
+			<li><a id="importButton" href="#">Import</a></li>
+		</ul>
+	</div>
+	
+	<div class="btn-group">
+		<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+				Members <span class="caret"></span>
+		</button>
+		<ul class="dropdown-menu" role="menu">
+			@for(member <- study.getMemberList()) {
+			<li><a href="@routes.Users.profile(member.getEmail())">@member.getName() (@member.getEmail())</a></li>
+			}
+			<li class="divider"></li>
+			<li><a href="@routes.Studies.changeMembers(study.getId())">Change</a></li>
+		</ul>
+	</div>
+</div>
+
+<!-- Components Table -->
+<h3>Components</h3>
+<table id="componentsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+	<thead>
+		<tr>
+			<th></th>
+			<th>Active</th>
+			<th>#</th>
+			<th>ID</th>
+			<th>Title</th>
+			<th></th>
+		</tr>
+	</thead>
+</table>
+
+<!-- Template for button toolbar in Component's row -->
+<div id="componentToolbar" style="display: none">
+	<div class="componentBtnGroup btn-group" aria-hidden="true">
+		<button type="button" class="showComponent btn btn-default">Show</button>
+		<button type="button" class="componentResults btn btn-default">Results <span class="resultsBadge badge"></span></button>
+		<button type="button" class="editComponent btn btn-default">Edit</button>
+		<div class="btn-group">
+			<button type="button" class="btn btn-default dropdown-toggle"
+				data-toggle="dropdown">
+				More <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu" role="menu">
+				<li><a class="exportComponent" href="#">Export</a></li>
+				<li><a class="cloneComponent" href="#">Clone</a></li>
+				<li class="divider"></li>
+				<li><a class="removeComponent" href="#">Delete</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+
+var studyData = @Html(services.JsonUtils.studyForUI(study));
+
+var componentsTable;
+$(document).ready(function() {
+	componentsTable = $('#componentsTable').DataTable({
+		"ajax": {
+			"type": "GET",
+			"url" : '@routes.Studies.tableDataByStudy(study.getId())',
+			"error": function(reason) {
+					showError("Couldn't read components data.")
+			}
+		},
+		"paging": false,
+		"info": false,
+		"filter": false,
+		"columnDefs": [ {
+			"searchable": false,
+			"orderable": false,
+			"targets": 0
+		} ],
+		"columns": [
+			{
+				"data": null,
+				"defaultContent": '',
+				"width": "1px",
+				"render": function (data, type, full, meta) {
+					return '<div class="upArrow"></div>'
+						+ '<div class="downArrow"></div>';
+				}
+			},
+			{
+				"class": 'activeComponent',
+				"orderable": false,
+				"data": null,
+				"defaultContent": '',
+				"width": "1px",
+				"render": function (data, type, full, meta) {
+					var html = '<input class="activeCheckbox" type="checkbox"';
+					if (data.active) {html += 'checked'}
+					html += '>';
+					return html;
+				}
+			},
+			{
+				"class": 'position',
+				"data": null,
+				"orderable": false,
+				"width": "1px"
+			},
+			{
+				"data": "id",
+				"orderable": false,
+				"width": "1px"
+			},
+			{ 
+				"data": "title",
+				"orderable": false
+			},
+			{
+				"class": "toolbar",
+				"orderable": false,
+				"data": null,
+				"defaultContent": '',
+				"width": "1%",
+				"render": function (data, type, full, meta) {
+					var toolbar = $('#componentToolbar').clone().show();
+					$(toolbar).find('.resultsBadge').text(data.resultCount);
+					return toolbar.html();
+				}
+			}
+		]
+	});
+	
+	componentsTable.on('order.dt search.dt', function () {
+		componentsTable.column(2, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+			cell.innerHTML = i + 1;
+		});
+	}).draw();
+
+	// Don't remove. It readjusts the columns width after writing the component's positions
+	componentsTable.columns.adjust().draw();
+	
+	// Adjust the width of every component's toolbar to the widest one
+	componentsTable.on('column-sizing.dt', function (e, settings) {
+		var maxWidth = 0;
+		$('.componentResults').each(function(index) {
+			var width = $(this).width();
+			if (width > maxWidth) {
+				maxWidth = width;
+			}
+		});
+		$('.componentResults').each(function(index) {
+			$(this).width(maxWidth);
+		});
+	});
+	
+	$('#componentsTable tbody').on('click', '.showComponent', function() {
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/show";
+	});
+	
+	$('#componentsTable tbody').on('click', '.componentResults', function() {
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/results";
+	});
+	
+	$('#componentsTable tbody').on('click', '.editComponent', function() {
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/edit";
+	});
+	
+	$('#componentsTable tbody').on('click', '.exportComponent', function() {
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/export";
+	});
+	
+	$('#componentsTable tbody').on('click', '.cloneComponent', function() {
+		window.location.href = "/mecharg/" + studyData.id +"/"
+			+ getComponentId(this) + "/clone";
+	});
+	
+	$('#componentsTable tbody').on('click', '.removeComponent', function() {
+		var element = this;
+		var componentId = getComponentId(this);
+		if (!componentId) {return} // should never happen
+		var componentTitle = getComponentTitle(this);
+		var title = "Confirm Delete";
+		var text = "You are about to delete component \"" + componentTitle 
+			+ "\" (ID " + componentId + ") <b>with all its results</b>.";
+		askConfirmation(title, text, 'Delete', function() {
+			$.ajax({
+				url : "/mecharg/" + studyData.id +"/" + componentId + "/remove",
+				type : 'DELETE',
+				success : function(result) {
+					var tr = $(element).closest('tr');
+					componentsTable.row(tr).remove().draw();
+				},
+				error : function(err) {
+					showError(err.responseText);
+				}
+			});
+		});
+	});
+	
+	$('#componentsTable tbody').on('click', '.upArrow', function() {
+		var tr = $(this).closest('tr');
+		var componentId = getComponentId(this);
+		ajaxChangeComponentOrder(componentId, "up", tr);
+	});
+
+	$('#componentsTable tbody').on('click', '.downArrow', function() {
+		var tr = $(this).closest('tr');
+		var componentId = getComponentId(this);
+		ajaxChangeComponentOrder(componentId, "down", tr);
+	});
+	
+	$('#componentsTable tbody').on('click', '.activeCheckbox', function() {
+		var checkbox = this;
+		var tr = $(this).closest('tr');
+		var componentId = getComponentId(this);
+		var active = $(this).prop('checked');
+		$.ajax({
+			url : "/mecharg/" + studyData.id +"/" + componentId
+					+ "/changeProperty?active=" + active,
+			type : "POST",
+			error : function(err) {
+				$(checkbox).prop("checked", !$(checkbox).is(":checked"));
+				showError(err.responseText);
+			}
+		});
+	});
+	
+	function getComponentId(element) {
+		var tr = $(element).closest('tr');
+		var rowData = componentsTable.row(tr).data();
+		return rowData.id;
+	}
+	
+	function getComponentTitle(element) {
+		var tr = $(element).closest('tr');
+		var rowData = componentsTable.row(tr).data();
+		return rowData.title;
+	}
+	
+});
+
+function ajaxChangeComponentOrder(componentId, direction, tr) {
+	$.ajax({
+		url : "/mecharg/" + studyData.id + "/changeComponentOrder"
+				+ "?componentId=" + componentId + "&direction="
+				+ direction,
+		type : "POST",
+		success : function(response) {
+			if (direction == "up") {
+				var clickedRow = componentsTable.row(tr);
+				var clickedRowIndex = clickedRow.index();
+				if (clickedRowIndex < 1) { return }
+				var previousRow = componentsTable.row(clickedRowIndex - 1);
+				swapRowData(clickedRow, previousRow);
+			}
+			if (direction == "down") {
+				var clickedRow = componentsTable.row(tr);
+				var clickedRowIndex = clickedRow.index();
+				if (clickedRowIndex > componentsTable.rows({page:'current'}).data().length - 2) { return }
+				var nextRow = componentsTable.row(clickedRowIndex + 1);
+				swapRowData(clickedRow, nextRow);
+			}
+			componentsTable.draw();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
+function swapRowData(row1, row2) {
+	var row1Data = row1.data();
+	var row2Data = row2.data();
+	row1.data(row2Data);
+	row2.data(row1Data);
+}
+
+$('#studyToolbar').on('click', '#lockStudy', function() {
+	$.ajax({
+		url : "/mecharg/" + studyData.id +"/swapLock",
+		type : "POST",
+		success : function(response) {
+			if (response == 'true') {
+				$("#lockStudy").text("Unlock");
+			} else {
+				$("#lockStudy").text("Lock");
+			}
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+$('#studyToolbar').on('click', '#showStudy', function() {
+	window.location.href = "@routes.Studies.showStudy(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#studyResults', function() {
+	window.location.href = "@routes.StudyResults.index(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#workers', function() {
+	window.location.href = "@routes.Studies.workers(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#editStudy', function() {
+	window.location.href = "@routes.Studies.edit(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#removeStudy', function() {
+	var title = "Confirm Delete";
+	var text = "You are about to delete the study \"" + studyData.title 
+		+ "\" (ID " + studyData.id + ") "
+		+ "<b>with all its components, results, and the entire study's directory, "
+		+ "including the HTML files</b>.";
+	askConfirmation(title, text, 'Delete', function() {
+		$.ajax({
+			url : '@routes.Studies.remove(study.getId())',
+			type : 'DELETE',
+			success : function(result) {
+				window.location.replace('@routes.Home.home()');
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
+});
+
+$('#studyToolbar').on('click', '#cloneStudy', function() {
+	$.ajax({
+		url : '@routes.Studies.cloneStudy(study.getId())',
+		type : 'GET',
+		success : function(result) {
+			window.location.replace('@routes.Studies.index(study.getId())');
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+function getComponentId(e) {
+	var componentElement = $(e.target);
+	var componentId = componentElement.attr("component-id");
+	return componentId;
+}
+
+$('#studyToolbar').on('click', '#importButton', function() {
+	$('#importBrowser').trigger("click");
+});
+
+$('#importBrowser').change(function() {
+	var data = new FormData();
+	var files = $('#importBrowser').prop('files');
+	$.each(files , function(index, value){
+		data.append('@ComponentModel.COMPONENT', value);
+	});
+	$.ajax({
+		url: '@routes.Components.importComponent(study.getId())',
+		data: data,
+		cache: false,
+		contentType: false,
+		processData: false,
+		type: 'POST',
+		success: function(data){
+			showSuccess("Component(s) or file(s) successfully imported.");
+			componentsTable.ajax.reload();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+</script>
+
+}

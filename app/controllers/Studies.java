@@ -52,7 +52,7 @@ public class Studies extends Controller {
 		Set<Worker> workerSet = ControllerUtils.retrieveWorkers(study);
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study, "Index");
-		return status(httpStatus, views.html.mecharg.study.index2.render(
+		return status(httpStatus, views.html.mecharg.study.index.render(
 				studyList, loggedInUser, breadcrumbs, messages, study,
 				workerSet));
 	}
@@ -79,7 +79,7 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class);
 		Call submitAction = routes.Studies.submit();
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New Study");
-		return ok(views.html.mecharg.study.edit2.render(studyList,
+		return ok(views.html.mecharg.study.edit.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form));
 	}
 
@@ -216,7 +216,7 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = routes.Studies.submitEdited(study.getId());
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study, "Edit");
-		return ok(views.html.mecharg.study.edit2.render(studyList,
+		return ok(views.html.mecharg.study.edit.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form));
 	}
 
@@ -393,7 +393,7 @@ public class Studies extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				"Change Members");
 		return status(httpStatus,
-				views.html.mecharg.study.changeMembers2.render(studyList,
+				views.html.mecharg.study.changeMembers.render(studyList,
 						loggedInUser, breadcrumbs, messages, study, userList));
 	}
 
@@ -481,7 +481,7 @@ public class Studies extends Controller {
 		String hostname = request().host();
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				"Mechanical Turk HIT Layout Source Code");
-		return ok(views.html.mecharg.study.mTurkSourceCode2.render(studyList,
+		return ok(views.html.mecharg.study.mTurkSourceCode.render(studyList,
 				loggedInUser, breadcrumbs, null, study, hostname));
 	}
 
@@ -520,7 +520,7 @@ public class Studies extends Controller {
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForStudy(study, "Workers");
-		return status(httpStatus, views.html.mecharg.study.workers2.render(
+		return status(httpStatus, views.html.mecharg.study.studysWorkers.render(
 				studyList, loggedInUser, breadcrumbs, messages, study));
 	}
 

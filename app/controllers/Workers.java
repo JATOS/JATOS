@@ -46,7 +46,7 @@ public class Workers extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorkerResult(worker,
 				"Index");
 		return status(httpStatus,
-				views.html.mecharg.result.workersStudyResults2.render(
+				views.html.mecharg.result.workersStudyResults.render(
 						studyList, loggedInUser, breadcrumbs, messages, worker));
 	}
 

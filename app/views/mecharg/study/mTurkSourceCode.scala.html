@@ -1,0 +1,76 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+study: StudyModel, hostname: String)
+
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+
+
+<h3>Source code for Mechanical Turk</h3>
+<p>Copy & paste this code into the 'source' field of your study's design layout in Mechanical Turk</p>
+
+<pre><code>
+&lt;link href=&quot;https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot; /&gt;
+&lt;section class=&quot;container&quot; id=&quot;SurveyLink&quot; style=&quot;margin-bottom:15px; padding: 10px 10px; font-family: Verdana, Geneva, sans-serif; color:#333333; font-size:0.9em;&quot;&gt;
+&lt;div class=&quot;row col-xs-12 col-md-12&quot;&gt;&lt;!-- Instructions --&gt;
+&lt;div class=&quot;panel panel-primary&quot;&gt;
+&lt;div class=&quot;panel-heading&quot;&gt;&lt;strong&gt;Instructions&lt;/strong&gt;&lt;/div&gt;
+
+&lt;div class=&quot;panel-body&quot;&gt;
+
+@if(study.getDescription() != null && !study.getDescription().isEmpty()) {
+	&lt;p id=&quot;studyDescription&quot;&gt;@study.getDescription()&lt;/p&gt;
+}
+	&lt;p id=&quot;previewHit&quot;&gt;This is a &lt;strong&gt;preview&lt;/strong&gt; of the study. When you&#39;ve accepted the HIT a link to the study will be shown. At the end of the study, you will receive a code to paste into the box below to receive credit for taking our study.&lt;/p&gt;
+
+	&lt;p id=&quot;acceptedHit&quot; style=&quot;display: none&quot;&gt;Select the link below to complete the study. At the end of the study, you will receive a code to paste into the box below to receive credit for taking our study.&lt;/p&gt;
+
+	&lt;p&gt;&lt;strong&gt;Make sure to leave this window open as you complete the study.&lt;/strong&gt; When you are finished, you will return to this page to paste the code into the box.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;!-- End Instruction --&gt;
+
+&lt;table&gt;
+	&lt;tbody&gt;
+		&lt;tr&gt;
+			&lt;td&gt;&lt;strong&gt;Study link:&lt;/strong&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;a href=&quot;&quot; id=&quot;studyUrl&quot; target=&quot;_blank&quot;&gt;link will be shown when HIT is accepted&lt;/a&gt;&lt;/td&gt;
+		&lt;/tr&gt;
+		&lt;tr&gt;
+			&lt;td&gt;&lt;strong&gt;Provide the study&#39;s confirmation code here to receive credits:&lt;/strong&gt;&lt;/td&gt;
+			&lt;td style=&quot;vertical-align: middle;&quot;&gt;&lt;input class=&quot;form-control&quot; id=&quot;surveycode&quot; name=&quot;surveycode&quot; placeholder=&quot;e.g. ab123456-1234-1234-a123-a12b3ce4f567&quot; type=&quot;text&quot; /&gt;&lt;/td&gt;
+		&lt;/tr&gt;
+	&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+&lt;/section&gt;
+&lt;!-- close container section --&gt;
+&lt;style type=&quot;text/css&quot;&gt;td { font-size:1.0em; padding:5px 5px; }
+&lt;/style&gt;
+
+&lt;script&gt;
+	// Hint: What&#39;s called an study in MA is called a survey in MT
+	var host = &quot;@hostname&quot;;
+	var studyPath = &quot;/publix/@study.getId()/start&quot;;
+	var query = document.URL.split(&#39;?&#39;)[1];
+
+	window.onload = function() {
+		if ((typeof query === &quot;undefined&quot;) || query.indexOf(&quot;ASSIGNMENT_ID_NOT_AVAILABLE&quot;) &gt; -1) {
+			// Show preview
+			document.getElementById(&quot;previewHit&quot;).style.display = &quot;block&quot;;
+			document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;none&quot;;
+			var studyUrlHref = &quot;&quot;;
+			var studyUrlText = &quot;link will be shown when HIT is accepted&quot;;
+		} else {
+			// Show accepted HIT
+			document.getElementById(&quot;previewHit&quot;).style.display = &quot;none&quot;;
+			document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;block&quot;;
+			var studyUrlHref = &quot;http://&quot; + host + studyPath + &quot;?&quot; + query;
+			var studyUrlText = &quot;link to HIT&quot;;
+		}
+		document.getElementById(&quot;studyUrl&quot;).setAttribute(&quot;href&quot;, studyUrlHref);
+		document.getElementById(&quot;studyUrl&quot;).innerHTML = studyUrlText;
+	}
+&lt;/script&gt;
+</code></pre>
+
+}

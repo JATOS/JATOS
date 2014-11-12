@@ -73,7 +73,7 @@ public class Components extends Controller {
 		String studyDirName = IOUtils.generateStudyDirName(study);
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForStudy(study, "New Component");
-		return ok(views.html.mecharg.component.edit2.render(studyList,
+		return ok(views.html.mecharg.component.edit.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form,
 				studyDirName));
 	}
@@ -127,7 +127,7 @@ public class Components extends Controller {
 		String studyDirName = IOUtils.generateStudyDirName(study);
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForComponent(study, component, "Edit");
-		return ok(views.html.mecharg.component.edit2.render(studyList,
+		return ok(views.html.mecharg.component.edit.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form,
 				studyDirName));
 	}

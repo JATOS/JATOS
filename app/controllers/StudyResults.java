@@ -44,7 +44,7 @@ public class StudyResults extends Controller {
 		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
 				.generateForStudyResult(study, "Index");
 		return status(httpStatus,
-				views.html.mecharg.result.studysStudyResults2.render(studyList,
+				views.html.mecharg.result.studysStudyResults.render(studyList,
 						loggedInUser, breadcrumbs, messages, study));
 	}
 

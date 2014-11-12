@@ -14,14 +14,14 @@ public class Authentication extends Controller {
 
 	public static Result login() {
 		Logger.info(CLASS_NAME + ".login");
-		return ok(views.html.mecharg.auth.login2.render(Form.form(Login.class)));
+		return ok(views.html.mecharg.auth.login.render(Form.form(Login.class)));
 	}
 	
 	@Transactional
 	public static Result authenticate() {
 		Form<Login> loginForm = Form.form(Login.class).bindFromRequest();
 		if (loginForm.hasErrors()) {
-			return badRequest(views.html.mecharg.auth.login2.render(loginForm));
+			return badRequest(views.html.mecharg.auth.login.render(loginForm));
 		} else {
 			session(Users.COOKIE_EMAIL, loginForm.get().email);
 			return redirect(routes.Home.home());

@@ -35,7 +35,7 @@ public class Users extends Controller {
 
 		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
 				.generateForUser(user, "Index");
-		return ok(views.html.mecharg.user.profile2.render(studyList,
+		return ok(views.html.mecharg.user.profile.render(studyList,
 				loggedInUser, breadcrumbs, null, user));
 	}
 
@@ -48,7 +48,7 @@ public class Users extends Controller {
 				.getEmail());
 		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
 				.generateForHome("New User");
-		return ok(views.html.mecharg.user.create2.render(studyList,
+		return ok(views.html.mecharg.user.create.render(studyList,
 				loggedInUser, breadcrumbs, null, Form.form(UserModel.class)));
 	}
 
@@ -115,7 +115,7 @@ public class Users extends Controller {
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
 				.generateForUser(user, "Edit Profile");
-		return ok(views.html.mecharg.user.editProfile2.render(studyList,
+		return ok(views.html.mecharg.user.editProfile.render(studyList,
 				loggedInUser, breadcrumbs, null, user, form));
 	}
 
@@ -159,7 +159,7 @@ public class Users extends Controller {
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
 				.generateForUser(user, "Change Password");
-		return ok(views.html.mecharg.user.changePassword2.render(studyList,
+		return ok(views.html.mecharg.user.changePassword.render(studyList,
 				loggedInUser, breadcrumbs, null, form));
 	}
 

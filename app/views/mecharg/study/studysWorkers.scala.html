@@ -1,0 +1,62 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+study: StudyModel)
+
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+
+<!-- Workers table -->
+<table id="workersTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+	<thead>
+		<tr>
+			<th>ID</th>
+			<th>Type</th>
+			<th>User Email</th>
+		</tr>
+	</thead>
+</table>
+
+<script type="text/javascript">
+
+var workersTable;
+$(document).ready(function() {
+	workersTable = $('#workersTable').DataTable({
+		"ajax": {
+			"type": "GET",
+			"url" : '@routes.Workers.tableDataByStudy(study.getId())',
+			"error": function(reason) {
+					showError("Couldn't read components data.")
+			}
+		},
+		"order": [[ 0, "desc" ]],
+		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+		"pageLength": 10,
+		"columns": [
+			{
+				"data": "id",
+				"render": function (data, type, full, meta) {
+					return '<a href="/mecharg/worker/'
+						+ data + '">' + data + '</a>';
+				}
+			},
+			{ "data": "workerType" },
+			{ "data": "userEmail", "defaultContent": '' },
+		]
+	});
+	
+	$('#resultsTable tbody').on('click', 'td.details-control', function() {
+		var tr = $(this).closest('tr');
+		var row = resultsTable.row(tr);
+		if (row.child.isShown()) {
+			row.child.hide();
+			tr.removeClass('shown');
+		}
+		else {
+			row.child(childRowFormat(row.data())).show();
+			tr.addClass('shown');
+		}
+	});
+});
+
+</script>
+
+}

@@ -1,0 +1,26 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel, 
+breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+study: StudyModel, userList: List[UserModel])
+
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+
+@helper.form(action = routes.Studies.submitChangedMembers(study.getId()), 'class -> "form-horizontal") {
+@for(user <- userList) {
+<div class="form-group">
+	<div class="col-lg-offset-2 col-lg-10">
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.MEMBERS" value="@user.getEmail()"
+					@if(study.hasMember(user)) {checked}
+					>@user.toString()
+		</label>
+	</div>
+</div>
+}
+<div class="form-group">
+	<div class="col-md-offset-2 col-md-10">
+		<input type="submit"  class="btn btn-primary" value="Update">
+	</div>
+</div>
+}
+
+}

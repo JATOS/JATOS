@@ -1,0 +1,38 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+user: UserModel)
+
+@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+
+<div id="toolbar" class="btn-group">
+	<button id="editProfile" type="button" class="btn btn-primary">Edit Profile</button>
+	<button id="changePassword" type="button" class="btn btn-primary">Change password</button>
+</div>
+
+<h3>Member in Studies</h3>
+<ul class="list-group">
+	@for(study <- user.getStudyList()) {
+	<li class="list-group-item">
+		<a href="@routes.Studies.index(study.getId())">
+			@study.getTitle() (ID: @study.getId())
+		</a>
+	</li>
+	}
+	@if(user.getStudyList().isEmpty()) {
+	<li class="list-group-item">None</li>
+	}
+</ul>
+
+<script type="text/javascript">
+
+$('#toolbar').on('click', '#editProfile', function() {
+	window.location.href = "@routes.Users.editProfile(user.getEmail())";
+});
+
+$('#toolbar').on('click', '#changePassword', function() {
+	window.location.href = "@routes.Users.changePassword(user.getEmail())";
+});
+
+</script>
+
+}

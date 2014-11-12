@@ -21,10 +21,9 @@ import services.IOUtils;
 import exceptions.ResultException;
 
 public class ControllerUtils extends Controller {
-	
+
 	public static final String JQDOWNLOAD_COOKIE_NAME = "Set-Cookie";
 	public static final String JQDOWNLOAD_COOKIE_CONTENT = "fileDownload=true; path=/";
-	
 
 	/**
 	 * Check if the request was made via Ajax or not.
@@ -154,7 +153,7 @@ public class ControllerUtils extends Controller {
 		if (isAjax()) {
 			result = status(httpStatus);
 		} else {
-			result = status(httpStatus, views.html.mecharg.study.edit2.render(
+			result = status(httpStatus, views.html.mecharg.study.edit.render(
 					studyList, loggedInUser, breadcrumbs, null, submitAction,
 					form));
 		}
@@ -174,7 +173,7 @@ public class ControllerUtils extends Controller {
 		} else {
 			String studyDirName = IOUtils.generateStudyDirName(study);
 			result = status(httpStatus,
-					views.html.mecharg.component.edit2.render(studyList,
+					views.html.mecharg.component.edit.render(studyList,
 							loggedInUser, breadcrumbs, null, submitAction,
 							form, studyDirName));
 		}
@@ -192,7 +191,7 @@ public class ControllerUtils extends Controller {
 			result = status(httpStatus);
 		} else {
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New User");
-			result = status(httpStatus, views.html.mecharg.user.create2.render(
+			result = status(httpStatus, views.html.mecharg.user.create.render(
 					studyList, loggedInUser, breadcrumbs, null, form));
 		}
 		throw new ResultException(result);
@@ -208,10 +207,10 @@ public class ControllerUtils extends Controller {
 		if (isAjax()) {
 			result = status(httpStatus);
 		} else {
-			Breadcrumbs breadcrumbs = Breadcrumbs
-					.generateForUser(user, "Edit Profile");
+			Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
+					"Edit Profile");
 			result = status(httpStatus,
-					views.html.mecharg.user.editProfile2.render(studyList,
+					views.html.mecharg.user.editProfile.render(studyList,
 							loggedInUser, breadcrumbs, null, user, form));
 		}
 		throw new ResultException(result);
@@ -231,7 +230,7 @@ public class ControllerUtils extends Controller {
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
 					"Change Password");
 			result = status(httpStatus,
-					views.html.mecharg.user.changePassword2.render(studyList,
+					views.html.mecharg.user.changePassword.render(studyList,
 							loggedInUser, breadcrumbs, null, form));
 		}
 		throw new ResultException(result);
