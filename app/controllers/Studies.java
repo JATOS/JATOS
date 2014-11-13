@@ -2,6 +2,7 @@ package controllers;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -468,7 +469,7 @@ public class Studies extends Controller {
 
 	@Transactional
 	public static Result showMTurkSourceCode(Long studyId)
-			throws ResultException {
+			throws Exception {
 		Logger.info(CLASS_NAME + ".showMTurkSourceCode: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
@@ -478,11 +479,12 @@ public class Studies extends Controller {
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		String hostname = request().host();
+		String[] referer = request().headers().get("Referer");
+		URL mechArgURL = new URL(referer[0]);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				"Mechanical Turk HIT Layout Source Code");
 		return ok(views.html.mecharg.study.mTurkSourceCode.render(studyList,
-				loggedInUser, breadcrumbs, null, study, hostname));
+				loggedInUser, breadcrumbs, null, study, mechArgURL));
 	}
 
 	/**

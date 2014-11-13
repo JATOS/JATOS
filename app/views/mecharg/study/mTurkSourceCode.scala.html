@@ -1,6 +1,6 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel,
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
-study: StudyModel, hostname: String)
+study: StudyModel, mechArgURL: java.net.URL)
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
 
@@ -49,7 +49,7 @@ study: StudyModel, hostname: String)
 
 &lt;script&gt;
 	// Hint: What&#39;s called an study in MA is called a survey in MT
-	var host = &quot;@hostname&quot;;
+	var host = &quot;@mechArgURL.getProtocol()://@mechArgURL.getHost():@mechArgURL.getPort()&quot;;
 	var studyPath = &quot;/publix/@study.getId()/start&quot;;
 	var query = document.URL.split(&#39;?&#39;)[1];
 
@@ -64,7 +64,7 @@ study: StudyModel, hostname: String)
 			// Show accepted HIT
 			document.getElementById(&quot;previewHit&quot;).style.display = &quot;none&quot;;
 			document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;block&quot;;
-			var studyUrlHref = &quot;http://&quot; + host + studyPath + &quot;?&quot; + query;
+			var studyUrlHref = host + &quot;/&quot; + studyPath + &quot;?&quot; + query;
 			var studyUrlText = &quot;link to HIT&quot;;
 		}
 		document.getElementById(&quot;studyUrl&quot;).setAttribute(&quot;href&quot;, studyUrlHref);
