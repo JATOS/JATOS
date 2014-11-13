@@ -37,7 +37,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public static final String COMPONENT_ID = "componentId";
 	public static final String STUDY_RESULT_ID = "studyResultId";
 	public static final String COMPONENT_RESULT_ID = "componentResultId";
-	public static final String POSITION = "position";
+	public static final String COMPONENT_POSITION = "componentPos";
 
 	private static final String CLASS_NAME = Publix.class.getSimpleName();
 
@@ -86,6 +86,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
 		componentResult.merge();
+//		return internalServerError("bladkjflasjfd");
 		return ok(JsonUtils.asJsonForPublix(component));
 	}
 

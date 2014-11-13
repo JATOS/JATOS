@@ -119,8 +119,10 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
-		return redirect(controllers.publix.routes.PublixInterceptor
-				.startComponent(studyId, nextComponent.getId()));
+		String urlWithQueryString = ExternalAssets
+				.getUrlWithRequestQueryString(controllers.publix.routes.PublixInterceptor
+						.startComponent(studyId, nextComponent.getId()).url());
+		return redirect(urlWithQueryString);
 	}
 
 	@Override

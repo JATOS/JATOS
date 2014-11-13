@@ -143,7 +143,11 @@ public class ComponentModel {
 	}
 
 	public String getHtmlFilePath() {
-		return this.htmlFilePath.replace('/', File.separatorChar);
+		if (htmlFilePath != null) {
+			return this.htmlFilePath.replace('/', File.separatorChar);
+		} else {
+			return null;
+		}
 	}
 	
 	public void setComments(String comments) {

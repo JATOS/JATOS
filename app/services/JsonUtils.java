@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -125,7 +128,10 @@ public class JsonUtils {
 		final int MAX_CHAR_PER_RESULT = 1000;
 		String data = componentResult.getData();
 		if (data != null) {
-			if (data.length() < MAX_CHAR_PER_RESULT) {
+			if (!Jsoup.isValid(data, Whitelist.none())) {
+				return "Component data contains potentially harmful code won't"
+						+ " be displayed here. However you can still export the data.";
+			} else if (data.length() < MAX_CHAR_PER_RESULT) {
 				return data;
 			} else {
 				return data.substring(0, MAX_CHAR_PER_RESULT) + " ...";
@@ -223,8 +229,8 @@ public class JsonUtils {
 				.getStudy().getId());
 		componentResultNode.put("componentId", componentResult.getComponent()
 				.getId());
-		componentResultNode.put("componentTitle", componentResult.getComponent()
-				.getTitle());
+		componentResultNode.put("componentTitle", componentResult
+				.getComponent().getTitle());
 
 		// Add componentResult's data
 		componentResultNode.put("data",

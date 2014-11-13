@@ -162,11 +162,57 @@ mecharg.submitResultData = function(resultData, success, error) {
 }
 
 /**
- * Starts the next component of this study. The next component is the one with
- * position + 1.
+ * Starts the component with the given ID. You can pass on information to the
+ * next component by adding a query string.
+ * 
+ * @param {Object}
+ *            nextComponentId - ID of the component to start
+ * @param {optional
+ *            Object} queryString - Query string without the initial '?' that
+ *            should be added to the URL
  */
-mecharg.startNextComponent = function() {
-	window.location.href = "/publix/" + mecharg.studyId + "/startNextComponent";
+mecharg.startComponent = function(nextComponentId, queryString) {
+	var url = "/publix/" + mecharg.studyId + "/" + nextComponentId + "/start";
+	if (queryString) {
+		url += "?" + queryString;
+	}
+	window.location.href = url;
+}
+
+/**
+ * Starts the component with the given position (# of component within study).
+ * You can pass on information to the next component by adding a query string.
+ * 
+ * @param {Object}
+ *            nextComponentPos - Position of the component to start
+ * @param {optional
+ *            Object} queryString - Query string without the initial '?' that
+ *            should be added to the URL
+ */
+mecharg.startComponentByPos = function(nextComponentPos, queryString) {
+	var url = "/publix/" + mecharg.studyId + "/startComponent?position="
+			+ nextComponentPos;
+	if (queryString) {
+		url += "&" + queryString;
+	}
+	window.location.href = url;
+}
+
+/**
+ * Starts the next component of this study. The next component is the one with
+ * position + 1. You can pass on information to the next component by adding a
+ * query string.
+ * 
+ * @param {optional
+ *            Object} queryString - Query string without the initial '?' that
+ *            should be added to the URL
+ */
+mecharg.startNextComponent = function(queryString) {
+	var url = "/publix/" + mecharg.studyId + "/startNextComponent";
+	if (queryString) {
+		url += "?" + queryString;
+	}
+	window.location.href = url;
 }
 
 /**
@@ -220,7 +266,7 @@ mecharg.endComponent = function(successful, errorMsg, success, error) {
 }
 
 /**
- * Aborts study. All previously submitted data will be deleted. 
+ * Aborts study. All previously submitted data will be deleted.
  * 
  * @param {optional
  *            String} message - Message that should be logged
@@ -259,7 +305,7 @@ mecharg.abortStudyAjax = function(message, success, error) {
 }
 
 /**
- * Aborts study. All previously submitted data will be deleted. 
+ * Aborts study. All previously submitted data will be deleted.
  * 
  * @param {optional
  *            String} message - Message that should be logged
@@ -298,8 +344,7 @@ mecharg.endStudyAjax = function(successful, errorMsg, success, error) {
 	} else if (undefined == errorMsg) {
 		fullUrl = url + "?successful=" + successful;
 	} else {
-		fullUrl = url + "?successful=" + successful + "&errorMsg="
-				+ errorMsg;
+		fullUrl = url + "?successful=" + successful + "&errorMsg=" + errorMsg;
 	}
 	$.ajax({
 		url : fullUrl,

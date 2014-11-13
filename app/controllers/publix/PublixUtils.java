@@ -109,7 +109,7 @@ public abstract class PublixUtils<T extends Worker> {
 		cookieMap.put(Publix.COMPONENT_ID, String.valueOf(component.getId()));
 		cookieMap.put(Publix.COMPONENT_RESULT_ID,
 				String.valueOf(componentResult.getId()));
-		cookieMap.put(Publix.POSITION,
+		cookieMap.put(Publix.COMPONENT_POSITION,
 				String.valueOf(study.getComponentPosition(component)));
 		StringBuilder sb = new StringBuilder();
 		Iterator<Entry<String, String>> iterator = cookieMap.entrySet()
