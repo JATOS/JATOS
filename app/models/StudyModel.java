@@ -3,6 +3,7 @@ package models;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -223,8 +224,8 @@ public class StudyModel {
 	}
 
 	/**
-	 * Returns the position (index+1) of the component in the list of
-	 * components of this study or null if it doesn't exist.
+	 * Returns the position (index+1) of the component in the list of components
+	 * of this study or null if it doesn't exist.
 	 */
 	public Integer getComponentPosition(ComponentModel component) {
 		int index = componentList.indexOf(component);
@@ -370,7 +371,17 @@ public class StudyModel {
 				"SELECT DISTINCT g FROM UserModel u LEFT JOIN u.studyList g "
 						+ "WHERE u.email = :member", StudyModel.class);
 		query.setParameter("member", memberEmail);
-		return query.getResultList();
+		List<StudyModel> studyList = query.getResultList();
+		// Sometimes the DB returns an element that's just null (bug?). Iterate 
+		// through the list and remove all null elements.
+		Iterator<StudyModel> it = studyList.iterator();
+		while (it.hasNext()) {
+			StudyModel study = it.next();
+			if (study == null) {
+				it.remove();
+			}
+		}
+		return studyList;
 	}
 
 	public void persist() {

@@ -154,7 +154,7 @@ public class IOUtils {
 	}
 
 	/**
-	 * Generates a study directory name.
+	 * Generates a study directory path.
 	 */
 	public static String generateStudysPath(String dirNamePrefix, Long studyId) {
 		return ExternalAssets.STUDIES_ROOT_PATH + File.separator
@@ -162,7 +162,7 @@ public class IOUtils {
 	}
 
 	/**
-	 * Generates a study directory name.
+	 * Generates a study directory path.
 	 */
 	public static String generateStudysPath(StudyModel study) {
 		return ExternalAssets.STUDIES_ROOT_PATH + File.separator
