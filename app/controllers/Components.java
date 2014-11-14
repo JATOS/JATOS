@@ -21,11 +21,9 @@ import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.IOUtils;
 import services.JsonUtils;
+import services.JsonUtils.UploadUnmarshaller;
 import services.Messages;
 import services.PersistanceUtils;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import controllers.publix.MAPublix;
 import exceptions.ResultException;
 
@@ -72,8 +70,8 @@ public class Components extends Controller {
 		Form<ComponentModel> form = Form.form(ComponentModel.class);
 		Call submitAction = routes.Components.submit(studyId);
 		String studyDirName = IOUtils.generateStudyDirName(study);
-		Breadcrumbs breadcrumbs = Breadcrumbs
-				.generateForStudy(study, "New Component");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+				"New Component");
 		return ok(views.html.mecharg.component.edit.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form,
 				studyDirName, study.isLocked()));
@@ -94,8 +92,8 @@ public class Components extends Controller {
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			Call submitAction = routes.Components.submit(studyId);
-			Breadcrumbs breadcrumbs = Breadcrumbs
-					.generateForStudy(study, "New Component");
+			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+					"New Component");
 			ControllerUtils.throwEditComponentResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
 					submitAction, study);
@@ -129,8 +127,8 @@ public class Components extends Controller {
 		Call submitAction = routes.Components
 				.submitEdited(studyId, componentId);
 		String studyDirName = IOUtils.generateStudyDirName(study);
-		Breadcrumbs breadcrumbs = Breadcrumbs
-				.generateForComponent(study, component, "Edit");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
+				component, "Edit");
 		return ok(views.html.mecharg.component.edit.render(studyList,
 				loggedInUser, breadcrumbs, messages, submitAction, form,
 				studyDirName, study.isLocked()));
@@ -156,8 +154,8 @@ public class Components extends Controller {
 		if (form.hasErrors()) {
 			Call submitAction = routes.Components.submitEdited(studyId,
 					componentId);
-			Breadcrumbs breadcrumbs = Breadcrumbs
-					.generateForComponent(study, component, "Edit");
+			Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
+					component, "Edit");
 			ControllerUtils.throwEditComponentResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
 					submitAction, study);
@@ -249,7 +247,7 @@ public class Components extends Controller {
 		String componentAsJson = null;
 		try {
 			componentAsJson = JsonUtils.asJsonForIO(component);
-		} catch (JsonProcessingException e) {
+		} catch (IOException e) {
 			String errorMsg = ErrorMessages.componentExportFailure(componentId);
 			ControllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
@@ -267,10 +265,9 @@ public class Components extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
-	 * Imports a arbitrary number of components and files. A component is
-	 * persisted into the DB. All other files are just stored in the study's
-	 * folder.
+	 * HTTP Ajax request Imports a arbitrary number of components and files. A
+	 * component is persisted into the DB. All other files are just stored in
+	 * the study's folder.
 	 */
 	@Transactional
 	public static Result importComponent(Long studyId) throws ResultException {
@@ -293,8 +290,8 @@ public class Components extends Controller {
 						Http.Status.BAD_REQUEST, studyId);
 			}
 			// Try whether we have a component
-			ComponentModel component = new IOUtils.UploadUnmarshaller()
-					.unmarshalling(filePart.getFile(), ComponentModel.class);
+			ComponentModel component = new UploadUnmarshaller().unmarshalling(
+					filePart.getFile(), ComponentModel.class);
 			if (component != null) {
 				if (component.validate() != null) {
 					String errorMsg = ErrorMessages.COMPONENT_INVALID;

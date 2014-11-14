@@ -26,8 +26,8 @@ import play.mvc.Security;
 import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.IOUtils;
-import services.IOUtils.UploadUnmarshaller;
 import services.JsonUtils;
+import services.JsonUtils.UploadUnmarshaller;
 import services.Messages;
 import services.PersistanceUtils;
 import services.ZipUtil;
@@ -174,7 +174,7 @@ public class Studies extends Controller {
 			throws ResultException {
 		File studyFile = IOUtils.findFiles(tempDir, "",
 				IOUtils.STUDY_FILE_SUFFIX)[0];
-		UploadUnmarshaller uploadUnmarshaller = new IOUtils.UploadUnmarshaller();
+		UploadUnmarshaller uploadUnmarshaller = new UploadUnmarshaller();
 		StudyModel study = uploadUnmarshaller.unmarshalling(studyFile,
 				StudyModel.class);
 		if (study == null) {

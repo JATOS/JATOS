@@ -1,6 +1,10 @@
-name := "MechArg"
+import com.typesafe.config._
 
-version := "1.1"
+val conf = ConfigFactory.parseFile(new File("conf/application.conf")).resolve()
+
+version := conf.getString("application.version")
+
+name := "MechArg"
 
 libraryDependencies ++= Seq(
   javaCore,

@@ -7,21 +7,24 @@ import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
-
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.results.ComponentResult;
 import models.results.StudyResult;
 import models.workers.Worker;
+
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+
 import play.Logger;
+import play.Play;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -29,6 +32,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class JsonUtils {
 
+	private static final String DATA = "data";
+	private static final String VERSION = "version";
 	private static final String CLASS_NAME = JsonUtils.class.getSimpleName();
 
 	/**
@@ -154,7 +159,7 @@ public class JsonUtils {
 			ObjectNode studyResultNode = studyResultAsJsonNode(studyResult);
 			arrayNode.add(studyResultNode);
 		}
-		allStudyResultsNode.put("data", arrayNode);
+		allStudyResultsNode.put(DATA, arrayNode);
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(allStudyResultsNode);
 		return asJsonStr;
 	}
@@ -178,7 +183,7 @@ public class JsonUtils {
 			ObjectNode studyResultNode = studyResultAsJsonNode(studyResult);
 			arrayNode.add(studyResultNode);
 		}
-		allStudyResultsNode.put("data", arrayNode);
+		allStudyResultsNode.put(DATA, arrayNode);
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(allStudyResultsNode);
 		return asJsonStr;
 	}
@@ -193,7 +198,7 @@ public class JsonUtils {
 			ObjectNode componentResultNode = componentResultAsJsonNode(componentResult);
 			arrayNode.add(componentResultNode);
 		}
-		allComponentResultsNode.put("data", arrayNode);
+		allComponentResultsNode.put(DATA, arrayNode);
 		String asJsonStr = OBJECTMAPPER
 				.writeValueAsString(allComponentResultsNode);
 		return asJsonStr;
@@ -233,8 +238,8 @@ public class JsonUtils {
 				.getComponent().getTitle());
 
 		// Add componentResult's data
-		componentResultNode.put("data",
-				componentResultDataForUI(componentResult));
+		componentResultNode
+				.put(DATA, componentResultDataForUI(componentResult));
 
 		return componentResultNode;
 	}
@@ -258,7 +263,7 @@ public class JsonUtils {
 			arrayNode.add(componentNode);
 		}
 		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
-		componentsNode.put("data", arrayNode);
+		componentsNode.put(DATA, arrayNode);
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(componentsNode);
 		return asJsonStr;
 	}
@@ -271,7 +276,7 @@ public class JsonUtils {
 			arrayNode.add(workerNode);
 		}
 		ObjectNode workersNode = OBJECTMAPPER.createObjectNode();
-		workersNode.put("data", arrayNode);
+		workersNode.put(DATA, arrayNode);
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(workersNode);
 		return asJsonStr;
 	}
@@ -283,30 +288,88 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Marshals the given object into JSON and returns it as String. It uses the
-	 * view JsonForIO.
+	 * Marshals the given object into JSON, adds the application's version, and
+	 * returns it as String. It uses the view JsonForIO.
 	 */
-	public static String asJsonForIO(Object obj) throws JsonProcessingException {
-		ObjectWriter objectWriter = OBJECTMAPPER
-				.writerWithView(JsonForIO.class);
-		String objectAsJson = objectWriter.writeValueAsString(obj);
-		return objectAsJson;
+	public static String asJsonForIO(Object obj) throws IOException {
+		ObjectNode node = generateNodeWithVersionForIO(obj);
+		return OBJECTMAPPER.writer().writeValueAsString(node);
 	}
 
 	/**
-	 * Marshals the given object into JSON and saves it into the given File. It
-	 * uses the view JsonForIO.
+	 * Marshals the given object into JSON, adds the application's version, and
+	 * saves it into the given File. It uses the view JsonForIO.
 	 */
 	public static void asJsonForIO(Object obj, File file) throws IOException {
-		ObjectWriter objectWriter = OBJECTMAPPER
-				.writerWithView(JsonForIO.class);
-		objectWriter.writeValue(file, obj);
+		ObjectNode node = generateNodeWithVersionForIO(obj);
+		OBJECTMAPPER.writer().writeValue(file, node);
 	}
 
-	public static <T> T unmarshalling(String jsonStr, Class<T> modelClass)
+	private static ObjectNode generateNodeWithVersionForIO(Object obj)
+			throws IOException {
+		ObjectNode node = OBJECTMAPPER.createObjectNode();
+		node.put(
+				VERSION,
+				Play.application().configuration()
+						.getString("application.version"));
+		// Unnecessary conversion into a temporary string - better solution?
+		String objAsJson = OBJECTMAPPER.writerWithView(JsonForIO.class)
+				.writeValueAsString(obj);
+		node.put(DATA, OBJECTMAPPER.readTree(objAsJson));
+		return node;
+	}
+
+	/**
+	 * Accepts an JSON String and turns the data object within this JSON String
+	 * into an object of the given type.
+	 */
+	public static <T> T unmarshallingIO(String jsonStr, Class<T> modelClass)
 			throws JsonParseException, JsonMappingException, IOException {
-		T object = OBJECTMAPPER.readValue(jsonStr, modelClass);
+		JsonNode node = OBJECTMAPPER.readTree(jsonStr).findValue(DATA);
+		T object = OBJECTMAPPER.treeToValue(node, modelClass);
 		return object;
+	}
+
+	/**
+	 * Unmarshalling of an JSON string without throwing an exception. Instead
+	 * error message and Exception are stored within the instance.
+	 * 
+	 * @author Kristian Lange
+	 */
+	public static class UploadUnmarshaller {
+
+		private String errorMsg;
+		private Exception exception;
+
+		public String getErrorMsg() {
+			return errorMsg;
+		}
+
+		public Exception getException() {
+			return exception;
+		}
+
+		public <T> T unmarshalling(File file, Class<T> modelClass) {
+			T object = null;
+			String jsonStr = null;
+			try {
+				// Don't unmarshall file directly so we can create error
+				// messages.
+				jsonStr = IOUtils.readFile(file);
+			} catch (IOException e) {
+				errorMsg = ErrorMessages.COULDNT_READ_FILE;
+				exception = e;
+				return null;
+			}
+			try {
+				object = JsonUtils.unmarshallingIO(jsonStr, modelClass);
+			} catch (IOException e) {
+				errorMsg = ErrorMessages.COULDNT_READ_JSON;
+				exception = e;
+				return null;
+			}
+			return object;
+		}
 	}
 
 }

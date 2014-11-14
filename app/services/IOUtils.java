@@ -30,46 +30,6 @@ public class IOUtils {
 
 	private static final int FILENAME_LENGTH = 35;
 
-	/**
-	 * Unmarshalling of an JSON string without throwing an exception. Instead
-	 * error message and Exception are stored within the instance.
-	 * 
-	 * @author Kristian Lange
-	 */
-	public static class UploadUnmarshaller {
-
-		private String errorMsg;
-		private Exception exception;
-
-		public String getErrorMsg() {
-			return errorMsg;
-		}
-
-		public Exception getException() {
-			return exception;
-		}
-
-		public <T> T unmarshalling(File file, Class<T> modelClass) {
-			T object = null;
-			String jsonStr = null;
-			try {
-				jsonStr = readFile(file);
-			} catch (IOException e) {
-				errorMsg = ErrorMessages.COULDNT_READ_FILE;
-				exception = e;
-				return null;
-			}
-			try {
-				object = JsonUtils.unmarshalling(jsonStr, modelClass);
-			} catch (IOException e) {
-				errorMsg = ErrorMessages.COULDNT_READ_JSON;
-				exception = e;
-				return null;
-			}
-			return object;
-		}
-	}
-
 	public static String readFile(File file) throws IOException {
 		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
 			StringBuilder sb = new StringBuilder();
