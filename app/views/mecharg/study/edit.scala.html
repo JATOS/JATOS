@@ -1,6 +1,6 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel, 
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
-submitAction: play.api.mvc.Call, form: Form[StudyModel])
+submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
 
@@ -65,6 +65,9 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel])
 @for(error <- form(StudyModel.JSON_DATA).errors) {
 	$('#jsonData').closest(".form-group").addClass("has-error");
 	$('#jsonData').after('<span class="help-block">@error.message</span>');
+}
+@if(studyIsLocked) {
+	$(':input').attr("disabled", true);
 }
 </script>
 

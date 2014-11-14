@@ -21,6 +21,7 @@ import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.IOUtils;
 import services.JsonUtils;
+import services.Messages;
 import services.PersistanceUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -75,7 +76,7 @@ public class Components extends Controller {
 				.generateForStudy(study, "New Component");
 		return ok(views.html.mecharg.component.edit.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form,
-				studyDirName));
+				studyDirName, study.isLocked()));
 	}
 
 	@Transactional
@@ -118,8 +119,11 @@ public class Components extends Controller {
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
-		ControllerUtils.checkStudyLocked(study);
 
+		Messages messages = new Messages();
+		if (study.isLocked()) {
+			messages.warning(ErrorMessages.STUDY_IS_LOCKED);
+		}
 		Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 				component);
 		Call submitAction = routes.Components
@@ -128,8 +132,8 @@ public class Components extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForComponent(study, component, "Edit");
 		return ok(views.html.mecharg.component.edit.render(studyList,
-				loggedInUser, breadcrumbs, null, submitAction, form,
-				studyDirName));
+				loggedInUser, breadcrumbs, messages, submitAction, form,
+				studyDirName, study.isLocked()));
 	}
 
 	@Transactional

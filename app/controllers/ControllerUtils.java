@@ -148,14 +148,14 @@ public class ControllerUtils extends Controller {
 	public static void throwEditStudyResultException(
 			List<StudyModel> studyList, UserModel loggedInUser,
 			Form<StudyModel> form, int httpStatus, Breadcrumbs breadcrumbs,
-			Call submitAction) throws ResultException {
+			Call submitAction, boolean studyIsLocked) throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus);
 		} else {
 			result = status(httpStatus, views.html.mecharg.study.edit.render(
 					studyList, loggedInUser, breadcrumbs, null, submitAction,
-					form));
+					form, studyIsLocked));
 		}
 		throw new ResultException(result);
 	}
@@ -175,7 +175,7 @@ public class ControllerUtils extends Controller {
 			result = status(httpStatus,
 					views.html.mecharg.component.edit.render(studyList,
 							loggedInUser, breadcrumbs, null, submitAction,
-							form, studyDirName));
+							form, studyDirName, study.isLocked()));
 		}
 		throw new ResultException(result);
 	}

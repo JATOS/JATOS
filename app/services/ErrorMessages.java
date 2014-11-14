@@ -33,7 +33,8 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a valid path (\"/\" as File separator; You can leave it empty)";
 	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format";
 	public static final String STUDY_AT_LEAST_ONE_MEMBER = "An study should have at least one member.";
-
+	public static final String STUDY_IS_LOCKED = "Study is locked. It's not possible to edit.";
+	
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";

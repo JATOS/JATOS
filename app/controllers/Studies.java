@@ -80,8 +80,8 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class);
 		Call submitAction = routes.Studies.submit();
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New Study");
-		return ok(views.html.mecharg.study.edit.render(studyList,
-				loggedInUser, breadcrumbs, null, submitAction, form));
+		return ok(views.html.mecharg.study.edit.render(studyList, loggedInUser,
+				breadcrumbs, null, submitAction, form, false));
 	}
 
 	@Transactional
@@ -97,7 +97,7 @@ public class Studies extends Controller {
 			Call submitAction = routes.Studies.submit();
 			ControllerUtils.throwEditStudyResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction);
+					submitAction, false);
 		}
 
 		// Persist in DB
@@ -113,7 +113,7 @@ public class Studies extends Controller {
 			Call submitAction = routes.Studies.submit();
 			ControllerUtils.throwEditStudyResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction);
+					submitAction, false);
 		}
 		return redirect(routes.Studies.index(study.getId(), null));
 	}
@@ -212,13 +212,16 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
 
+		Messages messages = new Messages();
+		if (study.isLocked()) {
+			messages.warning(ErrorMessages.STUDY_IS_LOCKED);
+		}
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = routes.Studies.submitEdited(study.getId());
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study, "Edit");
-		return ok(views.html.mecharg.study.edit.render(studyList,
-				loggedInUser, breadcrumbs, null, submitAction, form));
+		return ok(views.html.mecharg.study.edit.render(studyList, loggedInUser,
+				breadcrumbs, messages, submitAction, form, study.isLocked()));
 	}
 
 	@Transactional
@@ -239,7 +242,7 @@ public class Studies extends Controller {
 					"Edit");
 			ControllerUtils.throwEditStudyResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction);
+					submitAction, study.isLocked());
 		}
 
 		// Update study in DB
@@ -262,7 +265,7 @@ public class Studies extends Controller {
 					"Edit");
 			ControllerUtils.throwEditStudyResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction);
+					submitAction, study.isLocked());
 		}
 		return redirect(routes.Studies.index(studyId, null));
 	}
@@ -468,8 +471,7 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	public static Result showMTurkSourceCode(Long studyId)
-			throws Exception {
+	public static Result showMTurkSourceCode(Long studyId) throws Exception {
 		Logger.info(CLASS_NAME + ".showMTurkSourceCode: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
@@ -522,8 +524,9 @@ public class Studies extends Controller {
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForStudy(study, "Workers");
-		return status(httpStatus, views.html.mecharg.study.studysWorkers.render(
-				studyList, loggedInUser, breadcrumbs, messages, study));
+		return status(httpStatus,
+				views.html.mecharg.study.studysWorkers.render(studyList,
+						loggedInUser, breadcrumbs, messages, study));
 	}
 
 	@Transactional
