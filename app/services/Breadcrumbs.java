@@ -28,46 +28,61 @@ public class Breadcrumbs {
 		return this;
 	}
 
+	public static Breadcrumbs generateForHome() {
+		return generateForHome(null);
+	}
+
 	public static Breadcrumbs generateForHome(String last) {
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs().put(
-				"Home", routes.Home.home()).put(last, "");
+		Breadcrumbs breadcrumbs = new Breadcrumbs();
+		if (last != null) {
+			breadcrumbs = new Breadcrumbs().put("Home", routes.Home.home())
+					.put(last, "");
+		} else {
+			breadcrumbs.put("Home", "");
+		}
 		return breadcrumbs;
+	}
+
+	public static Breadcrumbs generateForUser(UserModel user) {
+		return generateForUser(user, null);
 	}
 
 	public static Breadcrumbs generateForUser(UserModel user, String last) {
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
-				.put("Home", routes.Home.home())
-				.put(user.toString(), routes.Users.profile(user.getEmail()))
-				.put(last, "");
+		Breadcrumbs breadcrumbs = new Breadcrumbs().put("Home",
+				routes.Home.home());
+		if (last != null) {
+			breadcrumbs.put(user.toString(),
+					routes.Users.profile(user.getEmail())).put(last, "");
+		} else {
+			breadcrumbs.put(user.toString(), "");
+		}
 		return breadcrumbs;
+	}
+
+	public static Breadcrumbs generateForStudy(StudyModel study) {
+		return generateForStudy(study, null);
 	}
 
 	public static Breadcrumbs generateForStudy(StudyModel study, String last) {
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
-				.put("Home", routes.Home.home())
-				.put(study.getTitle(),
-						routes.Studies.index(study.getId(), null))
-				.put(last, "");
-		return breadcrumbs;
-	}
-
-	public static Breadcrumbs generateForWorkerResult(Worker worker,
-			String last) {
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
-				.put("Home", routes.Home.home())
-				.put("Worker " + worker.getId(), "")
-				.put("Results", routes.Workers.index(worker.getId()))
-				.put(last, "");
+		Breadcrumbs breadcrumbs = new Breadcrumbs().put("Home",
+				routes.Home.home());
+		if (last != null) {
+			breadcrumbs.put(study.getTitle(),
+					routes.Studies.index(study.getId(), null)).put(last, "");
+		} else {
+			breadcrumbs.put(study.getTitle(), "");
+		}
 		return breadcrumbs;
 	}
 	
-	public static Breadcrumbs generateForStudyResult(StudyModel study,
-			String last) {
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
+	public static Breadcrumbs generateForWorker(Worker worker) {
+		return generateForWorker(worker, null);
+	}
+
+	public static Breadcrumbs generateForWorker(Worker worker, String last) {
+		Breadcrumbs breadcrumbs = new Breadcrumbs()
 				.put("Home", routes.Home.home())
-				.put(study.getTitle(),
-						routes.Studies.index(study.getId(), null))
-				.put("Results", routes.StudyResults.index(study.getId()))
+				.put("Worker " + worker.getId(), "")
 				.put(last, "");
 		return breadcrumbs;
 	}
@@ -79,19 +94,6 @@ public class Breadcrumbs {
 				.put(study.getTitle(),
 						routes.Studies.index(study.getId(), null))
 				.put(component.getTitle(), "").put(last, "");
-		return breadcrumbs;
-	}
-
-	public static Breadcrumbs generateForComponentResult(StudyModel study,
-			ComponentModel component, String last) {
-		services.Breadcrumbs breadcrumbs = new services.Breadcrumbs()
-				.put("Home", routes.Home.home())
-				.put(study.getTitle(),
-						routes.Studies.index(study.getId(), null))
-				.put(component.getTitle(), "")
-				.put("Results",
-						routes.ComponentResults.index(study.getId(),
-								component.getId())).put(last, "");
 		return breadcrumbs;
 	}
 

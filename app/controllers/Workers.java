@@ -43,8 +43,8 @@ public class Workers extends Controller {
 		// .error("This is even more dangerous!")
 		// .warning("A warning from a friend").info("Just an info")
 		// .success("You were successful!");
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorkerResult(worker,
-				"Index");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorker(worker,
+				"Results");
 		return status(httpStatus,
 				views.html.mecharg.result.workersStudyResults.render(
 						studyList, loggedInUser, breadcrumbs, messages, worker));

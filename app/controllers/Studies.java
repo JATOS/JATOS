@@ -52,7 +52,7 @@ public class Studies extends Controller {
 
 		Set<Worker> workerSet = ControllerUtils.retrieveWorkers(study);
 		Messages messages = new Messages().error(errorMsg);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study, "Index");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study);
 		return status(httpStatus, views.html.mecharg.study.index.render(
 				studyList, loggedInUser, breadcrumbs, messages, study,
 				workerSet));

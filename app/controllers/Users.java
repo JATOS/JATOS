@@ -34,7 +34,7 @@ public class Users extends Controller {
 		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForUser(user, "Index");
+				.generateForUser(user);
 		return ok(views.html.mecharg.user.profile.render(studyList,
 				loggedInUser, breadcrumbs, null, user));
 	}

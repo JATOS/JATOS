@@ -28,7 +28,7 @@ public class Home extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		Messages messages = new Messages().error(errorMsg);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("Index");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome();
 		return status(httpStatus, views.html.mecharg.home.render(studyList,
 				loggedInUser, breadcrumbs, messages));
 	}

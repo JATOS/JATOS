@@ -42,7 +42,7 @@ public class StudyResults extends Controller {
 
 		Messages messages = new Messages().error(errorMsg);
 		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForStudyResult(study, "Index");
+				.generateForStudy(study, "Results");
 		return status(httpStatus,
 				views.html.mecharg.result.studysStudyResults.render(studyList,
 						loggedInUser, breadcrumbs, messages, study));

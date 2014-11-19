@@ -46,7 +46,7 @@ public class ComponentResults extends Controller {
 
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs
-				.generateForComponentResult(study, component, "Index");
+				.generateForComponent(study, component, "Results");
 		return status(httpStatus,
 				views.html.mecharg.result.componentResults.render(studyList,
 						loggedInUser, breadcrumbs, messages, study, component));
