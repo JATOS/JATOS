@@ -24,8 +24,8 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 <div class="form-group">
 	<label class="control-label col-xs-2" for="dirName">Study's directory name:</label>
 	<div class="col-xs-10">
-		<input type="text" class="form-control" id="dirName" name="@StudyModel.DIRNAME_PREFIX" value="@form(StudyModel.DIRNAME_PREFIX).value" placeholder="Study's directory name">
-	<span class="help-block">Enter the name of the directory of your study in the file system of the OSA server. All HTML, JavaScript, CSS, and images goes in there. The actual directory name will get a suffix "_ID" with the ID of your study.</span>
+		<input type="text" class="form-control" id="dirName" name="@StudyModel.DIRNAME" value="@form(StudyModel.DIRNAME).value" placeholder="Study's directory name">
+	<span class="help-block">Enter the name of the directory of your study in the file system of the JATOS server. All HTML, JavaScript, CSS, and images goes in there.</span>
 	</div>
 </div>
 
@@ -58,7 +58,7 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 	$('#description').closest(".form-group").addClass("has-error");
 	$('#description').after('<span class="help-block">@error.message</span>');
 }
-@for(error <- form(StudyModel.DIRNAME_PREFIX).errors) {
+@for(error <- form(StudyModel.DIRNAME).errors) {
 	$('#dirName').closest(".form-group").addClass("has-error");
 	$('#dirName').after('<span class="help-block">@error.message</span>');
 }

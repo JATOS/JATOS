@@ -21,6 +21,7 @@ import javax.persistence.TypedQuery;
 import models.StudyModel;
 import models.workers.Worker;
 import play.db.jpa.JPA;
+import services.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -33,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * @author Kristian Lange
  */
 @Entity
-@JsonPropertyOrder(value = { "id", "startDate", "workerId", "workerType",
+@JsonPropertyOrder(value = { "id", "startDate", "worker",
 		"confirmationCode", "studyState", "errorMsg", "abortMsg" })
 public class StudyResult {
 
@@ -42,10 +43,16 @@ public class StudyResult {
 	private Long id;
 
 	/**
-	 * Time and date when the study was started.
+	 * Time and date when the study was started on the server.
 	 */
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
 	private Timestamp startDate;
+
+	/**
+	 * Time and date when the study was finished on the server.
+	 */
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
+	private Timestamp endDate;
 
 	public enum StudyState {
 		STARTED, // Study was started
@@ -117,12 +124,24 @@ public class StudyResult {
 		return this.id;
 	}
 
-	public void setStartDate(Timestamp date) {
-		this.startDate = date;
+	public void setStartDate(Timestamp startDate) {
+		this.startDate = startDate;
 	}
 
 	public Timestamp getStartDate() {
 		return this.startDate;
+	}
+
+	public void setEndDate(Timestamp endDate) {
+		this.endDate = endDate;
+	}
+
+	public Timestamp getEndDate() {
+		return this.endDate;
+	}
+
+	public String getDuration() {
+		return DateUtils.getDurationPretty(startDate, endDate);
 	}
 
 	public void setStudyState(StudyState state) {

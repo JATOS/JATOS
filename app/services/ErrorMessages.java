@@ -34,7 +34,7 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format";
 	public static final String STUDY_AT_LEAST_ONE_MEMBER = "An study should have at least one member.";
 	public static final String STUDY_IS_LOCKED = "Study is locked. It's not possible to edit.";
-	
+
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
@@ -253,8 +253,8 @@ public abstract class ErrorMessages<T extends Worker> {
 	}
 
 	public static String studysDirPathIsntDir(String dirName) {
-		return "Study's directory path \""
-				+ dirName + "\"doesn't lead to a directory.";
+		return "Study's directory path \"" + dirName
+				+ "\"doesn't lead to a directory.";
 	}
 
 	public static String clonedStudysDirNotCreatedBecauseExists(String dirName) {
@@ -281,7 +281,7 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String studysDirNotCreated(String dirName) {
 		return "Couldn't create new study's directory (" + dirName + ").";
 	}
-	
+
 	public static String fileNotUploaded(String fileName) {
 		return "Couldn't upload file " + fileName + ".";
 	}

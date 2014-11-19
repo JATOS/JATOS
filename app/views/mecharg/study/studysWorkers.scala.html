@@ -10,6 +10,7 @@ study: StudyModel)
 		<tr>
 			<th>ID</th>
 			<th>Type</th>
+			<th>MTurk Worker ID</th>
 			<th>User Email</th>
 		</tr>
 	</thead>
@@ -39,9 +40,18 @@ $(document).ready(function() {
 				}
 			},
 			{ "data": "workerType" },
-			{ "data": "userEmail", "defaultContent": '' },
+			{ "data": getMtWorkerId },
+			{ "data": getUserEmail },
 		]
 	});
+	
+	function getUserEmail(data, type, dataToSet) {
+		return (data.userEmail) ? data.userEmail : "none";
+	}
+	
+	function getMtWorkerId(data, type, dataToSet) {
+		return (data.mtWorkerId) ? data.mtWorkerId : "none";
+	}
 	
 	$('#resultsTable tbody').on('click', 'td.details-control', function() {
 		var tr = $(this).closest('tr');

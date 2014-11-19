@@ -69,12 +69,11 @@ public class Components extends Controller {
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class);
 		Call submitAction = routes.Components.submit(studyId);
-		String studyDirName = IOUtils.generateStudyDirName(study);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				"New Component");
 		return ok(views.html.mecharg.component.edit.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form,
-				studyDirName, study.isLocked()));
+				study));
 	}
 
 	@Transactional
@@ -126,12 +125,11 @@ public class Components extends Controller {
 				component);
 		Call submitAction = routes.Components
 				.submitEdited(studyId, componentId);
-		String studyDirName = IOUtils.generateStudyDirName(study);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
 				component, "Edit");
 		return ok(views.html.mecharg.component.edit.render(studyList,
 				loggedInUser, breadcrumbs, messages, submitAction, form,
-				studyDirName, study.isLocked()));
+				study));
 	}
 
 	@Transactional

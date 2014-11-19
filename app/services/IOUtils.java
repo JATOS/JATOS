@@ -50,7 +50,7 @@ public class IOUtils {
 	 */
 	public static File getFileSecurely(String path, String filePath)
 			throws IOException {
-		path = getStudyDirSecurely(path).getAbsolutePath();
+		path = getExistingStudyDirSecurely(path).getAbsolutePath();
 		String fullPath = path + File.separator + filePath;
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
@@ -67,7 +67,8 @@ public class IOUtils {
 	 * Gets the File object of the study directory while preventing a path
 	 * traversal attack and checks if the directory actually exists.
 	 */
-	public static File getStudyDirSecurely(String fullPath) throws IOException {
+	public static File getExistingStudyDirSecurely(String fullPath)
+			throws IOException {
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
 				.getCanonicalPath();
@@ -140,25 +141,10 @@ public class IOUtils {
 	}
 
 	/**
-	 * Generates a study directory name.
-	 */
-	public static String generateStudyDirName(String dirNamePrefix, Long studyId) {
-		return dirNamePrefix + "_" + studyId;
-	}
-
-	/**
-	 * Generates a study directory name.
-	 */
-	public static String generateStudyDirName(StudyModel study) {
-		return study.getDirNamePrefix() + "_" + study.getId();
-	}
-
-	/**
 	 * Generates a study directory path.
 	 */
-	public static String generateStudysPath(String dirNamePrefix, Long studyId) {
-		return ExternalAssets.STUDIES_ROOT_PATH + File.separator
-				+ generateStudyDirName(dirNamePrefix, studyId);
+	public static String generateStudysPath(String dirName, Long studyId) {
+		return ExternalAssets.STUDIES_ROOT_PATH + File.separator + dirName;
 	}
 
 	/**
@@ -166,12 +152,12 @@ public class IOUtils {
 	 */
 	public static String generateStudysPath(StudyModel study) {
 		return ExternalAssets.STUDIES_ROOT_PATH + File.separator
-				+ generateStudyDirName(study);
+				+ study.getDirName();
 	}
 
 	public static void removeStudyDirectory(StudyModel study)
 			throws IOException {
-		String dirName = generateStudyDirName(study);
+		String dirName = study.getDirName();
 		File dir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH, dirName);
 		if (!dir.exists()) {
 			return;
@@ -185,34 +171,42 @@ public class IOUtils {
 
 	public static void copyStudyDirectory(StudyModel srcStudy,
 			StudyModel destStudy) throws IOException {
-		String srcDirName = generateStudyDirName(srcStudy);
-		String destDirName = generateStudyDirName(destStudy);
+		String srcDirName = srcStudy.getDirName();
 		File srcDir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH,
 				srcDirName);
-		File destDir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH,
-				destDirName);
 		if (!srcDir.isDirectory()) {
 			throw new IOException(ErrorMessages.studysDirPathIsntDir(srcDir
 					.getName()));
 		}
-		if (destDir.exists()) {
-			throw new IOException(
-					ErrorMessages
-							.clonedStudysDirNotCreatedBecauseExists(destDir
-									.getName()));
+
+		String destDirName = destStudy.getDirName();
+		File destDir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH,
+				destDirName);
+		// Check if destination dir already exists and if yes add a number as
+		// suffix.
+		int i = 1;
+		while (destDir.exists()) {
+			destDirName = destStudy.getDirName() + "_" + i++;
+			destDir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH,
+					destDirName);
 		}
+		destStudy.setDirName(destDirName);
 		FileUtils.copyDirectory(srcDir, destDir);
 	}
 
 	public static void moveStudyDirectory(File srcDir, StudyModel study)
 			throws IOException {
-		File studyDir = new File(IOUtils.generateStudysPath(study));
+		File studyDir = new File(generateStudysPath(study));
+		if (studyDir.exists()) {
+			throw new IOException(
+					ErrorMessages.studysDirNotCreatedBecauseExists(studyDir
+							.getName()));
+		}
 		FileUtils.moveDirectory(srcDir, studyDir);
 	}
 
-	public static void createStudyDir(String dirNamePrefix, Long studyId)
+	public static void createStudyDir(String dirName, Long studyId)
 			throws IOException {
-		String dirName = generateStudyDirName(dirNamePrefix, studyId);
 		File dir = getFileSecurely(ExternalAssets.STUDIES_ROOT_PATH, dirName);
 		if (dir.exists()) {
 			throw new IOException(
@@ -227,7 +221,7 @@ public class IOUtils {
 	}
 
 	public static void createStudyDir(StudyModel study) throws IOException {
-		createStudyDir(study.getDirNamePrefix(), study.getId());
+		createStudyDir(study.getDirName(), study.getId());
 	}
 
 	/**
@@ -267,17 +261,20 @@ public class IOUtils {
 		}
 	}
 
-	public static void renameStudyDir(String oldDirNamePrefix,
-			String newDirNamePrefix, Long studyId) throws IOException {
-		File oldDir = new File(IOUtils.generateStudysPath(oldDirNamePrefix,
-				studyId));
-		File newDir = new File(IOUtils.generateStudysPath(newDirNamePrefix,
-				studyId));
-		if (newDir.exists()) {
+	public static void renameStudyDir(String oldDirName, String newDirName,
+			Long studyId) throws IOException {
+		File oldDir = new File(IOUtils.generateStudysPath(oldDirName, studyId));
+		File newDir = new File(IOUtils.generateStudysPath(newDirName, studyId));
+		if (oldDir.exists() && oldDirName.equals(newDirName)) {
 			return;
 		}
+		if (newDir.exists()) {
+			throw new IOException(
+					ErrorMessages.studysDirNotCreatedBecauseExists(newDir
+							.getName()));
+		}
 		if (!oldDir.exists()) {
-			createStudyDir(newDirNamePrefix, studyId);
+			createStudyDir(newDirName, studyId);
 			return;
 		}
 		boolean result = oldDir.renameTo(newDir);

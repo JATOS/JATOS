@@ -18,8 +18,8 @@ study: StudyModel, component: ComponentModel)
 			<th></th>
 			<th>Result ID</th>
 			<th>Start Time (Server)</th>
+			<th>Duration</th>
 			<th>Worker ID</th>
-			<th>Worker Type</th>
 			<th>State</th>
 			<th>Error Message</th>
 		</tr>
@@ -29,8 +29,8 @@ study: StudyModel, component: ComponentModel)
 			<th></th>
 			<th>Result ID</th>
 			<th>Start Time (Server)</th>
+			<th>Duration</th>
 			<th>Worker ID</th>
-			<th>Worker Type</th>
 			<th>State</th>
 			<th>Error Message</th>
 		</tr>
@@ -60,9 +60,12 @@ $(document).ready(function() {
 				"defaultContent": ''
 			},
 			{ "data": "id" },
+			{ "data": "startDate" },
 			{
-				"class": 'time',
-				"data": "startDate"
+				"data": "duration",
+				"render": function (data, type, full, meta) {
+					return (data) ? data : "not yet";
+				}
 			},
 			{
 				"data": "workerId",
@@ -71,7 +74,6 @@ $(document).ready(function() {
 						+ data + '">' + data + '</a>';
 				}
 			},
-			{ "data": "workerType" },
 			{ "data": "componentState" },
 			{ 
 				"data": "errorMsg",

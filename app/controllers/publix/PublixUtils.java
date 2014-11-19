@@ -1,6 +1,8 @@
 package controllers.publix;
 
 import java.io.StringWriter;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -71,14 +73,12 @@ public abstract class PublixUtils<T extends Worker> {
 				// The component to be started is the same as the last one
 				if (component.isReloadable()) {
 					// Reload is allowed
-					lastComponentResult
-							.setComponentState(ComponentState.RELOADED);
-					lastComponentResult.merge();
+					finishComponentResult(lastComponentResult,
+							ComponentState.RELOADED);
 				} else {
 					// Worker tried to reload a non-reloadable component -> end
 					// component and study with FAIL
-					lastComponentResult.setComponentState(ComponentState.FAIL);
-					lastComponentResult.merge();
+					finishComponentResult(lastComponentResult, ComponentState.FAIL);
 					String errorMsg = ErrorMessages
 							.componentNotAllowedToReload(studyResult.getStudy()
 									.getId(), component.getId());
@@ -86,11 +86,17 @@ public abstract class PublixUtils<T extends Worker> {
 					throw new ForbiddenReloadException(errorMsg);
 				}
 			} else {
-				lastComponentResult.setComponentState(ComponentState.FINISHED);
-				lastComponentResult.merge();
+				finishComponentResult(lastComponentResult, ComponentState.FINISHED);
 			}
 		}
 		return PersistanceUtils.createComponentResult(studyResult, component);
+	}
+
+	private void finishComponentResult(ComponentResult componentResult,
+			ComponentState state) {
+		componentResult.setComponentState(state);
+		componentResult.setEndDate(new Timestamp(new Date().getTime()));
+		componentResult.merge();
 	}
 
 	/**
@@ -136,8 +142,7 @@ public abstract class PublixUtils<T extends Worker> {
 	public void abortStudy(String message, StudyResult studyResult) {
 		// Put current ComponentResult into state ABORTED
 		ComponentResult currentComponentResult = retrieveCurrentComponentResult(studyResult);
-		currentComponentResult.setComponentState(ComponentState.ABORTED);
-		currentComponentResult.merge();
+		finishComponentResult(currentComponentResult, ComponentState.ABORTED);
 
 		// Finish the other ComponentResults
 		finishAllComponentResults(studyResult);
@@ -152,33 +157,35 @@ public abstract class PublixUtils<T extends Worker> {
 		// Set StudyResult to state ABORTED and set message
 		studyResult.setStudyState(StudyState.ABORTED);
 		studyResult.setAbortMsg(message);
+		studyResult.setEndDate(new Timestamp(new Date().getTime()));
 		studyResult.merge();
 	}
 
 	public String finishStudy(Boolean successful, String errorMsg,
 			StudyResult studyResult) {
-		finishAllComponentResults(studyResult);
 		String confirmationCode;
 		if (successful) {
+			finishAllComponentResults(studyResult);
 			confirmationCode = studyResult.getWorker()
 					.generateConfirmationCode();
 			studyResult.setStudyState(StudyState.FINISHED);
 		} else {
+			// Don't finish components and leave them as it
 			confirmationCode = null;
 			studyResult.setStudyState(StudyState.FAIL);
 		}
 		studyResult.setConfirmationCode(confirmationCode);
 		studyResult.setErrorMsg(errorMsg);
+		studyResult.setEndDate(new Timestamp(new Date().getTime()));
 		studyResult.merge();
 		return confirmationCode;
 	}
-
+	
 	public void finishAllComponentResults(StudyResult studyResult) {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
 			if (!componentDone(componentResult)) {
-				componentResult.setComponentState(ComponentState.FINISHED);
-				componentResult.merge();
+				finishComponentResult(componentResult, ComponentState.FINISHED);
 			}
 		}
 	}

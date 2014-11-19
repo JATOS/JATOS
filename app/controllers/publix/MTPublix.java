@@ -44,9 +44,9 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		// Hint: Don't confuse MTurk's workerId with MechArg's workerId. They
 		// aren't the same. MechArg's workerId is automatically generated
 		// and MTurk's workerId is stored within the MTWorker.
-		String mtWorkerId = request().getQueryString("workerId");
-		String mtAssignmentId = request().getQueryString("assignmentId");
-		String mtHitId = request().getQueryString("hitId");
+		String mtWorkerId = request().getQueryString("workerId").trim();
+		String mtAssignmentId = request().getQueryString("assignmentId").trim();
+		String mtHitId = request().getQueryString("hitId").trim();
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ "Parameters from MTurk: workerId " + mtWorkerId + ", "
 				+ "assignmentId " + mtAssignmentId + ", " + "hitId " + mtHitId);

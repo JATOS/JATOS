@@ -17,6 +17,7 @@ import javax.persistence.TypedQuery;
 
 import models.ComponentModel;
 import play.db.jpa.JPA;
+import services.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -40,11 +41,17 @@ public class ComponentResult {
 	private Long id;
 
 	/**
-	 * Time and date when the component was started.
+	 * Time and date when the component was started on the server.
 	 */
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
 	private Timestamp startDate;
 
+	/**
+	 * Time and date when the component was finished on the server.
+	 */
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
+	private Timestamp endDate;
+	
 	public enum ComponentState {
 		STARTED, // Component was started
 		DATA_RETRIEVED, // Component's jsonData were retrieved
@@ -117,6 +124,18 @@ public class ComponentResult {
 
 	public Timestamp getStartDate() {
 		return this.startDate;
+	}
+	
+	public void setEndDate(Timestamp endDate) {
+		this.endDate = endDate;
+	}
+
+	public Timestamp getEndDate() {
+		return this.endDate;
+	}
+	
+	public String getDuration() {
+		return DateUtils.getDurationPretty(startDate, endDate);
 	}
 
 	public void setComponentState(ComponentState state) {

@@ -1,7 +1,7 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel, 
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
 submitAction: play.api.mvc.Call, form: Form[ComponentModel],
-studyDirName: String, studyIsLocked: Boolean)
+study: StudyModel)
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
 
@@ -31,7 +31,7 @@ studyDirName: String, studyIsLocked: Boolean)
 	<label class="control-label col-xs-2" for="filePath">HTML file path:</label>
 	<div class="col-xs-10">
 		<div class="input-group" id="filePath">
-			<span class="input-group-addon">/@studyDirName/</span></span>
+			<span class="input-group-addon">/@study.getDirName()/</span></span>
 			<input type="text" class="form-control" name="@ComponentModel.HTML_FILE_PATH" value="@form(ComponentModel.HTML_FILE_PATH).value" placeholder="Path to the actual HTML file">
 		</div>
 		<span class="help-block">Enter the name of your HTML file that displays your component. You can also enter a path to you file. This path must be within the directory of this study.</span>
@@ -84,7 +84,7 @@ studyDirName: String, studyIsLocked: Boolean)
 	$('#jsonData').closest(".form-group").addClass("has-error");
 	$('#jsonData').after('<span class="help-block">@error.message</span>');
 }
-@if(studyIsLocked) {
+@if(study.isLocked()) {
 	$(':input').attr("disabled", true);
 }
 

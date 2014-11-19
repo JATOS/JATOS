@@ -9,7 +9,8 @@ import javax.persistence.TypedQuery;
 
 import play.db.jpa.JPA;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Concrete worker who originates from the MTurk.
@@ -25,11 +26,13 @@ public class MTWorker extends Worker {
 	/**
 	 * Worker ID from MTurk
 	 */
+	@JsonProperty("mtWorkerId")
 	private String mtWorkerId;
-	
+
 	public MTWorker() {
 	}
 
+	@JsonCreator
 	public MTWorker(String mtWorkerId) {
 		this.mtWorkerId = mtWorkerId;
 	}
@@ -38,24 +41,27 @@ public class MTWorker extends Worker {
 		this.mtWorkerId = mtWorkerId;
 	}
 
-	@JsonIgnore
 	public String getMTWorkerId() {
 		return this.mtWorkerId;
 	}
-	
+
 	@Override
 	public String toString() {
 		return mtWorkerId + ", " + super.toString();
 	}
-	
+
 	@Override
 	public String generateConfirmationCode() {
 		return UUID.randomUUID().toString();
 	}
-	
+
+	/**
+	 * Retrieves the worker with the given MTurk worker ID in a case insensitive
+	 * way.
+	 */
 	public static MTWorker findByMTWorkerId(String mtWorkerId) {
 		String queryStr = "SELECT e FROM Worker e WHERE "
-				+ "e.mtWorkerId=:mtWorkerId";
+				+ "upper(e.mtWorkerId)=:mtWorkerId";
 		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
 		List<Worker> workerList = query.setParameter("mtWorkerId", mtWorkerId)
 				.getResultList();
@@ -68,10 +74,14 @@ public class MTWorker extends Worker {
 		return findByMTWorkerId(mtWorkerId, WORKER_TYPE);
 	}
 
+	/**
+	 * Retrieves the worker with the given MTurk worker ID and type in a case
+	 * insensitive way.
+	 */
 	protected static MTWorker findByMTWorkerId(String mtWorkerId,
 			String workerType) {
 		String queryStr = "SELECT e FROM Worker e WHERE "
-				+ "e.mtWorkerId=:mtWorkerId and e.workerType=:workerType";
+				+ "upper(e.mtWorkerId)=:mtWorkerId and e.workerType=:workerType";
 		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
 		List<Worker> workerList = query.setParameter("mtWorkerId", mtWorkerId)
 				.setParameter(Worker.DISCRIMINATOR, workerType).getResultList();

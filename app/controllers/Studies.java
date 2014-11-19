@@ -163,8 +163,7 @@ public class Studies extends Controller {
 						Http.Status.BAD_REQUEST);
 			}
 		} catch (IOException e) {
-			String errorMsg = ErrorMessages.studysDirNotCreated(IOUtils
-					.generateStudysPath(study));
+			String errorMsg = "Study not imported: " + e.getMessage();
 			ControllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
@@ -249,16 +248,16 @@ public class Studies extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String title = requestData.get(StudyModel.TITLE);
 		String description = requestData.get(StudyModel.DESCRIPTION);
-		String dirNamePrefix = requestData.get(StudyModel.DIRNAME_PREFIX);
+		String dirName = requestData.get(StudyModel.DIRNAME);
 		String jsonData = requestData.get(StudyModel.JSON_DATA);
-		String oldDirNamePrefix = study.getDirNamePrefix();
-		PersistanceUtils.updateStudy(study, title, description, dirNamePrefix,
+		String oldDirName = study.getDirName();
+		PersistanceUtils.updateStudy(study, title, description, dirName,
 				jsonData);
 		try {
-			IOUtils.renameStudyDir(oldDirNamePrefix, study.getDirNamePrefix(),
+			IOUtils.renameStudyDir(oldDirName, study.getDirName(),
 					study.getId());
 		} catch (IOException e) {
-			form.reject(new ValidationError(StudyModel.DIRNAME_PREFIX, e
+			form.reject(new ValidationError(StudyModel.DIRNAME, e
 					.getMessage()));
 			Call submitAction = routes.Studies.submitEdited(study.getId());
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
@@ -324,7 +323,6 @@ public class Studies extends Controller {
 
 		StudyModel clone = new StudyModel(study);
 		clone.addMember(loggedInUser);
-		clone.persist();
 
 		// Copy study's dir and it's content to cloned study's dir
 		try {
@@ -333,6 +331,7 @@ public class Studies extends Controller {
 			ControllerUtils.throwAjaxResultException(e.getMessage(),
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
+		clone.persist();
 		return ok();
 	}
 
@@ -356,7 +355,7 @@ public class Studies extends Controller {
 							+ IOUtils.STUDY_FILE_SUFFIX);
 			JsonUtils.asJsonForIO(study, studyAsJsonFile);
 			String studyDirPath = IOUtils.generateStudysPath(study);
-			zipFile = ZipUtil.zipStudy(studyDirPath, study.getDirNamePrefix(),
+			zipFile = ZipUtil.zipStudy(studyDirPath, study.getDirName(),
 					studyAsJsonFile.getAbsolutePath());
 			studyAsJsonFile.delete();
 		} catch (IOException e) {

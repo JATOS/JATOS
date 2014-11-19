@@ -83,6 +83,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 			break;
 		case SHOW_COMPONENT_START:
 			// Just create a StudyResult for this.
+			utils.finishAllPriorStudyResults(worker, study);
 			studyResult = PersistanceUtils.createStudyResult(study, worker);
 			session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
 			break;

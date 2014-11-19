@@ -17,7 +17,6 @@ import play.mvc.Http;
 import play.mvc.SimpleResult;
 import services.Breadcrumbs;
 import services.ErrorMessages;
-import services.IOUtils;
 import exceptions.ResultException;
 
 public class ControllerUtils extends Controller {
@@ -171,11 +170,10 @@ public class ControllerUtils extends Controller {
 		if (isAjax()) {
 			result = status(httpStatus);
 		} else {
-			String studyDirName = IOUtils.generateStudyDirName(study);
 			result = status(httpStatus,
 					views.html.mecharg.component.edit.render(studyList,
 							loggedInUser, breadcrumbs, null, submitAction,
-							form, studyDirName, study.isLocked()));
+							form, study));
 		}
 		throw new ResultException(result);
 	}

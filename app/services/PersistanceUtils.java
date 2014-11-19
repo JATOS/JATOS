@@ -82,10 +82,10 @@ public class PersistanceUtils {
 	}
 
 	public static void updateStudy(StudyModel study, String title,
-			String description, String dirNamePrefix, String jsonData) {
+			String description, String dirName, String jsonData) {
 		study.setTitle(title);
 		study.setDescription(description);
-		study.setDirNamePrefix(dirNamePrefix);
+		study.setDirName(dirName);
 		study.setJsonData(jsonData);
 		study.merge();
 	}

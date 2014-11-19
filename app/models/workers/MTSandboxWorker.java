@@ -3,6 +3,8 @@ package models.workers;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 /**
  * Concrete worker who originates from the MTurk Sandbox.
  * 
@@ -17,6 +19,7 @@ public class MTSandboxWorker extends MTWorker {
 	public MTSandboxWorker() {
 	}
 
+	@JsonCreator
 	public MTSandboxWorker(String mtWorkerId) {
 		super(mtWorkerId);
 	}

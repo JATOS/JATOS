@@ -19,8 +19,10 @@ study: StudyModel)
 			<th></th>
 			<th>Result ID</th>
 			<th>Start Time (Server)</th>
+			<th>Duration</th>
 			<th>Worker ID</th>
 			<th>Worker Type</th>
+			<th>MTurk Worker ID</th>
 			<th>Confirmation Code</th>
 			<th>State</th>
 			<th>Messages</th>
@@ -31,8 +33,10 @@ study: StudyModel)
 			<th></th>
 			<th>Result ID</th>
 			<th>Start Time (Server)</th>
+			<th>Duration</th>
 			<th>Worker ID</th>
 			<th>Worker Type</th>
+			<th>MTurk Worker ID</th>
 			<th>Confirmation Code</th>
 			<th>State</th>
 			<th>Messages</th>
@@ -50,8 +54,8 @@ $(document).ready(function() {
 			"url" : "@routes.StudyResults.tableDataByStudy(study.getId())",
 			"error": function(reason) {
 					showError("Couldn't read results data.")
-				}
-			},
+			}
+		},
 		"order": [[ 2, "desc" ]],
 		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
 		"pageLength": 10,
@@ -64,6 +68,12 @@ $(document).ready(function() {
 			},
 			{ "data": "id" },
 			{ "data": "startDate" },
+			{
+				"data": "duration",
+				"render": function (data, type, full, meta) {
+					return (data) ? data : "not yet";
+				}
+			},
 			{ 
 				"data": "workerId",
 				"render": function (data, type, full, meta) {
@@ -72,7 +82,18 @@ $(document).ready(function() {
 				}
 			},
 			{ "data": "workerType" },
-			{ "data": getConfirmationCode },
+			{ 
+				"data": "worker.mtWorkerId",
+				"render": function (data, type, full, meta) {
+					return (data) ? data : "none";
+				}
+			},
+			{ 
+				"data": "confirmationCode",
+				"render": function (data, type, full, meta) {
+					return (data) ? data : "none";
+				}
+			},
 			{ "data": "studyState" },
 			{ 
 				"data": getMessages,
@@ -87,8 +108,14 @@ $(document).ready(function() {
 	});
 	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
 	
-	function getConfirmationCode(data, type, dataToSet) {
-		return (data.confirmationCode != null) ? data.confirmationCode : "none";
+	function getMTWorkerId(data, type, full, meta) {
+		if (data.MTSandboxWorker) {
+			return data.MTSandboxWorker.mtWorkerId;
+		}
+		if (data.MTWorker) {
+			return data.MTWorker.mtWorkerId;
+		}
+		return "none";
 	}
 	
 	function getMessages(data, type, dataToSet) {
@@ -179,23 +206,26 @@ function childRowFormat(data) {
 		'<td><b>Comp. ID</b></td>',
 		'<td><b>Component Title</b></td>',
 		'<td><b>Start Time (Server)</b></td>',
+		'<td><b>Duration</b></td>',
 		'<td><b>State</b></td>',
 		'</tr>');
 		if(data.componentResults.length > 0) {
 			data.componentResults.forEach(function(componentResult) {
+				var duration = (componentResult.duration) ? componentResult.duration : "not yet";
 				html.push('<tr class="info">',
 					'<td>' + componentResult.id + '</td>',
 					'<td>' + componentResult.componentId + '</td>',
 					'<td>' + componentResult.componentTitle + '</td>',
 					'<td>' + componentResult.startDate + '</td>',
+					'<td>' + duration + '</td>',
 					'<td>' + componentResult.componentState + '</td>',
 					'</tr><tr class="info">',
-					'<td colspan="5"><pre class="details-data">' + componentResult.data + '</pre></td>',
+					'<td colspan="6"><pre class="details-data">' + componentResult.data + '</pre></td>',
 					'</tr>');
 			});
 		} else {
 			html.push('<tr class="info">',
-				'<td colspan="5">empty</td>',
+				'<td colspan="6">empty</td>',
 				'</tr>');
 		}
 		html.push('</table>');

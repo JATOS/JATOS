@@ -4,6 +4,21 @@ worker: workers.Worker)
 
 @views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
 
+<!-- Worker Info Panel -->
+<div class="panel panel-default">
+	<div class="panel-body">
+	Worker ID: @worker.getId()<br>
+	Worker Type: @worker.getWorkerType()<br>
+	@if(worker.getWorkerType().equals("MT") || worker.getWorkerType().equals("MTSandbox")) {
+		MTurk Worker ID: @worker.asInstanceOf[workers.MTWorker].getMTWorkerId()
+	}
+	@if(worker.getWorkerType().equals("MA")) {
+		User Email Address: @worker.asInstanceOf[workers.MAWorker].getUser().getEmail()
+	}
+	</div>
+</div>
+
+
 <!-- Toolbar -->
 <div id="resultsToolbar" class="btn-toolbar pull-right" role="toolbar">
 	<div class="btn-group" aria-hidden="true">
@@ -19,6 +34,7 @@ worker: workers.Worker)
 			<th></th>
 			<th>Result ID</th>
 			<th>Start Time (Server)</th>
+			<th>Duration</th>
 			<th>Study ID</th>
 			<th>Study Title</th>
 			<th>Confirmation Code</th>
@@ -31,6 +47,7 @@ worker: workers.Worker)
 			<th></th>
 			<th>Result ID</th>
 			<th>Start Time (Server)</th>
+			<th>Duration</th>
 			<th>Study ID</th>
 			<th>Study Title</th>
 			<th>Confirmation Code</th>
@@ -66,6 +83,12 @@ $(document).ready(function() {
 			{
 				"class": 'time',
 				"data": "startDate"
+			},
+			{
+				"data": "duration",
+				"render": function (data, type, full, meta) {
+					return (data) ? data : "not yet";
+				}
 			},
 			{
 				"data": "studyId",
@@ -180,25 +203,28 @@ function childRowFormat(data) {
 		'<tr class="info">',
 		'<td><b>Result ID</b></td>',
 		'<td><b>Comp. ID</b></td>',
-		'<td><b>Compontent Title</b></td>',
-		'<td><b>Time</b></td>',
+		'<td><b>Component Title</b></td>',
+		'<td><b>Start Time (Server)</b></td>',
+		'<td><b>Duration</b></td>',
 		'<td><b>State</b></td>',
 		'</tr>');
 		if(data.componentResults.length > 0) {
 			data.componentResults.forEach(function(componentResult) {
+				var duration = (componentResult.duration) ? componentResult.duration : "not yet";
 				html.push('<tr class="info">',
 					'<td>' + componentResult.id + '</td>',
 					'<td>' + componentResult.componentId + '</td>',
 					'<td>' + componentResult.componentTitle + '</td>',
 					'<td>' + componentResult.startDate + '</td>',
+					'<td>' + duration + '</td>',
 					'<td>' + componentResult.componentState + '</td>',
 					'</tr><tr class="info">',
-					'<td colspan="5"><pre class="details-data">' + componentResult.data + '</pre></td>',
+					'<td colspan="6"><pre class="details-data">' + componentResult.data + '</pre></td>',
 					'</tr>');
 			});
 		} else {
 			html.push('<tr class="info">',
-				'<td colspan="5">empty</td>',
+				'<td colspan="6">empty</td>',
 				'</tr>');
 		}
 		html.push('</table>');

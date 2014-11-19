@@ -46,7 +46,7 @@ public class StudyModel {
 	public static final String TITLE = "title";
 	public static final String JSON_DATA = "jsonData";
 	public static final String DESCRIPTION = "description";
-	public static final String DIRNAME_PREFIX = "dirNamePrefix";
+	public static final String DIRNAME = "dirName";
 	public static final String STUDY = "study";
 
 	@Id
@@ -72,10 +72,10 @@ public class StudyModel {
 	private boolean locked = false;
 
 	/**
-	 * Prefix of the directory name of this study
+	 * Directory name of this study
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
-	private String dirNamePrefix;
+	private String dirName;
 
 	/**
 	 * Data in JSON format that are responded after public APIs 'getData' call.
@@ -110,7 +110,7 @@ public class StudyModel {
 	public StudyModel(StudyModel study) {
 		// Don't clone members and field 'locked'
 		this.description = study.description;
-		this.dirNamePrefix = study.dirNamePrefix;
+		this.dirName = study.dirName;
 		this.jsonData = study.jsonData;
 		this.title = study.title;
 		this.locked = false;
@@ -146,12 +146,12 @@ public class StudyModel {
 		return this.description;
 	}
 
-	public void setDirNamePrefix(String dirNamePrefix) {
-		this.dirNamePrefix = dirNamePrefix;
+	public void setDirName(String dirName) {
+		this.dirName = dirName;
 	}
 
-	public String getDirNamePrefix() {
-		return this.dirNamePrefix;
+	public String getDirName() {
+		return this.dirName;
 	}
 
 	public void setDate(Timestamp timestamp) {
@@ -304,14 +304,14 @@ public class StudyModel {
 			errorList.add(new ValidationError(DESCRIPTION,
 					ErrorMessages.NO_HTML_ALLOWED));
 		}
-		if (dirNamePrefix == null || dirNamePrefix.isEmpty()) {
-			errorList.add(new ValidationError(DIRNAME_PREFIX,
+		if (dirName == null || dirName.isEmpty()) {
+			errorList.add(new ValidationError(DIRNAME,
 					ErrorMessages.MISSING_DIRNAME));
 		}
 		Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
-		Matcher matcher = pattern.matcher(dirNamePrefix);
-		if (dirNamePrefix != null && matcher.find()) {
-			errorList.add(new ValidationError(DIRNAME_PREFIX,
+		Matcher matcher = pattern.matcher(dirName);
+		if (dirName != null && matcher.find()) {
+			errorList.add(new ValidationError(DIRNAME,
 					ErrorMessages.INVALID_DIR_NAME));
 		}
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {

@@ -3,6 +3,8 @@ package models.workers;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 /**
  * MTWorker for testing purpose.
  * 
@@ -17,6 +19,7 @@ public class MTTesterWorker extends MTWorker {
 	public MTTesterWorker() {
 	}
 
+	@JsonCreator
 	public MTTesterWorker(String mtWorkerId) {
 		super(mtWorkerId);
 	}

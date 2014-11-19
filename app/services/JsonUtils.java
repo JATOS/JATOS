@@ -14,6 +14,8 @@ import models.results.ComponentResult;
 import models.results.StudyResult;
 import models.workers.Worker;
 
+import org.hibernate.Hibernate;
+import org.hibernate.proxy.HibernateProxy;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
@@ -207,6 +209,11 @@ public class JsonUtils {
 	private static ObjectNode studyResultAsJsonNode(StudyResult studyResult)
 			throws IOException {
 		ObjectNode studyResultNode = OBJECTMAPPER.valueToTree(studyResult);
+		
+		// Add worker
+		ObjectNode workerNode = OBJECTMAPPER
+				.valueToTree(initializeAndUnproxy(studyResult.getWorker()));
+		studyResultNode.put("worker", workerNode);
 
 		// Add study's ID and title
 		studyResultNode.put("studyId", studyResult.getStudy().getId());
@@ -272,13 +279,24 @@ public class JsonUtils {
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
 		for (Worker worker : workerSet) {
-			ObjectNode workerNode = OBJECTMAPPER.valueToTree(worker);
+			ObjectNode workerNode = OBJECTMAPPER
+					.valueToTree(initializeAndUnproxy(worker));
 			arrayNode.add(workerNode);
 		}
 		ObjectNode workersNode = OBJECTMAPPER.createObjectNode();
 		workersNode.put(DATA, arrayNode);
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(workersNode);
 		return asJsonStr;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> T initializeAndUnproxy(T obj) {
+		Hibernate.initialize(obj);
+		if (obj instanceof HibernateProxy) {
+			obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()
+					.getImplementation();
+		}
+		return obj;
 	}
 
 	public static String asJson(Object obj) throws JsonProcessingException {

@@ -90,8 +90,7 @@ public class ExternalAssets extends Controller {
 
 	public static String getComponentUrlPath(StudyModel study,
 			ComponentModel component) {
-		return "/" + URL_STUDIES_PATH + "/"
-				+ IOUtils.generateStudyDirName(study) + "/"
+		return "/" + URL_STUDIES_PATH + "/" + study.getDirName() + "/"
 				+ component.getHtmlFilePath();
 	}
 
