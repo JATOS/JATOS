@@ -58,6 +58,7 @@ public class ComponentModel {
 	/**
 	 * Timestamp of the creation or the last update of this component
 	 */
+	@JsonIgnore
 	private Timestamp date;
 
 	/**

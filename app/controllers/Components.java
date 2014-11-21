@@ -43,7 +43,6 @@ public class Components extends Controller {
 		ComponentModel component = ComponentModel.findById(componentId);
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
-		ControllerUtils.checkStudyLocked(study);
 
 		if (component.getHtmlFilePath() == null
 				|| component.getHtmlFilePath().isEmpty()) {

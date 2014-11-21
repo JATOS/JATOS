@@ -462,7 +462,6 @@ public class Studies extends Controller {
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
 
 		session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_STUDY);
 		return redirect(controllers.publix.routes.PublixInterceptor

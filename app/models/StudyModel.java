@@ -64,11 +64,13 @@ public class StudyModel {
 	/**
 	 * Timestamp of the creation or the last update of this study
 	 */
+	@JsonIgnore
 	private Timestamp date;
 
 	/**
 	 * If a study is locked, it can't be changed.
 	 */
+	@JsonView(JsonUtils.JsonForPublix.class)
 	private boolean locked = false;
 
 	/**
@@ -372,7 +374,7 @@ public class StudyModel {
 						+ "WHERE u.email = :member", StudyModel.class);
 		query.setParameter("member", memberEmail);
 		List<StudyModel> studyList = query.getResultList();
-		// Sometimes the DB returns an element that's just null (bug?). Iterate 
+		// Sometimes the DB returns an element that's just null (bug?). Iterate
 		// through the list and remove all null elements.
 		Iterator<StudyModel> it = studyList.iterator();
 		while (it.hasNext()) {
