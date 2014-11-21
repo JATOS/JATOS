@@ -155,6 +155,10 @@ if (messages != null) {
 	showError('@flash.get("error")');
 }
 
+@if(services.PersistanceUtils.IN_MEMORY_DB) {
+	showWarning("You are using an in-memory database. This is fine for initial evalution of JOTAS. Unfortunately after closing JOTAS all changes will be lost. If you want to continue working with JOTAS, it's strongly recommended to setup a disk-based database.")
+}
+
 for (var key in breadcrumbs) {
 	var breadcrumb;
 	if (breadcrumbs[key] === null || breadcrumbs[key] === "") {

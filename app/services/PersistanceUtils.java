@@ -17,12 +17,20 @@ import models.workers.Worker;
 
 import org.apache.commons.lang3.StringUtils;
 
+import play.Play;
+
 /**
  * Utility class that provides persistence methods.
  * 
  * @author Kristian Lange
  */
 public class PersistanceUtils {
+
+	/**
+	 * Is true if an in-memory database is used.
+	 */
+	public static boolean IN_MEMORY_DB = Play.application().configuration()
+			.getString("db.default.url").contains("jdbc:h2:mem:play");
 
 	public static StudyResult createStudyResult(StudyModel study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);
@@ -70,7 +78,7 @@ public class PersistanceUtils {
 		adminWorker.merge();
 		return adminUser;
 	}
-	
+
 	public static void addStudy(StudyModel study, UserModel loggedInUser) {
 		study.persist();
 		PersistanceUtils.addMemberToStudy(study, loggedInUser);
@@ -169,7 +177,7 @@ public class PersistanceUtils {
 	public static void removeAllStudyResults(StudyModel study) {
 		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
 		for (StudyResult studyResult : studyResultList) {
-				removeStudyResult(studyResult);
+			removeStudyResult(studyResult);
 		}
 	}
 

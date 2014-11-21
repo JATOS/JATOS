@@ -11,9 +11,6 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import services.IOUtils;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-
 /**
  * Manages web-access to files in the external studies directory (outside of
  * MechArg's packed Jar).
@@ -31,15 +28,10 @@ public class ExternalAssets extends Controller {
 			.getSimpleName();
 
 	/**
-	 * Path to application.conf
-	 */
-	private static final String APPLICATION_CONF = "/conf/application.conf";
-
-	/**
 	 * Property name in application config for the path to the directory where
 	 * all studies are located
 	 */
-	private static final String PROPERTY_STUDIES_ROOT_PATH = "mecharg.studiesRootPath";
+	private static final String PROPERTY_STUDIES_ROOT_PATH = "jatos.studiesRootPath";
 
 	/**
 	 * Default path to the studies directory in case it wasn't specified in the
@@ -47,18 +39,15 @@ public class ExternalAssets extends Controller {
 	 */
 	private static final String DEFAULT_STUDIES_ROOT_PATH = "/studies";
 	private static final String BASEPATH = Play.application().path().getPath();
-	private static final String CONFIGPATH = BASEPATH + APPLICATION_CONF;
-	private static final Config CONFIG = ConfigFactory.parseFile(new File(
-			CONFIGPATH));
 
 	/**
-	 * If the PROPERTY_STUDIES_ROOT_PATH is defined in the configuration file
-	 * then use it as the base path. If PROPERTY_STUDIES_ROOT_PATH isn't
+	 * The path to the studies folder. If the property is defined in the
+	 * configuration file then use it as the base path. If property isn't
 	 * defined, try in default study path instead.
 	 */
 	public static String STUDIES_ROOT_PATH;
 	static {
-		String rawConfigStudiesPath = CONFIG
+		String rawConfigStudiesPath = Play.application().configuration()
 				.getString(PROPERTY_STUDIES_ROOT_PATH);
 		if (rawConfigStudiesPath != null && !rawConfigStudiesPath.isEmpty()) {
 			STUDIES_ROOT_PATH = rawConfigStudiesPath.replace("~",
