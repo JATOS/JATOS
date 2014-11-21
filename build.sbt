@@ -4,7 +4,7 @@ val conf = ConfigFactory.parseFile(new File("conf/application.conf")).resolve()
 
 version := conf.getString("application.version")
 
-name := "MechArg"
+name := "JATOS"
 
 libraryDependencies ++= Seq(
   javaCore,
