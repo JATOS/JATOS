@@ -16,5 +16,5 @@ fi
 chmod u+x ./bin/jatos
 
 # Start JATOS with configuration file and application secret
-./bin/mecharg -Dconfig.file="conf/production.conf" -Dapplication.secret=$secret > /dev/null &
+./bin/jatos -Dconfig.file="conf/production.conf" -Dapplication.secret=$secret > /dev/null &
 

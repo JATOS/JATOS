@@ -30,7 +30,7 @@ public class PersistanceUtils {
 	 * Is true if an in-memory database is used.
 	 */
 	public static boolean IN_MEMORY_DB = Play.application().configuration()
-			.getString("db.default.url").contains("jdbc:h2:mem:play");
+			.getString("db.default.url").contains("jdbc:h2:mem:");
 
 	public static StudyResult createStudyResult(StudyModel study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);
