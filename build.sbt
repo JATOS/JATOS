@@ -23,4 +23,4 @@ playAssetsDirectories <+= baseDirectory / "studies"
 
 play.Project.playJavaSettings
 
-mappings in Universal += file(baseDirectory.value + "/start.sh") -> ("start.sh")
+mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh")
