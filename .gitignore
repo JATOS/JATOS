@@ -14,5 +14,5 @@ dist
 /.project
 /RUNNING_PID
 /.settings
-/start.sh~
+/loader.sh~
 /application.secret
