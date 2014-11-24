@@ -56,8 +56,8 @@ public abstract class ErrorMessages<T extends Worker> {
 	// Publix
 	public static final String COMPONENT_INVALID = "Component is invalid";
 	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
-	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_MECHARG = "This study or component was never started from within MechArg.";
-	public static final String STUDY_NEVER_STARTED_FROM_MECHARG = "This study was never started from within MechArg.";
+	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS = "This study or component was never started from within JATOS.";
+	public static final String STUDY_NEVER_STARTED_FROM_JATOS = "This study was never started from within JATOS.";
 	public static final String STUDY_NEVER_FINSHED = "Study never finished, but new study started by the same worker";
 	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters";
 	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
@@ -217,8 +217,8 @@ public abstract class ErrorMessages<T extends Worker> {
 
 	public static String removeMAWorker(Long workerId, String username,
 			String email) {
-		String errorMsg = "Worker (ID: " + workerId + ") is a worker of the "
-				+ "Mechanical Argentine, associated to the user " + username
+		String errorMsg = "Worker (ID: " + workerId + ") is a worker of "
+				+ "JATOS, associated to the user " + username
 				+ " (" + email + ") and can't be deleted.";
 		return errorMsg;
 	}

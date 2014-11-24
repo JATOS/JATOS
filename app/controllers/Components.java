@@ -50,7 +50,7 @@ public class Components extends Controller {
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_COMPONENT_START);
+		session(MAPublix.JATOS_SHOW, MAPublix.SHOW_COMPONENT_START);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, componentId));
 	}
@@ -70,7 +70,7 @@ public class Components extends Controller {
 		Call submitAction = routes.Components.submit(studyId);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				"New Component");
-		return ok(views.html.mecharg.component.edit.render(studyList,
+		return ok(views.html.jatos.component.edit.render(studyList,
 				loggedInUser, breadcrumbs, null, submitAction, form,
 				study));
 	}
@@ -126,7 +126,7 @@ public class Components extends Controller {
 				.submitEdited(studyId, componentId);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
 				component, "Edit");
-		return ok(views.html.mecharg.component.edit.render(studyList,
+		return ok(views.html.jatos.component.edit.render(studyList,
 				loggedInUser, breadcrumbs, messages, submitAction, form,
 				study));
 	}

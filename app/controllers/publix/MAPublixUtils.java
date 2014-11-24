@@ -11,7 +11,7 @@ import exceptions.ForbiddenPublixException;
 import exceptions.NotFoundPublixException;
 
 /**
- * Special PublixUtils for MAPublix (studies or components started via MechArg's
+ * Special PublixUtils for MAPublix (studies or components started via JATOS'
  * UI).
  * 
  * @author Kristian Lange

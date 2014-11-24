@@ -7,9 +7,9 @@ import play.libs.F.Promise;
 import play.mvc.Result;
 
 /**
- * Public API of MechArg. With these methods the studies and components running
+ * Public API of JATOS. With these methods the studies and components running
  * on the client side can communicate (start, finish components/studies,
- * retrieve/persist data) with the MechArg running on the server side.
+ * retrieve/persist data) with JATOS running on the server side.
  * 
  * @author Kristian Lange
  */

@@ -2,7 +2,7 @@
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
 study: StudyModel, workerSet: Set[workers.Worker])
 
-@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
 <!-- Toolbar -->
 <div id="studyToolbar" class="btn-toolbar" role="toolbar">
@@ -186,27 +186,27 @@ $(document).ready(function() {
 	});
 	
 	$('#componentsTable tbody').on('click', '.showComponent', function() {
-		window.location.href = "/mecharg/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyData.id +"/"
 			+ getComponentId(this) + "/show";
 	});
 	
 	$('#componentsTable tbody').on('click', '.componentResults', function() {
-		window.location.href = "/mecharg/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyData.id +"/"
 			+ getComponentId(this) + "/results";
 	});
 	
 	$('#componentsTable tbody').on('click', '.editComponent', function() {
-		window.location.href = "/mecharg/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyData.id +"/"
 			+ getComponentId(this) + "/edit";
 	});
 	
 	$('#componentsTable tbody').on('click', '.exportComponent', function() {
-		window.location.href = "/mecharg/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyData.id +"/"
 			+ getComponentId(this) + "/export";
 	});
 	
 	$('#componentsTable tbody').on('click', '.cloneComponent', function() {
-		window.location.href = "/mecharg/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyData.id +"/"
 			+ getComponentId(this) + "/clone";
 	});
 	
@@ -220,7 +220,7 @@ $(document).ready(function() {
 			+ "\" (ID " + componentId + ") <b>with all its results</b>.";
 		askConfirmation(title, text, 'Delete', function() {
 			$.ajax({
-				url : "/mecharg/" + studyData.id +"/" + componentId + "/remove",
+				url : "/jatos/" + studyData.id +"/" + componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
 					var tr = $(element).closest('tr');
@@ -251,7 +251,7 @@ $(document).ready(function() {
 		var componentId = getComponentId(this);
 		var active = $(this).prop('checked');
 		$.ajax({
-			url : "/mecharg/" + studyData.id +"/" + componentId
+			url : "/jatos/" + studyData.id +"/" + componentId
 					+ "/changeProperty?active=" + active,
 			type : "POST",
 			error : function(err) {
@@ -277,7 +277,7 @@ $(document).ready(function() {
 
 function ajaxChangeComponentOrder(componentId, direction, tr) {
 	$.ajax({
-		url : "/mecharg/" + studyData.id + "/changeComponentOrder"
+		url : "/jatos/" + studyData.id + "/changeComponentOrder"
 				+ "?componentId=" + componentId + "&direction="
 				+ direction,
 		type : "POST",
@@ -313,7 +313,7 @@ function swapRowData(row1, row2) {
 
 $('#studyToolbar').on('click', '#lockStudy', function() {
 	$.ajax({
-		url : "/mecharg/" + studyData.id +"/swapLock",
+		url : "/jatos/" + studyData.id +"/swapLock",
 		type : "POST",
 		success : function(response) {
 			if (response == 'true') {

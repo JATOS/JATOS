@@ -56,7 +56,7 @@ public class JsonUtils {
 	/**
 	 * Helper class for selectively marshaling an Object to JSON. Only fields of
 	 * that Object that are annotated with this class will be serialised.
-	 * Intended use: import/export between different instances of the MechArg.
+	 * Intended use: import/export between different instances of JATOS.
 	 */
 	public static class JsonForIO {
 	}

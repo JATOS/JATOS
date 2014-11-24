@@ -13,7 +13,7 @@ import services.IOUtils;
 
 /**
  * Manages web-access to files in the external studies directory (outside of
- * MechArg's packed Jar).
+ * JATOS' packed Jar).
  * 
  * @author Kristian Lange
  */

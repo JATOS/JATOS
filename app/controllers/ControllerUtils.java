@@ -152,7 +152,7 @@ public class ControllerUtils extends Controller {
 		if (isAjax()) {
 			result = status(httpStatus);
 		} else {
-			result = status(httpStatus, views.html.mecharg.study.edit.render(
+			result = status(httpStatus, views.html.jatos.study.edit.render(
 					studyList, loggedInUser, breadcrumbs, null, submitAction,
 					form, studyIsLocked));
 		}
@@ -171,7 +171,7 @@ public class ControllerUtils extends Controller {
 			result = status(httpStatus);
 		} else {
 			result = status(httpStatus,
-					views.html.mecharg.component.edit.render(studyList,
+					views.html.jatos.component.edit.render(studyList,
 							loggedInUser, breadcrumbs, null, submitAction,
 							form, study));
 		}
@@ -189,7 +189,7 @@ public class ControllerUtils extends Controller {
 			result = status(httpStatus);
 		} else {
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New User");
-			result = status(httpStatus, views.html.mecharg.user.create.render(
+			result = status(httpStatus, views.html.jatos.user.create.render(
 					studyList, loggedInUser, breadcrumbs, null, form));
 		}
 		throw new ResultException(result);
@@ -208,7 +208,7 @@ public class ControllerUtils extends Controller {
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
 					"Edit Profile");
 			result = status(httpStatus,
-					views.html.mecharg.user.editProfile.render(studyList,
+					views.html.jatos.user.editProfile.render(studyList,
 							loggedInUser, breadcrumbs, null, user, form));
 		}
 		throw new ResultException(result);
@@ -228,7 +228,7 @@ public class ControllerUtils extends Controller {
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
 					"Change Password");
 			result = status(httpStatus,
-					views.html.mecharg.user.changePassword.render(studyList,
+					views.html.jatos.user.changePassword.render(studyList,
 							loggedInUser, breadcrumbs, null, form));
 		}
 		throw new ResultException(result);

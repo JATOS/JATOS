@@ -2,7 +2,7 @@
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
 study: StudyModel)
 
-@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
 <!-- Workers table -->
 <table id="workersTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -35,7 +35,7 @@ $(document).ready(function() {
 			{
 				"data": "id",
 				"render": function (data, type, full, meta) {
-					return '<a href="/mecharg/worker/'
+					return '<a href="/jatos/worker/'
 						+ data + '">' + data + '</a>';
 				}
 			},

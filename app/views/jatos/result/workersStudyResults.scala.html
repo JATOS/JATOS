@@ -2,7 +2,7 @@
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
 worker: workers.Worker)
 
-@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
 <!-- Worker Info Panel -->
 <div class="panel panel-default">
@@ -93,7 +93,7 @@ $(document).ready(function() {
 			{
 				"data": "studyId",
 				"render": function (data, type, full, meta) {
-					return '<a href="/mecharg/'
+					return '<a href="/jatos/'
 						+ data + '">' + data + '</a>';
 				}
 			},
@@ -156,7 +156,7 @@ $('#resultsToolbar').on('click', '.exportData', function() {
 		showError("No results selected");
 		return;
 	}
-	var url = '/mecharg/studyresult'
+	var url = '/jatos/studyresult'
 		+ '/exportData?studyResultIds=' + ids.toString();
 	$.fileDownload(url)
 		.fail(function () { showError("Export of results failed"); });
@@ -180,7 +180,7 @@ $('#resultsToolbar').on('click', '.remove', function() {
 		+ "(ID " + ids.toString() + ") " 
 		+ "<b>with all their component results</b>.";
 	askConfirmation(title, text, 'Delete', function() {
-		var url = '/mecharg/studyresult/remove?studyResultIds=' + ids.toString();
+		var url = '/jatos/studyresult/remove?studyResultIds=' + ids.toString();
 		$.ajax({
 			url : url,
 			type : 'GET',

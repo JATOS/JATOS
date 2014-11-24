@@ -1,8 +1,8 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel,
+@(studyList: List[StudyModel], loggedInUser: UserModel, 
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
-study: StudyModel)
+study: StudyModel, component: ComponentModel)
 
-@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
 <!-- Toolbar -->
 <div id="resultsToolbar" class="btn-toolbar pull-right" role="toolbar">
@@ -12,7 +12,6 @@ study: StudyModel)
 	</div>
 </div>
 
-<!-- Results table -->
 <table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
 		<tr>
@@ -21,11 +20,8 @@ study: StudyModel)
 			<th>Start Time (Server)</th>
 			<th>Duration</th>
 			<th>Worker ID</th>
-			<th>Worker Type</th>
-			<th>MTurk Worker ID</th>
-			<th>Confirmation Code</th>
 			<th>State</th>
-			<th>Messages</th>
+			<th>Error Message</th>
 		</tr>
 	</thead>
 	<tfoot>
@@ -35,11 +31,8 @@ study: StudyModel)
 			<th>Start Time (Server)</th>
 			<th>Duration</th>
 			<th>Worker ID</th>
-			<th>Worker Type</th>
-			<th>MTurk Worker ID</th>
-			<th>Confirmation Code</th>
 			<th>State</th>
-			<th>Messages</th>
+			<th>Error Message</th>
 		</tr>
 	</tfoot>
 </table>
@@ -51,7 +44,7 @@ $(document).ready(function() {
 	resultsTable = $('#resultsTable').DataTable({
 		"ajax": {
 			"type": "GET",
-			"url" : "@routes.StudyResults.tableDataByStudy(study.getId())",
+			"url" : "@routes.ComponentResults.tableDataByComponent(study.getId(),component.getId())",
 			"error": function(reason) {
 					showError("Couldn't read results data.")
 			}
@@ -74,29 +67,16 @@ $(document).ready(function() {
 					return (data) ? data : "not yet";
 				}
 			},
-			{ 
+			{
 				"data": "workerId",
 				"render": function (data, type, full, meta) {
-					return '<a href="/mecharg/worker/'
+					return '<a href="/jatos/worker/'
 						+ data + '">' + data + '</a>';
 				}
 			},
-			{ "data": "workerType" },
+			{ "data": "componentState" },
 			{ 
-				"data": "worker.mtWorkerId",
-				"render": function (data, type, full, meta) {
-					return (data) ? data : "none";
-				}
-			},
-			{ 
-				"data": "confirmationCode",
-				"render": function (data, type, full, meta) {
-					return (data) ? data : "none";
-				}
-			},
-			{ "data": "studyState" },
-			{ 
-				"data": getMessages,
+				"data": "errorMsg",
 				"width": "20%"
 			}
 		]
@@ -107,28 +87,6 @@ $(document).ready(function() {
 		"sRowSelector": "td:not(:first-child):not(:last-child)"
 	});
 	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
-	
-	function getMTWorkerId(data, type, full, meta) {
-		if (data.MTSandboxWorker) {
-			return data.MTSandboxWorker.mtWorkerId;
-		}
-		if (data.MTWorker) {
-			return data.MTWorker.mtWorkerId;
-		}
-		return "none";
-	}
-	
-	function getMessages(data, type, dataToSet) {
-		var messages = [];
-		if (data.errorMsg != null) {
-			messages.push(data.errorMsg);
-			messages.push("<br>");
-		}
-		if (data.abortMsg != null) {
-			messages.push(data.abortMsg);
-		}
-		return messages.join("");
-	}
 	
 	$('#resultsTable tbody').on('click', 'td.details-control', function() {
 		var tr = $(this).closest('tr');
@@ -157,8 +115,8 @@ $('#resultsToolbar').on('click', '.exportData', function() {
 		showError("No results selected");
 		return;
 	}
-	var url = '/mecharg/studyresult'
-		+ '/exportData?studyResultIds=' + ids.toString();
+	var url = '/jatos/componentresult/'
+		+ 'exportData?componentResultIds=' + ids.toString();
 	$.fileDownload(url)
 		.fail(function () { showError("Export of results failed"); });
 	return false; //this is critical to stop the click event which will trigger a normal file download
@@ -177,11 +135,10 @@ $('#resultsToolbar').on('click', '.remove', function() {
 		return;
 	}
 	var title = "Confirm Delete";
-	var text = "You are about to delete the study results "
-		+ "(ID " + ids.toString() + ") " 
-		+ "<b>with all their component results</b>.";
+	var text = "You are about to delete the component results "
+		+ "(ID " + ids.toString() + ").";
 	askConfirmation(title, text, 'Delete', function() {
-		var url = '/mecharg/studyresult/remove?studyResultIds=' + ids.toString();
+		var url = '/jatos/componentresult/remove?componentResultIds=' + ids.toString();
 		$.ajax({
 			url : url,
 			type : 'GET',
@@ -199,37 +156,7 @@ $('#resultsToolbar').on('click', '.remove', function() {
 
 function childRowFormat(data) {
 	// `data` is the original data object for the row
-	var html = [];
-	html.push('<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
-		'<tr class="info">',
-		'<td><b>Result ID</b></td>',
-		'<td><b>Comp. ID</b></td>',
-		'<td><b>Component Title</b></td>',
-		'<td><b>Start Time (Server)</b></td>',
-		'<td><b>Duration</b></td>',
-		'<td><b>State</b></td>',
-		'</tr>');
-		if(data.componentResults.length > 0) {
-			data.componentResults.forEach(function(componentResult) {
-				var duration = (componentResult.duration) ? componentResult.duration : "not yet";
-				html.push('<tr class="info">',
-					'<td>' + componentResult.id + '</td>',
-					'<td>' + componentResult.componentId + '</td>',
-					'<td>' + componentResult.componentTitle + '</td>',
-					'<td>' + componentResult.startDate + '</td>',
-					'<td>' + duration + '</td>',
-					'<td>' + componentResult.componentState + '</td>',
-					'</tr><tr class="info">',
-					'<td colspan="6"><pre class="details-data">' + componentResult.data + '</pre></td>',
-					'</tr>');
-			});
-		} else {
-			html.push('<tr class="info">',
-				'<td colspan="6">empty</td>',
-				'</tr>');
-		}
-		html.push('</table>');
-	return html.join("");
+	return '<p><pre class="details-data">' + data.data + '</pre></p>';
 }
 
 </script>

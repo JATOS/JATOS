@@ -53,7 +53,7 @@ public class Studies extends Controller {
 		Set<Worker> workerSet = ControllerUtils.retrieveWorkers(study);
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study);
-		return status(httpStatus, views.html.mecharg.study.index.render(
+		return status(httpStatus, views.html.jatos.study.index.render(
 				studyList, loggedInUser, breadcrumbs, messages, study,
 				workerSet));
 	}
@@ -80,7 +80,7 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class);
 		Call submitAction = routes.Studies.submit();
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New Study");
-		return ok(views.html.mecharg.study.edit.render(studyList, loggedInUser,
+		return ok(views.html.jatos.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, null, submitAction, form, false));
 	}
 
@@ -219,7 +219,7 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = routes.Studies.submitEdited(study.getId());
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study, "Edit");
-		return ok(views.html.mecharg.study.edit.render(studyList, loggedInUser,
+		return ok(views.html.jatos.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, messages, submitAction, form, study.isLocked()));
 	}
 
@@ -396,7 +396,7 @@ public class Studies extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				"Change Members");
 		return status(httpStatus,
-				views.html.mecharg.study.changeMembers.render(studyList,
+				views.html.jatos.study.changeMembers.render(studyList,
 						loggedInUser, breadcrumbs, messages, study, userList));
 	}
 
@@ -463,7 +463,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_STUDY);
+		session(MAPublix.JATOS_SHOW, MAPublix.SHOW_STUDY);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startStudy(study.getId()));
 	}
@@ -480,11 +480,11 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		String[] referer = request().headers().get("Referer");
-		URL mechArgURL = new URL(referer[0]);
+		URL jatosURL = new URL(referer[0]);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				"Mechanical Turk HIT Layout Source Code");
-		return ok(views.html.mecharg.study.mTurkSourceCode.render(studyList,
-				loggedInUser, breadcrumbs, null, study, mechArgURL));
+		return ok(views.html.jatos.study.mTurkSourceCode.render(studyList,
+				loggedInUser, breadcrumbs, null, study, jatosURL));
 	}
 
 	/**
@@ -523,7 +523,7 @@ public class Studies extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForStudy(study, "Workers");
 		return status(httpStatus,
-				views.html.mecharg.study.studysWorkers.render(studyList,
+				views.html.jatos.study.studysWorkers.render(studyList,
 						loggedInUser, breadcrumbs, messages, study));
 	}
 

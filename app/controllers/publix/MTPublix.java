@@ -18,7 +18,7 @@ import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
 
 /**
- * Implementation of MechArg's public API for studies that are started via
+ * Implementation of JATOS' public API for studies that are started via
  * MTurk.
  * 
  * @author Kristian Lange
@@ -41,8 +41,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	@Override
 	public Result startStudy(Long studyId) throws PublixException {
 		// Get MTurk query parameters
-		// Hint: Don't confuse MTurk's workerId with MechArg's workerId. They
-		// aren't the same. MechArg's workerId is automatically generated
+		// Hint: Don't confuse MTurk's workerId with JATOS' workerId. They
+		// aren't the same. JATOS' workerId is automatically generated
 		// and MTurk's workerId is stored within the MTWorker.
 		String mtWorkerId = request().getQueryString("workerId").trim();
 		String mtAssignmentId = request().getQueryString("assignmentId").trim();

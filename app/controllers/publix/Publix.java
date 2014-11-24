@@ -31,7 +31,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		IPublix {
 
 	// ID cookie name and value names
-	public static final String ID_COOKIE_NAME = "MechArg_IDs";
+	public static final String ID_COOKIE_NAME = "JATOS_IDs";
 	public static final String WORKER_ID = "workerId";
 	public static final String STUDY_ID = "studyId";
 	public static final String COMPONENT_ID = "componentId";

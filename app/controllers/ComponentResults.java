@@ -48,7 +48,7 @@ public class ComponentResults extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForComponent(study, component, "Results");
 		return status(httpStatus,
-				views.html.mecharg.result.componentResults.render(studyList,
+				views.html.jatos.result.componentResults.render(studyList,
 						loggedInUser, breadcrumbs, messages, study, component));
 	}
 

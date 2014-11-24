@@ -29,7 +29,7 @@ public class Home extends Controller {
 				.getEmail());
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome();
-		return status(httpStatus, views.html.mecharg.home.render(studyList,
+		return status(httpStatus, views.html.jatos.home.render(studyList,
 				loggedInUser, breadcrumbs, messages));
 	}
 

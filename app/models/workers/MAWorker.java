@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Concrete worker who originates from the MechArg itself.
+ * Concrete worker who originates from JATOS itself.
  * 
  * @author Kristian Lange
  */

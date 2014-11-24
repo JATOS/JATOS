@@ -1,8 +1,8 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel,
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
-study: StudyModel, mechArgURL: java.net.URL)
+study: StudyModel, jatosUrl: java.net.URL)
 
-@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
 
 <h3>Source code for Mechanical Turk</h3>
@@ -49,10 +49,10 @@ study: StudyModel, mechArgURL: java.net.URL)
 
 &lt;script&gt;
 	// Hint: What&#39;s called an study in MA is called a survey in MT
-	@if(mechArgURL.getPort() > 0) {
-	var host = &quot;@mechArgURL.getProtocol()://@mechArgURL.getHost():@mechArgURL.getPort()&quot;;
+	@if(jatosUrl.getPort() > 0) {
+	var host = &quot;@jatosUrl.getProtocol()://@jatosUrl.getHost():@jatosUrl.getPort()&quot;;
 	} else {
-	var host = &quot;@mechArgURL.getProtocol()://@mechArgURL.getHost()&quot;;
+	var host = &quot;@jatosUrl.getProtocol()://@jatosUrl.getHost()&quot;;
 	}
 	var studyPath = &quot;/publix/@study.getId()/start&quot;;
 	var query = document.URL.split(&#39;?&#39;)[1];

@@ -19,14 +19,14 @@ import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
 
 /**
- * Implementation of MechArg's public API for studies and components that are
- * started via MechArg's UI.
+ * Implementation of JATOS' public API for studies and components that are
+ * started via JATOS' UI.
  * 
  * @author Kristian Lange
  */
 public class MAPublix extends Publix<MAWorker> implements IPublix {
 
-	public static final String MECHARG_SHOW = "mecharg_show";
+	public static final String JATOS_SHOW = "jatos_show";
 	public static final String SHOW_STUDY = "full_study";
 	public static final String SHOW_COMPONENT_START = "single_component_start";
 	public static final String SHOW_COMPONENT_FINISHED = "single_component_finished";
@@ -51,10 +51,10 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 				.retrieveFirstActiveComponent(study);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
-		String mechArgShow = utils.retrieveMechArgShowCookie();
-		if (!mechArgShow.equals(SHOW_STUDY)) {
+		String jatosShow = utils.retrieveJatosShowCookie();
+		if (!jatosShow.equals(SHOW_STUDY)) {
 			throw new ForbiddenPublixException(
-					ErrorMessages.STUDY_NEVER_STARTED_FROM_MECHARG);
+					ErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		utils.finishAllPriorStudyResults(worker, study);
 		PersistanceUtils.createStudyResult(study, worker);
@@ -75,9 +75,9 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 		utils.checkComponentBelongsToStudy(study, component);
 
 		// Check if it's a single component show or a whole study show
-		String mechArgShow = utils.retrieveMechArgShowCookie();
+		String jatosShow = utils.retrieveJatosShowCookie();
 		StudyResult studyResult = null;
-		switch (mechArgShow) {
+		switch (jatosShow) {
 		case SHOW_STUDY:
 			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
 			break;
@@ -85,7 +85,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 			// Just create a StudyResult for this.
 			utils.finishAllPriorStudyResults(worker, study);
 			studyResult = PersistanceUtils.createStudyResult(study, worker);
-			session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
+			session(MAPublix.JATOS_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
 			break;
 		case SHOW_COMPONENT_FINISHED:
 			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
@@ -130,14 +130,14 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 				study);
 
 		// Check if it's a single component show or a whole study show
-		String mechArgShow = utils.retrieveMechArgShowCookie();
-		switch (mechArgShow) {
+		String jatosShow = utils.retrieveJatosShowCookie();
+		switch (jatosShow) {
 		case SHOW_STUDY:
 			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
 			break;
 		case SHOW_COMPONENT_START:
 			// Should never happen
-			session(MAPublix.MECHARG_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
+			session(MAPublix.JATOS_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, null));
 		case SHOW_COMPONENT_FINISHED:
@@ -174,7 +174,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 				study);
 		if (!utils.studyDone(studyResult)) {
 			utils.abortStudy(message, studyResult);
-			Publix.session().remove(MAPublix.MECHARG_SHOW);
+			Publix.session().remove(MAPublix.JATOS_SHOW);
 		}
 
 		PublixUtils.discardIdCookie();
@@ -200,7 +200,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 				study);
 		if (!utils.studyDone(studyResult)) {
 			utils.finishStudy(successful, errorMsg, studyResult);
-			Publix.session().remove(MAPublix.MECHARG_SHOW);
+			Publix.session().remove(MAPublix.JATOS_SHOW);
 		}
 		PublixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {

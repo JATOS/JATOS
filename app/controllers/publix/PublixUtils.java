@@ -400,13 +400,13 @@ public abstract class PublixUtils<T extends Worker> {
 		return data;
 	}
 
-	public String retrieveMechArgShowCookie() throws ForbiddenPublixException {
-		String mechArgShow = Publix.session(MAPublix.MECHARG_SHOW);
-		if (mechArgShow == null) {
+	public String retrieveJatosShowCookie() throws ForbiddenPublixException {
+		String jatosShow = Publix.session(MAPublix.JATOS_SHOW);
+		if (jatosShow == null) {
 			throw new ForbiddenPublixException(
-					ErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_MECHARG);
+					ErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS);
 		}
-		return mechArgShow;
+		return jatosShow;
 	}
 
 	public void checkComponentBelongsToStudy(StudyModel study,

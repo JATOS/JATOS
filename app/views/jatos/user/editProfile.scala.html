@@ -2,7 +2,7 @@
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
 user: UserModel, form: Form[UserModel])
 
-@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
 @helper.form(action = routes.Users.submitEditedProfile(user.getEmail()), 'class -> "form-horizontal", 'role -> "form") {
 

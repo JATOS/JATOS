@@ -2,7 +2,7 @@
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
 submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 
-@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
 @helper.form(action = submitAction, 'class -> "form-horizontal", 'role -> "form") {
 

@@ -4,7 +4,7 @@ import models.workers.MAWorker;
 
 /**
  * Special ErrorMessages for MAPublix (studies or components started via
- * MechArg's UI).
+ * JATOS' UI).
  * 
  * @author Kristian Lange
  */

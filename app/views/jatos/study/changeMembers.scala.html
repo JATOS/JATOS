@@ -2,7 +2,7 @@
 breadcrumbs: services.Breadcrumbs, messages: services.Messages,
 study: StudyModel, userList: List[UserModel])
 
-@views.html.mecharg.main(studyList, loggedInUser, breadcrumbs, messages){
+@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
 @helper.form(action = routes.Studies.submitChangedMembers(study.getId()), 'class -> "form-horizontal") {
 @for(user <- userList) {

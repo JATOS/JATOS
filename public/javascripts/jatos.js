@@ -1,10 +1,10 @@
 /**
- * MechArg JavaScript Library
+ * JATOS JavaScript Library
  * 
  * Author Kristian Lange 2014
  */
 
-var mecharg = {};
+var jatos = {};
 var onErrorCallback;
 var onLoadCallback;
 
@@ -14,7 +14,7 @@ window.addEventListener('load', onload);
  * Defines callback function that is to be called when jatos.js is finished
  * its initialisation.
  */
-mecharg.onLoad = function(callback) {
+jatos.onLoad = function(callback) {
 	onLoadCallback = callback;
 }
 
@@ -22,7 +22,7 @@ mecharg.onLoad = function(callback) {
  * Defines callback function that is to be called in case jatos.js produces an
  * error.
  */
-mecharg.onError = function(callback) {
+jatos.onError = function(callback) {
 	onErrorCallback = callback;
 }
 
@@ -34,12 +34,12 @@ function onload() {
 	var componentDataReady = false;
 
 	/**
-	 * Reads MechArg's ID cookie and stores all key-value pairs into mecharg
+	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos
 	 * scope This function is automatically called after the page is loaded, so
 	 * it's not necessary to call it again.
 	 */
 	readIdCookie = function() {
-		var nameEQ = escape("MechArg_IDs") + "=";
+		var nameEQ = escape("JATOS_IDs") + "=";
 		var ca = document.cookie.split(';');
 		for (var i = 0; i < ca.length; i++) {
 			var c = ca[i];
@@ -52,7 +52,7 @@ function onload() {
 				var idMap = cookieStr.split("&");
 				idMap.forEach(function(entry) {
 					var keyValuePair = entry.split("=");
-					mecharg[keyValuePair[0]] = keyValuePair[1];
+					jatos[keyValuePair[0]] = keyValuePair[1];
 				});
 			}
 		}
@@ -70,20 +70,20 @@ function onload() {
 	}
 
 	/**
-	 * Gets the study's data from the MechArg server and stores them in
-	 * mecharg.studyData (the whole data) and mecharg.studyJsonData (just the
+	 * Gets the study's data from the JATOS server and stores them in
+	 * jatos.studyData (the whole data) and jatos.studyJsonData (just the
 	 * JSON data).
 	 */
 	getStudyData = function() {
 		$
 				.ajax({
-					url : "/publix/" + mecharg.studyId + "/getData",
+					url : "/publix/" + jatos.studyId + "/getData",
 					type : "GET",
 					dataType : 'json',
 					success : function(response) {
-						mecharg.studyData = response;
-						mecharg.studyJsonData = $
-								.parseJSON(mecharg.studyData.jsonData);
+						jatos.studyData = response;
+						jatos.studyJsonData = $
+								.parseJSON(jatos.studyData.jsonData);
 						studyDataReady = true;
 						ready();
 					},
@@ -96,20 +96,20 @@ function onload() {
 	}
 
 	/**
-	 * Gets the component's data from the MechArg server and stores them in
-	 * mecharg.componentData (the whole data) and mecharg.componentJsonData
+	 * Gets the component's data from the JATOS server and stores them in
+	 * jatos.componentData (the whole data) and jatos.componentJsonData
 	 * (just the JSON data).
 	 */
 	getComponentData = function() {
 		$.ajax({
-			url : "/publix/" + mecharg.studyId + "/" + mecharg.componentId
+			url : "/publix/" + jatos.studyId + "/" + jatos.componentId
 					+ "/getData",
 			type : "GET",
 			dataType : 'json',
 			success : function(response) {
-				mecharg.componentData = response;
-				mecharg.componentJsonData = $
-						.parseJSON(mecharg.componentData.jsonData);
+				jatos.componentData = response;
+				jatos.componentJsonData = $
+						.parseJSON(jatos.componentData.jsonData);
 				componentDataReady = true;
 				ready();
 			},
@@ -127,7 +127,7 @@ function onload() {
 }
 
 /**
- * Posts resultData back to the MechArg server.
+ * Posts resultData back to the JATOS server.
  * 
  * @param {Object}
  *            resultData - String to be submitted
@@ -137,9 +137,9 @@ function onload() {
  * @param {optional
  *            Function} error - Function to be called in case of error
  */
-mecharg.submitResultData = function(resultData, success, error) {
+jatos.submitResultData = function(resultData, success, error) {
 	$.ajax({
-		url : "/publix/" + mecharg.studyId + "/" + mecharg.componentId
+		url : "/publix/" + jatos.studyId + "/" + jatos.componentId
 				+ "/submitResultData",
 		data : resultData,
 		processData : false,
@@ -171,8 +171,8 @@ mecharg.submitResultData = function(resultData, success, error) {
  *            Object} queryString - Query string without the initial '?' that
  *            should be added to the URL
  */
-mecharg.startComponent = function(nextComponentId, queryString) {
-	var url = "/publix/" + mecharg.studyId + "/" + nextComponentId + "/start";
+jatos.startComponent = function(nextComponentId, queryString) {
+	var url = "/publix/" + jatos.studyId + "/" + nextComponentId + "/start";
 	if (queryString) {
 		url += "?" + queryString;
 	}
@@ -189,8 +189,8 @@ mecharg.startComponent = function(nextComponentId, queryString) {
  *            Object} queryString - Query string without the initial '?' that
  *            should be added to the URL
  */
-mecharg.startComponentByPos = function(nextComponentPos, queryString) {
-	var url = "/publix/" + mecharg.studyId + "/startComponent?position="
+jatos.startComponentByPos = function(nextComponentPos, queryString) {
+	var url = "/publix/" + jatos.studyId + "/startComponent?position="
 			+ nextComponentPos;
 	if (queryString) {
 		url += "&" + queryString;
@@ -207,8 +207,8 @@ mecharg.startComponentByPos = function(nextComponentPos, queryString) {
  *            Object} queryString - Query string without the initial '?' that
  *            should be added to the URL
  */
-mecharg.startNextComponent = function(queryString) {
-	var url = "/publix/" + mecharg.studyId + "/startNextComponent";
+jatos.startNextComponent = function(queryString) {
+	var url = "/publix/" + jatos.studyId + "/startNextComponent";
 	if (queryString) {
 		url += "?" + queryString;
 	}
@@ -233,8 +233,8 @@ mecharg.startNextComponent = function(queryString) {
  * @param {optional
  *            Function} error - Function to be called in case of error
  */
-mecharg.endComponent = function(successful, errorMsg, success, error) {
-	var url = "/publix/" + mecharg.studyId + "/" + mecharg.componentId + "/end";
+jatos.endComponent = function(successful, errorMsg, success, error) {
+	var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end";
 	var fullUrl;
 	if (undefined == successful || undefined == errorMsg) {
 		fullUrl = url;
@@ -276,8 +276,8 @@ mecharg.endComponent = function(successful, errorMsg, success, error) {
  * @param {optional
  *            Function} error - Function to be called in case of error
  */
-mecharg.abortStudyAjax = function(message, success, error) {
-	var url = "/publix/" + mecharg.studyId + "/abort";
+jatos.abortStudyAjax = function(message, success, error) {
+	var url = "/publix/" + jatos.studyId + "/abort";
 	var fullUrl;
 	if (undefined == message) {
 		fullUrl = url;
@@ -310,8 +310,8 @@ mecharg.abortStudyAjax = function(message, success, error) {
  * @param {optional
  *            String} message - Message that should be logged
  */
-mecharg.abortStudy = function(message) {
-	var url = "/publix/" + mecharg.studyId + "/abort";
+jatos.abortStudy = function(message) {
+	var url = "/publix/" + jatos.studyId + "/abort";
 	if (undefined == message) {
 		window.location.href = url;
 	} else {
@@ -334,8 +334,8 @@ mecharg.abortStudy = function(message) {
  * @param {optional
  *            Function} error - Function to be called in case of error
  */
-mecharg.endStudyAjax = function(successful, errorMsg, success, error) {
-	var url = "/publix/" + mecharg.studyId + "/end";
+jatos.endStudyAjax = function(successful, errorMsg, success, error) {
+	var url = "/publix/" + jatos.studyId + "/end";
 	var fullUrl;
 	if (undefined == successful || undefined == errorMsg) {
 		fullUrl = url;
@@ -376,8 +376,8 @@ mecharg.endStudyAjax = function(successful, errorMsg, success, error) {
  * @param {optional
  *            String} errorMsg - Error message that should be logged.
  */
-mecharg.endStudy = function(successful, errorMsg) {
-	var url = "/publix/" + mecharg.studyId + "/end";
+jatos.endStudy = function(successful, errorMsg) {
+	var url = "/publix/" + jatos.studyId + "/end";
 	if (undefined == successful || undefined == errorMsg) {
 		window.location.href = url;
 	} else if (undefined == successful) {
@@ -391,11 +391,11 @@ mecharg.endStudy = function(successful, errorMsg) {
 }
 
 /**
- * Logs an error within the MechArg.
+ * Logs an error within the JATOS.
  */
-mecharg.logError = function(logErrorMsg) {
+jatos.logError = function(logErrorMsg) {
 	$.ajax({
-		url : "/publix/" + mecharg.studyId + "/" + mecharg.componentId
+		url : "/publix/" + jatos.studyId + "/" + jatos.componentId
 				+ "/logError",
 		data : logErrorMsg,
 		processData : false,

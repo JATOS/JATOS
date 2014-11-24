@@ -23,7 +23,7 @@ public class IntegrationTest {
 					public void invoke(TestBrowser browser) {
 						browser.goTo("http://localhost:3333");
 						assertThat(browser.pageSource()).contains(
-								"Mechanical Argentine");
+								"JATOS");
 					}
 				});
 	}
