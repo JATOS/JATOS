@@ -107,7 +107,7 @@ $(document).ready(function() {
 		"columnDefs": [ {
 			"searchable": false,
 			"orderable": false,
-			"targets": 0
+			"targets": "_all"
 		} ],
 		"columns": [
 			{
@@ -121,7 +121,6 @@ $(document).ready(function() {
 			},
 			{
 				"class": 'activeComponent',
-				"orderable": false,
 				"data": null,
 				"defaultContent": '',
 				"width": "1px",
@@ -135,21 +134,17 @@ $(document).ready(function() {
 			{
 				"class": 'position',
 				"data": null,
-				"orderable": false,
 				"width": "1px"
 			},
 			{
 				"data": "id",
-				"orderable": false,
 				"width": "1px"
 			},
 			{ 
 				"data": "title",
-				"orderable": false
 			},
 			{
 				"class": "toolbar",
-				"orderable": false,
 				"data": null,
 				"defaultContent": '',
 				"width": "1%",
@@ -159,7 +154,8 @@ $(document).ready(function() {
 					return toolbar.html();
 				}
 			}
-		]
+		],
+		"order" : []
 	});
 	
 	componentsTable.on('order.dt search.dt', function () {
