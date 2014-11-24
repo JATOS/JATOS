@@ -11,7 +11,7 @@ var onLoadCallback;
 window.addEventListener('load', onload);
 
 /**
- * Defines callback function that is to be called when mecharg.js is finished
+ * Defines callback function that is to be called when jatos.js is finished
  * its initialisation.
  */
 mecharg.onLoad = function(callback) {
@@ -19,7 +19,7 @@ mecharg.onLoad = function(callback) {
 }
 
 /**
- * Defines callback function that is to be called in case mecharg.js produces an
+ * Defines callback function that is to be called in case jatos.js produces an
  * error.
  */
 mecharg.onError = function(callback) {
@@ -27,7 +27,7 @@ mecharg.onError = function(callback) {
 }
 
 /**
- * Initialising mecharg.js.
+ * Initialising jatos.js.
  */
 function onload() {
 	var studyDataReady = false;
