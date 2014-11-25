@@ -11,8 +11,8 @@ var onLoadCallback;
 window.addEventListener('load', onload);
 
 /**
- * Defines callback function that is to be called when jatos.js is finished
- * its initialisation.
+ * Defines callback function that is to be called when jatos.js is finished its
+ * initialisation.
  */
 jatos.onLoad = function(callback) {
 	onLoadCallback = callback;
@@ -34,9 +34,9 @@ function onload() {
 	var componentDataReady = false;
 
 	/**
-	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos
-	 * scope This function is automatically called after the page is loaded, so
-	 * it's not necessary to call it again.
+	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope
+	 * This function is automatically called after the page is loaded, so it's
+	 * not necessary to call it again.
 	 */
 	readIdCookie = function() {
 		var nameEQ = escape("JATOS_IDs") + "=";
@@ -71,34 +71,32 @@ function onload() {
 
 	/**
 	 * Gets the study's data from the JATOS server and stores them in
-	 * jatos.studyData (the whole data) and jatos.studyJsonData (just the
-	 * JSON data).
+	 * jatos.studyData (the whole data) and jatos.studyJsonData (just the JSON
+	 * data).
 	 */
 	getStudyData = function() {
-		$
-				.ajax({
-					url : "/publix/" + jatos.studyId + "/getData",
-					type : "GET",
-					dataType : 'json',
-					success : function(response) {
-						jatos.studyData = response;
-						jatos.studyJsonData = $
-								.parseJSON(jatos.studyData.jsonData);
-						studyDataReady = true;
-						ready();
-					},
-					error : function(err) {
-						if (onErrorCallback) {
-							onErrorCallback(err.responseText);
-						}
-					}
-				});
+		$.ajax({
+			url : "/publix/" + jatos.studyId + "/getData",
+			type : "GET",
+			dataType : 'json',
+			success : function(response) {
+				jatos.studyData = response;
+				jatos.studyJsonData = $.parseJSON(jatos.studyData.jsonData);
+				studyDataReady = true;
+				ready();
+			},
+			error : function(err) {
+				if (onErrorCallback) {
+					onErrorCallback(err.responseText);
+				}
+			}
+		});
 	}
 
 	/**
 	 * Gets the component's data from the JATOS server and stores them in
-	 * jatos.componentData (the whole data) and jatos.componentJsonData
-	 * (just the JSON data).
+	 * jatos.componentData (the whole data) and jatos.componentJsonData (just
+	 * the JSON data).
 	 */
 	getComponentData = function() {
 		$.ajax({
@@ -110,6 +108,7 @@ function onload() {
 				jatos.componentData = response;
 				jatos.componentJsonData = $
 						.parseJSON(jatos.componentData.jsonData);
+				document.title = jatos.componentData.title;
 				componentDataReady = true;
 				ready();
 			},
@@ -402,4 +401,19 @@ jatos.logError = function(logErrorMsg) {
 		type : "POST",
 		contentType : "text/plain"
 	});
+}
+
+/**
+ * Convenience function that adds all JATOS IDs (study ID, component ID, worker
+ * ID, study result ID, component result ID) to the given object.
+ * 
+ * @param {Object}
+ *            obj - Object to which the IDs will be added
+ */
+jatos.addJatosIds = function(obj) {
+	obj.studyId = jatos.studyId;
+	obj.componentId = jatos.componentId;
+	obj.workerId = jatos.workerId;
+	obj.studyResultId = jatos.studyResultId;
+	obj.componentResultId = jatos.componentResultId;
 }
