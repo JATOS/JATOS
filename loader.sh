@@ -1,11 +1,21 @@
 #!/bin/bash
 
+address="127.0.0.1"
+port="9000"
+
+#####################################
+
+dir="$( cd "$( dirname "$0" )" && pwd )"
+export PATH="$dir:$dir/bin:$PATH"
+
 function start() {
+	[ -f $dir/RUNNING_PID ] && return
+
 	echo -n "Starting JATOS"
 
 	# Generate application secret for the Play framework
 	# If it's the first start, create a new secret, otherwise load it from the file.
-	secretfile="application.secret"
+	secretfile="$dir/application.secret"
 	if [ -f "$secretfile" ]
 	then
 		secret=$(<$secretfile)
@@ -14,24 +24,34 @@ function start() {
 		echo "$random" > "$secretfile"
 		secret=$random
 	fi
+
+	if [ ! -f $dir/bin/jatos ]
+	then
+		echo -e "\n$dir/bin/jatos doesn't exist!"
+		exit 1
+	fi
 	
 	# In case './bin/jatos' isn't executable set the x bit
-	chmod u+x ./bin/jatos
+	chmod u+x $dir/bin/jatos
 	
 	# Start JATOS with configuration file and application secret
-	./bin/jatos -Dconfig.file="conf/production.conf" -Dapplication.secret=$secret > /dev/null &
-
+	jatos -Dconfig.file="$dir/conf/production.conf" -Dapplication.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
+	
 	echo "...started"
 }
 
 function stop() {
-	[ -f ./RUNNING_PID ] || return
+	[ -f $dir/RUNNING_PID ] || return
 	echo -n "Stopping JATOS"
-	kill `cat RUNNING_PID`
+	kill -SIGTERM $(cat $dir/RUNNING_PID)
+	while [ -f $dir/RUNNING_PID ]
+	do
+		sleep 0.5
+	done
+
 	echo "...stopped"
 }
 
-[ -f ./bin/jatos ] || [ exit 1 ]
 case "$1" in
 	start)
 		start
