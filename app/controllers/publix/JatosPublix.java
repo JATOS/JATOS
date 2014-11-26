@@ -4,7 +4,7 @@ import models.ComponentModel;
 import models.StudyModel;
 import models.results.ComponentResult;
 import models.results.StudyResult;
-import models.workers.MAWorker;
+import models.workers.JatosWorker;
 import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Result;
@@ -24,7 +24,7 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
-public class JatosPublix extends Publix<MAWorker> implements IPublix {
+public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	public static final String JATOS_SHOW = "jatos_show";
 	public static final String SHOW_STUDY = "full_study";
@@ -46,7 +46,7 @@ public class JatosPublix extends Publix<MAWorker> implements IPublix {
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
-		MAWorker worker = utils.retrieveWorker();
+		JatosWorker worker = utils.retrieveWorker();
 		ComponentModel firstComponent = utils
 				.retrieveFirstActiveComponent(study);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
@@ -69,7 +69,7 @@ public class JatosPublix extends Publix<MAWorker> implements IPublix {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
-		MAWorker worker = utils.retrieveWorker();
+		JatosWorker worker = utils.retrieveWorker();
 		ComponentModel component = utils.retrieveComponent(study, componentId);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 		utils.checkComponentBelongsToStudy(study, component);
@@ -123,7 +123,7 @@ public class JatosPublix extends Publix<MAWorker> implements IPublix {
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
-		MAWorker worker = utils.retrieveWorker();
+		JatosWorker worker = utils.retrieveWorker();
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
@@ -167,7 +167,7 @@ public class JatosPublix extends Publix<MAWorker> implements IPublix {
 				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
 				+ "message \"" + message + "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
-		MAWorker worker = utils.retrieveWorker();
+		JatosWorker worker = utils.retrieveWorker();
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
@@ -193,7 +193,7 @@ public class JatosPublix extends Publix<MAWorker> implements IPublix {
 				+ "successful " + successful + ", " + "errorMsg \"" + errorMsg
 				+ "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
-		MAWorker worker = utils.retrieveWorker();
+		JatosWorker worker = utils.retrieveWorker();
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,

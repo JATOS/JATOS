@@ -2,7 +2,7 @@ package controllers.publix;
 
 import models.StudyModel;
 import models.UserModel;
-import models.workers.MAWorker;
+import models.workers.JatosWorker;
 import services.ErrorMessages;
 import services.MAErrorMessages;
 import controllers.Users;
@@ -16,7 +16,7 @@ import exceptions.NotFoundPublixException;
  * 
  * @author Kristian Lange
  */
-public class JatosPublixUtils extends PublixUtils<MAWorker> {
+public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 
 	private MAErrorMessages errorMessages;
 
@@ -26,7 +26,7 @@ public class JatosPublixUtils extends PublixUtils<MAWorker> {
 	}
 
 	@Override
-	public MAWorker retrieveWorker() throws BadRequestPublixException,
+	public JatosWorker retrieveWorker() throws BadRequestPublixException,
 			NotFoundPublixException {
 		String email = Publix.session(Users.COOKIE_EMAIL);
 		if (email == null) {
@@ -40,7 +40,7 @@ public class JatosPublixUtils extends PublixUtils<MAWorker> {
 	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(MAWorker worker, StudyModel study)
+	public void checkWorkerAllowedToDoStudy(JatosWorker worker, StudyModel study)
 			throws ForbiddenPublixException {
 		UserModel loggedInUser = worker.getUser();
 		if (!study.hasMember(loggedInUser)) {

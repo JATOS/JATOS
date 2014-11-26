@@ -7,7 +7,7 @@ import java.util.Set;
 import models.StudyModel;
 import models.UserModel;
 import models.results.StudyResult;
-import models.workers.MAWorker;
+import models.workers.JatosWorker;
 import models.workers.Worker;
 import play.Logger;
 import play.db.jpa.Transactional;
@@ -72,8 +72,8 @@ public class Workers extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkWorker(worker, workerId);
 
-		if (worker instanceof MAWorker) {
-			MAWorker maWorker = (MAWorker) worker;
+		if (worker instanceof JatosWorker) {
+			JatosWorker maWorker = (JatosWorker) worker;
 			String errorMsg = ErrorMessages
 					.removeMAWorker(worker.getId(), maWorker.getUser()
 							.getName(), maWorker.getUser().getEmail());

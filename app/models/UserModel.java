@@ -21,7 +21,7 @@ import org.jsoup.safety.Whitelist;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import models.workers.MAWorker;
+import models.workers.JatosWorker;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 import services.ErrorMessages;
@@ -48,7 +48,7 @@ public class UserModel {
 
 	@JsonIgnore
 	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	private MAWorker worker;
+	private JatosWorker worker;
 
 	// Password is stored as a hash
 	private String passwordHash;
@@ -101,11 +101,11 @@ public class UserModel {
 		return this.studyList;
 	}
 
-	public void setWorker(MAWorker worker) {
+	public void setWorker(JatosWorker worker) {
 		this.worker = worker;
 	}
 
-	public MAWorker getWorker() {
+	public JatosWorker getWorker() {
 		return this.worker;
 	}
 

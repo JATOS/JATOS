@@ -17,20 +17,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Kristian Lange
  */
 @Entity
-@DiscriminatorValue(MAWorker.WORKER_TYPE)
-public class MAWorker extends Worker {
+@DiscriminatorValue(JatosWorker.WORKER_TYPE)
+public class JatosWorker extends Worker {
 	
-	public static final String WORKER_TYPE = "MA";
+	public static final String WORKER_TYPE = "Jatos";
 
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_email")
 	private UserModel user;
 
-	public MAWorker() {
+	public JatosWorker() {
 	}
 	
-	public MAWorker(UserModel user) {
+	public JatosWorker(UserModel user) {
 		this.user = user;
 	}
 

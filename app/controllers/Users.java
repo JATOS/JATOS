@@ -4,7 +4,7 @@ import java.util.List;
 
 import models.StudyModel;
 import models.UserModel;
-import models.workers.MAWorker;
+import models.workers.JatosWorker;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -93,7 +93,7 @@ public class Users extends Controller {
 			ControllerUtils.throwCreateUserResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST);
 		}
-		MAWorker worker = new MAWorker(newUser);
+		JatosWorker worker = new JatosWorker(newUser);
 		worker.persist();
 		newUser.setPasswordHash(passwordHash);
 		newUser.setWorker(worker);

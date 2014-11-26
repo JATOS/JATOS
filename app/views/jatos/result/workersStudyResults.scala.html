@@ -12,8 +12,8 @@ worker: workers.Worker)
 	@if(worker.getWorkerType().equals("MT") || worker.getWorkerType().equals("MTSandbox")) {
 		MTurk Worker ID: @worker.asInstanceOf[workers.MTWorker].getMTWorkerId()
 	}
-	@if(worker.getWorkerType().equals("MA")) {
-		User Email Address: @worker.asInstanceOf[workers.MAWorker].getUser().getEmail()
+	@if(worker.getWorkerType().equals("Jatos")) {
+		User Email Address: @worker.asInstanceOf[workers.JatosWorker].getUser().getEmail()
 	}
 	</div>
 </div>

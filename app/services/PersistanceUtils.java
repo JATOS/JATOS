@@ -9,7 +9,7 @@ import models.StudyModel;
 import models.UserModel;
 import models.results.ComponentResult;
 import models.results.StudyResult;
-import models.workers.MAWorker;
+import models.workers.JatosWorker;
 import models.workers.MTSandboxWorker;
 import models.workers.MTTesterWorker;
 import models.workers.MTWorker;
@@ -68,7 +68,7 @@ public class PersistanceUtils {
 
 	public static UserModel createAdmin() throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
-		MAWorker adminWorker = new MAWorker();
+		JatosWorker adminWorker = new JatosWorker();
 		adminWorker.persist();
 		String passwordHash = UserModel.getHashMDFive("admin");
 		UserModel adminUser = new UserModel("admin", "Admin", passwordHash);
@@ -185,7 +185,7 @@ public class PersistanceUtils {
 
 	public static void removeWorker(Worker worker) {
 		// Don't remove MA's own workers
-		if (worker instanceof MAWorker) {
+		if (worker instanceof JatosWorker) {
 			return;
 		}
 

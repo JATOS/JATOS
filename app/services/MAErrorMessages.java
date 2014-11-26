@@ -1,6 +1,6 @@
 package services;
 
-import models.workers.MAWorker;
+import models.workers.JatosWorker;
 
 /**
  * Special ErrorMessages for JatosPublix (studies or components started via
@@ -8,10 +8,10 @@ import models.workers.MAWorker;
  * 
  * @author Kristian Lange
  */
-public class MAErrorMessages extends ErrorMessages<MAWorker> {
+public class MAErrorMessages extends ErrorMessages<JatosWorker> {
 
 	@Override
-	public String workerNeverStartedStudy(MAWorker worker, Long studyId) {
+	public String workerNeverStartedStudy(JatosWorker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " ("
 				+ worker.getUser().getEmail() + ")" + " never started study "
 				+ studyId + ".";
@@ -19,7 +19,7 @@ public class MAErrorMessages extends ErrorMessages<MAWorker> {
 	}
 
 	@Override
-	public String workerNeverDidStudy(MAWorker worker, Long studyId) {
+	public String workerNeverDidStudy(JatosWorker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " ("
 				+ worker.getUser().getEmail() + ")" + " never did study "
 				+ studyId + ".";
@@ -27,7 +27,7 @@ public class MAErrorMessages extends ErrorMessages<MAWorker> {
 	}
 
 	@Override
-	public String workerNotAllowedStudy(MAWorker worker, Long studyId) {
+	public String workerNotAllowedStudy(JatosWorker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " ("
 				+ worker.getUser().getEmail() + ")" + " is not allowed to do "
 				+ "study " + studyId + ".";
@@ -35,7 +35,7 @@ public class MAErrorMessages extends ErrorMessages<MAWorker> {
 	}
 
 	@Override
-	public String workerFinishedStudyAlready(MAWorker worker, Long studyId) {
+	public String workerFinishedStudyAlready(JatosWorker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " ("
 				+ worker.getUser().getEmail() + ")" + " finished study "
 				+ studyId + " already.";
