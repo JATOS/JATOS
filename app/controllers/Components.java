@@ -162,11 +162,12 @@ public class Components extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String title = requestData.get(ComponentModel.TITLE);
 		String filePath = requestData.get(ComponentModel.HTML_FILE_PATH);
+		String comments = requestData.get(ComponentModel.COMMENTS);
 		String jsonData = requestData.get(ComponentModel.JSON_DATA);
 		boolean reloadable = (Boolean.valueOf(requestData
 				.get(ComponentModel.RELOADABLE)));
 		PersistanceUtils.updateComponent(component, title, reloadable,
-				filePath, jsonData);
+				filePath, comments, jsonData);
 		return redirectAfterEdit(studyId, componentId, study);
 	}
 

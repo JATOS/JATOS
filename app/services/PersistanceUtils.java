@@ -118,10 +118,12 @@ public class PersistanceUtils {
 	}
 
 	public static void updateComponent(ComponentModel component, String title,
-			boolean reloadable, String filePath, String jsonData) {
+			boolean reloadable, String filePath, String comments,
+			String jsonData) {
 		component.setTitle(title);
 		component.setReloadable(reloadable);
 		component.setHtmlFilePath(filePath);
+		component.setComments(comments);
 		component.setJsonData(jsonData);
 		component.merge();
 	}
