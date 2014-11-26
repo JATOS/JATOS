@@ -16,3 +16,4 @@ dist
 /.settings
 /loader.sh~
 /application.secret
+/**/*development.conf
