@@ -215,7 +215,7 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String removeMAWorker(Long workerId, String username,
+	public static String removeJatosWorker(Long workerId, String username,
 			String email) {
 		String errorMsg = "Worker (ID: " + workerId + ") is a worker of "
 				+ "JATOS, associated to the user " + username

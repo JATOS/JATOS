@@ -184,7 +184,7 @@ public class PersistanceUtils {
 	}
 
 	public static void removeWorker(Worker worker) {
-		// Don't remove MA's own workers
+		// Don't remove JATOS' own workers
 		if (worker instanceof JatosWorker) {
 			return;
 		}

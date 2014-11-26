@@ -9,7 +9,7 @@ import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Result;
 import services.ErrorMessages;
-import services.MAErrorMessages;
+import services.JatosErrorMessages;
 import services.PersistanceUtils;
 import controllers.ControllerUtils;
 import controllers.Users;
@@ -33,7 +33,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	private static final String CLASS_NAME = JatosPublix.class.getSimpleName();
 
-	protected static final MAErrorMessages errorMessages = new MAErrorMessages();
+	protected static final JatosErrorMessages errorMessages = new JatosErrorMessages();
 	protected static final JatosPublixUtils utils = new JatosPublixUtils(
 			errorMessages);
 

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Enumeration;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -18,7 +19,8 @@ public class ZipUtil {
 	public static File unzip(File file) throws IOException {
 		ZipFile zipFile = new ZipFile(file);
 		Enumeration<?> enumeration = zipFile.entries();
-		File tempDir = Files.createTempDirectory("MAImport").toFile();
+		File tempDir = Files.createTempDirectory(
+				"JatosImport" + UUID.randomUUID().toString()).toFile();
 		while (enumeration.hasMoreElements()) {
 			ZipEntry zipEntry = (ZipEntry) enumeration.nextElement();
 			String fileName = zipEntry.getName();

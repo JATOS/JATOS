@@ -8,7 +8,7 @@ import models.workers.JatosWorker;
  * 
  * @author Kristian Lange
  */
-public class MAErrorMessages extends ErrorMessages<JatosWorker> {
+public class JatosErrorMessages extends ErrorMessages<JatosWorker> {
 
 	@Override
 	public String workerNeverStartedStudy(JatosWorker worker, Long studyId) {

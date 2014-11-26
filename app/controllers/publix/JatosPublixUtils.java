@@ -4,7 +4,7 @@ import models.StudyModel;
 import models.UserModel;
 import models.workers.JatosWorker;
 import services.ErrorMessages;
-import services.MAErrorMessages;
+import services.JatosErrorMessages;
 import controllers.Users;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
@@ -18,9 +18,9 @@ import exceptions.NotFoundPublixException;
  */
 public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 
-	private MAErrorMessages errorMessages;
+	private JatosErrorMessages errorMessages;
 
-	public JatosPublixUtils(MAErrorMessages errorMessages) {
+	public JatosPublixUtils(JatosErrorMessages errorMessages) {
 		super(errorMessages);
 		this.errorMessages = errorMessages;
 	}
