@@ -14,7 +14,7 @@ import exceptions.PublixException;
  * Interceptor for Publix: it intercepts requests for JATOS' public API and
  * forwards them to one of the implementations of the API. Right now two
  * implementations exists: MTPublix for studies originating from MTurk and
- * MAPublix for studies and components started from within JATOS' UI.
+ * JatosPublix for studies and components started from within JATOS' UI.
  * 
  * TODO: Move @Transactional out of controller and get rid of synchronisation
  * and JPA transaction handling
@@ -23,7 +23,7 @@ import exceptions.PublixException;
  */
 public class PublixInterceptor extends Controller implements IPublix {
 
-	private IPublix maPublix = new MAPublix();
+	private IPublix jatosPublix = new JatosPublix();
 	private IPublix mtPublix = new MTPublix();
 
 	private static Object lock = new Object();
@@ -34,7 +34,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		synchronized (lock) {
 			Result result;
 			if (isFromJatos()) {
-				result = maPublix.startStudy(studyId);
+				result = jatosPublix.startStudy(studyId);
 			} else {
 				result = mtPublix.startStudy(studyId);
 			}
@@ -52,7 +52,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		synchronized (lock) {
 			Promise<Result> result;
 			if (isFromJatos()) {
-				result = maPublix.startComponent(studyId, componentId);
+				result = jatosPublix.startComponent(studyId, componentId);
 			} else {
 				result = mtPublix.startComponent(studyId, componentId);
 			}
@@ -71,7 +71,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		// and JPA transaction handling
 		Promise<Result> result;
 		if (isFromJatos()) {
-			result = maPublix.startComponentByPosition(studyId, position);
+			result = jatosPublix.startComponentByPosition(studyId, position);
 		} else {
 			result = mtPublix.startComponentByPosition(studyId, position);
 		}
@@ -84,7 +84,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		synchronized (lock) {
 			Result result;
 			if (isFromJatos()) {
-				result = maPublix.startNextComponent(studyId);
+				result = jatosPublix.startNextComponent(studyId);
 			} else {
 				result = mtPublix.startNextComponent(studyId);
 			}
@@ -102,7 +102,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		synchronized (lock) {
 			Result result;
 			if (isFromJatos()) {
-				result = maPublix.getStudyData(studyId);
+				result = jatosPublix.getStudyData(studyId);
 			} else {
 				result = mtPublix.getStudyData(studyId);
 			}
@@ -120,7 +120,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		synchronized (lock) {
 			Result result;
 			if (isFromJatos()) {
-				result = maPublix.getComponentData(studyId, componentId);
+				result = jatosPublix.getComponentData(studyId, componentId);
 			} else {
 				result = mtPublix.getComponentData(studyId, componentId);
 			}
@@ -138,7 +138,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		synchronized (lock) {
 			Result result;
 			if (isFromJatos()) {
-				result = maPublix.submitResultData(studyId, componentId);
+				result = jatosPublix.submitResultData(studyId, componentId);
 			} else {
 				result = mtPublix.submitResultData(studyId, componentId);
 			}
@@ -156,7 +156,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		synchronized (lock) {
 			Result result;
 			if (isFromJatos()) {
-				result = maPublix.finishComponent(studyId, componentId,
+				result = jatosPublix.finishComponent(studyId, componentId,
 						successful, errorMsg);
 			} else {
 				result = mtPublix.finishComponent(studyId, componentId,
@@ -176,7 +176,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		synchronized (lock) {
 			Result result;
 			if (isFromJatos()) {
-				result = maPublix.abortStudy(studyId, message);
+				result = jatosPublix.abortStudy(studyId, message);
 			} else {
 				result = mtPublix.abortStudy(studyId, message);
 			}
@@ -194,7 +194,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		synchronized (lock) {
 			Result result;
 			if (isFromJatos()) {
-				result = maPublix.finishStudy(studyId, successful, errorMsg);
+				result = jatosPublix.finishStudy(studyId, successful, errorMsg);
 			} else {
 				result = mtPublix.finishStudy(studyId, successful, errorMsg);
 			}
@@ -208,7 +208,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	public Result logError(Long studyId, Long componentId) {
 		if (isFromJatos()) {
-			return maPublix.logError(studyId, componentId);
+			return jatosPublix.logError(studyId, componentId);
 		} else {
 			return mtPublix.logError(studyId, componentId);
 		}
@@ -217,7 +217,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	public Result teapot() {
 		if (isFromJatos()) {
-			return maPublix.teapot();
+			return jatosPublix.teapot();
 		} else {
 			return mtPublix.teapot();
 		}
@@ -227,7 +227,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	 * Check if this request originates from within JATOS.
 	 */
 	private boolean isFromJatos() {
-		if (session(MAPublix.JATOS_SHOW) != null) {
+		if (session(JatosPublix.JATOS_SHOW) != null) {
 			return true;
 		}
 		return false;

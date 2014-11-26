@@ -31,7 +31,7 @@ import services.JsonUtils.UploadUnmarshaller;
 import services.Messages;
 import services.PersistanceUtils;
 import services.ZipUtil;
-import controllers.publix.MAPublix;
+import controllers.publix.JatosPublix;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
@@ -463,7 +463,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		session(MAPublix.JATOS_SHOW, MAPublix.SHOW_STUDY);
+		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_STUDY);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startStudy(study.getId()));
 	}

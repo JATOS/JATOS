@@ -24,20 +24,20 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
-public class MAPublix extends Publix<MAWorker> implements IPublix {
+public class JatosPublix extends Publix<MAWorker> implements IPublix {
 
 	public static final String JATOS_SHOW = "jatos_show";
 	public static final String SHOW_STUDY = "full_study";
 	public static final String SHOW_COMPONENT_START = "single_component_start";
 	public static final String SHOW_COMPONENT_FINISHED = "single_component_finished";
 
-	private static final String CLASS_NAME = MAPublix.class.getSimpleName();
+	private static final String CLASS_NAME = JatosPublix.class.getSimpleName();
 
 	protected static final MAErrorMessages errorMessages = new MAErrorMessages();
-	protected static final MAPublixUtils utils = new MAPublixUtils(
+	protected static final JatosPublixUtils utils = new JatosPublixUtils(
 			errorMessages);
 
-	public MAPublix() {
+	public JatosPublix() {
 		super(utils);
 	}
 
@@ -85,7 +85,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 			// Just create a StudyResult for this.
 			utils.finishAllPriorStudyResults(worker, study);
 			studyResult = PersistanceUtils.createStudyResult(study, worker);
-			session(MAPublix.JATOS_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
+			session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_COMPONENT_FINISHED);
 			break;
 		case SHOW_COMPONENT_FINISHED:
 			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
@@ -137,7 +137,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 			break;
 		case SHOW_COMPONENT_START:
 			// Should never happen
-			session(MAPublix.JATOS_SHOW, MAPublix.SHOW_COMPONENT_FINISHED);
+			session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_COMPONENT_FINISHED);
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, null));
 		case SHOW_COMPONENT_FINISHED:
@@ -174,7 +174,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 				study);
 		if (!utils.studyDone(studyResult)) {
 			utils.abortStudy(message, studyResult);
-			Publix.session().remove(MAPublix.JATOS_SHOW);
+			Publix.session().remove(JatosPublix.JATOS_SHOW);
 		}
 
 		PublixUtils.discardIdCookie();
@@ -200,7 +200,7 @@ public class MAPublix extends Publix<MAWorker> implements IPublix {
 				study);
 		if (!utils.studyDone(studyResult)) {
 			utils.finishStudy(successful, errorMsg, studyResult);
-			Publix.session().remove(MAPublix.JATOS_SHOW);
+			Publix.session().remove(JatosPublix.JATOS_SHOW);
 		}
 		PublixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {

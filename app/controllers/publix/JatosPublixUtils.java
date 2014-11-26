@@ -11,16 +11,16 @@ import exceptions.ForbiddenPublixException;
 import exceptions.NotFoundPublixException;
 
 /**
- * Special PublixUtils for MAPublix (studies or components started via JATOS'
+ * Special PublixUtils for JatosPublix (studies or components started via JATOS'
  * UI).
  * 
  * @author Kristian Lange
  */
-public class MAPublixUtils extends PublixUtils<MAWorker> {
+public class JatosPublixUtils extends PublixUtils<MAWorker> {
 
 	private MAErrorMessages errorMessages;
 
-	public MAPublixUtils(MAErrorMessages errorMessages) {
+	public JatosPublixUtils(MAErrorMessages errorMessages) {
 		super(errorMessages);
 		this.errorMessages = errorMessages;
 	}

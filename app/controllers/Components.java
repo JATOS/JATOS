@@ -24,7 +24,7 @@ import services.JsonUtils;
 import services.JsonUtils.UploadUnmarshaller;
 import services.Messages;
 import services.PersistanceUtils;
-import controllers.publix.MAPublix;
+import controllers.publix.JatosPublix;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
@@ -50,7 +50,7 @@ public class Components extends Controller {
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		session(MAPublix.JATOS_SHOW, MAPublix.SHOW_COMPONENT_START);
+		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_COMPONENT_START);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, componentId));
 	}

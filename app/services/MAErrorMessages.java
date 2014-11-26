@@ -3,7 +3,7 @@ package services;
 import models.workers.MAWorker;
 
 /**
- * Special ErrorMessages for MAPublix (studies or components started via
+ * Special ErrorMessages for JatosPublix (studies or components started via
  * JATOS' UI).
  * 
  * @author Kristian Lange
