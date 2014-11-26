@@ -116,7 +116,7 @@ $('#resultsToolbar').on('click', '.exportData', function() {
 		return;
 	}
 	var url = '/jatos/componentresult/'
-		+ 'exportData?componentResultIds=' + ids.toString();
+		+ 'exportData?componentResultIds=' + ids.join(", ");
 	$.fileDownload(url)
 		.fail(function () { showError("Export of results failed"); });
 	return false; //this is critical to stop the click event which will trigger a normal file download
@@ -136,7 +136,7 @@ $('#resultsToolbar').on('click', '.remove', function() {
 	}
 	var title = "Confirm Delete";
 	var text = "You are about to delete the component results "
-		+ "(ID " + ids.toString() + ").";
+		+ "(ID " + ids.join(", ") + ").";
 	askConfirmation(title, text, 'Delete', function() {
 		var url = '/jatos/componentresult/remove?componentResultIds=' + ids.toString();
 		$.ajax({
