@@ -24,3 +24,7 @@ playAssetsDirectories <+= baseDirectory / "studies"
 play.Project.playJavaSettings
 
 mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh")
+
+mappings in Universal := (mappings in Universal).value filter { case (file, path) => 
+	! path.endsWith(".development.conf")
+}
