@@ -86,7 +86,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
 		componentResult.merge();
-//		return internalServerError("bladkjflasjfd");
+		// return internalServerError("bladkjflasjfd");
 		return ok(JsonUtils.asJsonForPublix(component));
 	}
 
@@ -119,7 +119,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		componentResult.merge();
 		return ok();
 	}
-	
+
 	@Override
 	public Result finishComponent(Long studyId, Long componentId,
 			Boolean successful, String errorMsg) throws PublixException {
@@ -132,12 +132,12 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		ComponentModel component = utils.retrieveComponent(study, componentId);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 		utils.checkComponentBelongsToStudy(study, component);
-		
+
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
-		ComponentResult componentResult = utils.retrieveCurrentComponentResult(
-					studyResult);
-		
+		ComponentResult componentResult = utils
+				.retrieveCurrentComponentResult(studyResult);
+
 		if (successful) {
 			componentResult.setComponentState(ComponentState.FINISHED);
 			componentResult.setErrorMsg(errorMsg);
@@ -172,6 +172,18 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	@Override
 	public Result teapot() {
 		return status(418, "I'm a teapot");
+	}
+
+	/**
+	 * Gets the value of to the given key in request's query string and trims
+	 * whitespace.
+	 */
+	public static String getQueryString(String key) {
+		String value = request().getQueryString(key);
+		if (value != null) {
+			value = value.trim();
+		}
+		return value;
 	}
 
 	/**

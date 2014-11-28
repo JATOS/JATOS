@@ -18,8 +18,7 @@ import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
 
 /**
- * Implementation of JATOS' public API for studies that are started via
- * MTurk.
+ * Implementation of JATOS' public API for studies that are started via MTurk.
  * 
  * @author Kristian Lange
  */
@@ -44,9 +43,9 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		// Hint: Don't confuse MTurk's workerId with JATOS' workerId. They
 		// aren't the same. JATOS' workerId is automatically generated
 		// and MTurk's workerId is stored within the MTWorker.
-		String mtWorkerId = request().getQueryString("workerId").trim();
-		String mtAssignmentId = request().getQueryString("assignmentId").trim();
-		String mtHitId = request().getQueryString("hitId").trim();
+		String mtWorkerId = getQueryString("workerId");
+		String mtAssignmentId = getQueryString("assignmentId");
+		String mtHitId = getQueryString("hitId");
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ "Parameters from MTurk: workerId " + mtWorkerId + ", "
 				+ "assignmentId " + mtAssignmentId + ", " + "hitId " + mtHitId);
