@@ -319,7 +319,7 @@ jatos.abortStudy = function(message) {
 }
 
 /**
- * Ends study.
+ * Ends study with an Ajax call.
  * 
  * @param {optional
  *            Boolean} successful - 'true' if study should finish successful and
