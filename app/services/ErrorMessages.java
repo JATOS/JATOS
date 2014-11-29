@@ -63,7 +63,8 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
-
+	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
+	
 	public static String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
 		return errorMsg;

@@ -2,13 +2,14 @@ package controllers.publix;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import exceptions.BadRequestPublixException;
 import exceptions.PublixException;
 import play.libs.F.Promise;
 import play.mvc.Result;
 
 /**
- * Public API of JATOS. With these methods the studies and components running
- * on the client side can communicate (start, finish components/studies,
+ * Public API of JATOS. With these methods the studies and components running on
+ * the client side can communicate (start, finish components/studies,
  * retrieve/persist data) with JATOS running on the server side.
  * 
  * @author Kristian Lange
@@ -99,11 +100,12 @@ public interface IPublix {
 	 * HTTP type: Ajax POST request<br>
 	 * In case the client side wants to log an error.
 	 */
-	public Result logError(Long studyId, Long componentId);
+	public Result logError(Long studyId, Long componentId)
+			throws BadRequestPublixException;
 
 	/**
 	 * HTTP type: Normal GET request<br>
 	 */
-	public Result teapot();
+	public Result teapot() throws BadRequestPublixException;
 
 }
