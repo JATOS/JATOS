@@ -165,13 +165,13 @@ jatos.submitResultData = function(resultData, success, error) {
  * next component by adding a query string.
  * 
  * @param {Object}
- *            nextComponentId - ID of the component to start
+ *            componentId - ID of the component to start
  * @param {optional
  *            Object} queryString - Query string without the initial '?' that
  *            should be added to the URL
  */
-jatos.startComponent = function(nextComponentId, queryString) {
-	var url = "/publix/" + jatos.studyId + "/" + nextComponentId + "/start";
+jatos.startComponent = function(componentId, queryString) {
+	var url = "/publix/" + jatos.studyId + "/" + componentId + "/start";
 	if (queryString) {
 		url += "?" + queryString;
 	}
@@ -183,14 +183,14 @@ jatos.startComponent = function(nextComponentId, queryString) {
  * You can pass on information to the next component by adding a query string.
  * 
  * @param {Object}
- *            nextComponentPos - Position of the component to start
+ *            componentPos - Position of the component to start
  * @param {optional
  *            Object} queryString - Query string without the initial '?' that
  *            should be added to the URL
  */
-jatos.startComponentByPos = function(nextComponentPos, queryString) {
+jatos.startComponentByPos = function(componentPos, queryString) {
 	var url = "/publix/" + jatos.studyId + "/startComponent?position="
-			+ nextComponentPos;
+			+ componentPos;
 	if (queryString) {
 		url += "&" + queryString;
 	}
