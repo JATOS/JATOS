@@ -1,13 +1,12 @@
-import models.UserModel;
+package common;
+
 import play.Application;
 import play.GlobalSettings;
 import play.Logger;
-import play.db.jpa.JPA;
 import play.libs.F.Promise;
 import play.mvc.Http.RequestHeader;
 import play.mvc.Results;
 import play.mvc.SimpleResult;
-import services.PersistanceUtils;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -33,23 +32,7 @@ public class Global extends GlobalSettings {
 	@Override
 	public void onStart(Application app) {
 		Logger.info(CLASS_NAME + ".onStart: Application has started");
-		checkAdmin();
-	}
-
-	/**
-	 * Check for user admin: In case the app is started the first time we need
-	 * an initial user: admin. If admin can't be found, create one.
-	 */
-	private void checkAdmin() {
-		JPA.withTransaction(new play.libs.F.Callback0() {
-			@Override
-			public void invoke() throws Throwable {
-				UserModel admin = UserModel.findByEmail("admin");
-				if (admin == null) {
-					PersistanceUtils.createAdmin();
-				}
-			}
-		});
+		Initializer.initialize();
 	}
 
 	@Override
@@ -58,14 +41,12 @@ public class Global extends GlobalSettings {
 		Throwable causeCause = t.getCause().getCause();
 		if (cause instanceof PublixException) {
 			PublixException publixException = (PublixException) cause;
-			SimpleResult result = publixException
-					.getSimpleResult();
+			SimpleResult result = publixException.getSimpleResult();
 			return Promise.<SimpleResult> pure(result);
 		}
 		if (causeCause instanceof PublixException) {
 			PublixException publixException = (PublixException) causeCause;
-			SimpleResult result = publixException
-					.getSimpleResult();
+			SimpleResult result = publixException.getSimpleResult();
 			return Promise.<SimpleResult> pure(result);
 		}
 		if (cause instanceof ResultException) {

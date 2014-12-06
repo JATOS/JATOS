@@ -15,6 +15,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
+import org.hibernate.annotations.GenericGenerator;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
@@ -46,6 +47,15 @@ public class ComponentModel {
 	@GeneratedValue
 	@JsonView(JsonUtils.JsonForPublix.class)
 	private Long id;
+
+	/**
+	 * Universally unique ID. Used for import/export between different JATOS
+	 * instances.
+	 */
+	@JsonView(JsonUtils.JsonForIO.class)
+	@GeneratedValue(generator = "uuid2")
+	@GenericGenerator(name = "uuid2", strategy = "uuid2")
+	private String uuid;
 
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -115,6 +125,14 @@ public class ComponentModel {
 		return this.id;
 	}
 
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+
+	public String getUuid() {
+		return this.uuid;
+	}
+
 	public void setStudy(StudyModel study) {
 		this.study = study;
 	}
@@ -168,6 +186,7 @@ public class ComponentModel {
 
 	public void setJsonData(String jsonDataStr) {
 		if (jsonDataStr == null) {
+			this.jsonData = null;
 			return;
 		}
 		if (!JsonUtils.isValidJSON(jsonDataStr)) {
@@ -261,6 +280,18 @@ public class ComponentModel {
 
 	public static ComponentModel findById(Long id) {
 		return JPA.em().find(ComponentModel.class, id);
+	}
+
+	public static ComponentModel findByUuid(String uuid) {
+		String queryStr = "SELECT e FROM ComponentModel e WHERE "
+				+ "e.uuid=:uuid";
+		TypedQuery<ComponentModel> query = JPA.em().createQuery(queryStr,
+				ComponentModel.class);
+		List<ComponentModel> studyList = query.setParameter("uuid", uuid)
+				.getResultList();
+		ComponentModel study = studyList.isEmpty() ? null
+				: (ComponentModel) studyList.get(0);
+		return study;
 	}
 
 	public static List<ComponentModel> findAll() {

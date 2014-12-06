@@ -64,7 +64,7 @@ function showError(msg) {
 }
 </script>
 
-<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 	<div class="container-fluid">
 		<div class="navbar-header">
 			<button type="button" class="navbar-toggle collapsed"
@@ -76,7 +76,14 @@ function showError(msg) {
 			</button>
 			<a class="navbar-brand" href="@routes.Home.home">JATOS</a>
 		</div>
-		<div id="navbar" class="navbar-collapse collapse">
+		<div class="navbar-collapse collapse">
+			<ul class="nav navbar-nav navbar-left">
+				<li><a href="@routes.Studies.create()">New Study</a></li>
+				<li><input id="importStudyBrowser" type="file" name="@StudyModel.STUDY" style="display: none;"></li>
+				<li><a id="importStudyLink" href="#">Import Study</a></li>
+				<li><a href="@routes.Users.create()">New User</a></li>
+			
+			</ul>
 			<ul class="nav navbar-nav navbar-right">
 				<li><a href="@routes.Users.profile(user.getEmail())">@user.getName()
 						(@user.getEmail())</a></li>
@@ -100,6 +107,12 @@ function showError(msg) {
 				}
 			</ul>
 		</div>
+
+		<!-- Main -->
+		<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+			<ol id="breadcrumbs" class="breadcrumb"></ol>
+			@body
+		</div>
 	</div>
 </div>
 	
@@ -109,24 +122,46 @@ function showError(msg) {
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-				<h4 class="modal-title" id="modalTitle">Confirm</h4>
+				<h4 class="modal-title">Confirm</h4>
 			</div>
 			<div class="modal-body">
-				<p id="modalText"></p>
-				<p>Do you want to proceed?</p>
+				<p class="modalText"></p>
+				<p class="modalPostText"></p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button id="confirmButton" type="button" class="confirmed btn btn-primary"></button>
+				<button type="button" class="confirmed btn btn-primary"></button>
 			</div>
 		</div>
 	</div>
 </div>
 
-<!-- Main -->
-<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-	<ol id="breadcrumbs" class="breadcrumb"></ol>
-	@body
+<!-- Confirmation Modal - Study Import -->
+<div class="modal fade" id="confirmModalStudyImport" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title">Study and study's directory already exist</h4>
+			</div>
+			<div class="modal-body">
+				<p class="modalText"></p>
+				<div class="checkbox">
+					<label><input type="checkbox" id="studysPropertiesConfirm"> Overwrite study's and its components' properties</label>
+					<span class="help-block">Components included in the imported study will be created or updated. Components not included in the imported study will be inactivated but not deleted.</span>
+				</div>
+				<div class="checkbox">
+					<label><input type="checkbox" id="studysDirConfirm"> Overwrite study's directory</label>
+					<span class="help-block">This directory contains the study's files like HTML, CSS, and JavaSript files and images.</span>
+				</div>
+				<p class="modalPostText"></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="confirmed btn btn-primary">Overwrite</button>
+			</div>
+		</div>
+	</div>
 </div>
 
 <script>
@@ -169,16 +204,138 @@ for (var key in breadcrumbs) {
 	$("#breadcrumbs").append(breadcrumb);
 }
 
-function askConfirmation(title, text, buttonText, action) {
-	$('#confirmationModal').find('#modalTitle').html(title);
-	$('#confirmationModal').find('#modalText').html(text);
-	$('#confirmationModal').find('#confirmButton').text(buttonText);
+function askConfirmation(title, preText, html, postText, buttonText, action) {
+		$('#confirmationModal').find('.modal-title').html(title);
+	if (preText) {
+		$('#confirmationModal').find('.modalText').html(preText);
+	}
+	if (html) {
+		if ($('#confirmationModal').find('.modalText').next().is('.modalPostText')) {
+			$('#confirmationModal').find('.modalText').after(html);
+		} else {
+			$('#confirmationModal').find('.modalText').next().html(html);
+		}
+	}
+	if (postText) {
+		$('#confirmationModal').find('.modalPostText').html(postText);
+	}
+	$('#confirmationModal').find('.confirmed').text(buttonText);
 	$('#confirmationModal').modal('show');
 	$('#confirmationModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmationModal').modal('hide');
 		action();
 	});
 }
+
+$('#jatosHeader').on('click', '#importStudyLink', function() {
+	$('#importStudyBrowser').trigger("click");
+});
+
+$('#jatosHeader').on('change', '#importStudyBrowser', function() {
+	var data = new FormData();
+	var files = $('#importStudyBrowser').prop('files');
+	$.each(files , function(index, value){
+		data.append('@StudyModel.STUDY', value);
+	});
+	$.ajax({
+		url: '@routes.ImportExport.importStudy()',
+		data: data,
+		cache: false,
+		contentType: false,
+		processData: false,
+		type: 'POST',
+		success: importStudyConfirm,
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+	
+function importStudyConfirm(data) {
+	response = $.parseJSON(data);
+	if (response.studyExists) {
+		askConfirmationForStudyExists(response);
+	} else if (response.dirExists) {
+		askConfirmationForStudyNotExistsDirExists(response);
+	} else {
+		askConfirmationForStudyNotExistsDirNotExists(response);
+	}
+}
+
+function askConfirmationForStudyExists(response) {
+	var preText = "It seems a study \"" + response.studyTitle 
+		+ "\" and its directory \"" + response.dirPath
+		+ "\" already exist. What do you want to do?";
+	$('#confirmModalStudyImport').find('.modalText').html(preText);
+	$('#confirmModalStudyImport').on('click', '.checkbox', function() {
+		if (!$('#studysPropertiesConfirm').is(':checked')
+				&& !$('#studysDirConfirm').is(':checked')) {
+			$('.confirmed').attr("disabled", true);
+		} else {
+			$('.confirmed').attr("disabled", false);
+		}
+	});
+	$('#confirmModalStudyImport').find('.confirmed').attr("disabled", true);
+	$('#confirmModalStudyImport').modal('show');
+	$('#confirmModalStudyImport').off('click.confirm').on('click.confirm', '.confirmed', function() {
+		$('#confirmModalStudyImport').modal('hide');
+		var studysPropertiesConfirm = $('#studysPropertiesConfirm').is(':checked');
+		var studysDirConfirm = $('#studysDirConfirm').is(':checked');
+		var jsonData = JSON.stringify({ "@ImportExport.STUDYS_PROPERTIES_CONFIRM": studysPropertiesConfirm,
+			"@ImportExport.STUDYS_DIR_CONFIRM" : studysDirConfirm });
+		postStudyImportConfirm(jsonData, function (data) {
+			showSuccess("Study successfully overwriten");
+		});
+	});
+}
+
+function askConfirmationForStudyNotExistsDirExists(response) {
+	var title = "Study import - but study's directory already exists";
+	var preText = "You are about to import the study \"" + response.studyTitle 
+		+ "\" and its directory \"" + response.dirPath
+		+ "\". There already exist a directory with the same name. "
+		+ "If you proceed the <b>current directory will be overridden</b>.";
+	var postText = "Do you want to proceed?";
+	askConfirmation(title, preText, null, postText, 'Import', function() {
+		var jsonData = JSON.stringify({ "@ImportExport.STUDYS_PROPERTIES_CONFIRM": true,
+			"@ImportExport.STUDYS_DIR_CONFIRM" : true });
+		postStudyImportConfirm(jsonData, function (data) {
+			showSuccess("Study successfully imported");
+		});
+	});
+}
+
+function askConfirmationForStudyNotExistsDirNotExists(response) {
+	var title = "Study import";
+	var preText = "You are about to import the study \"" + response.studyTitle 
+		+ "\" and its directory \"" + response.dirPath
+		+ "\".";
+	var postText = "Do you want to proceed?"
+	askConfirmation(title, preText, null, postText, 'Import', function() {
+		var jsonData = JSON.stringify({ "@ImportExport.STUDYS_PROPERTIES_CONFIRM": true,
+			"@ImportExport.STUDYS_DIR_CONFIRM" : true });
+		postStudyImportConfirm(jsonData, function (data) {
+			showSuccess("Study successfully imported");
+		});
+	});
+}
+
+function postStudyImportConfirm(jsonData, success) {
+	$.ajax({
+		type: 'POST',
+		url: '@routes.ImportExport.importStudyConfirmed()',
+		contentType: "application/json; charset=utf-8",
+		dataType: 'text',
+		data: jsonData,
+		success: function(result) {
+			window.location.replace("/jatos/" + result);
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
 </script>
 	
 </body>

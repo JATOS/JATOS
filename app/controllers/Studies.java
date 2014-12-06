@@ -1,6 +1,5 @@
 package controllers;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
@@ -13,24 +12,19 @@ import models.UserModel;
 import models.workers.Worker;
 import play.Logger;
 import play.api.mvc.Call;
-import play.data.DynamicForm;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
-import play.mvc.Http.MultipartFormData;
-import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import play.mvc.Security;
 import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.IOUtils;
 import services.JsonUtils;
-import services.JsonUtils.UploadUnmarshaller;
 import services.Messages;
 import services.PersistanceUtils;
-import services.ZipUtil;
 import controllers.publix.JatosPublix;
 import exceptions.ResultException;
 
@@ -79,7 +73,8 @@ public class Studies extends Controller {
 
 		Form<StudyModel> form = Form.form(StudyModel.class);
 		Call submitAction = routes.Studies.submit();
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New Study");
+		Breadcrumbs breadcrumbs = Breadcrumbs
+				.generateForHome(Breadcrumbs.NEW_STUDY);
 		return ok(views.html.jatos.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, null, submitAction, form, false));
 	}
@@ -93,7 +88,8 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		if (form.hasErrors()) {
-			Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New Study");
+			Breadcrumbs breadcrumbs = Breadcrumbs
+					.generateForHome(Breadcrumbs.NEW_STUDY);
 			Call submitAction = routes.Studies.submit();
 			ControllerUtils.throwEditStudyResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
@@ -106,100 +102,17 @@ public class Studies extends Controller {
 
 		// Create study's dir
 		try {
-			IOUtils.createStudyDir(study);
+			IOUtils.createStudyDir(study.getDirName());
 		} catch (IOException e) {
 			form.reject(e.getMessage());
-			Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New Study");
+			Breadcrumbs breadcrumbs = Breadcrumbs
+					.generateForHome(Breadcrumbs.NEW_STUDY);
 			Call submitAction = routes.Studies.submit();
 			ControllerUtils.throwEditStudyResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
 					submitAction, false);
 		}
 		return redirect(routes.Studies.index(study.getId(), null));
-	}
-
-	/**
-	 * HTTP Ajax request
-	 */
-	@Transactional
-	public static Result importStudy() throws ResultException {
-		Logger.info(CLASS_NAME + ".importStudy: " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-
-		MultipartFormData mfd = request().body().asMultipartFormData();
-		List<FilePart> filePartList = mfd.getFiles();
-		for (FilePart filePart : filePartList) {
-			// If the key isn't right the upload doesn't come from the right
-			// form
-			if (!filePart.getKey().equals(StudyModel.STUDY)) {
-				String errorMsg = ErrorMessages.NO_STUDY_UPLOAD;
-				ControllerUtils.throwHomeResultException(errorMsg,
-						Http.Status.BAD_REQUEST);
-			}
-			File tempDir = unzipUploadedFile(filePart);
-			StudyModel study = unmarshalStudy(tempDir);
-			PersistanceUtils.addStudy(study, loggedInUser);
-			moveStudyDir(tempDir, study);
-		}
-		return ok();
-	}
-
-	private static void moveStudyDir(File tempDir, StudyModel study)
-			throws ResultException {
-		try {
-			File[] dirArray = IOUtils.findDirectories(tempDir);
-			if (dirArray.length == 0) {
-				// If a study dir is missing, create a new one.
-				IOUtils.createStudyDir(study);
-				// TODO send warning message
-			} else if (dirArray.length == 1) {
-				File studyDir = dirArray[0];
-				IOUtils.moveStudyDirectory(studyDir, study);
-			} else {
-				// More than one dir is forbidden
-				String errorMsg = ErrorMessages.MORE_THAN_ONE_DIR_IN_ZIP;
-				ControllerUtils.throwHomeResultException(errorMsg,
-						Http.Status.BAD_REQUEST);
-			}
-		} catch (IOException e) {
-			String errorMsg = "Study not imported: " + e.getMessage();
-			ControllerUtils.throwHomeResultException(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
-		}
-	}
-
-	private static StudyModel unmarshalStudy(File tempDir)
-			throws ResultException {
-		File studyFile = IOUtils.findFiles(tempDir, "",
-				IOUtils.STUDY_FILE_SUFFIX)[0];
-		UploadUnmarshaller uploadUnmarshaller = new UploadUnmarshaller();
-		StudyModel study = uploadUnmarshaller.unmarshalling(studyFile,
-				StudyModel.class);
-		if (study == null) {
-			ControllerUtils.throwHomeResultException(
-					uploadUnmarshaller.getErrorMsg(), Http.Status.BAD_REQUEST);
-		}
-		if (study.validate() != null) {
-			String errorMsg = ErrorMessages.COMPONENT_INVALID;
-			ControllerUtils.throwHomeResultException(errorMsg,
-					Http.Status.BAD_REQUEST);
-		}
-		studyFile.delete();
-		return study;
-	}
-
-	private static File unzipUploadedFile(FilePart filePart)
-			throws ResultException {
-		File tempDir = null;
-		try {
-			tempDir = ZipUtil.unzip(filePart.getFile());
-		} catch (IOException e1) {
-			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
-			ControllerUtils.throwHomeResultException(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
-		}
-		return tempDir;
 	}
 
 	@Transactional
@@ -218,7 +131,8 @@ public class Studies extends Controller {
 		}
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = routes.Studies.submitEdited(study.getId());
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study, "Edit");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+				Breadcrumbs.EDIT_PROPERTIES);
 		return ok(views.html.jatos.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, messages, submitAction, form, study.isLocked()));
 	}
@@ -238,30 +152,26 @@ public class Studies extends Controller {
 		if (form.hasErrors()) {
 			Call submitAction = routes.Studies.submitEdited(study.getId());
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
-					"Edit");
+					Breadcrumbs.EDIT_PROPERTIES);
 			ControllerUtils.throwEditStudyResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
 					submitAction, study.isLocked());
 		}
 
 		// Update study in DB
-		DynamicForm requestData = Form.form().bindFromRequest();
-		String title = requestData.get(StudyModel.TITLE);
-		String description = requestData.get(StudyModel.DESCRIPTION);
-		String dirName = requestData.get(StudyModel.DIRNAME);
-		String jsonData = requestData.get(StudyModel.JSON_DATA);
+		StudyModel updatedStudy = form.get();
+		// Get old dirName before study is updated
 		String oldDirName = study.getDirName();
-		PersistanceUtils.updateStudy(study, title, description, dirName,
-				jsonData);
+		PersistanceUtils.updateStudysProperties(study, updatedStudy);
+
+		// Rename study dir
 		try {
-			IOUtils.renameStudyDir(oldDirName, study.getDirName(),
-					study.getId());
+			IOUtils.renameStudyDir(oldDirName, study.getDirName());
 		} catch (IOException e) {
-			form.reject(new ValidationError(StudyModel.DIRNAME, e
-					.getMessage()));
+			form.reject(new ValidationError(StudyModel.DIRNAME, e.getMessage()));
 			Call submitAction = routes.Studies.submitEdited(study.getId());
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
-					"Edit");
+					Breadcrumbs.EDIT_PROPERTIES);
 			ControllerUtils.throwEditStudyResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
 					submitAction, study.isLocked());
@@ -301,7 +211,7 @@ public class Studies extends Controller {
 
 		// Remove study's dir
 		try {
-			IOUtils.removeStudyDirectory(study);
+			IOUtils.removeStudyDirectory(study.getDirName());
 		} catch (IOException e) {
 			String errorMsg = e.getMessage();
 			ControllerUtils.throwAjaxResultException(errorMsg,
@@ -322,57 +232,16 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		StudyModel clone = new StudyModel(study);
-		clone.addMember(loggedInUser);
-
 		// Copy study's dir and it's content to cloned study's dir
 		try {
-			IOUtils.copyStudyDirectory(study, clone);
+			String destDirName = IOUtils.cloneStudyDirectory(study.getDirName());
+			clone.setDirName(destDirName);
 		} catch (IOException e) {
 			ControllerUtils.throwAjaxResultException(e.getMessage(),
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
-		clone.persist();
+		PersistanceUtils.addStudy(clone, loggedInUser);
 		return ok();
-	}
-
-	/**
-	 * HTTP Ajax request
-	 */
-	@Transactional
-	public static Result exportStudy(Long studyId) throws ResultException {
-		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-
-		File zipFile = null;
-		try {
-			File studyAsJsonFile = File.createTempFile(
-					IOUtils.generateFileName(study.getTitle()), "."
-							+ IOUtils.STUDY_FILE_SUFFIX);
-			JsonUtils.asJsonForIO(study, studyAsJsonFile);
-			String studyDirPath = IOUtils.generateStudysPath(study);
-			zipFile = ZipUtil.zipStudy(studyDirPath, study.getDirName(),
-					studyAsJsonFile.getAbsolutePath());
-			studyAsJsonFile.delete();
-		} catch (IOException e) {
-			String errorMsg = ErrorMessages.studyExportFailure(studyId);
-			ControllerUtils.throwAjaxResultException(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
-		}
-
-		String zipFileName = IOUtils.generateFileName(study.getTitle(),
-				IOUtils.ZIP_FILE_SUFFIX);
-		response().setContentType("application/x-download");
-		response().setHeader("Content-disposition",
-				"attachment; filename=" + zipFileName);
-		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME,
-				ControllerUtils.JQDOWNLOAD_COOKIE_CONTENT);
-		return ok(zipFile);
 	}
 
 	@Transactional
@@ -394,7 +263,7 @@ public class Studies extends Controller {
 		List<UserModel> userList = UserModel.findAll();
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
-				"Change Members");
+				Breadcrumbs.CHANGE_MEMBERS);
 		return status(httpStatus,
 				views.html.jatos.study.changeMembers.render(studyList,
 						loggedInUser, breadcrumbs, messages, study, userList));
@@ -482,7 +351,7 @@ public class Studies extends Controller {
 		String[] referer = request().headers().get("Referer");
 		URL jatosURL = new URL(referer[0]);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
-				"Mechanical Turk HIT Layout Source Code");
+				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 		return ok(views.html.jatos.study.mTurkSourceCode.render(studyList,
 				loggedInUser, breadcrumbs, null, study, jatosURL));
 	}
@@ -520,11 +389,10 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Messages messages = new Messages().error(errorMsg);
-		Breadcrumbs breadcrumbs = Breadcrumbs
-				.generateForStudy(study, "Workers");
-		return status(httpStatus,
-				views.html.jatos.study.studysWorkers.render(studyList,
-						loggedInUser, breadcrumbs, messages, study));
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+				Breadcrumbs.WORKERS);
+		return status(httpStatus, views.html.jatos.study.studysWorkers.render(
+				studyList, loggedInUser, breadcrumbs, messages, study));
 	}
 
 	@Transactional

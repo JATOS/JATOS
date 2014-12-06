@@ -13,6 +13,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
+import services.Breadcrumbs;
 import services.ErrorMessages;
 import exceptions.ResultException;
 
@@ -33,10 +34,9 @@ public class Users extends Controller {
 				.getEmail());
 		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForUser(user);
-		return ok(views.html.jatos.user.profile.render(studyList,
-				loggedInUser, breadcrumbs, null, user));
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user);
+		return ok(views.html.jatos.user.profile.render(studyList, loggedInUser,
+				breadcrumbs, null, user));
 	}
 
 	@Transactional
@@ -46,10 +46,10 @@ public class Users extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForHome("New User");
-		return ok(views.html.jatos.user.create.render(studyList,
-				loggedInUser, breadcrumbs, null, Form.form(UserModel.class)));
+		Breadcrumbs breadcrumbs = Breadcrumbs
+				.generateForHome(Breadcrumbs.NEW_USER);
+		return ok(views.html.jatos.user.create.render(studyList, loggedInUser,
+				breadcrumbs, null, Form.form(UserModel.class)));
 	}
 
 	@Transactional
@@ -113,8 +113,8 @@ public class Users extends Controller {
 		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForUser(user, "Edit Profile");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
+				Breadcrumbs.EDIT_PROFILE);
 		return ok(views.html.jatos.user.editProfile.render(studyList,
 				loggedInUser, breadcrumbs, null, user, form));
 	}
@@ -157,8 +157,8 @@ public class Users extends Controller {
 		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForUser(user, "Change Password");
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
+				Breadcrumbs.CHANGE_PASSWORD);
 		return ok(views.html.jatos.user.changePassword.render(studyList,
 				loggedInUser, breadcrumbs, null, form));
 	}

@@ -12,6 +12,17 @@ import controllers.routes;
 
 public class Breadcrumbs {
 
+	public static final String EDIT_PROPERTIES = "Edit Properties";
+	public static final String WORKERS = "Workers";
+	public static final String MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE = "Mechanical Turk HIT Layout Source Code";
+	public static final String CHANGE_MEMBERS = "Change Members";
+	public static final String NEW_STUDY = "New Study";
+	public static final String RESULTS = "Results";
+	public static final String NEW_COMPONENT = "New Component";
+	public static final String CHANGE_PASSWORD = "Change Password";
+	public static final String EDIT_PROFILE = "Edit Profile";
+	public static final String NEW_USER = "New User";
+	
 	private Map<String, String> breadcrumbs = new LinkedHashMap<>();
 
 	public Map<String, String> getBreadcrumbs() {

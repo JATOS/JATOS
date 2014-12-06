@@ -41,7 +41,7 @@ public class ExternalAssets extends Controller {
 	private static final String BASEPATH = Play.application().path().getPath();
 
 	/**
-	 * The path to the studies folder. If the property is defined in the
+	 * The path to the studies directory. If the property is defined in the
 	 * configuration file then use it as the base path. If property isn't
 	 * defined, try in default study path instead.
 	 */

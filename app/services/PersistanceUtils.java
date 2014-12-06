@@ -2,6 +2,7 @@ package services;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 
 import models.ComponentModel;
@@ -89,13 +90,61 @@ public class PersistanceUtils {
 		study.merge();
 	}
 
-	public static void updateStudy(StudyModel study, String title,
-			String description, String dirName, String jsonData) {
-		study.setTitle(title);
-		study.setDescription(description);
-		study.setDirName(dirName);
-		study.setJsonData(jsonData);
+	public static void updateStudysProperties(StudyModel study,
+			StudyModel updatedStudy) {
+		study.setTitle(updatedStudy.getTitle());
+		study.setDescription(updatedStudy.getDescription());
+		study.setDirName(updatedStudy.getDirName());
+		study.setJsonData(updatedStudy.getJsonData());
 		study.merge();
+	}
+	
+	public static void updateStudysPropertiesWODirName(StudyModel study,
+			StudyModel updatedStudy) {
+		study.setTitle(updatedStudy.getTitle());
+		study.setDescription(updatedStudy.getDescription());
+		study.setJsonData(updatedStudy.getJsonData());
+		study.merge();
+	}
+
+	public static void updateStudysComponents(StudyModel currentStudy,
+			StudyModel updatedStudy) {
+		// Clear list and rebuild it from updated study
+		List<ComponentModel> currentComponentList = new ArrayList<ComponentModel>(
+				currentStudy.getComponentList());
+		currentStudy.getComponentList().clear();
+
+		for (ComponentModel updatedComponent : updatedStudy.getComponentList()) {
+			ComponentModel currentComponent = null;
+			// Find both matching components with the same UUID
+			for (ComponentModel tempComponent : currentComponentList) {
+				if (tempComponent.getUuid().equals(updatedComponent.getUuid())) {
+					currentComponent = tempComponent;
+					break;
+				}
+			}
+			if (currentComponent != null) {
+				PersistanceUtils.updateComponentsProperties(currentComponent,
+						updatedComponent);
+				currentStudy.addComponent(currentComponent);
+				currentComponentList.remove(currentComponent);
+			} else {
+				// If the updated component doesn't exist in the current study
+				// add it.
+				PersistanceUtils.addComponent(currentStudy, updatedComponent);
+			}
+		}
+
+		// Check whether any component from the current study are left that
+		// aren't in the updated study. Add them to the end of the list and
+		// put them into inactive (we don't remove them, because they could be
+		// associated with results)
+		for (ComponentModel currentComponent : currentComponentList) {
+			currentComponent.setActive(false);
+			currentStudy.addComponent(currentComponent);
+		}
+
+		currentStudy.merge();
 	}
 
 	public static void removeStudy(StudyModel study) {
@@ -117,14 +166,14 @@ public class PersistanceUtils {
 		study.merge();
 	}
 
-	public static void updateComponent(ComponentModel component, String title,
-			boolean reloadable, String filePath, String comments,
-			String jsonData) {
-		component.setTitle(title);
-		component.setReloadable(reloadable);
-		component.setHtmlFilePath(filePath);
-		component.setComments(comments);
-		component.setJsonData(jsonData);
+	public static void updateComponentsProperties(ComponentModel component,
+			ComponentModel updatedComponent) {
+		component.setTitle(updatedComponent.getTitle());
+		component.setReloadable(updatedComponent.isReloadable());
+		component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
+		component.setComments(updatedComponent.getComments());
+		component.setJsonData(updatedComponent.getJsonData());
+		component.setActive(updatedComponent.isActive());
 		component.merge();
 	}
 

@@ -16,6 +16,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
+import services.Breadcrumbs;
 import services.DateUtils;
 import services.ErrorMessages;
 import services.IOUtils;
@@ -41,8 +42,8 @@ public class StudyResults extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Messages messages = new Messages().error(errorMsg);
-		services.Breadcrumbs breadcrumbs = services.Breadcrumbs
-				.generateForStudy(study, "Results");
+		Breadcrumbs breadcrumbs = Breadcrumbs
+				.generateForStudy(study, Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.studysStudyResults.render(studyList,
 						loggedInUser, breadcrumbs, messages, study));

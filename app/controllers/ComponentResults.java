@@ -46,7 +46,7 @@ public class ComponentResults extends Controller {
 
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs
-				.generateForComponent(study, component, "Results");
+				.generateForComponent(study, component, Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.componentResults.render(studyList,
 						loggedInUser, breadcrumbs, messages, study, component));

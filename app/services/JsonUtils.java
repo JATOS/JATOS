@@ -20,7 +20,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.Logger;
-import play.Play;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -31,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import common.Common;
 
 public class JsonUtils {
 
@@ -209,7 +209,7 @@ public class JsonUtils {
 	private static ObjectNode studyResultAsJsonNode(StudyResult studyResult)
 			throws IOException {
 		ObjectNode studyResultNode = OBJECTMAPPER.valueToTree(studyResult);
-		
+
 		// Add worker
 		ObjectNode workerNode = OBJECTMAPPER
 				.valueToTree(initializeAndUnproxy(studyResult.getWorker()));
@@ -299,9 +299,14 @@ public class JsonUtils {
 		return obj;
 	}
 
-	public static String asJson(Object obj) throws JsonProcessingException {
+	public static String asJson(Object obj) {
 		ObjectWriter objectWriter = OBJECTMAPPER.writer();
-		String objectAsJson = objectWriter.writeValueAsString(obj);
+		String objectAsJson = null;
+		try {
+			objectAsJson = objectWriter.writeValueAsString(obj);
+		} catch (JsonProcessingException e) {
+			Logger.error(CLASS_NAME + ".asJson: error marshalling object");
+		}
 		return objectAsJson;
 	}
 
@@ -326,10 +331,7 @@ public class JsonUtils {
 	private static ObjectNode generateNodeWithVersionForIO(Object obj)
 			throws IOException {
 		ObjectNode node = OBJECTMAPPER.createObjectNode();
-		node.put(
-				VERSION,
-				Play.application().configuration()
-						.getString("application.version"));
+		node.put(VERSION, Common.VERSION);
 		// Unnecessary conversion into a temporary string - better solution?
 		String objAsJson = OBJECTMAPPER.writerWithView(JsonForIO.class)
 				.writeValueAsString(obj);

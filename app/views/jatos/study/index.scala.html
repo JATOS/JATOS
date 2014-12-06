@@ -10,7 +10,7 @@ study: StudyModel, workerSet: Set[workers.Worker])
 		<button id="showStudy" type="button" class="btn btn-primary">Show</button>
 		<button id="studyResults" type="button" class="btn btn-primary">Results <span class="badge">@results.StudyResult.countByStudy(study)</span></button>
 		<button id="workers" type="button" class="btn btn-primary">Workers <span class="badge">@workerSet.size()</button>
-		<button id="editStudy" type="button" class="btn btn-primary">Edit</button>
+		<button id="editStudy" type="button" class="btn btn-primary">Properties</button>
 		<button id="lockStudy" type="button" class="btn btn-primary">@if(study.isLocked()){Unlock}else{Lock}</button>
 		<div class="btn-group">
 			<button type="button" class="btn btn-primary dropdown-toggle"
@@ -18,7 +18,7 @@ study: StudyModel, workerSet: Set[workers.Worker])
 				More <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
-				<li><a href="@routes.Studies.exportStudy(study.getId())">Export</a></li>
+				<li><a href="@routes.ImportExport.exportStudy(study.getId())">Export</a></li>
 				<li><a id="cloneStudy" href="#">Clone</a></li>
 				<li><a href="@routes.Studies.showMTurkSourceCode(study.getId())">MT Source Code</a></li>
 				<li class="divider"></li>
@@ -32,8 +32,8 @@ study: StudyModel, workerSet: Set[workers.Worker])
 		</button>
 		<ul class="dropdown-menu" role="menu">
 			<li><a href="@routes.Components.create(study.getId())">New</a></li>
-			<input id="importBrowser" type="file" name="@ComponentModel.COMPONENT" multiple style="display: none;">
-			<li><a id="importButton" href="#">Import</a></li>
+			<input id="importComponentBrowser" type="file" name="@ComponentModel.COMPONENT" style="display: none;">
+			<li><a id="importComponentButton" href="#">Import</a></li>
 		</ul>
 	</div>
 	
@@ -71,7 +71,7 @@ study: StudyModel, workerSet: Set[workers.Worker])
 	<div class="componentBtnGroup btn-group" aria-hidden="true">
 		<button type="button" class="showComponent btn btn-default">Show</button>
 		<button type="button" class="componentResults btn btn-default">Results <span class="resultsBadge badge"></span></button>
-		<button type="button" class="editComponent btn btn-default">Edit</button>
+		<button type="button" class="editComponent btn btn-default">Properties</button>
 		<div class="btn-group">
 			<button type="button" class="btn btn-default dropdown-toggle"
 				data-toggle="dropdown">
@@ -212,9 +212,10 @@ $(document).ready(function() {
 		if (!componentId) {return} // should never happen
 		var componentTitle = getComponentTitle(this);
 		var title = "Confirm Delete";
-		var text = "You are about to delete component \"" + componentTitle 
+		var preText = "You are about to delete component \"" + componentTitle 
 			+ "\" (ID " + componentId + ") <b>with all its results</b>.";
-		askConfirmation(title, text, 'Delete', function() {
+		var postText = "Do you want to proceed?";
+		askConfirmation(title, preText, null, postText, 'Delete', function() {
 			$.ajax({
 				url : "/jatos/" + studyData.id +"/" + componentId + "/remove",
 				type : 'DELETE',
@@ -342,11 +343,12 @@ $('#studyToolbar').on('click', '#editStudy', function() {
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
 	var title = "Confirm Delete";
-	var text = "You are about to delete the study \"" + studyData.title 
+	var preText = "You are about to delete the study \"" + studyData.title 
 		+ "\" (ID " + studyData.id + ") "
 		+ "<b>with all its components, results, and the entire study's directory, "
 		+ "including the HTML files</b>.";
-	askConfirmation(title, text, 'Delete', function() {
+	var postText = "Do you want to proceed?";
+	askConfirmation(title, preText, null, postText, 'Delete', function() {
 		$.ajax({
 			url : '@routes.Studies.remove(study.getId())',
 			type : 'DELETE',
@@ -379,32 +381,63 @@ function getComponentId(e) {
 	return componentId;
 }
 
-$('#studyToolbar').on('click', '#importButton', function() {
-	$('#importBrowser').trigger("click");
+$('#studyToolbar').on('click', '#importComponentButton', function() {
+	$('#importComponentBrowser').trigger("click");
 });
 
-$('#importBrowser').change(function() {
+$('#studyToolbar').on('change', '#importComponentBrowser', function() {
 	var data = new FormData();
-	var files = $('#importBrowser').prop('files');
+	var files = $('#importComponentBrowser').prop('files');
 	$.each(files , function(index, value){
 		data.append('@ComponentModel.COMPONENT', value);
 	});
 	$.ajax({
-		url: '@routes.Components.importComponent(study.getId())',
+		url: '@routes.ImportExport.importComponent(study.getId())',
 		data: data,
 		cache: false,
 		contentType: false,
 		processData: false,
 		type: 'POST',
-		success: function(data){
-			showSuccess("Component(s) or file(s) successfully imported.");
-			componentsTable.ajax.reload();
-		},
+		success: importComponentConfirm,
 		error : function(err) {
 			showError(err.responseText);
 		}
 	});
 });
+
+function importComponentConfirm(data) {
+	response = $.parseJSON(data);
+	if (response.componentExists) {
+		var title = "Component already exists";
+		var preText = "It seems a component \"" + response.componentTitle 
+			+ "\" already exist.";
+		var postText = "Do you want to overwrite this component?";
+		askConfirmation(title, preText, null, postText, 'Overwrite', function() {
+			postComponentImportConfirm();
+		});
+	} else {
+		var title = "Import component";
+		var preText = "You are about to import the component \""
+			+ response.componentTitle + "\".";
+		var postText = "Do you want to proceed?";
+		askConfirmation(title, preText, null, postText, 'Import', function() {
+			postComponentImportConfirm();
+		});
+	}
+}
+
+function postComponentImportConfirm() {
+	$.ajax({
+		type: 'POST',
+		url: '@routes.ImportExport.importComponentConfirmed(study.getId())',
+		success: function(result) {
+			window.location.replace('@routes.Studies.index(study.getId())');
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
 
 </script>
 

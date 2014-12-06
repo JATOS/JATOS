@@ -56,7 +56,7 @@ public class ControllerUtils extends Controller {
 			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
 		}
 		if (!study.hasMember(loggedInUser)) {
-			String errorMsg = ErrorMessages.notMember(loggedInUser.getName(),
+			String errorMsg = ErrorMessages.studyNotMember(loggedInUser.getName(),
 					loggedInUser.getEmail(), studyId, study.getTitle());
 			SimpleResult result = null;
 			if (isAjax()) {

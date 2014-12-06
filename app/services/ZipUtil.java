@@ -20,7 +20,8 @@ public class ZipUtil {
 		ZipFile zipFile = new ZipFile(file);
 		Enumeration<?> enumeration = zipFile.entries();
 		File tempDir = Files.createTempDirectory(
-				"JatosImport" + UUID.randomUUID().toString()).toFile();
+				"JatosImport_" + UUID.randomUUID().toString()).toFile();
+		tempDir.deleteOnExit();
 		while (enumeration.hasMoreElements()) {
 			ZipEntry zipEntry = (ZipEntry) enumeration.nextElement();
 			String fileName = zipEntry.getName();
@@ -53,6 +54,7 @@ public class ZipUtil {
 			String studyAsJsonPath) throws IOException {
 		File zipFile = File.createTempFile("study", "."
 				+ IOUtils.ZIP_FILE_SUFFIX);
+		zipFile.deleteOnExit();
 		FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
 		ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
 
@@ -71,6 +73,9 @@ public class ZipUtil {
 			String dirNameInZip, String dirPath, ZipOutputStream zipOutputStream)
 			throws IOException {
 		File dir = new File(dirPath);
+		if (!dir.isDirectory()) {
+			return;
+		}
 		for (String fileName : dir.list()) {
 			String filePathInZip;
 			if (dirPathInZip.equals("")) {

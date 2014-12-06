@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -22,6 +23,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.TypedQuery;
 
+import org.hibernate.annotations.GenericGenerator;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
@@ -54,6 +56,15 @@ public class StudyModel {
 	@JsonView(JsonUtils.JsonForPublix.class)
 	private Long id;
 
+	/**
+	 * Universally unique ID. Used for import/export between different JATOS
+	 * instances.
+	 */
+	@JsonView(JsonUtils.JsonForIO.class)
+	@GeneratedValue(generator = "uuid2")
+	@GenericGenerator(name = "uuid2", strategy = "uuid2")
+	private String uuid;
+
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String title;
 
@@ -77,6 +88,7 @@ public class StudyModel {
 	 * Directory name of this study
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
+	@Column(unique = true, nullable = false)
 	private String dirName;
 
 	/**
@@ -107,10 +119,10 @@ public class StudyModel {
 	}
 
 	/**
-	 * Constructor for cloning (without members)
+	 * Constructor for cloning (without members or locked)
 	 */
 	public StudyModel(StudyModel study) {
-		// Don't clone members and field 'locked'
+		// Don't clone fields 'memberList' and 'locked'
 		this.description = study.description;
 		this.dirName = study.dirName;
 		this.jsonData = study.jsonData;
@@ -130,6 +142,14 @@ public class StudyModel {
 
 	public Long getId() {
 		return this.id;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+
+	public String getUuid() {
+		return this.uuid;
 	}
 
 	public void setTitle(String title) {
@@ -180,6 +200,10 @@ public class StudyModel {
 	}
 
 	public void setJsonData(String jsonDataStr) {
+		if (jsonDataStr == null) {
+			this.jsonData = null;
+			return;
+		}
 		if (!JsonUtils.isValidJSON(jsonDataStr)) {
 			// Set the invalid string anyway. It will cause an error during
 			// validate().
@@ -360,6 +384,17 @@ public class StudyModel {
 
 	public static StudyModel findById(Long id) {
 		return JPA.em().find(StudyModel.class, id);
+	}
+
+	public static StudyModel findByUuid(String uuid) {
+		String queryStr = "SELECT e FROM StudyModel e WHERE " + "e.uuid=:uuid";
+		TypedQuery<StudyModel> query = JPA.em().createQuery(queryStr,
+				StudyModel.class);
+		List<StudyModel> studyList = query.setParameter("uuid", uuid)
+				.getResultList();
+		StudyModel study = studyList.isEmpty() ? null : (StudyModel) studyList
+				.get(0);
+		return study;
 	}
 
 	public static List<StudyModel> findAll() {

@@ -44,7 +44,7 @@ public class Workers extends Controller {
 		// .warning("A warning from a friend").info("Just an info")
 		// .success("You were successful!");
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorker(worker,
-				"Results");
+				Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.workersStudyResults.render(
 						studyList, loggedInUser, breadcrumbs, messages, worker));
