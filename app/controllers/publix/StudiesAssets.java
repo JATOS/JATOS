@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 
 import models.ComponentModel;
-import models.StudyModel;
 import play.Logger;
 import play.Play;
 import play.mvc.Controller;
@@ -17,14 +16,14 @@ import services.IOUtils;
  * 
  * @author Kristian Lange
  */
-public class ExternalAssets extends Controller {
+public class StudiesAssets extends Controller {
 
 	/**
 	 * Part of the URL path that defines the location of the studies
 	 */
 	public static final String URL_STUDIES_PATH = "studies";
 
-	private static final String CLASS_NAME = ExternalAssets.class
+	private static final String CLASS_NAME = StudiesAssets.class
 			.getSimpleName();
 
 	/**
@@ -77,9 +76,9 @@ public class ExternalAssets extends Controller {
 		return ok(file, true);
 	}
 
-	public static String getComponentUrlPath(StudyModel study,
+	public static String getComponentUrlPath(String studyDirName,
 			ComponentModel component) {
-		return "/" + URL_STUDIES_PATH + "/" + study.getDirName() + "/"
+		return "/" + URL_STUDIES_PATH + "/" + studyDirName + "/"
 				+ component.getHtmlFilePath();
 	}
 

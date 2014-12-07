@@ -76,6 +76,6 @@ GET     /jatos/:studyId/:componentId/clone           controllers.Components.clon
 GET     /jatos/:studyId/:componentId/export          controllers.ImportExport.exportComponent(studyId: Long, componentId: Long)
 
 # Static resources (not managed by the Play framework) from the /public directory
-GET     /studies/*file                     controllers.publix.ExternalAssets.at(file)
+GET     /studies/*file                     controllers.publix.StudiesAssets.at(file)
 GET     /assets/*file                      controllers.Assets.at(path = "/public", file)
 GET     /webjars/*file                     controllers.WebJarAssets.at(file)

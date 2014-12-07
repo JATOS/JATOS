@@ -1,18 +1,37 @@
 package common;
+
+import java.io.File;
 import java.util.List;
 import java.util.UUID;
 
+import controllers.publix.StudiesAssets;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import play.Logger;
 import play.db.jpa.JPA;
 import services.PersistanceUtils;
 
 public class Initializer {
 
+	private static final String CLASS_NAME = Initializer.class.getSimpleName();
+
 	public static void initialize() {
 		checkAdmin();
 		checkUuid();
+		checkStudyRootFolder();
+	}
+
+	/**
+	 * Check whether studies root directory exists and create if not.
+	 */
+	private static void checkStudyRootFolder() {
+		boolean success = new File(StudiesAssets.STUDIES_ROOT_PATH).mkdir();
+		if (success) {
+			Logger.info(CLASS_NAME
+					+ ".checkStudyRootFolder: Created studies root directory "
+					+ StudiesAssets.STUDIES_ROOT_PATH);
+		}
 	}
 
 	/**
