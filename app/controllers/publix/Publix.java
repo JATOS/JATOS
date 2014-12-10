@@ -86,7 +86,6 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
 		componentResult.merge();
-		// return internalServerError("bladkjflasjfd");
 		return ok(JsonUtils.asJsonForPublix(component));
 	}
 

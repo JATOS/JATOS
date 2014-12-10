@@ -26,7 +26,7 @@ public class ZipUtil {
 			ZipEntry zipEntry = (ZipEntry) enumeration.nextElement();
 			String fileName = zipEntry.getName();
 			file = new File(tempDir, fileName);
-			if (fileName.endsWith("/")) {
+			if (fileName.endsWith(File.separator)) {
 				file.mkdirs();
 				continue;
 			}

@@ -36,7 +36,8 @@ public class StudiesAssets extends Controller {
 	 * Default path to the studies directory in case it wasn't specified in the
 	 * config
 	 */
-	private static final String DEFAULT_STUDIES_ROOT_PATH = "/studies";
+	private static final String DEFAULT_STUDIES_ROOT_PATH = File.separator
+			+ "studies";
 	private static final String BASEPATH = Play.application().path().getPath();
 
 	/**
@@ -64,6 +65,7 @@ public class StudiesAssets extends Controller {
 	public static Result at(String filePath) {
 		File file;
 		try {
+			filePath = filePath.replace("/", File.separator);
 			file = IOUtils.getExistingFileSecurely(STUDIES_ROOT_PATH, filePath);
 			Logger.info(CLASS_NAME + ".at: loading file " + file.getPath()
 					+ ".");

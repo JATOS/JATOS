@@ -1,10 +1,14 @@
 #!/bin/bash
+# JATOS loader for Linux and MacOS X
 
+# Change IP address and port here
 address="127.0.0.1"
 port="9000"
 
+# Don't change after here unless you know what you're doing
 #####################################
 
+# Get JATOS directory and add it to PATH
 dir="$( cd "$( dirname "$0" )" && pwd )"
 export PATH="$dir:$dir/bin:$PATH"
 
@@ -16,14 +20,12 @@ function start() {
 	# Generate application secret for the Play framework
 	# If it's the first start, create a new secret, otherwise load it from the file.
 	secretfile="$dir/application.secret"
-	if [ -f "$secretfile" ]
+	if [ ! -f "$secretfile" ]
 	then
-		secret=$(<$secretfile)
-	else
 		random="$(LC_CTYPE=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1)"
 		echo "$random" > "$secretfile"
-		secret=$random
 	fi
+	secret=$(<$secretfile)
 
 	if [ ! -f $dir/bin/jatos ]
 	then
