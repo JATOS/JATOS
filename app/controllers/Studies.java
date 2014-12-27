@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import models.workers.StandaloneWorker;
+import models.workers.TesterWorker;
 import models.workers.Worker;
 import play.Logger;
 import play.api.mvc.Call;
@@ -26,6 +30,7 @@ import services.JsonUtils;
 import services.Messages;
 import services.PersistanceUtils;
 import controllers.publix.JatosPublix;
+import controllers.publix.TesterPublix;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
@@ -234,7 +239,8 @@ public class Studies extends Controller {
 		StudyModel clone = new StudyModel(study);
 		// Copy study's dir and it's content to cloned study's dir
 		try {
-			String destDirName = IOUtils.cloneStudyDirectory(study.getDirName());
+			String destDirName = IOUtils
+					.cloneStudyDirectory(study.getDirName());
 			clone.setDirName(destDirName);
 		} catch (IOException e) {
 			ControllerUtils.throwAjaxResultException(e.getMessage(),
@@ -333,8 +339,75 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_STUDY);
-		return redirect(controllers.publix.routes.PublixInterceptor
-				.startStudy(study.getId()));
+		String queryStr = "?" + JatosPublix.JATOS_WORKER_ID + "="
+				+ loggedInUser.getWorker().getId();
+		return redirect(controllers.publix.routes.PublixInterceptor.startStudy(
+				study.getId()).url()
+				+ queryStr);
+	}
+
+	@Transactional
+	public static Result createStandaloneRun(Long studyId)
+			throws ResultException {
+		Logger.info(CLASS_NAME + ".createStandaloneRun: studyId " + studyId
+				+ ", " + "logged-in user's email "
+				+ session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+
+		JsonNode json = request().body().asJson();
+		if (json == null) {
+			String errorMsg = ErrorMessages
+					.studyCreationOfStandaloneRunFailed(studyId);
+			ControllerUtils.throwStudiesResultException(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
+		}
+		String workerName = json.findPath("workerName").asText().trim();
+		if (workerName == null || workerName.isEmpty()) {
+			String errorMsg = ErrorMessages
+					.studyCreationOfStandaloneRunFailed(studyId);
+			ControllerUtils.throwStudiesResultException(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
+		}
+
+		StandaloneWorker worker = new StandaloneWorker(workerName);
+		worker.persist();
+		String url = controllers.publix.routes.PublixInterceptor.startStudy(
+				study.getId()).absoluteURL(request())
+				+ "?standaloneWorkerId=" + worker.getId();
+		return ok(url);
+	}
+
+	@Transactional
+	public static Result createTesterRun(Long studyId) throws ResultException {
+		Logger.info(CLASS_NAME + ".createTesterRun: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		StudyModel study = StudyModel.findById(studyId);
+		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+
+		JsonNode json = request().body().asJson();
+		if (json == null) {
+			String errorMsg = ErrorMessages
+					.studyCreationOfTesterRunFailed(studyId);
+			ControllerUtils.throwStudiesResultException(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
+		}
+		String workerName = json.findPath("workerName").asText().trim();
+		if (workerName == null || workerName.isEmpty()) {
+			String errorMsg = ErrorMessages
+					.studyCreationOfTesterRunFailed(studyId);
+			ControllerUtils.throwStudiesResultException(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
+		}
+
+		TesterWorker worker = new TesterWorker(workerName);
+		worker.persist();
+		String url = controllers.publix.routes.PublixInterceptor.startStudy(
+				study.getId()).absoluteURL(request())
+				+ "?" + TesterPublix.TESTER_ID + "=" + worker.getId();
+		return ok(url);
 	}
 
 	@Transactional

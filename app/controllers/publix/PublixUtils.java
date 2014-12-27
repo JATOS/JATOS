@@ -400,15 +400,6 @@ public abstract class PublixUtils<T extends Worker> {
 		return data;
 	}
 
-	public String retrieveJatosShowCookie() throws ForbiddenPublixException {
-		String jatosShow = Publix.session(JatosPublix.JATOS_SHOW);
-		if (jatosShow == null) {
-			throw new ForbiddenPublixException(
-					ErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS);
-		}
-		return jatosShow;
-	}
-
 	public void checkComponentBelongsToStudy(StudyModel study,
 			ComponentModel component) throws PublixException {
 		if (!component.getStudy().equals(study)) {

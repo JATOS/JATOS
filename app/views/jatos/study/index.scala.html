@@ -22,6 +22,9 @@ study: StudyModel, workerSet: Set[workers.Worker])
 				<li><a id="cloneStudy" href="#">Clone</a></li>
 				<li><a href="@routes.Studies.showMTurkSourceCode(study.getId())">MT Source Code</a></li>
 				<li class="divider"></li>
+				<li><a id="testerRun" href="#">Tester Run</a></li>
+				<li><a id="standaloneRun" href="#">Standalone Run</a></li>
+				<li class="divider"></li>
 				<li><a id="removeStudy" href="#">Delete</a></li>
 			</ul>
 		</div>
@@ -83,6 +86,28 @@ study: StudyModel, workerSet: Set[workers.Worker])
 				<li class="divider"></li>
 				<li><a class="removeComponent" href="#">Delete</a></li>
 			</ul>
+		</div>
+	</div>
+</div>
+
+<!-- Confirmation Modal - Run Standalone or Tester -->
+<div class="modal fade" id="confirmModalRun" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title">Create run</h4>
+			</div>
+			<div class="modal-body">
+				<p class="modalText">You're about to create a worker.</p>
+				<div class="input-group">
+					<input type="text" class="workerName form-control" placeholder="Worker name">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="confirmed btn btn-primary">Create</button>
+			</div>
 		</div>
 	</div>
 </div>
@@ -339,6 +364,65 @@ $('#studyToolbar').on('click', '#workers', function() {
 
 $('#studyToolbar').on('click', '#editStudy', function() {
 	window.location.href = "@routes.Studies.edit(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#standaloneRun', function() {
+	$('#confirmModalRun').find('.modal-title').html("Create standalone run");
+	$('#confirmModalRun').find('.modalText').html("You're about to create a standalone worker.");
+	$('#confirmModalRun').modal('show');
+	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
+		$('#confirmModalRun').modal('hide');
+		var workerName = $('#confirmModalRun').find('.workerName').val();
+		var jsonData = JSON.stringify({ "workerName": workerName });
+		$.ajax({
+			type: 'POST',
+			url: '@routes.Studies.createStandaloneRun(study.getId())',
+			contentType: "application/json; charset=utf-8",
+			dataType: 'text',
+			data: jsonData,
+			success: function(result) {
+				var title = "Standalone run";
+				var preText = "Use link";
+				var html = "<p>" + result + "</p>"; 
+				var postText = "or press \"Run\" to start it right away.";
+				askConfirmation(title, preText, html, postText, 'Run', function() {
+				});
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
+});
+
+$('#studyToolbar').on('click', '#testerRun', function() {
+	$('#confirmModalRun').find('.modal-title').html("Create tester run");
+	$('#confirmModalRun').find('.modalText').html("You're about to create a tester worker.");
+	$('#confirmModalRun').modal('show');
+	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
+		$('#confirmModalRun').modal('hide');
+		var workerName = $('#confirmModalRun').find('.workerName').val();
+		var jsonData = JSON.stringify({ "workerName": workerName });
+		$.ajax({
+			type: 'POST',
+			url: '@routes.Studies.createTesterRun(study.getId())',
+			contentType: "application/json; charset=utf-8",
+			dataType: 'text',
+			data: jsonData,
+			success: function(result) {
+				var title = "Tester run";
+				var preText = "Use link";
+				var html = "<p>" + result + "</p>"; 
+				var postText = "or press \"Run\" to start it right away.";
+				askConfirmation(title, preText, html, postText, 'Run', function() {
+					window.location.href = result;
+				});
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
 });
 
 $('#studyToolbar').on('click', '#removeStudy', function() {

@@ -44,8 +44,12 @@ public class Components extends Controller {
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_COMPONENT_START);
-		return redirect(controllers.publix.routes.PublixInterceptor
-				.startComponent(studyId, componentId));
+		session(JatosPublix.SHOW_COMPONENT_ID, componentId.toString());
+		String queryStr = "?" + JatosPublix.JATOS_WORKER_ID + "="
+				+ loggedInUser.getWorker().getId();
+		return redirect(controllers.publix.routes.PublixInterceptor.startStudy(
+				studyId).url()
+				+ queryStr);
 	}
 
 	@Transactional
@@ -151,7 +155,8 @@ public class Components extends Controller {
 
 		// Update component in DB
 		ComponentModel updatedComponent = form.get();
-		PersistanceUtils.updateComponentsProperties(component, updatedComponent);
+		PersistanceUtils
+				.updateComponentsProperties(component, updatedComponent);
 		return redirectAfterEdit(studyId, componentId, study);
 	}
 

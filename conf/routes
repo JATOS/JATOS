@@ -51,6 +51,8 @@ DELETE  /jatos/:studyId/remove                       controllers.Studies.remove(
 POST    /jatos/:studyId/changeComponentOrder         controllers.Studies.changeComponentOrder(studyId: Long, componentId: Long, direction: String)
 GET     /jatos/:studyId/mturk                        controllers.Studies.showMTurkSourceCode(studyId: Long)
 GET     /jatos/:studyId/show                         controllers.Studies.showStudy(studyId: Long)
+POST    /jatos/:studyId/createStandaloneRun          controllers.Studies.createStandaloneRun(studyId: Long)
+POST    /jatos/:studyId/createTesterRun              controllers.Studies.createTesterRun(studyId: Long)
 GET     /jatos/:studyId/clone                        controllers.Studies.cloneStudy(studyId: Long)
 GET     /jatos/:studyId/export                       controllers.ImportExport.exportStudy(studyId: Long)
 POST    /jatos/:studyId/swapLock                     controllers.Studies.swapLock(studyId: Long)

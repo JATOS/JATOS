@@ -12,12 +12,8 @@ import models.results.ComponentResult;
 import models.results.StudyResult;
 import models.workers.JatosWorker;
 import models.workers.MTSandboxWorker;
-import models.workers.MTTesterWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
-
-import org.apache.commons.lang3.StringUtils;
-
 import play.Play;
 
 /**
@@ -55,10 +51,7 @@ public class PersistanceUtils {
 	public static MTWorker createMTWorker(String mtWorkerId,
 			boolean mTurkSandbox) {
 		MTWorker worker;
-		if (StringUtils.containsIgnoreCase(mtWorkerId,
-				MTTesterWorker.WORKER_TYPE)) {
-			worker = new MTTesterWorker(mtWorkerId.toLowerCase());
-		} else if (mTurkSandbox) {
+		if (mTurkSandbox) {
 			worker = new MTSandboxWorker(mtWorkerId);
 		} else {
 			worker = new MTWorker(mtWorkerId);

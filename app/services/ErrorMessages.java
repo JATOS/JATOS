@@ -63,6 +63,7 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String STUDY_NEVER_FINSHED = "Study never finished, but new study started by the same worker";
 	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters";
 	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
+	public static final String NO_TESTER_WORKERID = "Tester's workerId is missing in the query parameters.";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
 	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
@@ -158,12 +159,6 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String workerNotFromMTurk(Long workerId) {
-		String errorMsg = "The worker with ID " + workerId
-				+ " isn't a MTurk worker.";
-		return errorMsg;
-	}
-
 	public static String userNotExist(String email) {
 		String errorMsg = "An user with email " + email + " doesn't exist.";
 		return errorMsg;
@@ -250,6 +245,16 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String studyLocked(Long studyId) {
 		return "Study " + studyId
 				+ " is locked. Unlock it if you want to make changes.";
+	}
+	
+	public static String studyCreationOfStandaloneRunFailed(Long studyId) {
+		return "The creation of a standalone run for study " + studyId
+				+ " failed.";
+	}
+	
+	public static String studyCreationOfTesterRunFailed(Long studyId) {
+		return "The creation of a tester run for study " + studyId
+				+ " failed.";
 	}
 
 	public static String couldntGeneratePathToFileOrDir(String fileStr) {

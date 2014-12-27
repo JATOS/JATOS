@@ -20,16 +20,18 @@ import exceptions.PublixException;
 
 /**
  * Implementation of JATOS' public API for studies and components that are
- * started via JATOS' UI.
+ * started via JATOS' UI (show study or show component).
  * 
  * @author Kristian Lange
  */
 public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
+	public static final String JATOS_WORKER_ID = "jatosWorkerId";
 	public static final String JATOS_SHOW = "jatos_show";
 	public static final String SHOW_STUDY = "full_study";
 	public static final String SHOW_COMPONENT_START = "single_component_start";
 	public static final String SHOW_COMPONENT_FINISHED = "single_component_finished";
+	public static final String SHOW_COMPONENT_ID = "show_component_id";
 
 	private static final String CLASS_NAME = JatosPublix.class.getSimpleName();
 
@@ -47,19 +49,26 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
 		JatosWorker worker = utils.retrieveWorker();
-		ComponentModel firstComponent = utils
-				.retrieveFirstActiveComponent(study);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
+		Long componentId = null;
 		String jatosShow = utils.retrieveJatosShowCookie();
-		if (!jatosShow.equals(SHOW_STUDY)) {
+		switch (jatosShow) {
+		case SHOW_STUDY:
+			componentId = utils.retrieveFirstActiveComponent(study).getId();
+			break;
+		case SHOW_COMPONENT_START:
+			componentId = Long.valueOf(session(SHOW_COMPONENT_ID));
+			session().remove(SHOW_COMPONENT_ID);
+			break;
+		case SHOW_COMPONENT_FINISHED:
 			throw new ForbiddenPublixException(
 					ErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		utils.finishAllPriorStudyResults(worker, study);
 		PersistanceUtils.createStudyResult(study, worker);
 		return redirect(controllers.publix.routes.PublixInterceptor
-				.startComponent(studyId, firstComponent.getId()));
+				.startComponent(studyId, componentId));
 	}
 
 	@Override
@@ -76,19 +85,15 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 		// Check if it's a single component show or a whole study show
 		String jatosShow = utils.retrieveJatosShowCookie();
-		StudyResult studyResult = null;
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
 		switch (jatosShow) {
 		case SHOW_STUDY:
-			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
 			break;
 		case SHOW_COMPONENT_START:
-			// Just create a StudyResult for this.
-			utils.finishAllPriorStudyResults(worker, study);
-			studyResult = PersistanceUtils.createStudyResult(study, worker);
 			session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_COMPONENT_FINISHED);
 			break;
 		case SHOW_COMPONENT_FINISHED:
-			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
 			ComponentResult lastComponentResult = utils
 					.retrieveLastComponentResult(studyResult);
 			if (!lastComponentResult.getComponent().equals(component)) {

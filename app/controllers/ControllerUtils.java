@@ -56,8 +56,9 @@ public class ControllerUtils extends Controller {
 			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
 		}
 		if (!study.hasMember(loggedInUser)) {
-			String errorMsg = ErrorMessages.studyNotMember(loggedInUser.getName(),
-					loggedInUser.getEmail(), studyId, study.getTitle());
+			String errorMsg = ErrorMessages.studyNotMember(
+					loggedInUser.getName(), loggedInUser.getEmail(), studyId,
+					study.getTitle());
 			SimpleResult result = null;
 			if (isAjax()) {
 				result = forbidden(errorMsg);
@@ -129,6 +130,11 @@ public class ControllerUtils extends Controller {
 		throw new ResultException(result, errorMsg);
 	}
 
+	/**
+	 * Difference between throwStudyResultsResultException and
+	 * throwStudyResultException: First one throws a ResultException for a
+	 * study's result page - second one for a study page.
+	 */
 	public static void throwStudiesResultException(String errorMsg,
 			int httpStatus, Long studyId) throws ResultException {
 		SimpleResult result = null;
@@ -170,10 +176,9 @@ public class ControllerUtils extends Controller {
 		if (isAjax()) {
 			result = status(httpStatus);
 		} else {
-			result = status(httpStatus,
-					views.html.jatos.component.edit.render(studyList,
-							loggedInUser, breadcrumbs, null, submitAction,
-							form, study));
+			result = status(httpStatus, views.html.jatos.component.edit.render(
+					studyList, loggedInUser, breadcrumbs, null, submitAction,
+					form, study));
 		}
 		throw new ResultException(result);
 	}
@@ -247,6 +252,11 @@ public class ControllerUtils extends Controller {
 		throw new ResultException(result, errorMsg);
 	}
 
+	/**
+	 * Difference between throwStudyResultsResultException and
+	 * throwStudyResultException: First one throws a ResultException for a
+	 * study's result page - second one for a study page.
+	 */
 	public static void throwStudyResultsResultException(String errorMsg,
 			int httpStatus, Long studyId) throws ResultException {
 		SimpleResult result = null;

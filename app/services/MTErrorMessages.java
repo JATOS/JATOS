@@ -40,5 +40,11 @@ public class MTErrorMessages extends ErrorMessages<MTWorker> {
 				+ studyId + " already.";
 		return errorMsg;
 	}
+	
+	public static String workerNotFromMTurk(Long workerId) {
+		String errorMsg = "The worker with ID " + workerId
+				+ " isn't a MTurk worker.";
+		return errorMsg;
+	}
 
 }

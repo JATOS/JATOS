@@ -1,35 +1,30 @@
 package controllers.publix;
 
 import models.StudyModel;
-import models.workers.MTSandboxWorker;
-import models.workers.MTWorker;
+import models.workers.TesterWorker;
 import models.workers.Worker;
 import services.ErrorMessages;
-import services.MTErrorMessages;
+import services.TesterErrorMessages;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
 import exceptions.NotFoundPublixException;
 import exceptions.PublixException;
 
 /**
- * Special PublixUtils for MTPublix (studies started via MTurk).
+ * Special PublixUtils for TesterPublix
  * 
  * @author Kristian Lange
  */
-public class MTPublixUtils extends PublixUtils<MTWorker> {
+public class TesterPublixUtils extends PublixUtils<TesterWorker> {
 
-	private MTErrorMessages errorMessages;
-
-	public MTPublixUtils(MTErrorMessages errorMessages) {
+	public TesterPublixUtils(TesterErrorMessages errorMessages) {
 		super(errorMessages);
-		this.errorMessages = errorMessages;
 	}
 
 	@Override
-	public MTWorker retrieveWorker() throws PublixException {
+	public TesterWorker retrieveWorker() throws PublixException {
 		String workerIdStr = Publix.session(Publix.WORKER_ID);
 		if (workerIdStr == null) {
-			// No worker ID in session -> study never started
 			throw new ForbiddenPublixException(
 					ErrorMessages.NO_WORKERID_IN_SESSION);
 		}
@@ -46,24 +41,18 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 			throw new NotFoundPublixException(
 					ErrorMessages.workerNotExist(workerId));
 		}
-		if (!(worker instanceof MTWorker)) {
+		if (!(worker instanceof TesterWorker)) {
 			throw new NotFoundPublixException(
-					MTErrorMessages.workerNotFromMTurk(workerId));
+					TesterErrorMessages.workerNotTester(workerId));
 		}
-		return (MTWorker) worker;
+		return (TesterWorker) worker;
 	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(MTWorker worker, StudyModel study)
+	public void checkWorkerAllowedToDoStudy(TesterWorker worker, StudyModel study)
 			throws ForbiddenPublixException {
-		// Sandbox workers can repeat studies
-		if (worker instanceof MTSandboxWorker) {
-			return;
-		}
-		if (didStudyAlready(worker, study)) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerNotAllowedStudy(worker, study.getId()));
-		}
+		// No restrictions for testers
+		return;
 	}
 
 }

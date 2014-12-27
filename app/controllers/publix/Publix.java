@@ -17,6 +17,7 @@ import services.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import controllers.ControllerUtils;
 import controllers.Users;
 import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
@@ -45,6 +46,67 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 	public Publix(PublixUtils<T> utils) {
 		this.utils = utils;
+	}
+
+	@Override
+	public Promise<Result> startComponent(Long studyId, Long componentId)
+			throws PublixException {
+		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID));
+
+		T worker = utils.retrieveWorker();
+		StudyModel study = utils.retrieveStudy(studyId);
+		ComponentModel component = utils.retrieveComponent(study, componentId);
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		ComponentResult componentResult = null;
+		try {
+			componentResult = utils.startComponent(component, studyResult);
+		} catch (ForbiddenReloadException e) {
+			return Promise
+					.pure((Result) redirect(controllers.publix.routes.PublixInterceptor
+							.finishStudy(studyId, false, e.getMessage())));
+		}
+		PublixUtils.setIdCookie(studyResult, componentResult, worker);
+		String urlPath = StudiesAssets.getComponentUrlPath(study.getDirName(),
+				component);
+		String urlWithQueryStr = StudiesAssets
+				.getUrlWithRequestQueryString(urlPath);
+		return forwardTo(urlWithQueryStr);
+	}
+
+	@Override
+	public Promise<Result> startComponentByPosition(Long studyId,
+			Integer position) throws PublixException {
+		Logger.info(CLASS_NAME + ".startComponentByPosition: studyId "
+				+ studyId + ", " + "position " + position + ", "
+				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+		ComponentModel component = utils.retrieveComponentByPosition(studyId,
+				position);
+		return startComponent(studyId, component.getId());
+	}
+
+	@Override
+	public Result startNextComponent(Long studyId) throws PublixException {
+		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
+				+ ", " + "workerId " + session(WORKER_ID));
+		T worker = utils.retrieveWorker();
+		StudyModel study = utils.retrieveStudy(studyId);
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+
+		ComponentModel nextComponent = utils
+				.retrieveNextActiveComponent(studyResult);
+		if (nextComponent == null) {
+			// Study has no more components -> finish it
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, true, null));
+		}
+		String urlWithQueryString = StudiesAssets
+				.getUrlWithRequestQueryString(controllers.publix.routes.PublixInterceptor
+						.startComponent(studyId, nextComponent.getId()).url());
+		return redirect(urlWithQueryString);
 	}
 
 	@Override
@@ -147,16 +209,29 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		componentResult.merge();
 		return ok();
 	}
-
+	
 	@Override
-	public Promise<Result> startComponentByPosition(Long studyId,
-			Integer position) throws PublixException {
-		Logger.info(CLASS_NAME + ".startComponentByPosition: studyId "
-				+ studyId + ", " + "position " + position + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
-		ComponentModel component = utils.retrieveComponentByPosition(studyId,
-				position);
-		return startComponent(studyId, component.getId());
+	public Result abortStudy(Long studyId, String message)
+			throws PublixException {
+		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
+				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
+				+ "message \"" + message + "\"");
+		StudyModel study = utils.retrieveStudy(studyId);
+		T worker = utils.retrieveWorker();
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		if (!utils.studyDone(studyResult)) {
+			utils.abortStudy(message, studyResult);
+		}
+
+		PublixUtils.discardIdCookie();
+		if (ControllerUtils.isAjax()) {
+			return ok();
+		} else {
+			return ok(views.html.publix.abort.render());
+		}
 	}
 
 	@Override
