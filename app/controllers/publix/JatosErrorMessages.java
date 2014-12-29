@@ -1,14 +1,14 @@
-package services;
+package controllers.publix;
 
 import models.workers.JatosWorker;
 
 /**
- * Special ErrorMessages for JatosPublix (studies or components started via
+ * Special PublixErrorMessages for JatosPublix (studies or components started via
  * JATOS' UI).
  * 
  * @author Kristian Lange
  */
-public class JatosErrorMessages extends ErrorMessages<JatosWorker> {
+public class JatosErrorMessages extends PublixErrorMessages<JatosWorker> {
 
 	@Override
 	public String workerNeverStartedStudy(JatosWorker worker, Long studyId) {
@@ -39,6 +39,13 @@ public class JatosErrorMessages extends ErrorMessages<JatosWorker> {
 		String errorMsg = "Worker " + worker.getId() + " ("
 				+ worker.getUser().getEmail() + ")" + " finished study "
 				+ studyId + " already.";
+		return errorMsg;
+	}
+
+	@Override
+	public String workerNotCorrectType(Long workerId) {
+		String errorMsg = "The worker with ID " + workerId
+				+ " isn't a JATOS worker.";
 		return errorMsg;
 	}
 

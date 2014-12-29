@@ -16,7 +16,6 @@ GET     /publix/:studyId/startNextComponent              @controllers.publix.Pub
 GET     /publix/:studyId/:componentId/getData            @controllers.publix.PublixInterceptor.getComponentData(studyId: Long, componentId: Long)
 POST    /publix/:studyId/:componentId/submitResultData   @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long)
 POST    /publix/:studyId/:componentId/logError           @controllers.publix.PublixInterceptor.logError(studyId: Long, componentId: Long)
-GET     /publix/teapot                                   @controllers.publix.PublixInterceptor.teapot()
 
 # JATOS
 GET     /jatos/login                                 controllers.Authentication.login()

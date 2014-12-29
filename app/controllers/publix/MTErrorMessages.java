@@ -1,13 +1,13 @@
-package services;
+package controllers.publix;
 
 import models.workers.MTWorker;
 
 /**
- * Special ErrorMessages for MTPublix (studies started via MTurk).
+ * Special PublixErrorMessages for MTPublix (studies started via MTurk).
  * 
  * @author Kristian Lange
  */
-public class MTErrorMessages extends ErrorMessages<MTWorker> {
+public class MTErrorMessages extends PublixErrorMessages<MTWorker> {
 
 	@Override
 	public String workerNeverStartedStudy(MTWorker worker, Long studyId) {
@@ -41,9 +41,15 @@ public class MTErrorMessages extends ErrorMessages<MTWorker> {
 		return errorMsg;
 	}
 	
-	public static String workerNotFromMTurk(Long workerId) {
+	@Override
+	public String workerNotCorrectType(Long workerId) {
 		String errorMsg = "The worker with ID " + workerId
 				+ " isn't a MTurk worker.";
+		return errorMsg;
+	}
+	
+	public static String noPreviewAvailable(Long studyId) {
+		String errorMsg = "No preview available for study " + studyId + ".";
 		return errorMsg;
 	}
 

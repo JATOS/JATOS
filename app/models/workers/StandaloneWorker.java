@@ -1,7 +1,16 @@
 package models.workers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+
+import play.data.validation.ValidationError;
+import services.ErrorMessages;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
@@ -15,36 +24,43 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 public class StandaloneWorker extends Worker {
 
 	public static final String WORKER_TYPE = "Standalone";
+	public static final String COMMENT = "comment";
 
-	/**
-	 * Worker's name or other identification
-	 */
-	private String name;
+	private String comment;
 	
 	public StandaloneWorker() {
 	}
 	
 	@JsonCreator
-	public StandaloneWorker(String name) {
-		this.name = name;
+	public StandaloneWorker(String commment) {
+		this.comment = commment;
 	}
 	
-	public void setName(String name) {
-		this.name = name;
+	public void setComment(String comment) {
+		this.comment = comment;
 	}
 
-	public String getName() {
-		return this.name;
+	public String getComment() {
+		return this.comment;
 	}
 	
 	@Override
 	public String toString() {
-		return name + ", " + super.toString();
+		return comment + ", " + super.toString();
 	}
 
 	@Override
 	public String generateConfirmationCode() {
 		return null;
+	}
+	
+	public List<ValidationError> validate() {
+		List<ValidationError> errorList = new ArrayList<ValidationError>();
+		if (comment != null && !Jsoup.isValid(comment, Whitelist.none())) {
+			errorList.add(new ValidationError(COMMENT,
+					ErrorMessages.NO_HTML_ALLOWED));
+		}
+		return errorList.isEmpty() ? null : errorList;
 	}
 
 }

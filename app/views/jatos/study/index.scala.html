@@ -101,7 +101,7 @@ study: StudyModel, workerSet: Set[workers.Worker])
 			<div class="modal-body">
 				<p class="modalText">You're about to create a worker.</p>
 				<div class="input-group">
-					<input type="text" class="workerName form-control" placeholder="Worker name">
+					<input type="text" class="comment form-control" placeholder="Comment">
 				</div>
 			</div>
 			<div class="modal-footer">
@@ -372,8 +372,8 @@ $('#studyToolbar').on('click', '#standaloneRun', function() {
 	$('#confirmModalRun').modal('show');
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
-		var workerName = $('#confirmModalRun').find('.workerName').val();
-		var jsonData = JSON.stringify({ "workerName": workerName });
+		var comment = $('#confirmModalRun').find('.comment').val();
+		var jsonData = JSON.stringify({ @workers.StandaloneWorker.COMMENT: comment });
 		$.ajax({
 			type: 'POST',
 			url: '@routes.Studies.createStandaloneRun(study.getId())',
@@ -386,6 +386,7 @@ $('#studyToolbar').on('click', '#standaloneRun', function() {
 				var html = "<p>" + result + "</p>"; 
 				var postText = "or press \"Run\" to start it right away.";
 				askConfirmation(title, preText, html, postText, 'Run', function() {
+					window.location.href = result;
 				});
 			},
 			error : function(err) {
@@ -401,8 +402,8 @@ $('#studyToolbar').on('click', '#testerRun', function() {
 	$('#confirmModalRun').modal('show');
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
-		var workerName = $('#confirmModalRun').find('.workerName').val();
-		var jsonData = JSON.stringify({ "workerName": workerName });
+		var comment = $('#confirmModalRun').find('.comment').val();
+		var jsonData = JSON.stringify({ @workers.TesterWorker.COMMENT: comment });
 		$.ajax({
 			type: 'POST',
 			url: '@routes.Studies.createTesterRun(study.getId())',

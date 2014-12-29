@@ -7,8 +7,6 @@ import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import play.Logger;
 import play.mvc.Result;
-import services.ErrorMessages;
-import services.MTErrorMessages;
 import services.PersistanceUtils;
 import controllers.ControllerUtils;
 import exceptions.BadRequestPublixException;
@@ -56,18 +54,28 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 		StudyModel study = utils.retrieveStudy(studyId);
 
-		checkForMTurkPreview(studyId, mtAssignmentId);
+		// Check if it's just a preview coming from MTurk. We don't allow
+		// previews.
+		if (mtAssignmentId != null
+				&& mtAssignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
+			// It's a preview coming from Mechanical Turk -> no previews
+			throw new BadRequestPublixException(
+					MTErrorMessages.noPreviewAvailable(studyId));
+		}
 
-		// Check worker
+		// Check worker and create if doesn't exists
 		if (mtWorkerId == null) {
-			throw new BadRequestPublixException(ErrorMessages.NO_MTURK_WORKERID);
+			throw new BadRequestPublixException(PublixErrorMessages.NO_MTURK_WORKERID);
 		}
 		MTWorker worker = MTWorker.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
+			String workerType = session(PublixInterceptor.WORKER_TYPE);
+			boolean isRequestFromMTurkSandbox = workerType
+					.equals(MTSandboxWorker.WORKER_TYPE);
 			worker = PersistanceUtils.createMTWorker(mtWorkerId,
-					isRequestFromMTurkSandbox());
+					isRequestFromMTurkSandbox);
 		}
-		utils.checkWorkerAllowedToDoStudy(worker, study);
+		utils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));
 
 		utils.finishAllPriorStudyResults(worker, study);
@@ -86,7 +94,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ "workerId " + session(WORKER_ID) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
-		MTWorker worker = utils.retrieveWorker();
+		MTWorker worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
@@ -110,25 +118,6 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 						.render(confirmationCode));
 			}
 		}
-	}
-
-	private void checkForMTurkPreview(Long studyId, String mtAssignmentId)
-			throws BadRequestPublixException {
-		if (mtAssignmentId != null
-				&& mtAssignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
-			// It's a preview coming from Mechanical Turk -> no previews
-			throw new BadRequestPublixException(
-					ErrorMessages.noPreviewAvailable(studyId));
-		}
-	}
-
-	/**
-	 * Returns true if the request comes from the Mechanical Turk Sandbox and
-	 * false otherwise.
-	 */
-	private boolean isRequestFromMTurkSandbox() {
-		String workerType = session(PublixInterceptor.WORKER_TYPE);
-		return workerType.equals(MTSandboxWorker.WORKER_TYPE);
 	}
 
 }

@@ -1,14 +1,11 @@
 package controllers.publix;
 
 import models.StudyModel;
+import models.results.StudyResult;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
-import services.ErrorMessages;
-import services.MTErrorMessages;
-import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
-import exceptions.NotFoundPublixException;
 import exceptions.PublixException;
 
 /**
@@ -26,31 +23,28 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 	}
 
 	@Override
-	public MTWorker retrieveWorker() throws PublixException {
-		String workerIdStr = Publix.session(Publix.WORKER_ID);
-		if (workerIdStr == null) {
-			// No worker ID in session -> study never started
-			throw new ForbiddenPublixException(
-					ErrorMessages.NO_WORKERID_IN_SESSION);
-		}
-		long workerId;
-		try {
-			workerId = Long.parseLong(workerIdStr);
-		} catch (NumberFormatException e) {
-			throw new BadRequestPublixException(
-					ErrorMessages.workerNotExist(workerIdStr));
-		}
-
-		Worker worker = Worker.findById(workerId);
-		if (worker == null) {
-			throw new NotFoundPublixException(
-					ErrorMessages.workerNotExist(workerId));
-		}
+	public MTWorker retrieveTypedWorker(String workerIdStr)
+			throws PublixException {
+		Worker worker = retrieveWorker(workerIdStr);
 		if (!(worker instanceof MTWorker)) {
-			throw new NotFoundPublixException(
-					MTErrorMessages.workerNotFromMTurk(workerId));
+			throw new ForbiddenPublixException(
+					errorMessages.workerNotCorrectType(worker.getId()));
 		}
 		return (MTWorker) worker;
+	}
+	
+	@Override
+	public void checkWorkerAllowedToStartStudy(MTWorker worker, StudyModel study)
+			throws ForbiddenPublixException {
+		if (!(worker instanceof MTSandboxWorker)) {
+			for (StudyResult studyResult : worker.getStudyResultList()) {
+				if (studyResult.getStudy().getId() == study.getId()) {
+					throw new ForbiddenPublixException(
+							PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+				}
+			}
+		}
+		checkWorkerAllowedToDoStudy(worker, study);
 	}
 
 	@Override
@@ -60,9 +54,10 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 		if (worker instanceof MTSandboxWorker) {
 			return;
 		}
+		// MTurk workers can't repeat studies
 		if (didStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
-					errorMessages.workerNotAllowedStudy(worker, study.getId()));
+					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 	}
 

@@ -75,7 +75,7 @@ public class Workers extends Controller {
 		if (worker instanceof JatosWorker) {
 			JatosWorker maWorker = (JatosWorker) worker;
 			String errorMsg = ErrorMessages
-					.removeJatosWorker(worker.getId(), maWorker.getUser()
+					.removeJatosWorkerNotAllowed(worker.getId(), maWorker.getUser()
 							.getName(), maWorker.getUser().getEmail());
 			ControllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.FORBIDDEN);

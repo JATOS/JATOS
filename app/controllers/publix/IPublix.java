@@ -103,9 +103,4 @@ public interface IPublix {
 	public Result logError(Long studyId, Long componentId)
 			throws BadRequestPublixException;
 
-	/**
-	 * HTTP type: Normal GET request<br>
-	 */
-	public Result teapot() throws BadRequestPublixException;
-
 }

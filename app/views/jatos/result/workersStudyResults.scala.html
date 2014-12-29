@@ -9,11 +9,17 @@ worker: workers.Worker)
 	<div class="panel-body">
 	Worker ID: @worker.getId()<br>
 	Worker Type: @worker.getWorkerType()<br>
-	@if(worker.getWorkerType().equals("MT") || worker.getWorkerType().equals("MTSandbox")) {
+	@if(worker.getWorkerType().equals(workers.MTWorker.WORKER_TYPE) || worker.getWorkerType().equals(workers.MTSandboxWorker.WORKER_TYPE)) {
 		MTurk Worker ID: @worker.asInstanceOf[workers.MTWorker].getMTWorkerId()
 	}
-	@if(worker.getWorkerType().equals("Jatos")) {
+	@if(worker.getWorkerType().equals(workers.JatosWorker.WORKER_TYPE)) {
 		User Email Address: @worker.asInstanceOf[workers.JatosWorker].getUser().getEmail()
+	}
+	@if(worker.getWorkerType().equals(workers.TesterWorker.WORKER_TYPE)) {
+		Comment: @worker.asInstanceOf[workers.TesterWorker].getComment()
+	}
+	@if(worker.getWorkerType().equals(workers.StandaloneWorker.WORKER_TYPE)) {
+		Comment: @worker.asInstanceOf[workers.StandaloneWorker].getComment()
 	}
 	</div>
 </div>

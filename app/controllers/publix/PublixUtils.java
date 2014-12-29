@@ -27,7 +27,6 @@ import org.w3c.dom.Document;
 
 import play.Logger;
 import play.mvc.Http.RequestBody;
-import services.ErrorMessages;
 import services.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -49,16 +48,41 @@ public abstract class PublixUtils<T extends Worker> {
 
 	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
 
-	private ErrorMessages<T> errorMessages;
+	private PublixErrorMessages<T> errorMessages;
 
-	public PublixUtils(ErrorMessages<T> errorMessages) {
+	public PublixUtils(PublixErrorMessages<T> errorMessages) {
 		this.errorMessages = errorMessages;
 	}
-
-	public abstract T retrieveWorker() throws PublixException;
+	
+	public abstract void checkWorkerAllowedToStartStudy(T worker,
+			StudyModel study) throws ForbiddenPublixException;
 
 	public abstract void checkWorkerAllowedToDoStudy(T worker, StudyModel study)
 			throws ForbiddenPublixException;
+
+	public abstract T retrieveTypedWorker(String workerIdStr)
+			throws PublixException;
+
+	public Worker retrieveWorker(String workerIdStr) throws PublixException {
+		if (workerIdStr == null) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.NO_WORKERID_IN_SESSION);
+		}
+		long workerId;
+		try {
+			workerId = Long.parseLong(workerIdStr);
+		} catch (NumberFormatException e) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.workerNotExist(workerIdStr));
+		}
+
+		Worker worker = Worker.findById(workerId);
+		if (worker == null) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.workerNotExist(workerId));
+		}
+		return worker;
+	}
 
 	/**
 	 * Start or restart a component
@@ -78,15 +102,17 @@ public abstract class PublixUtils<T extends Worker> {
 				} else {
 					// Worker tried to reload a non-reloadable component -> end
 					// component and study with FAIL
-					finishComponentResult(lastComponentResult, ComponentState.FAIL);
-					String errorMsg = ErrorMessages
+					finishComponentResult(lastComponentResult,
+							ComponentState.FAIL);
+					String errorMsg = PublixErrorMessages
 							.componentNotAllowedToReload(studyResult.getStudy()
 									.getId(), component.getId());
 					// exceptionalFinishStudy(studyResult, errorMsg);
 					throw new ForbiddenReloadException(errorMsg);
 				}
 			} else {
-				finishComponentResult(lastComponentResult, ComponentState.FINISHED);
+				finishComponentResult(lastComponentResult,
+						ComponentState.FINISHED);
 			}
 		}
 		return PersistanceUtils.createComponentResult(studyResult, component);
@@ -180,7 +206,7 @@ public abstract class PublixUtils<T extends Worker> {
 		studyResult.merge();
 		return confirmationCode;
 	}
-	
+
 	public void finishAllComponentResults(StudyResult studyResult) {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
@@ -237,7 +263,7 @@ public abstract class PublixUtils<T extends Worker> {
 		for (StudyResult studyResult : studyResultList) {
 			if (studyResult.getStudy().getId() == study.getId()
 					&& !studyDone(studyResult)) {
-				finishStudy(false, ErrorMessages.STUDY_NEVER_FINSHED,
+				finishStudy(false, PublixErrorMessages.STUDY_NEVER_FINSHED,
 						studyResult);
 			}
 		}
@@ -324,7 +350,7 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 		if (component == null) {
 			throw new NotFoundPublixException(
-					ErrorMessages.studyHasNoActiveComponents(study.getId()));
+					PublixErrorMessages.studyHasNoActiveComponents(study.getId()));
 		}
 		return component;
 	}
@@ -346,17 +372,17 @@ public abstract class PublixUtils<T extends Worker> {
 			ForbiddenPublixException {
 		ComponentModel component = ComponentModel.findById(componentId);
 		if (component == null) {
-			throw new NotFoundPublixException(ErrorMessages.componentNotExist(
+			throw new NotFoundPublixException(PublixErrorMessages.componentNotExist(
 					study.getId(), componentId));
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
 			throw new BadRequestPublixException(
-					ErrorMessages.componentNotBelongToStudy(study.getId(),
+					PublixErrorMessages.componentNotBelongToStudy(study.getId(),
 							componentId));
 		}
 		if (!component.isActive()) {
 			throw new ForbiddenPublixException(
-					ErrorMessages.componentNotActive(study.getId(), componentId));
+					PublixErrorMessages.componentNotActive(study.getId(), componentId));
 		}
 		return component;
 	}
@@ -366,14 +392,14 @@ public abstract class PublixUtils<T extends Worker> {
 		StudyModel study = retrieveStudy(studyId);
 		if (position == null) {
 			throw new BadRequestPublixException(
-					ErrorMessages.COMPONENTS_POSITION_NOT_NULL);
+					PublixErrorMessages.COMPONENTS_POSITION_NOT_NULL);
 		}
 		ComponentModel component;
 		try {
 			component = study.getComponent(position);
 		} catch (IndexOutOfBoundsException e) {
 			throw new NotFoundPublixException(
-					ErrorMessages.noComponentAtPosition(study.getId(), position));
+					PublixErrorMessages.noComponentAtPosition(study.getId(), position));
 		}
 		return component;
 	}
@@ -383,7 +409,7 @@ public abstract class PublixUtils<T extends Worker> {
 		StudyModel study = StudyModel.findById(studyId);
 		if (study == null) {
 			throw new NotFoundPublixException(
-					ErrorMessages.studyNotExist(studyId));
+					PublixErrorMessages.studyNotExist(studyId));
 		}
 		return study;
 	}
@@ -394,7 +420,7 @@ public abstract class PublixUtils<T extends Worker> {
 		String data = getRequestBodyAsString(requestBody);
 		if (data == null) {
 			throw new UnsupportedMediaTypePublixException(
-					ErrorMessages.submittedDataUnknownFormat(component
+					PublixErrorMessages.submittedDataUnknownFormat(component
 							.getStudy().getId(), component.getId()));
 		}
 		return data;
@@ -404,7 +430,7 @@ public abstract class PublixUtils<T extends Worker> {
 			ComponentModel component) throws PublixException {
 		if (!component.getStudy().equals(study)) {
 			throw new BadRequestPublixException(
-					ErrorMessages.componentNotBelongToStudy(study.getId(),
+					PublixErrorMessages.componentNotBelongToStudy(study.getId(),
 							component.getId()));
 		}
 	}

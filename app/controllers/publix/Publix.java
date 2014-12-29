@@ -55,7 +55,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
 
-		T worker = utils.retrieveWorker();
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = utils.retrieveStudy(studyId);
 		ComponentModel component = utils.retrieveComponent(study, componentId);
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
@@ -91,7 +91,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public Result startNextComponent(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
 				+ ", " + "workerId " + session(WORKER_ID));
-		T worker = utils.retrieveWorker();
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = utils.retrieveStudy(studyId);
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
@@ -113,7 +113,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public Result getStudyData(Long studyId) throws PublixException,
 			JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId);
-		T worker = utils.retrieveWorker();
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = utils.retrieveStudy(studyId);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
@@ -128,7 +128,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			throws PublixException, JsonProcessingException {
 		Logger.info(CLASS_NAME + ".getComponentData: studyId " + studyId + ", "
 				+ "componentId " + componentId);
-		T worker = utils.retrieveWorker();
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = utils.retrieveStudy(studyId);
 		ComponentModel component = utils.retrieveComponent(study, componentId);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
@@ -157,7 +157,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		StudyModel study = utils.retrieveStudy(studyId);
-		T worker = utils.retrieveWorker();
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = utils.retrieveComponent(study, componentId);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 		utils.checkComponentBelongsToStudy(study, component);
@@ -189,7 +189,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ session(Users.COOKIE_EMAIL) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
-		T worker = utils.retrieveWorker();
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = utils.retrieveComponent(study, componentId);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 		utils.checkComponentBelongsToStudy(study, component);
@@ -217,7 +217,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
 				+ "message \"" + message + "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
-		T worker = utils.retrieveWorker();
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
@@ -233,6 +233,34 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			return ok(views.html.publix.abort.render());
 		}
 	}
+	
+	@Override
+	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
+			throws PublixException {
+		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID) + ", " + "successful "
+				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
+		StudyModel study = utils.retrieveStudy(studyId);
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		if (!utils.studyDone(studyResult)) {
+			utils.finishStudy(successful, errorMsg, studyResult);
+		}
+
+		PublixUtils.discardIdCookie();
+		if (ControllerUtils.isAjax()) {
+			return ok();
+		} else {
+			if (!successful) {
+				return ok(views.html.publix.error.render(errorMsg));
+			} else {
+				return ok(views.html.publix.finishedAndThanks.render());
+			}
+		}
+	}
 
 	@Override
 	public Result logError(Long studyId, Long componentId) {
@@ -241,11 +269,6 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ studyId + ", " + "componentId " + componentId + ", "
 				+ "error message \"" + msg + "\".");
 		return ok();
-	}
-
-	@Override
-	public Result teapot() {
-		return status(418, "I'm a teapot");
 	}
 
 	/**

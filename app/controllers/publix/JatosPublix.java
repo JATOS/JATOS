@@ -8,8 +8,6 @@ import models.workers.JatosWorker;
 import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Result;
-import services.ErrorMessages;
-import services.JatosErrorMessages;
 import services.PersistanceUtils;
 import controllers.ControllerUtils;
 import controllers.Users;
@@ -48,8 +46,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
-		JatosWorker worker = utils.retrieveWorker();
-		utils.checkWorkerAllowedToDoStudy(worker, study);
+
+		JatosWorker worker = utils.retrieveUser().getWorker();
+		utils.checkWorkerAllowedToStartStudy(worker, study);
+		session(WORKER_ID, worker.getId().toString());
 
 		Long componentId = null;
 		String jatosShow = utils.retrieveJatosShowCookie();
@@ -63,7 +63,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			break;
 		case SHOW_COMPONENT_FINISHED:
 			throw new ForbiddenPublixException(
-					ErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
+					PublixErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		utils.finishAllPriorStudyResults(worker, study);
 		PersistanceUtils.createStudyResult(study, worker);
@@ -78,7 +78,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
-		JatosWorker worker = utils.retrieveWorker();
+		JatosWorker worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = utils.retrieveComponent(study, componentId);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 		utils.checkComponentBelongsToStudy(study, component);
@@ -129,7 +129,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
-		JatosWorker worker = utils.retrieveWorker();
+		JatosWorker worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
@@ -173,7 +173,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
 				+ "message \"" + message + "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
-		JatosWorker worker = utils.retrieveWorker();
+		JatosWorker worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
@@ -199,7 +199,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ "successful " + successful + ", " + "errorMsg \"" + errorMsg
 				+ "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
-		JatosWorker worker = utils.retrieveWorker();
+		JatosWorker worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
@@ -208,6 +208,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			utils.finishStudy(successful, errorMsg, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_SHOW);
 		}
+		
 		PublixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);

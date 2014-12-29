@@ -3,11 +3,7 @@ package controllers.publix;
 import models.StudyModel;
 import models.workers.TesterWorker;
 import models.workers.Worker;
-import services.ErrorMessages;
-import services.TesterErrorMessages;
-import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
-import exceptions.NotFoundPublixException;
 import exceptions.PublixException;
 
 /**
@@ -17,40 +13,33 @@ import exceptions.PublixException;
  */
 public class TesterPublixUtils extends PublixUtils<TesterWorker> {
 
+	private TesterErrorMessages errorMessages;
+
 	public TesterPublixUtils(TesterErrorMessages errorMessages) {
 		super(errorMessages);
+		this.errorMessages = errorMessages;
 	}
 
 	@Override
-	public TesterWorker retrieveWorker() throws PublixException {
-		String workerIdStr = Publix.session(Publix.WORKER_ID);
-		if (workerIdStr == null) {
-			throw new ForbiddenPublixException(
-					ErrorMessages.NO_WORKERID_IN_SESSION);
-		}
-		long workerId;
-		try {
-			workerId = Long.parseLong(workerIdStr);
-		} catch (NumberFormatException e) {
-			throw new BadRequestPublixException(
-					ErrorMessages.workerNotExist(workerIdStr));
-		}
-
-		Worker worker = Worker.findById(workerId);
-		if (worker == null) {
-			throw new NotFoundPublixException(
-					ErrorMessages.workerNotExist(workerId));
-		}
+	public TesterWorker retrieveTypedWorker(String workerIdStr)
+			throws PublixException {
+		Worker worker = retrieveWorker(workerIdStr);
 		if (!(worker instanceof TesterWorker)) {
-			throw new NotFoundPublixException(
-					TesterErrorMessages.workerNotTester(workerId));
+			throw new ForbiddenPublixException(
+					errorMessages.workerNotCorrectType(worker.getId()));
 		}
 		return (TesterWorker) worker;
 	}
+	
+	@Override
+	public void checkWorkerAllowedToStartStudy(TesterWorker worker,
+			StudyModel study) throws ForbiddenPublixException {
+		checkWorkerAllowedToDoStudy(worker, study);
+	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(TesterWorker worker, StudyModel study)
-			throws ForbiddenPublixException {
+	public void checkWorkerAllowedToDoStudy(TesterWorker worker,
+			StudyModel study) throws ForbiddenPublixException {
 		// No restrictions for testers
 		return;
 	}

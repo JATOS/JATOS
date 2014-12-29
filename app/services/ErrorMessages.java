@@ -1,22 +1,13 @@
 package services;
 
 import models.UserModel;
-import models.workers.Worker;
 
 /**
  * Helper class with methods that generate error strings.
  * 
  * @author Kristian Lange
  */
-public abstract class ErrorMessages<T extends Worker> {
-
-	public abstract String workerNeverStartedStudy(T worker, Long studyId);
-
-	public abstract String workerFinishedStudyAlready(T worker, Long studyId);
-
-	public abstract String workerNeverDidStudy(T worker, Long studyId);
-
-	public abstract String workerNotAllowedStudy(T worker, Long studyId);
+public abstract class ErrorMessages {
 
 	// General
 	public static final String MISSING_TITLE = "Missing title";
@@ -56,23 +47,6 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static final String NO_RESULTS_SELECTED = "No results selected";
 	public static final String PROBLEM_GENERATING_JSON_DATA = "Problem generate JSON data";
 
-	// Publix
-	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
-	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS = "This study or component was never started from within JATOS.";
-	public static final String STUDY_NEVER_STARTED_FROM_JATOS = "This study was never started from within JATOS.";
-	public static final String STUDY_NEVER_FINSHED = "Study never finished, but new study started by the same worker";
-	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters";
-	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
-	public static final String NO_TESTER_WORKERID = "Tester's workerId is missing in the query parameters.";
-	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
-	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
-	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
-	
-	public static String noPreviewAvailable(Long studyId) {
-		String errorMsg = "No preview available for study " + studyId + ".";
-		return errorMsg;
-	}
-
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
 	}
@@ -100,12 +74,6 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String studyHasNoActiveComponents(Long studyId) {
-		String errorMsg = "The study with ID " + studyId
-				+ " has no active components.";
-		return errorMsg;
-	}
-
 	public static String componentExportFailure(Long componentId) {
 		String errorMsg = "Failure during export of component with ID "
 				+ componentId + ".";
@@ -116,46 +84,6 @@ public abstract class ErrorMessages<T extends Worker> {
 			Long componentId) {
 		String errorMsg = "There is no study with ID " + studyId
 				+ " that has a component with ID " + componentId + ".";
-		return errorMsg;
-	}
-
-	public static String componentNotActive(Long studyId, Long componentId) {
-		String errorMsg = "Component with ID " + componentId
-				+ " in study with ID " + studyId + " is not active.";
-		return errorMsg;
-	}
-
-	public static String componentNotAllowedToReload(Long studyId,
-			Long componentId) {
-		String errorMsg = "It's not allowed to reload this component (ID: "
-				+ componentId + "). Unfortunately it is neccessary to finish "
-				+ "this study (ID: " + studyId + ") at this point.";
-		return errorMsg;
-	}
-
-	public static String componentAlreadyFinishedOrFailed(Long studyId,
-			Long componentId) {
-		String errorMsg = "Component " + componentId + " of study " + studyId
-				+ " is already finished or failed.";
-		return errorMsg;
-	}
-
-	public static String componentAlreadyStarted(Long studyId, Long componentId) {
-		String errorMsg = "Component " + componentId + " of study " + studyId
-				+ " was already started.";
-		return errorMsg;
-	}
-
-	public static String componentNeverStarted(Long studyId, Long componentId) {
-		String errorMsg = "Component " + componentId + " of study " + studyId
-				+ " was never started.";
-		return errorMsg;
-	}
-
-	public static String submittedDataUnknownFormat(Long studyId,
-			Long componentId) {
-		String errorMsg = "Unknown format of submitted data for component "
-				+ componentId + " of study " + studyId + ".";
 		return errorMsg;
 	}
 
@@ -173,12 +101,6 @@ public abstract class ErrorMessages<T extends Worker> {
 	public static String componentNotExist(Long studyId, Long componentId) {
 		String errorMsg = "An component with ID " + componentId + " of study "
 				+ studyId + " doesn't exist.";
-		return errorMsg;
-	}
-
-	public static String noComponentAtPosition(Long studyId, Integer position) {
-		String errorMsg = "There is no component at position " + position
-				+ " in study " + studyId + ".";
 		return errorMsg;
 	}
 
@@ -219,7 +141,7 @@ public abstract class ErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
-	public static String removeJatosWorker(Long workerId, String username,
+	public static String removeJatosWorkerNotAllowed(Long workerId, String username,
 			String email) {
 		String errorMsg = "Worker (ID: " + workerId + ") is a worker of "
 				+ "JATOS, associated to the user " + username

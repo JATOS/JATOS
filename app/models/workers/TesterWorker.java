@@ -1,7 +1,16 @@
 package models.workers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+
+import play.data.validation.ValidationError;
+import services.ErrorMessages;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
@@ -15,31 +24,38 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 public class TesterWorker extends Worker {
 
 	public static final String WORKER_TYPE = "Tester";
+	public static final String COMMENT = "comment";
 
-	/**
-	 * Worker's name or other identification
-	 */
-	private String name;
+	private String comment;
 	
 	public TesterWorker() {
 	}
 	
 	@JsonCreator
-	public TesterWorker(String name) {
-		this.name = name;
+	public TesterWorker(String comment) {
+		this.comment = comment;
 	}
 	
-	public void setName(String name) {
-		this.name = name;
+	public void setComment(String comment) {
+		this.comment = comment;
 	}
 
-	public String getName() {
-		return this.name;
+	public String getComment() {
+		return this.comment;
 	}
 
 	@Override
 	public String generateConfirmationCode() {
 		return null;
+	}
+	
+	public List<ValidationError> validate() {
+		List<ValidationError> errorList = new ArrayList<ValidationError>();
+		if (comment != null && !Jsoup.isValid(comment, Whitelist.none())) {
+			errorList.add(new ValidationError(COMMENT,
+					ErrorMessages.NO_HTML_ALLOWED));
+		}
+		return errorList.isEmpty() ? null : errorList;
 	}
 
 }

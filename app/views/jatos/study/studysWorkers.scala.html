@@ -10,8 +10,7 @@ study: StudyModel)
 		<tr>
 			<th>ID</th>
 			<th>Type</th>
-			<th>MTurk Worker ID</th>
-			<th>User Email</th>
+			<th>Additional Info</th>
 		</tr>
 	</thead>
 </table>
@@ -40,17 +39,21 @@ $(document).ready(function() {
 				}
 			},
 			{ "data": "workerType" },
-			{ "data": getMtWorkerId },
-			{ "data": getUserEmail },
+			{ "data": getOther }
 		]
 	});
 	
-	function getUserEmail(data, type, dataToSet) {
-		return (data.userEmail) ? data.userEmail : "none";
-	}
-	
-	function getMtWorkerId(data, type, dataToSet) {
-		return (data.mtWorkerId) ? data.mtWorkerId : "none";
+	function getOther(data, type, dataToSet) {
+		if (data.mtWorkerId) {
+			return "MTurk worker ID: " + data.mtWorkerId;
+		}
+		if (data.userEmail) {
+			return "User email: " + data.userEmail;
+		}
+		if (data.comment) {
+			return "Comment: " + data.comment;
+		}
+		return "none";
 	}
 	
 	$('#resultsTable tbody').on('click', 'td.details-control', function() {

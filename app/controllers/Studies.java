@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -29,7 +27,11 @@ import services.IOUtils;
 import services.JsonUtils;
 import services.Messages;
 import services.PersistanceUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
 import controllers.publix.JatosPublix;
+import controllers.publix.StandalonePublix;
 import controllers.publix.TesterPublix;
 import exceptions.ResultException;
 
@@ -363,19 +365,21 @@ public class Studies extends Controller {
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		String workerName = json.findPath("workerName").asText().trim();
-		if (workerName == null || workerName.isEmpty()) {
-			String errorMsg = ErrorMessages
-					.studyCreationOfStandaloneRunFailed(studyId);
+		String comment = json.findPath(StandaloneWorker.COMMENT).asText().trim();
+		StandaloneWorker worker = new StandaloneWorker(comment);
+		List<ValidationError> errorList = worker.validate();
+		if (errorList != null && !errorList.isEmpty()) {
+			String errorMsg = errorList.get(0).message();
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-
-		StandaloneWorker worker = new StandaloneWorker(workerName);
 		worker.persist();
 		String url = controllers.publix.routes.PublixInterceptor.startStudy(
 				study.getId()).absoluteURL(request())
-				+ "?standaloneWorkerId=" + worker.getId();
+				+ "?"
+				+ StandalonePublix.STANDALONE_WORKER_ID
+				+ "="
+				+ worker.getId();
 		return ok(url);
 	}
 
@@ -394,15 +398,14 @@ public class Studies extends Controller {
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		String workerName = json.findPath("workerName").asText().trim();
-		if (workerName == null || workerName.isEmpty()) {
-			String errorMsg = ErrorMessages
-					.studyCreationOfTesterRunFailed(studyId);
+		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
+		TesterWorker worker = new TesterWorker(comment);
+		List<ValidationError> errorList = worker.validate();
+		if (errorList != null && !errorList.isEmpty()) {
+			String errorMsg = errorList.get(0).message();
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-
-		TesterWorker worker = new TesterWorker(workerName);
 		worker.persist();
 		String url = controllers.publix.routes.PublixInterceptor.startStudy(
 				study.getId()).absoluteURL(request())
