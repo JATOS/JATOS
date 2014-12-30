@@ -325,7 +325,7 @@ public class ControllerUtils extends Controller {
 				if (idStr.isEmpty()) {
 					continue;
 				}
-				resultIdList.add(Long.parseLong(idStr));
+				resultIdList.add(Long.parseLong(idStr.trim()));
 			} catch (NumberFormatException e) {
 				String errorMsg = ErrorMessages.resultNotExist(idStr);
 				SimpleResult result = notFound(errorMsg);
