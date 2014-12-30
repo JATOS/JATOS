@@ -1,7 +1,6 @@
 package controllers.publix;
 
 import models.StudyModel;
-import models.results.StudyResult;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
@@ -32,17 +31,14 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 		}
 		return (MTWorker) worker;
 	}
-	
+
 	@Override
 	public void checkWorkerAllowedToStartStudy(MTWorker worker, StudyModel study)
 			throws ForbiddenPublixException {
-		if (!(worker instanceof MTSandboxWorker)) {
-			for (StudyResult studyResult : worker.getStudyResultList()) {
-				if (studyResult.getStudy().getId() == study.getId()) {
-					throw new ForbiddenPublixException(
-							PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
-				}
-			}
+		if (!(worker instanceof MTSandboxWorker)
+				&& didStudyAlready(worker, study)) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 		checkWorkerAllowedToDoStudy(worker, study);
 	}
@@ -55,7 +51,7 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 			return;
 		}
 		// MTurk workers can't repeat studies
-		if (didStudyAlready(worker, study)) {
+		if (finishedStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}

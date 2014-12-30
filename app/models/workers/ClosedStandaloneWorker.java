@@ -20,20 +20,20 @@ import com.fasterxml.jackson.annotation.JsonCreator;
  * @author Kristian Lange
  */
 @Entity
-@DiscriminatorValue(StandaloneWorker.WORKER_TYPE)
-public class StandaloneWorker extends Worker {
+@DiscriminatorValue(ClosedStandaloneWorker.WORKER_TYPE)
+public class ClosedStandaloneWorker extends Worker {
 
 	public static final String WORKER_TYPE = "Standalone";
 	public static final String COMMENT = "comment";
 
 	private String comment;
 	
-	public StandaloneWorker() {
+	public ClosedStandaloneWorker() {
 	}
 	
 	@JsonCreator
-	public StandaloneWorker(String commment) {
-		this.comment = commment;
+	public ClosedStandaloneWorker(String comment) {
+		this.comment = comment;
 	}
 	
 	public void setComment(String comment) {

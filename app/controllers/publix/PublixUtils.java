@@ -53,7 +53,7 @@ public abstract class PublixUtils<T extends Worker> {
 	public PublixUtils(PublixErrorMessages<T> errorMessages) {
 		this.errorMessages = errorMessages;
 	}
-	
+
 	public abstract void checkWorkerAllowedToStartStudy(T worker,
 			StudyModel study) throws ForbiddenPublixException;
 
@@ -350,7 +350,8 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 		if (component == null) {
 			throw new NotFoundPublixException(
-					PublixErrorMessages.studyHasNoActiveComponents(study.getId()));
+					PublixErrorMessages.studyHasNoActiveComponents(study
+							.getId()));
 		}
 		return component;
 	}
@@ -372,17 +373,19 @@ public abstract class PublixUtils<T extends Worker> {
 			ForbiddenPublixException {
 		ComponentModel component = ComponentModel.findById(componentId);
 		if (component == null) {
-			throw new NotFoundPublixException(PublixErrorMessages.componentNotExist(
-					study.getId(), componentId));
+			throw new NotFoundPublixException(
+					PublixErrorMessages.componentNotExist(study.getId(),
+							componentId));
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
 			throw new BadRequestPublixException(
-					PublixErrorMessages.componentNotBelongToStudy(study.getId(),
-							componentId));
+					PublixErrorMessages.componentNotBelongToStudy(
+							study.getId(), componentId));
 		}
 		if (!component.isActive()) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.componentNotActive(study.getId(), componentId));
+					PublixErrorMessages.componentNotActive(study.getId(),
+							componentId));
 		}
 		return component;
 	}
@@ -399,7 +402,8 @@ public abstract class PublixUtils<T extends Worker> {
 			component = study.getComponent(position);
 		} catch (IndexOutOfBoundsException e) {
 			throw new NotFoundPublixException(
-					PublixErrorMessages.noComponentAtPosition(study.getId(), position));
+					PublixErrorMessages.noComponentAtPosition(study.getId(),
+							position));
 		}
 		return component;
 	}
@@ -430,17 +434,31 @@ public abstract class PublixUtils<T extends Worker> {
 			ComponentModel component) throws PublixException {
 		if (!component.getStudy().equals(study)) {
 			throw new BadRequestPublixException(
-					PublixErrorMessages.componentNotBelongToStudy(study.getId(),
-							component.getId()));
+					PublixErrorMessages.componentNotBelongToStudy(
+							study.getId(), component.getId()));
 		}
 	}
 
 	/**
-	 * Checks if the worker did this study already.
+	 * Checks if the worker finished this study already. 'Finished' includes
+	 * failed and aborted.
+	 */
+	public boolean finishedStudyAlready(T worker, StudyModel study) {
+		for (StudyResult studyResult : worker.getStudyResultList()) {
+			if (studyResult.getStudy().equals(study) && studyDone(studyResult)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Checks if the worker ever did this study independent of the study
+	 * result's state.
 	 */
 	public boolean didStudyAlready(T worker, StudyModel study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().equals(study) && studyDone(studyResult)) {
+			if (studyResult.getStudy().getId() == study.getId()) {
 				return true;
 			}
 		}

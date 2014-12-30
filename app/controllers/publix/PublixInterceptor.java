@@ -1,9 +1,10 @@
 package controllers.publix;
 
+import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
-import models.workers.StandaloneWorker;
+import models.workers.OpenStandaloneWorker;
 import models.workers.TesterWorker;
 import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
@@ -20,20 +21,22 @@ import exceptions.PublixException;
  * Interceptor for Publix: it intercepts requests for JATOS' public API and
  * forwards them to one of the implementations of the API (all extend Publix).
  * Each implementation deals with different workers (e.g. workers from MechTurk,
- * tester worker).
+ * tester workers).
  * 
  * When a study is started the implementation to use is determined by parameters
  * in the request's query string. Then the worker type is put into the session
  * and used in subsequent requests of the same study run.
  * 
  * 1. Requests coming from MechTurk or MechTurk Sandbox (MTWorker and
- * MTSandboxWorker) will be forwarded too MTPublix.<br>
- * 2. Requests coming from a standalone run (StandaloneWorker) will be forwarded
- * to StandalonePublix.<br>
+ * MTSandboxWorker) will be forwarded to MTPublix.<br>
+ * 2. Requests coming from Jatos' UI (if clicked on show study/component) run
+ * (JatosWorker) will be forwarded to JatosPublix.<br>
  * 3. Requests coming from a tester run (TesterWorker) will be forwarded to
  * TesterPublix.<br>
- * 4. Requests coming from Jatos' UI (if clicked on show study/component) run
- * (JatosWorker) will be forwarded to JatosPublix.<br>
+ * 4. Requests coming from a closed standalone run (limited to pre-created
+ * ClosedStandaloneWorker) will be forwarded to ClosedStandalonePublix.<br>
+ * 5. Requests coming from an open standalone run (unlimited to everyone with
+ * the link) will be forwarded to OpenStandalonePublix.<br>
  * 
  * TODO: Move @Transactional out of controller and get rid of synchronisation
  * and JPA transaction handling
@@ -49,7 +52,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 	private IPublix jatosPublix = new JatosPublix();
 	private IPublix mtPublix = new MTPublix();
 	private IPublix testerPublix = new TesterPublix();
-	private IPublix standalonePublix = new StandalonePublix();
+	private IPublix closedStandalonePublix = new ClosedStandalonePublix();
+	private IPublix openStandalonePublix = new OpenStandalonePublix();
 
 	@Override
 	@Transactional
@@ -71,8 +75,11 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case TesterWorker.WORKER_TYPE:
 				result = testerPublix.startStudy(studyId);
 				break;
-			case StandaloneWorker.WORKER_TYPE:
-				result = standalonePublix.startStudy(studyId);
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.startStudy(studyId);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.startStudy(studyId);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -102,8 +109,13 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case TesterWorker.WORKER_TYPE:
 				promise = testerPublix.startComponent(studyId, componentId);
 				break;
-			case StandaloneWorker.WORKER_TYPE:
-				promise = standalonePublix.startComponent(studyId, componentId);
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				promise = closedStandalonePublix.startComponent(studyId,
+						componentId);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				promise = openStandalonePublix.startComponent(studyId,
+						componentId);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -134,8 +146,12 @@ public class PublixInterceptor extends Controller implements IPublix {
 		case TesterWorker.WORKER_TYPE:
 			promise = testerPublix.startComponentByPosition(studyId, position);
 			break;
-		case StandaloneWorker.WORKER_TYPE:
-			promise = standalonePublix.startComponentByPosition(studyId,
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			promise = closedStandalonePublix.startComponentByPosition(studyId,
+					position);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			promise = openStandalonePublix.startComponentByPosition(studyId,
 					position);
 			break;
 		default:
@@ -161,8 +177,11 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case TesterWorker.WORKER_TYPE:
 				result = testerPublix.startNextComponent(studyId);
 				break;
-			case StandaloneWorker.WORKER_TYPE:
-				result = standalonePublix.startNextComponent(studyId);
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.startNextComponent(studyId);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.startNextComponent(studyId);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -192,8 +211,11 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case TesterWorker.WORKER_TYPE:
 				result = testerPublix.getStudyData(studyId);
 				break;
-			case StandaloneWorker.WORKER_TYPE:
-				result = standalonePublix.getStudyData(studyId);
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.getStudyData(studyId);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.getStudyData(studyId);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -223,9 +245,13 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case TesterWorker.WORKER_TYPE:
 				result = testerPublix.getComponentData(studyId, componentId);
 				break;
-			case StandaloneWorker.WORKER_TYPE:
-				result = standalonePublix
-						.getComponentData(studyId, componentId);
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.getComponentData(studyId,
+						componentId);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.getComponentData(studyId,
+						componentId);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -255,9 +281,13 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case TesterWorker.WORKER_TYPE:
 				result = testerPublix.submitResultData(studyId, componentId);
 				break;
-			case StandaloneWorker.WORKER_TYPE:
-				result = standalonePublix
-						.submitResultData(studyId, componentId);
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.submitResultData(studyId,
+						componentId);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.submitResultData(studyId,
+						componentId);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -290,9 +320,13 @@ public class PublixInterceptor extends Controller implements IPublix {
 				result = testerPublix.finishComponent(studyId, componentId,
 						successful, errorMsg);
 				break;
-			case StandaloneWorker.WORKER_TYPE:
-				result = standalonePublix.finishComponent(studyId, componentId,
-						successful, errorMsg);
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.finishComponent(studyId,
+						componentId, successful, errorMsg);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.finishComponent(studyId,
+						componentId, successful, errorMsg);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -322,8 +356,11 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case TesterWorker.WORKER_TYPE:
 				result = testerPublix.abortStudy(studyId, message);
 				break;
-			case StandaloneWorker.WORKER_TYPE:
-				result = standalonePublix.abortStudy(studyId, message);
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.abortStudy(studyId, message);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.abortStudy(studyId, message);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -354,8 +391,12 @@ public class PublixInterceptor extends Controller implements IPublix {
 				result = testerPublix
 						.finishStudy(studyId, successful, errorMsg);
 				break;
-			case StandaloneWorker.WORKER_TYPE:
-				result = standalonePublix.finishStudy(studyId, successful,
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.finishStudy(studyId,
+						successful, errorMsg);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.finishStudy(studyId, successful,
 						errorMsg);
 				break;
 			default:
@@ -381,8 +422,10 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return jatosPublix.logError(studyId, componentId);
 		case TesterWorker.WORKER_TYPE:
 			return testerPublix.logError(studyId, componentId);
-		case StandaloneWorker.WORKER_TYPE:
-			return standalonePublix.logError(studyId, componentId);
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			return closedStandalonePublix.logError(studyId, componentId);
+		case OpenStandaloneWorker.WORKER_TYPE:
+			return openStandalonePublix.logError(studyId, componentId);
 		default:
 			throw new BadRequestPublixException(
 					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
@@ -399,7 +442,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 		if (workerType != null) {
 			return workerType;
 		}
-		throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		throw new BadRequestPublixException(
+				PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 	}
 
 	/**
@@ -431,13 +475,20 @@ public class PublixInterceptor extends Controller implements IPublix {
 		if (testerId != null) {
 			return TesterWorker.WORKER_TYPE;
 		}
-		// Check for standalone worker
-		String standaloneWorkerId = Publix
-				.getQueryString(StandalonePublix.STANDALONE_WORKER_ID);
-		if (standaloneWorkerId != null) {
-			return StandaloneWorker.WORKER_TYPE;
+		// Check for closed standalone worker
+		String closedStandaloneWorkerId = Publix
+				.getQueryString(ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID);
+		if (closedStandaloneWorkerId != null) {
+			return ClosedStandaloneWorker.WORKER_TYPE;
 		}
-		throw new BadRequestPublixException(PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		// Check for open standalone worker
+		String openStandalone = Publix
+				.getQueryString(OpenStandalonePublix.OPENSTANDALONE);
+		if (openStandalone != null) {
+			return OpenStandaloneWorker.WORKER_TYPE;
+		}
+		throw new BadRequestPublixException(
+				PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 	}
 
 }

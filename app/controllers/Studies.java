@@ -9,7 +9,7 @@ import java.util.Set;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.workers.StandaloneWorker;
+import models.workers.ClosedStandaloneWorker;
 import models.workers.TesterWorker;
 import models.workers.Worker;
 import play.Logger;
@@ -30,8 +30,8 @@ import services.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import controllers.publix.ClosedStandalonePublix;
 import controllers.publix.JatosPublix;
-import controllers.publix.StandalonePublix;
 import controllers.publix.TesterPublix;
 import exceptions.ResultException;
 
@@ -349,9 +349,9 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	public static Result createStandaloneRun(Long studyId)
+	public static Result createClosedStandaloneRun(Long studyId)
 			throws ResultException {
-		Logger.info(CLASS_NAME + ".createStandaloneRun: studyId " + studyId
+		Logger.info(CLASS_NAME + ".createClosedStandaloneRun: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
@@ -365,8 +365,8 @@ public class Studies extends Controller {
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		String comment = json.findPath(StandaloneWorker.COMMENT).asText().trim();
-		StandaloneWorker worker = new StandaloneWorker(comment);
+		String comment = json.findPath(ClosedStandaloneWorker.COMMENT).asText().trim();
+		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
 		List<ValidationError> errorList = worker.validate();
 		if (errorList != null && !errorList.isEmpty()) {
 			String errorMsg = errorList.get(0).message();
@@ -377,7 +377,7 @@ public class Studies extends Controller {
 		String url = controllers.publix.routes.PublixInterceptor.startStudy(
 				study.getId()).absoluteURL(request())
 				+ "?"
-				+ StandalonePublix.STANDALONE_WORKER_ID
+				+ ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID
 				+ "="
 				+ worker.getId();
 		return ok(url);

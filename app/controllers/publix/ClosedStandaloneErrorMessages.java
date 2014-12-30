@@ -1,16 +1,16 @@
 package controllers.publix;
 
-import models.workers.TesterWorker;
+import models.workers.ClosedStandaloneWorker;
 
 /**
- * Special PublixErrorMessages for TesterPublix
+ * Special PublixErrorMessages for ClosedStandalonePublix
  * 
  * @author Kristian Lange
  */
-public class TesterErrorMessages extends PublixErrorMessages<TesterWorker> {
+public class ClosedStandaloneErrorMessages extends PublixErrorMessages<ClosedStandaloneWorker> {
 
 	@Override
-	public String workerNeverStartedStudy(TesterWorker worker, Long studyId) {
+	public String workerNeverStartedStudy(ClosedStandaloneWorker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " (comment: "
 				+ worker.getComment() + ")" + " never started study " + studyId
 				+ ".";
@@ -18,14 +18,14 @@ public class TesterErrorMessages extends PublixErrorMessages<TesterWorker> {
 	}
 
 	@Override
-	public String workerNeverDidStudy(TesterWorker worker, Long studyId) {
+	public String workerNeverDidStudy(ClosedStandaloneWorker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " (comment: "
 				+ worker.getComment() + ")" + " never did study " + studyId + ".";
 		return errorMsg;
 	}
 
 	@Override
-	public String workerNotAllowedStudy(TesterWorker worker, Long studyId) {
+	public String workerNotAllowedStudy(ClosedStandaloneWorker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " (comment: "
 				+ worker.getComment() + ")" + " is not allowed to do " + "study "
 				+ studyId + ".";
@@ -33,7 +33,8 @@ public class TesterErrorMessages extends PublixErrorMessages<TesterWorker> {
 	}
 
 	@Override
-	public String workerFinishedStudyAlready(TesterWorker worker, Long studyId) {
+	public String workerFinishedStudyAlready(ClosedStandaloneWorker worker,
+			Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " (comment: "
 				+ worker.getComment() + ")" + " finished study " + studyId
 				+ " already.";
@@ -43,7 +44,7 @@ public class TesterErrorMessages extends PublixErrorMessages<TesterWorker> {
 	@Override
 	public String workerNotCorrectType(Long workerId) {
 		String errorMsg = "The worker with ID " + workerId
-				+ " isn't a tester worker.";
+				+ " isn't a closed standalone worker.";
 		return errorMsg;
 	}
 

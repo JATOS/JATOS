@@ -23,7 +23,8 @@ study: StudyModel, workerSet: Set[workers.Worker])
 				<li><a href="@routes.Studies.showMTurkSourceCode(study.getId())">MT Source Code</a></li>
 				<li class="divider"></li>
 				<li><a id="testerRun" href="#">Tester Run</a></li>
-				<li><a id="standaloneRun" href="#">Standalone Run</a></li>
+				<li><a id="closedStandaloneRun" href="#">Closed Standalone Run</a></li>
+				<li><a id="openStandaloneRun" href="#">Open Standalone Run</a></li>
 				<li class="divider"></li>
 				<li><a id="removeStudy" href="#">Delete</a></li>
 			</ul>
@@ -366,23 +367,23 @@ $('#studyToolbar').on('click', '#editStudy', function() {
 	window.location.href = "@routes.Studies.edit(study.getId())";
 });
 
-$('#studyToolbar').on('click', '#standaloneRun', function() {
-	$('#confirmModalRun').find('.modal-title').html("Create standalone run");
-	$('#confirmModalRun').find('.modalText').html("You're about to create a standalone worker.");
+$('#studyToolbar').on('click', '#closedStandaloneRun', function() {
+	$('#confirmModalRun').find('.modal-title').html("Create closed standalone run");
+	$('#confirmModalRun').find('.modalText').html("You're about to create a worker for a closed standalone run.");
 	$('#confirmModalRun').modal('show');
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
 		var comment = $('#confirmModalRun').find('.comment').val();
-		var jsonData = JSON.stringify({ @workers.StandaloneWorker.COMMENT: comment });
+		var jsonData = JSON.stringify({ @workers.ClosedStandaloneWorker.COMMENT: comment });
 		$.ajax({
 			type: 'POST',
-			url: '@routes.Studies.createStandaloneRun(study.getId())',
+			url: '@routes.Studies.createClosedStandaloneRun(study.getId())',
 			contentType: "application/json; charset=utf-8",
 			dataType: 'text',
 			data: jsonData,
 			success: function(result) {
-				var title = "Standalone run";
-				var preText = "Use link";
+				var title = "Closed standalone run";
+				var preText = "Use this link";
 				var html = "<p>" + result + "</p>"; 
 				var postText = "or press \"Run\" to start it right away.";
 				askConfirmation(title, preText, html, postText, 'Run', function() {
@@ -393,6 +394,17 @@ $('#studyToolbar').on('click', '#standaloneRun', function() {
 				showError(err.responseText);
 			}
 		});
+	});
+});
+
+$('#studyToolbar').on('click', '#openStandaloneRun', function() {
+	var title = "Open standalone run";
+	var preText = "Use this link";
+	var url = "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId()).absoluteURL(request())?openStandalone";
+	var html = "<p>" + url + "</p>"; 
+	var postText = "or press \"Run\" to start one right away. Remember to allow open standalone runs in your study's properties.";
+	askConfirmation(title, preText, html, postText, 'Run', function() {
+		window.location.href = url;
 	});
 });
 
@@ -412,7 +424,7 @@ $('#studyToolbar').on('click', '#testerRun', function() {
 			data: jsonData,
 			success: function(result) {
 				var title = "Tester run";
-				var preText = "Use link";
+				var preText = "Use this link";
 				var html = "<p>" + result + "</p>"; 
 				var postText = "or press \"Run\" to start it right away.";
 				askConfirmation(title, preText, html, postText, 'Run', function() {

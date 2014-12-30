@@ -18,8 +18,8 @@ worker: workers.Worker)
 	@if(worker.getWorkerType().equals(workers.TesterWorker.WORKER_TYPE)) {
 		Comment: @worker.asInstanceOf[workers.TesterWorker].getComment()
 	}
-	@if(worker.getWorkerType().equals(workers.StandaloneWorker.WORKER_TYPE)) {
-		Comment: @worker.asInstanceOf[workers.StandaloneWorker].getComment()
+	@if(worker.getWorkerType().equals(workers.ClosedStandaloneWorker.WORKER_TYPE)) {
+		Comment: @worker.asInstanceOf[workers.ClosedStandaloneWorker].getComment()
 	}
 	</div>
 </div>

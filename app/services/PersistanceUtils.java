@@ -91,7 +91,7 @@ public class PersistanceUtils {
 		study.setJsonData(updatedStudy.getJsonData());
 		study.merge();
 	}
-	
+
 	public static void updateStudysPropertiesWODirName(StudyModel study,
 			StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());

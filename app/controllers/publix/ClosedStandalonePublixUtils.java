@@ -1,38 +1,38 @@
 package controllers.publix;
 
 import models.StudyModel;
-import models.workers.StandaloneWorker;
+import models.workers.ClosedStandaloneWorker;
 import models.workers.Worker;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
 /**
- * Special PublixUtils for StandalonePublix
+ * Special PublixUtils for ClosedStandalonePublix
  * 
  * @author Kristian Lange
  */
-public class StandalonePublixUtils extends PublixUtils<StandaloneWorker> {
+public class ClosedStandalonePublixUtils extends PublixUtils<ClosedStandaloneWorker> {
 
-	private StandaloneErrorMessages errorMessages;
+	private ClosedStandaloneErrorMessages errorMessages;
 
-	public StandalonePublixUtils(StandaloneErrorMessages errorMessages) {
+	public ClosedStandalonePublixUtils(ClosedStandaloneErrorMessages errorMessages) {
 		super(errorMessages);
 		this.errorMessages = errorMessages;
 	}
 
 	@Override
-	public StandaloneWorker retrieveTypedWorker(String workerIdStr)
+	public ClosedStandaloneWorker retrieveTypedWorker(String workerIdStr)
 			throws PublixException {
 		Worker worker = retrieveWorker(workerIdStr);
-		if (!(worker instanceof StandaloneWorker)) {
+		if (!(worker instanceof ClosedStandaloneWorker)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotCorrectType(worker.getId()));
 		}
-		return (StandaloneWorker) worker;
+		return (ClosedStandaloneWorker) worker;
 	}
 	
 	@Override
-	public void checkWorkerAllowedToStartStudy(StandaloneWorker worker, StudyModel study)
+	public void checkWorkerAllowedToStartStudy(ClosedStandaloneWorker worker, StudyModel study)
 			throws ForbiddenPublixException {
 		if (!worker.getStudyResultList().isEmpty()) {
 			throw new ForbiddenPublixException(
@@ -42,10 +42,10 @@ public class StandalonePublixUtils extends PublixUtils<StandaloneWorker> {
 	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(StandaloneWorker worker,
+	public void checkWorkerAllowedToDoStudy(ClosedStandaloneWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
 		// Standalone workers can't repeat the same study
-		if (didStudyAlready(worker, study)) {
+		if (finishedStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
