@@ -48,6 +48,10 @@ public class JatosWorker extends Worker {
 		return this.user.getEmail();
 	}
 	
+	public String getWorkerType() {
+		return WORKER_TYPE;
+	}
+	
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}

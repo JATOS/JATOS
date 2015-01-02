@@ -35,13 +35,17 @@ public class OpenStandalonePublixUtils extends PublixUtils<OpenStandaloneWorker>
 	@Override
 	public void checkWorkerAllowedToStartStudy(OpenStandaloneWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
-		// no constrictions
-		return;
+		checkWorkerAllowedToDoStudy(worker, study);
 	}
 
 	@Override
 	public void checkWorkerAllowedToDoStudy(OpenStandaloneWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
+		if (!study.hasAllowedWorker(worker.getWorkerType())) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.workerTypeNotAllowed(worker
+							.getUIWorkerType()));
+		}
 		// Standalone workers can't repeat the same study
 		if (finishedStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
@@ -51,6 +55,7 @@ public class OpenStandalonePublixUtils extends PublixUtils<OpenStandaloneWorker>
 
 	public void checkAllowedToDoStudy(StudyModel study)
 			throws ForbiddenPublixException {
+		// Check if study was done before - cookie has the study id stored 
 		Cookie cookie = Publix.request().cookie(
 				OpenStandalonePublix.COOKIE);
 		if (cookie != null) {

@@ -46,6 +46,10 @@ public class MTWorker extends Worker {
 		return this.mtWorkerId;
 	}
 	
+	public String getWorkerType() {
+		return WORKER_TYPE;
+	}
+	
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}

@@ -11,11 +11,13 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
-public class ClosedStandalonePublixUtils extends PublixUtils<ClosedStandaloneWorker> {
+public class ClosedStandalonePublixUtils extends
+		PublixUtils<ClosedStandaloneWorker> {
 
 	private ClosedStandaloneErrorMessages errorMessages;
 
-	public ClosedStandalonePublixUtils(ClosedStandaloneErrorMessages errorMessages) {
+	public ClosedStandalonePublixUtils(
+			ClosedStandaloneErrorMessages errorMessages) {
 		super(errorMessages);
 		this.errorMessages = errorMessages;
 	}
@@ -30,10 +32,12 @@ public class ClosedStandalonePublixUtils extends PublixUtils<ClosedStandaloneWor
 		}
 		return (ClosedStandaloneWorker) worker;
 	}
-	
+
 	@Override
-	public void checkWorkerAllowedToStartStudy(ClosedStandaloneWorker worker, StudyModel study)
-			throws ForbiddenPublixException {
+	public void checkWorkerAllowedToStartStudy(ClosedStandaloneWorker worker,
+			StudyModel study) throws ForbiddenPublixException {
+		// Standalone runs are used only once - don't start if worker has a
+		// study result
 		if (!worker.getStudyResultList().isEmpty()) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
@@ -44,7 +48,12 @@ public class ClosedStandalonePublixUtils extends PublixUtils<ClosedStandaloneWor
 	@Override
 	public void checkWorkerAllowedToDoStudy(ClosedStandaloneWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
-		// Standalone workers can't repeat the same study
+		if (!study.hasAllowedWorker(worker.getWorkerType())) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.workerTypeNotAllowed(worker
+							.getUIWorkerType()));
+		}
+		// Closed standalone workers can't repeat the same study
 		if (finishedStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);

@@ -46,6 +46,11 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 	@Override
 	public void checkWorkerAllowedToDoStudy(MTWorker worker, StudyModel study)
 			throws ForbiddenPublixException {
+		if (!study.hasAllowedWorker(worker.getWorkerType())) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.workerTypeNotAllowed(worker
+							.getUIWorkerType()));
+		}
 		// Sandbox workers can repeat studies
 		if (worker instanceof MTSandboxWorker) {
 			return;

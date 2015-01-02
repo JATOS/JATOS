@@ -40,8 +40,11 @@ public class TesterPublixUtils extends PublixUtils<TesterWorker> {
 	@Override
 	public void checkWorkerAllowedToDoStudy(TesterWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
-		// No restrictions for testers
-		return;
+		if (!study.hasAllowedWorker(worker.getWorkerType())) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.workerTypeNotAllowed(worker
+							.getUIWorkerType()));
+		}
 	}
 
 }

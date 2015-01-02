@@ -46,8 +46,6 @@ public abstract class Worker {
 	@GeneratedValue
 	private Long id;
 
-	private String workerType;
-
 	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "studyResultList_order")
@@ -67,13 +65,7 @@ public abstract class Worker {
 		return this.id;
 	}
 
-	public void setWorkerType(String workerType) {
-		this.workerType = workerType;
-	}
-
-	public String getWorkerType() {
-		return this.workerType;
-	}
+	public abstract String getWorkerType();
 
 	@JsonProperty("uiWorkerType")
 	public abstract String getUIWorkerType();

@@ -57,6 +57,11 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	@Override
 	public void checkWorkerAllowedToDoStudy(JatosWorker worker, StudyModel study)
 			throws ForbiddenPublixException {
+		if (!study.hasAllowedWorker(worker.getWorkerType())) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.workerTypeNotAllowed(worker
+							.getUIWorkerType()));
+		}
 		UserModel loggedInUser = worker.getUser();
 		// User has to be a member of this study
 		if (!study.hasMember(loggedInUser)) {

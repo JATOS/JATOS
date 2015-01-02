@@ -45,6 +45,10 @@ public class TesterWorker extends Worker {
 		return this.comment;
 	}
 	
+	public String getWorkerType() {
+		return WORKER_TYPE;
+	}
+	
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}
