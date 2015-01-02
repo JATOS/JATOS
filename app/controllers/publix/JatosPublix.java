@@ -116,9 +116,9 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 							.finishStudy(studyId, false, e.getMessage())));
 		}
 		PublixUtils.setIdCookie(studyResult, componentResult, worker);
-		String urlPath = StudiesAssets.getComponentUrlPath(study.getDirName(),
+		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
-		String urlWithQueryStr = StudiesAssets
+		String urlWithQueryStr = StudyAssets
 				.getUrlWithRequestQueryString(urlPath);
 		return forwardTo(urlWithQueryStr);
 	}
@@ -160,7 +160,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
-		String urlWithQueryString = StudiesAssets
+		String urlWithQueryString = StudyAssets
 				.getUrlWithRequestQueryString(controllers.publix.routes.PublixInterceptor
 						.startComponent(studyId, nextComponent.getId()).url());
 		return redirect(urlWithQueryString);

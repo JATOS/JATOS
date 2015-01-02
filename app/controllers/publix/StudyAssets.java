@@ -11,51 +11,52 @@ import play.mvc.Result;
 import services.IOUtils;
 
 /**
- * Manages web-access to files in the external studies directory (outside of
- * JATOS' packed Jar).
+ * Manages web-access to files in the external study assets directory (outside
+ * of JATOS' packed Jar).
  * 
  * @author Kristian Lange
  */
-public class StudiesAssets extends Controller {
+public class StudyAssets extends Controller {
 
 	/**
-	 * Part of the URL path that defines the location of the studies
+	 * Identifying part of any URL that access the study assets directory.
 	 */
-	public static final String URL_STUDIES_PATH = "studies";
+	public static final String URL_STUDY_ASSETS = "study_assets";
 
-	private static final String CLASS_NAME = StudiesAssets.class
-			.getSimpleName();
-
-	/**
-	 * Property name in application config for the path to the directory where
-	 * all studies are located
-	 */
-	private static final String PROPERTY_STUDIES_ROOT_PATH = "jatos.studiesRootPath";
+	private static final String CLASS_NAME = StudyAssets.class.getSimpleName();
 
 	/**
-	 * Default path to the studies directory in case it wasn't specified in the
-	 * config
+	 * Property name in application config for the path in the file system to
+	 * the directory where all studies are located
 	 */
-	private static final String DEFAULT_STUDIES_ROOT_PATH = File.separator
-			+ "studies";
+	private static final String PROPERTY_STUDY_ASSETS_PATH = "jatos.studyAssetsPath";
+
+	/**
+	 * Default path in the file system to the studies directory in case it
+	 * wasn't specified in the config
+	 */
+	private static final String DEFAULT_STUDY_ASSETS_PATH = File.separator
+			+ "study_assets";
+
 	private static final String BASEPATH = Play.application().path().getPath();
 
 	/**
-	 * The path to the studies directory. If the property is defined in the
-	 * configuration file then use it as the base path. If property isn't
-	 * defined, try in default study path instead.
+	 * Path in the file system to the studies directory. If the property is
+	 * defined in the configuration file then use it as the base path. If
+	 * property isn't defined, try in default study path instead.
 	 */
-	public static String STUDIES_ROOT_PATH;
+	public static String STUDY_ASSETS_PATH;
 	static {
 		String rawConfigStudiesPath = Play.application().configuration()
-				.getString(PROPERTY_STUDIES_ROOT_PATH);
+				.getString(PROPERTY_STUDY_ASSETS_PATH);
 		if (rawConfigStudiesPath != null && !rawConfigStudiesPath.isEmpty()) {
-			STUDIES_ROOT_PATH = rawConfigStudiesPath.replace("~",
+			STUDY_ASSETS_PATH = rawConfigStudiesPath.replace("~",
 					System.getProperty("user.home"));
 		} else {
-			STUDIES_ROOT_PATH = BASEPATH + DEFAULT_STUDIES_ROOT_PATH;
+			STUDY_ASSETS_PATH = BASEPATH + DEFAULT_STUDY_ASSETS_PATH;
 		}
-		Logger.info(CLASS_NAME + ": Path to studies is " + STUDIES_ROOT_PATH);
+		Logger.info(CLASS_NAME + ": Path to study assets directory is "
+				+ STUDY_ASSETS_PATH);
 	}
 
 	/**
@@ -66,12 +67,12 @@ public class StudiesAssets extends Controller {
 		File file;
 		try {
 			filePath = filePath.replace("/", File.separator);
-			file = IOUtils.getExistingFileSecurely(STUDIES_ROOT_PATH, filePath);
+			file = IOUtils.getExistingFileSecurely(STUDY_ASSETS_PATH, filePath);
 			Logger.info(CLASS_NAME + ".at: loading file " + file.getPath()
 					+ ".");
 		} catch (IOException e) {
 			Logger.info(CLASS_NAME + ".at: failed loading from path "
-					+ STUDIES_ROOT_PATH + File.separator + filePath);
+					+ STUDY_ASSETS_PATH + File.separator + filePath);
 			return notFound(views.html.publix.error.render("Resource \""
 					+ filePath + "\" couldn't be found."));
 		}
@@ -80,7 +81,7 @@ public class StudiesAssets extends Controller {
 
 	public static String getComponentUrlPath(String studyDirName,
 			ComponentModel component) {
-		return "/" + URL_STUDIES_PATH + "/" + studyDirName + "/"
+		return "/" + URL_STUDY_ASSETS + "/" + studyDirName + "/"
 				+ component.getHtmlFilePath();
 	}
 
@@ -99,7 +100,7 @@ public class StudiesAssets extends Controller {
 	}
 
 	public static String getUrl(String urlPath) {
-		String requestHostName = Publix.request().host(); // includes port
+		String requestHostName = Publix.request().host(); // host includes port
 		return "http://" + requestHostName + urlPath;
 	}
 }

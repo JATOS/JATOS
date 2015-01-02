@@ -10,7 +10,7 @@ import models.UserModel;
 import play.Logger;
 import play.db.jpa.JPA;
 import services.PersistanceUtils;
-import controllers.publix.StudiesAssets;
+import controllers.publix.StudyAssets;
 
 public class Initializer {
 
@@ -19,18 +19,18 @@ public class Initializer {
 	public static void initialize() {
 		checkAdmin();
 		checkUuid();
-		checkStudyRootFolder();
+		checkStudyAssetsDir();
 	}
 
 	/**
-	 * Check whether studies root directory exists and create if not.
+	 * Check whether studies assets directory exists and create if not.
 	 */
-	private static void checkStudyRootFolder() {
-		boolean success = new File(StudiesAssets.STUDIES_ROOT_PATH).mkdir();
+	private static void checkStudyAssetsDir() {
+		boolean success = new File(StudyAssets.STUDY_ASSETS_PATH).mkdir();
 		if (success) {
 			Logger.info(CLASS_NAME
-					+ ".checkStudyRootFolder: Created studies root directory "
-					+ StudiesAssets.STUDIES_ROOT_PATH);
+					+ ".checkStudyAssetsDir: Created study assets directory "
+					+ StudyAssets.STUDY_ASSETS_PATH);
 		}
 	}
 

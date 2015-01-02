@@ -10,7 +10,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import play.mvc.Http.MultipartFormData.FilePart;
-import controllers.publix.StudiesAssets;
+import controllers.publix.StudyAssets;
 
 public class IOUtils {
 
@@ -147,12 +147,12 @@ public class IOUtils {
 	 * Generates a study directory path.
 	 */
 	public static String generateStudysPath(String studyDirName) {
-		return StudiesAssets.STUDIES_ROOT_PATH + File.separator + studyDirName;
+		return StudyAssets.STUDY_ASSETS_PATH + File.separator + studyDirName;
 	}
 
 	public static void removeStudyDirectory(String studyDirName)
 			throws IOException {
-		File dir = getFileSecurely(StudiesAssets.STUDIES_ROOT_PATH,
+		File dir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH,
 				studyDirName);
 		if (!dir.exists()) {
 			return;
@@ -166,7 +166,7 @@ public class IOUtils {
 
 	public static String cloneStudyDirectory(String srcDirName)
 			throws IOException {
-		File srcDir = getFileSecurely(StudiesAssets.STUDIES_ROOT_PATH,
+		File srcDir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH,
 				srcDirName);
 		if (!srcDir.isDirectory()) {
 			throw new IOException(ErrorMessages.studysDirPathIsntDir(srcDir
@@ -179,7 +179,7 @@ public class IOUtils {
 		// suffix.
 		int i = 1;
 		while (destDir == null || destDir.exists()) {
-			destDir = getFileSecurely(StudiesAssets.STUDIES_ROOT_PATH,
+			destDir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH,
 					destDirName);
 			destDirName = srcDirName + "_" + i++;
 		}
@@ -189,7 +189,7 @@ public class IOUtils {
 
 	public static void moveStudyDirectory(File srcDir, String targetDirName)
 			throws IOException {
-		File targetDir = getFileSecurely(StudiesAssets.STUDIES_ROOT_PATH,
+		File targetDir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH,
 				targetDirName);
 		if (targetDir.exists()) {
 			throw new IOException(
@@ -200,7 +200,7 @@ public class IOUtils {
 	}
 
 	public static void createStudyDir(String dirName) throws IOException {
-		File dir = getFileSecurely(StudiesAssets.STUDIES_ROOT_PATH, dirName);
+		File dir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH, dirName);
 		if (dir.exists()) {
 			throw new IOException(
 					ErrorMessages.studysDirNotCreatedBecauseExists(dir
