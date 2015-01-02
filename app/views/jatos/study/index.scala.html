@@ -400,7 +400,7 @@ $('#studyToolbar').on('click', '#closedStandaloneRun', function() {
 $('#studyToolbar').on('click', '#openStandaloneRun', function() {
 	var title = "Open standalone run";
 	var preText = "Use this link";
-	var url = "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId()).absoluteURL(request())?openStandalone";
+	var url = "@ControllerUtils.getRefererUrl()" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?openStandalone";
 	var html = "<p>" + url + "</p>"; 
 	var postText = "or press \"Run\" to start one right away. Remember to allow open standalone runs in your study's properties.";
 	askConfirmation(title, preText, html, postText, 'Run', function() {

@@ -110,7 +110,8 @@ public class Studies extends Controller {
 			IOUtils.createStudyDir(study.getDirName());
 		} catch (IOException e) {
 			errorList = new ArrayList<>();
-			errorList.add(new ValidationError(StudyModel.DIRNAME, e.getMessage()));
+			errorList.add(new ValidationError(StudyModel.DIRNAME, e
+					.getMessage()));
 			failStudyCreate(loggedInUser, studyList, study, errorList);
 		}
 		return redirect(routes.Studies.index(study.getId(), null));
@@ -123,7 +124,8 @@ public class Studies extends Controller {
 		study.setDescription(formMap.get(StudyModel.DESCRIPTION)[0]);
 		study.setDirName(formMap.get(StudyModel.DIRNAME)[0]);
 		study.setJsonData(formMap.get(StudyModel.JSON_DATA)[0]);
-		String[] allowedWorkerArray = formMap.get(StudyModel.ALLOWED_WORKER_LIST);
+		String[] allowedWorkerArray = formMap
+				.get(StudyModel.ALLOWED_WORKER_LIST);
 		if (allowedWorkerArray != null) {
 			study.getAllowedWorkerList().clear();
 			for (String worker : allowedWorkerArray) {
@@ -134,7 +136,7 @@ public class Studies extends Controller {
 		}
 		return study;
 	}
-	
+
 	private static void failStudyCreate(UserModel loggedInUser,
 			List<StudyModel> studyList, StudyModel study,
 			List<ValidationError> errorList) throws ResultException {
@@ -145,9 +147,10 @@ public class Studies extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForHome(Breadcrumbs.NEW_STUDY);
 		Call submitAction = routes.Studies.submit();
-		ControllerUtils.throwEditStudyResultException(studyList,
-				loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-				submitAction, false);
+		ControllerUtils
+				.throwEditStudyResultException(studyList, loggedInUser, form,
+						Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
+						false);
 	}
 
 	@Transactional
@@ -171,7 +174,7 @@ public class Studies extends Controller {
 		return ok(views.html.jatos.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, messages, submitAction, form, study.isLocked()));
 	}
-	
+
 	@Transactional
 	public static Result submitEdited(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
@@ -200,12 +203,13 @@ public class Studies extends Controller {
 			IOUtils.renameStudyDir(oldDirName, study.getDirName());
 		} catch (IOException e) {
 			errorList = new ArrayList<>();
-			errorList.add(new ValidationError(StudyModel.DIRNAME, e.getMessage()));
+			errorList.add(new ValidationError(StudyModel.DIRNAME, e
+					.getMessage()));
 			failStudyEdit(loggedInUser, studyList, study, errorList);
 		}
 		return redirect(routes.Studies.index(studyId, null));
 	}
-	
+
 	private static void failStudyEdit(UserModel loggedInUser,
 			List<StudyModel> studyList, StudyModel study,
 			List<ValidationError> errorList) throws ResultException {
@@ -216,9 +220,9 @@ public class Studies extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.EDIT_PROPERTIES);
 		Call submitAction = routes.Studies.submitEdited(study.getId());
-		ControllerUtils.throwEditStudyResultException(studyList,
-				loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-				submitAction, study.isLocked());
+		ControllerUtils.throwEditStudyResultException(studyList, loggedInUser,
+				form, Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
+				study.isLocked());
 	}
 
 	/**
@@ -410,8 +414,8 @@ public class Studies extends Controller {
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		worker.persist();
-		String url = controllers.publix.routes.PublixInterceptor.startStudy(
-				study.getId()).absoluteURL(request())
+		String url = ControllerUtils.getRefererUrl() + controllers.publix.routes.PublixInterceptor.startStudy(
+				study.getId()).url()
 				+ "?"
 				+ ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID
 				+ "="
@@ -443,14 +447,17 @@ public class Studies extends Controller {
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		worker.persist();
-		String url = controllers.publix.routes.PublixInterceptor.startStudy(
-				study.getId()).absoluteURL(request())
-				+ "?" + TesterPublix.TESTER_ID + "=" + worker.getId();
+
+		String url = ControllerUtils.getRefererUrl()
+				+ controllers.publix.routes.PublixInterceptor.startStudy(
+						study.getId()).url() + "?" + TesterPublix.TESTER_ID
+				+ "=" + worker.getId();
 		return ok(url);
 	}
 
 	@Transactional
-	public static Result showMTurkSourceCode(Long studyId) throws Exception {
+	public static Result showMTurkSourceCode(Long studyId)
+			throws ResultException {
 		Logger.info(CLASS_NAME + ".showMTurkSourceCode: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
@@ -460,8 +467,7 @@ public class Studies extends Controller {
 				.getEmail());
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		String[] referer = request().headers().get("Referer");
-		URL jatosURL = new URL(referer[0]);
+		URL jatosURL = ControllerUtils.getRefererUrl();
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 		return ok(views.html.jatos.study.mTurkSourceCode.render(studyList,

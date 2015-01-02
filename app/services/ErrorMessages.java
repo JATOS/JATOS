@@ -47,7 +47,10 @@ public abstract class ErrorMessages {
 	public static final String NO_RESULTS_SELECTED = "No results selected";
 	public static final String PROBLEM_GENERATING_JSON_DATA = "Problem generate JSON data";
 
+	// Other
 	public static final String MTWORKER_ALLOWANCE_MISSING = "Right now workers from Mechnical Turk are not allowed to run this study. You should change this in this study's properties before you run it from Mechanical Turk.";
+	public static final String COULDNT_GENERATE_URL = "Couldn't generate URL";
+	
 	
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
