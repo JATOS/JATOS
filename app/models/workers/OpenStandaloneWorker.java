@@ -13,8 +13,13 @@ import javax.persistence.Entity;
 public class OpenStandaloneWorker extends Worker {
 
 	public static final String WORKER_TYPE = "OpenStandalone";
+	public static final String UI_WORKER_TYPE = "Open standalone";
 
 	public OpenStandaloneWorker() {
+	}
+	
+	public String getUIWorkerType() {
+		return UI_WORKER_TYPE;
 	}
 
 	@Override

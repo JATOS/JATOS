@@ -4,7 +4,6 @@ study: StudyModel, jatosUrl: java.net.URL)
 
 @views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
-
 <h3>Source code for Mechanical Turk</h3>
 <p>Copy & paste this code into the 'source' field of your study's design layout in Mechanical Turk</p>
 
@@ -77,4 +76,11 @@ study: StudyModel, jatosUrl: java.net.URL)
 &lt;/script&gt;
 </code></pre>
 
+<script type="text/javascript">
+
+@if(!study.hasAllowedWorker(workers.MTWorker.WORKER_TYPE)) {
+	showWarning("@services.ErrorMessages.MTWORKER_ALLOWANCE_MISSING");
+}
+
+</script>
 }

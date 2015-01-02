@@ -23,7 +23,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 @DiscriminatorValue(ClosedStandaloneWorker.WORKER_TYPE)
 public class ClosedStandaloneWorker extends Worker {
 
-	public static final String WORKER_TYPE = "Standalone";
+	public static final String WORKER_TYPE = "ClosedStandalone";
+	public static final String UI_WORKER_TYPE = "Closed standalone";
 	public static final String COMMENT = "comment";
 
 	private String comment;
@@ -42,6 +43,10 @@ public class ClosedStandaloneWorker extends Worker {
 
 	public String getComment() {
 		return this.comment;
+	}
+	
+	public String getUIWorkerType() {
+		return UI_WORKER_TYPE;
 	}
 	
 	@Override

@@ -18,7 +18,7 @@ study: StudyModel)
 	<div class="col-xs-offset-2 col-xs-10">
 		<label class="checkbox-inline">
 			<input type="checkbox" name="@ComponentModel.RELOADABLE" value="true"
-					@if("true".equals(form("reloadable").value)) {checked="checked"}
+					@if("true".equals(form(ComponentModel.RELOADABLE).value)) {checked="checked"}
 					>Allow participants to reload
 			<!-- We need a hidden input field.
 			http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->

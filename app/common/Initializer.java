@@ -4,13 +4,13 @@ import java.io.File;
 import java.util.List;
 import java.util.UUID;
 
-import controllers.publix.StudiesAssets;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import play.Logger;
 import play.db.jpa.JPA;
 import services.PersistanceUtils;
+import controllers.publix.StudiesAssets;
 
 public class Initializer {
 

@@ -2,6 +2,7 @@ package controllers;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,7 +79,8 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 
-		Form<StudyModel> form = Form.form(StudyModel.class);
+		StudyModel study = new StudyModel();
+		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = routes.Studies.submit();
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForHome(Breadcrumbs.NEW_STUDY);
@@ -90,36 +92,62 @@ public class Studies extends Controller {
 	public static Result submit() throws ResultException {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
-		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		if (form.hasErrors()) {
-			Breadcrumbs breadcrumbs = Breadcrumbs
-					.generateForHome(Breadcrumbs.NEW_STUDY);
-			Call submitAction = routes.Studies.submit();
-			ControllerUtils.throwEditStudyResultException(studyList,
-					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction, false);
+
+		StudyModel study = bindStudyFromRequest();
+		List<ValidationError> errorList = study.validate();
+		if (errorList != null) {
+			failStudyCreate(loggedInUser, studyList, study, errorList);
 		}
 
 		// Persist in DB
-		StudyModel study = form.get();
 		PersistanceUtils.addStudy(study, loggedInUser);
 
 		// Create study's dir
 		try {
 			IOUtils.createStudyDir(study.getDirName());
 		} catch (IOException e) {
-			form.reject(e.getMessage());
-			Breadcrumbs breadcrumbs = Breadcrumbs
-					.generateForHome(Breadcrumbs.NEW_STUDY);
-			Call submitAction = routes.Studies.submit();
-			ControllerUtils.throwEditStudyResultException(studyList,
-					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction, false);
+			errorList = new ArrayList<>();
+			errorList.add(new ValidationError(StudyModel.DIRNAME, e.getMessage()));
+			failStudyCreate(loggedInUser, studyList, study, errorList);
 		}
 		return redirect(routes.Studies.index(study.getId(), null));
+	}
+
+	private static StudyModel bindStudyFromRequest() {
+		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
+		StudyModel study = new StudyModel();
+		study.setTitle(formMap.get(StudyModel.TITLE)[0]);
+		study.setDescription(formMap.get(StudyModel.DESCRIPTION)[0]);
+		study.setDirName(formMap.get(StudyModel.DIRNAME)[0]);
+		study.setJsonData(formMap.get(StudyModel.JSON_DATA)[0]);
+		String[] allowedWorkerArray = formMap.get(StudyModel.ALLOWED_WORKER_LIST);
+		if (allowedWorkerArray != null) {
+			study.getAllowedWorkerList().clear();
+			for (String worker : allowedWorkerArray) {
+				study.addAllowedWorker(worker);
+			}
+		} else {
+			study.getAllowedWorkerList().clear();
+		}
+		return study;
+	}
+	
+	private static void failStudyCreate(UserModel loggedInUser,
+			List<StudyModel> studyList, StudyModel study,
+			List<ValidationError> errorList) throws ResultException {
+		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
+		for (ValidationError error : errorList) {
+			form.reject(error);
+		}
+		Breadcrumbs breadcrumbs = Breadcrumbs
+				.generateForHome(Breadcrumbs.NEW_STUDY);
+		Call submitAction = routes.Studies.submit();
+		ControllerUtils.throwEditStudyResultException(studyList,
+				loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
+				submitAction, false);
 	}
 
 	@Transactional
@@ -143,7 +171,7 @@ public class Studies extends Controller {
 		return ok(views.html.jatos.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, messages, submitAction, form, study.isLocked()));
 	}
-
+	
 	@Transactional
 	public static Result submitEdited(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
@@ -155,35 +183,42 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
-		Form<StudyModel> form = Form.form(StudyModel.class).bindFromRequest();
-		if (form.hasErrors()) {
-			Call submitAction = routes.Studies.submitEdited(study.getId());
-			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
-					Breadcrumbs.EDIT_PROPERTIES);
-			ControllerUtils.throwEditStudyResultException(studyList,
-					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction, study.isLocked());
+		StudyModel updatedStudy = bindStudyFromRequest();
+		List<ValidationError> errorList = updatedStudy.validate();
+		if (errorList != null) {
+			failStudyEdit(loggedInUser, studyList, updatedStudy, errorList);
 		}
 
-		// Update study in DB
-		StudyModel updatedStudy = form.get();
-		// Get old dirName before study is updated
+		// Save old dirName before study is updated
 		String oldDirName = study.getDirName();
+
+		// Update study in DB
 		PersistanceUtils.updateStudysProperties(study, updatedStudy);
 
 		// Rename study dir
 		try {
 			IOUtils.renameStudyDir(oldDirName, study.getDirName());
 		} catch (IOException e) {
-			form.reject(new ValidationError(StudyModel.DIRNAME, e.getMessage()));
-			Call submitAction = routes.Studies.submitEdited(study.getId());
-			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
-					Breadcrumbs.EDIT_PROPERTIES);
-			ControllerUtils.throwEditStudyResultException(studyList,
-					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction, study.isLocked());
+			errorList = new ArrayList<>();
+			errorList.add(new ValidationError(StudyModel.DIRNAME, e.getMessage()));
+			failStudyEdit(loggedInUser, studyList, study, errorList);
 		}
 		return redirect(routes.Studies.index(studyId, null));
+	}
+	
+	private static void failStudyEdit(UserModel loggedInUser,
+			List<StudyModel> studyList, StudyModel study,
+			List<ValidationError> errorList) throws ResultException {
+		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
+		for (ValidationError error : errorList) {
+			form.reject(error);
+		}
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+				Breadcrumbs.EDIT_PROPERTIES);
+		Call submitAction = routes.Studies.submitEdited(study.getId());
+		ControllerUtils.throwEditStudyResultException(studyList,
+				loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
+				submitAction, study.isLocked());
 	}
 
 	/**
@@ -351,8 +386,8 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result createClosedStandaloneRun(Long studyId)
 			throws ResultException {
-		Logger.info(CLASS_NAME + ".createClosedStandaloneRun: studyId " + studyId
-				+ ", " + "logged-in user's email "
+		Logger.info(CLASS_NAME + ".createClosedStandaloneRun: studyId "
+				+ studyId + ", " + "logged-in user's email "
 				+ session(Users.COOKIE_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
@@ -365,7 +400,8 @@ public class Studies extends Controller {
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		String comment = json.findPath(ClosedStandaloneWorker.COMMENT).asText().trim();
+		String comment = json.findPath(ClosedStandaloneWorker.COMMENT).asText()
+				.trim();
 		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
 		List<ValidationError> errorList = worker.validate();
 		if (errorList != null && !errorList.isEmpty()) {

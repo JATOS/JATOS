@@ -8,7 +8,7 @@ worker: workers.Worker)
 <div class="panel panel-default">
 	<div class="panel-body">
 	Worker ID: @worker.getId()<br>
-	Worker Type: @worker.getWorkerType()<br>
+	Worker Type: @worker.getUIWorkerType()<br>
 	@if(worker.getWorkerType().equals(workers.MTWorker.WORKER_TYPE) || worker.getWorkerType().equals(workers.MTSandboxWorker.WORKER_TYPE)) {
 		MTurk Worker ID: @worker.asInstanceOf[workers.MTWorker].getMTWorkerId()
 	}

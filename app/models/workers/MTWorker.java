@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class MTWorker extends Worker {
 
 	public static final String WORKER_TYPE = "MT";
+	public static final String UI_WORKER_TYPE = "MTurk";
 
 	/**
 	 * Worker ID from MTurk
@@ -43,6 +44,10 @@ public class MTWorker extends Worker {
 
 	public String getMTWorkerId() {
 		return this.mtWorkerId;
+	}
+	
+	public String getUIWorkerType() {
+		return UI_WORKER_TYPE;
 	}
 
 	@Override

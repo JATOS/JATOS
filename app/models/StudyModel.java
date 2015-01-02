@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -22,6 +23,10 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.TypedQuery;
+
+import models.workers.ClosedStandaloneWorker;
+import models.workers.JatosWorker;
+import models.workers.TesterWorker;
 
 import org.hibernate.annotations.GenericGenerator;
 import org.jsoup.Jsoup;
@@ -50,6 +55,7 @@ public class StudyModel {
 	public static final String DESCRIPTION = "description";
 	public static final String DIRNAME = "dirName";
 	public static final String STUDY = "study";
+	public static final String ALLOWED_WORKER_LIST = "allowedWorkerList";
 
 	@Id
 	@GeneratedValue
@@ -85,6 +91,14 @@ public class StudyModel {
 	private boolean locked = false;
 
 	/**
+	 * List of worker types that are allowed to run this study. If the worker
+	 * type is not in this list, it has no permission to run this study.
+	 */
+	@JsonView(JsonUtils.JsonForIO.class)
+	@ElementCollection
+	private Set<String> allowedWorkerList = new HashSet<String>();
+
+	/**
 	 * Directory name of this study
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
@@ -116,6 +130,10 @@ public class StudyModel {
 	private List<ComponentModel> componentList = new ArrayList<ComponentModel>();
 
 	public StudyModel() {
+		// Add default allowed workers
+		addAllowedWorker(JatosWorker.WORKER_TYPE);
+		addAllowedWorker(TesterWorker.WORKER_TYPE);
+		addAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
 	}
 
 	/**
@@ -128,9 +146,9 @@ public class StudyModel {
 		this.jsonData = study.jsonData;
 		this.title = study.title;
 		this.locked = false;
-		ComponentModel clone;
+		this.allowedWorkerList = study.allowedWorkerList;
 		for (ComponentModel component : study.componentList) {
-			clone = new ComponentModel(component);
+			ComponentModel clone = new ComponentModel(component);
 			clone.setStudy(this);
 			componentList.add(clone);
 		}
@@ -193,8 +211,11 @@ public class StudyModel {
 	}
 
 	public String getJsonData() {
-		if (this.jsonData == null) {
+		if (jsonData == null) {
 			return null;
+		}
+		if (!JsonUtils.isValidJSON(jsonData)) {
+			return jsonData;
 		}
 		return JsonUtils.makePretty(jsonData);
 	}
@@ -211,6 +232,26 @@ public class StudyModel {
 			return;
 		}
 		this.jsonData = JsonUtils.asStringForDB(jsonDataStr);
+	}
+
+	public void setAllowedWorkerList(Set<String> allowedWorkerList) {
+		this.allowedWorkerList = allowedWorkerList;
+	}
+
+	public Set<String> getAllowedWorkerList() {
+		return this.allowedWorkerList;
+	}
+
+	public void addAllowedWorker(String workerType) {
+		allowedWorkerList.add(workerType);
+	}
+
+	public void removeAllowedWorker(String workerType) {
+		allowedWorkerList.remove(workerType);
+	}
+
+	public boolean hasAllowedWorker(String workerType) {
+		return allowedWorkerList.contains(workerType);
 	}
 
 	public void setMemberList(Set<UserModel> memberList) {

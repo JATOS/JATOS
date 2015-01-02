@@ -22,6 +22,7 @@ import models.results.StudyResult;
 import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 
@@ -35,10 +36,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = Worker.DISCRIMINATOR)
 @AttributeOverride(name = Worker.DISCRIMINATOR, column = @Column(name = Worker.DISCRIMINATOR, nullable = false, insertable = false, updatable = false))
-@JsonTypeInfo(use=JsonTypeInfo.Id.NONE, include=As.WRAPPER_OBJECT, property="type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE, include = As.WRAPPER_OBJECT, property = "type")
 public abstract class Worker {
 
-	public final static String DISCRIMINATOR = "workerType";
+	public static final String DISCRIMINATOR = "workerType";
+	public static final String UI_WORKER_TYPE = "uiWorkerType";
 
 	@Id
 	@GeneratedValue
@@ -72,6 +74,9 @@ public abstract class Worker {
 	public String getWorkerType() {
 		return this.workerType;
 	}
+
+	@JsonProperty("uiWorkerType")
+	public abstract String getUIWorkerType();
 
 	public void setStudyResultList(List<StudyResult> studyResultList) {
 		this.studyResultList = studyResultList;

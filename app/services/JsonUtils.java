@@ -281,6 +281,7 @@ public class JsonUtils {
 		for (Worker worker : workerSet) {
 			ObjectNode workerNode = OBJECTMAPPER
 					.valueToTree(initializeAndUnproxy(worker));
+//			workerNode.put(Worker.UI_WORKER_TYPE, worker.getUIWorkerType());
 			arrayNode.add(workerNode);
 		}
 		ObjectNode workersNode = OBJECTMAPPER.createObjectNode();

@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 public class MTSandboxWorker extends MTWorker {
 
 	public static final String WORKER_TYPE = "MTSandbox";
+	public static final String UI_WORKER_TYPE = "MTurk Sandbox";
 
 	public MTSandboxWorker() {
 	}
@@ -22,6 +23,10 @@ public class MTSandboxWorker extends MTWorker {
 	@JsonCreator
 	public MTSandboxWorker(String mtWorkerId) {
 		super(mtWorkerId);
+	}
+	
+	public String getUIWorkerType() {
+		return UI_WORKER_TYPE;
 	}
 
 	public static MTWorker findByMTWorkerId(String mtWorkerId) {

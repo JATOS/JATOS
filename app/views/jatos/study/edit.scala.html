@@ -38,10 +38,43 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 </div>
 
 <div class="form-group">
+	<label class="control-label col-xs-2" for="jsonData">Allowed worker types:</label>
+	<div class="col-xs-10">
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.JatosWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.JatosWorker.WORKER_TYPE)) {checked}
+					>@workers.JatosWorker.UI_WORKER_TYPE
+		</label>
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.TesterWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.TesterWorker.WORKER_TYPE)) {checked}
+					>@workers.TesterWorker.UI_WORKER_TYPE
+		</label>
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.MTWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.MTWorker.WORKER_TYPE)) {checked}
+					>@workers.MTWorker.UI_WORKER_TYPE
+		</label>
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.ClosedStandaloneWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.ClosedStandaloneWorker.WORKER_TYPE)) {checked}
+					>@workers.ClosedStandaloneWorker.UI_WORKER_TYPE
+		</label>
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.OpenStandaloneWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.OpenStandaloneWorker.WORKER_TYPE)) {checked}
+					>@workers.OpenStandaloneWorker.UI_WORKER_TYPE
+		</label>
+		<span class="help-block">Which workers are allowed to run this study?</span>
+	</div>
+</div>
+
+<div class="form-group">
 	<div class="col-xs-offset-2 col-xs-10">
 		<input type="submit" class="btn btn-primary" value="Submit">
 	</div>
 </div>
+
 }
 
 <script>

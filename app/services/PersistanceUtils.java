@@ -89,6 +89,7 @@ public class PersistanceUtils {
 		study.setDescription(updatedStudy.getDescription());
 		study.setDirName(updatedStudy.getDirName());
 		study.setJsonData(updatedStudy.getJsonData());
+		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
 		study.merge();
 	}
 
@@ -97,6 +98,7 @@ public class PersistanceUtils {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
 		study.setJsonData(updatedStudy.getJsonData());
+		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
 		study.merge();
 	}
 
