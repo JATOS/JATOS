@@ -19,7 +19,7 @@ libraryDependencies ++= Seq(
   "org.webjars" % "bootstrap" % "3.3.0"
 )
 
-playAssetsDirectories <+= baseDirectory / "studies"
+playAssetsDirectories <+= baseDirectory / "study_assets"
 
 play.Project.playJavaSettings
 
