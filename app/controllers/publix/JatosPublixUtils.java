@@ -36,7 +36,7 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	}
 
 	public UserModel retrieveUser() throws ForbiddenPublixException {
-		String email = Publix.session(Users.COOKIE_EMAIL);
+		String email = Publix.session(Users.SESSION_EMAIL);
 		if (email == null) {
 			throw new ForbiddenPublixException(ErrorMessages.NO_USER_LOGGED_IN);
 		}
@@ -69,14 +69,14 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 					errorMessages.workerNotAllowedStudy(worker, study.getId()));
 		}
 		// User has to be logged in
-		String email = Publix.session(Users.COOKIE_EMAIL);
+		String email = Publix.session(Users.SESSION_EMAIL);
 		if (!loggedInUser.getEmail().equals(email)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotAllowedStudy(worker, study.getId()));
 		}
 	}
 
-	public String retrieveJatosShowCookie() throws ForbiddenPublixException {
+	public String retrieveJatosShowFromSession() throws ForbiddenPublixException {
 		String jatosShow = Publix.session(JatosPublix.JATOS_SHOW);
 		if (jatosShow == null) {
 			throw new ForbiddenPublixException(

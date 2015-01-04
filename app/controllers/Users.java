@@ -22,12 +22,12 @@ public class Users extends Controller {
 
 	private static final String CLASS_NAME = Users.class.getSimpleName();
 
-	public static final String COOKIE_EMAIL = "email";
+	public static final String SESSION_EMAIL = "email";
 
 	@Transactional
 	public static Result profile(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".profile: " + "email " + email + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel user = ControllerUtils.retrieveUser(email);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -42,7 +42,7 @@ public class Users extends Controller {
 	@Transactional
 	public static Result create() throws ResultException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
@@ -55,7 +55,7 @@ public class Users extends Controller {
 	@Transactional
 	public static Result submit() throws Exception {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -105,7 +105,7 @@ public class Users extends Controller {
 	@Transactional
 	public static Result editProfile(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".editProfile: " + "email " + email + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel user = ControllerUtils.retrieveUser(email);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -124,7 +124,7 @@ public class Users extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".submitEditedProfile: " + "email " + email
 				+ ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel user = ControllerUtils.retrieveUser(email);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -149,7 +149,7 @@ public class Users extends Controller {
 	@Transactional
 	public static Result changePassword(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".changePassword: " + "email " + email + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel user = ControllerUtils.retrieveUser(email);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -167,7 +167,7 @@ public class Users extends Controller {
 	public static Result submitChangedPassword(String email) throws Exception {
 		Logger.info(CLASS_NAME + ".submitChangedPassword: " + "email " + email
 				+ ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel user = ControllerUtils.retrieveUser(email);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();

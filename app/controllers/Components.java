@@ -30,7 +30,7 @@ public class Components extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".showComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		StudyModel study = StudyModel.findById(studyId);
 		ComponentModel component = ComponentModel.findById(componentId);
@@ -55,7 +55,7 @@ public class Components extends Controller {
 	@Transactional
 	public static Result create(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".create: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -74,7 +74,7 @@ public class Components extends Controller {
 	@Transactional
 	public static Result submit(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".submit: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -103,7 +103,7 @@ public class Components extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -131,7 +131,7 @@ public class Components extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -182,7 +182,7 @@ public class Components extends Controller {
 		Logger.info(CLASS_NAME + ".changeProperty: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "active " + active
 				+ ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
@@ -201,7 +201,7 @@ public class Components extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".cloneComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
@@ -222,7 +222,7 @@ public class Components extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);

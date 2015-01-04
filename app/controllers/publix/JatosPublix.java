@@ -44,7 +44,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Override
 	public Result startStudy(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
 
 		JatosWorker worker = utils.retrieveUser().getWorker();
@@ -52,7 +52,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		session(WORKER_ID, worker.getId().toString());
 
 		Long componentId = null;
-		String jatosShow = utils.retrieveJatosShowCookie();
+		String jatosShow = utils.retrieveJatosShowFromSession();
 		switch (jatosShow) {
 		case SHOW_STUDY:
 			componentId = utils.retrieveFirstActiveComponent(study).getId();
@@ -76,7 +76,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
 		JatosWorker worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = utils.retrieveComponent(study, componentId);
@@ -84,7 +84,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		utils.checkComponentBelongsToStudy(study, component);
 
 		// Check if it's a single component show or a whole study show
-		String jatosShow = utils.retrieveJatosShowCookie();
+		String jatosShow = utils.retrieveJatosShowFromSession();
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
 		switch (jatosShow) {
@@ -127,7 +127,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Result startNextComponent(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
 				+ ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = utils.retrieveStudy(studyId);
 		JatosWorker worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		utils.checkWorkerAllowedToDoStudy(worker, study);
@@ -136,7 +136,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				study);
 
 		// Check if it's a single component show or a whole study show
-		String jatosShow = utils.retrieveJatosShowCookie();
+		String jatosShow = utils.retrieveJatosShowFromSession();
 		switch (jatosShow) {
 		case SHOW_STUDY:
 			studyResult = utils.retrieveWorkersLastStudyResult(worker, study);
@@ -170,7 +170,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
-				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
+				+ "logged-in user email " + session(Users.SESSION_EMAIL) + ", "
 				+ "message \"" + message + "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
 		JatosWorker worker = utils.retrieveTypedWorker(session(WORKER_ID));
@@ -195,7 +195,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
-				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
+				+ "logged-in user email " + session(Users.SESSION_EMAIL) + ", "
 				+ "successful " + successful + ", " + "errorMsg \"" + errorMsg
 				+ "\"");
 		StudyModel study = utils.retrieveStudy(studyId);

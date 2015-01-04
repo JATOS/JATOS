@@ -316,7 +316,7 @@ public class ControllerUtils extends Controller {
 
 	public static UserModel retrieveLoggedInUser() throws ResultException {
 		UserModel loggedInUser = UserModel
-				.findByEmail(session(Users.COOKIE_EMAIL));
+				.findByEmail(session(Users.SESSION_EMAIL));
 		if (loggedInUser == null) {
 			String errorMsg = ErrorMessages.NO_USER_LOGGED_IN;
 			SimpleResult result = null;

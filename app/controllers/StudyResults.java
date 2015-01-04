@@ -34,7 +34,7 @@ public class StudyResults extends Controller {
 	public static Result index(Long studyId, String errorMsg, int httpStatus)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -68,7 +68,7 @@ public class StudyResults extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".removeByWorker: workerId " + workerId + ", "
 				+ "studyResultIds " + studyResultIds + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		Worker worker = Worker.findById(workerId);
 		ControllerUtils.checkWorker(worker, workerId);
@@ -106,7 +106,7 @@ public class StudyResults extends Controller {
 	public static Result remove(String studyResultIds) throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: studyResultIds " + studyResultIds
 				+ ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
 		List<Long> studyResultIdList = ControllerUtils
@@ -135,7 +135,7 @@ public class StudyResults extends Controller {
 	@Transactional
 	public static Result tableDataByStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -158,7 +158,7 @@ public class StudyResults extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".tableDataByWorker: workerId " + workerId
 				+ ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		Worker worker = Worker.findById(workerId);
 		ControllerUtils.checkWorker(worker, workerId);
@@ -183,7 +183,7 @@ public class StudyResults extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".exportData: studyResultIds "
 				+ studyResultIds + ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();

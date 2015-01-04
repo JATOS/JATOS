@@ -45,7 +45,7 @@ public class Studies extends Controller {
 	public static Result index(Long studyId, String errorMsg, int httpStatus)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -74,7 +74,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result create() throws ResultException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
@@ -91,7 +91,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result submit() throws ResultException {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
@@ -156,7 +156,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result edit(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -178,7 +178,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result submitEdited(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -231,7 +231,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result swapLock(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".swapLock: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -247,7 +247,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result remove(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -272,7 +272,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result cloneStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".cloneStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -300,7 +300,7 @@ public class Studies extends Controller {
 	public static Result changeMembers(Long studyId, String errorMsg,
 			int httpStatus) throws ResultException {
 		Logger.info(CLASS_NAME + ".changeMembers: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -321,7 +321,7 @@ public class Studies extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".submitChangedMembers: studyId " + studyId
 				+ ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -351,7 +351,7 @@ public class Studies extends Controller {
 			String direction) throws ResultException {
 		Logger.info(CLASS_NAME + ".changeComponentOrder: studyId " + studyId
 				+ ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
@@ -374,7 +374,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result showStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".showStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -392,7 +392,7 @@ public class Studies extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".createClosedStandaloneRun: studyId "
 				+ studyId + ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -426,7 +426,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result createTesterRun(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".createTesterRun: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -460,7 +460,7 @@ public class Studies extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".showMTurkSourceCode: studyId " + studyId
 				+ ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -480,7 +480,7 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result tableDataByStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -499,7 +499,7 @@ public class Studies extends Controller {
 	public static Result workers(Long studyId, String errorMsg, int httpStatus)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser

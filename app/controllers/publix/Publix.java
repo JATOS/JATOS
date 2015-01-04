@@ -32,7 +32,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		IPublix {
 
 	// ID cookie name and value names
-	public static final String ID_COOKIE_NAME = "JATOS_IDs";
+	public static final String ID_COOKIE_NAME = "JATOS_IDS";
 	public static final String WORKER_ID = "workerId";
 	public static final String STUDY_ID = "studyId";
 	public static final String COMPONENT_ID = "componentId";
@@ -81,7 +81,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			Integer position) throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponentByPosition: studyId "
 				+ studyId + ", " + "position " + position + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		ComponentModel component = utils.retrieveComponentByPosition(studyId,
 				position);
 		return startComponent(studyId, component.getId());
@@ -186,7 +186,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			Boolean successful, String errorMsg) throws PublixException {
 		Logger.info(CLASS_NAME + ".finishComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "logged-in user email "
-				+ session(Users.COOKIE_EMAIL) + ", " + "successful "
+				+ session(Users.SESSION_EMAIL) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
 		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
@@ -214,7 +214,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
-				+ "logged-in user email " + session(Users.COOKIE_EMAIL) + ", "
+				+ "logged-in user email " + session(Users.SESSION_EMAIL) + ", "
 				+ "message \"" + message + "\"");
 		StudyModel study = utils.retrieveStudy(studyId);
 		T worker = utils.retrieveTypedWorker(session(WORKER_ID));

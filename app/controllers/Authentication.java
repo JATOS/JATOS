@@ -23,15 +23,15 @@ public class Authentication extends Controller {
 		if (loginForm.hasErrors()) {
 			return badRequest(views.html.jatos.auth.login.render(loginForm));
 		} else {
-			session(Users.COOKIE_EMAIL, loginForm.get().email);
+			session(Users.SESSION_EMAIL, loginForm.get().email);
 			return redirect(routes.Home.home());
 		}
 	}
 
 	@Security.Authenticated(Secured.class)
 	public static Result logout() {
-		Logger.info(CLASS_NAME + ".logout: " + session(Users.COOKIE_EMAIL));
-		session().remove(Users.COOKIE_EMAIL);
+		Logger.info(CLASS_NAME + ".logout: " + session(Users.SESSION_EMAIL));
+		session().remove(Users.SESSION_EMAIL);
 		flash("success", "You've been logged out");
 		return redirect(routes.Authentication.login());
 	}

@@ -35,7 +35,7 @@ public class ComponentResults extends Controller {
 			int httpStatus) throws ResultException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
@@ -72,7 +72,7 @@ public class ComponentResults extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
 		List<Long> componentResultIdList = ControllerUtils
@@ -105,7 +105,7 @@ public class ComponentResults extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".tableDataByComponent: studyId " + studyId
 				+ ", " + "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
@@ -128,7 +128,7 @@ public class ComponentResults extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".exportData: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();

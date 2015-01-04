@@ -33,8 +33,8 @@ public class ImportExport extends Controller {
 
 	public static final String STUDYS_DIR_CONFIRM = "studysDirConfirm";
 	public static final String STUDYS_PROPERTIES_CONFIRM = "studysPropertiesConfirm";
-	private static final String TEMP_STUDYS_DIR = "tempStudyDir";
-	private static final String TEMP_COMPONENT_DIR = "tempStudyDir";
+	private static final String SESSION_TEMP_STUDYS_DIR = "tempStudyDir";
+	private static final String SESSION_TEMP_COMPONENT_DIR = "tempComponentDir";
 	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
 
 	/**
@@ -46,14 +46,14 @@ public class ImportExport extends Controller {
 	@Transactional
 	public static Result importStudy() throws ResultException {
 		Logger.info(CLASS_NAME + ".importStudy: " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
 		File tempStudyDir = unzipUploadedFile();
 		StudyModel uploadedStudy = unmarshalStudy(tempStudyDir, false);
 
 		// Remember study's dir name
-		session(TEMP_STUDYS_DIR, tempStudyDir.getName());
+		session(SESSION_TEMP_STUDYS_DIR, tempStudyDir.getName());
 
 		StudyModel currentStudy = StudyModel
 				.findByUuid(uploadedStudy.getUuid());
@@ -93,7 +93,7 @@ public class ImportExport extends Controller {
 	@Transactional
 	public static Result importStudyConfirmed() throws ResultException {
 		Logger.info(CLASS_NAME + ".importStudyConfirmed: "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
 		// Get confirmation: overwrite study's properties and/or study's dir
@@ -162,8 +162,8 @@ public class ImportExport extends Controller {
 	 * variable afterwards.
 	 */
 	private static File getTempStudyDir() throws ResultException {
-		String tempStudyDirName = session(TEMP_STUDYS_DIR);
-		response().discardCookie(TEMP_STUDYS_DIR);
+		String tempStudyDirName = session(SESSION_TEMP_STUDYS_DIR);
+		session().remove(SESSION_TEMP_STUDYS_DIR);
 		if (tempStudyDirName == null || tempStudyDirName.isEmpty()) {
 			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
 			ControllerUtils.throwHomeResultException(errorMsg,
@@ -268,7 +268,7 @@ public class ImportExport extends Controller {
 	@Transactional
 	public static Result exportStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = StudyModel.findById(studyId);
@@ -282,7 +282,8 @@ public class ImportExport extends Controller {
 							+ IOUtils.STUDY_FILE_SUFFIX);
 			studyAsJsonFile.deleteOnExit();
 			JsonUtils.asJsonForIO(study, studyAsJsonFile);
-			String studyDirPath = IOUtils.generateStudysPath(study.getDirName());
+			String studyDirPath = IOUtils
+					.generateStudysPath(study.getDirName());
 			zipFile = ZipUtil.zipStudy(studyDirPath, study.getDirName(),
 					studyAsJsonFile.getAbsolutePath());
 			studyAsJsonFile.delete();
@@ -311,7 +312,7 @@ public class ImportExport extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".exportComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = StudyModel.findById(studyId);
@@ -348,7 +349,7 @@ public class ImportExport extends Controller {
 	@Transactional
 	public static Result importComponent(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".importComponent: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -368,7 +369,7 @@ public class ImportExport extends Controller {
 				filePart.getFile(), study);
 
 		// Remember component's file name
-		session(TEMP_COMPONENT_DIR, filePart.getFile().getName());
+		session(SESSION_TEMP_COMPONENT_DIR, filePart.getFile().getName());
 
 		boolean componentExists = ComponentModel.findByUuid(uploadedComponent
 				.getUuid()) != null;
@@ -390,7 +391,7 @@ public class ImportExport extends Controller {
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".importComponentConfirmed: " + "studyId "
 				+ studyId + ", " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
@@ -417,8 +418,8 @@ public class ImportExport extends Controller {
 	 */
 	private static File getTempComponentFile(StudyModel study)
 			throws ResultException {
-		String tempComponentFileName = session(TEMP_COMPONENT_DIR);
-		response().discardCookie(TEMP_COMPONENT_DIR);
+		String tempComponentFileName = session(SESSION_TEMP_COMPONENT_DIR);
+		session().remove(SESSION_TEMP_COMPONENT_DIR);
 		if (tempComponentFileName == null || tempComponentFileName.isEmpty()) {
 			String errorMsg = ErrorMessages.IMPORT_OF_COMPONENT_FAILED;
 			ControllerUtils.throwStudiesResultException(errorMsg,

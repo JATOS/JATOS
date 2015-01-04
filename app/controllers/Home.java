@@ -23,7 +23,7 @@ public class Home extends Controller {
 	public static Result home(String errorMsg, int httpStatus)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
-				+ session(Users.COOKIE_EMAIL));
+				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());

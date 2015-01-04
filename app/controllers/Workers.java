@@ -31,7 +31,7 @@ public class Workers extends Controller {
 	public static Result index(Long workerId, String errorMsg, int httpStatus)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		Worker worker = Worker.findById(workerId);
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
@@ -67,7 +67,7 @@ public class Workers extends Controller {
 	@Transactional
 	public static Result remove(Long workerId) throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: workerId " + workerId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Worker worker = Worker.findById(workerId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkWorker(worker, workerId);
@@ -100,7 +100,7 @@ public class Workers extends Controller {
 	@Transactional
 	public static Result tableDataByStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.COOKIE_EMAIL));
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
