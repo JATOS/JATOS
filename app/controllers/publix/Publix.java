@@ -122,6 +122,32 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		studyResult.merge();
 		return ok(JsonUtils.asJsonForPublix(study));
 	}
+	
+	@Override
+	public Result getStudySessionData(Long studyId) throws PublixException {
+		Logger.info(CLASS_NAME + ".getStudySessionData: studyId " + studyId);
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
+		StudyModel study = utils.retrieveStudy(studyId);
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		String studySessionData = studyResult.getStudySessionData();
+		return ok(studySessionData);
+	}
+	
+	@Override
+	public Result setStudySessionData(Long studyId) throws PublixException {
+		Logger.info(CLASS_NAME + ".setStudySessionData: studyId " + studyId);
+		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
+		StudyModel study = utils.retrieveStudy(studyId);
+		utils.checkWorkerAllowedToDoStudy(worker, study);
+		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
+				study);
+		String studySessionData = utils.getDataFromRequestBody(request().body());
+		studyResult.setStudySessionData(studySessionData);
+		studyResult.merge();
+		return ok();
+	}
 
 	@Override
 	public Result getComponentProperties(Long studyId, Long componentId)
@@ -174,8 +200,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 					.finishStudy(studyId, false, e.getMessage()));
 		}
 
-		String data = utils.getDataFromRequestBody(request().body(), component);
-		componentResult.setData(data);
+		String resultData = utils.getDataFromRequestBody(request().body());
+		componentResult.setData(resultData);
 		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
 		componentResult.merge();
 		return ok();

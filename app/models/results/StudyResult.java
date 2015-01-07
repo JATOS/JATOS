@@ -11,6 +11,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
@@ -34,8 +35,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * @author Kristian Lange
  */
 @Entity
-@JsonPropertyOrder(value = { "id", "startDate", "worker",
-		"confirmationCode", "studyState", "errorMsg", "abortMsg" })
+@JsonPropertyOrder(value = { "id", "startDate", "worker", "confirmationCode",
+		"studyState", "errorMsg", "abortMsg" })
 public class StudyResult {
 
 	@Id
@@ -66,6 +67,15 @@ public class StudyResult {
 	 * State in the progress of a study.
 	 */
 	private StudyState studyState;
+
+	/**
+	 * Temporary, global data storage that can be used by components to exchange
+	 * data while the study is running. It will be deleted after the study is
+	 * finished. It's stored as a normal string but jatos.js is converting it
+	 * into JSON. It's initialised with an empty JSON object.
+	 */
+	@Lob
+	private String studySessionData = "{}";
 
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
@@ -150,6 +160,14 @@ public class StudyResult {
 
 	public StudyState getStudyState() {
 		return this.studyState;
+	}
+
+	public void setStudySessionData(String studySessionData) {
+		this.studySessionData = studySessionData;
+	}
+
+	public String getStudySessionData() {
+		return this.studySessionData;
 	}
 
 	public void setStudy(StudyModel study) {

@@ -19,7 +19,6 @@ public abstract class PublixErrorMessages<T extends Worker> {
 
 	public abstract String workerNotCorrectType(Long workerId);
 
-	// Publix
 	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
 	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS = "This study or component was never started from within JATOS.";
 	public static final String STUDY_NEVER_STARTED_FROM_JATOS = "This study was never started from within JATOS.";
@@ -31,7 +30,8 @@ public abstract class PublixErrorMessages<T extends Worker> {
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
 	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
-
+	public static final String SUBMITTED_DATA_UNKNOWN_FORMAT = "Submitted data have an unknown format.";
+	
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
 	}
@@ -94,13 +94,6 @@ public abstract class PublixErrorMessages<T extends Worker> {
 
 	public static String studyNotExist(Long studyId) {
 		String errorMsg = "An study with ID " + studyId + " doesn't exist.";
-		return errorMsg;
-	}
-
-	public static String submittedDataUnknownFormat(Long studyId,
-			Long componentId) {
-		String errorMsg = "Unknown format of submitted data for component "
-				+ componentId + " of study " + studyId + ".";
 		return errorMsg;
 	}
 

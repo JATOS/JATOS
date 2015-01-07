@@ -418,14 +418,12 @@ public abstract class PublixUtils<T extends Worker> {
 		return study;
 	}
 
-	public String getDataFromRequestBody(RequestBody requestBody,
-			ComponentModel component)
+	public String getDataFromRequestBody(RequestBody requestBody)
 			throws UnsupportedMediaTypePublixException {
 		String data = getRequestBodyAsString(requestBody);
 		if (data == null) {
 			throw new UnsupportedMediaTypePublixException(
-					PublixErrorMessages.submittedDataUnknownFormat(component
-							.getStudy().getId(), component.getId()));
+					PublixErrorMessages.SUBMITTED_DATA_UNKNOWN_FORMAT);
 		}
 		return data;
 	}

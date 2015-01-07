@@ -227,6 +227,74 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return result;
 		}
 	}
+	
+	@Override
+	@Transactional
+	public Result getStudySessionData(Long studyId) throws PublixException,
+			JsonProcessingException {
+		synchronized (lock) {
+			Result result = null;
+			switch (getWorkerTypeFromSession()) {
+			case MTWorker.WORKER_TYPE:
+			case MTSandboxWorker.WORKER_TYPE:
+				result = mtPublix.getStudySessionData(studyId);
+				break;
+			case JatosWorker.WORKER_TYPE:
+				result = jatosPublix.getStudySessionData(studyId);
+				break;
+			case TesterWorker.WORKER_TYPE:
+				result = testerPublix.getStudySessionData(studyId);
+				break;
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.getStudySessionData(studyId);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.getStudySessionData(studyId);
+				break;
+			default:
+				throw new BadRequestPublixException(
+						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
+		}
+	}
+
+	@Override
+	@Transactional
+	public Result setStudySessionData(Long studyId) throws PublixException,
+			JsonProcessingException {
+		synchronized (lock) {
+			Result result = null;
+			switch (getWorkerTypeFromSession()) {
+			case MTWorker.WORKER_TYPE:
+			case MTSandboxWorker.WORKER_TYPE:
+				result = mtPublix.setStudySessionData(studyId);
+				break;
+			case JatosWorker.WORKER_TYPE:
+				result = jatosPublix.setStudySessionData(studyId);
+				break;
+			case TesterWorker.WORKER_TYPE:
+				result = testerPublix.setStudySessionData(studyId);
+				break;
+			case ClosedStandaloneWorker.WORKER_TYPE:
+				result = closedStandalonePublix.setStudySessionData(studyId);
+				break;
+			case OpenStandaloneWorker.WORKER_TYPE:
+				result = openStandalonePublix.setStudySessionData(studyId);
+				break;
+			default:
+				throw new BadRequestPublixException(
+						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+			}
+			JPA.em().flush();
+			JPA.em().getTransaction().commit();
+			JPA.em().getTransaction().begin();
+			return result;
+		}
+	}
 
 	@Override
 	@Transactional

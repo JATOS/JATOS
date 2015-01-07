@@ -56,6 +56,26 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Ajax GET request<br>
+	 * Returns the study's session data in JSON format that belong to the
+	 * specified study. Study session data are individual for each study run.
+	 * The study session data are different from Play's session and stored
+	 * within the study results.
+	 */
+	public Result getStudySessionData(Long studyId) throws PublixException,
+			JsonProcessingException;
+
+	/**
+	 * HTTP type: Ajax POST request<br>
+	 * Expects the study's session data in JSON format and sets them in the
+	 * study result that belong to the specified study. Study session data are
+	 * individual for each study run. The study session data are different from
+	 * Play's session and stored within the study results.
+	 */
+	public Result setStudySessionData(Long studyId) throws PublixException,
+			JsonProcessingException;
+
+	/**
+	 * HTTP type: Ajax GET request<br>
 	 * Returns the properties in JSON format that belong to the component
 	 * specified by its ID.
 	 */

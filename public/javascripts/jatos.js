@@ -31,6 +31,7 @@ jatos.onError = function(callback) {
  */
 function onload() {
 	var studyPropertiesReady = false;
+	var studySessionDataReady = false;
 	var componentPropertiesReady = false;
 
 	/**
@@ -59,11 +60,12 @@ function onload() {
 	}
 
 	/**
-	 * Checks whether study's properties and component's properties are finished
-	 * loading
+	 * Checks whether study's properties, study session data, and component's
+	 * properties are finished loading
 	 */
 	ready = function() {
-		if (studyPropertiesReady && componentPropertiesReady) {
+		if (studyPropertiesReady && studySessionDataReady
+				&& componentPropertiesReady) {
 			if (onLoadCallback) {
 				onLoadCallback();
 			}
@@ -84,6 +86,38 @@ function onload() {
 				jatos.studyData = response;
 				jatos.studyJsonData = $.parseJSON(jatos.studyData.jsonData);
 				studyPropertiesReady = true;
+				ready();
+			},
+			error : function(err) {
+				if (onErrorCallback) {
+					onErrorCallback(err.responseText);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Gets the study's session data from the JATOS server and stores them in
+	 * jatos.studySessionData.
+	 */
+	getStudySessionData = function() {
+		$.ajax({
+			url : "/publix/" + jatos.studyId + "/getSessionData",
+			type : "GET",
+			dataType : 'text',
+			success : function(response) {
+				try {
+					jatos.studySessionData = $.parseJSON(response);
+				} catch (e) {
+					jatos.studySessionData = "Error parsing JSON";
+					if (onErrorCallback) {
+						onErrorCallback(e);
+					}
+				}
+				jatos.studySessionDataFrozen = Object.freeze({
+					"sessionDataStr" : response
+				});
+				studySessionDataReady = true;
 				ready();
 			},
 			error : function(err) {
@@ -123,6 +157,7 @@ function onload() {
 
 	readIdCookie();
 	getStudyProperties();
+	getStudySessionData();
 	getComponentProperties();
 }
 
@@ -162,6 +197,56 @@ jatos.submitResultData = function(resultData, success, error) {
 }
 
 /**
+ * Posts study session data back to the JATOS server. This function is called by
+ * all functions that start a new component, so it shouldn't be necessary to
+ * call it manually.
+ * 
+ * @param {Object}
+ *            sessionData - Object to be submitted
+ * @param {optional
+ *            Function} complete - Function to be called after this function is
+ *            finished
+ */
+jatos.setStudySessionData = function(sessionData, complete) {
+	var sessionDataStr;
+	try {
+		sessionDataStr = JSON.stringify(sessionData);
+	} catch (error) {
+		if (onErrorCallback) {
+			onErrorCallback(error);
+		}
+		if (complete) {
+			complete()
+		}
+		return;
+	}
+	if (jatos.studySessionDataFrozen.sessionDataStr == sessionDataStr) {
+		// If old and new session data are equal don't post it
+		if (complete) {
+			complete()
+		}
+		return;
+	}
+	$.ajax({
+		url : "/publix/" + jatos.studyId + "/setSessionData",
+		data : sessionDataStr,
+		processData : false,
+		type : "POST",
+		contentType : "text/plain",
+		error : function(err) {
+			if (onErrorCallback) {
+				onErrorCallback(err.responseText);
+			}
+		},
+		complete : function() {
+			if (complete) {
+				complete()
+			}
+		}
+	});
+}
+
+/**
  * Starts the component with the given ID. You can pass on information to the
  * next component by adding a query string.
  * 
@@ -172,11 +257,14 @@ jatos.submitResultData = function(resultData, success, error) {
  *            should be added to the URL
  */
 jatos.startComponent = function(componentId, queryString) {
-	var url = "/publix/" + jatos.studyId + "/" + componentId + "/start";
-	if (queryString) {
-		url += "?" + queryString;
-	}
-	window.location.href = url;
+	var callbackWhenComplete = function() {
+		var url = "/publix/" + jatos.studyId + "/" + componentId + "/start";
+		if (queryString) {
+			url += "?" + queryString;
+		}
+		window.location.href = url;
+	};
+	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 }
 
 /**
@@ -190,12 +278,15 @@ jatos.startComponent = function(componentId, queryString) {
  *            should be added to the URL
  */
 jatos.startComponentByPos = function(componentPos, queryString) {
-	var url = "/publix/" + jatos.studyId + "/startComponent?position="
-			+ componentPos;
-	if (queryString) {
-		url += "&" + queryString;
+	var callbackWhenComplete = function() {
+		var url = "/publix/" + jatos.studyId + "/startComponent?position="
+				+ componentPos;
+		if (queryString) {
+			url += "&" + queryString;
+		}
+		window.location.href = url;
 	}
-	window.location.href = url;
+	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 }
 
 /**
@@ -208,11 +299,14 @@ jatos.startComponentByPos = function(componentPos, queryString) {
  *            should be added to the URL
  */
 jatos.startNextComponent = function(queryString) {
-	var url = "/publix/" + jatos.studyId + "/startNextComponent";
-	if (queryString) {
-		url += "?" + queryString;
+	var callbackWhenComplete = function() {
+		var url = "/publix/" + jatos.studyId + "/startNextComponent";
+		if (queryString) {
+			url += "?" + queryString;
+		}
+		window.location.href = url;
 	}
-	window.location.href = url;
+	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 }
 
 /**
@@ -234,35 +328,39 @@ jatos.startNextComponent = function(queryString) {
  *            Function} error - Function to be called in case of error
  */
 jatos.endComponent = function(successful, errorMsg, success, error) {
-	var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end";
-	var fullUrl;
-	if (undefined == successful || undefined == errorMsg) {
-		fullUrl = url;
-	} else if (undefined == successful) {
-		fullUrl = url + "?errorMsg=" + errorMsg;
-	} else if (undefined == errorMsg) {
-		fullUrl = url + "?successful=" + successful;
-	} else {
-		fullUrl = url + "?successful=" + successful + "&errorMsg=" + errorMsg;
-	}
-	$.ajax({
-		url : fullUrl,
-		processData : false,
-		type : "GET",
-		success : function(response) {
-			if (success) {
-				success(response)
-			}
-		},
-		error : function(err) {
-			if (onErrorCallback) {
-				onErrorCallback(err.responseText);
-			}
-			if (error) {
-				error(response)
-			}
+	var callbackWhenComplete = function() {
+		var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end";
+		var fullUrl;
+		if (undefined == successful || undefined == errorMsg) {
+			fullUrl = url;
+		} else if (undefined == successful) {
+			fullUrl = url + "?errorMsg=" + errorMsg;
+		} else if (undefined == errorMsg) {
+			fullUrl = url + "?successful=" + successful;
+		} else {
+			fullUrl = url + "?successful=" + successful + "&errorMsg="
+					+ errorMsg;
 		}
-	});
+		$.ajax({
+			url : fullUrl,
+			processData : false,
+			type : "GET",
+			success : function(response) {
+				if (success) {
+					success(response)
+				}
+			},
+			error : function(err) {
+				if (onErrorCallback) {
+					onErrorCallback(err.responseText);
+				}
+				if (error) {
+					error(response)
+				}
+			}
+		});
+	}
+	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 }
 
 /**
