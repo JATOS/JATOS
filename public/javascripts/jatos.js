@@ -30,8 +30,8 @@ jatos.onError = function(callback) {
  * Initialising jatos.js.
  */
 function onload() {
-	var studyDataReady = false;
-	var componentDataReady = false;
+	var studyPropertiesReady = false;
+	var componentPropertiesReady = false;
 
 	/**
 	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope
@@ -39,7 +39,7 @@ function onload() {
 	 * not necessary to call it again.
 	 */
 	readIdCookie = function() {
-		var nameEQ = escape("JATOS_IDs") + "=";
+		var nameEQ = escape("JATOS_IDS") + "=";
 		var ca = document.cookie.split(';');
 		for (var i = 0; i < ca.length; i++) {
 			var c = ca[i];
@@ -59,10 +59,11 @@ function onload() {
 	}
 
 	/**
-	 * Checks whether study's data and component's data are finished loading
+	 * Checks whether study's properties and component's properties are finished
+	 * loading
 	 */
 	ready = function() {
-		if (studyDataReady && componentDataReady) {
+		if (studyPropertiesReady && componentPropertiesReady) {
 			if (onLoadCallback) {
 				onLoadCallback();
 			}
@@ -70,19 +71,19 @@ function onload() {
 	}
 
 	/**
-	 * Gets the study's data from the JATOS server and stores them in
-	 * jatos.studyData (the whole data) and jatos.studyJsonData (just the JSON
-	 * data).
+	 * Gets the study's properties from the JATOS server and stores them in
+	 * jatos.studyData (the whole properties) and jatos.studyJsonData (just the
+	 * JSON input data of the properties).
 	 */
-	getStudyData = function() {
+	getStudyProperties = function() {
 		$.ajax({
-			url : "/publix/" + jatos.studyId + "/getData",
+			url : "/publix/" + jatos.studyId + "/getProperties",
 			type : "GET",
 			dataType : 'json',
 			success : function(response) {
 				jatos.studyData = response;
 				jatos.studyJsonData = $.parseJSON(jatos.studyData.jsonData);
-				studyDataReady = true;
+				studyPropertiesReady = true;
 				ready();
 			},
 			error : function(err) {
@@ -94,14 +95,14 @@ function onload() {
 	}
 
 	/**
-	 * Gets the component's data from the JATOS server and stores them in
-	 * jatos.componentData (the whole data) and jatos.componentJsonData (just
-	 * the JSON data).
+	 * Gets the component's properties from the JATOS server and stores them in
+	 * jatos.componentData (the whole properties) and jatos.componentJsonData
+	 * (just the JSON input data of the properties).
 	 */
-	getComponentData = function() {
+	getComponentProperties = function() {
 		$.ajax({
 			url : "/publix/" + jatos.studyId + "/" + jatos.componentId
-					+ "/getData",
+					+ "/getProperties",
 			type : "GET",
 			dataType : 'json',
 			success : function(response) {
@@ -109,7 +110,7 @@ function onload() {
 				jatos.componentJsonData = $
 						.parseJSON(jatos.componentData.jsonData);
 				document.title = jatos.componentData.title;
-				componentDataReady = true;
+				componentPropertiesReady = true;
 				ready();
 			},
 			error : function(err) {
@@ -121,8 +122,8 @@ function onload() {
 	}
 
 	readIdCookie();
-	getStudyData();
-	getComponentData();
+	getStudyProperties();
+	getComponentProperties();
 }
 
 /**

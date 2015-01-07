@@ -115,7 +115,7 @@ study: StudyModel, workerSet: Set[workers.Worker])
 
 <script type="text/javascript">
 
-var studyData = @Html(services.JsonUtils.studyForUI(study));
+var studyProperties = @Html(services.JsonUtils.studyForUI(study));
 
 var componentsTable;
 $(document).ready(function() {
@@ -208,27 +208,27 @@ $(document).ready(function() {
 	});
 	
 	$('#componentsTable tbody').on('click', '.showComponent', function() {
-		window.location.href = "/jatos/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyProperties.id +"/"
 			+ getComponentId(this) + "/show";
 	});
 	
 	$('#componentsTable tbody').on('click', '.componentResults', function() {
-		window.location.href = "/jatos/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyProperties.id +"/"
 			+ getComponentId(this) + "/results";
 	});
 	
 	$('#componentsTable tbody').on('click', '.editComponent', function() {
-		window.location.href = "/jatos/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyProperties.id +"/"
 			+ getComponentId(this) + "/edit";
 	});
 	
 	$('#componentsTable tbody').on('click', '.exportComponent', function() {
-		window.location.href = "/jatos/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyProperties.id +"/"
 			+ getComponentId(this) + "/export";
 	});
 	
 	$('#componentsTable tbody').on('click', '.cloneComponent', function() {
-		window.location.href = "/jatos/" + studyData.id +"/"
+		window.location.href = "/jatos/" + studyProperties.id +"/"
 			+ getComponentId(this) + "/clone";
 	});
 	
@@ -243,7 +243,7 @@ $(document).ready(function() {
 		var postText = "Do you want to proceed?";
 		askConfirmation(title, preText, null, postText, 'Delete', function() {
 			$.ajax({
-				url : "/jatos/" + studyData.id +"/" + componentId + "/remove",
+				url : "/jatos/" + studyProperties.id +"/" + componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
 					var tr = $(element).closest('tr');
@@ -274,7 +274,7 @@ $(document).ready(function() {
 		var componentId = getComponentId(this);
 		var active = $(this).prop('checked');
 		$.ajax({
-			url : "/jatos/" + studyData.id +"/" + componentId
+			url : "/jatos/" + studyProperties.id +"/" + componentId
 					+ "/changeProperty?active=" + active,
 			type : "POST",
 			error : function(err) {
@@ -300,7 +300,7 @@ $(document).ready(function() {
 
 function ajaxChangeComponentOrder(componentId, direction, tr) {
 	$.ajax({
-		url : "/jatos/" + studyData.id + "/changeComponentOrder"
+		url : "/jatos/" + studyProperties.id + "/changeComponentOrder"
 				+ "?componentId=" + componentId + "&direction="
 				+ direction,
 		type : "POST",
@@ -336,7 +336,7 @@ function swapRowData(row1, row2) {
 
 $('#studyToolbar').on('click', '#lockStudy', function() {
 	$.ajax({
-		url : "/jatos/" + studyData.id +"/swapLock",
+		url : "/jatos/" + studyProperties.id +"/swapLock",
 		type : "POST",
 		success : function(response) {
 			if (response == 'true') {
@@ -440,8 +440,8 @@ $('#studyToolbar').on('click', '#testerRun', function() {
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
 	var title = "Confirm Delete";
-	var preText = "You are about to delete the study \"" + studyData.title 
-		+ "\" (ID " + studyData.id + ") "
+	var preText = "You are about to delete the study \"" + studyProperties.title 
+		+ "\" (ID " + studyProperties.id + ") "
 		+ "<b>with all its components, results, and the entire study's directory, "
 		+ "including the HTML files</b>.";
 	var postText = "Do you want to proceed?";

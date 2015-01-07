@@ -49,17 +49,17 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Ajax GET request<br>
-	 * Returns the data in JSON format that belong to the specified study.
+	 * Returns the properties in JSON format that belong to the specified study.
 	 */
-	public Result getStudyData(Long studyId) throws PublixException,
+	public Result getStudyProperties(Long studyId) throws PublixException,
 			JsonProcessingException;
 
 	/**
 	 * HTTP type: Ajax GET request<br>
-	 * Returns the data in JSON format that belong to the component specified by
-	 * its ID.
+	 * Returns the properties in JSON format that belong to the component
+	 * specified by its ID.
 	 */
-	public Result getComponentData(Long studyId, Long componentId)
+	public Result getComponentProperties(Long studyId, Long componentId)
 			throws PublixException, JsonProcessingException;
 
 	/**

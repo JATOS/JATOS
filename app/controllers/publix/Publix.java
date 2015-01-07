@@ -110,9 +110,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public Result getStudyData(Long studyId) throws PublixException,
+	public Result getStudyProperties(Long studyId) throws PublixException,
 			JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getStudyData: studyId " + studyId);
+		Logger.info(CLASS_NAME + ".getStudyProperties: studyId " + studyId);
 		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = utils.retrieveStudy(studyId);
 		utils.checkWorkerAllowedToDoStudy(worker, study);
@@ -124,9 +124,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public Result getComponentData(Long studyId, Long componentId)
+	public Result getComponentProperties(Long studyId, Long componentId)
 			throws PublixException, JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getComponentData: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".getComponentProperties: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = utils.retrieveStudy(studyId);

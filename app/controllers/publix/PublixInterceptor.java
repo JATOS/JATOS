@@ -196,26 +196,26 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result getStudyData(Long studyId) throws PublixException,
+	public Result getStudyProperties(Long studyId) throws PublixException,
 			JsonProcessingException {
 		synchronized (lock) {
 			Result result = null;
 			switch (getWorkerTypeFromSession()) {
 			case MTWorker.WORKER_TYPE:
 			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.getStudyData(studyId);
+				result = mtPublix.getStudyProperties(studyId);
 				break;
 			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.getStudyData(studyId);
+				result = jatosPublix.getStudyProperties(studyId);
 				break;
 			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.getStudyData(studyId);
+				result = testerPublix.getStudyProperties(studyId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.getStudyData(studyId);
+				result = closedStandalonePublix.getStudyProperties(studyId);
 				break;
 			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.getStudyData(studyId);
+				result = openStandalonePublix.getStudyProperties(studyId);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -230,27 +230,27 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result getComponentData(Long studyId, Long componentId)
+	public Result getComponentProperties(Long studyId, Long componentId)
 			throws PublixException, JsonProcessingException {
 		synchronized (lock) {
 			Result result = null;
 			switch (getWorkerTypeFromSession()) {
 			case MTWorker.WORKER_TYPE:
 			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.getComponentData(studyId, componentId);
+				result = mtPublix.getComponentProperties(studyId, componentId);
 				break;
 			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.getComponentData(studyId, componentId);
+				result = jatosPublix.getComponentProperties(studyId, componentId);
 				break;
 			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.getComponentData(studyId, componentId);
+				result = testerPublix.getComponentProperties(studyId, componentId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.getComponentData(studyId,
+				result = closedStandalonePublix.getComponentProperties(studyId,
 						componentId);
 				break;
 			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.getComponentData(studyId,
+				result = openStandalonePublix.getComponentProperties(studyId,
 						componentId);
 				break;
 			default:
