@@ -74,7 +74,7 @@ function onload() {
 
 	/**
 	 * Gets the study's properties from the JATOS server and stores them in
-	 * jatos.studyData (the whole properties) and jatos.studyJsonData (just the
+	 * jatos.studyProperties and jatos.studyJsonInput (just the
 	 * JSON input data of the properties).
 	 */
 	getStudyProperties = function() {
@@ -84,7 +84,9 @@ function onload() {
 			dataType : 'json',
 			success : function(response) {
 				jatos.studyData = response;
+				jatos.studyProperties = jatos.studyData;
 				jatos.studyJsonData = $.parseJSON(jatos.studyData.jsonData);
+				jatos.studyJsonInput = jatos.studyJsonData;
 				studyPropertiesReady = true;
 				ready();
 			},
@@ -130,7 +132,7 @@ function onload() {
 
 	/**
 	 * Gets the component's properties from the JATOS server and stores them in
-	 * jatos.componentData (the whole properties) and jatos.componentJsonData
+	 * jatos.componentProperties and jatos.componentJsonInput
 	 * (just the JSON input data of the properties).
 	 */
 	getComponentProperties = function() {
@@ -141,8 +143,10 @@ function onload() {
 			dataType : 'json',
 			success : function(response) {
 				jatos.componentData = response;
+				jatos.componentProperties = jatos.componentData;
 				jatos.componentJsonData = $
 						.parseJSON(jatos.componentData.jsonData);
+				jatos.componentJsonInput = jatos.componentJsonData;
 				document.title = jatos.componentData.title;
 				componentPropertiesReady = true;
 				ready();
