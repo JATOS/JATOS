@@ -203,6 +203,8 @@ public abstract class PublixUtils<T extends Worker> {
 		studyResult.setConfirmationCode(confirmationCode);
 		studyResult.setErrorMsg(errorMsg);
 		studyResult.setEndDate(new Timestamp(new Date().getTime()));
+		// Clear study session data before finishing
+		studyResult.setStudySessionData(null);
 		studyResult.merge();
 		return confirmationCode;
 	}
