@@ -83,9 +83,12 @@ function onload() {
 			type : "GET",
 			dataType : 'json',
 			success : function(response) {
+				// Legacy names
 				jatos.studyData = response;
-				jatos.studyProperties = jatos.studyData;
 				jatos.studyJsonData = $.parseJSON(jatos.studyData.jsonData);
+				delete jatos.studyData.jsonData;
+				// New names
+				jatos.studyProperties = jatos.studyData;
 				jatos.studyJsonInput = jatos.studyJsonData;
 				studyPropertiesReady = true;
 				ready();
@@ -142,10 +145,13 @@ function onload() {
 			type : "GET",
 			dataType : 'json',
 			success : function(response) {
+				// Legacy names
 				jatos.componentData = response;
-				jatos.componentProperties = jatos.componentData;
 				jatos.componentJsonData = $
 						.parseJSON(jatos.componentData.jsonData);
+				delete jatos.componentData.jsonData;
+				// New names
+				jatos.componentProperties = jatos.componentData;
 				jatos.componentJsonInput = jatos.componentJsonData;
 				document.title = jatos.componentData.title;
 				componentPropertiesReady = true;
