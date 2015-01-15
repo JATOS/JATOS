@@ -19,18 +19,18 @@ public class Initializer {
 	public static void initialize() {
 		checkAdmin();
 		checkUuid();
-		checkStudyAssetsDir();
+		checkStudyAssetsRootDir();
 	}
 
 	/**
-	 * Check whether studies assets directory exists and create if not.
+	 * Check whether studies assets root directory exists and create if not.
 	 */
-	private static void checkStudyAssetsDir() {
-		boolean success = new File(StudyAssets.STUDY_ASSETS_PATH).mkdir();
+	private static void checkStudyAssetsRootDir() {
+		boolean success = new File(StudyAssets.STUDY_ASSETS_ROOT_PATH).mkdir();
 		if (success) {
 			Logger.info(CLASS_NAME
-					+ ".checkStudyAssetsDir: Created study assets directory "
-					+ StudyAssets.STUDY_ASSETS_PATH);
+					+ ".checkStudyAssetsRootDir: Created study assets root directory "
+					+ StudyAssets.STUDY_ASSETS_ROOT_PATH);
 		}
 	}
 

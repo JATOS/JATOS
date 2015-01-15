@@ -19,7 +19,8 @@ import services.IOUtils;
 public class StudyAssets extends Controller {
 
 	/**
-	 * Identifying part of any URL that access the study assets directory.
+	 * Identifying part of any URL that indicates an access to the study assets
+	 * directories.
 	 */
 	public static final String URL_STUDY_ASSETS = "study_assets";
 
@@ -27,36 +28,37 @@ public class StudyAssets extends Controller {
 
 	/**
 	 * Property name in application config for the path in the file system to
-	 * the directory where all studies are located
+	 * study assets root directory, the directory where all study assets are
+	 * located
 	 */
-	private static final String PROPERTY_STUDY_ASSETS_PATH = "jatos.studyAssetsPath";
+	private static final String PROPERTY_STUDY_ASSETS_ROOT_PATH = "jatos.studyAssetsRootPath";
 
 	/**
-	 * Default path in the file system to the studies directory in case it
-	 * wasn't specified in the config
+	 * Default path in the file system to the study assets root directory in
+	 * case it wasn't specified in the config
 	 */
-	private static final String DEFAULT_STUDY_ASSETS_PATH = File.separator
-			+ "study_assets";
+	private static final String DEFAULT_STUDY_ASSETS_ROOT_PATH = File.separator
+			+ "study_assets_root";
 
 	private static final String BASEPATH = Play.application().path().getPath();
 
 	/**
-	 * Path in the file system to the studies directory. If the property is
-	 * defined in the configuration file then use it as the base path. If
-	 * property isn't defined, try in default study path instead.
+	 * Path in the file system to the study assets root directory. If the
+	 * property is defined in the configuration file then use it as the base
+	 * path. If property isn't defined, try in default study path instead.
 	 */
-	public static String STUDY_ASSETS_PATH;
+	public static String STUDY_ASSETS_ROOT_PATH;
 	static {
 		String rawConfigStudiesPath = Play.application().configuration()
-				.getString(PROPERTY_STUDY_ASSETS_PATH);
+				.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
 		if (rawConfigStudiesPath != null && !rawConfigStudiesPath.isEmpty()) {
-			STUDY_ASSETS_PATH = rawConfigStudiesPath.replace("~",
+			STUDY_ASSETS_ROOT_PATH = rawConfigStudiesPath.replace("~",
 					System.getProperty("user.home"));
 		} else {
-			STUDY_ASSETS_PATH = BASEPATH + DEFAULT_STUDY_ASSETS_PATH;
+			STUDY_ASSETS_ROOT_PATH = BASEPATH + DEFAULT_STUDY_ASSETS_ROOT_PATH;
 		}
 		Logger.info(CLASS_NAME + ": Path to study assets directory is "
-				+ STUDY_ASSETS_PATH);
+				+ STUDY_ASSETS_ROOT_PATH);
 	}
 
 	/**
@@ -67,21 +69,22 @@ public class StudyAssets extends Controller {
 		File file;
 		try {
 			filePath = filePath.replace("/", File.separator);
-			file = IOUtils.getExistingFileSecurely(STUDY_ASSETS_PATH, filePath);
+			file = IOUtils.getExistingFileSecurely(STUDY_ASSETS_ROOT_PATH,
+					filePath);
 			Logger.info(CLASS_NAME + ".at: loading file " + file.getPath()
 					+ ".");
 		} catch (IOException e) {
 			Logger.info(CLASS_NAME + ".at: failed loading from path "
-					+ STUDY_ASSETS_PATH + File.separator + filePath);
+					+ STUDY_ASSETS_ROOT_PATH + File.separator + filePath);
 			return notFound(views.html.publix.error.render("Resource \""
 					+ filePath + "\" couldn't be found."));
 		}
 		return ok(file, true);
 	}
 
-	public static String getComponentUrlPath(String studyDirName,
+	public static String getComponentUrlPath(String studyAssetsDirName,
 			ComponentModel component) {
-		return "/" + URL_STUDY_ASSETS + "/" + studyDirName + "/"
+		return "/" + URL_STUDY_ASSETS + "/" + studyAssetsDirName + "/"
 				+ component.getHtmlFilePath();
 	}
 

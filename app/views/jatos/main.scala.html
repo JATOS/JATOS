@@ -142,7 +142,7 @@ function showError(msg) {
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-				<h4 class="modal-title">Study and study's directory already exist</h4>
+				<h4 class="modal-title">Study and study assets' directory already exist</h4>
 			</div>
 			<div class="modal-body">
 				<p class="modalText"></p>
@@ -151,7 +151,7 @@ function showError(msg) {
 					<span class="help-block">Components included in the imported study will be created or updated. Components not included in the imported study will be inactivated but not deleted.</span>
 				</div>
 				<div class="checkbox">
-					<label><input type="checkbox" id="studysDirConfirm"> Overwrite study's directory</label>
+					<label><input type="checkbox" id="studysDirConfirm"> Overwrite study assets' directory</label>
 					<span class="help-block">This directory contains the study's files like HTML, CSS, and JavaSript files and images.</span>
 				</div>
 				<p class="modalPostText"></p>
@@ -290,7 +290,7 @@ function askConfirmationForStudyExists(response) {
 }
 
 function askConfirmationForStudyNotExistsDirExists(response) {
-	var title = "Study import - but study's directory already exists";
+	var title = "Study import - but study assets' directory already exists";
 	var preText = "You are about to import the study \"" + response.studyTitle 
 		+ "\" and its directory \"" + response.dirPath
 		+ "\". There already exist a directory with the same name. "

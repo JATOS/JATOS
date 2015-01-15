@@ -99,7 +99,7 @@ public class StudyModel {
 	private Set<String> allowedWorkerList = new HashSet<String>();
 
 	/**
-	 * Directory name of this study
+	 * Study assets directory name
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	@Column(unique = true, nullable = false)

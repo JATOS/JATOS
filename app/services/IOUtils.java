@@ -48,7 +48,7 @@ public class IOUtils {
 	 */
 	public static File getFileSecurely(String path, String filePath)
 			throws IOException {
-		path = getExistingStudyDirSecurely(path).getAbsolutePath();
+		path = getExistingStudyAssetsDirSecurely(path).getAbsolutePath();
 		String fullPath = path + File.separator + filePath;
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
@@ -62,10 +62,10 @@ public class IOUtils {
 	}
 
 	/**
-	 * Gets the File object of the study directory while preventing a path
-	 * traversal attack and checks if the directory actually exists.
+	 * Gets the File object of the study assets' directory while preventing a
+	 * path traversal attack and checks if the directory actually exists.
 	 */
-	public static File getExistingStudyDirSecurely(String fullPath)
+	public static File getExistingStudyAssetsDirSecurely(String fullPath)
 			throws IOException {
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
@@ -76,14 +76,15 @@ public class IOUtils {
 					ErrorMessages.couldntGeneratePathToFileOrDir(fullPath));
 		}
 		if (file == null || !file.exists() || !file.isDirectory()) {
-			throw new IOException(ErrorMessages.studysDirPathIsntDir(fullPath));
+			throw new IOException(
+					ErrorMessages.studyAssetsDirPathIsntDir(fullPath));
 		}
 		return file;
 	}
 
-	public static boolean checkStudyDirExists(String studyDirName) {
-		File studyDir = new File(generateStudysPath(studyDirName));
-		return studyDir.exists();
+	public static boolean checkStudyAssetsDirExists(String dirName) {
+		File studyAssetsDir = new File(generateStudyAssetsPath(dirName));
+		return studyAssetsDir.exists();
 	}
 
 	/**
@@ -100,12 +101,12 @@ public class IOUtils {
 	}
 
 	/**
-	 * Gets the File object which resides under filePath within the study's
-	 * directory.
+	 * Gets the File object which resides under filePath within the study
+	 * assets' directory.
 	 */
-	public static File getFileInStudyDir(String studyDirName, String filePath)
+	public static File getFileInStudyAssetsDir(String dirName, String filePath)
 			throws IOException {
-		String studyPath = generateStudysPath(studyDirName);
+		String studyPath = generateStudyAssetsPath(dirName);
 		File file = getFileSecurely(studyPath, filePath);
 		return file;
 	}
@@ -144,33 +145,31 @@ public class IOUtils {
 	}
 
 	/**
-	 * Generates a study directory path.
+	 * Generates a study assets directory path.
 	 */
-	public static String generateStudysPath(String studyDirName) {
-		return StudyAssets.STUDY_ASSETS_PATH + File.separator + studyDirName;
+	public static String generateStudyAssetsPath(String dirName) {
+		return StudyAssets.STUDY_ASSETS_ROOT_PATH + File.separator + dirName;
 	}
 
-	public static void removeStudyDirectory(String studyDirName)
-			throws IOException {
-		File dir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH,
-				studyDirName);
+	public static void removeStudyAssetsDir(String dirName) throws IOException {
+		File dir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH, dirName);
 		if (!dir.exists()) {
 			return;
 		}
 		if (!dir.isDirectory()) {
-			throw new IOException(ErrorMessages.studysDirPathIsntDir(dir
+			throw new IOException(ErrorMessages.studyAssetsDirPathIsntDir(dir
 					.getName()));
 		}
 		FileUtils.deleteDirectory(dir);
 	}
 
-	public static String cloneStudyDirectory(String srcDirName)
+	public static String cloneStudyAssetsDirectory(String srcDirName)
 			throws IOException {
-		File srcDir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH,
+		File srcDir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH,
 				srcDirName);
 		if (!srcDir.isDirectory()) {
-			throw new IOException(ErrorMessages.studysDirPathIsntDir(srcDir
-					.getName()));
+			throw new IOException(
+					ErrorMessages.studyAssetsDirPathIsntDir(srcDir.getName()));
 		}
 
 		String destDirName = srcDirName + "_clone";
@@ -179,7 +178,7 @@ public class IOUtils {
 		// suffix.
 		int i = 1;
 		while (destDir == null || destDir.exists()) {
-			destDir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH,
+			destDir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH,
 					destDirName);
 			destDirName = srcDirName + "_" + i++;
 		}
@@ -187,28 +186,29 @@ public class IOUtils {
 		return destDir.getName();
 	}
 
-	public static void moveStudyDirectory(File srcDir, String targetDirName)
+	public static void moveStudyAssetsDir(File srcDir, String targetDirName)
 			throws IOException {
-		File targetDir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH,
+		File targetDir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH,
 				targetDirName);
 		if (targetDir.exists()) {
 			throw new IOException(
-					ErrorMessages.studysDirNotCreatedBecauseExists(targetDir
-							.getName()));
+					ErrorMessages
+							.studyAssetsDirNotCreatedBecauseExists(targetDir
+									.getName()));
 		}
 		FileUtils.moveDirectory(srcDir, targetDir);
 	}
 
-	public static void createStudyDir(String dirName) throws IOException {
-		File dir = getFileSecurely(StudyAssets.STUDY_ASSETS_PATH, dirName);
+	public static void createStudyAssetsDir(String dirName) throws IOException {
+		File dir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH, dirName);
 		if (dir.exists()) {
 			throw new IOException(
-					ErrorMessages.studysDirNotCreatedBecauseExists(dir
+					ErrorMessages.studyAssetsDirNotCreatedBecauseExists(dir
 							.getName()));
 		}
 		boolean result = dir.mkdirs();
 		if (!result) {
-			throw new IOException(ErrorMessages.studysDirNotCreated(dir
+			throw new IOException(ErrorMessages.studyAssetsDirNotCreated(dir
 					.getName()));
 		}
 	}
@@ -239,11 +239,10 @@ public class IOUtils {
 		return matches;
 	}
 
-	public static void moveFileIntoStudyDir(FilePart filePart, String studyDirName)
-			throws IOException {
+	public static void moveFileIntoStudyAssetsDir(FilePart filePart,
+			String dirName) throws IOException {
 		File file = filePart.getFile();
-		File destPath = getFileInStudyDir(studyDirName,
-				filePart.getFilename());
+		File destPath = getFileInStudyAssetsDir(dirName, filePart.getFilename());
 		boolean result = file.renameTo(destPath);
 		if (!result) {
 			throw new IOException(ErrorMessages.fileNotRenamed(file.getName(),
@@ -251,25 +250,25 @@ public class IOUtils {
 		}
 	}
 
-	public static void renameStudyDir(String oldDirName, String newDirName)
+	public static void renameStudyAssetsDir(String oldDirName, String newDirName)
 			throws IOException {
-		File oldDir = new File(IOUtils.generateStudysPath(oldDirName));
-		File newDir = new File(IOUtils.generateStudysPath(newDirName));
+		File oldDir = new File(IOUtils.generateStudyAssetsPath(oldDirName));
+		File newDir = new File(IOUtils.generateStudyAssetsPath(newDirName));
 		if (oldDir.exists() && oldDirName.equals(newDirName)) {
 			return;
 		}
 		if (newDir.exists()) {
 			throw new IOException(
-					ErrorMessages.studysDirNotCreatedBecauseExists(newDir
+					ErrorMessages.studyAssetsDirNotCreatedBecauseExists(newDir
 							.getName()));
 		}
 		if (!oldDir.exists()) {
-			createStudyDir(newDirName);
+			createStudyAssetsDir(newDirName);
 			return;
 		}
 		boolean result = oldDir.renameTo(newDir);
 		if (!result) {
-			throw new IOException(ErrorMessages.studysDirNotRenamed(
+			throw new IOException(ErrorMessages.studyAssetsDirNotRenamed(
 					oldDir.getName(), newDir.getName()));
 		}
 	}

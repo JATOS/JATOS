@@ -50,16 +50,18 @@ public class ZipUtil {
 		return tempDir;
 	}
 
-	static public File zipStudy(String studyDirPath, String studyDirNameInZip,
-			String studyAsJsonPath) throws IOException {
+	static public File zipStudy(String studyAssetsDirPath,
+			String studyAssetsDirNameInZip, String studyAsJsonPath)
+			throws IOException {
 		File zipFile = File.createTempFile("study", "."
 				+ IOUtils.ZIP_FILE_SUFFIX);
 		zipFile.deleteOnExit();
 		FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
 		ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
 
-		// Add the study's directory to zip
-		addDirectoryToZip("", studyDirNameInZip, studyDirPath, zipOutputStream);
+		// Add the study assets' directory to zip
+		addDirectoryToZip("", studyAssetsDirNameInZip, studyAssetsDirPath,
+				zipOutputStream);
 
 		// Add study's data as JSON file to zip
 		addFileToZip("", studyAsJsonPath, zipOutputStream);

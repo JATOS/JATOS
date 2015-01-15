@@ -33,8 +33,8 @@ public class ImportExport extends Controller {
 
 	public static final String STUDYS_DIR_CONFIRM = "studysDirConfirm";
 	public static final String STUDYS_PROPERTIES_CONFIRM = "studysPropertiesConfirm";
-	private static final String SESSION_TEMP_STUDYS_DIR = "tempStudyDir";
-	private static final String SESSION_TEMP_COMPONENT_DIR = "tempComponentDir";
+	private static final String SESSION_TEMP_STUDY_ASSETS_DIR = "tempStudyAssetsDir";
+	private static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
 
 	/**
@@ -49,16 +49,16 @@ public class ImportExport extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
-		File tempStudyDir = unzipUploadedFile();
-		StudyModel uploadedStudy = unmarshalStudy(tempStudyDir, false);
+		File tempStudyAssetsDir = unzipUploadedFile();
+		StudyModel uploadedStudy = unmarshalStudy(tempStudyAssetsDir, false);
 
-		// Remember study's dir name
-		session(SESSION_TEMP_STUDYS_DIR, tempStudyDir.getName());
+		// Remember study assets' dir name
+		session(SESSION_TEMP_STUDY_ASSETS_DIR, tempStudyAssetsDir.getName());
 
 		StudyModel currentStudy = StudyModel
 				.findByUuid(uploadedStudy.getUuid());
 		boolean studyExists = currentStudy != null;
-		boolean dirExists = IOUtils.checkStudyDirExists(uploadedStudy
+		boolean dirExists = IOUtils.checkStudyAssetsDirExists(uploadedStudy
 				.getDirName());
 		if (studyExists && !currentStudy.hasMember(loggedInUser)) {
 			String errorMsg = ErrorMessages.studyImportNotMember(currentStudy
@@ -70,7 +70,7 @@ public class ImportExport extends Controller {
 				&& (currentStudy == null || !currentStudy.getDirName().equals(
 						uploadedStudy.getDirName()))) {
 			String errorMsg = ErrorMessages
-					.studysDirExistsBelongsToDifferentStudy(uploadedStudy
+					.studyAssetsDirExistsBelongsToDifferentStudy(uploadedStudy
 							.getDirName());
 			ControllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.FORBIDDEN);
@@ -96,7 +96,7 @@ public class ImportExport extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
-		// Get confirmation: overwrite study's properties and/or study's dir
+		// Get confirmation: overwrite study's properties and/or study assets
 		JsonNode json = request().body().asJson();
 		if (json == null) {
 			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
@@ -113,8 +113,8 @@ public class ImportExport extends Controller {
 					Http.Status.BAD_REQUEST);
 		}
 
-		File tempStudyDir = getTempStudyDir();
-		StudyModel importedStudy = unmarshalStudy(tempStudyDir, true);
+		File tempStudyAssetsDir = getTempStudyAssetsDir();
+		StudyModel importedStudy = unmarshalStudy(tempStudyAssetsDir, true);
 		StudyModel currentStudy = StudyModel
 				.findByUuid(importedStudy.getUuid());
 
@@ -125,12 +125,12 @@ public class ImportExport extends Controller {
 			ControllerUtils.checkStudyLocked(currentStudy);
 			if (studysDirConfirm) {
 				if (studysPropertiesConfirm) {
-					moveStudyDir(tempStudyDir, currentStudy,
+					moveStudyAssetsDir(tempStudyAssetsDir, currentStudy,
 							importedStudy.getDirName(), loggedInUser);
 				} else {
 					// If we don't overwrite the properties, don't use the
-					// updated study's dir name
-					moveStudyDir(tempStudyDir, currentStudy,
+					// updated study assets' dir name
+					moveStudyAssetsDir(tempStudyAssetsDir, currentStudy,
 							currentStudy.getDirName(), loggedInUser);
 				}
 			}
@@ -150,50 +150,50 @@ public class ImportExport extends Controller {
 			}
 			return ok(currentStudy.getId().toString());
 		} else {
-			moveStudyDir(tempStudyDir, null, importedStudy.getDirName(),
-					loggedInUser);
+			moveStudyAssetsDir(tempStudyAssetsDir, null,
+					importedStudy.getDirName(), loggedInUser);
 			PersistanceUtils.addStudy(importedStudy, loggedInUser);
 			return ok(importedStudy.getId().toString());
 		}
 	}
 
 	/**
-	 * Get study's dir File object. Name is stored in session. Discard session
-	 * variable afterwards.
+	 * Get study assets' dir File object. Name is stored in session. Discard
+	 * session variable afterwards.
 	 */
-	private static File getTempStudyDir() throws ResultException {
-		String tempStudyDirName = session(SESSION_TEMP_STUDYS_DIR);
-		session().remove(SESSION_TEMP_STUDYS_DIR);
-		if (tempStudyDirName == null || tempStudyDirName.isEmpty()) {
+	private static File getTempStudyAssetsDir() throws ResultException {
+		String tempStudyAssetsDirName = session(SESSION_TEMP_STUDY_ASSETS_DIR);
+		session().remove(SESSION_TEMP_STUDY_ASSETS_DIR);
+		if (tempStudyAssetsDirName == null || tempStudyAssetsDirName.isEmpty()) {
 			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
 			ControllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
-		File tempStudyDir = new File(System.getProperty("java.io.tmpdir"),
-				tempStudyDirName);
-		return tempStudyDir;
+		File tempStudyAssetsDir = new File(
+				System.getProperty("java.io.tmpdir"), tempStudyAssetsDirName);
+		return tempStudyAssetsDir;
 	}
 
 	/**
-	 * Deletes current study's dir and moves imported study's dir from temp to
-	 * studies dir
+	 * Deletes current study assets' dir and moves imported study assets' dir
+	 * from temp to study assets root dir
 	 */
-	private static void moveStudyDir(File tempStudyDir,
-			StudyModel currentStudy, String studyDirName, UserModel loggedInUser)
-			throws ResultException {
+	private static void moveStudyAssetsDir(File tempStudyAssetsDir,
+			StudyModel currentStudy, String studyAssetsDirName,
+			UserModel loggedInUser) throws ResultException {
 		try {
 			if (currentStudy != null) {
-				IOUtils.removeStudyDirectory(currentStudy.getDirName());
+				IOUtils.removeStudyAssetsDir(currentStudy.getDirName());
 			}
 
-			File[] dirArray = IOUtils.findDirectories(tempStudyDir);
+			File[] dirArray = IOUtils.findDirectories(tempStudyAssetsDir);
 			if (dirArray.length == 0) {
-				// If a study dir is missing, create a new one.
-				IOUtils.createStudyDir(studyDirName);
+				// If a study assets dir is missing, create a new one.
+				IOUtils.createStudyAssetsDir(studyAssetsDirName);
 				// TODO send warning message
 			} else if (dirArray.length == 1) {
-				File studyDir = dirArray[0];
-				IOUtils.moveStudyDirectory(studyDir, studyDirName);
+				File studyAssetsDir = dirArray[0];
+				IOUtils.moveStudyAssetsDir(studyAssetsDir, studyAssetsDirName);
 			} else {
 				String errorMsg = ErrorMessages.MORE_THAN_ONE_DIR_IN_ZIP;
 				ControllerUtils.throwHomeResultException(errorMsg,
@@ -282,9 +282,9 @@ public class ImportExport extends Controller {
 							+ IOUtils.STUDY_FILE_SUFFIX);
 			studyAsJsonFile.deleteOnExit();
 			JsonUtils.asJsonForIO(study, studyAsJsonFile);
-			String studyDirPath = IOUtils
-					.generateStudysPath(study.getDirName());
-			zipFile = ZipUtil.zipStudy(studyDirPath, study.getDirName(),
+			String studyAssetsDirPath = IOUtils.generateStudyAssetsPath(study
+					.getDirName());
+			zipFile = ZipUtil.zipStudy(studyAssetsDirPath, study.getDirName(),
 					studyAsJsonFile.getAbsolutePath());
 			studyAsJsonFile.delete();
 		} catch (IOException e) {
@@ -369,7 +369,7 @@ public class ImportExport extends Controller {
 				filePart.getFile(), study);
 
 		// Remember component's file name
-		session(SESSION_TEMP_COMPONENT_DIR, filePart.getFile().getName());
+		session(SESSION_TEMP_COMPONENT_FILE, filePart.getFile().getName());
 
 		boolean componentExists = ComponentModel.findByUuid(uploadedComponent
 				.getUuid()) != null;
@@ -418,16 +418,16 @@ public class ImportExport extends Controller {
 	 */
 	private static File getTempComponentFile(StudyModel study)
 			throws ResultException {
-		String tempComponentFileName = session(SESSION_TEMP_COMPONENT_DIR);
-		session().remove(SESSION_TEMP_COMPONENT_DIR);
+		String tempComponentFileName = session(SESSION_TEMP_COMPONENT_FILE);
+		session().remove(SESSION_TEMP_COMPONENT_FILE);
 		if (tempComponentFileName == null || tempComponentFileName.isEmpty()) {
 			String errorMsg = ErrorMessages.IMPORT_OF_COMPONENT_FAILED;
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, study.getId());
 		}
-		File tempStudyDir = new File(System.getProperty("java.io.tmpdir"),
+		File tempComponentFile = new File(System.getProperty("java.io.tmpdir"),
 				tempComponentFileName);
-		return tempStudyDir;
+		return tempComponentFile;
 	}
 
 	private static ComponentModel unmarshalComponent(File file, StudyModel study)

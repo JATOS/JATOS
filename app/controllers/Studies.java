@@ -105,9 +105,9 @@ public class Studies extends Controller {
 		// Persist in DB
 		PersistanceUtils.addStudy(study, loggedInUser);
 
-		// Create study's dir
+		// Create study assets' dir
 		try {
-			IOUtils.createStudyDir(study.getDirName());
+			IOUtils.createStudyAssetsDir(study.getDirName());
 		} catch (IOException e) {
 			errorList = new ArrayList<>();
 			errorList.add(new ValidationError(StudyModel.DIRNAME, e
@@ -200,7 +200,7 @@ public class Studies extends Controller {
 
 		// Rename study dir
 		try {
-			IOUtils.renameStudyDir(oldDirName, study.getDirName());
+			IOUtils.renameStudyAssetsDir(oldDirName, study.getDirName());
 		} catch (IOException e) {
 			errorList = new ArrayList<>();
 			errorList.add(new ValidationError(StudyModel.DIRNAME, e
@@ -255,9 +255,9 @@ public class Studies extends Controller {
 
 		PersistanceUtils.removeStudy(study);
 
-		// Remove study's dir
+		// Remove study assets' dir
 		try {
-			IOUtils.removeStudyDirectory(study.getDirName());
+			IOUtils.removeStudyAssetsDir(study.getDirName());
 		} catch (IOException e) {
 			String errorMsg = e.getMessage();
 			ControllerUtils.throwAjaxResultException(errorMsg,
@@ -278,10 +278,10 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		StudyModel clone = new StudyModel(study);
-		// Copy study's dir and it's content to cloned study's dir
+		// Copy study assets' dir and it's content to cloned study assets' dir
 		try {
-			String destDirName = IOUtils
-					.cloneStudyDirectory(study.getDirName());
+			String destDirName = IOUtils.cloneStudyAssetsDirectory(study
+					.getDirName());
 			clone.setDirName(destDirName);
 		} catch (IOException e) {
 			ControllerUtils.throwAjaxResultException(e.getMessage(),
@@ -414,11 +414,10 @@ public class Studies extends Controller {
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		worker.persist();
-		String url = ControllerUtils.getRefererUrl() + controllers.publix.routes.PublixInterceptor.startStudy(
-				study.getId()).url()
-				+ "?"
-				+ ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID
-				+ "="
+		String url = ControllerUtils.getRefererUrl()
+				+ controllers.publix.routes.PublixInterceptor.startStudy(
+						study.getId()).url() + "?"
+				+ ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID + "="
 				+ worker.getId();
 		return ok(url);
 	}

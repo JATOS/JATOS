@@ -50,8 +50,7 @@ public abstract class ErrorMessages {
 	// Other
 	public static final String MTWORKER_ALLOWANCE_MISSING = "Right now workers from Mechnical Turk are not allowed to run this study. You should change this in this study's properties before you run it from Mechanical Turk.";
 	public static final String COULDNT_GENERATE_URL = "Couldn't generate URL";
-	
-	
+
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
 	}
@@ -65,14 +64,14 @@ public abstract class ErrorMessages {
 		String errorMsg = "An study with ID " + studyId + " doesn't exist.";
 		return errorMsg;
 	}
-	
-	public static String studyNotMember(String username, String email, Long studyId,
-			String studyTitle) {
+
+	public static String studyNotMember(String username, String email,
+			Long studyId, String studyTitle) {
 		String errorMsg = username + " (" + email + ") isn't member of study "
 				+ studyId + " \"" + studyTitle + "\".";
 		return errorMsg;
 	}
-	
+
 	public static String studyImportNotMember(String studyTitle) {
 		String errorMsg = "The study \"" + studyTitle + "\" you're trying "
 				+ "to upload already exists but you aren't a member of it.";
@@ -146,11 +145,11 @@ public abstract class ErrorMessages {
 		return errorMsg;
 	}
 
-	public static String removeJatosWorkerNotAllowed(Long workerId, String username,
-			String email) {
+	public static String removeJatosWorkerNotAllowed(Long workerId,
+			String username, String email) {
 		String errorMsg = "Worker (ID: " + workerId + ") is a worker of "
-				+ "JATOS, associated to the user " + username
-				+ " (" + email + ") and can't be deleted.";
+				+ "JATOS, associated to the user " + username + " (" + email
+				+ ") and can't be deleted.";
 		return errorMsg;
 	}
 
@@ -173,15 +172,14 @@ public abstract class ErrorMessages {
 		return "Study " + studyId
 				+ " is locked. Unlock it if you want to make changes.";
 	}
-	
+
 	public static String studyCreationOfStandaloneRunFailed(Long studyId) {
 		return "The creation of a standalone run for study " + studyId
 				+ " failed.";
 	}
-	
+
 	public static String studyCreationOfTesterRunFailed(Long studyId) {
-		return "The creation of a tester run for study " + studyId
-				+ " failed.";
+		return "The creation of a tester run for study " + studyId + " failed.";
 	}
 
 	public static String couldntGeneratePathToFileOrDir(String fileStr) {
@@ -189,33 +187,36 @@ public abstract class ErrorMessages {
 				+ "\".";
 	}
 
-	public static String couldntGenerateStudysDir(String path) {
-		return "Couldn't generate path to study directory (" + path + ").";
+	public static String couldntGenerateStudyAssetsDir(String path) {
+		return "Couldn't generate path to study assets' directory (" + path
+				+ ").";
 	}
 
-	public static String studysDirPathIsntDir(String dirName) {
-		return "Study's directory path \"" + dirName
+	public static String studyAssetsDirPathIsntDir(String dirName) {
+		return "Study assets' directory path \"" + dirName
 				+ "\"doesn't lead to a directory.";
 	}
 
-	public static String clonedStudysDirNotCreatedBecauseExists(String dirName) {
-		return "Cloned study's directory (" + dirName
+	public static String clonedStudyAssetsDirNotCreatedBecauseExists(
+			String dirName) {
+		return "Cloned study assets' directory (" + dirName
 				+ ") couldn't be created because it already exists.";
 	}
 
-	public static String studysDirNotCreatedBecauseExists(String dirName) {
-		return "Study's directory (" + dirName
+	public static String studyAssetsDirNotCreatedBecauseExists(String dirName) {
+		return "Study assets' directory (" + dirName
 				+ ") couldn't be created because it already exists.";
 	}
-	
-	public static String studysDirExistsBelongsToDifferentStudy(String dirName) {
-		return "The uploaded study's directory \"" + dirName
+
+	public static String studyAssetsDirExistsBelongsToDifferentStudy(
+			String dirName) {
+		return "The uploaded study assets' directory \"" + dirName
 				+ "\" already exists but belongs to another study.";
 	}
 
-	public static String studysDirNotRenamed(String oldDirName,
+	public static String studyAssetsDirNotRenamed(String oldDirName,
 			String newDirName) {
-		return "Couldn't rename study's directory from \"" + oldDirName
+		return "Couldn't rename study assets' directory from \"" + oldDirName
 				+ "\" to \"" + newDirName + "\".";
 	}
 
@@ -224,8 +225,8 @@ public abstract class ErrorMessages {
 				+ newFileName + "\".";
 	}
 
-	public static String studysDirNotCreated(String dirName) {
-		return "Couldn't create new study's directory (" + dirName + ").";
+	public static String studyAssetsDirNotCreated(String dirName) {
+		return "Couldn't create new study assets' directory (" + dirName + ").";
 	}
 
 	public static String fileNotUploaded(String fileName) {

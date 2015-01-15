@@ -72,7 +72,7 @@ public class ComponentModel {
 	private Timestamp date;
 
 	/**
-	 * Local path to component's HTML file in the study's directory. File
+	 * Local path to component's HTML file in the study assets' dir. File
 	 * separators are persisted as '/'.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
