@@ -122,7 +122,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		studyResult.merge();
 		return ok(JsonUtils.asJsonForPublix(study));
 	}
-	
+
 	@Override
 	public Result getStudySessionData(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".getStudySessionData: studyId " + studyId);
@@ -134,7 +134,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		String studySessionData = studyResult.getStudySessionData();
 		return ok(studySessionData);
 	}
-	
+
 	@Override
 	public Result setStudySessionData(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".setStudySessionData: studyId " + studyId);
@@ -143,7 +143,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		utils.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
 				study);
-		String studySessionData = utils.getDataFromRequestBody(request().body());
+		String studySessionData = utils
+				.getDataFromRequestBody(request().body());
 		studyResult.setStudySessionData(studySessionData);
 		studyResult.merge();
 		return ok();
@@ -152,8 +153,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	@Override
 	public Result getComponentProperties(Long studyId, Long componentId)
 			throws PublixException, JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getComponentProperties: studyId " + studyId + ", "
-				+ "componentId " + componentId);
+		Logger.info(CLASS_NAME + ".getComponentProperties: studyId " + studyId
+				+ ", " + "componentId " + componentId);
 		T worker = utils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = utils.retrieveStudy(studyId);
 		ComponentModel component = utils.retrieveComponent(study, componentId);
@@ -235,7 +236,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		componentResult.merge();
 		return ok();
 	}
-	
+
 	@Override
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
@@ -259,7 +260,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			return ok(views.html.publix.abort.render());
 		}
 	}
-	
+
 	@Override
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
@@ -317,6 +318,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Promise<WS.Response> response = WS.url(url).get();
 		return response.map(new Function<WS.Response, Result>() {
 			public Result apply(WS.Response response) {
+				// Prevent browser from caching pages - this would be an
+				// security issue and additionally confuse the study flow
+				response().setHeader("Cache-control", "no-cache, no-store");
 				return ok(response.getBody()).as("text/html");
 			}
 		});
