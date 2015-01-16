@@ -19,8 +19,6 @@ libraryDependencies ++= Seq(
   "org.webjars" % "bootstrap" % "3.3.0"
 )
 
-playAssetsDirectories <+= baseDirectory / "study_assets_root"
-
 play.Project.playJavaSettings
 
 mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh")
