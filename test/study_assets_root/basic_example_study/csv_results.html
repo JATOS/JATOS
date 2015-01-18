@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Basic Example Study</title>
+<link rel="shortcut icon" type="image/png" href="/study_assets/basic_example_study/images/favicon.png">
+<link rel="stylesheet" href="/study_assets/basic_example_study/css/basic_example_study.css"/>
+<script src="/study_assets/basic_example_study/libs/jquery-1.11.1.min.js"></script>
+<script src="/assets/javascripts/jatos.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+	<div id="component">
+		<p id="error"></p>
+		<p id="text">This component serves a very simple purpose: it takes JSON data (hard-coded into the JavaScript), converts it into comma-separated values (CSV) and submits it back to JATOS as result data. Below you can see the original JSON and the converted CSV data. <br><br> JATOS' only limitation is that result data are text, so it naturally supports either JSON or CSV data as output formats. (We recommend JSON strings because they are robust and much more flexible than CSV; but the choice is yours). </p>
+		<p>JSON</p>
+		<p id="json"></p>
+		<p>CSV</p>
+		<p id="csv"></p>
+		<p id="next">Press any key to go on.</p>
+	</div>
+
+	<script>
+
+		var data = [
+				{ Family: "Canidae", Kingdom: "Animalia", Phylum: "Chordata", Class: "Mammalia", Infraclass: "", Order: "Carnivora", Suborder: "Caniformia", Infraorder: "", TemporalRange: "Pleistocene - Recent" },
+				{ Family: "Felidae", Kingdom: "Animalia", Phylum: "Chordata", Class: "Mammalia", Infraclass: "", Order: "Carnivora", Suborder: "Feliformia", Infraorder: "", TemporalRange: "Oligocene - Recent" },
+				{ Family: "Ursidae", Kingdom: "Animalia", Phylum: "Chordata", Class: "Mammalia", Infraclass: "", Order: "Carnivora", Suborder: "Caniformia", Infraorder: "", TemporalRange: "Eocene - Recent" },
+				{ Family: "Cervidae", Kingdom: "Animalia", Phylum: "Chordata", Class: "Mammalia", Infraclass: "Eutheria", Order: "Artiodactyla", Suborder: "Ruminantia", Infraorder: "Pecora", TemporalRange: "Early Oligocene - Recent" }
+		];
+		var componentState = Object.freeze({
+					RUNNING : 0,
+					FINISHED : 1
+				});
+		var currentComponentState = componentState.RUNNING;
+
+		// What todo when jatos.js is finished loading
+		jatos.onLoad(function() {
+			startComponent();
+		});
+
+		// What todo when jatos.js produces an error
+		jatos.onError(function(errorMsg) {
+			showError(errorMsg);
+		});
+		
+		// What todo when user presses a key
+		$(document).keydown(function(event) {
+			// Do nothing if key is Shift, Control or Alt (AltGr doesn't seem to work)
+			if (event.ctrlKey || event.altKey || event.altGraphKey 
+					|| event.shiftKey) {
+				return;	
+			}
+			if (currentComponentState == componentState.FINISHED) {
+				return;
+			}
+			endComponentAndNext();
+		});
+		
+		function startComponent() {
+			document.title = jatos.componentData.title;
+			$("#text").show();
+			$("#next").show();
+			var dataAsJSON = JSON.stringify(data);
+			$('#json').text(dataAsJSON).show();
+			// Convert data into CSV format
+			componentResultData = asCSV(data, true);
+			$('#csv').text(componentResultData).show();
+		}
+
+		function endComponentAndNext() {
+			currentComponentState = componentState.FINISHED;
+			// Post results back to the server and move to the next component
+			jatos.submitResultData(componentResultData, jatos.startNextComponent, showError);
+		}
+
+		// Converts a given array into CSV format. If showLabel is true it adds
+		// the columns names.
+		function asCSV(dataAsArray, showLabel) {     
+			var csvStr = '';  
+			if (showLabel) {
+				var row = "";
+				for (var i in dataAsArray[0]) {
+					row += i + ',';
+				}
+				row = row.slice(0, -1);
+				csvStr += row + '\r\n';
+			}
+			for (var i = 0; i < dataAsArray.length; i++) {
+				var row = "";
+				for (var j in dataAsArray[i]) {
+					row += '"' + dataAsArray[i][j] + '",';
+				}
+				row = row.slice(0, -1);
+				csvStr += row + '\r\n';
+			}
+			return csvStr; 
+		}
+		
+		function showError(errorMsg) {
+			$("#error").html(errorMsg).show();
+		}
+		
+	</script>
+</body>
+</html>

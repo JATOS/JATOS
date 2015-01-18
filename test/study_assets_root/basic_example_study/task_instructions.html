@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Basic Example Study</title>
+<link rel="shortcut icon" type="image/png" href="/study_assets/basic_example_study/images/favicon.png">
+<link rel="stylesheet" href="/study_assets/basic_example_study/css/basic_example_study.css"/>
+<script src="/study_assets/basic_example_study/libs/jquery-1.11.1.min.js"></script>
+<script src="/assets/javascripts/jatos.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+	<div id="component">
+		<p id="error"></p>
+		<p id="progressText"></p>
+		<p id="text"></p>
+		<p id="moveSlidesText"></p>
+	</div>
+
+	<script>
+		var slideList;
+		var slideCount = 0;
+		var forwardsKey;
+		var backwardsKey;
+		var moveSlidesText;
+		var componentState = Object.freeze({
+			RUNNING: 0, WAITING: 1, FINISHED: 2, ERROR: 3
+		});
+		var currentComponentState = componentState.WAITING;
+		
+		// What todo when jatos.js is finished initializing
+		jatos.onLoad(function() {
+			currentComponentState = componentState.RUNNING;
+			resetSlide();
+			startComponent();
+		});
+
+		// What todo when jatos.js produces an error
+		jatos.onError(function(errorMsg) {
+			showError(errorMsg);
+		});
+		
+		// What todo when key is pressed
+		$(document).keydown(function(event) {
+			// Do nothing if key is Shift, Control or Alt (AltGr doesn't seem to work)
+			if (event.ctrlKey || event.altKey || event.altGraphKey 
+					|| event.shiftKey) {
+				return;	
+			}
+
+			switch (currentComponentState) {
+			case componentState.RUNNING:
+				var keycode = (event.keyCode ? event.keyCode
+								: event.which);
+				if (keycode == forwardsKey.charCodeAt(0)){
+					nextSlide();
+				} 
+				return;
+			case componentState.ERROR:
+				finishStudyWithError();
+				return;
+			}
+		});
+
+		
+		function startComponent() {
+			document.title = jatos.componentData.title;
+			slideList = jatos.componentJsonData.slideList;
+			forwardsKey = jatos.componentJsonData.forwardsKey;
+			moveSlidesText = "Press " + forwardsKey + " to go to the next component";
+			displaySlide();
+		}
+
+		function displaySlide() {
+			var progressText = (slideCount + 1) + " of " + slideList.length + " component slides <br> " + (slideCount + jatos.componentJsonData.startingSlide) + " of " + jatos.studyJsonData.totalStudySlides + " total study slides"; 
+			var text = slideList[slideCount].text;
+			$("#progressText").html(progressText).show();
+			$("#text").html(text).show();
+			$("#moveSlidesText").html(moveSlidesText).show();
+		}
+		
+		function nextSlide() {
+			slideCount++;
+			if (slideCount < slideList.length) {
+				displaySlide();
+			} else {
+				jatos.startNextComponent();
+			}
+		}
+	
+		function showError(errorMsg) {
+			resetSlide();
+			currentComponentState = componentState.ERROR;
+			window.errorMsg = errorMsg;
+			$("#error").html(errorMsg).show();
+		}
+		
+		function resetSlide() {
+			$("#component").children().hide();
+		}
+
+		function finishStudyWithError() {
+			currentComponentState = componentState.FINISHED;
+			jatos.endComponent(false,  window.errorMsg, jatos.endStudy(false, window.errorMsg));
+		}
+		
+	</script>
+</body>
+</html>

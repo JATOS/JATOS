@@ -5,6 +5,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.Initializer;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -64,8 +66,10 @@ public class PersistanceUtils {
 			NoSuchAlgorithmException {
 		JatosWorker adminWorker = new JatosWorker();
 		adminWorker.persist();
-		String passwordHash = UserModel.getHashMDFive("admin");
-		UserModel adminUser = new UserModel("admin", "Admin", passwordHash);
+		String passwordHash = UserModel
+				.getHashMDFive(Initializer.ADMIN_PASSWORD);
+		UserModel adminUser = new UserModel(Initializer.ADMIN_EMAIL,
+				Initializer.ADMIN_NAME, passwordHash);
 		adminUser.setWorker(adminWorker);
 		adminUser.persist();
 		adminWorker.setUser(adminUser);

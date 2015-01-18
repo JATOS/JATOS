@@ -36,7 +36,7 @@ public class ControllerUtils extends Controller {
 		return value != null && value.length > 0
 				&& value[0].equals(requestWithHeaderValueForAjax);
 	}
-	
+
 	/**
 	 * Returns the request's referer without the path (only protocol, host,
 	 * port). Sometimes (e.g. if JATOS is behind a proxy) this is the only way
@@ -46,9 +46,11 @@ public class ControllerUtils extends Controller {
 		URL jatosURL = null;
 		try {
 			String[] referer = request().headers().get("Referer");
-			URL refererURL = new URL(referer[0]);
-			jatosURL = new URL(refererURL.getProtocol(), refererURL.getHost(),
-					refererURL.getPort(), "");
+			if (referer != null && referer.length > 0) {
+				URL refererURL = new URL(referer[0]);
+				jatosURL = new URL(refererURL.getProtocol(),
+						refererURL.getHost(), refererURL.getPort(), "");
+			}
 		} catch (MalformedURLException e) {
 			String errorMsg = ErrorMessages.COULDNT_GENERATE_URL + ": "
 					+ e.getMessage();

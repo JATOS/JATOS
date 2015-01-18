@@ -1,0 +1,106 @@
+body {
+	font: 20px "Lucida Grande","Helvetica Neue", sans-serif;
+	margin: 0;
+	padding: 0;
+}
+
+#component {
+	margin-top: 5%;
+	margin-left: auto;
+	margin-right: auto;
+	width: 80%;
+	padding: 0;
+}
+
+#error {
+	margin: 0;
+	margin-top: 5%;
+	text-align: center;
+	font-size: 100%;
+	color: rgb(255, 0, 0);
+	display: none;
+}
+
+#progressText {
+	font-size: 12px;
+	cursor:pointer;
+	padding: 0;
+	margin: 10px 0 0 10px;
+	position:absolute;
+    top: 10px;
+    right: 10px;
+}
+
+#text {
+	margin: 0;
+	padding: 0;
+	margin-bottom: 10px;
+	display: none;
+}
+
+#csv, #json {
+	margin: 0;
+	padding: 5px;
+	margin-bottom: 10px;
+	border-style: solid;
+    border-width: 1px;
+	font: @monospaceFont;
+	white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+	white-space: -pre-wrap;      /* Opera 4-6 */
+	white-space: -o-pre-wrap;    /* Opera 7 */
+	white-space: pre-wrap;       /* css-3 */
+	word-wrap: break-word;       /* Internet Explorer 5.5+ */
+	word-break: break-all;
+	display: none;
+}
+
+#answers {
+	padding-left: 10px;
+	padding-right: 10px;
+	margin-bottom: 30px;
+	display: none;
+}
+
+#answerInstruction {
+	text-align: center;
+}
+
+#moveSlidesText, #moveComponentsText, #taskStimulus {
+	margin: 0;
+	padding: 0;
+	margin-top: 20px;
+	text-align: center;
+	display: none;
+}
+
+#endAnswer {
+	margin: 0;
+	padding: 0;
+	text-align: center;
+	display: none;
+}
+
+#nextComponent {
+	margin: 0;
+	padding: 0;
+	text-align: center;
+	display: none;
+}
+
+#abort {
+	font-size: 14px;
+	cursor:pointer;
+	padding: 0;
+	margin: 10px 0 0 10px;
+	position:absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+#URLparamsTextBox {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 25px;
+    font-size: 16px;
+}
