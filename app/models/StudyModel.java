@@ -10,7 +10,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.persistence.CascadeType;
-import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -102,7 +101,6 @@ public class StudyModel {
 	 * Study assets directory name
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
-	@Column(unique = true, nullable = false)
 	private String dirName;
 
 	/**
