@@ -29,4 +29,6 @@ mappings in Universal := (mappings in Universal).value filter { case (file, path
 	! path.endsWith(".development.conf")
 }
 
-javaOptions in Test += "-Dconfig.file=conf/.testing.conf"
+Keys.fork in Test := false
+
+
