@@ -37,28 +37,54 @@ public class StudyAssets extends Controller {
 	 * Default path in the file system to the study assets root directory in
 	 * case it wasn't specified in the config
 	 */
-	private static final String DEFAULT_STUDY_ASSETS_ROOT_PATH = File.separator
-			+ "study_assets_root";
+	private static final String DEFAULT_STUDY_ASSETS_ROOT_PATH = "study_assets_root";
 
-	private static final String BASEPATH = Play.application().path().getPath();
+	/**
+	 * JATOS' absolute base path without trailing '/.'
+	 */
+	private static final String BASEPATH = getBasePath();
 
 	/**
 	 * Path in the file system to the study assets root directory. If the
 	 * property is defined in the configuration file then use it as the base
 	 * path. If property isn't defined, try in default study path instead.
 	 */
-	public static String STUDY_ASSETS_ROOT_PATH;
-	static {
-		String rawConfigStudiesPath = Play.application().configuration()
+	public static String STUDY_ASSETS_ROOT_PATH = getStudyAssetsRootPath();
+
+	private static String getBasePath() {
+		String tempBasePath = Play.application().path().getAbsolutePath();
+		if (tempBasePath.endsWith(File.separator + ".")) {
+			tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 2);
+		}
+		if (tempBasePath.endsWith(File.separator)) {
+			tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 1);
+		}
+		return tempBasePath;
+	}
+
+	private static String getStudyAssetsRootPath() {
+		String tempStudyAssetsRootPath = Play.application().configuration()
 				.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
-		if (rawConfigStudiesPath != null && !rawConfigStudiesPath.isEmpty()) {
-			STUDY_ASSETS_ROOT_PATH = rawConfigStudiesPath.replace("~",
+		if (tempStudyAssetsRootPath != null
+				&& !tempStudyAssetsRootPath.isEmpty()) {
+			// Replace ~ with actual home directory
+			tempStudyAssetsRootPath = tempStudyAssetsRootPath.replace("~",
 					System.getProperty("user.home"));
+			// Replace Unix-like file separator with actual system's one
+			tempStudyAssetsRootPath = tempStudyAssetsRootPath.replace("/",
+					File.separator);
 		} else {
-			STUDY_ASSETS_ROOT_PATH = BASEPATH + DEFAULT_STUDY_ASSETS_ROOT_PATH;
+			tempStudyAssetsRootPath = DEFAULT_STUDY_ASSETS_ROOT_PATH;
+		}
+
+		// If relative path add JATOS' base path as prefix
+		if (!tempStudyAssetsRootPath.startsWith(File.separator)) {
+			tempStudyAssetsRootPath = BASEPATH + File.separator
+					+ tempStudyAssetsRootPath;
 		}
 		Logger.info(CLASS_NAME + ": Path to study assets directory is "
-				+ STUDY_ASSETS_ROOT_PATH);
+				+ tempStudyAssetsRootPath);
+		return tempStudyAssetsRootPath;
 	}
 
 	/**
