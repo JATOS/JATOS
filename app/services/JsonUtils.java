@@ -42,7 +42,7 @@ public class JsonUtils {
 	 * ObjectMapper from Jackson JSON library to marshal/unmarshal. It considers
 	 * the default timezone.
 	 */
-	private static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
+	public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
 			.setTimeZone(TimeZone.getDefault());
 
 	/**
