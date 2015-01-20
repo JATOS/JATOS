@@ -1,5 +1,8 @@
-package controllers.publix;
+package controllers.publix.open_standalone;
 
+import controllers.publix.Publix;
+import controllers.publix.PublixErrorMessages;
+import controllers.publix.PublixUtils;
 import models.StudyModel;
 import models.workers.OpenStandaloneWorker;
 import models.workers.Worker;

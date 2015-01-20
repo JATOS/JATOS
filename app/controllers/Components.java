@@ -17,7 +17,7 @@ import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.Messages;
 import services.PersistanceUtils;
-import controllers.publix.JatosPublix;
+import controllers.publix.jatos.JatosPublix;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)

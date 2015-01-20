@@ -1,4 +1,4 @@
-package controllers.publix;
+package controllers.publix.jatos;
 
 import models.ComponentModel;
 import models.StudyModel;
@@ -12,6 +12,11 @@ import services.PersistanceUtils;
 import controllers.ControllerUtils;
 import controllers.Users;
 import controllers.routes;
+import controllers.publix.IPublix;
+import controllers.publix.Publix;
+import controllers.publix.PublixErrorMessages;
+import controllers.publix.PublixUtils;
+import controllers.publix.StudyAssets;
 import exceptions.ForbiddenPublixException;
 import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;

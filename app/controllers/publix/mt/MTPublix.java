@@ -1,4 +1,4 @@
-package controllers.publix;
+package controllers.publix.mt;
 
 import models.ComponentModel;
 import models.StudyModel;
@@ -9,6 +9,12 @@ import play.Logger;
 import play.mvc.Result;
 import services.PersistanceUtils;
 import controllers.ControllerUtils;
+import controllers.publix.IPublix;
+import controllers.publix.Publix;
+import controllers.publix.PublixErrorMessages;
+import controllers.publix.PublixInterceptor;
+import controllers.publix.PublixUtils;
+import controllers.publix.routes;
 import exceptions.BadRequestPublixException;
 import exceptions.PublixException;
 

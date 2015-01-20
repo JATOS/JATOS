@@ -1,5 +1,8 @@
-package controllers.publix;
+package controllers.publix.closed_standalone;
 
+import controllers.publix.IPublix;
+import controllers.publix.Publix;
+import controllers.publix.routes;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;

@@ -14,6 +14,11 @@ import play.mvc.Result;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import controllers.publix.closed_standalone.ClosedStandalonePublix;
+import controllers.publix.jatos.JatosPublix;
+import controllers.publix.mt.MTPublix;
+import controllers.publix.open_standalone.OpenStandalonePublix;
+import controllers.publix.tester.TesterPublix;
 import exceptions.BadRequestPublixException;
 import exceptions.PublixException;
 

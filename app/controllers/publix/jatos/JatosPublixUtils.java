@@ -1,4 +1,4 @@
-package controllers.publix;
+package controllers.publix.jatos;
 
 import models.StudyModel;
 import models.UserModel;
@@ -6,6 +6,9 @@ import models.workers.JatosWorker;
 import models.workers.Worker;
 import services.ErrorMessages;
 import controllers.Users;
+import controllers.publix.Publix;
+import controllers.publix.PublixErrorMessages;
+import controllers.publix.PublixUtils;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 

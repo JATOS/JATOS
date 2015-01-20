@@ -31,9 +31,9 @@ import services.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import controllers.publix.ClosedStandalonePublix;
-import controllers.publix.JatosPublix;
-import controllers.publix.TesterPublix;
+import controllers.publix.closed_standalone.ClosedStandalonePublix;
+import controllers.publix.jatos.JatosPublix;
+import controllers.publix.tester.TesterPublix;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)

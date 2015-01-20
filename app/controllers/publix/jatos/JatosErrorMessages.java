@@ -1,5 +1,6 @@
-package controllers.publix;
+package controllers.publix.jatos;
 
+import controllers.publix.PublixErrorMessages;
 import models.workers.JatosWorker;
 
 /**
