@@ -1,15 +1,18 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel,
-breadcrumbs: services.Breadcrumbs, messages: services.Messages,
-study: StudyModel, workerSet: Set[workers.Worker])
-
-@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
+@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs:
+services.Breadcrumbs, messages: services.Messages, study: StudyModel,
+workerSet: Set[workers.Worker]) @views.html.jatos.main(studyList,
+loggedInUser, breadcrumbs, messages){
 
 <!-- Toolbar -->
 <div id="studyToolbar" class="btn-toolbar" role="toolbar">
 	<div class="btn-group">
 		<button id="showStudy" type="button" class="btn btn-primary">Show</button>
-		<button id="studyResults" type="button" class="btn btn-primary">Results <span class="badge">@results.StudyResult.countByStudy(study)</span></button>
-		<button id="workers" type="button" class="btn btn-primary">Workers <span class="badge">@workerSet.size()</button>
+		<button id="studyResults" type="button" class="btn btn-primary">
+			Results <span class="badge">@results.StudyResult.countByStudy(study)</span>
+		</button>
+		<button id="workers" type="button" class="btn btn-primary">
+			Workers <span class="badge">@workerSet.size()
+		</button>
 		<button id="editStudy" type="button" class="btn btn-primary">Properties</button>
 		<button id="lockStudy" type="button" class="btn btn-primary">@if(study.isLocked()){Unlock}else{Lock}</button>
 		<div class="btn-group">
@@ -20,10 +23,13 @@ study: StudyModel, workerSet: Set[workers.Worker])
 			<ul class="dropdown-menu" role="menu">
 				<li><a href="@routes.ImportExport.exportStudy(study.getId())">Export</a></li>
 				<li><a id="cloneStudy" href="#">Clone</a></li>
-				<li><a href="@routes.Studies.showMTurkSourceCode(study.getId())">MT Source Code</a></li>
+				<li><a
+					href="@routes.Studies.showMTurkSourceCode(study.getId())">MT
+						Source Code</a></li>
 				<li class="divider"></li>
 				<li><a id="testerRun" href="#">Tester Run</a></li>
-				<li><a id="closedStandaloneRun" href="#">Closed Standalone Run</a></li>
+				<li><a id="closedStandaloneRun" href="#">Closed Standalone
+						Run</a></li>
 				<li><a id="openStandaloneRun" href="#">Open Standalone Run</a></li>
 				<li class="divider"></li>
 				<li><a id="removeStudy" href="#">Delete</a></li>
@@ -31,24 +37,27 @@ study: StudyModel, workerSet: Set[workers.Worker])
 		</div>
 	</div>
 	<div class="btn-group">
-		<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-				Components <span class="caret"></span>
+		<button type="button" class="btn btn-primary dropdown-toggle"
+			data-toggle="dropdown">
+			Components <span class="caret"></span>
 		</button>
 		<ul class="dropdown-menu" role="menu">
 			<li><a href="@routes.Components.create(study.getId())">New</a></li>
-			<input id="importComponentBrowser" type="file" name="@ComponentModel.COMPONENT" style="display: none;">
+			<input id="importComponentBrowser" type="file"
+				name="@ComponentModel.COMPONENT" style="display: none;">
 			<li><a id="importComponentButton" href="#">Import</a></li>
 		</ul>
 	</div>
-	
+
 	<div class="btn-group">
-		<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-				Members <span class="caret"></span>
+		<button type="button" class="btn btn-primary dropdown-toggle"
+			data-toggle="dropdown">
+			Members <span class="caret"></span>
 		</button>
 		<ul class="dropdown-menu" role="menu">
 			@for(member <- study.getMemberList()) {
-			<li><a href="@routes.Users.profile(member.getEmail())">@member.getName() (@member.getEmail())</a></li>
-			}
+			<li><a href="@routes.Users.profile(member.getEmail())">@member.getName()
+					(@member.getEmail())</a></li> }
 			<li class="divider"></li>
 			<li><a href="@routes.Studies.changeMembers(study.getId())">Change</a></li>
 		</ul>
@@ -57,7 +66,8 @@ study: StudyModel, workerSet: Set[workers.Worker])
 
 <!-- Components Table -->
 <h3>Components</h3>
-<table id="componentsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+<table id="componentsTable" class="table table-hover table-row-border"
+	cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
 		<tr>
 			<th></th>
@@ -74,7 +84,9 @@ study: StudyModel, workerSet: Set[workers.Worker])
 <div id="componentToolbar" style="display: none">
 	<div class="componentBtnGroup btn-group" aria-hidden="true">
 		<button type="button" class="showComponent btn btn-default">Show</button>
-		<button type="button" class="componentResults btn btn-default">Results <span class="resultsBadge badge"></span></button>
+		<button type="button" class="componentResults btn btn-default">
+			Results <span class="resultsBadge badge"></span>
+		</button>
 		<button type="button" class="editComponent btn btn-default">Properties</button>
 		<div class="btn-group">
 			<button type="button" class="btn btn-default dropdown-toggle"
@@ -92,17 +104,21 @@ study: StudyModel, workerSet: Set[workers.Worker])
 </div>
 
 <!-- Confirmation Modal - Run Standalone or Tester -->
-<div class="modal fade" id="confirmModalRun" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="confirmModalRun" tabindex="-1" role="dialog"
+	aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<button type="button" class="close" data-dismiss="modal">
+					<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+				</button>
 				<h4 class="modal-title">Create run</h4>
 			</div>
 			<div class="modal-body">
 				<p class="modalText">You're about to create a worker.</p>
 				<div class="input-group">
-					<input type="text" class="comment form-control" placeholder="Comment">
+					<input type="text" class="comment form-control"
+						placeholder="Comment">
 				</div>
 			</div>
 			<div class="modal-footer">
@@ -259,13 +275,13 @@ $(document).ready(function() {
 	$('#componentsTable tbody').on('click', '.upArrow', function() {
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
-		ajaxChangeComponentOrder(componentId, "up", tr);
+		ajaxChangeComponentOrder(componentId, "@Studies.COMPONENT_ORDER_UP", tr);
 	});
 
 	$('#componentsTable tbody').on('click', '.downArrow', function() {
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
-		ajaxChangeComponentOrder(componentId, "down", tr);
+		ajaxChangeComponentOrder(componentId, "@Studies.COMPONENT_ORDER_DOWN", tr);
 	});
 	
 	$('#componentsTable tbody').on('click', '.activeCheckbox', function() {
@@ -400,7 +416,7 @@ $('#studyToolbar').on('click', '#closedStandaloneRun', function() {
 $('#studyToolbar').on('click', '#openStandaloneRun', function() {
 	var title = "Open standalone run";
 	var preText = "Use this link";
-	var url = "@ControllerUtils.getRefererUrl()" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?openStandalone";
+	var url = "@ControllerUtils.getReferer()" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?openStandalone";
 	var html = "<p>" + url + "</p>"; 
 	var postText = "or press \"Run\" to start one right away. Remember to allow open standalone runs in your study's properties.";
 	askConfirmation(title, preText, html, postText, 'Run', function() {

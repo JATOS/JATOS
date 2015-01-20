@@ -39,6 +39,8 @@ import exceptions.ResultException;
 @Security.Authenticated(Secured.class)
 public class Studies extends Controller {
 
+	public static final String COMPONENT_ORDER_DOWN = "down";
+	public static final String COMPONENT_ORDER_UP = "up";
 	private static final String CLASS_NAME = Studies.class.getSimpleName();
 
 	@Transactional
@@ -360,10 +362,10 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 
-		if (direction.equals("up")) {
+		if (direction.equals(COMPONENT_ORDER_UP)) {
 			study.componentOrderMinusOne(component);
 		}
-		if (direction.equals("down")) {
+		if (direction.equals(COMPONENT_ORDER_DOWN)) {
 			study.componentOrderPlusOne(component);
 		}
 		study.refresh();
@@ -414,7 +416,8 @@ public class Studies extends Controller {
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		worker.persist();
-		String url = ControllerUtils.getRefererUrl()
+
+		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
 						study.getId()).url() + "?"
 				+ ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID + "="
@@ -447,7 +450,7 @@ public class Studies extends Controller {
 		}
 		worker.persist();
 
-		String url = ControllerUtils.getRefererUrl()
+		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
 						study.getId()).url() + "?" + TesterPublix.TESTER_ID
 				+ "=" + worker.getId();
@@ -467,6 +470,11 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		URL jatosURL = ControllerUtils.getRefererUrl();
+		if (jatosURL == null) {
+			String errorMsg = ErrorMessages.COULDNT_GENERATE_JATOS_URL;
+			ControllerUtils.throwStudiesResultException(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
+		}
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 		return ok(views.html.jatos.study.mTurkSourceCode.render(studyList,

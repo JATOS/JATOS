@@ -36,11 +36,18 @@ public class ControllerUtils extends Controller {
 		return value != null && value.length > 0
 				&& value[0].equals(requestWithHeaderValueForAjax);
 	}
+	
+	public static String getReferer() throws ResultException {
+		URL refererUrl = getRefererUrl();
+		return (refererUrl != null) ? refererUrl.toString() : "";
+	}
+	
 
 	/**
 	 * Returns the request's referer without the path (only protocol, host,
 	 * port). Sometimes (e.g. if JATOS is behind a proxy) this is the only way
-	 * to get JATOS' absolute URL.
+	 * to get JATOS' absolute URL. If the 'Referer' isn't set in the header it
+	 * returns null.
 	 */
 	public static URL getRefererUrl() throws ResultException {
 		URL jatosURL = null;
@@ -52,8 +59,8 @@ public class ControllerUtils extends Controller {
 						refererURL.getHost(), refererURL.getPort(), "");
 			}
 		} catch (MalformedURLException e) {
-			String errorMsg = ErrorMessages.COULDNT_GENERATE_URL + ": "
-					+ e.getMessage();
+			String errorMsg = ErrorMessages.COULDNT_GENERATE_JATOS_URL + " ("
+					+ e.getMessage() + ")";
 			ControllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
