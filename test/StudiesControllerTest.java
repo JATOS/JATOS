@@ -44,10 +44,11 @@ import services.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
-import common.Initializer;
 
+import common.Initializer;
 import controllers.Studies;
 import controllers.Users;
+import controllers.publix.StudyAssets;
 import exceptions.ResultException;
 
 /**
@@ -96,6 +97,7 @@ public class StudiesControllerTest extends WithApplication {
 		em.close();
 		JPA.bindForCurrentThread(null);
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
+		new File(StudyAssets.STUDY_ASSETS_ROOT_PATH).delete();
 		Helpers.stop(app);
 	}
 
