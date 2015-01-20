@@ -11,7 +11,6 @@ import static play.test.Helpers.status;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
 import javax.persistence.EntityManager;
@@ -55,7 +54,6 @@ import exceptions.ResultException;
  */
 public class StudiesControllerTest extends WithApplication {
 
-	private static final String DIRNAME_TEST = "dirname_test";
 	private static FakeApplication app;
 	private static EntityManager em;
 	private static UserModel admin;
@@ -65,8 +63,7 @@ public class StudiesControllerTest extends WithApplication {
 	public ExpectedException thrown = ExpectedException.none();
 
 	@BeforeClass
-	public static void startApp() throws UnsupportedEncodingException,
-			NoSuchAlgorithmException {
+	public static void startApp() throws Exception {
 		app = Helpers.fakeApplication();
 		Helpers.start(app);
 
@@ -75,7 +72,6 @@ public class StudiesControllerTest extends WithApplication {
 		em = jpaPlugin.get().em("default");
 		JPA.bindForCurrentThread(null);
 		JPA.bindForCurrentThread(em);
-		// JPA.em().getTransaction().begin();
 
 		// Get admin (admin is automatically created during initialization)
 		admin = UserModel.findByEmail(Initializer.ADMIN_EMAIL);
@@ -89,42 +85,47 @@ public class StudiesControllerTest extends WithApplication {
 
 	@After
 	public void tearDown() throws IOException {
-		// clearDB();
 	}
 
 	@AfterClass
 	public static void stopApp() throws IOException {
 		em.close();
 		JPA.bindForCurrentThread(null);
+		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
 		Helpers.stop(app);
-		IOUtils.removeStudyAssetsDir(DIRNAME_TEST);
 	}
 
-	private static void importStudyTemplate()
-			throws UnsupportedEncodingException, NoSuchAlgorithmException {
+	private static void importStudyTemplate() throws NoSuchAlgorithmException,
+			IOException {
 		UploadUnmarshaller uploadUnmarshaller = new UploadUnmarshaller();
 		File studyFile = new File("test/basic_example_study.jas");
 		studyTemplate = uploadUnmarshaller.unmarshalling(studyFile,
 				StudyModel.class);
+		IOUtils.createStudyAssetsDir(studyTemplate.getDirName());
 	}
 
-	private synchronized StudyModel addStudy() {
+	private synchronized StudyModel cloneStudy() throws IOException {
 		JPA.em().getTransaction().begin();
 		StudyModel studyClone = new StudyModel(studyTemplate);
+		String destDirName;
+		destDirName = IOUtils
+				.cloneStudyAssetsDirectory(studyClone.getDirName());
+		studyClone.setDirName(destDirName);
 		PersistanceUtils.addStudy(studyClone, admin);
 		JPA.em().getTransaction().commit();
 		return studyClone;
 	}
 
-	private synchronized void removeStudy(StudyModel study) {
+	private synchronized void removeStudy(StudyModel study) throws IOException {
+		IOUtils.removeStudyAssetsDir(study.getDirName());
 		JPA.em().getTransaction().begin();
 		PersistanceUtils.removeStudy(study);
 		JPA.em().getTransaction().commit();
 	}
 
 	@Test
-	public void callIndex() {
-		StudyModel studyClone = addStudy();
+	public void callIndex() throws Exception {
+		StudyModel studyClone = cloneStudy();
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.index(studyClone.getId(), null),
@@ -140,24 +141,25 @@ public class StudiesControllerTest extends WithApplication {
 	}
 
 	@Test
-	public void callIndexButNotMember() {
-		StudyModel studyClone = addStudy();
+	public void callIndexButNotMember() throws Exception {
+		StudyModel studyClone = cloneStudy();
 
 		JPA.em().getTransaction().begin();
 		StudyModel.findById(studyClone.getId()).removeMember(admin);
 		JPA.em().getTransaction().commit();
 
-		thrown.expect(RuntimeException.class);
-		thrown.expectMessage("isn't member of study");
-		thrown.expectCause(IsInstanceOf
-				.<Throwable> instanceOf(ResultException.class));
-		callAction(
-				controllers.routes.ref.Studies.index(studyClone.getId(), null),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
-
-		// Clean up
-		removeStudy(studyClone);
+		try {
+			callAction(
+					controllers.routes.ref.Studies.index(studyClone.getId(),
+							null),
+					fakeRequest().withSession(Users.SESSION_EMAIL,
+							Initializer.ADMIN_EMAIL));
+		} catch (RuntimeException e) {
+			assert (e.getMessage().contains("isn't member of study"));
+			assert (e.getCause() instanceof ResultException);
+		} finally {
+			removeStudy(studyClone);
+		}
 	}
 
 	@Test
@@ -173,13 +175,14 @@ public class StudiesControllerTest extends WithApplication {
 	}
 
 	@Test
-	public void callSubmit() throws IOException {
+	public void callSubmit() throws Exception {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
 				ImmutableMap.of(StudyModel.TITLE, "Title Test",
 						StudyModel.DESCRIPTION, "Description test.",
-						StudyModel.DIRNAME, DIRNAME_TEST, StudyModel.JSON_DATA,
-						"{}", StudyModel.ALLOWED_WORKER_LIST, ""));
+						StudyModel.DIRNAME, "dirName_submit",
+						StudyModel.JSON_DATA, "{}",
+						StudyModel.ALLOWED_WORKER_LIST, ""));
 		Result result = callAction(controllers.routes.ref.Studies.submit(),
 				request);
 		assertEquals(303, status(result));
@@ -191,12 +194,15 @@ public class StudiesControllerTest extends WithApplication {
 		StudyModel study = StudyModel.findById(studyId);
 		assertEquals("Title Test", study.getTitle());
 		assertEquals("Description test.", study.getDescription());
-		assertEquals("dirname_test", study.getDirName());
+		assertEquals("dirName_submit", study.getDirName());
 		assertEquals("{ }", study.getJsonData());
 		assert (study.getComponentList().isEmpty());
 		assert (study.getMemberList().contains(admin));
 		assert (!study.isLocked());
 		assert (study.getAllowedWorkerList().isEmpty());
+
+		// Clean up
+		removeStudy(study);
 	}
 
 	@Test
@@ -215,8 +221,8 @@ public class StudiesControllerTest extends WithApplication {
 	}
 
 	@Test
-	public void callSubmitStudyAssetsDirExists() {
-		StudyModel studyClone = addStudy();
+	public void callSubmitStudyAssetsDirExists() throws Exception {
+		StudyModel studyClone = cloneStudy();
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
@@ -226,13 +232,94 @@ public class StudiesControllerTest extends WithApplication {
 						StudyModel.JSON_DATA, "{}",
 						StudyModel.ALLOWED_WORKER_LIST, ""));
 
-		thrown.expect(RuntimeException.class);
-		thrown.expectCause(IsInstanceOf
-				.<Throwable> instanceOf(ResultException.class));
-		callAction(controllers.routes.ref.Studies.submit(), request);
+		try {
+			callAction(controllers.routes.ref.Studies.submit(), request);
+		} catch (RuntimeException e) {
+			assert (e.getCause() instanceof ResultException);
+		} finally {
+			removeStudy(studyClone);
+		}
+	}
+
+	@Test
+	public void callEdit() throws Exception {
+		StudyModel studyClone = cloneStudy();
+
+		Result result = callAction(
+				controllers.routes.ref.Studies.edit(studyClone.getId()),
+				fakeRequest().withSession(Users.SESSION_EMAIL,
+						Initializer.ADMIN_EMAIL));
+		assertThat(status(result)).isEqualTo(OK);
+		assertThat(charset(result)).isEqualTo("utf-8");
+		assertThat(contentType(result)).isEqualTo("text/html");
+		assertThat(contentAsString(result)).contains(
+				Breadcrumbs.EDIT_PROPERTIES);
 
 		// Clean up
 		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callSubmitEdited() throws Exception {
+		StudyModel studyClone = cloneStudy();
+
+		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
+				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
+				ImmutableMap.of(StudyModel.TITLE, "Title Test",
+						StudyModel.DESCRIPTION, "Description test.",
+						StudyModel.DIRNAME, "dirName_submitEdited",
+						StudyModel.JSON_DATA, "{}",
+						StudyModel.ALLOWED_WORKER_LIST, ""));
+		Result result = callAction(
+				controllers.routes.ref.Studies.submitEdited(studyClone.getId()),
+				request);
+		assertEquals(303, status(result));
+
+		// It would be nice to test the edited study here
+		// Clean up
+		studyClone.setDirName("dirName_submitEdited");
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callSwapLock() throws Exception {
+		StudyModel studyClone = cloneStudy();
+
+		Result result = callAction(
+				controllers.routes.ref.Studies.swapLock(studyClone.getId()),
+				fakeRequest().withSession(Users.SESSION_EMAIL,
+						Initializer.ADMIN_EMAIL));
+		assertThat(status(result)).isEqualTo(OK);
+		assertThat(contentAsString(result)).contains("true");
+
+		// Clean up
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callRemove() throws Exception {
+		StudyModel studyClone = cloneStudy();
+
+		Result result = callAction(
+				controllers.routes.ref.Studies.remove(studyClone.getId()),
+				fakeRequest().withSession(Users.SESSION_EMAIL,
+						Initializer.ADMIN_EMAIL));
+		assertThat(status(result)).isEqualTo(OK);
+	}
+
+	@Test
+	public void callCloneStudy() throws Exception {
+		StudyModel study = cloneStudy();
+
+		Result result = callAction(
+				controllers.routes.ref.Studies.cloneStudy(study.getId()),
+				fakeRequest().withSession(Users.SESSION_EMAIL,
+						Initializer.ADMIN_EMAIL));
+		assertThat(status(result)).isEqualTo(OK);
+
+		// Clean up
+		IOUtils.removeStudyAssetsDir(study.getDirName() + "_clone");
+		removeStudy(study);
 	}
 
 }
