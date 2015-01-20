@@ -153,11 +153,14 @@ public class ImportExport extends Controller {
 				PersistanceUtils.updateStudysComponents(currentStudy,
 						importedStudy);
 			}
+			// TODO simplify if command; unify return command
+			tempUnzippedStudyDir.delete();
 			return ok(currentStudy.getId().toString());
 		} else {
 			moveStudyAssetsDir(tempUnzippedStudyDir, null,
 					importedStudy.getDirName(), loggedInUser);
 			PersistanceUtils.addStudy(importedStudy, loggedInUser);
+			tempUnzippedStudyDir.delete();
 			return ok(importedStudy.getId().toString());
 		}
 	}

@@ -39,6 +39,7 @@ import scala.Option;
 import services.Breadcrumbs;
 import services.IOUtils;
 import services.JsonUtils;
+import services.ZipUtil;
 import services.JsonUtils.UploadUnmarshaller;
 import services.PersistanceUtils;
 
@@ -81,7 +82,7 @@ public class StudiesControllerTest extends WithApplication {
 		// Get admin (admin is automatically created during initialization)
 		admin = UserModel.findByEmail(Initializer.ADMIN_EMAIL);
 
-		importStudyTemplate();
+		studyTemplate = importStudyTemplate2();
 	}
 
 	@Before
@@ -101,13 +102,24 @@ public class StudiesControllerTest extends WithApplication {
 		Helpers.stop(app);
 	}
 
-	private static void importStudyTemplate() throws NoSuchAlgorithmException,
-			IOException {
+	private static StudyModel importStudyTemplate2()
+			throws NoSuchAlgorithmException, IOException {
+		File studyZip = new File("test/basic_example_study.zip");
+		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
+		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
+				IOUtils.STUDY_FILE_SUFFIX);
+		File studyFile = studyFileList[0];
 		UploadUnmarshaller uploadUnmarshaller = new UploadUnmarshaller();
-		File studyFile = new File("test/basic_example_study.jas");
-		studyTemplate = uploadUnmarshaller.unmarshalling(studyFile,
+		StudyModel importedStudy = uploadUnmarshaller.unmarshalling(studyFile,
 				StudyModel.class);
-		IOUtils.createStudyAssetsDir(studyTemplate.getDirName());
+		studyFile.delete();
+
+		File[] dirArray = IOUtils.findDirectories(tempUnzippedStudyDir);
+		IOUtils.moveStudyAssetsDir(dirArray[0], importedStudy.getDirName());
+
+		PersistanceUtils.addStudy(importedStudy, admin);
+		tempUnzippedStudyDir.delete();
+		return importedStudy;
 	}
 
 	private synchronized StudyModel cloneStudy() throws IOException {
