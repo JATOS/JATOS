@@ -76,7 +76,6 @@ public class StudiesControllerTest extends WithApplication {
 		Option<JPAPlugin> jpaPlugin = app.getWrappedApplication().plugin(
 				JPAPlugin.class);
 		em = jpaPlugin.get().em("default");
-		JPA.bindForCurrentThread(null);
 		JPA.bindForCurrentThread(em);
 
 		// Get admin (admin is automatically created during initialization)

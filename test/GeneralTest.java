@@ -39,7 +39,6 @@ public class GeneralTest extends WithApplication {
 		Option<JPAPlugin> jpaPlugin = app.getWrappedApplication().plugin(
 				JPAPlugin.class);
 		em = jpaPlugin.get().em("default");
-		JPA.bindForCurrentThread(null);
 		JPA.bindForCurrentThread(em);
 	}
 
