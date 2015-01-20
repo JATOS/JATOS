@@ -163,7 +163,7 @@ public class IOUtils {
 		FileUtils.deleteDirectory(dir);
 	}
 
-	public static String cloneStudyAssetsDirectory(String srcDirName)
+	public synchronized static String cloneStudyAssetsDirectory(String srcDirName)
 			throws IOException {
 		File srcDir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH,
 				srcDirName);
