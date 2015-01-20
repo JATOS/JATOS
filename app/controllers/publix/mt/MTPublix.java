@@ -14,7 +14,6 @@ import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixInterceptor;
 import controllers.publix.PublixUtils;
-import controllers.publix.routes;
 import exceptions.BadRequestPublixException;
 import exceptions.PublixException;
 

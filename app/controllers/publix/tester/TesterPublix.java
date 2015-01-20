@@ -1,14 +1,13 @@
 package controllers.publix.tester;
 
-import controllers.publix.IPublix;
-import controllers.publix.Publix;
-import controllers.publix.routes;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.TesterWorker;
 import play.Logger;
 import play.mvc.Result;
 import services.PersistanceUtils;
+import controllers.publix.IPublix;
+import controllers.publix.Publix;
 import exceptions.PublixException;
 
 /**
