@@ -144,11 +144,13 @@ public class StudyModel {
 		this.jsonData = study.jsonData;
 		this.title = study.title;
 		this.locked = false;
-		this.allowedWorkerList = study.allowedWorkerList;
+		for (String worker : study.allowedWorkerList) {
+			this.allowedWorkerList.add(worker);
+		}
 		for (ComponentModel component : study.componentList) {
 			ComponentModel clone = new ComponentModel(component);
 			clone.setStudy(this);
-			componentList.add(clone);
+			this.componentList.add(clone);
 		}
 	}
 
