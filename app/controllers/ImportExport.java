@@ -38,7 +38,7 @@ public class ImportExport extends Controller {
 
 	public static final String STUDYS_DIR_CONFIRM = "studysDirConfirm";
 	public static final String STUDYS_PROPERTIES_CONFIRM = "studysPropertiesConfirm";
-	private static final String SESSION_TEMP_STUDY_ASSETS_DIR = "tempStudyAssetsDir";
+	private static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
 	private static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
 
@@ -54,11 +54,11 @@ public class ImportExport extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
-		File tempStudyAssetsDir = unzipUploadedFile();
-		StudyModel uploadedStudy = unmarshalStudy(tempStudyAssetsDir, false);
+		File tempUnzippedStudyDir = unzipUploadedFile();
+		StudyModel uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, false);
 
 		// Remember study assets' dir name
-		session(SESSION_TEMP_STUDY_ASSETS_DIR, tempStudyAssetsDir.getName());
+		session(SESSION_UNZIPPED_STUDY_DIR, tempUnzippedStudyDir.getName());
 
 		StudyModel currentStudy = StudyModel
 				.findByUuid(uploadedStudy.getUuid());
@@ -93,7 +93,7 @@ public class ImportExport extends Controller {
 
 	/**
 	 * HTTP Ajax request<br>
-	 * Actual import of study and its directory
+	 * Actual import of study and its study assets directory
 	 */
 	@Transactional
 	public static Result importStudyConfirmed() throws ResultException {
@@ -118,8 +118,8 @@ public class ImportExport extends Controller {
 					Http.Status.BAD_REQUEST);
 		}
 
-		File tempStudyAssetsDir = getTempStudyAssetsDir();
-		StudyModel importedStudy = unmarshalStudy(tempStudyAssetsDir, true);
+		File tempUnzippedStudyDir = getUnzippedStudyDir();
+		StudyModel importedStudy = unmarshalStudy(tempUnzippedStudyDir, true);
 		StudyModel currentStudy = StudyModel
 				.findByUuid(importedStudy.getUuid());
 
@@ -130,12 +130,12 @@ public class ImportExport extends Controller {
 			ControllerUtils.checkStudyLocked(currentStudy);
 			if (studysDirConfirm) {
 				if (studysPropertiesConfirm) {
-					moveStudyAssetsDir(tempStudyAssetsDir, currentStudy,
+					moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy,
 							importedStudy.getDirName(), loggedInUser);
 				} else {
 					// If we don't overwrite the properties, don't use the
 					// updated study assets' dir name
-					moveStudyAssetsDir(tempStudyAssetsDir, currentStudy,
+					moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy,
 							currentStudy.getDirName(), loggedInUser);
 				}
 			}
@@ -155,7 +155,7 @@ public class ImportExport extends Controller {
 			}
 			return ok(currentStudy.getId().toString());
 		} else {
-			moveStudyAssetsDir(tempStudyAssetsDir, null,
+			moveStudyAssetsDir(tempUnzippedStudyDir, null,
 					importedStudy.getDirName(), loggedInUser);
 			PersistanceUtils.addStudy(importedStudy, loggedInUser);
 			return ok(importedStudy.getId().toString());
@@ -163,27 +163,27 @@ public class ImportExport extends Controller {
 	}
 
 	/**
-	 * Get study assets' dir File object. Name is stored in session. Discard
-	 * session variable afterwards.
+	 * Get unzipped study dir File object stored in Java's temp directory. Name
+	 * is stored in session. Discard session variable afterwards.
 	 */
-	private static File getTempStudyAssetsDir() throws ResultException {
-		String tempStudyAssetsDirName = session(SESSION_TEMP_STUDY_ASSETS_DIR);
-		session().remove(SESSION_TEMP_STUDY_ASSETS_DIR);
-		if (tempStudyAssetsDirName == null || tempStudyAssetsDirName.isEmpty()) {
+	private static File getUnzippedStudyDir() throws ResultException {
+		String unzippedStudyDirName = session(SESSION_UNZIPPED_STUDY_DIR);
+		session().remove(SESSION_UNZIPPED_STUDY_DIR);
+		if (unzippedStudyDirName == null || unzippedStudyDirName.isEmpty()) {
 			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
 			ControllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
-		File tempStudyAssetsDir = new File(
-				System.getProperty("java.io.tmpdir"), tempStudyAssetsDirName);
-		return tempStudyAssetsDir;
+		File unzippedStudyDir = new File(System.getProperty("java.io.tmpdir"),
+				unzippedStudyDirName);
+		return unzippedStudyDir;
 	}
 
 	/**
 	 * Deletes current study assets' dir and moves imported study assets' dir
-	 * from temp to study assets root dir
+	 * from Java's temp dir to study assets root dir
 	 */
-	private static void moveStudyAssetsDir(File tempStudyAssetsDir,
+	private static void moveStudyAssetsDir(File unzippedStudyDir,
 			StudyModel currentStudy, String studyAssetsDirName,
 			UserModel loggedInUser) throws ResultException {
 		try {
@@ -191,7 +191,7 @@ public class ImportExport extends Controller {
 				IOUtils.removeStudyAssetsDir(currentStudy.getDirName());
 			}
 
-			File[] dirArray = IOUtils.findDirectories(tempStudyAssetsDir);
+			File[] dirArray = IOUtils.findDirectories(unzippedStudyDir);
 			if (dirArray.length == 0) {
 				// If a study assets dir is missing, create a new one.
 				IOUtils.createStudyAssetsDir(studyAssetsDirName);
