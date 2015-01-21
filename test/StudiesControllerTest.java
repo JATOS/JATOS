@@ -8,137 +8,38 @@ import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.headers;
 import static play.test.Helpers.status;
-
-import java.io.File;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.persistence.EntityManager;
-
 import models.StudyModel;
-import models.UserModel;
 import models.workers.ClosedStandaloneWorker;
 
 import org.hamcrest.core.IsInstanceOf;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import play.db.jpa.JPA;
-import play.db.jpa.JPAPlugin;
 import play.mvc.Result;
-import play.test.FakeApplication;
 import play.test.FakeRequest;
-import play.test.Helpers;
-import play.test.WithApplication;
-import scala.Option;
 import services.Breadcrumbs;
 import services.IOUtils;
 import services.JsonUtils;
-import services.ZipUtil;
-import services.JsonUtils.UploadUnmarshaller;
-import services.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
-
 import common.Initializer;
+
 import controllers.Studies;
 import controllers.Users;
-import controllers.publix.StudyAssets;
 import exceptions.ResultException;
 
 /**
- * Testing actions of controller.Studies. We set up a fake application with it's
- * own database.
+ * Testing actions of controller.Studies.
  * 
  * @author Kristian Lange
  */
-public class StudiesControllerTest extends WithApplication {
-
-	private static FakeApplication app;
-	private static EntityManager em;
-	private static UserModel admin;
-	private static StudyModel studyTemplate;
+public class StudiesControllerTest extends AbstractControllerTest {
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
-
-	@BeforeClass
-	public static void startApp() throws Exception {
-		app = Helpers.fakeApplication();
-		Helpers.start(app);
-
-		Option<JPAPlugin> jpaPlugin = app.getWrappedApplication().plugin(
-				JPAPlugin.class);
-		em = jpaPlugin.get().em("default");
-		JPA.bindForCurrentThread(em);
-
-		// Get admin (admin is automatically created during initialization)
-		admin = UserModel.findByEmail(Initializer.ADMIN_EMAIL);
-
-		studyTemplate = importStudyTemplate2();
-	}
-
-	@Before
-	public void setUp() {
-	}
-
-	@After
-	public void tearDown() throws IOException {
-	}
-
-	@AfterClass
-	public static void stopApp() throws IOException {
-		em.close();
-		JPA.bindForCurrentThread(null);
-		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		new File(StudyAssets.STUDY_ASSETS_ROOT_PATH).delete();
-		Helpers.stop(app);
-	}
-
-	private static StudyModel importStudyTemplate2()
-			throws NoSuchAlgorithmException, IOException {
-		File studyZip = new File("test/basic_example_study.zip");
-		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
-		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
-				IOUtils.STUDY_FILE_SUFFIX);
-		File studyFile = studyFileList[0];
-		UploadUnmarshaller uploadUnmarshaller = new UploadUnmarshaller();
-		StudyModel importedStudy = uploadUnmarshaller.unmarshalling(studyFile,
-				StudyModel.class);
-		studyFile.delete();
-
-		File[] dirArray = IOUtils.findDirectories(tempUnzippedStudyDir);
-		IOUtils.moveStudyAssetsDir(dirArray[0], importedStudy.getDirName());
-
-		PersistanceUtils.addStudy(importedStudy, admin);
-		tempUnzippedStudyDir.delete();
-		return importedStudy;
-	}
-
-	private synchronized StudyModel cloneStudy() throws IOException {
-		JPA.em().getTransaction().begin();
-		StudyModel studyClone = new StudyModel(studyTemplate);
-		String destDirName;
-		destDirName = IOUtils
-				.cloneStudyAssetsDirectory(studyClone.getDirName());
-		studyClone.setDirName(destDirName);
-		PersistanceUtils.addStudy(studyClone, admin);
-		JPA.em().getTransaction().commit();
-		return studyClone;
-	}
-
-	private synchronized void removeStudy(StudyModel study) throws IOException {
-		IOUtils.removeStudyAssetsDir(study.getDirName());
-		JPA.em().getTransaction().begin();
-		PersistanceUtils.removeStudy(study);
-		JPA.em().getTransaction().commit();
-	}
 
 	@Test
 	public void callIndex() throws Exception {
