@@ -72,6 +72,13 @@ public abstract class ErrorMessages {
 		return errorMsg;
 	}
 
+	public static String studyReorderUnknownDirection(String direction,
+			Long studyId) {
+		String errorMsg = "Unknown direction command. Couldn't reorder "
+				+ "components in study with ID " + studyId + ".";
+		return errorMsg;
+	}
+
 	public static String studyImportNotMember(String studyTitle) {
 		String errorMsg = "The study \"" + studyTitle + "\" you're trying "
 				+ "to upload already exists but you aren't a member of it.";

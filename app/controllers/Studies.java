@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import models.ComponentModel;
@@ -28,6 +27,7 @@ import services.IOUtils;
 import services.JsonUtils;
 import services.Messages;
 import services.PersistanceUtils;
+import services.StudyBinder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -83,6 +83,8 @@ public class Studies extends Controller {
 
 		StudyModel study = new StudyModel();
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
+		// It's a generic template for editing a study. We have to tell it the
+		// submit action.
 		Call submitAction = routes.Studies.submit();
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForHome(Breadcrumbs.NEW_STUDY);
@@ -98,45 +100,16 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 
-		StudyModel study = bindStudyFromRequest();
+		StudyModel study = StudyBinder.bindStudyFromRequest(request().body()
+				.asFormUrlEncoded());
 		List<ValidationError> errorList = study.validate();
 		if (errorList != null) {
 			failStudyCreate(loggedInUser, studyList, study, errorList);
 		}
 
-		// Persist in DB
 		PersistanceUtils.addStudy(study, loggedInUser);
-
-		// Create study assets' dir
-		try {
-			IOUtils.createStudyAssetsDir(study.getDirName());
-		} catch (IOException e) {
-			errorList = new ArrayList<>();
-			errorList.add(new ValidationError(StudyModel.DIRNAME, e
-					.getMessage()));
-			failStudyCreate(loggedInUser, studyList, study, errorList);
-		}
+		createStudyAssetsDir(loggedInUser, studyList, study);
 		return redirect(routes.Studies.index(study.getId(), null));
-	}
-
-	private static StudyModel bindStudyFromRequest() {
-		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
-		StudyModel study = new StudyModel();
-		study.setTitle(formMap.get(StudyModel.TITLE)[0]);
-		study.setDescription(formMap.get(StudyModel.DESCRIPTION)[0]);
-		study.setDirName(formMap.get(StudyModel.DIRNAME)[0]);
-		study.setJsonData(formMap.get(StudyModel.JSON_DATA)[0]);
-		String[] allowedWorkerArray = formMap
-				.get(StudyModel.ALLOWED_WORKER_LIST);
-		if (allowedWorkerArray != null) {
-			study.getAllowedWorkerList().clear();
-			for (String worker : allowedWorkerArray) {
-				study.addAllowedWorker(worker);
-			}
-		} else {
-			study.getAllowedWorkerList().clear();
-		}
-		return study;
 	}
 
 	private static void failStudyCreate(UserModel loggedInUser,
@@ -188,27 +161,16 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
-		StudyModel updatedStudy = bindStudyFromRequest();
+		StudyModel updatedStudy = StudyBinder.bindStudyFromRequest(request()
+				.body().asFormUrlEncoded());
 		List<ValidationError> errorList = updatedStudy.validate();
 		if (errorList != null) {
 			failStudyEdit(loggedInUser, studyList, updatedStudy, errorList);
 		}
 
-		// Save old dirName before study is updated
 		String oldDirName = study.getDirName();
-
-		// Update study in DB
 		PersistanceUtils.updateStudysProperties(study, updatedStudy);
-
-		// Rename study dir
-		try {
-			IOUtils.renameStudyAssetsDir(oldDirName, study.getDirName());
-		} catch (IOException e) {
-			errorList = new ArrayList<>();
-			errorList.add(new ValidationError(StudyModel.DIRNAME, e
-					.getMessage()));
-			failStudyEdit(loggedInUser, studyList, study, errorList);
-		}
+		renameStudyAssetsDir(study, loggedInUser, studyList, oldDirName);
 		return redirect(routes.Studies.index(studyId, null));
 	}
 
@@ -256,15 +218,7 @@ public class Studies extends Controller {
 		ControllerUtils.checkStudyLocked(study);
 
 		PersistanceUtils.removeStudy(study);
-
-		// Remove study assets' dir
-		try {
-			IOUtils.removeStudyAssetsDir(study.getDirName());
-		} catch (IOException e) {
-			String errorMsg = e.getMessage();
-			ControllerUtils.throwAjaxResultException(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
-		}
+		removeStudyAssetsDir(study);
 		return ok();
 	}
 
@@ -280,15 +234,7 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		StudyModel clone = new StudyModel(study);
-		// Copy study assets' dir and it's content to cloned study assets' dir
-		try {
-			String destDirName = IOUtils.cloneStudyAssetsDirectory(study
-					.getDirName());
-			clone.setDirName(destDirName);
-		} catch (IOException e) {
-			ControllerUtils.throwAjaxResultException(e.getMessage(),
-					Http.Status.INTERNAL_SERVER_ERROR);
-		}
+		cloneStudyAssetsDir(study, clone);
 		PersistanceUtils.addStudy(clone, loggedInUser);
 		return ok();
 	}
@@ -328,8 +274,14 @@ public class Studies extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		Map<String, String[]> formMap = request().body().asFormUrlEncoded();
-		String[] checkedUsers = formMap.get(StudyModel.MEMBERS);
+		String[] checkedUsers = request().body().asFormUrlEncoded()
+				.get(StudyModel.MEMBERS);
+		persistCheckedUsers(studyId, study, checkedUsers);
+		return redirect(routes.Studies.index(studyId, null));
+	}
+
+	private static void persistCheckedUsers(Long studyId, StudyModel study,
+			String[] checkedUsers) throws ResultException {
 		if (checkedUsers == null || checkedUsers.length < 1) {
 			String errorMsg = ErrorMessages.STUDY_AT_LEAST_ONE_MEMBER;
 			ControllerUtils.throwChangeMemberOfStudiesResultException(errorMsg,
@@ -342,7 +294,6 @@ public class Studies extends Controller {
 				PersistanceUtils.addMemberToStudy(study, user);
 			}
 		}
-		return redirect(routes.Studies.index(studyId, null));
 	}
 
 	/**
@@ -362,12 +313,19 @@ public class Studies extends Controller {
 		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 
-		if (direction.equals(COMPONENT_ORDER_UP)) {
+		switch (direction) {
+		case COMPONENT_ORDER_UP:
 			study.componentOrderMinusOne(component);
-		}
-		if (direction.equals(COMPONENT_ORDER_DOWN)) {
+			break;
+		case COMPONENT_ORDER_DOWN:
 			study.componentOrderPlusOne(component);
+			break;
+		default:
+			return badRequest(ErrorMessages.studyReorderUnknownDirection(
+					direction, studyId));
 		}
+		// The actual change in order happens within the component model. The
+		// study model we just have to refresh.
 		study.refresh();
 
 		return ok();
@@ -409,12 +367,7 @@ public class Studies extends Controller {
 		String comment = json.findPath(ClosedStandaloneWorker.COMMENT).asText()
 				.trim();
 		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
-		List<ValidationError> errorList = worker.validate();
-		if (errorList != null && !errorList.isEmpty()) {
-			String errorMsg = errorList.get(0).message();
-			ControllerUtils.throwStudiesResultException(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
+		checkWorker(studyId, worker);
 		worker.persist();
 
 		String url = ControllerUtils.getReferer()
@@ -442,12 +395,7 @@ public class Studies extends Controller {
 		}
 		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
 		TesterWorker worker = new TesterWorker(comment);
-		List<ValidationError> errorList = worker.validate();
-		if (errorList != null && !errorList.isEmpty()) {
-			String errorMsg = errorList.get(0).message();
-			ControllerUtils.throwStudiesResultException(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
+		checkWorker(studyId, worker);
 		worker.persist();
 
 		String url = ControllerUtils.getReferer()
@@ -455,6 +403,16 @@ public class Studies extends Controller {
 						study.getId()).url() + "?" + TesterPublix.TESTER_ID
 				+ "=" + worker.getId();
 		return ok(url);
+	}
+
+	private static void checkWorker(Long studyId, Worker worker)
+			throws ResultException {
+		List<ValidationError> errorList = worker.validate();
+		if (errorList != null && !errorList.isEmpty()) {
+			String errorMsg = errorList.get(0).message();
+			ControllerUtils.throwStudiesResultException(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
+		}
 	}
 
 	@Transactional
@@ -529,6 +487,73 @@ public class Studies extends Controller {
 	@Transactional
 	public static Result workers(Long studyId) throws ResultException {
 		return workers(studyId, null, Http.Status.OK);
+	}
+
+	/**
+	 * Creates a study assets dir in the file system. It's a wrapper around the
+	 * corresponding IOUtils method.
+	 */
+	private static void createStudyAssetsDir(UserModel loggedInUser,
+			List<StudyModel> studyList, StudyModel study)
+			throws ResultException {
+		List<ValidationError> errorList;
+		try {
+			IOUtils.createStudyAssetsDir(study.getDirName());
+		} catch (IOException e) {
+			errorList = new ArrayList<>();
+			errorList.add(new ValidationError(StudyModel.DIRNAME, e
+					.getMessage()));
+			failStudyCreate(loggedInUser, studyList, study, errorList);
+		}
+	}
+
+	/**
+	 * Renames study assets dir. It's a wrapper around the corresponding IOUtils
+	 * method.
+	 */
+	private static void renameStudyAssetsDir(StudyModel study,
+			UserModel loggedInUser, List<StudyModel> studyList,
+			String oldDirName) throws ResultException {
+		List<ValidationError> errorList;
+		try {
+			IOUtils.renameStudyAssetsDir(oldDirName, study.getDirName());
+		} catch (IOException e) {
+			errorList = new ArrayList<>();
+			errorList.add(new ValidationError(StudyModel.DIRNAME, e
+					.getMessage()));
+			failStudyEdit(loggedInUser, studyList, study, errorList);
+		}
+	}
+
+	/**
+	 * Removes study assets dir. It's a wrapper around the corresponding IOUtils
+	 * method.
+	 */
+	private static void removeStudyAssetsDir(StudyModel study)
+			throws ResultException {
+		try {
+			IOUtils.removeStudyAssetsDir(study.getDirName());
+		} catch (IOException e) {
+			String errorMsg = e.getMessage();
+			ControllerUtils.throwAjaxResultException(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	/**
+	 * Copy study assets' dir and it's content to cloned study assets' dir. It's
+	 * a wrapper around the corresponding IOUtils method.
+	 */
+	private static void cloneStudyAssetsDir(StudyModel study, StudyModel clone)
+			throws ResultException {
+		try {
+			String destDirName = IOUtils.cloneStudyAssetsDirectory(study
+					.getDirName());
+			clone.setDirName(destDirName);
+		} catch (IOException e) {
+			ControllerUtils.throwAjaxResultException(e.getMessage(),
+					Http.Status.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 }
