@@ -123,8 +123,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		PublixUtils.setIdCookie(studyResult, componentResult, worker);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
-		String urlWithQueryStr = StudyAssets
-				.getUrlWithRequestQueryString(urlPath);
+		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(request()
+				.uri(), request().host(), urlPath);
 		return forwardTo(urlWithQueryStr);
 	}
 
@@ -165,9 +165,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
-		String urlWithQueryString = StudyAssets
-				.getUrlWithRequestQueryString(controllers.publix.routes.PublixInterceptor
-						.startComponent(studyId, nextComponent.getId()).url());
+		String startComponentUrlPath = controllers.publix.routes.PublixInterceptor
+				.startComponent(studyId, nextComponent.getId()).url();
+		String urlWithQueryString = StudyAssets.getUrlWithQueryString(request()
+				.uri(), request().host(), startComponentUrlPath);
 		return redirect(urlWithQueryString);
 	}
 
@@ -213,7 +214,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			utils.finishStudy(successful, errorMsg, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_SHOW);
 		}
-		
+
 		PublixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);

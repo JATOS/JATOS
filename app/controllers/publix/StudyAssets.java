@@ -6,9 +6,10 @@ import java.io.IOException;
 import models.ComponentModel;
 import play.Logger;
 import play.Play;
-import play.mvc.Controller;
 import play.mvc.Result;
 import services.IOUtils;
+
+import common.Common;
 
 /**
  * Manages web-access to files in the external study assets directory (outside
@@ -16,7 +17,7 @@ import services.IOUtils;
  * 
  * @author Kristian Lange
  */
-public class StudyAssets extends Controller {
+public class StudyAssets {
 
 	/**
 	 * Identifying part of any URL that indicates an access to the study assets
@@ -40,27 +41,11 @@ public class StudyAssets extends Controller {
 	private static final String DEFAULT_STUDY_ASSETS_ROOT_PATH = "study_assets_root";
 
 	/**
-	 * JATOS' absolute base path without trailing '/.'
-	 */
-	private static final String BASEPATH = getBasePath();
-
-	/**
 	 * Path in the file system to the study assets root directory. If the
 	 * property is defined in the configuration file then use it as the base
 	 * path. If property isn't defined, try in default study path instead.
 	 */
 	public static String STUDY_ASSETS_ROOT_PATH = getStudyAssetsRootPath();
-
-	private static String getBasePath() {
-		String tempBasePath = Play.application().path().getAbsolutePath();
-		if (tempBasePath.endsWith(File.separator + ".")) {
-			tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 2);
-		}
-		if (tempBasePath.endsWith(File.separator)) {
-			tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 1);
-		}
-		return tempBasePath;
-	}
 
 	private static String getStudyAssetsRootPath() {
 		String tempStudyAssetsRootPath = Play.application().configuration()
@@ -79,7 +64,7 @@ public class StudyAssets extends Controller {
 
 		// If relative path add JATOS' base path as prefix
 		if (!tempStudyAssetsRootPath.startsWith(File.separator)) {
-			tempStudyAssetsRootPath = BASEPATH + File.separator
+			tempStudyAssetsRootPath = Common.BASEPATH + File.separator
 					+ tempStudyAssetsRootPath;
 		}
 		Logger.info(CLASS_NAME + ": Path to study assets directory is "
@@ -102,10 +87,10 @@ public class StudyAssets extends Controller {
 		} catch (IOException e) {
 			Logger.info(CLASS_NAME + ".at: failed loading from path "
 					+ STUDY_ASSETS_ROOT_PATH + File.separator + filePath);
-			return notFound(views.html.publix.error.render("Resource \""
+			return Publix.notFound(views.html.publix.error.render("Resource \""
 					+ filePath + "\" couldn't be found."));
 		}
-		return ok(file, true);
+		return Publix.ok(file, true);
 	}
 
 	public static String getComponentUrlPath(String studyAssetsDirName,
@@ -115,21 +100,22 @@ public class StudyAssets extends Controller {
 	}
 
 	/**
-	 * Generates an URL with protocol HTTP, request's hostname, given urlPath,
-	 * and requests query string.
+	 * Generates an URL with protocol HTTP. Takes the hostname from the request,
+	 * the url's path from the given urlPath, and the query string
+	 * again from the request.
 	 */
-	public static String getUrlWithRequestQueryString(String urlPath) {
-		String requestUrlPath = Publix.request().uri();
-		int queryBegin = requestUrlPath.lastIndexOf("?");
+	public static String getUrlWithQueryString(String oldUri,
+			String requestHost, String newUrlPath) {
+		// Check if we have an query string (begins with '?')
+		int queryBegin = oldUri.lastIndexOf("?");
 		if (queryBegin > 0) {
-			String queryString = requestUrlPath.substring(queryBegin + 1);
-			urlPath = urlPath + "?" + queryString;
+			String queryString = oldUri.substring(queryBegin + 1);
+			newUrlPath = newUrlPath + "?" + queryString;
 		}
-		return getUrl(urlPath);
-	}
 
-	public static String getUrl(String urlPath) {
-		String requestHostName = Publix.request().host(); // host includes port
-		return "http://" + requestHostName + urlPath;
+		// It would be nice if Play has a way to find out which protocol it
+		// uses. Apparently it changes http automatically into https if it uses
+		// encryption (at least when I checked with Play 2.2.3).
+		return "http://" + requestHost + newUrlPath;
 	}
 }
