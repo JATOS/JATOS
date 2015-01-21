@@ -58,6 +58,7 @@ public class TesterWorker extends Worker {
 		return null;
 	}
 	
+	@Override
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (comment != null && !Jsoup.isValid(comment, Whitelist.none())) {

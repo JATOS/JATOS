@@ -1,11 +1,14 @@
 package models.workers;
 
+import java.util.List;
+
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 
+import play.data.validation.ValidationError;
 import models.UserModel;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -63,6 +66,11 @@ public class JatosWorker extends Worker {
 	
 	@Override
 	public String generateConfirmationCode() {
+		return null;
+	}
+	
+	@Override
+	public List<ValidationError> validate() {
 		return null;
 	}
 	

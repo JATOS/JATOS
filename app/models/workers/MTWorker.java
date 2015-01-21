@@ -7,6 +7,7 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.TypedQuery;
 
+import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -62,6 +63,11 @@ public class MTWorker extends Worker {
 	@Override
 	public String generateConfirmationCode() {
 		return UUID.randomUUID().toString();
+	}
+	
+	@Override
+	public List<ValidationError> validate() {
+		return null;
 	}
 
 	/**

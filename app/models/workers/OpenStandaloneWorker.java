@@ -1,7 +1,11 @@
 package models.workers;
 
+import java.util.List;
+
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+
+import play.data.validation.ValidationError;
 
 /**
  * Worker if a study is run as an open standalone worker
@@ -28,6 +32,11 @@ public class OpenStandaloneWorker extends Worker {
 
 	@Override
 	public String generateConfirmationCode() {
+		return null;
+	}
+	
+	@Override
+	public List<ValidationError> validate() {
 		return null;
 	}
 

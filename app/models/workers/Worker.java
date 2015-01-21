@@ -19,6 +19,7 @@ import javax.persistence.OrderColumn;
 import javax.persistence.TypedQuery;
 
 import models.results.StudyResult;
+import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -57,6 +58,13 @@ public abstract class Worker {
 
 	public abstract String generateConfirmationCode();
 
+	public abstract List<ValidationError> validate();
+
+	public abstract String getWorkerType();
+
+	@JsonProperty("uiWorkerType")
+	public abstract String getUIWorkerType();
+
 	public void setId(Long id) {
 		this.id = id;
 	}
@@ -64,12 +72,7 @@ public abstract class Worker {
 	public Long getId() {
 		return this.id;
 	}
-
-	public abstract String getWorkerType();
-
-	@JsonProperty("uiWorkerType")
-	public abstract String getUIWorkerType();
-
+	
 	public void setStudyResultList(List<StudyResult> studyResultList) {
 		this.studyResultList = studyResultList;
 	}
