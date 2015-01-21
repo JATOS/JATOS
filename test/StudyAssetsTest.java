@@ -2,7 +2,6 @@ import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.NOT_FOUND;
 import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.status;
-import static play.test.Helpers.fakeRequest;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,8 +11,6 @@ import models.StudyModel;
 import org.junit.Test;
 
 import play.mvc.Result;
-import play.test.FakeRequest;
-import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 
 /**
@@ -61,6 +58,7 @@ public class StudyAssetsTest extends AbstractControllerTest {
 	public void testAtPathTraversalAttack() throws IOException {
 		StudyModel studyClone = cloneStudy();
 
+		// Although this file exists, it shouldn't be found
 		Result result = StudyAssets.at("../../conf/application.conf");
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 
