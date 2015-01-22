@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import exceptions.ResultException;
 
 /**
- * Cares for import/export of components and studies.
+ * Controller that cares for import/export of components and studies.
  * 
  * @author Kristian Lange
  */
