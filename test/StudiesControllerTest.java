@@ -1,6 +1,7 @@
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static play.mvc.Http.Status.OK;
+import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.charset;
 import static play.test.Helpers.contentAsString;
@@ -11,6 +12,7 @@ import static play.test.Helpers.status;
 import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;
 
+import org.apache.http.HttpHeaders;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,8 +27,8 @@ import services.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
-import common.Initializer;
 
+import common.Initializer;
 import controllers.Studies;
 import controllers.Users;
 import exceptions.ResultException;
@@ -103,10 +105,11 @@ public class StudiesControllerTest extends AbstractControllerTest {
 						StudyModel.ALLOWED_WORKER_LIST, ""));
 		Result result = callAction(controllers.routes.ref.Studies.submit(),
 				request);
-		assertEquals(303, status(result));
+		assertEquals(SEE_OTHER, status(result));
 
 		// Get study ID of created study from response's header
-		String[] locationArray = headers(result).get("Location").split("/");
+		String[] locationArray = headers(result).get(HttpHeaders.LOCATION)
+				.split("/");
 		Long studyId = Long.valueOf(locationArray[locationArray.length - 1]);
 
 		StudyModel study = StudyModel.findById(studyId);
@@ -191,7 +194,7 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.submitEdited(studyClone.getId()),
 				request);
-		assertEquals(303, status(result));
+		assertEquals(SEE_OTHER, status(result));
 
 		// It would be nice to test the edited study here
 		// Clean up
@@ -266,7 +269,7 @@ public class StudiesControllerTest extends AbstractControllerTest {
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL,
 								Initializer.ADMIN_EMAIL));
-		assertEquals(303, status(result));
+		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
 		removeStudy(studyClone);
@@ -331,7 +334,7 @@ public class StudiesControllerTest extends AbstractControllerTest {
 				controllers.routes.ref.Studies.showStudy(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						Initializer.ADMIN_EMAIL));
-		assertEquals(303, status(result));
+		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
 		removeStudy(studyClone);
