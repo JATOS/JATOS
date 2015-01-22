@@ -3,7 +3,6 @@ package controllers;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import models.ComponentModel;
@@ -13,7 +12,6 @@ import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
-import play.mvc.Http.MultipartFormData;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import play.mvc.Security;
@@ -244,14 +242,13 @@ public class ImportExport extends Controller {
 
 	private static File unzipUploadedFile() throws ResultException {
 		// Get file from request
-		MultipartFormData mfd = request().body().asMultipartFormData();
-		List<FilePart> filePartList = mfd.getFiles();
-		if (filePartList.isEmpty()) {
+		FilePart filePart = request().body().asMultipartFormData()
+				.getFile(StudyModel.STUDY);
+		if (filePart == null) {
 			String errorMsg = ErrorMessages.FILE_MISSING;
 			ControllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
-		FilePart filePart = filePartList.get(0);
 		if (!filePart.getKey().equals(StudyModel.STUDY)) {
 			// If wrong key the upload comes from wrong form
 			String errorMsg = ErrorMessages.NO_STUDY_UPLOAD;
@@ -363,9 +360,13 @@ public class ImportExport extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		ControllerUtils.checkStudyLocked(study);
 
-		MultipartFormData mfd = request().body().asMultipartFormData();
-		List<FilePart> filePartList = mfd.getFiles();
-		FilePart filePart = filePartList.get(0);
+		FilePart filePart = request().body().asMultipartFormData()
+				.getFile(ComponentModel.COMPONENT);
+		if (filePart == null) {
+			String errorMsg = ErrorMessages.FILE_MISSING;
+			ControllerUtils.throwStudiesResultException(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
+		}
 		// If wrong key the upload comes from the wrong form
 		if (!filePart.getKey().equals(ComponentModel.COMPONENT)) {
 			String errorMsg = ErrorMessages.NO_COMPONENT_UPLOAD;
