@@ -23,6 +23,9 @@ import exceptions.ResultException;
 @Security.Authenticated(Secured.class)
 public class Components extends Controller {
 
+	public static final String EDIT_SUBMIT_NAME = "action";
+	public static final String EDIT_SUBMIT = "Submit";
+	public static final String EDIT_SUBMIT_AND_SHOW = "Submit & Show";
 	private static final String CLASS_NAME = Components.class.getSimpleName();
 
 	@Transactional
@@ -163,8 +166,9 @@ public class Components extends Controller {
 	private static Result redirectAfterEdit(Long studyId, Long componentId,
 			StudyModel study) {
 		// Check which submit button was pressed: "Submit" or "Submit & Show".
-		String[] postAction = request().body().asFormUrlEncoded().get("action");
-		if (postAction[0].toLowerCase().contains("show")) {
+		String[] postAction = request().body().asFormUrlEncoded()
+				.get(EDIT_SUBMIT_NAME);
+		if (postAction[0].equals(EDIT_SUBMIT_AND_SHOW)) {
 			return redirect(routes.Components.showComponent(studyId,
 					componentId));
 		} else {
