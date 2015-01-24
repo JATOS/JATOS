@@ -6,9 +6,9 @@ import java.io.IOException;
 import models.ComponentModel;
 import play.Logger;
 import play.Play;
+import play.mvc.Controller;
 import play.mvc.Result;
 import services.IOUtils;
-
 import common.Common;
 
 /**
@@ -17,7 +17,7 @@ import common.Common;
  * 
  * @author Kristian Lange
  */
-public class StudyAssets {
+public class StudyAssets extends Controller {
 
 	/**
 	 * Identifying part of any URL that indicates an access to the study assets
@@ -73,7 +73,7 @@ public class StudyAssets {
 	}
 
 	/**
-	 * Called while routing. Translates the given file path from the URL into a
+	 * Action called while routing. Translates the given file path from the URL into a
 	 * file path of the OS's file system and returns the file.
 	 */
 	public static Result at(String filePath) {
@@ -87,10 +87,10 @@ public class StudyAssets {
 		} catch (IOException e) {
 			Logger.info(CLASS_NAME + ".at: failed loading from path "
 					+ STUDY_ASSETS_ROOT_PATH + File.separator + filePath);
-			return Publix.notFound(views.html.publix.error.render("Resource \""
+			return notFound(views.html.publix.error.render("Resource \""
 					+ filePath + "\" couldn't be found."));
 		}
-		return Publix.ok(file, true);
+		return ok(file, true);
 	}
 
 	public static String getComponentUrlPath(String studyAssetsDirName,
