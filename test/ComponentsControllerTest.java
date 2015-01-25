@@ -53,7 +53,7 @@ public class ComponentsControllerTest {
 	@BeforeClass
 	public static void startApp() throws Exception {
 		utils.startApp();
-		studyTemplate = utils.importStudyTemplate();
+		studyTemplate = utils.importExampleStudy();
 	}
 
 	@AfterClass
@@ -67,7 +67,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callShowComponent() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Components.showComponent(
@@ -92,7 +92,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callShowComponentNoHtml() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		JPA.em().getTransaction().begin();
 		studyClone.getComponent(1).setHtmlFilePath(null);
@@ -116,7 +116,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callCreate() throws IOException {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Components.create(studyClone.getId()),
@@ -135,7 +135,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmit() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentModel.TITLE, "Title Test");
@@ -162,7 +162,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitAndShow() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentModel.TITLE, "Title Test");
@@ -188,7 +188,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitValidationError() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentModel.TITLE, "");
@@ -209,7 +209,7 @@ public class ComponentsControllerTest {
 
 	@Test
 	public void callChangeProperties() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				Initializer.ADMIN_EMAIL);
@@ -225,7 +225,7 @@ public class ComponentsControllerTest {
 
 	@Test
 	public void callCloneComponent() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				Initializer.ADMIN_EMAIL);
@@ -241,7 +241,7 @@ public class ComponentsControllerTest {
 
 	@Test
 	public void callRemove() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				Initializer.ADMIN_EMAIL);

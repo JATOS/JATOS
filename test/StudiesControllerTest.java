@@ -54,7 +54,7 @@ public class StudiesControllerTest {
 	@BeforeClass
 	public static void startApp() throws Exception {
 		utils.startApp();
-		studyTemplate = utils.importStudyTemplate();
+		studyTemplate = utils.importExampleStudy();
 	}
 
 	@AfterClass
@@ -65,7 +65,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callIndex() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.index(studyClone.getId(), null),
@@ -82,7 +82,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callIndexButNotMember() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		JPA.em().getTransaction().begin();
 		StudyModel.findById(studyClone.getId()).removeMember(utils.admin);
@@ -163,7 +163,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitStudyAssetsDirExists() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
@@ -184,7 +184,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callEdit() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.edit(studyClone.getId()),
@@ -202,7 +202,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitEdited() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
@@ -224,7 +224,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSwapLock() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.swapLock(studyClone.getId()),
@@ -239,7 +239,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callRemove() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.remove(studyClone.getId()),
@@ -250,7 +250,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callCloneStudy() throws Exception {
-		StudyModel study = utils.cloneStudy(studyTemplate);
+		StudyModel study = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.cloneStudy(study.getId()),
@@ -265,7 +265,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callChangeMember() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies
@@ -280,7 +280,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitChangedMembers() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.submitChangedMembers(studyClone
@@ -297,7 +297,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitChangedMembersZeroMembers() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		try {
 			callAction(
@@ -318,7 +318,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callChangeComponentOrder() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		// Move first component one down
 		Result result = callAction(
@@ -348,7 +348,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callShowStudy() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.showStudy(studyClone.getId()),
@@ -362,7 +362,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callCreateClosedStandaloneRun() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
@@ -379,7 +379,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callCreateTesterRun() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
@@ -396,7 +396,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callShowMTurkSourceCode() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.showMTurkSourceCode(studyClone
@@ -414,7 +414,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callWorkers() throws Exception {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.workers(studyClone.getId()),

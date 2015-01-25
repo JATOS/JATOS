@@ -22,8 +22,8 @@ import common.Initializer;
 import controllers.publix.StudyAssets;
 
 /**
- * Utils class to test controllers. Set up a fake application with it's
- * own database, import a study, etc.
+ * Utils class to test controllers. Set up a fake application with it's own
+ * database, import a study, etc.
  * 
  * @author Kristian Lange
  */
@@ -62,8 +62,8 @@ public class ControllerTestUtils {
 		Helpers.stop(application);
 	}
 
-	protected StudyModel importStudyTemplate()
-			throws NoSuchAlgorithmException, IOException {
+	protected StudyModel importExampleStudy() throws NoSuchAlgorithmException,
+			IOException {
 		File studyZip = new File("test/basic_example_study.zip");
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
 		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
@@ -77,22 +77,25 @@ public class ControllerTestUtils {
 		File[] dirArray = IOUtils.findDirectories(tempUnzippedStudyDir);
 		IOUtils.moveStudyAssetsDir(dirArray[0], importedStudy.getDirName());
 
-		PersistanceUtils.addStudy(importedStudy, admin);
 		tempUnzippedStudyDir.delete();
 		return importedStudy;
 	}
 
-	protected synchronized StudyModel cloneStudy(StudyModel studyToBeCloned)
-			throws IOException {
-		entityManager.getTransaction().begin();
+	protected synchronized StudyModel cloneAndPersistStudy(
+			StudyModel studyToBeCloned) throws IOException {
 		StudyModel studyClone = new StudyModel(studyToBeCloned);
 		String destDirName;
 		destDirName = IOUtils
 				.cloneStudyAssetsDirectory(studyClone.getDirName());
 		studyClone.setDirName(destDirName);
-		PersistanceUtils.addStudy(studyClone, admin);
-		entityManager.getTransaction().commit();
+		commitStudy(studyClone);
 		return studyClone;
+	}
+
+	protected void commitStudy(StudyModel study) {
+		entityManager.getTransaction().begin();
+		PersistanceUtils.addStudy(study, admin);
+		entityManager.getTransaction().commit();
 	}
 
 	protected synchronized void removeStudy(StudyModel study)

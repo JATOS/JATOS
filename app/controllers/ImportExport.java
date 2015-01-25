@@ -34,6 +34,8 @@ import exceptions.ResultException;
 @Security.Authenticated(Secured.class)
 public class ImportExport extends Controller {
 
+	public static final String COMPONENT_TITLE = "componentTitle";
+	public static final String COMPONENT_EXISTS = "componentExists";
 	public static final String DIR_PATH = "dirPath";
 	public static final String DIR_EXISTS = "dirExists";
 	public static final String STUDY_TITLE = "studyTitle";
@@ -389,8 +391,8 @@ public class ImportExport extends Controller {
 
 		// Create response
 		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("componentExists", componentExists);
-		response.put("componentTitle", uploadedComponent.getTitle());
+		response.put(COMPONENT_EXISTS, componentExists);
+		response.put(COMPONENT_TITLE, uploadedComponent.getTitle());
 		String asJson = JsonUtils.asJson(response);
 		return ok(asJson);
 	}

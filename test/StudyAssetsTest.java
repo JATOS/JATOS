@@ -29,7 +29,7 @@ public class StudyAssetsTest {
 	@BeforeClass
 	public static void startApp() throws Exception {
 		utils.startApp();
-		studyTemplate = utils.importStudyTemplate();
+		studyTemplate = utils.importExampleStudy();
 	}
 
 	@AfterClass
@@ -54,7 +54,7 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testAt() throws IOException {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = StudyAssets.at("basic_example_study/hello_world.html");
 		assertThat(status(result)).isEqualTo(OK);
@@ -74,7 +74,7 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testAtPathTraversalAttack() throws IOException {
-		StudyModel studyClone = utils.cloneStudy(studyTemplate);
+		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		// Although this file exists, it shouldn't be found
 		Result result = StudyAssets.at("../../conf/application.conf");

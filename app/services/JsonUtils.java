@@ -34,8 +34,8 @@ import common.Common;
 
 public class JsonUtils {
 
-	private static final String DATA = "data";
-	private static final String VERSION = "version";
+	public static final String DATA = "data";
+	public static final String VERSION = "version";
 	private static final String CLASS_NAME = JsonUtils.class.getSimpleName();
 
 	/**
