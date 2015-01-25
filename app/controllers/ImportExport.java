@@ -34,10 +34,14 @@ import exceptions.ResultException;
 @Security.Authenticated(Secured.class)
 public class ImportExport extends Controller {
 
+	public static final String DIR_PATH = "dirPath";
+	public static final String DIR_EXISTS = "dirExists";
+	public static final String STUDY_TITLE = "studyTitle";
+	public static final String STUDY_EXISTS = "studyExists";
 	public static final String STUDYS_DIR_CONFIRM = "studysDirConfirm";
 	public static final String STUDYS_PROPERTIES_CONFIRM = "studysPropertiesConfirm";
-	private static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
-	private static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
+	public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
+	public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
 
 	/**
@@ -81,10 +85,10 @@ public class ImportExport extends Controller {
 
 		// Create response
 		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("studyExists", studyExists);
-		response.put("studyTitle", uploadedStudy.getTitle());
-		response.put("dirExists", dirExists);
-		response.put("dirPath", uploadedStudy.getDirName());
+		response.put(STUDY_EXISTS, studyExists);
+		response.put(STUDY_TITLE, uploadedStudy.getTitle());
+		response.put(DIR_EXISTS, dirExists);
+		response.put(DIR_PATH, uploadedStudy.getDirName());
 		String asJson = JsonUtils.asJson(response);
 		return ok(asJson);
 	}

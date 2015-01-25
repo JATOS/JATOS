@@ -9,11 +9,16 @@ import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.headers;
 import static play.test.Helpers.status;
+
+import java.io.IOException;
+
 import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;
 
 import org.apache.http.HttpHeaders;
 import org.hamcrest.core.IsInstanceOf;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -27,8 +32,8 @@ import services.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
-
 import common.Initializer;
+
 import controllers.Studies;
 import controllers.Users;
 import exceptions.ResultException;
@@ -38,14 +43,29 @@ import exceptions.ResultException;
  * 
  * @author Kristian Lange
  */
-public class StudiesControllerTest extends AbstractControllerTest {
+public class StudiesControllerTest {
+
+	private static ControllerTestUtils utils = new ControllerTestUtils();
+	private static StudyModel studyTemplate;
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 
+	@BeforeClass
+	public static void startApp() throws Exception {
+		utils.startApp();
+		studyTemplate = utils.importStudyTemplate();
+	}
+
+	@AfterClass
+	public static void stopApp() throws IOException {
+		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
+		utils.stopApp();
+	}
+
 	@Test
 	public void callIndex() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.index(studyClone.getId(), null),
@@ -57,15 +77,15 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertThat(contentAsString(result)).contains("Components");
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callIndexButNotMember() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		JPA.em().getTransaction().begin();
-		StudyModel.findById(studyClone.getId()).removeMember(admin);
+		StudyModel.findById(studyClone.getId()).removeMember(utils.admin);
 		JPA.em().getTransaction().commit();
 
 		try {
@@ -78,7 +98,7 @@ public class StudiesControllerTest extends AbstractControllerTest {
 			assert (e.getMessage().contains("isn't member of study"));
 			assert (e.getCause() instanceof ResultException);
 		} finally {
-			removeStudy(studyClone);
+			utils.removeStudy(studyClone);
 		}
 	}
 
@@ -118,12 +138,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertEquals("dirName_submit", study.getDirName());
 		assertEquals("{ }", study.getJsonData());
 		assert (study.getComponentList().isEmpty());
-		assert (study.getMemberList().contains(admin));
+		assert (study.getMemberList().contains(utils.admin));
 		assert (!study.isLocked());
 		assert (study.getAllowedWorkerList().isEmpty());
 
 		// Clean up
-		removeStudy(study);
+		utils.removeStudy(study);
 	}
 
 	@Test
@@ -143,7 +163,7 @@ public class StudiesControllerTest extends AbstractControllerTest {
 
 	@Test
 	public void callSubmitStudyAssetsDirExists() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
@@ -158,13 +178,13 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		} catch (RuntimeException e) {
 			assert (e.getCause() instanceof ResultException);
 		} finally {
-			removeStudy(studyClone);
+			utils.removeStudy(studyClone);
 		}
 	}
 
 	@Test
 	public void callEdit() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.edit(studyClone.getId()),
@@ -177,12 +197,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 				Breadcrumbs.EDIT_PROPERTIES);
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSubmitEdited() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
@@ -199,12 +219,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		// It would be nice to test the edited study here
 		// Clean up
 		studyClone.setDirName("dirName_submitEdited");
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSwapLock() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.swapLock(studyClone.getId()),
@@ -214,12 +234,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertThat(contentAsString(result)).contains("true");
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callRemove() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.remove(studyClone.getId()),
@@ -230,7 +250,7 @@ public class StudiesControllerTest extends AbstractControllerTest {
 
 	@Test
 	public void callCloneStudy() throws Exception {
-		StudyModel study = cloneStudy();
+		StudyModel study = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.cloneStudy(study.getId()),
@@ -240,12 +260,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 
 		// Clean up
 		IOUtils.removeStudyAssetsDir(study.getDirName() + "_clone");
-		removeStudy(study);
+		utils.removeStudy(study);
 	}
 
 	@Test
 	public void callChangeMember() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies
@@ -255,12 +275,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSubmitChangedMembers() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.submitChangedMembers(studyClone
@@ -272,12 +292,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSubmitChangedMembersZeroMembers() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		try {
 			callAction(
@@ -292,13 +312,13 @@ public class StudiesControllerTest extends AbstractControllerTest {
 					.contains("An study should have at least one member."));
 			assert (e.getCause() instanceof ResultException);
 		} finally {
-			removeStudy(studyClone);
+			utils.removeStudy(studyClone);
 		}
 	}
 
 	@Test
 	public void callChangeComponentOrder() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		// Move first component one down
 		Result result = callAction(
@@ -323,12 +343,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callShowStudy() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.showStudy(studyClone.getId()),
@@ -337,12 +357,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callCreateClosedStandaloneRun() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
@@ -354,12 +374,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callCreateTesterRun() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
@@ -371,12 +391,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callShowMTurkSourceCode() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.showMTurkSourceCode(studyClone
@@ -389,12 +409,12 @@ public class StudiesControllerTest extends AbstractControllerTest {
 				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callWorkers() throws Exception {
-		StudyModel studyClone = cloneStudy();
+		StudyModel studyClone = utils.cloneStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.workers(studyClone.getId()),
@@ -404,7 +424,7 @@ public class StudiesControllerTest extends AbstractControllerTest {
 		assertThat(contentAsString(result)).contains(Breadcrumbs.WORKERS);
 
 		// Clean up
-		removeStudy(studyClone);
+		utils.removeStudy(studyClone);
 	}
 
 }

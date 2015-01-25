@@ -1,59 +1,68 @@
+import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static play.mvc.Http.Status.OK;
+import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
+import static play.test.Helpers.charset;
+import static play.test.Helpers.contentAsString;
+import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
+import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.persistence.EntityManager;
+import java.io.IOException;
 
 import models.UserModel;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import play.db.jpa.JPA;
-import play.db.jpa.JPAPlugin;
 import play.mvc.Result;
-import play.test.FakeApplication;
-import play.test.Helpers;
-import play.test.WithApplication;
-import scala.Option;
 
 import com.google.common.collect.ImmutableMap;
 import common.Initializer;
 
+import controllers.Users;
+
 /**
- * Testing controller.Studies
+ * Testing controller.Authentication
  * 
  * @author Kristian Lange
  */
-public class AuthenticationControllerTest extends WithApplication {
+public class AuthenticationControllerTest {
 
-	private static FakeApplication app;
-	private static EntityManager em;
-
-	@Before
-	public void setUp() throws UnsupportedEncodingException,
-			NoSuchAlgorithmException {
-		app = Helpers.fakeApplication();
-		Helpers.start(app);
-		
-		Option<JPAPlugin> jpaPlugin = app.getWrappedApplication().plugin(
-				JPAPlugin.class);
-		em = jpaPlugin.get().em("default");
-		JPA.bindForCurrentThread(em);
+	private static ControllerTestUtils utils = new ControllerTestUtils();
+	
+	@BeforeClass
+	public static void startApp() throws Exception {
+		utils.startApp();
 	}
 
-	@After
-	public void tearDown() {
-		em.close();
-		JPA.bindForCurrentThread(null);
-		Helpers.stop(app);
+	@AfterClass
+	public static void stopApp() throws IOException {
+		utils.stopApp();
+	}
+	
+	@Test
+	public void callLogin() throws Exception {
+		Result result = callAction(controllers.routes.ref.Authentication
+				.login());
+		assertThat(status(result)).isEqualTo(OK);
+		assertThat(charset(result)).isEqualTo("utf-8");
+		assertThat(contentType(result)).isEqualTo("text/html");
+		assertThat(contentAsString(result)).contains("login");
+	}
+	
+	@Test
+	public void callLogout() throws Exception {
+		Result result = callAction(controllers.routes.ref.Authentication
+				.logout());
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		redirectLocation(result).contains("login");
+		assertThat(!session(result).containsKey(Users.SESSION_EMAIL));
 	}
 
 	@Test

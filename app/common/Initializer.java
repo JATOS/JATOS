@@ -64,7 +64,7 @@ public class Initializer {
 	}
 
 	/**
-	 * Check for user admin: In case the app is started the first time we need
+	 * Check for user admin: In case the application is started the first time we need
 	 * an initial user: admin. If admin can't be found, create one.
 	 */
 	private static void checkAdmin() {

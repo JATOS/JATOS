@@ -12,6 +12,7 @@ import controllers.routes;
 
 public class Breadcrumbs {
 
+	public static final String HOME = "Home";
 	public static final String EDIT_PROPERTIES = "Edit Properties";
 	public static final String WORKERS = "Workers";
 	public static final String MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE = "Mechanical Turk HIT Layout Source Code";
@@ -46,10 +47,10 @@ public class Breadcrumbs {
 	public static Breadcrumbs generateForHome(String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		if (last != null) {
-			breadcrumbs = new Breadcrumbs().put("Home", routes.Home.home())
+			breadcrumbs = new Breadcrumbs().put(HOME, routes.Home.home())
 					.put(last, "");
 		} else {
-			breadcrumbs.put("Home", "");
+			breadcrumbs.put(HOME, "");
 		}
 		return breadcrumbs;
 	}
@@ -59,7 +60,7 @@ public class Breadcrumbs {
 	}
 
 	public static Breadcrumbs generateForUser(UserModel user, String last) {
-		Breadcrumbs breadcrumbs = new Breadcrumbs().put("Home",
+		Breadcrumbs breadcrumbs = new Breadcrumbs().put(HOME,
 				routes.Home.home());
 		if (last != null) {
 			breadcrumbs.put(user.toString(),
@@ -75,7 +76,7 @@ public class Breadcrumbs {
 	}
 
 	public static Breadcrumbs generateForStudy(StudyModel study, String last) {
-		Breadcrumbs breadcrumbs = new Breadcrumbs().put("Home",
+		Breadcrumbs breadcrumbs = new Breadcrumbs().put(HOME,
 				routes.Home.home());
 		if (last != null) {
 			breadcrumbs.put(study.getTitle(),
@@ -92,7 +93,7 @@ public class Breadcrumbs {
 
 	public static Breadcrumbs generateForWorker(Worker worker, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs()
-				.put("Home", routes.Home.home())
+				.put(HOME, routes.Home.home())
 				.put("Worker " + worker.getId(), "")
 				.put(last, "");
 		return breadcrumbs;
@@ -101,7 +102,7 @@ public class Breadcrumbs {
 	public static Breadcrumbs generateForComponent(StudyModel study,
 			ComponentModel component, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs()
-				.put("Home", routes.Home.home())
+				.put(HOME, routes.Home.home())
 				.put(study.getTitle(),
 						routes.Studies.index(study.getId(), null))
 				.put(component.getTitle(), "").put(last, "");
