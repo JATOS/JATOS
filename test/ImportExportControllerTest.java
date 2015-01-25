@@ -11,38 +11,28 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.EntityManager;
-
 import models.StudyModel;
-import models.UserModel;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import play.Logger;
 import play.api.libs.Files.TemporaryFile;
 import play.api.mvc.AnyContent;
 import play.api.mvc.AnyContentAsMultipartFormData;
 import play.api.mvc.MultipartFormData;
 import play.api.mvc.MultipartFormData.FilePart;
-import play.db.jpa.JPA;
-import play.db.jpa.JPAPlugin;
 import play.libs.Scala;
 import play.mvc.Result;
-import play.test.FakeApplication;
-import play.test.Helpers;
-import scala.Option;
 import services.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import common.Initializer;
+
 import controllers.ImportExport;
 import controllers.Users;
-import controllers.publix.StudyAssets;
 
 /**
  * Testing actions of controller.Studies.
@@ -51,12 +41,7 @@ import controllers.publix.StudyAssets;
  */
 public class ImportExportControllerTest {
 
-	private static final String CLASS_NAME = ImportExportControllerTest.class
-			.getSimpleName();
-
-	protected static FakeApplication application;
-	protected static EntityManager entityManager;
-	protected static UserModel admin;
+	private static ControllerTestUtils utils = new ControllerTestUtils();
 
 	private File studyZip = new File("test/basic_example_study.zip");
 	private String studyZipBkpName = "test/basic_example_study_bkp.zip";
@@ -64,30 +49,12 @@ public class ImportExportControllerTest {
 
 	@BeforeClass
 	public static void startApp() throws Exception {
-		application = Helpers.fakeApplication();
-		Helpers.start(application);
-
-		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
-				.plugin(JPAPlugin.class);
-		entityManager = jpaPlugin.get().em("default");
-		JPA.bindForCurrentThread(entityManager);
-
-		// Get admin (admin is automatically created during initialization)
-		admin = UserModel.findByEmail(Initializer.ADMIN_EMAIL);
+		utils.startApp();
 	}
 
 	@AfterClass
 	public static void stopApp() throws IOException {
-		entityManager.close();
-		JPA.bindForCurrentThread(null);
-		boolean result = new File(StudyAssets.STUDY_ASSETS_ROOT_PATH).delete();
-		if (!result) {
-			Logger.warn(CLASS_NAME
-					+ ".stopApp: Couldn't remove study assets root directory "
-					+ StudyAssets.STUDY_ASSETS_ROOT_PATH
-					+ " after finished testing. This should not happen.");
-		}
-		Helpers.stop(application);
+		utils.stopApp();
 	}
 
 	@Test
