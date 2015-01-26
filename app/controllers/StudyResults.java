@@ -64,45 +64,6 @@ public class StudyResults extends Controller {
 	 * HTTP Ajax request
 	 */
 	@Transactional
-	public static Result removeByWorker(Long workerId, String studyResultIds)
-			throws ResultException {
-		Logger.info(CLASS_NAME + ".removeByWorker: workerId " + workerId + ", "
-				+ "studyResultIds " + studyResultIds + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		Worker worker = Worker.findById(workerId);
-		ControllerUtils.checkWorker(worker, workerId);
-
-		List<Long> studyResultIdList = ControllerUtils
-				.extractResultIds(studyResultIds);
-		for (Long studyResultId : studyResultIdList) {
-			StudyResult studyResult = StudyResult.findById(studyResultId);
-			if (studyResult == null) {
-				String errorMsg = ErrorMessages
-						.studyResultNotExist(studyResultId);
-				ControllerUtils.throwWorkerResultException(errorMsg,
-						Http.Status.NOT_FOUND, workerId);
-			}
-			if (studyResult.getWorkerId() != workerId) {
-				String errorMsg = ErrorMessages.studyResultNotFromWorker(
-						studyResultId, workerId);
-				ControllerUtils.throwWorkerResultException(errorMsg,
-						Http.Status.FORBIDDEN, workerId);
-			}
-			StudyModel resultsStudy = studyResult.getStudy();
-			ControllerUtils.checkStandardForStudy(resultsStudy,
-					resultsStudy.getId(), loggedInUser);
-			ControllerUtils.checkStudyLocked(resultsStudy);
-			PersistanceUtils.removeStudyResult(studyResult);
-		}
-
-		return ok();
-	}
-
-	/**
-	 * HTTP Ajax request
-	 */
-	@Transactional
 	public static Result remove(String studyResultIds) throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: studyResultIds " + studyResultIds
 				+ ", " + "logged-in user's email "
