@@ -110,5 +110,11 @@ public class ControllerTestUtils {
 		PersistanceUtils.removeStudy(study);
 		entityManager.getTransaction().commit();
 	}
+	
+	protected void removeMember(StudyModel studyClone, UserModel member) {
+		JPA.em().getTransaction().begin();
+		StudyModel.findById(studyClone.getId()).removeMember(member);
+		JPA.em().getTransaction().commit();
+	}
 
 }

@@ -46,7 +46,7 @@ public class ComponentsControllerTest {
 
 	private static ControllerTestUtils utils = new ControllerTestUtils();
 	private static StudyModel studyTemplate;
-	
+
 	@Resource
 	private UserTransaction userTransaction;
 
@@ -61,7 +61,7 @@ public class ComponentsControllerTest {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
 		utils.stopApp();
 	}
-	
+
 	/**
 	 * Checks action with route Components.showComponent.
 	 */
@@ -75,12 +75,13 @@ public class ComponentsControllerTest {
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						Initializer.ADMIN_EMAIL));
 		assertEquals(SEE_OTHER, status(result));
-		assert session(result).containsKey(JatosPublix.JATOS_SHOW);
-		assert session(result).containsValue(JatosPublix.SHOW_COMPONENT_START);
-		assert session(result).containsKey(JatosPublix.SHOW_COMPONENT_ID);
-		assert session(result).containsValue(studyClone.getId().toString());
-		assert headers(result).get(HttpHeaders.LOCATION).contains(
-				JatosPublix.JATOS_WORKER_ID);
+		assertThat(session(result).containsKey(JatosPublix.JATOS_SHOW));
+		assertThat(session(result).containsValue(
+				JatosPublix.SHOW_COMPONENT_START));
+		assertThat(session(result).containsKey(JatosPublix.SHOW_COMPONENT_ID));
+		assertThat(session(result).containsValue(studyClone.getId().toString()));
+		assertThat(headers(result).get(HttpHeaders.LOCATION).contains(
+				JatosPublix.JATOS_WORKER_ID));
 
 		// Clean up
 		utils.removeStudy(studyClone);
@@ -105,7 +106,7 @@ public class ComponentsControllerTest {
 					fakeRequest().withSession(Users.SESSION_EMAIL,
 							Initializer.ADMIN_EMAIL));
 		} catch (RuntimeException e) {
-			assert (e.getCause() instanceof ResultException);
+			assertThat(e.getCause() instanceof ResultException);
 		} finally {
 			utils.removeStudy(studyClone);
 		}
@@ -201,7 +202,7 @@ public class ComponentsControllerTest {
 			callAction(controllers.routes.ref.Components.submit(studyClone
 					.getId()), request);
 		} catch (RuntimeException e) {
-			assert (e.getCause() instanceof ResultException);
+			assertThat(e.getCause() instanceof ResultException);
 		} finally {
 			utils.removeStudy(studyClone);
 		}

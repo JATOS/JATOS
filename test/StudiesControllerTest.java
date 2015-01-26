@@ -23,7 +23,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import play.db.jpa.JPA;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import services.Breadcrumbs;
@@ -81,28 +80,6 @@ public class StudiesControllerTest {
 	}
 
 	@Test
-	public void callIndexButNotMember() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
-
-		JPA.em().getTransaction().begin();
-		StudyModel.findById(studyClone.getId()).removeMember(utils.admin);
-		JPA.em().getTransaction().commit();
-
-		try {
-			callAction(
-					controllers.routes.ref.Studies.index(studyClone.getId(),
-							null),
-					fakeRequest().withSession(Users.SESSION_EMAIL,
-							Initializer.ADMIN_EMAIL));
-		} catch (RuntimeException e) {
-			assert (e.getMessage().contains("isn't member of study"));
-			assert (e.getCause() instanceof ResultException);
-		} finally {
-			utils.removeStudy(studyClone);
-		}
-	}
-
-	@Test
 	public void callCreate() {
 		Result result = callAction(
 				controllers.routes.ref.Studies.create(),
@@ -137,10 +114,10 @@ public class StudiesControllerTest {
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
 		assertEquals("{ }", study.getJsonData());
-		assert (study.getComponentList().isEmpty());
-		assert (study.getMemberList().contains(utils.admin));
-		assert (!study.isLocked());
-		assert (study.getAllowedWorkerList().isEmpty());
+		assertThat((study.getComponentList().isEmpty()));
+		assertThat((study.getMemberList().contains(utils.admin)));
+		assertThat((!study.isLocked()));
+		assertThat((study.getAllowedWorkerList().isEmpty()));
 
 		// Clean up
 		utils.removeStudy(study);
@@ -176,7 +153,7 @@ public class StudiesControllerTest {
 		try {
 			callAction(controllers.routes.ref.Studies.submit(), request);
 		} catch (RuntimeException e) {
-			assert (e.getCause() instanceof ResultException);
+			assertThat(e.getCause() instanceof ResultException);
 		} finally {
 			utils.removeStudy(studyClone);
 		}
@@ -308,9 +285,9 @@ public class StudiesControllerTest {
 							ImmutableMap.of("bla", "blu")).withSession(
 							Users.SESSION_EMAIL, Initializer.ADMIN_EMAIL));
 		} catch (RuntimeException e) {
-			assert (e.getMessage()
+			assertThat(e.getMessage()
 					.contains("An study should have at least one member."));
-			assert (e.getCause() instanceof ResultException);
+			assertThat(e.getCause() instanceof ResultException);
 		} finally {
 			utils.removeStudy(studyClone);
 		}

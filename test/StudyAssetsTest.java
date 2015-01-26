@@ -47,9 +47,9 @@ public class StudyAssetsTest {
 	@Test
 	public void testStudyAssetsRootPath() {
 		File studyAssetsRoot = new File(StudyAssets.STUDY_ASSETS_ROOT_PATH);
-		assert (studyAssetsRoot.exists());
-		assert (studyAssetsRoot.isDirectory());
-		assert (studyAssetsRoot.isAbsolute());
+		assertThat(studyAssetsRoot.exists());
+		assertThat(studyAssetsRoot.isDirectory());
+		assertThat(studyAssetsRoot.isAbsolute());
 	}
 
 	@Test
