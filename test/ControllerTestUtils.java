@@ -4,6 +4,8 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.persistence.EntityManager;
 
+import org.apache.commons.io.FileUtils;
+
 import models.StudyModel;
 import models.UserModel;
 import play.Logger;
@@ -16,9 +18,7 @@ import services.IOUtils;
 import services.JsonUtils.UploadUnmarshaller;
 import services.PersistanceUtils;
 import services.ZipUtil;
-
 import common.Initializer;
-
 import controllers.publix.StudyAssets;
 
 /**
@@ -52,14 +52,19 @@ public class ControllerTestUtils {
 	protected void stopApp() throws IOException {
 		entityManager.close();
 		JPA.bindForCurrentThread(null);
-		boolean result = new File(StudyAssets.STUDY_ASSETS_ROOT_PATH).delete();
-		if (!result) {
-			Logger.warn(CLASS_NAME
-					+ ".stopApp: Couldn't remove study assets root directory "
-					+ StudyAssets.STUDY_ASSETS_ROOT_PATH
-					+ " after finished testing. This should not happen.");
-		}
+		removeStudyAssetsRootDir();
 		Helpers.stop(application);
+	}
+
+	protected static void removeStudyAssetsRootDir() throws IOException {
+		File assetsRoot = new File(StudyAssets.STUDY_ASSETS_ROOT_PATH);
+		if (assetsRoot.list().length > 0) {
+			Logger.warn(CLASS_NAME
+					+ ".removeStudyAssetsRootDir: Study assets root directory "
+					+ StudyAssets.STUDY_ASSETS_ROOT_PATH
+					+ " is not empty after finishing testing. This should not happen.");
+		}
+		FileUtils.deleteDirectory(assetsRoot);
 	}
 
 	protected StudyModel importExampleStudy() throws NoSuchAlgorithmException,
