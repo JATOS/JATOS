@@ -2,14 +2,12 @@ package services;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
 import models.ComponentModel;
 import models.StudyModel;
-import models.UserModel;
 import models.results.ComponentResult;
 import models.results.StudyResult;
 import models.workers.Worker;
@@ -21,10 +19,8 @@ import org.jsoup.safety.Whitelist;
 
 import play.Logger;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -131,7 +127,7 @@ public class JsonUtils {
 	 * MAX_CHAR_PER_RESULT characters.
 	 */
 	public static String componentResultDataForUI(
-			ComponentResult componentResult) throws IOException {
+			ComponentResult componentResult) {
 		final int MAX_CHAR_PER_RESULT = 1000;
 		String data = componentResult.getData();
 		if (data != null) {
@@ -153,10 +149,18 @@ public class JsonUtils {
 	 * studyResult's componentResults.
 	 */
 	public static String allStudyResultsForUI(StudyModel study)
-			throws IOException {
+			throws JsonProcessingException {
+		return allStudyResultsForUI(StudyResult.findAllByStudy(study));
+	}
+
+	/**
+	 * Returns all studyResults as a JSON string. It's including the
+	 * studyResult's componentResults.
+	 */
+	public static String allStudyResultsForUI(List<StudyResult> studyResultList)
+			throws JsonProcessingException {
 		ObjectNode allStudyResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allStudyResultsNode.arrayNode();
-		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
 		for (StudyResult studyResult : studyResultList) {
 			ObjectNode studyResultNode = studyResultAsJsonNode(studyResult);
 			arrayNode.add(studyResultNode);
@@ -166,32 +170,8 @@ public class JsonUtils {
 		return asJsonStr;
 	}
 
-	public static String allStudyResultsByWorkerForUI(Worker worker,
-			UserModel loggedInUser) throws IOException {
-		ObjectNode allStudyResultsNode = OBJECTMAPPER.createObjectNode();
-		ArrayNode arrayNode = allStudyResultsNode.arrayNode();
-
-		// Generate the list of StudyResults that the logged-in user is allowed
-		// to see
-		List<StudyResult> allowedStudyResultList = new ArrayList<StudyResult>();
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().hasMember(loggedInUser)) {
-				allowedStudyResultList.add(studyResult);
-			}
-		}
-
-		// Marshal to JSON
-		for (StudyResult studyResult : allowedStudyResultList) {
-			ObjectNode studyResultNode = studyResultAsJsonNode(studyResult);
-			arrayNode.add(studyResultNode);
-		}
-		allStudyResultsNode.put(DATA, arrayNode);
-		String asJsonStr = OBJECTMAPPER.writeValueAsString(allStudyResultsNode);
-		return asJsonStr;
-	}
-
 	public static String allComponentResultsForUI(ComponentModel component)
-			throws IOException {
+			throws JsonProcessingException {
 		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allComponentResultsNode.arrayNode();
 		List<ComponentResult> componentResultList = ComponentResult
@@ -206,8 +186,7 @@ public class JsonUtils {
 		return asJsonStr;
 	}
 
-	private static ObjectNode studyResultAsJsonNode(StudyResult studyResult)
-			throws IOException {
+	private static ObjectNode studyResultAsJsonNode(StudyResult studyResult) {
 		ObjectNode studyResultNode = OBJECTMAPPER.valueToTree(studyResult);
 
 		// Add worker
@@ -232,7 +211,7 @@ public class JsonUtils {
 	}
 
 	private static ObjectNode componentResultAsJsonNode(
-			ComponentResult componentResult) throws IOException {
+			ComponentResult componentResult) {
 		ObjectNode componentResultNode = OBJECTMAPPER
 				.valueToTree(componentResult);
 
@@ -281,7 +260,7 @@ public class JsonUtils {
 		for (Worker worker : workerSet) {
 			ObjectNode workerNode = OBJECTMAPPER
 					.valueToTree(initializeAndUnproxy(worker));
-//			workerNode.put(Worker.UI_WORKER_TYPE, worker.getUIWorkerType());
+			// workerNode.put(Worker.UI_WORKER_TYPE, worker.getUIWorkerType());
 			arrayNode.add(workerNode);
 		}
 		ObjectNode workersNode = OBJECTMAPPER.createObjectNode();
@@ -345,7 +324,7 @@ public class JsonUtils {
 	 * into an object of the given type.
 	 */
 	public static <T> T unmarshallingIO(String jsonStr, Class<T> modelClass)
-			throws JsonParseException, JsonMappingException, IOException {
+			throws JsonProcessingException, IOException {
 		JsonNode node = OBJECTMAPPER.readTree(jsonStr).findValue(DATA);
 		T object = OBJECTMAPPER.treeToValue(node, modelClass);
 		return object;

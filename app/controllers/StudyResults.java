@@ -116,16 +116,32 @@ public class StudyResults extends Controller {
 		Worker worker = Worker.findById(workerId);
 		ControllerUtils.checkWorker(worker, workerId);
 
+		List<StudyResult> allowedStudyResultList = getAllowedStudyResultList(
+				loggedInUser, worker);
 		String dataAsJson = null;
 		try {
-			dataAsJson = JsonUtils.allStudyResultsByWorkerForUI(worker,
-					loggedInUser);
+			dataAsJson = JsonUtils.allStudyResultsForUI(allowedStudyResultList);
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
 			ControllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
+	}
+
+	/**
+	 * Generate the list of StudyResults that the logged-in user is allowed to
+	 * see.
+	 */
+	private static List<StudyResult> getAllowedStudyResultList(
+			UserModel loggedInUser, Worker worker) {
+		List<StudyResult> allowedStudyResultList = new ArrayList<StudyResult>();
+		for (StudyResult studyResult : worker.getStudyResultList()) {
+			if (studyResult.getStudy().hasMember(loggedInUser)) {
+				allowedStudyResultList.add(studyResult);
+			}
+		}
+		return allowedStudyResultList;
 	}
 
 	/**
