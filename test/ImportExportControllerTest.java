@@ -38,7 +38,7 @@ import controllers.ImportExport;
 import controllers.Users;
 
 /**
- * Testing actions of controller.Studies.
+ * Testing actions of controller.ImportExport
  * 
  * @author Kristian Lange
  */
@@ -205,6 +205,7 @@ public class ImportExportControllerTest {
 		assertThat(study.getFirstComponent().getTitle()).doesNotContain(
 				"Hello World");
 
+		// First call: ImportExport.importComponent()
 		Result result = callAction(
 				controllers.routes.ref.ImportExport.importComponent(study
 						.getId()),
@@ -232,6 +233,7 @@ public class ImportExportControllerTest {
 				sessionFileName);
 		assertThat(tmpComponentFile.exists() && !tmpComponentFile.isDirectory());
 
+		// Second call: ImportExport.importComponentConfirmed()
 		result = callAction(
 				controllers.routes.ref.ImportExport.importComponentConfirmed(study
 						.getId()),
@@ -242,6 +244,9 @@ public class ImportExportControllerTest {
 
 		// Tests
 		assertThat(status(result)).isEqualTo(OK);
+		
+		// TODO Check if component was actually added
+		// TODO Check override of component
 
 		// Clean-up
 		if (componentFileBkp.exists()) {
