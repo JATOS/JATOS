@@ -1,6 +1,7 @@
 package controllers;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -45,8 +46,8 @@ public class ComponentResults extends Controller {
 				loggedInUser, component);
 
 		Messages messages = new Messages().error(errorMsg);
-		Breadcrumbs breadcrumbs = Breadcrumbs
-				.generateForComponent(study, component, Breadcrumbs.RESULTS);
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
+				component, Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.componentResults.render(studyList,
 						loggedInUser, breadcrumbs, messages, study, component));
@@ -77,21 +78,10 @@ public class ComponentResults extends Controller {
 
 		List<Long> componentResultIdList = ControllerUtils
 				.extractResultIds(componentResultIds);
-		for (Long componentResultId : componentResultIdList) {
-			ComponentResult componentResult = ComponentResult
-					.findById(componentResultId);
-			if (componentResult == null) {
-				String errorMsg = ErrorMessages
-						.componentResultNotExist(componentResultId);
-				ControllerUtils.throwAjaxResultException(errorMsg,
-						Http.Status.NOT_FOUND);
-			}
-			ComponentModel resultsComponent = componentResult.getComponent();
-			StudyModel resultsStudy = resultsComponent.getStudy();
-			ControllerUtils.checkStandardForComponents(resultsStudy.getId(),
-					resultsComponent.getId(), resultsStudy, loggedInUser,
-					resultsComponent);
-			ControllerUtils.checkStudyLocked(resultsStudy);
+		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
+		checkAllComponentResults(componentResultList, loggedInUser, true);
+
+		for (ComponentResult componentResult : componentResultList) {
 			PersistanceUtils.removeComponentResult(componentResult);
 		}
 		return ok();
@@ -133,8 +123,12 @@ public class ComponentResults extends Controller {
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
-		String componentResultDataAsStr = getComponentResultData(
-				componentResultIds, loggedInUser);
+		List<Long> componentResultIdList = ControllerUtils
+				.extractResultIds(componentResultIds);
+		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
+		checkAllComponentResults(componentResultList, loggedInUser, true);
+		String componentResultDataAsStr = getComponentResultData(componentResultList);
+
 		response().setContentType("application/x-download");
 		String filename = "results_" + DateUtils.getDateForFile(new Date())
 				+ "." + IOUtils.TXT_FILE_SUFFIX;
@@ -146,29 +140,15 @@ public class ComponentResults extends Controller {
 		return ok(componentResultDataAsStr);
 	}
 
-	private static String getComponentResultData(String componentResultIds,
-			UserModel loggedInUser) throws ResultException {
-		List<Long> componentResultIdList = ControllerUtils
-				.extractResultIds(componentResultIds);
-
-		// Put all ComponentResult's data into a String each in a separate line
-		Iterator<Long> iterator = componentResultIdList.iterator();
+	/**
+	 * Put all ComponentResult's data into a String each in a separate line.
+	 */
+	private static String getComponentResultData(
+			List<ComponentResult> componentResultList) throws ResultException {
 		StringBuilder sb = new StringBuilder();
+		Iterator<ComponentResult> iterator = componentResultList.iterator();
 		while (iterator.hasNext()) {
-			Long componentResultId = iterator.next();
-			ComponentResult componentResult = ComponentResult
-					.findById(componentResultId);
-			if (componentResult == null) {
-				String errorMsg = ErrorMessages
-						.componentResultNotExist(componentResultId);
-				ControllerUtils.throwAjaxResultException(errorMsg,
-						Http.Status.BAD_REQUEST);
-			}
-			ComponentModel resultsComponent = componentResult.getComponent();
-			StudyModel resultsStudy = resultsComponent.getStudy();
-			ControllerUtils.checkStandardForComponents(resultsStudy.getId(),
-					resultsComponent.getId(), resultsStudy, loggedInUser,
-					resultsComponent);
+			ComponentResult componentResult = iterator.next();
 			String data = componentResult.getData();
 			if (data != null) {
 				sb.append(data);
@@ -180,4 +160,34 @@ public class ComponentResults extends Controller {
 		return sb.toString();
 	}
 
+	private static List<ComponentResult> getAllComponentResults(
+			List<Long> componentResultIdList) throws ResultException {
+		List<ComponentResult> componentResultList = new ArrayList<>();
+		for (Long componentResultId : componentResultIdList) {
+			ComponentResult componentResult = ComponentResult
+					.findById(componentResultId);
+			if (componentResult == null) {
+				String errorMsg = ErrorMessages
+						.componentResultNotExist(componentResultId);
+				ControllerUtils.throwAjaxResultException(errorMsg,
+						Http.Status.NOT_FOUND);
+			}
+			componentResultList.add(componentResult);
+		}
+		return componentResultList;
+	}
+
+	private static void checkAllComponentResults(
+			List<ComponentResult> componentResultList, UserModel loggedInUser,
+			boolean studyMustNotBeLocked) throws ResultException {
+		for (ComponentResult componentResult : componentResultList) {
+			ComponentModel component = componentResult.getComponent();
+			StudyModel study = component.getStudy();
+			ControllerUtils.checkStandardForComponents(study.getId(),
+					component.getId(), study, loggedInUser, component);
+			if (studyMustNotBeLocked) {
+				ControllerUtils.checkStudyLocked(study);
+			}
+		}
+	}
 }

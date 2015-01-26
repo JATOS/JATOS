@@ -36,12 +36,11 @@ public class ControllerUtils extends Controller {
 		return value != null && value.length > 0
 				&& value[0].equals(requestWithHeaderValueForAjax);
 	}
-	
+
 	public static String getReferer() throws ResultException {
 		URL refererUrl = getRefererUrl();
 		return (refererUrl != null) ? refererUrl.toString() : "";
 	}
-	
 
 	/**
 	 * Returns the request's referer without the path (only protocol, host,
@@ -67,6 +66,10 @@ public class ControllerUtils extends Controller {
 		return jatosURL;
 	}
 
+	/**
+	 * Throws a ResultException if a study is locked. Distinguishes between
+	 * normal and Ajax request.
+	 */
 	public static void checkStudyLocked(StudyModel study)
 			throws ResultException {
 		if (study.isLocked()) {

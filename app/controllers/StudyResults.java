@@ -1,6 +1,7 @@
 package controllers;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -42,8 +43,8 @@ public class StudyResults extends Controller {
 		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Messages messages = new Messages().error(errorMsg);
-		Breadcrumbs breadcrumbs = Breadcrumbs
-				.generateForStudy(study, Breadcrumbs.RESULTS);
+		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+				Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.studysStudyResults.render(studyList,
 						loggedInUser, breadcrumbs, messages, study));
@@ -72,21 +73,12 @@ public class StudyResults extends Controller {
 
 		List<Long> studyResultIdList = ControllerUtils
 				.extractResultIds(studyResultIds);
-		for (Long studyResultId : studyResultIdList) {
-			StudyResult studyResult = StudyResult.findById(studyResultId);
-			if (studyResult == null) {
-				String errorMsg = ErrorMessages
-						.studyResultNotExist(studyResultId);
-				ControllerUtils.throwAjaxResultException(errorMsg,
-						Http.Status.NOT_FOUND);
-			}
-			StudyModel resultsStudy = studyResult.getStudy();
-			ControllerUtils.checkStandardForStudy(resultsStudy,
-					resultsStudy.getId(), loggedInUser);
-			ControllerUtils.checkStudyLocked(resultsStudy);
+		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
+		checkAllStudyResults(studyResultList, loggedInUser, true);
+
+		for (StudyResult studyResult : studyResultList) {
 			PersistanceUtils.removeStudyResult(studyResult);
 		}
-
 		return ok();
 	}
 
@@ -149,8 +141,11 @@ public class StudyResults extends Controller {
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 
-		String studyResultDataAsStr = getStudyResultData(studyResultIds,
-				loggedInUser);
+		List<Long> studyResultIdList = ControllerUtils
+				.extractResultIds(studyResultIds);
+		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
+		checkAllStudyResults(studyResultList, loggedInUser, false);
+		String studyResultDataAsStr = getStudyResultData(studyResultList);
 
 		response().setContentType("application/x-download");
 		String filename = "results_" + DateUtils.getDateForFile(new Date())
@@ -163,21 +158,13 @@ public class StudyResults extends Controller {
 		return ok(studyResultDataAsStr);
 	}
 
-	private static String getStudyResultData(String studyResultIds,
-			UserModel loggedInUser) throws ResultException {
-		List<Long> studyResultIdList = ControllerUtils
-				.extractResultIds(studyResultIds);
-
-		// Put all ComponentResult's data into a String each in a separate line
+	/**
+	 * Put all ComponentResult's data into a String each in a separate line.
+	 */
+	private static String getStudyResultData(List<StudyResult> studyResultList)
+			throws ResultException {
 		StringBuilder sb = new StringBuilder();
-		for (Long studyResultId : studyResultIdList) {
-			StudyResult studyResult = StudyResult.findById(studyResultId);
-			if (studyResult == null) {
-				String errorMsg = ErrorMessages
-						.studyResultNotExist(studyResultId);
-				ControllerUtils.throwAjaxResultException(errorMsg,
-						Http.Status.NOT_FOUND);
-			}
+		for (StudyResult studyResult : studyResultList) {
 			Iterator<ComponentResult> iterator = studyResult
 					.getComponentResultList().iterator();
 			while (iterator.hasNext()) {
@@ -192,6 +179,35 @@ public class StudyResults extends Controller {
 			}
 		}
 		return sb.toString();
+	}
+
+	private static List<StudyResult> getAllStudyResults(
+			List<Long> studyResultIdList) throws ResultException {
+		List<StudyResult> studyResultList = new ArrayList<>();
+		for (Long studyResultId : studyResultIdList) {
+			StudyResult studyResult = StudyResult.findById(studyResultId);
+			if (studyResult == null) {
+				String errorMsg = ErrorMessages
+						.studyResultNotExist(studyResultId);
+				ControllerUtils.throwAjaxResultException(errorMsg,
+						Http.Status.NOT_FOUND);
+			}
+			studyResultList.add(studyResult);
+		}
+		return studyResultList;
+	}
+
+	private static void checkAllStudyResults(List<StudyResult> studyResultList,
+			UserModel loggedInUser, boolean studyMustNotBeLocked)
+			throws ResultException {
+		for (StudyResult studyResult : studyResultList) {
+			StudyModel study = studyResult.getStudy();
+			ControllerUtils.checkStandardForStudy(study, study.getId(),
+					loggedInUser);
+			if (studyMustNotBeLocked) {
+				ControllerUtils.checkStudyLocked(study);
+			}
+		}
 	}
 
 }
