@@ -8,6 +8,7 @@ import static play.test.Helpers.status;
 import java.io.IOException;
 
 import models.StudyModel;
+import models.UserModel;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -29,11 +30,13 @@ public class AccessControllerTest {
 
 	private static ControllerTestUtils utils = new ControllerTestUtils();
 	private static StudyModel studyTemplate;
+	private static UserModel testUser;
 
 	@BeforeClass
 	public static void startApp() throws Exception {
 		utils.startApp();
 		studyTemplate = utils.importExampleStudy();
+		testUser = utils.createAndPersistUser("bla@bla.com", "Bla", "bla");
 	}
 
 	@AfterClass
@@ -43,6 +46,7 @@ public class AccessControllerTest {
 	}
 
 	private void checkDeniedAccess(HandlerRef ref) {
+		// Call action without testUser in session
 		Result result = callAction(ref);
 		assertThat(status(result)).isEqualTo(SEE_OTHER);
 		redirectLocation(result).contains("login");
@@ -57,6 +61,18 @@ public class AccessControllerTest {
 							utils.admin.getEmail()));
 		} catch (RuntimeException e) {
 			assertThat(e.getMessage()).contains("isn't member of study");
+			assertThat(e.getCause() instanceof ResultException);
+		}
+	}
+
+	private void checkRightUser(HandlerRef ref) {
+		try {
+			callAction(
+					ref,
+					fakeRequest().withSession(Users.SESSION_EMAIL,
+							utils.admin.getEmail()));
+		} catch (RuntimeException e) {
+			assertThat(e.getMessage()).contains("You must be logged in as");
 			assertThat(e.getCause() instanceof ResultException);
 		}
 	}
@@ -399,6 +415,58 @@ public class AccessControllerTest {
 		HandlerRef ref = controllers.routes.ref.StudyResults.exportData("1");
 		checkDeniedAccess(ref);
 		// TODO check whether result's study has appropriate member
+	}
+
+	@Test
+	public void callUsersProfile() throws Exception {
+		HandlerRef ref = controllers.routes.ref.Users.profile(testUser
+				.getEmail());
+		checkDeniedAccess(ref);
+		checkRightUser(ref);
+	}
+
+	@Test
+	public void callUsersCreate() throws Exception {
+		HandlerRef ref = controllers.routes.ref.Users.create();
+		checkDeniedAccess(ref);
+	}
+
+	@Test
+	public void callUsersSubmit() throws Exception {
+		HandlerRef ref = controllers.routes.ref.Users.submit();
+		checkDeniedAccess(ref);
+	}
+
+	@Test
+	public void callUsersEditProfile() throws Exception {
+		HandlerRef ref = controllers.routes.ref.Users.editProfile(testUser
+				.getEmail());
+		checkDeniedAccess(ref);
+		checkRightUser(ref);
+	}
+
+	@Test
+	public void callUsersSubmitEditedProfile() throws Exception {
+		HandlerRef ref = controllers.routes.ref.Users
+				.submitEditedProfile(testUser.getEmail());
+		checkDeniedAccess(ref);
+		checkRightUser(ref);
+	}
+	
+	@Test
+	public void callUsersChangePassword() throws Exception {
+		HandlerRef ref = controllers.routes.ref.Users
+				.changePassword(testUser.getEmail());
+		checkDeniedAccess(ref);
+		checkRightUser(ref);
+	}
+	
+	@Test
+	public void callUsersSubmitChangedPassword() throws Exception {
+		HandlerRef ref = controllers.routes.ref.Users
+				.submitChangedPassword(testUser.getEmail());
+		checkDeniedAccess(ref);
+		checkRightUser(ref);
 	}
 
 }

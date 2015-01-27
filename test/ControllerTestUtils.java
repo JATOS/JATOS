@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
 import javax.persistence.EntityManager;
@@ -98,12 +99,17 @@ public class ControllerTestUtils {
 		return studyClone;
 	}
 
-	protected void commitStudy(StudyModel study) {
+	protected synchronized UserModel createAndPersistUser(String email, String name,
+			String password) throws UnsupportedEncodingException,
+			NoSuchAlgorithmException {
+		String passwordHash = UserService.getHashMDFive(password);
+		UserModel user = new UserModel(email, name, passwordHash);
 		entityManager.getTransaction().begin();
-		PersistanceUtils.addStudy(study, admin);
+		PersistanceUtils.addUser(user);
 		entityManager.getTransaction().commit();
+		return user;
 	}
-
+	
 	protected synchronized void removeStudy(StudyModel study)
 			throws IOException {
 		IOUtils.removeStudyAssetsDir(study.getDirName());
@@ -111,11 +117,17 @@ public class ControllerTestUtils {
 		PersistanceUtils.removeStudy(study);
 		entityManager.getTransaction().commit();
 	}
-	
+
+	protected synchronized void commitStudy(StudyModel study) {
+		entityManager.getTransaction().begin();
+		PersistanceUtils.addStudy(study, admin);
+		entityManager.getTransaction().commit();
+	}
+
 	protected void removeMember(StudyModel studyClone, UserModel member) {
-		JPA.em().getTransaction().begin();
+		entityManager.getTransaction().begin();
 		StudyModel.findById(studyClone.getId()).removeMember(member);
-		JPA.em().getTransaction().commit();
+		entityManager.getTransaction().commit();
 	}
 
 }
