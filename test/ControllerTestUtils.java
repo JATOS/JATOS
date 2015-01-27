@@ -9,6 +9,8 @@ import models.StudyModel;
 import models.UserModel;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 
 import play.Logger;
 import play.db.jpa.JPA;
@@ -37,6 +39,9 @@ public class ControllerTestUtils {
 	protected FakeApplication application;
 	protected EntityManager entityManager;
 	protected UserModel admin;
+	
+	@Rule
+	protected ExpectedException thrown = ExpectedException.none();
 
 	protected void startApp() throws Exception {
 		application = Helpers.fakeApplication();
@@ -124,7 +129,7 @@ public class ControllerTestUtils {
 		entityManager.getTransaction().commit();
 	}
 
-	protected void removeMember(StudyModel studyClone, UserModel member) {
+	protected synchronized void removeMember(StudyModel studyClone, UserModel member) {
 		entityManager.getTransaction().begin();
 		StudyModel.findById(studyClone.getId()).removeMember(member);
 		entityManager.getTransaction().commit();

@@ -19,9 +19,7 @@ import org.apache.http.HttpHeaders;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import play.mvc.Result;
 import play.test.FakeRequest;
@@ -45,9 +43,6 @@ public class StudiesControllerTest {
 
 	private static ControllerTestUtils utils = new ControllerTestUtils();
 	private static StudyModel studyTemplate;
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	@BeforeClass
 	public static void startApp() throws Exception {
@@ -131,8 +126,8 @@ public class StudiesControllerTest {
 						StudyModel.JSON_DATA, "{",
 						StudyModel.ALLOWED_WORKER_LIST, "WrongWorker"));
 
-		thrown.expect(RuntimeException.class);
-		thrown.expectCause(IsInstanceOf
+		utils.thrown.expect(RuntimeException.class);
+		utils.thrown.expectCause(IsInstanceOf
 				.<Throwable> instanceOf(ResultException.class));
 		callAction(controllers.routes.ref.Studies.submit(), request);
 	}

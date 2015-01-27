@@ -54,6 +54,7 @@ public class AccessControllerTest {
 
 	private void checkNotMember(HandlerRef ref, StudyModel study) {
 		utils.removeMember(study, utils.admin);
+		utils.thrown.expect(RuntimeException.class);
 		try {
 			callAction(
 					ref,
@@ -66,6 +67,7 @@ public class AccessControllerTest {
 	}
 
 	private void checkRightUser(HandlerRef ref) {
+		utils.thrown.expect(RuntimeException.class);
 		try {
 			callAction(
 					ref,
@@ -73,6 +75,19 @@ public class AccessControllerTest {
 							utils.admin.getEmail()));
 		} catch (RuntimeException e) {
 			assertThat(e.getMessage()).contains("You must be logged in as");
+			assertThat(e.getCause() instanceof ResultException);
+		}
+	}
+	
+	private void checkRemoveJatosWorker(HandlerRef ref) {
+		utils.thrown.expect(RuntimeException.class);
+		try {
+			callAction(
+					ref,
+					fakeRequest().withSession(Users.SESSION_EMAIL,
+							utils.admin.getEmail()));
+		} catch (RuntimeException e) {
+			assertThat(e.getMessage()).contains("is a worker of JATOS");
 			assertThat(e.getCause() instanceof ResultException);
 		}
 	}
@@ -467,6 +482,21 @@ public class AccessControllerTest {
 				.submitChangedPassword(testUser.getEmail());
 		checkDeniedAccess(ref);
 		checkRightUser(ref);
+	}
+	
+	@Test
+	public void callWorkersIndex() throws Exception {
+		HandlerRef ref = controllers.routes.ref.Workers
+				.index(utils.admin.getWorker().getId());
+		checkDeniedAccess(ref);
+	}
+	
+	@Test
+	public void callWorkersRemove() throws Exception {
+		HandlerRef ref = controllers.routes.ref.Workers
+				.remove(utils.admin.getWorker().getId());
+		checkDeniedAccess(ref);
+		checkRemoveJatosWorker(ref);
 	}
 
 }
