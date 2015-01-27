@@ -12,7 +12,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.Security;
 import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.Messages;
@@ -20,7 +19,11 @@ import services.PersistanceUtils;
 import controllers.publix.jatos.JatosPublix;
 import exceptions.ResultException;
 
-@Security.Authenticated(Secured.class)
+/**
+ * Controller that deals with all requests regarding Components.
+ * 
+ * @author Kristian Lange
+ */
 public class Components extends Controller {
 
 	public static final String EDIT_SUBMIT_NAME = "action";
@@ -28,6 +31,10 @@ public class Components extends Controller {
 	public static final String EDIT_SUBMIT_AND_SHOW = "Submit & Show";
 	private static final String CLASS_NAME = Components.class.getSimpleName();
 
+	/**
+	 * Actually shows a single component. It uses a JatosWorker and redirects to
+	 * Publix.startStudy().
+	 */
 	@Transactional
 	public static Result showComponent(Long studyId, Long componentId)
 			throws ResultException {
@@ -55,6 +62,9 @@ public class Components extends Controller {
 				+ queryStr);
 	}
 
+	/**
+	 * Shows a view with a form to create a new Component.
+	 */
 	@Transactional
 	public static Result create(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".create: studyId " + studyId + ", "
@@ -74,6 +84,9 @@ public class Components extends Controller {
 				loggedInUser, breadcrumbs, null, submitAction, form, study));
 	}
 
+	/**
+	 * Handles the post request of the form to create a new Component.
+	 */
 	@Transactional
 	public static Result submit(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".submit: studyId " + studyId + ", "
@@ -101,6 +114,9 @@ public class Components extends Controller {
 		return redirectAfterEdit(studyId, component.getId(), study);
 	}
 
+	/**
+	 * Shows a view with a form to edit the properties of a Component.
+	 */
 	@Transactional
 	public static Result edit(Long studyId, Long componentId)
 			throws ResultException {
@@ -129,6 +145,9 @@ public class Components extends Controller {
 				loggedInUser, breadcrumbs, messages, submitAction, form, study));
 	}
 
+	/**
+	 * Handles the post of the edit form.
+	 */
 	@Transactional
 	public static Result submitEdited(Long studyId, Long componentId)
 			throws ResultException {
@@ -177,8 +196,9 @@ public class Components extends Controller {
 	}
 
 	/**
-	 * Ajax POST request to change a single property. So far the only property
-	 * possible to change is 'active'.
+	 * Ajax POST
+	 * 
+	 * Request to change the property 'active' of a component.
 	 */
 	@Transactional
 	public static Result changeProperty(Long studyId, Long componentId,
@@ -200,6 +220,9 @@ public class Components extends Controller {
 		return ok();
 	}
 
+	/**
+	 * Clone a component.
+	 */
 	@Transactional
 	public static Result cloneComponent(Long studyId, Long componentId)
 			throws ResultException {
@@ -219,7 +242,9 @@ public class Components extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Remove a component.
 	 */
 	@Transactional
 	public static Result remove(Long studyId, Long componentId)

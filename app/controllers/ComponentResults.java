@@ -15,7 +15,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.Security;
 import services.Breadcrumbs;
 import services.DateUtils;
 import services.ErrorMessages;
@@ -25,12 +24,19 @@ import services.Messages;
 import services.PersistanceUtils;
 import exceptions.ResultException;
 
-@Security.Authenticated(Secured.class)
+/**
+ * Controller that deals with requests regarding ComponentResult.
+ * 
+ * @author Kristian Lange
+ */
 public class ComponentResults extends Controller {
 
 	private static final String CLASS_NAME = ComponentResults.class
 			.getSimpleName();
 
+	/**
+	 * Shows a view with all component results of a component of a study.
+	 */
 	@Transactional
 	public static Result index(Long studyId, Long componentId, String errorMsg,
 			int httpStatus) throws ResultException {
@@ -66,7 +72,9 @@ public class ComponentResults extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Removes all ComponentResults specified in the parameter. 
 	 */
 	@Transactional
 	public static Result remove(String componentResultIds)
@@ -88,7 +96,9 @@ public class ComponentResults extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Returns all ComponentResults as JSON for a given component.
 	 */
 	@Transactional
 	public static Result tableDataByComponent(Long studyId, Long componentId)
@@ -111,7 +121,9 @@ public class ComponentResults extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Returns all ComponentResults as text for a given component.
 	 */
 	@Transactional
 	public static Result exportData(String componentResultIds)

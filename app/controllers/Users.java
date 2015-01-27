@@ -12,13 +12,11 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.Security;
 import services.Breadcrumbs;
 import services.PersistanceUtils;
 import services.UserService;
 import exceptions.ResultException;
 
-@Security.Authenticated(Secured.class)
 public class Users extends Controller {
 
 	private static final String CLASS_NAME = Users.class.getSimpleName();

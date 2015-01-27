@@ -14,7 +14,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.Security;
 import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.JsonUtils;
@@ -22,7 +21,6 @@ import services.Messages;
 import services.PersistanceUtils;
 import exceptions.ResultException;
 
-@Security.Authenticated(Secured.class)
 public class Workers extends Controller {
 
 	private static final String CLASS_NAME = Workers.class.getSimpleName();

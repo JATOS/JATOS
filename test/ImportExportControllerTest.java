@@ -121,7 +121,7 @@ public class ImportExportControllerTest {
 		File file_renamed = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
 				"hello_world_renamed.html");
 		file_orig.renameTo(file_renamed);
-		utils.commitStudy(study);
+		utils.addStudy(study);
 
 		// Check renaming
 		assertThat(file_renamed.exists());
@@ -159,7 +159,7 @@ public class ImportExportControllerTest {
 		study.setTitle("Different Title");
 		// Change a file name
 		file_orig.renameTo(file_renamed);
-		utils.commitStudy(study);
+		utils.addStudy(study);
 
 		// Third call: Import same study third time
 		result = callImportStudy();
@@ -193,7 +193,7 @@ public class ImportExportControllerTest {
 		// Import study manually and remove first component (Hello World)
 		StudyModel study = utils.importExampleStudy();
 		study.removeComponent(study.getFirstComponent());
-		utils.commitStudy(study);
+		utils.addStudy(study);
 
 		// Make a backup of our component file
 		File componentFile = new File("test/hello_world.jac");
@@ -257,7 +257,7 @@ public class ImportExportControllerTest {
 	@Test
 	public synchronized void checkCallExportStudy() throws Exception {
 		StudyModel study = utils.importExampleStudy();
-		utils.commitStudy(study);
+		utils.addStudy(study);
 
 		Result result = callAction(
 				controllers.routes.ref.ImportExport.exportStudy(study.getId()),
@@ -273,7 +273,7 @@ public class ImportExportControllerTest {
 	@Test
 	public synchronized void checkCallExportComponent() throws Exception {
 		StudyModel study = utils.importExampleStudy();
-		utils.commitStudy(study);
+		utils.addStudy(study);
 
 		Result result = callAction(
 				controllers.routes.ref.ImportExport.exportComponent(

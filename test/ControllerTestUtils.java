@@ -100,7 +100,7 @@ public class ControllerTestUtils {
 		destDirName = IOUtils
 				.cloneStudyAssetsDirectory(studyClone.getDirName());
 		studyClone.setDirName(destDirName);
-		commitStudy(studyClone);
+		addStudy(studyClone);
 		return studyClone;
 	}
 
@@ -123,9 +123,15 @@ public class ControllerTestUtils {
 		entityManager.getTransaction().commit();
 	}
 
-	protected synchronized void commitStudy(StudyModel study) {
+	protected synchronized void addStudy(StudyModel study) {
 		entityManager.getTransaction().begin();
 		PersistanceUtils.addStudy(study, admin);
+		entityManager.getTransaction().commit();
+	}
+	
+	protected synchronized void lockStudy(StudyModel study) {
+		entityManager.getTransaction().begin();
+		study.setLocked(true);
 		entityManager.getTransaction().commit();
 	}
 

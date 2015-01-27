@@ -14,7 +14,6 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
-import play.mvc.Security;
 import services.ErrorMessages;
 import services.IOUtils;
 import services.JsonUtils;
@@ -31,7 +30,6 @@ import exceptions.ResultException;
  * 
  * @author Kristian Lange
  */
-@Security.Authenticated(Secured.class)
 public class ImportExport extends Controller {
 
 	public static final String COMPONENT_TITLE = "componentTitle";
@@ -47,10 +45,11 @@ public class ImportExport extends Controller {
 	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
 
 	/**
-	 * HTTP Ajax request<br>
+	 * Ajax request
+	 * 
 	 * Checks whether this is a legitimate study import, whether the study or
 	 * its directory already exists. The actual import happens in
-	 * importStudyConfirmed().
+	 * importStudyConfirmed(). Returns JSON.
 	 */
 	@Transactional
 	public static Result importStudy() throws ResultException {
@@ -96,8 +95,10 @@ public class ImportExport extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request<br>
-	 * Actual import of study and its study assets directory
+	 * Ajax request
+	 * 
+	 * Actual import of study and its study assets directory. Always subsequent
+	 * of an importStudy() call.
 	 */
 	@Transactional
 	public static Result importStudyConfirmed() throws ResultException {
@@ -274,7 +275,10 @@ public class ImportExport extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Export a study. Returns a .zip file that contains the study asset
+	 * directory and the study as JSON as a .jas file.
 	 */
 	@Transactional
 	public static Result exportStudy(Long studyId) throws ResultException {
@@ -316,7 +320,9 @@ public class ImportExport extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Export of a component. Returns a .jac file with the component in JSON.
 	 */
 	@Transactional
 	public static Result exportComponent(Long studyId, Long componentId)
@@ -353,9 +359,10 @@ public class ImportExport extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request<br>
+	 * Ajax request
+	 * 
 	 * Checks whether this is a legitimate component import. The actual import
-	 * happens in importComponentConfirmed().
+	 * happens in importComponentConfirmed(). Returns JSON with the results.
 	 */
 	@Transactional
 	public static Result importComponent(Long studyId) throws ResultException {
@@ -398,8 +405,9 @@ public class ImportExport extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request<br>
-	 * Actual import of component
+	 * Ajax request
+	 * 
+	 * Actual import of component.
 	 */
 	@Transactional
 	public static Result importComponentConfirmed(Long studyId)

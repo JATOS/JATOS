@@ -20,7 +20,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.Security;
 import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.IOUtils;
@@ -36,13 +35,15 @@ import controllers.publix.jatos.JatosPublix;
 import controllers.publix.tester.TesterPublix;
 import exceptions.ResultException;
 
-@Security.Authenticated(Secured.class)
 public class Studies extends Controller {
 
 	public static final String COMPONENT_ORDER_DOWN = "down";
 	public static final String COMPONENT_ORDER_UP = "up";
 	private static final String CLASS_NAME = Studies.class.getSimpleName();
 
+	/**
+	 * Shows a view with details regarding a study.
+	 */
 	@Transactional
 	public static Result index(Long studyId, String errorMsg, int httpStatus)
 			throws ResultException {
@@ -73,6 +74,9 @@ public class Studies extends Controller {
 		return index(studyId, null, Http.Status.OK);
 	}
 
+	/**
+	 * Shows a view with a form to create a new study.
+	 */
 	@Transactional
 	public static Result create() throws ResultException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
@@ -92,6 +96,9 @@ public class Studies extends Controller {
 				breadcrumbs, null, submitAction, form, false));
 	}
 
+	/**
+	 * POST request of the form to create a new study.
+	 */
 	@Transactional
 	public static Result submit() throws ResultException {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
@@ -128,6 +135,9 @@ public class Studies extends Controller {
 						false);
 	}
 
+	/**
+	 * Shows a form to edit the study properties.
+	 */
 	@Transactional
 	public static Result edit(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
@@ -150,6 +160,9 @@ public class Studies extends Controller {
 				breadcrumbs, messages, submitAction, form, study.isLocked()));
 	}
 
+	/**
+	 * POST request of the edit form to change the properties of a study.
+	 */
 	@Transactional
 	public static Result submitEdited(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
@@ -190,7 +203,9 @@ public class Studies extends Controller {
 	}
 
 	/**
-	 * Ajax POST request to swap the locked field.
+	 * Ajax POST request
+	 * 
+	 * Swap the locked field of a study.
 	 */
 	@Transactional
 	public static Result swapLock(Long studyId) throws ResultException {
@@ -206,7 +221,9 @@ public class Studies extends Controller {
 	}
 
 	/**
-	 * Ajax DELETE request to remove a study
+	 * Ajax DELETE request
+	 * 
+	 * Remove a study
 	 */
 	@Transactional
 	public static Result remove(Long studyId) throws ResultException {
@@ -223,7 +240,9 @@ public class Studies extends Controller {
 	}
 
 	/**
-	 * Ajax POST request
+	 * Ajax request 
+	 * 
+	 * Clones a study.
 	 */
 	@Transactional
 	public static Result cloneStudy(Long studyId) throws ResultException {
@@ -244,6 +263,9 @@ public class Studies extends Controller {
 		return changeMembers(studyId, null, Http.Status.OK);
 	}
 
+	/**
+	 * Shows a view with a form to change members of a study.
+	 */
 	@Transactional
 	public static Result changeMembers(Long studyId, String errorMsg,
 			int httpStatus) throws ResultException {
@@ -264,6 +286,9 @@ public class Studies extends Controller {
 						loggedInUser, breadcrumbs, messages, study, userList));
 	}
 
+	/**
+	 * POST request that handles changed members of a study.
+	 */
 	@Transactional
 	public static Result submitChangedMembers(Long studyId)
 			throws ResultException {
@@ -297,7 +322,9 @@ public class Studies extends Controller {
 	}
 
 	/**
-	 * Ajax POST request to change the oder of components within an study.
+	 * Ajax POST request
+	 * 
+	 * Change the oder of components within a study.
 	 */
 	@Transactional
 	public static Result changeComponentOrder(Long studyId, Long componentId,
@@ -331,6 +358,10 @@ public class Studies extends Controller {
 		return ok();
 	}
 
+	/**
+	 * Actually shows the study. Uses JatosWorker. It redirects to
+	 * Publix.startStudy() action.
+	 */
 	@Transactional
 	public static Result showStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".showStudy: studyId " + studyId + ", "
@@ -347,6 +378,12 @@ public class Studies extends Controller {
 				+ queryStr);
 	}
 
+	/**
+	 * Ajax request
+	 * 
+	 * Creates a ClosedStandaloneWorker and the URL that can be used for this
+	 * kind of run.
+	 */
 	@Transactional
 	public static Result createClosedStandaloneRun(Long studyId)
 			throws ResultException {
@@ -378,6 +415,12 @@ public class Studies extends Controller {
 		return ok(url);
 	}
 
+	/**
+	 * Ajax request
+	 * 
+	 * Creates a TesterWorker and returns the URL that can be used for a tester
+	 * run.
+	 */
 	@Transactional
 	public static Result createTesterRun(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".createTesterRun: studyId " + studyId + ", "
@@ -415,6 +458,10 @@ public class Studies extends Controller {
 		}
 	}
 
+	/**
+	 * Shows a view with the source code that is intended to be copied into
+	 * Mechanical Turk.
+	 */
 	@Transactional
 	public static Result showMTurkSourceCode(Long studyId)
 			throws ResultException {
@@ -440,7 +487,9 @@ public class Studies extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Returns all Components of the given study as JSON.
 	 */
 	@Transactional
 	public static Result tableDataByStudy(Long studyId) throws ResultException {
@@ -460,6 +509,9 @@ public class Studies extends Controller {
 		return ok(dataAsJson);
 	}
 
+	/**
+	 * Shows view that lists all Workers that did the given study.
+	 */
 	@Transactional
 	public static Result workers(Long studyId, String errorMsg, int httpStatus)
 			throws ResultException {

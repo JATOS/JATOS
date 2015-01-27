@@ -9,12 +9,15 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.Security;
 import services.Breadcrumbs;
 import services.Messages;
 import exceptions.ResultException;
 
-@Security.Authenticated(Secured.class)
+/**
+ * Controller that provides actions for the home view.
+ * 
+ * @author Kristian Lange
+ */
 public class Home extends Controller {
 
 	private static final String CLASS_NAME = Home.class.getSimpleName();
