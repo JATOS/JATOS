@@ -21,6 +21,11 @@ import services.Messages;
 import services.PersistanceUtils;
 import exceptions.ResultException;
 
+/**
+ * Controller that handles all worker actions in JATOS' GUI
+ * 
+ * @author Kristian Lange
+ */
 public class Workers extends Controller {
 
 	private static final String CLASS_NAME = Workers.class.getSimpleName();
@@ -59,7 +64,7 @@ public class Workers extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
 	 * 
 	 * Remove a worker including its results.
 	 */
@@ -98,7 +103,7 @@ public class Workers extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
 	 * 
 	 * Returns a list of workers (as JSON) that did the specified study.
 	 */

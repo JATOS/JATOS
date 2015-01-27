@@ -25,10 +25,18 @@ import services.Messages;
 import services.PersistanceUtils;
 import exceptions.ResultException;
 
+/**
+ * Controller for actions around StudyResults in the JATOS GUI.
+ * 
+ * @author Kristian Lange
+ */
 public class StudyResults extends Controller {
 
 	private static final String CLASS_NAME = StudyResults.class.getSimpleName();
 
+	/**
+	 * Shows view with all StudyResults of a study.
+	 */
 	@Transactional
 	public static Result index(Long studyId, String errorMsg, int httpStatus)
 			throws ResultException {
@@ -60,7 +68,9 @@ public class StudyResults extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Takes a string with a list of StudyResults and removes them all.
 	 */
 	@Transactional
 	public static Result remove(String studyResultIds) throws ResultException {
@@ -81,7 +91,9 @@ public class StudyResults extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Returns all StudyResults of a study in JSON format.
 	 */
 	@Transactional
 	public static Result tableDataByStudy(Long studyId) throws ResultException {
@@ -102,7 +114,9 @@ public class StudyResults extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Returns all StudyResults belonging to a worker as JSON.
 	 */
 	@Transactional
 	public static Result tableDataByWorker(Long workerId)
@@ -143,7 +157,10 @@ public class StudyResults extends Controller {
 	}
 
 	/**
-	 * HTTP Ajax request
+	 * Ajax request
+	 * 
+	 * Returns all result data of ComponentResults belonging to StudyResults
+	 * specified in the given string as text.
 	 */
 	@Transactional
 	public static Result exportData(String studyResultIds)
@@ -195,6 +212,9 @@ public class StudyResults extends Controller {
 		return sb.toString();
 	}
 
+	/**
+	 * Get all StudyResults or throw a ResultException if one doesn't exist.
+	 */
 	private static List<StudyResult> getAllStudyResults(
 			List<Long> studyResultIdList) throws ResultException {
 		List<StudyResult> studyResultList = new ArrayList<>();

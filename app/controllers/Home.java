@@ -22,6 +22,9 @@ public class Home extends Controller {
 
 	private static final String CLASS_NAME = Home.class.getSimpleName();
 
+	/**
+	 * Shows home view
+	 */
 	@Transactional
 	public static Result home(String errorMsg, int httpStatus)
 			throws ResultException {

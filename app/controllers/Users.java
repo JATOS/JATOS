@@ -17,12 +17,20 @@ import services.PersistanceUtils;
 import services.UserService;
 import exceptions.ResultException;
 
+/**
+ * Controller with actions concerning users
+ * 
+ * @author Kristian Lange
+ */
 public class Users extends Controller {
 
 	private static final String CLASS_NAME = Users.class.getSimpleName();
 
 	public static final String SESSION_EMAIL = "email";
 
+	/**
+	 * Shows the profile view of a user
+	 */
 	@Transactional
 	public static Result profile(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".profile: " + "email " + email + ", "
@@ -38,6 +46,9 @@ public class Users extends Controller {
 				breadcrumbs, null, user));
 	}
 
+	/**
+	 * Shows a view with a form to create a new user.
+	 */
 	@Transactional
 	public static Result create() throws ResultException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
@@ -51,6 +62,9 @@ public class Users extends Controller {
 				breadcrumbs, null, Form.form(UserModel.class)));
 	}
 
+	/**
+	 * Handles post request of user create form.
+	 */
 	@Transactional
 	public static Result submit() throws Exception {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
@@ -85,6 +99,9 @@ public class Users extends Controller {
 		return redirect(routes.Home.home());
 	}
 
+	/**
+	 * Shows view with form to edit a user profile.
+	 */
 	@Transactional
 	public static Result editProfile(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".editProfile: " + "email " + email + ", "
@@ -102,6 +119,9 @@ public class Users extends Controller {
 				loggedInUser, breadcrumbs, null, user, form));
 	}
 
+	/**
+	 * Handles post request of user edit profile form.
+	 */
 	@Transactional
 	public static Result submitEditedProfile(String email)
 			throws ResultException {
@@ -128,6 +148,9 @@ public class Users extends Controller {
 		return redirect(routes.Users.profile(email));
 	}
 
+	/**
+	 * Shows view to change the password of a user.
+	 */
 	@Transactional
 	public static Result changePassword(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".changePassword: " + "email " + email + ", "
@@ -145,6 +168,9 @@ public class Users extends Controller {
 				loggedInUser, breadcrumbs, null, form));
 	}
 
+	/**
+	 * Handles post request of change password form.
+	 */
 	@Transactional
 	public static Result submitChangedPassword(String email) throws Exception {
 		Logger.info(CLASS_NAME + ".submitChangedPassword: " + "email " + email

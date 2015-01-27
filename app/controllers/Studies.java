@@ -35,6 +35,11 @@ import controllers.publix.jatos.JatosPublix;
 import controllers.publix.tester.TesterPublix;
 import exceptions.ResultException;
 
+/**
+ * Controller for all actions regarding studies within the JATOS GUI.
+ * 
+ * @author Kristian Lange
+ */
 public class Studies extends Controller {
 
 	public static final String COMPONENT_ORDER_DOWN = "down";
@@ -42,7 +47,7 @@ public class Studies extends Controller {
 	private static final String CLASS_NAME = Studies.class.getSimpleName();
 
 	/**
-	 * Shows a view with details regarding a study.
+	 * Shows the index view with details regarding a study.
 	 */
 	@Transactional
 	public static Result index(Long studyId, String errorMsg, int httpStatus)

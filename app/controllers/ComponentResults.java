@@ -74,7 +74,7 @@ public class ComponentResults extends Controller {
 	/**
 	 * Ajax request
 	 * 
-	 * Removes all ComponentResults specified in the parameter. 
+	 * Removes all ComponentResults specified in the parameter.
 	 */
 	@Transactional
 	public static Result remove(String componentResultIds)
@@ -123,7 +123,8 @@ public class ComponentResults extends Controller {
 	/**
 	 * Ajax request
 	 * 
-	 * Returns all ComponentResults as text for a given component.
+	 * Returns all result data of ComponentResults as text for a given
+	 * component.
 	 */
 	@Transactional
 	public static Result exportData(String componentResultIds)

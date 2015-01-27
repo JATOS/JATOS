@@ -20,7 +20,8 @@ import controllers.publix.jatos.JatosPublix;
 import exceptions.ResultException;
 
 /**
- * Controller that deals with all requests regarding Components.
+ * Controller that deals with all requests regarding Components within the JATOS
+ * GUI.
  * 
  * @author Kristian Lange
  */
