@@ -1,8 +1,5 @@
 package models;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -16,15 +13,16 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.TypedQuery;
 
+import models.workers.JatosWorker;
+
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import models.workers.JatosWorker;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPA;
 import services.ErrorMessages;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Domain model and DAO of a user.
@@ -63,10 +61,6 @@ public class UserModel {
 	}
 
 	public UserModel() {
-	}
-
-	public void update(String name) {
-		this.name = name;
 	}
 
 	public void setEmail(String email) {
@@ -177,21 +171,6 @@ public class UserModel {
 					ErrorMessages.NO_HTML_ALLOWED));
 		}
 		return errorList.isEmpty() ? null : errorList;
-	}
-
-	public static String getHashMDFive(String str)
-			throws UnsupportedEncodingException, NoSuchAlgorithmException {
-		byte[] strBytes = str.getBytes("UTF-8");
-		MessageDigest md = MessageDigest.getInstance("MD5");
-		byte[] hashByte = md.digest(strBytes);
-
-		// Convert the byte to hex format
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < hashByte.length; i++) {
-			sb.append(Integer.toString((hashByte[i] & 0xff) + 0x100, 16)
-					.substring(1));
-		}
-		return sb.toString();
 	}
 
 	public static UserModel findByEmail(String email) {

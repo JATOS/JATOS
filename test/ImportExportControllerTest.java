@@ -33,7 +33,6 @@ import services.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import common.Initializer;
 import controllers.ImportExport;
 import controllers.Users;
 
@@ -103,7 +102,7 @@ public class ImportExportControllerTest {
 		result = callAction(
 				controllers.routes.ref.Studies.remove(importedStudy.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 	}
 
 	/**
@@ -210,7 +209,7 @@ public class ImportExportControllerTest {
 				controllers.routes.ref.ImportExport.importComponent(study
 						.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL).withAnyContent(
+						utils.admin.getEmail()).withAnyContent(
 						getMultiPartFormDataForFileUpload(componentFileBkp,
 								ComponentModel.COMPONENT, "application/json"),
 						"multipart/form-data", "POST"));
@@ -238,13 +237,13 @@ public class ImportExportControllerTest {
 				controllers.routes.ref.ImportExport.importComponentConfirmed(study
 						.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL).withSession(
+						utils.admin.getEmail()).withSession(
 						ImportExport.SESSION_TEMP_COMPONENT_FILE,
 						sessionFileName));
 
 		// Tests
 		assertThat(status(result)).isEqualTo(OK);
-		
+
 		// TODO Check if component was actually added
 		// TODO Check override of component
 
@@ -263,7 +262,7 @@ public class ImportExportControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.ImportExport.exportStudy(study.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentType(result)).isEqualTo("application/x-download");
 
@@ -280,7 +279,7 @@ public class ImportExportControllerTest {
 				controllers.routes.ref.ImportExport.exportComponent(
 						study.getId(), study.getComponent(1).getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentType(result)).isEqualTo("application/x-download");
 
@@ -297,7 +296,7 @@ public class ImportExportControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.ImportExport.importStudy(),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL).withAnyContent(
+						utils.admin.getEmail()).withAnyContent(
 						getMultiPartFormDataForFileUpload(studyZipBkp,
 								StudyModel.STUDY, "application/zip"),
 						"multipart/form-data", "POST"));
@@ -333,7 +332,7 @@ public class ImportExportControllerTest {
 				controllers.routes.ref.ImportExport.importStudyConfirmed(),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL,
-								Initializer.ADMIN_EMAIL)
+								utils.admin.getEmail())
 						.withSession(ImportExport.SESSION_UNZIPPED_STUDY_DIR,
 								unzippedStudyDirName).withJsonBody(jsonObj));
 		return result;

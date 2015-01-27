@@ -4,17 +4,18 @@ import java.util.List;
 
 import models.StudyModel;
 import models.UserModel;
-import models.workers.JatosWorker;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
+import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Security;
 import services.Breadcrumbs;
-import services.ErrorMessages;
+import services.PersistanceUtils;
+import services.UserService;
 import exceptions.ResultException;
 
 @Security.Authenticated(Secured.class)
@@ -66,39 +67,23 @@ public class Users extends Controller {
 					loggedInUser, form, Http.Status.BAD_REQUEST);
 		}
 
-		// Check if user with this email already exists.
 		UserModel newUser = form.get();
-		if (UserModel.findByEmail(newUser.getEmail()) != null) {
-			form.reject(UserModel.EMAIL,
-					ErrorMessages.THIS_EMAIL_IS_ALREADY_REGISTERED);
-		}
-
-		// Check for non empty passwords
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String password = requestData.get(UserModel.PASSWORD);
 		String passwordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
-		if (password.trim().isEmpty() || passwordRepeat.trim().isEmpty()) {
-			form.reject(UserModel.PASSWORD,
-					ErrorMessages.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
-		}
-
-		// Check that both passwords are the same
-		String passwordHash = UserModel.getHashMDFive(password);
-		String passwordHashRepeat = UserModel.getHashMDFive(passwordRepeat);
-		if (!passwordHash.equals(passwordHashRepeat)) {
-			form.reject(UserModel.PASSWORD, ErrorMessages.PASSWORDS_DONT_MATCH);
-		}
-
-		if (form.hasErrors()) {
+		List<ValidationError> errorList = UserService.validateNewUser(newUser,
+				password, passwordRepeat);
+		if (!errorList.isEmpty()) {
+			for (ValidationError error : errorList) {
+				form.reject(error);
+			}
 			ControllerUtils.throwCreateUserResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST);
 		}
-		JatosWorker worker = new JatosWorker(newUser);
-		worker.persist();
+
+		String passwordHash = UserService.getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
-		newUser.setWorker(worker);
-		newUser.persist();
-		worker.merge();
+		PersistanceUtils.addUser(newUser);
 		return redirect(routes.Home.home());
 	}
 
@@ -141,8 +126,7 @@ public class Users extends Controller {
 		// unaltered. For the password we have an extra form.
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String name = requestData.get(UserModel.NAME);
-		user.update(name);
-		user.merge();
+		PersistanceUtils.updateUser(user, name);
 		return redirect(routes.Users.profile(email));
 	}
 
@@ -176,37 +160,21 @@ public class Users extends Controller {
 		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		DynamicForm requestData = Form.form().bindFromRequest();
-
-		// Authenticate
-		String oldPasswordHash = UserModel.getHashMDFive(requestData
-				.get(UserModel.OLD_PASSWORD));
-		if (UserModel.authenticate(user.getEmail(), oldPasswordHash) == null) {
-			form.reject(UserModel.OLD_PASSWORD,
-					ErrorMessages.WRONG_OLD_PASSWORD);
-		}
-
-		// Check for non empty passwords
 		String newPassword = requestData.get(UserModel.NEW_PASSWORD);
 		String newPasswordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
-		if (newPassword.trim().isEmpty() || newPasswordRepeat.trim().isEmpty()) {
-			form.reject(UserModel.NEW_PASSWORD,
-					ErrorMessages.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
-		}
-
-		// Check that both passwords are the same
-		String newPasswordHash = UserModel.getHashMDFive(newPassword);
-		String newPasswordHashRepeat = UserModel
-				.getHashMDFive(newPasswordRepeat);
-		if (!newPasswordHash.equals(newPasswordHashRepeat)) {
-			form.reject(UserModel.NEW_PASSWORD,
-					ErrorMessages.PASSWORDS_DONT_MATCH);
-		}
-
-		if (form.hasErrors()) {
+		String oldPasswordHash = UserService.getHashMDFive(requestData
+				.get(UserModel.OLD_PASSWORD));
+		List<ValidationError> errorList = UserService.validateChangePassword(user,
+				newPassword, newPasswordRepeat, oldPasswordHash);
+		if (!errorList.isEmpty()) {
+			for (ValidationError error : errorList) {
+				form.reject(error);
+			}
 			ControllerUtils.throwChangePasswordUserResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, loggedInUser);
 		}
 		// Update password hash in DB
+		String newPasswordHash = UserService.getHashMDFive(newPassword);
 		user.setPasswordHash(newPasswordHash);
 		user.merge();
 		return redirect(routes.Users.profile(email));

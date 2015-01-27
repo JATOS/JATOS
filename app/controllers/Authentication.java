@@ -7,10 +7,13 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
+import services.UserService;
 
 public class Authentication extends Controller {
 	
 	private static final String CLASS_NAME = Authentication.class.getSimpleName();
+	
+	
 
 	public static Result login() {
 		Logger.info(CLASS_NAME + ".login");
@@ -45,7 +48,7 @@ public class Authentication extends Controller {
 
 		public String validate() {
 			try {
-				String passwordHash = UserModel.getHashMDFive(password);
+				String passwordHash = UserService.getHashMDFive(password);
 				if (UserModel.authenticate(email, passwordHash) == null) {
 					return "Invalid user or password";
 				}

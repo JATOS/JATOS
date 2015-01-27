@@ -21,9 +21,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import play.mvc.Result;
+import services.UserService;
 
 import com.google.common.collect.ImmutableMap;
-import common.Initializer;
 
 import controllers.Users;
 
@@ -71,10 +71,10 @@ public class AuthenticationControllerTest {
 				controllers.routes.ref.Authentication.authenticate(),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(UserModel.EMAIL,
-								Initializer.ADMIN_EMAIL, UserModel.PASSWORD,
-								Initializer.ADMIN_PASSWORD)));
+								UserService.ADMIN_EMAIL, UserModel.PASSWORD,
+								UserService.ADMIN_PASSWORD)));
 		assertEquals(303, status(result));
-		assertEquals(Initializer.ADMIN_EMAIL,
+		assertEquals(UserService.ADMIN_EMAIL,
 				session(result).get(UserModel.EMAIL));
 	}
 
@@ -84,7 +84,7 @@ public class AuthenticationControllerTest {
 				controllers.routes.ref.Authentication.authenticate(),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(UserModel.EMAIL,
-								Initializer.ADMIN_EMAIL, UserModel.PASSWORD,
+								UserService.ADMIN_EMAIL, UserModel.PASSWORD,
 								"bla")));
 		assertEquals(400, status(result));
 		assertNull(session(result).get(UserModel.EMAIL));

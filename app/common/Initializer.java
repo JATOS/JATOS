@@ -9,14 +9,10 @@ import models.StudyModel;
 import models.UserModel;
 import play.Logger;
 import play.db.jpa.JPA;
-import services.PersistanceUtils;
+import services.UserService;
 import controllers.publix.StudyAssets;
 
 public class Initializer {
-
-	public static final String ADMIN_EMAIL = "admin";
-	public static final String ADMIN_PASSWORD = "admin";
-	public static final String ADMIN_NAME = "Admin";
 
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
 
@@ -71,9 +67,9 @@ public class Initializer {
 		JPA.withTransaction(new play.libs.F.Callback0() {
 			@Override
 			public void invoke() throws Throwable {
-				UserModel admin = UserModel.findByEmail(ADMIN_EMAIL);
+				UserModel admin = UserModel.findByEmail(UserService.ADMIN_EMAIL);
 				if (admin == null) {
-					PersistanceUtils.createAdmin();
+					UserService.createAdmin();
 				}
 			}
 		});

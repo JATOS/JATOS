@@ -1,11 +1,7 @@
 package services;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-
-import common.Initializer;
 
 import models.ComponentModel;
 import models.StudyModel;
@@ -62,19 +58,17 @@ public class PersistanceUtils {
 		return worker;
 	}
 
-	public static UserModel createAdmin() throws UnsupportedEncodingException,
-			NoSuchAlgorithmException {
-		JatosWorker adminWorker = new JatosWorker();
-		adminWorker.persist();
-		String passwordHash = UserModel
-				.getHashMDFive(Initializer.ADMIN_PASSWORD);
-		UserModel adminUser = new UserModel(Initializer.ADMIN_EMAIL,
-				Initializer.ADMIN_NAME, passwordHash);
-		adminUser.setWorker(adminWorker);
-		adminUser.persist();
-		adminWorker.setUser(adminUser);
-		adminWorker.merge();
-		return adminUser;
+	public static void addUser(UserModel user) {
+		JatosWorker worker = new JatosWorker(user);
+		worker.persist();
+		user.setWorker(worker);
+		user.persist();
+		worker.merge();
+	}
+	
+	public static void updateUser(UserModel user, String name) {
+		user.setName(name);
+		user.merge();
 	}
 
 	public static void addStudy(StudyModel study, UserModel loggedInUser) {

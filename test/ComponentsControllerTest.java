@@ -29,9 +29,6 @@ import play.mvc.Result;
 import play.test.FakeRequest;
 import services.Breadcrumbs;
 import services.IOUtils;
-
-import common.Initializer;
-
 import controllers.Components;
 import controllers.Users;
 import controllers.publix.jatos.JatosPublix;
@@ -73,7 +70,7 @@ public class ComponentsControllerTest {
 				controllers.routes.ref.Components.showComponent(
 						studyClone.getId(), studyClone.getComponent(1).getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 		assertThat(session(result).containsKey(JatosPublix.JATOS_SHOW));
 		assertThat(session(result).containsValue(
@@ -104,7 +101,7 @@ public class ComponentsControllerTest {
 					controllers.routes.ref.Components.showComponent(studyClone
 							.getId(), studyClone.getComponent(1).getId()),
 					fakeRequest().withSession(Users.SESSION_EMAIL,
-							Initializer.ADMIN_EMAIL));
+							utils.admin.getEmail()));
 		} catch (RuntimeException e) {
 			assertThat(e.getCause() instanceof ResultException);
 		} finally {
@@ -122,7 +119,7 @@ public class ComponentsControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Components.create(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_COMPONENT);
 
@@ -146,7 +143,7 @@ public class ComponentsControllerTest {
 		form.put(ComponentModel.JSON_DATA, "{}");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(form);
+				utils.admin.getEmail()).withFormUrlEncodedBody(form);
 
 		Result result = callAction(
 				controllers.routes.ref.Components.submit(studyClone.getId()),
@@ -173,7 +170,7 @@ public class ComponentsControllerTest {
 		form.put(ComponentModel.JSON_DATA, "{}");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(form);
+				utils.admin.getEmail()).withFormUrlEncodedBody(form);
 		Result result = callAction(
 				controllers.routes.ref.Components.submit(studyClone.getId()),
 				request);
@@ -197,7 +194,7 @@ public class ComponentsControllerTest {
 		form.put(ComponentModel.JSON_DATA, "{");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(form);
+				utils.admin.getEmail()).withFormUrlEncodedBody(form);
 		try {
 			callAction(controllers.routes.ref.Components.submit(studyClone
 					.getId()), request);
@@ -213,7 +210,7 @@ public class ComponentsControllerTest {
 		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL);
+				utils.admin.getEmail());
 		Result result = callAction(
 				controllers.routes.ref.Components.changeProperty(
 						studyClone.getId(), studyClone.getComponent(1).getId(),
@@ -229,7 +226,7 @@ public class ComponentsControllerTest {
 		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL);
+				utils.admin.getEmail());
 		Result result = callAction(
 				controllers.routes.ref.Components.cloneComponent(
 						studyClone.getId(), studyClone.getComponent(1).getId()),
@@ -245,7 +242,7 @@ public class ComponentsControllerTest {
 		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL);
+				utils.admin.getEmail());
 		Result result = callAction(controllers.routes.ref.Components.remove(
 				studyClone.getId(), studyClone.getComponent(1).getId()),
 				request);

@@ -31,7 +31,6 @@ import services.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
-import common.Initializer;
 
 import controllers.Studies;
 import controllers.Users;
@@ -69,7 +68,7 @@ public class StudiesControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.index(studyClone.getId(), null),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
@@ -84,7 +83,7 @@ public class StudiesControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.create(),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
@@ -94,7 +93,7 @@ public class StudiesControllerTest {
 	@Test
 	public void callSubmit() throws Exception {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
+				utils.admin.getEmail()).withFormUrlEncodedBody(
 				ImmutableMap.of(StudyModel.TITLE, "Title Test",
 						StudyModel.DESCRIPTION, "Description test.",
 						StudyModel.DIRNAME, "dirName_submit",
@@ -126,7 +125,7 @@ public class StudiesControllerTest {
 	@Test
 	public void callSubmitValidationError() {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
+				utils.admin.getEmail()).withFormUrlEncodedBody(
 				ImmutableMap.of(StudyModel.TITLE, " ", StudyModel.DESCRIPTION,
 						"Description test.", StudyModel.DIRNAME, "%.test",
 						StudyModel.JSON_DATA, "{",
@@ -143,7 +142,7 @@ public class StudiesControllerTest {
 		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
+				utils.admin.getEmail()).withFormUrlEncodedBody(
 				ImmutableMap.of(StudyModel.TITLE, "Title Test",
 						StudyModel.DESCRIPTION, "Description test.",
 						StudyModel.DIRNAME, studyClone.getDirName(),
@@ -166,7 +165,7 @@ public class StudiesControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.edit(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
@@ -182,7 +181,7 @@ public class StudiesControllerTest {
 		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				Initializer.ADMIN_EMAIL).withFormUrlEncodedBody(
+				utils.admin.getEmail()).withFormUrlEncodedBody(
 				ImmutableMap.of(StudyModel.TITLE, "Title Test",
 						StudyModel.DESCRIPTION, "Description test.",
 						StudyModel.DIRNAME, "dirName_submitEdited",
@@ -206,7 +205,7 @@ public class StudiesControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.swapLock(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains("true");
 
@@ -221,7 +220,7 @@ public class StudiesControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.remove(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 	}
 
@@ -232,7 +231,7 @@ public class StudiesControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.cloneStudy(study.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
@@ -248,7 +247,7 @@ public class StudiesControllerTest {
 				controllers.routes.ref.Studies
 						.changeMembers(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
@@ -265,7 +264,7 @@ public class StudiesControllerTest {
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL,
-								Initializer.ADMIN_EMAIL));
+								utils.admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
@@ -283,7 +282,7 @@ public class StudiesControllerTest {
 					fakeRequest().withFormUrlEncodedBody(
 					// Just put some gibberish in the map
 							ImmutableMap.of("bla", "blu")).withSession(
-							Users.SESSION_EMAIL, Initializer.ADMIN_EMAIL));
+							Users.SESSION_EMAIL, utils.admin.getEmail()));
 		} catch (RuntimeException e) {
 			assertThat(e.getMessage()
 					.contains("An study should have at least one member."));
@@ -305,7 +304,7 @@ public class StudiesControllerTest {
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL,
-								Initializer.ADMIN_EMAIL));
+								utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Move second component one up
@@ -316,7 +315,7 @@ public class StudiesControllerTest {
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL,
-								Initializer.ADMIN_EMAIL));
+								utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
@@ -330,7 +329,7 @@ public class StudiesControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.showStudy(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
@@ -347,7 +346,7 @@ public class StudiesControllerTest {
 				controllers.routes.ref.Studies.createClosedStandaloneRun(studyClone
 						.getId()),
 				fakeRequest().withJsonBody(jsonNode).withSession(
-						Users.SESSION_EMAIL, Initializer.ADMIN_EMAIL));
+						Users.SESSION_EMAIL, utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
@@ -364,7 +363,7 @@ public class StudiesControllerTest {
 				controllers.routes.ref.Studies.createTesterRun(studyClone
 						.getId()),
 				fakeRequest().withJsonBody(jsonNode).withSession(
-						Users.SESSION_EMAIL, Initializer.ADMIN_EMAIL));
+						Users.SESSION_EMAIL, utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
@@ -380,7 +379,7 @@ public class StudiesControllerTest {
 						.getId()),
 				fakeRequest().withHeader("Referer",
 						"http://www.example.com:9000").withSession(
-						Users.SESSION_EMAIL, Initializer.ADMIN_EMAIL));
+						Users.SESSION_EMAIL, utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(
 				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
@@ -396,7 +395,7 @@ public class StudiesControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.workers(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						Initializer.ADMIN_EMAIL));
+						utils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(Breadcrumbs.WORKERS);
 

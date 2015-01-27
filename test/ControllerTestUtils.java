@@ -4,10 +4,11 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.persistence.EntityManager;
 
-import org.apache.commons.io.FileUtils;
-
 import models.StudyModel;
 import models.UserModel;
+
+import org.apache.commons.io.FileUtils;
+
 import play.Logger;
 import play.db.jpa.JPA;
 import play.db.jpa.JPAPlugin;
@@ -17,8 +18,8 @@ import scala.Option;
 import services.IOUtils;
 import services.JsonUtils.UploadUnmarshaller;
 import services.PersistanceUtils;
+import services.UserService;
 import services.ZipUtil;
-import common.Initializer;
 import controllers.publix.StudyAssets;
 
 /**
@@ -46,7 +47,7 @@ public class ControllerTestUtils {
 		JPA.bindForCurrentThread(entityManager);
 
 		// Get admin (admin is automatically created during initialisation)
-		admin = UserModel.findByEmail(Initializer.ADMIN_EMAIL);
+		admin = UserModel.findByEmail(UserService.ADMIN_EMAIL);
 	}
 
 	protected void stopApp() throws IOException {
