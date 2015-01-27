@@ -27,27 +27,26 @@ public class Workers extends Controller {
 
 	private static final String CLASS_NAME = Workers.class.getSimpleName();
 
+	/**
+	 * Shows view with worker details.
+	 */
 	@Transactional
 	public static Result index(Long workerId, String errorMsg, int httpStatus)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		Worker worker = Worker.findById(workerId);
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
+		Worker worker = Worker.findById(workerId);
 		ControllerUtils.checkWorker(worker, workerId);
 
 		Messages messages = new Messages().error(errorMsg);
-		// messages.error("This is dangerous!")
-		// .error("This is even more dangerous!")
-		// .warning("A warning from a friend").info("Just an info")
-		// .success("You were successful!");
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorker(worker,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
-				views.html.jatos.result.workersStudyResults.render(
-						studyList, loggedInUser, breadcrumbs, messages, worker));
+				views.html.jatos.result.workersStudyResults.render(studyList,
+						loggedInUser, breadcrumbs, messages, worker));
 	}
 
 	@Transactional
@@ -63,6 +62,8 @@ public class Workers extends Controller {
 
 	/**
 	 * HTTP Ajax request
+	 * 
+	 * Remove a worker including its results.
 	 */
 	@Transactional
 	public static Result remove(Long workerId) throws ResultException {
@@ -72,30 +73,36 @@ public class Workers extends Controller {
 		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
 		ControllerUtils.checkWorker(worker, workerId);
 
+		checkRemoval(worker, loggedInUser);
+		PersistanceUtils.removeWorker(worker);
+		return ok();
+	}
+
+	private static void checkRemoval(Worker worker, UserModel loggedInUser)
+			throws ResultException {
+		// JatosWorker associated to a JATOS user must not be removed
 		if (worker instanceof JatosWorker) {
 			JatosWorker maWorker = (JatosWorker) worker;
-			String errorMsg = ErrorMessages
-					.removeJatosWorkerNotAllowed(worker.getId(), maWorker.getUser()
-							.getName(), maWorker.getUser().getEmail());
+			String errorMsg = ErrorMessages.removeJatosWorkerNotAllowed(worker
+					.getId(), maWorker.getUser().getName(), maWorker.getUser()
+					.getEmail());
 			ControllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.FORBIDDEN);
 		}
 
 		// Check for every study if removal is allowed
-		StudyModel study;
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			study = studyResult.getStudy();
+			StudyModel study = studyResult.getStudy();
 			ControllerUtils.checkStandardForStudy(study, study.getId(),
 					loggedInUser);
 			ControllerUtils.checkStudyLocked(study);
 		}
-
-		PersistanceUtils.removeWorker(worker);
-		return ok();
 	}
 
 	/**
 	 * HTTP Ajax request
+	 * 
+	 * Returns a list of workers (as JSON) that did the specified study.
 	 */
 	@Transactional
 	public static Result tableDataByStudy(Long studyId) throws ResultException {

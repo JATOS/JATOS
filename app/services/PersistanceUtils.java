@@ -225,6 +225,9 @@ public class PersistanceUtils {
 		}
 	}
 
+	/**
+	 * Removes a Worker including its StudyResults and their ComponentResults.
+	 */
 	public static void removeWorker(Worker worker) {
 		// Don't remove JATOS' own workers
 		if (worker instanceof JatosWorker) {
