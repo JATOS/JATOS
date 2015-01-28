@@ -2,7 +2,9 @@ package controllers;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import models.ComponentModel;
@@ -155,8 +157,7 @@ public class ImportExport extends Controller {
 					PersistanceUtils.updateStudysPropertiesWODirName(
 							currentStudy, importedStudy);
 				}
-				PersistanceUtils.updateStudysComponents(currentStudy,
-						importedStudy);
+				updateStudysComponents(currentStudy, importedStudy);
 			}
 			// TODO simplify if command; unify return command
 			tempUnzippedStudyDir.delete();
@@ -272,6 +273,50 @@ public class ImportExport extends Controller {
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return tempDir;
+	}
+
+	/**
+	 * Update the components of the current study with the one of the imported
+	 * study.
+	 */
+	private static void updateStudysComponents(StudyModel currentStudy,
+			StudyModel updatedStudy) {
+		// Clear list and rebuild it from updated study
+		List<ComponentModel> currentComponentList = new ArrayList<ComponentModel>(
+				currentStudy.getComponentList());
+		currentStudy.getComponentList().clear();
+
+		for (ComponentModel updatedComponent : updatedStudy.getComponentList()) {
+			ComponentModel currentComponent = null;
+			// Find both matching components with the same UUID
+			for (ComponentModel tempComponent : currentComponentList) {
+				if (tempComponent.getUuid().equals(updatedComponent.getUuid())) {
+					currentComponent = tempComponent;
+					break;
+				}
+			}
+			if (currentComponent != null) {
+				PersistanceUtils.updateComponentsProperties(currentComponent,
+						updatedComponent);
+				currentStudy.addComponent(currentComponent);
+				currentComponentList.remove(currentComponent);
+			} else {
+				// If the updated component doesn't exist in the current study
+				// add it.
+				PersistanceUtils.addComponent(currentStudy, updatedComponent);
+			}
+		}
+
+		// Check whether any component from the current study are left that
+		// aren't in the updated study. Add them to the end of the list and
+		// put them into inactive (we don't remove them, because they could be
+		// associated with results)
+		for (ComponentModel currentComponent : currentComponentList) {
+			currentComponent.setActive(false);
+			currentStudy.addComponent(currentComponent);
+		}
+
+		currentStudy.merge();
 	}
 
 	/**

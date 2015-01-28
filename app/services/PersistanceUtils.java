@@ -1,6 +1,5 @@
 package services;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import models.ComponentModel;
@@ -27,6 +26,9 @@ public class PersistanceUtils {
 	public static boolean IN_MEMORY_DB = Play.application().configuration()
 			.getString("db.default.url").contains("jdbc:h2:mem:");
 
+	/**
+	 * Creates StudyResult and adds it to the worker.
+	 */
 	public static StudyResult createStudyResult(StudyModel study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);
 		studyResult.persist();
@@ -35,6 +37,9 @@ public class PersistanceUtils {
 		return studyResult;
 	}
 
+	/**
+	 * Creates ComponentResult and adds it to the study.
+	 */
 	public static ComponentResult createComponentResult(
 			StudyResult studyResult, ComponentModel component) {
 		ComponentResult componentResult = new ComponentResult(component);
@@ -46,6 +51,9 @@ public class PersistanceUtils {
 		return componentResult;
 	}
 
+	/**
+	 * Create MTWorker. Distinguishes between normal and sandbox.
+	 */
 	public static MTWorker createMTWorker(String mtWorkerId,
 			boolean mTurkSandbox) {
 		MTWorker worker;
@@ -58,6 +66,9 @@ public class PersistanceUtils {
 		return worker;
 	}
 
+	/**
+	 * Persist user und creates it's JatosWorker.
+	 */
 	public static void addUser(UserModel user) {
 		JatosWorker worker = new JatosWorker(user);
 		worker.persist();
@@ -65,22 +76,34 @@ public class PersistanceUtils {
 		user.persist();
 		worker.merge();
 	}
-	
+
+	/**
+	 * Changes name of user.
+	 */
 	public static void updateUser(UserModel user, String name) {
 		user.setName(name);
 		user.merge();
 	}
 
+	/**
+	 * Persist study and add member.
+	 */
 	public static void addStudy(StudyModel study, UserModel loggedInUser) {
 		study.persist();
 		PersistanceUtils.addMemberToStudy(study, loggedInUser);
 	}
 
+	/**
+	 * Add member to study.
+	 */
 	public static void addMemberToStudy(StudyModel study, UserModel member) {
 		study.addMember(member);
 		study.merge();
 	}
 
+	/**
+	 * Update properties of study with properties of updatedStudy.
+	 */
 	public static void updateStudysProperties(StudyModel study,
 			StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
@@ -91,6 +114,10 @@ public class PersistanceUtils {
 		study.merge();
 	}
 
+	/**
+	 * Update properties of study with properties of updatedStudy (excluding
+	 * study's dir name).
+	 */
 	public static void updateStudysPropertiesWODirName(StudyModel study,
 			StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
@@ -100,46 +127,9 @@ public class PersistanceUtils {
 		study.merge();
 	}
 
-	public static void updateStudysComponents(StudyModel currentStudy,
-			StudyModel updatedStudy) {
-		// Clear list and rebuild it from updated study
-		List<ComponentModel> currentComponentList = new ArrayList<ComponentModel>(
-				currentStudy.getComponentList());
-		currentStudy.getComponentList().clear();
-
-		for (ComponentModel updatedComponent : updatedStudy.getComponentList()) {
-			ComponentModel currentComponent = null;
-			// Find both matching components with the same UUID
-			for (ComponentModel tempComponent : currentComponentList) {
-				if (tempComponent.getUuid().equals(updatedComponent.getUuid())) {
-					currentComponent = tempComponent;
-					break;
-				}
-			}
-			if (currentComponent != null) {
-				PersistanceUtils.updateComponentsProperties(currentComponent,
-						updatedComponent);
-				currentStudy.addComponent(currentComponent);
-				currentComponentList.remove(currentComponent);
-			} else {
-				// If the updated component doesn't exist in the current study
-				// add it.
-				PersistanceUtils.addComponent(currentStudy, updatedComponent);
-			}
-		}
-
-		// Check whether any component from the current study are left that
-		// aren't in the updated study. Add them to the end of the list and
-		// put them into inactive (we don't remove them, because they could be
-		// associated with results)
-		for (ComponentModel currentComponent : currentComponentList) {
-			currentComponent.setActive(false);
-			currentStudy.addComponent(currentComponent);
-		}
-
-		currentStudy.merge();
-	}
-
+	/**
+	 * Remove study and its components
+	 */
 	public static void removeStudy(StudyModel study) {
 		// Remove all study's components
 		for (ComponentModel component : study.getComponentList()) {
@@ -152,6 +142,9 @@ public class PersistanceUtils {
 		study.remove();
 	}
 
+	/**
+	 * Persist component and add to study.
+	 */
 	public static void addComponent(StudyModel study, ComponentModel component) {
 		component.setStudy(study);
 		study.addComponent(component);
@@ -159,6 +152,9 @@ public class PersistanceUtils {
 		study.merge();
 	}
 
+	/**
+	 * Update component's properties with the ones from updatedComponent
+	 */
 	public static void updateComponentsProperties(ComponentModel component,
 			ComponentModel updatedComponent) {
 		component.setTitle(updatedComponent.getTitle());
@@ -170,11 +166,18 @@ public class PersistanceUtils {
 		component.merge();
 	}
 
+	/**
+	 * Change and persist active property.
+	 */
 	public static void changeActive(ComponentModel component, boolean active) {
 		component.setActive(active);
 		component.merge();
 	}
 
+	/**
+	 * Remove component from study, all its ComponentResults and the component
+	 * itself.
+	 */
 	public static void removeComponent(StudyModel study,
 			ComponentModel component) {
 		// Remove component from study
@@ -191,6 +194,9 @@ public class PersistanceUtils {
 		component.remove();
 	}
 
+	/**
+	 * Remove ComponentResult form its StudyResult and remove itself.
+	 */
 	public static void removeComponentResult(ComponentResult componentResult) {
 		StudyResult studyResult = componentResult.getStudyResult();
 		studyResult.removeComponentResult(componentResult);
@@ -198,6 +204,10 @@ public class PersistanceUtils {
 		componentResult.remove();
 	}
 
+	/**
+	 * Remove StudyResult and all its ComponentResults. Remove study result from
+	 * worker.
+	 */
 	public static void removeStudyResult(StudyResult studyResult) {
 		// Remove all component results of this study result
 		for (ComponentResult componentResult : studyResult
