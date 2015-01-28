@@ -16,10 +16,11 @@ import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;
 
 import org.apache.http.HttpHeaders;
-import org.hamcrest.core.IsInstanceOf;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import play.mvc.Result;
 import play.test.FakeRequest;
@@ -43,6 +44,9 @@ public class StudiesControllerTest {
 
 	private static ControllerTestUtils utils = new ControllerTestUtils();
 	private static StudyModel studyTemplate;
+
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
 
 	@BeforeClass
 	public static void startApp() throws Exception {
@@ -121,14 +125,13 @@ public class StudiesControllerTest {
 	public void callSubmitValidationError() {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				utils.admin.getEmail()).withFormUrlEncodedBody(
+		// Fill with non-valid values
 				ImmutableMap.of(StudyModel.TITLE, " ", StudyModel.DESCRIPTION,
 						"Description test.", StudyModel.DIRNAME, "%.test",
 						StudyModel.JSON_DATA, "{",
 						StudyModel.ALLOWED_WORKER_LIST, "WrongWorker"));
 
-		utils.thrown.expect(RuntimeException.class);
-		utils.thrown.expectCause(IsInstanceOf
-				.<Throwable> instanceOf(ResultException.class));
+		thrown.expect(ResultException.class);
 		callAction(controllers.routes.ref.Studies.submit(), request);
 	}
 
@@ -144,10 +147,9 @@ public class StudiesControllerTest {
 						StudyModel.JSON_DATA, "{}",
 						StudyModel.ALLOWED_WORKER_LIST, ""));
 
+		thrown.expect(ResultException.class);
 		try {
 			callAction(controllers.routes.ref.Studies.submit(), request);
-		} catch (RuntimeException e) {
-			assertThat(e.getCause() instanceof ResultException);
 		} finally {
 			utils.removeStudy(studyClone);
 		}
@@ -270,6 +272,8 @@ public class StudiesControllerTest {
 	public void callSubmitChangedMembersZeroMembers() throws Exception {
 		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
+		thrown.expect(ResultException.class);
+		thrown.expectMessage("An study should have at least one member.");
 		try {
 			callAction(
 					controllers.routes.ref.Studies.submitChangedMembers(studyClone
@@ -278,10 +282,6 @@ public class StudiesControllerTest {
 					// Just put some gibberish in the map
 							ImmutableMap.of("bla", "blu")).withSession(
 							Users.SESSION_EMAIL, utils.admin.getEmail()));
-		} catch (RuntimeException e) {
-			assertThat(e.getMessage()
-					.contains("An study should have at least one member."));
-			assertThat(e.getCause() instanceof ResultException);
 		} finally {
 			utils.removeStudy(studyClone);
 		}

@@ -13,16 +13,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Resource;
-import javax.transaction.UserTransaction;
-
 import models.ComponentModel;
 import models.StudyModel;
 
 import org.apache.http.HttpHeaders;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import play.db.jpa.JPA;
 import play.mvc.Result;
@@ -44,9 +43,9 @@ public class ComponentsControllerTest {
 	private static ControllerTestUtils utils = new ControllerTestUtils();
 	private static StudyModel studyTemplate;
 
-	@Resource
-	private UserTransaction userTransaction;
-
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
+	
 	@BeforeClass
 	public static void startApp() throws Exception {
 		utils.startApp();
@@ -96,14 +95,14 @@ public class ComponentsControllerTest {
 		studyClone.getComponent(1).setHtmlFilePath(null);
 		JPA.em().getTransaction().commit();
 
+		thrown.expect(ResultException.class);
+		thrown.expectMessage("HTML file path is empty.");
 		try {
 			callAction(
 					controllers.routes.ref.Components.showComponent(studyClone
 							.getId(), studyClone.getComponent(1).getId()),
 					fakeRequest().withSession(Users.SESSION_EMAIL,
 							utils.admin.getEmail()));
-		} catch (RuntimeException e) {
-			assertThat(e.getCause() instanceof ResultException);
 		} finally {
 			utils.removeStudy(studyClone);
 		}
@@ -195,11 +194,10 @@ public class ComponentsControllerTest {
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				utils.admin.getEmail()).withFormUrlEncodedBody(form);
+		thrown.expect(ResultException.class);
 		try {
 			callAction(controllers.routes.ref.Components.submit(studyClone
 					.getId()), request);
-		} catch (RuntimeException e) {
-			assertThat(e.getCause() instanceof ResultException);
 		} finally {
 			utils.removeStudy(studyClone);
 		}

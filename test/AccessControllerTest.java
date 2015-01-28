@@ -1,9 +1,5 @@
-import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
-import static play.test.Helpers.redirectLocation;
-import static play.test.Helpers.status;
 
 import java.io.IOException;
 
@@ -12,10 +8,11 @@ import models.UserModel;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import play.mvc.HandlerRef;
-import play.mvc.Result;
 import services.IOUtils;
 import controllers.Studies;
 import controllers.Users;
@@ -32,6 +29,9 @@ public class AccessControllerTest {
 	private static StudyModel studyTemplate;
 	private static UserModel testUser;
 
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
+
 	@BeforeClass
 	public static void startApp() throws Exception {
 		utils.startApp();
@@ -46,50 +46,38 @@ public class AccessControllerTest {
 	}
 
 	private void checkDeniedAccess(HandlerRef ref) {
+		thrown.expect(ResultException.class);
+		thrown.expectMessage("No user logged in");
 		// Call action without testUser in session
-		Result result = callAction(ref);
-		assertThat(status(result)).isEqualTo(SEE_OTHER);
-		redirectLocation(result).contains("login");
+		callAction(ref);
 	}
 
 	private void checkNotMember(HandlerRef ref, StudyModel study) {
 		utils.removeMember(study, utils.admin);
-		utils.thrown.expect(RuntimeException.class);
-		try {
-			callAction(
-					ref,
-					fakeRequest().withSession(Users.SESSION_EMAIL,
-							utils.admin.getEmail()));
-		} catch (RuntimeException e) {
-			assertThat(e.getMessage()).contains("isn't member of study");
-			assertThat(e.getCause() instanceof ResultException);
-		}
+		thrown.expect(ResultException.class);
+		thrown.expectMessage("isn't member of study");
+		callAction(
+				ref,
+				fakeRequest().withSession(Users.SESSION_EMAIL,
+						utils.admin.getEmail()));
 	}
 
 	private void checkRightUser(HandlerRef ref) {
-		utils.thrown.expect(RuntimeException.class);
-		try {
-			callAction(
-					ref,
-					fakeRequest().withSession(Users.SESSION_EMAIL,
-							utils.admin.getEmail()));
-		} catch (RuntimeException e) {
-			assertThat(e.getMessage()).contains("You must be logged in as");
-			assertThat(e.getCause() instanceof ResultException);
-		}
+		thrown.expect(ResultException.class);
+		thrown.expectMessage("You must be logged in as");
+		callAction(
+				ref,
+				fakeRequest().withSession(Users.SESSION_EMAIL,
+						utils.admin.getEmail()));
 	}
-	
+
 	private void checkRemoveJatosWorker(HandlerRef ref) {
-		utils.thrown.expect(RuntimeException.class);
-		try {
-			callAction(
-					ref,
-					fakeRequest().withSession(Users.SESSION_EMAIL,
-							utils.admin.getEmail()));
-		} catch (RuntimeException e) {
-			assertThat(e.getMessage()).contains("is a worker of JATOS");
-			assertThat(e.getCause() instanceof ResultException);
-		}
+		thrown.expect(ResultException.class);
+		thrown.expectMessage("is a worker of JATOS");
+		callAction(
+				ref,
+				fakeRequest().withSession(Users.SESSION_EMAIL,
+						utils.admin.getEmail()));
 	}
 
 	@Test
@@ -467,15 +455,15 @@ public class AccessControllerTest {
 		checkDeniedAccess(ref);
 		checkRightUser(ref);
 	}
-	
+
 	@Test
 	public void callUsersChangePassword() throws Exception {
-		HandlerRef ref = controllers.routes.ref.Users
-				.changePassword(testUser.getEmail());
+		HandlerRef ref = controllers.routes.ref.Users.changePassword(testUser
+				.getEmail());
 		checkDeniedAccess(ref);
 		checkRightUser(ref);
 	}
-	
+
 	@Test
 	public void callUsersSubmitChangedPassword() throws Exception {
 		HandlerRef ref = controllers.routes.ref.Users
@@ -483,18 +471,18 @@ public class AccessControllerTest {
 		checkDeniedAccess(ref);
 		checkRightUser(ref);
 	}
-	
+
 	@Test
 	public void callWorkersIndex() throws Exception {
-		HandlerRef ref = controllers.routes.ref.Workers
-				.index(utils.admin.getWorker().getId());
+		HandlerRef ref = controllers.routes.ref.Workers.index(utils.admin
+				.getWorker().getId());
 		checkDeniedAccess(ref);
 	}
-	
+
 	@Test
 	public void callWorkersRemove() throws Exception {
-		HandlerRef ref = controllers.routes.ref.Workers
-				.remove(utils.admin.getWorker().getId());
+		HandlerRef ref = controllers.routes.ref.Workers.remove(utils.admin
+				.getWorker().getId());
 		checkDeniedAccess(ref);
 		checkRemoveJatosWorker(ref);
 	}

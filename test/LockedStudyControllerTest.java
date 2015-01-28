@@ -1,4 +1,3 @@
-import static org.fest.assertions.Assertions.assertThat;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
 
@@ -8,7 +7,9 @@ import models.StudyModel;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import play.mvc.HandlerRef;
 import services.IOUtils;
@@ -26,6 +27,9 @@ public class LockedStudyControllerTest {
 	private static ControllerTestUtils utils = new ControllerTestUtils();
 	private static StudyModel studyTemplate;
 
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
+
 	@BeforeClass
 	public static void startApp() throws Exception {
 		utils.startApp();
@@ -39,17 +43,12 @@ public class LockedStudyControllerTest {
 	}
 
 	private void checkDenyLocked(HandlerRef ref) {
-		utils.thrown.expect(RuntimeException.class);
-		try {
-			callAction(
-					ref,
-					fakeRequest().withSession(Users.SESSION_EMAIL,
-							utils.admin.getEmail()));
-		} catch (RuntimeException e) {
-			assertThat(e.getMessage()).contains(
-					"Unlock it if you want to make changes.");
-			assertThat(e.getCause() instanceof ResultException);
-		}
+		thrown.expect(ResultException.class);
+		thrown.expectMessage("Unlock it if you want to make changes.");
+		callAction(
+				ref,
+				fakeRequest().withSession(Users.SESSION_EMAIL,
+						utils.admin.getEmail()));
 	}
 
 	@Test

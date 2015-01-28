@@ -43,6 +43,11 @@ import controllers.Users;
  */
 public class ImportExportControllerTest {
 
+	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
+	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
+	private static final String TEST_STUDY_ZIP_PATH = "test/assets/basic_example_study.zip";
+	private static final String TEST_STUDY_BKP_ZIP_PATH = "test/assets/basic_example_study_bkp.zip";
+
 	private static ControllerTestUtils utils = new ControllerTestUtils();
 
 	@BeforeClass
@@ -196,9 +201,9 @@ public class ImportExportControllerTest {
 		utils.addStudy(study);
 
 		// Make a backup of our component file
-		File componentFile = new File("test/hello_world.jac");
+		File componentFile = new File(TEST_COMPONENT_JAC_PATH);
 		File componentFileBkp = new File(System.getProperty("java.io.tmpdir"),
-				"hello_world_bkp.jac");
+				TEST_COMPONENT_BKP_JAC_FILENAME);
 		FileUtils.copyFile(componentFile, componentFileBkp);
 
 		assertThat(study.getFirstComponent().getTitle()).doesNotContain(
@@ -289,8 +294,8 @@ public class ImportExportControllerTest {
 
 	private Result callImportStudy() throws IOException {
 		// Make a backup of our study file
-		File studyZip = new File("test/basic_example_study.zip");
-		File studyZipBkp = new File("test/basic_example_study_bkp.zip");
+		File studyZip = new File(TEST_STUDY_ZIP_PATH);
+		File studyZipBkp = new File(TEST_STUDY_BKP_ZIP_PATH);
 		FileUtils.copyFile(studyZip, studyZipBkp);
 
 		Result result = callAction(
