@@ -9,8 +9,6 @@ import models.StudyModel;
 import models.UserModel;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 
 import play.Logger;
 import play.db.jpa.JPA;
@@ -39,9 +37,6 @@ public class ControllerTestUtils {
 	protected FakeApplication application;
 	protected EntityManager entityManager;
 	protected UserModel admin;
-	
-	@Rule
-	protected ExpectedException thrown = ExpectedException.none();
 
 	protected void startApp() throws Exception {
 		application = Helpers.fakeApplication();
@@ -76,7 +71,7 @@ public class ControllerTestUtils {
 
 	protected StudyModel importExampleStudy() throws NoSuchAlgorithmException,
 			IOException {
-		File studyZip = new File("test/basic_example_study.zip");
+		File studyZip = new File("test/assets/basic_example_study.zip");
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
 		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
@@ -104,8 +99,8 @@ public class ControllerTestUtils {
 		return studyClone;
 	}
 
-	protected synchronized UserModel createAndPersistUser(String email, String name,
-			String password) throws UnsupportedEncodingException,
+	protected synchronized UserModel createAndPersistUser(String email,
+			String name, String password) throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
 		String passwordHash = UserService.getHashMDFive(password);
 		UserModel user = new UserModel(email, name, passwordHash);
@@ -114,7 +109,7 @@ public class ControllerTestUtils {
 		entityManager.getTransaction().commit();
 		return user;
 	}
-	
+
 	protected synchronized void removeStudy(StudyModel study)
 			throws IOException {
 		IOUtils.removeStudyAssetsDir(study.getDirName());
@@ -128,14 +123,15 @@ public class ControllerTestUtils {
 		PersistanceUtils.addStudy(study, admin);
 		entityManager.getTransaction().commit();
 	}
-	
+
 	protected synchronized void lockStudy(StudyModel study) {
 		entityManager.getTransaction().begin();
 		study.setLocked(true);
 		entityManager.getTransaction().commit();
 	}
 
-	protected synchronized void removeMember(StudyModel studyClone, UserModel member) {
+	protected synchronized void removeMember(StudyModel studyClone,
+			UserModel member) {
 		entityManager.getTransaction().begin();
 		StudyModel.findById(studyClone.getId()).removeMember(member);
 		entityManager.getTransaction().commit();
