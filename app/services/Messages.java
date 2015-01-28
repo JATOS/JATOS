@@ -3,6 +3,11 @@ package services;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Container class for messages destined for JATOS' GUI views
+ * 
+ * @author Kristian Lange
+ */
 public class Messages {
 
 	private List<String> successList = new ArrayList<>();

@@ -12,6 +12,11 @@ import org.apache.commons.lang3.StringUtils;
 import play.mvc.Http.MultipartFormData.FilePart;
 import controllers.publix.StudyAssets;
 
+/**
+ * Utility class that handles access to the system's file system.
+ * 
+ * @author Kristian Lange
+ */
 public class IOUtils {
 
 	public static final String STUDY_FILE_SUFFIX = "jas";

@@ -10,6 +10,11 @@ import models.workers.Worker;
 import play.mvc.Call;
 import controllers.routes;
 
+/**
+ * Provides breadcrumbs for different views of JATOS' GUI.
+ * 
+ * @author Kristian Lange
+ */
 public class Breadcrumbs {
 
 	public static final String HOME = "Home";

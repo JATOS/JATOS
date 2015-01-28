@@ -28,6 +28,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import common.Common;
 
+/**
+ * Utility class the handles everything with JSON, like marshaling and
+ * unmarshaling.
+ * 
+ * @author Kristian Lange
+ */
 public class JsonUtils {
 
 	public static final String DATA = "data";
