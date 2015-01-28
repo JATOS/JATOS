@@ -50,7 +50,7 @@ public class Components extends Controller {
 
 		if (component.getHtmlFilePath() == null
 				|| component.getHtmlFilePath().isEmpty()) {
-			String errorMsg = ErrorMessages.urlViewEmpty(componentId);
+			String errorMsg = ErrorMessages.htmlFilePathEmpty(componentId);
 			ControllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}

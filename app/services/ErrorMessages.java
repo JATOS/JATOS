@@ -160,8 +160,8 @@ public abstract class ErrorMessages {
 		return errorMsg;
 	}
 
-	public static String urlViewEmpty(Long componentId) {
-		String errorMsg = "Component " + componentId + "'s URL field is empty.";
+	public static String htmlFilePathEmpty(Long componentId) {
+		String errorMsg = "Component " + componentId + "'s HTML file path is empty.";
 		return errorMsg;
 	}
 
