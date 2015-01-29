@@ -1,0 +1,1 @@
+web:    play run -Dconfig.file="conf/heroku.conf" -Ddb.default.url=${CLEARDB_DATABASE_URL}
