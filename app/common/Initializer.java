@@ -12,10 +12,19 @@ import play.db.jpa.JPA;
 import services.UserService;
 import controllers.publix.StudyAssets;
 
+/**
+ * This Initializer is called once with every start.
+ * 
+ * @author Kristian Lange
+ */
 public class Initializer {
 
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
 
+	/**
+	 * This method is called once with every start and does some health checks
+	 * or DB updates.
+	 */
 	public static void initialize() {
 		checkAdmin();
 		checkUuid();
@@ -60,14 +69,15 @@ public class Initializer {
 	}
 
 	/**
-	 * Check for user admin: In case the application is started the first time we need
-	 * an initial user: admin. If admin can't be found, create one.
+	 * Check for user admin: In case the application is started the first time
+	 * we need an initial user: admin. If admin can't be found, create one.
 	 */
 	private static void checkAdmin() {
 		JPA.withTransaction(new play.libs.F.Callback0() {
 			@Override
 			public void invoke() throws Throwable {
-				UserModel admin = UserModel.findByEmail(UserService.ADMIN_EMAIL);
+				UserModel admin = UserModel
+						.findByEmail(UserService.ADMIN_EMAIL);
 				if (admin == null) {
 					UserService.createAdmin();
 				}

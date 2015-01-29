@@ -9,6 +9,12 @@ import java.util.List;
 import models.UserModel;
 import play.data.validation.ValidationError;
 
+/**
+ * Service class mostly for Users controller. Handles everything around
+ * UserModel.
+ * 
+ * @author Kristian Lange
+ */
 public class UserService {
 
 	public static final String ADMIN_EMAIL = "admin";
@@ -49,11 +55,11 @@ public class UserService {
 			errorList.add(new ValidationError(UserModel.EMAIL,
 					ErrorMessages.THIS_EMAIL_IS_ALREADY_REGISTERED));
 		}
-		
+
 		checkPasswords(password, passwordRepeat, errorList);
 		return errorList;
 	}
-	
+
 	public static List<ValidationError> validateChangePassword(UserModel user,
 			String password, String passwordRepeat, String oldPasswordHash)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
@@ -64,13 +70,13 @@ public class UserService {
 			errorList.add(new ValidationError(UserModel.OLD_PASSWORD,
 					ErrorMessages.WRONG_OLD_PASSWORD));
 		}
-		
+
 		checkPasswords(password, passwordRepeat, errorList);
 		return errorList;
 	}
 
-	public static void checkPasswords(String password,
-			String passwordRepeat, List<ValidationError> errorList)
+	public static void checkPasswords(String password, String passwordRepeat,
+			List<ValidationError> errorList)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 
 		// Check for non empty passwords

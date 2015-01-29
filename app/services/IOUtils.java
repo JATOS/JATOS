@@ -9,7 +9,6 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import play.mvc.Http.MultipartFormData.FilePart;
 import controllers.publix.StudyAssets;
 
 /**
@@ -25,14 +24,17 @@ public class IOUtils {
 	public static final String TXT_FILE_SUFFIX = "txt";
 
 /**
-	 * Illegal characters or strings in file or directory name '/', '\n', '\r',
-	 * '//', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':',
+	 * Regular expression of illegal characters or strings in file or directory names
+	 * '/', '\n', '\r', * '//', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':',
 	 * '~', '!', '§', '$', '%', '&' 
 	 */
 	public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&]";
 
-	private static final int FILENAME_LENGTH = 35;
+	private static final int MAX_FILENAME_LENGTH = 35;
 
+	/**
+	 * Reads file line by line and returns as String.
+	 */
 	public static String readFile(File file) throws IOException {
 		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
 			StringBuilder sb = new StringBuilder();
@@ -124,7 +126,7 @@ public class IOUtils {
 	public static String generateFileName(String rawName, Long id, String suffix) {
 		String filename = rawName.trim()
 				.replaceAll(REGEX_ILLEGAL_IN_FILENAME, "_").toLowerCase();
-		filename = StringUtils.left(filename, FILENAME_LENGTH);
+		filename = StringUtils.left(filename, MAX_FILENAME_LENGTH);
 		if (id != null) {
 			filename = filename.concat("_" + id);
 		}
@@ -156,6 +158,9 @@ public class IOUtils {
 		return StudyAssets.STUDY_ASSETS_ROOT_PATH + File.separator + dirName;
 	}
 
+	/**
+	 * Remove study assets' directory if exists.
+	 */
 	public static void removeStudyAssetsDir(String dirName) throws IOException {
 		File dir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH, dirName);
 		if (!dir.exists()) {
@@ -168,8 +173,13 @@ public class IOUtils {
 		FileUtils.deleteDirectory(dir);
 	}
 
-	public synchronized static String cloneStudyAssetsDirectory(String srcDirName)
-			throws IOException {
+	/**
+	 * Copies study assets' directory. Adds suffix '_clone' to the name of the
+	 * new assets dir. If a dir with suffix '_clone' already exists it adds '_'
+	 * + number instead.
+	 */
+	public synchronized static String cloneStudyAssetsDirectory(
+			String srcDirName) throws IOException {
 		File srcDir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH,
 				srcDirName);
 		if (!srcDir.isDirectory()) {
@@ -191,6 +201,15 @@ public class IOUtils {
 		return destDir.getName();
 	}
 
+	/**
+	 * Moves study assets dir into the assets root dir.
+	 * 
+	 * @param srcDir
+	 *            The source dir File can be anywhere in the file system.
+	 * @param targetDirName
+	 *            Name of the target dir within the assets root dir
+	 * @throws IOException
+	 */
 	public static void moveStudyAssetsDir(File srcDir, String targetDirName)
 			throws IOException {
 		File targetDir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH,
@@ -204,6 +223,13 @@ public class IOUtils {
 		FileUtils.moveDirectory(srcDir, targetDir);
 	}
 
+	/**
+	 * Creates a study assets dir.
+	 * 
+	 * @param dirName
+	 *            Name of the new study assets dir.
+	 * @throws IOException
+	 */
 	public static void createStudyAssetsDir(String dirName) throws IOException {
 		File dir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH, dirName);
 		if (dir.exists()) {
@@ -244,17 +270,9 @@ public class IOUtils {
 		return matches;
 	}
 
-	public static void moveFileIntoStudyAssetsDir(FilePart filePart,
-			String dirName) throws IOException {
-		File file = filePart.getFile();
-		File destPath = getFileInStudyAssetsDir(dirName, filePart.getFilename());
-		boolean result = file.renameTo(destPath);
-		if (!result) {
-			throw new IOException(ErrorMessages.fileNotRenamed(file.getName(),
-					destPath.getName()));
-		}
-	}
-
+	/**
+	 * Renames a study assets dir.
+	 */
 	public static void renameStudyAssetsDir(String oldDirName, String newDirName)
 			throws IOException {
 		File oldDir = new File(IOUtils.generateStudyAssetsPath(oldDirName));

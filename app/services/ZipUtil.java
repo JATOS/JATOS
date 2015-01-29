@@ -12,10 +12,20 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * Utility class that does zipping and unzipping.
+ * 
+ * @author Kristian Lange
+ */
 public class ZipUtil {
 
 	private static final int BUFFER_SIZE = 4096;
 
+	/**
+	 * Unzips the given File. Creates a new File object with the prefix
+	 * 'JatosImport_' within the systems temp directory. The method can handle
+	 * recursive unzipping of sub-directories.
+	 */
 	public static File unzip(File file) throws IOException {
 		ZipFile zipFile = new ZipFile(file);
 		Enumeration<?> enumeration = zipFile.entries();
@@ -50,6 +60,11 @@ public class ZipUtil {
 		return tempDir;
 	}
 
+	/**
+	 * Zips a study. It returns a File object with the name 'study.zip' within
+	 * the system's temp directory. The zip file will contain the study assets'
+	 * directory and the study's JSON data (a .jas file).
+	 */
 	static public File zipStudy(String studyAssetsDirPath,
 			String studyAssetsDirNameInZip, String studyAsJsonPath)
 			throws IOException {
@@ -63,7 +78,7 @@ public class ZipUtil {
 		addDirectoryToZip("", studyAssetsDirNameInZip, studyAssetsDirPath,
 				zipOutputStream);
 
-		// Add study's data as JSON file to zip
+		// Add study as JSON file to zip
 		addFileToZip("", studyAsJsonPath, zipOutputStream);
 
 		zipOutputStream.flush();

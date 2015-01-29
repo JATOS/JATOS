@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import common.Common;
 
 /**
- * Utility class the handles everything with JSON, like marshaling and
+ * Utility class the handles everything around JSON, like marshaling and
  * unmarshaling.
  * 
  * @author Kristian Lange
@@ -176,6 +176,10 @@ public class JsonUtils {
 		return asJsonStr;
 	}
 
+	/**
+	 * Returns JSON of all ComponentResuls of the specified component. The JSON
+	 * string is intended for use in JATOS' GUI.
+	 */
 	public static String allComponentResultsForUI(ComponentModel component)
 			throws JsonProcessingException {
 		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
@@ -192,6 +196,10 @@ public class JsonUtils {
 		return asJsonStr;
 	}
 
+	/**
+	 * Returns ObjectNode of the given StudyResult. It contains the worker,
+	 * study's ID and title, and all ComponentResults.
+	 */
 	private static ObjectNode studyResultAsJsonNode(StudyResult studyResult) {
 		ObjectNode studyResultNode = OBJECTMAPPER.valueToTree(studyResult);
 
@@ -216,6 +224,10 @@ public class JsonUtils {
 		return studyResultNode;
 	}
 
+	/**
+	 * Returns an ObjectNode of the given ComponentResult. It contains the study
+	 * ID, component ID and component title.
+	 */
 	private static ObjectNode componentResultAsJsonNode(
 			ComponentResult componentResult) {
 		ObjectNode componentResultNode = OBJECTMAPPER
@@ -236,6 +248,11 @@ public class JsonUtils {
 		return componentResultNode;
 	}
 
+	/**
+	 * Returns JSON string of the given study. It includes the 'resultCount',
+	 * the number of StudyResults of the study so far. This JSON is intended for
+	 * JATOS' GUI.
+	 */
 	public static String studyForUI(StudyModel study)
 			throws JsonProcessingException {
 		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
@@ -244,6 +261,11 @@ public class JsonUtils {
 		return asJsonStr;
 	}
 
+	/**
+	 * Returns a JSON string of all components in the given list. This includes
+	 * the 'resultCount', the number of ComponentResults of this component so
+	 * far. Intended for use in JATOS' GUI.
+	 */
 	public static String allComponentsForUI(List<ComponentModel> componentList)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
@@ -260,6 +282,10 @@ public class JsonUtils {
 		return asJsonStr;
 	}
 
+	/**
+	 * Returns a JSON string for the given set of workers. Intended for use in
+	 * JATOS' GUI.
+	 */
 	public static String allWorkersForUI(Set<Worker> workerSet)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
@@ -285,6 +311,9 @@ public class JsonUtils {
 		return obj;
 	}
 
+	/**
+	 * Generic JSON marshaler.
+	 */
 	public static String asJson(Object obj) {
 		ObjectWriter objectWriter = OBJECTMAPPER.writer();
 		String objectAsJson = null;
@@ -314,6 +343,10 @@ public class JsonUtils {
 		OBJECTMAPPER.writer().writeValue(file, node);
 	}
 
+	/**
+	 * Generic JSON marshaler that adds the JATOS version to the JSON string.
+	 * Intended for file IO.
+	 */
 	private static ObjectNode generateNodeWithVersionForIO(Object obj)
 			throws IOException {
 		ObjectNode node = OBJECTMAPPER.createObjectNode();

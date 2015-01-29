@@ -25,6 +25,10 @@ public class Global extends GlobalSettings {
 		return INJECTOR.getInstance(controllerClass);
 	}
 
+	/**
+	 * Needed for nan static action methods in controllers. Used in Publix
+	 * interface.
+	 */
 	private static Injector createInjector() {
 		return Guice.createInjector();
 	}
@@ -39,6 +43,8 @@ public class Global extends GlobalSettings {
 	public Promise<SimpleResult> onError(RequestHeader request, Throwable t) {
 		Throwable cause = t.getCause();
 		Throwable causeCause = t.getCause().getCause();
+		
+		// Handle PublixException from Publix (public API) controllers
 		if (cause instanceof PublixException) {
 			PublixException publixException = (PublixException) cause;
 			SimpleResult result = publixException.getSimpleResult();
@@ -49,6 +55,8 @@ public class Global extends GlobalSettings {
 			SimpleResult result = publixException.getSimpleResult();
 			return Promise.<SimpleResult> pure(result);
 		}
+		
+		// Handle ResultException from JATOS' GUI controllers
 		if (cause instanceof ResultException) {
 			ResultException resultException = (ResultException) cause;
 			SimpleResult result = resultException.getResult();
