@@ -26,7 +26,7 @@ public class Global extends GlobalSettings {
 	}
 
 	/**
-	 * Needed for nan static action methods in controllers. Used in Publix
+	 * Needed for non-static action methods in controllers. Used in Publix
 	 * interface.
 	 */
 	private static Injector createInjector() {
