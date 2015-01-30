@@ -4,8 +4,11 @@ import java.io.File;
 import java.util.List;
 import java.util.UUID;
 
+import com.google.inject.Inject;
+
 import models.ComponentModel;
 import models.StudyModel;
+import models.UserDao;
 import models.UserModel;
 import play.Logger;
 import play.db.jpa.JPA;
@@ -13,7 +16,8 @@ import services.UserService;
 import controllers.publix.StudyAssets;
 
 /**
- * This Initializer is called once with every start.
+ * This Initializer is called once with every start and does some JATOS specific
+ * initialisation.
  * 
  * @author Kristian Lange
  */
@@ -21,11 +25,20 @@ public class Initializer {
 
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
 
+	private UserDao userDao;
+	private UserService userService;
+
+	@Inject
+	public Initializer(UserDao userDao, UserService userService) {
+		this.userDao = userDao;
+		this.userService = userService;
+	}
+
 	/**
 	 * This method is called once with every start and does some health checks
 	 * or DB updates.
 	 */
-	public static void initialize() {
+	public void initialize() {
 		checkAdmin();
 		checkUuid();
 		checkStudyAssetsRootDir();
@@ -72,14 +85,13 @@ public class Initializer {
 	 * Check for user admin: In case the application is started the first time
 	 * we need an initial user: admin. If admin can't be found, create one.
 	 */
-	private static void checkAdmin() {
+	private void checkAdmin() {
 		JPA.withTransaction(new play.libs.F.Callback0() {
 			@Override
 			public void invoke() throws Throwable {
-				UserModel admin = UserModel
-						.findByEmail(UserService.ADMIN_EMAIL);
+				UserModel admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 				if (admin == null) {
-					UserService.createAdmin();
+					userService.createAdmin();
 				}
 			}
 		});

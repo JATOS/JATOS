@@ -11,6 +11,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import common.Global;
+
 import play.mvc.HandlerRef;
 import services.IOUtils;
 import controllers.Studies;
@@ -24,7 +26,8 @@ import exceptions.ResultException;
  */
 public class LockedStudyControllerTest {
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
+	private static ControllerTestUtils utils = Global.INJECTOR
+			.getInstance(ControllerTestUtils.class);
 	private static StudyModel studyTemplate;
 
 	@Rule

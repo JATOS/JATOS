@@ -23,6 +23,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import common.Global;
+
 import play.db.jpa.JPA;
 import play.mvc.Result;
 import play.test.FakeRequest;
@@ -40,7 +42,8 @@ import exceptions.ResultException;
  */
 public class ComponentsControllerTest {
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
+	private static ControllerTestUtils utils = Global.INJECTOR
+			.getInstance(ControllerTestUtils.class);
 	private static StudyModel studyTemplate;
 
 	@Rule

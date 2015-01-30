@@ -12,6 +12,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import common.Global;
+
 import play.mvc.Result;
 import services.IOUtils;
 import controllers.publix.StudyAssets;
@@ -23,7 +25,8 @@ import controllers.publix.StudyAssets;
  */
 public class StudyAssetsTest {
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
+	private static ControllerTestUtils utils = Global.INJECTOR
+			.getInstance(ControllerTestUtils.class);
 	private static StudyModel studyTemplate;
 	
 	@BeforeClass

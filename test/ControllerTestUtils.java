@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import javax.persistence.EntityManager;
 
 import models.StudyModel;
+import models.UserDao;
 import models.UserModel;
 
 import org.apache.commons.io.FileUtils;
@@ -21,6 +22,9 @@ import services.JsonUtils.UploadUnmarshaller;
 import services.PersistanceUtils;
 import services.UserService;
 import services.ZipUtil;
+
+import com.google.inject.Inject;
+
 import controllers.publix.StudyAssets;
 
 /**
@@ -38,6 +42,16 @@ public class ControllerTestUtils {
 	protected EntityManager entityManager;
 	protected UserModel admin;
 
+	private final UserDao userDao;
+	private final PersistanceUtils persistanceUtils;
+
+	@Inject
+	public ControllerTestUtils(UserDao userDao,
+			PersistanceUtils persistanceUtils) {
+		this.userDao = userDao;
+		this.persistanceUtils = persistanceUtils;
+	}
+
 	protected void startApp() throws Exception {
 		application = Helpers.fakeApplication();
 		Helpers.start(application);
@@ -48,7 +62,7 @@ public class ControllerTestUtils {
 		JPA.bindForCurrentThread(entityManager);
 
 		// Get admin (admin is automatically created during initialisation)
-		admin = UserModel.findByEmail(UserService.ADMIN_EMAIL);
+		admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 	}
 
 	protected void stopApp() throws IOException {
@@ -105,7 +119,7 @@ public class ControllerTestUtils {
 		String passwordHash = UserService.getHashMDFive(password);
 		UserModel user = new UserModel(email, name, passwordHash);
 		entityManager.getTransaction().begin();
-		PersistanceUtils.addUser(user);
+		persistanceUtils.addUser(user);
 		entityManager.getTransaction().commit();
 		return user;
 	}
@@ -114,13 +128,13 @@ public class ControllerTestUtils {
 			throws IOException {
 		IOUtils.removeStudyAssetsDir(study.getDirName());
 		entityManager.getTransaction().begin();
-		PersistanceUtils.removeStudy(study);
+		persistanceUtils.removeStudy(study);
 		entityManager.getTransaction().commit();
 	}
 
 	protected synchronized void addStudy(StudyModel study) {
 		entityManager.getTransaction().begin();
-		PersistanceUtils.addStudy(study, admin);
+		persistanceUtils.addStudy(study, admin);
 		entityManager.getTransaction().commit();
 	}
 

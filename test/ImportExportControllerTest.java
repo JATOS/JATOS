@@ -32,6 +32,7 @@ import services.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import common.Global;
 
 import controllers.ImportExport;
 import controllers.Users;
@@ -48,7 +49,8 @@ public class ImportExportControllerTest {
 	private static final String TEST_STUDY_ZIP_PATH = "test/assets/basic_example_study.zip";
 	private static final String TEST_STUDY_BKP_ZIP_PATH = "test/assets/basic_example_study_bkp.zip";
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
+	private static ControllerTestUtils utils = Global.INJECTOR
+			.getInstance(ControllerTestUtils.class);
 
 	@BeforeClass
 	public static void startApp() throws Exception {

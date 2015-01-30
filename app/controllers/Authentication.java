@@ -14,24 +14,23 @@ import services.UserService;
  * @author Kristian Lange
  */
 public class Authentication extends Controller {
-	
-	private static final String CLASS_NAME = Authentication.class.getSimpleName();
-	
-	
+
+	private static final String CLASS_NAME = Authentication.class
+			.getSimpleName();
 
 	/**
 	 * Shows the login form view.
 	 */
-	public static Result login() {
+	public Result login() {
 		Logger.info(CLASS_NAME + ".login");
 		return ok(views.html.jatos.auth.login.render(Form.form(Login.class)));
 	}
-	
+
 	/**
 	 * Deals with login form post.
 	 */
 	@Transactional
-	public static Result authenticate() {
+	public Result authenticate() {
 		Form<Login> loginForm = Form.form(Login.class).bindFromRequest();
 		if (loginForm.hasErrors()) {
 			return badRequest(views.html.jatos.auth.login.render(loginForm));
@@ -44,7 +43,7 @@ public class Authentication extends Controller {
 	/**
 	 * Shows login view with an logout message.
 	 */
-	public static Result logout() {
+	public Result logout() {
 		Logger.info(CLASS_NAME + ".logout: " + session(Users.SESSION_EMAIL));
 		session().remove(Users.SESSION_EMAIL);
 		flash("success", "You've been logged out");

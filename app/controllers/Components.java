@@ -16,6 +16,9 @@ import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.Messages;
 import services.PersistanceUtils;
+
+import com.google.inject.Inject;
+
 import controllers.publix.jatos.JatosPublix;
 import exceptions.ResultException;
 
@@ -32,26 +35,36 @@ public class Components extends Controller {
 	public static final String EDIT_SUBMIT_AND_SHOW = "Submit & Show";
 	private static final String CLASS_NAME = Components.class.getSimpleName();
 
+	private final ControllerUtils controllerUtils;
+	private final PersistanceUtils persistanceUtils;
+
+	@Inject
+	public Components(ControllerUtils controllerUtils,
+			PersistanceUtils persistanceUtils) {
+		this.controllerUtils = controllerUtils;
+		this.persistanceUtils = persistanceUtils;
+	}
+
 	/**
 	 * Actually shows a single component. It uses a JatosWorker and redirects to
 	 * Publix.startStudy().
 	 */
 	@Transactional
-	public static Result showComponent(Long studyId, Long componentId)
+	public Result showComponent(Long studyId, Long componentId)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".showComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		StudyModel study = StudyModel.findById(studyId);
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 
 		if (component.getHtmlFilePath() == null
 				|| component.getHtmlFilePath().isEmpty()) {
 			String errorMsg = ErrorMessages.htmlFilePathEmpty(componentId);
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_COMPONENT_START);
@@ -67,15 +80,15 @@ public class Components extends Controller {
 	 * Shows a view with a form to create a new Component.
 	 */
 	@Transactional
-	public static Result create(Long studyId) throws ResultException {
+	public Result create(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".create: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class);
 		Call submitAction = routes.Components.submit(studyId);
@@ -89,15 +102,15 @@ public class Components extends Controller {
 	 * Handles the post request of the form to create a new Component.
 	 */
 	@Transactional
-	public static Result submit(Long studyId) throws ResultException {
+	public Result submit(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".submit: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
 				.bindFromRequest();
@@ -105,13 +118,13 @@ public class Components extends Controller {
 			Call submitAction = routes.Components.submit(studyId);
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 					Breadcrumbs.NEW_COMPONENT);
-			ControllerUtils.throwEditComponentResultException(studyList,
+			controllerUtils.throwEditComponentResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
 					submitAction, study);
 		}
 
 		ComponentModel component = form.get();
-		PersistanceUtils.addComponent(study, component);
+		persistanceUtils.addComponent(study, component);
 		return redirectAfterEdit(studyId, component.getId(), study);
 	}
 
@@ -119,17 +132,16 @@ public class Components extends Controller {
 	 * Shows a view with a form to edit the properties of a Component.
 	 */
 	@Transactional
-	public static Result edit(Long studyId, Long componentId)
-			throws ResultException {
+	public Result edit(Long studyId, Long componentId) throws ResultException {
 		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 
 		Messages messages = new Messages();
@@ -150,19 +162,19 @@ public class Components extends Controller {
 	 * Handles the post of the edit form.
 	 */
 	@Transactional
-	public static Result submitEdited(Long studyId, Long componentId)
+	public Result submitEdited(Long studyId, Long componentId)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
-		ControllerUtils.checkStudyLocked(study);
+		controllerUtils.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
 				.bindFromRequest();
@@ -171,19 +183,19 @@ public class Components extends Controller {
 					componentId);
 			Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
 					component, Breadcrumbs.EDIT_PROPERTIES);
-			ControllerUtils.throwEditComponentResultException(studyList,
+			controllerUtils.throwEditComponentResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
 					submitAction, study);
 		}
 
 		// Update component in DB
 		ComponentModel updatedComponent = form.get();
-		PersistanceUtils
+		persistanceUtils
 				.updateComponentsProperties(component, updatedComponent);
 		return redirectAfterEdit(studyId, componentId, study);
 	}
 
-	private static Result redirectAfterEdit(Long studyId, Long componentId,
+	private Result redirectAfterEdit(Long studyId, Long componentId,
 			StudyModel study) {
 		// Check which submit button was pressed: "Submit" or "Submit & Show".
 		String[] postAction = request().body().asFormUrlEncoded()
@@ -202,21 +214,21 @@ public class Components extends Controller {
 	 * Request to change the property 'active' of a component.
 	 */
 	@Transactional
-	public static Result changeProperty(Long studyId, Long componentId,
-			Boolean active) throws ResultException {
+	public Result changeProperty(Long studyId, Long componentId, Boolean active)
+			throws ResultException {
 		Logger.info(CLASS_NAME + ".changeProperty: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "active " + active
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
-		ControllerUtils.checkStudyLocked(study);
+		controllerUtils.checkStudyLocked(study);
 
 		if (active != null) {
-			PersistanceUtils.changeActive(component, active);
+			persistanceUtils.changeActive(component, active);
 		}
 		return ok();
 	}
@@ -225,20 +237,20 @@ public class Components extends Controller {
 	 * Clone a component.
 	 */
 	@Transactional
-	public static Result cloneComponent(Long studyId, Long componentId)
+	public Result cloneComponent(Long studyId, Long componentId)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".cloneComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
-		ControllerUtils.checkStudyLocked(study);
+		controllerUtils.checkStudyLocked(study);
 
 		ComponentModel clone = new ComponentModel(component);
-		PersistanceUtils.addComponent(study, clone);
+		persistanceUtils.addComponent(study, clone);
 		return redirect(routes.Studies.index(studyId, null));
 	}
 
@@ -248,19 +260,18 @@ public class Components extends Controller {
 	 * Remove a component.
 	 */
 	@Transactional
-	public static Result remove(Long studyId, Long componentId)
-			throws ResultException {
+	public Result remove(Long studyId, Long componentId) throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
-		ControllerUtils.checkStudyLocked(study);
+		controllerUtils.checkStudyLocked(study);
 
-		PersistanceUtils.removeComponent(study, component);
+		persistanceUtils.removeComponent(study, component);
 		return ok();
 	}
 

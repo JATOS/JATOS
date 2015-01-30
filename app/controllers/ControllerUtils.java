@@ -9,6 +9,7 @@ import java.util.Set;
 
 import models.ComponentModel;
 import models.StudyModel;
+import models.UserDao;
 import models.UserModel;
 import models.results.StudyResult;
 import models.workers.Worker;
@@ -19,6 +20,9 @@ import play.mvc.Http;
 import play.mvc.SimpleResult;
 import services.Breadcrumbs;
 import services.ErrorMessages;
+
+import com.google.inject.Inject;
+
 import exceptions.ResultException;
 
 /**
@@ -31,10 +35,28 @@ public class ControllerUtils extends Controller {
 	public static final String JQDOWNLOAD_COOKIE_NAME = "Set-Cookie";
 	public static final String JQDOWNLOAD_COOKIE_CONTENT = "fileDownload=true; path=/";
 
+	private final UserDao userDao;
+	private final Home home;
+	private final Workers workers;
+	private final Studies studies;
+	private final StudyResults studyResults;
+	private final ComponentResults componentResults;
+
+	@Inject
+	public ControllerUtils(UserDao userDao, Workers workers, Studies studies,
+			StudyResults studyResults, Home home, ComponentResults componentResults) {
+		this.userDao = userDao;
+		this.workers = workers;
+		this.studies = studies;
+		this.studyResults = studyResults;
+		this.home = home;
+		this.componentResults = componentResults;
+	}
+
 	/**
 	 * Check if the request was made via Ajax or not.
 	 */
-	public static Boolean isAjax() {
+	public Boolean isAjax() {
 		String requestWithHeader = "X-Requested-With";
 		String requestWithHeaderValueForAjax = "XMLHttpRequest";
 		String[] value = request().headers().get(requestWithHeader);
@@ -46,7 +68,7 @@ public class ControllerUtils extends Controller {
 	 * Same as {@link #getRefererUrl()} but returns the URL's String if the
 	 * 'Referer' exists or "" otherwise.
 	 */
-	public static String getReferer() throws ResultException {
+	public String getReferer() throws ResultException {
 		URL refererUrl = getRefererUrl();
 		return (refererUrl != null) ? refererUrl.toString() : "";
 	}
@@ -57,7 +79,7 @@ public class ControllerUtils extends Controller {
 	 * to get JATOS' absolute URL. If the 'Referer' isn't set in the header it
 	 * returns null.
 	 */
-	public static URL getRefererUrl() throws ResultException {
+	public URL getRefererUrl() throws ResultException {
 		URL jatosURL = null;
 		try {
 			String[] referer = request().headers().get("Referer");
@@ -69,8 +91,7 @@ public class ControllerUtils extends Controller {
 		} catch (MalformedURLException e) {
 			String errorMsg = ErrorMessages.COULDNT_GENERATE_JATOS_URL + " ("
 					+ e.getMessage() + ")";
-			ControllerUtils.throwHomeResultException(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
 		}
 		return jatosURL;
 	}
@@ -79,8 +100,7 @@ public class ControllerUtils extends Controller {
 	 * Throws a ResultException if a study is locked. Distinguishes between
 	 * normal and Ajax request.
 	 */
-	public static void checkStudyLocked(StudyModel study)
-			throws ResultException {
+	public void checkStudyLocked(StudyModel study) throws ResultException {
 		if (study.isLocked()) {
 			String errorMsg = ErrorMessages.studyLocked(study.getId());
 			SimpleResult result = null;
@@ -97,7 +117,7 @@ public class ControllerUtils extends Controller {
 	 * Checks the study and throws a ResultException in case of a problem.
 	 * Distinguishes between normal and Ajax request.
 	 */
-	public static void checkStandardForStudy(StudyModel study, Long studyId,
+	public void checkStandardForStudy(StudyModel study, Long studyId,
 			UserModel user) throws ResultException {
 		if (study == null) {
 			String errorMsg = ErrorMessages.studyNotExist(studyId);
@@ -111,7 +131,7 @@ public class ControllerUtils extends Controller {
 			if (isAjax()) {
 				result = forbidden(errorMsg);
 			} else {
-				result = (SimpleResult) Home.home(errorMsg,
+				result = (SimpleResult) home.home(errorMsg,
 						Http.Status.FORBIDDEN);
 			}
 			throw new ResultException(result, errorMsg);
@@ -122,10 +142,10 @@ public class ControllerUtils extends Controller {
 	 * Checks the component of this study and throws a ResultException in case
 	 * of a problem. Distinguishes between normal and Ajax request.
 	 */
-	public static void checkStandardForComponents(Long studyId,
-			Long componentId, StudyModel study, UserModel loggedInUser,
-			ComponentModel component) throws ResultException {
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+	public void checkStandardForComponents(Long studyId, Long componentId,
+			StudyModel study, UserModel loggedInUser, ComponentModel component)
+			throws ResultException {
+		checkStandardForStudy(study, studyId, loggedInUser);
 		if (component == null) {
 			String errorMsg = ErrorMessages.componentNotExist(componentId);
 			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
@@ -142,7 +162,7 @@ public class ControllerUtils extends Controller {
 	 * Throws a ResultException in case the worker doesn't exist. Distinguishes
 	 * between normal and Ajax request.
 	 */
-	public static void checkWorker(Worker worker, Long workerId)
+	public void checkWorker(Worker worker, Long workerId)
 			throws ResultException {
 		if (worker == null) {
 			String errorMsg = ErrorMessages.workerNotExist(workerId);
@@ -154,7 +174,7 @@ public class ControllerUtils extends Controller {
 	 * Throws a ResultException in case the user's email isn't equal to the
 	 * loggedInUser' email. Distinguishes between normal and Ajax request.
 	 */
-	public static void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
+	public void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
 			throws ResultException {
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
 			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
@@ -166,7 +186,7 @@ public class ControllerUtils extends Controller {
 	 * Throws a ResultException for an Ajax request (doesn't return a view) with
 	 * the given error msg and HTTP status.
 	 */
-	public static void throwAjaxResultException(String errorMsg, int httpStatus)
+	public void throwAjaxResultException(String errorMsg, int httpStatus)
 			throws ResultException {
 		SimpleResult result = status(httpStatus, errorMsg);
 		throw new ResultException(result, errorMsg);
@@ -177,13 +197,13 @@ public class ControllerUtils extends Controller {
 	 * Ajax it shows worker's index view. Distinguishes between normal and Ajax
 	 * request.
 	 */
-	public static void throwWorkerResultException(String errorMsg,
-			int httpStatus, Long workerId) throws ResultException {
+	public void throwWorkerResultException(String errorMsg, int httpStatus,
+			Long workerId) throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) Workers.index(workerId, errorMsg,
+			result = (SimpleResult) workers.index(workerId, errorMsg,
 					httpStatus);
 		}
 		throw new ResultException(result, errorMsg);
@@ -193,13 +213,13 @@ public class ControllerUtils extends Controller {
 	 * Throws a ResultException with the given error msg and HTTP status. If non
 	 * Ajax it shows home view. Distinguishes between normal and Ajax request.
 	 */
-	public static void throwHomeResultException(String errorMsg, int httpStatus)
+	public void throwHomeResultException(String errorMsg, int httpStatus)
 			throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) Home.home(errorMsg, httpStatus);
+			result = (SimpleResult) home.home(errorMsg, httpStatus);
 		}
 		throw new ResultException(result, errorMsg);
 	}
@@ -213,13 +233,13 @@ public class ControllerUtils extends Controller {
 	 * throwStudyResultException: First one throws a ResultException for a
 	 * study's result page - second one for a study page.
 	 */
-	public static void throwStudiesResultException(String errorMsg,
-			int httpStatus, Long studyId) throws ResultException {
+	public void throwStudiesResultException(String errorMsg, int httpStatus,
+			Long studyId) throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) Studies
+			result = (SimpleResult) studies
 					.index(studyId, errorMsg, httpStatus);
 		}
 		throw new ResultException(result, errorMsg);
@@ -230,10 +250,10 @@ public class ControllerUtils extends Controller {
 	 * and HTTP status. If non Ajax it shows study's edit view. Distinguishes
 	 * between normal and Ajax request.
 	 */
-	public static void throwEditStudyResultException(
-			List<StudyModel> studyList, UserModel loggedInUser,
-			Form<StudyModel> form, int httpStatus, Breadcrumbs breadcrumbs,
-			Call submitAction, boolean studyIsLocked) throws ResultException {
+	public void throwEditStudyResultException(List<StudyModel> studyList,
+			UserModel loggedInUser, Form<StudyModel> form, int httpStatus,
+			Breadcrumbs breadcrumbs, Call submitAction, boolean studyIsLocked)
+			throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus);
@@ -250,10 +270,10 @@ public class ControllerUtils extends Controller {
 	 * and HTTP status. If non Ajax it shows component's edit view.
 	 * Distinguishes between normal and Ajax request.
 	 */
-	public static void throwEditComponentResultException(
-			List<StudyModel> studyList, UserModel loggedInUser,
-			Form<ComponentModel> form, int httpStatus, Breadcrumbs breadcrumbs,
-			Call submitAction, StudyModel study) throws ResultException {
+	public void throwEditComponentResultException(List<StudyModel> studyList,
+			UserModel loggedInUser, Form<ComponentModel> form, int httpStatus,
+			Breadcrumbs breadcrumbs, Call submitAction, StudyModel study)
+			throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus);
@@ -270,9 +290,9 @@ public class ControllerUtils extends Controller {
 	 * and HTTP status. If non Ajax it shows create user view. Distinguishes
 	 * between normal and Ajax request.
 	 */
-	public static void throwCreateUserResultException(
-			List<StudyModel> studyList, UserModel loggedInUser,
-			Form<UserModel> form, int httpStatus) throws ResultException {
+	public void throwCreateUserResultException(List<StudyModel> studyList,
+			UserModel loggedInUser, Form<UserModel> form, int httpStatus)
+			throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus);
@@ -289,7 +309,7 @@ public class ControllerUtils extends Controller {
 	 * and HTTP status. If non Ajax it shows edit user view. Distinguishes
 	 * between normal and Ajax request.
 	 */
-	public static void throwEditUserResultException(List<StudyModel> studyList,
+	public void throwEditUserResultException(List<StudyModel> studyList,
 			UserModel loggedInUser, Form<UserModel> form, UserModel user,
 			int httpStatus) throws ResultException {
 		SimpleResult result = null;
@@ -310,7 +330,7 @@ public class ControllerUtils extends Controller {
 	 * and HTTP status. If non Ajax it shows change password view. Distinguishes
 	 * between normal and Ajax request.
 	 */
-	public static void throwChangePasswordUserResultException(
+	public void throwChangePasswordUserResultException(
 			List<StudyModel> studyList, UserModel loggedInUser,
 			Form<UserModel> form, int httpStatus, UserModel user)
 			throws ResultException {
@@ -332,14 +352,13 @@ public class ControllerUtils extends Controller {
 	 * Ajax it study's change members view. Distinguishes between normal and
 	 * Ajax request.
 	 */
-	public static void throwChangeMemberOfStudiesResultException(
-			String errorMsg, int httpStatus, Long studyId)
-			throws ResultException {
+	public void throwChangeMemberOfStudiesResultException(String errorMsg,
+			int httpStatus, Long studyId) throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) Studies.changeMembers(studyId, errorMsg,
+			result = (SimpleResult) studies.changeMembers(studyId, errorMsg,
 					httpStatus);
 		}
 		throw new ResultException(result, errorMsg);
@@ -354,13 +373,13 @@ public class ControllerUtils extends Controller {
 	 * throwStudyResultException: First one throws a ResultException for a
 	 * study's result page - second one for a study page.
 	 */
-	public static void throwStudyResultsResultException(String errorMsg,
+	public void throwStudyResultsResultException(String errorMsg,
 			int httpStatus, Long studyId) throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) StudyResults.index(studyId, errorMsg,
+			result = (SimpleResult) studyResults.index(studyId, errorMsg,
 					httpStatus);
 		}
 		throw new ResultException(result, errorMsg);
@@ -371,14 +390,14 @@ public class ControllerUtils extends Controller {
 	 * Ajax it shows the ComponentResults.index() view. Distinguishes between
 	 * normal and Ajax request.
 	 */
-	public static void throwComponentResultsResultException(String errorMsg,
+	public void throwComponentResultsResultException(String errorMsg,
 			int httpStatus, Long studyId, Long componentId)
 			throws ResultException {
 		SimpleResult result = null;
 		if (isAjax()) {
 			result = status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) ComponentResults.index(studyId,
+			result = (SimpleResult) componentResults.index(studyId,
 					componentId, errorMsg, httpStatus);
 		}
 		throw new ResultException(result, errorMsg);
@@ -388,8 +407,8 @@ public class ControllerUtils extends Controller {
 	 * Retrieves the user with the given email form the DB. Throws a
 	 * ResultException if it doesn't exist.
 	 */
-	public static UserModel retrieveUser(String email) throws ResultException {
-		UserModel user = UserModel.findByEmail(email);
+	public UserModel retrieveUser(String email) throws ResultException {
+		UserModel user = userDao.findByEmail(email);
 		if (user == null) {
 			String errorMsg = ErrorMessages.userNotExist(email);
 			throwHomeResultException(errorMsg, Http.Status.BAD_REQUEST);
@@ -402,11 +421,11 @@ public class ControllerUtils extends Controller {
 	 * ResultException if it doesn't exist. The ResultException will redirect to
 	 * the login screen.
 	 */
-	public static UserModel retrieveLoggedInUser() throws ResultException {
+	public UserModel retrieveLoggedInUser() throws ResultException {
 		String email = session(Users.SESSION_EMAIL);
 		UserModel loggedInUser = null;
 		if (email != null) {
-			loggedInUser = UserModel.findByEmail(email);
+			loggedInUser = userDao.findByEmail(email);
 		}
 		if (loggedInUser == null) {
 			String errorMsg = ErrorMessages.NO_USER_LOGGED_IN;
@@ -424,7 +443,7 @@ public class ControllerUtils extends Controller {
 	/**
 	 * Retrieve all workers that did this study.
 	 */
-	public static Set<Worker> retrieveWorkers(StudyModel study) {
+	public Set<Worker> retrieveWorkers(StudyModel study) {
 		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
 		Set<Worker> workerSet = new HashSet<>();
 		for (StudyResult studyResult : studyResultList) {
@@ -438,8 +457,7 @@ public class ControllerUtils extends Controller {
 	 * a ResultException if an ID is not a number or if the original String
 	 * dosn't contain any ID.
 	 */
-	public static List<Long> extractResultIds(String resultIds)
-			throws ResultException {
+	public List<Long> extractResultIds(String resultIds) throws ResultException {
 		String[] resultIdStrArray = resultIds.split(",");
 		List<Long> resultIdList = new ArrayList<>();
 		for (String idStr : resultIdStrArray) {

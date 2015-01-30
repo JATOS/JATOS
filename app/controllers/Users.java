@@ -3,6 +3,7 @@ package controllers;
 import java.util.List;
 
 import models.StudyModel;
+import models.UserDao;
 import models.UserModel;
 import play.Logger;
 import play.data.DynamicForm;
@@ -15,6 +16,9 @@ import play.mvc.Result;
 import services.Breadcrumbs;
 import services.PersistanceUtils;
 import services.UserService;
+
+import com.google.inject.Inject;
+
 import exceptions.ResultException;
 
 /**
@@ -28,18 +32,32 @@ public class Users extends Controller {
 
 	public static final String SESSION_EMAIL = "email";
 
+	private final UserDao userDao;
+	private final UserService userService;
+	private final ControllerUtils controllerUtils;
+	private final PersistanceUtils persistanceUtils;
+
+	@Inject
+	public Users(UserDao userDao, UserService userService,
+			ControllerUtils controllerUtils, PersistanceUtils persistanceUtils) {
+		this.userDao = userDao;
+		this.userService = userService;
+		this.controllerUtils = controllerUtils;
+		this.persistanceUtils = persistanceUtils;
+	}
+
 	/**
 	 * Shows the profile view of a user
 	 */
 	@Transactional
-	public static Result profile(String email) throws ResultException {
+	public Result profile(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".profile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel user = controllerUtils.retrieveUser(email);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		controllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user);
 		return ok(views.html.jatos.user.profile.render(studyList, loggedInUser,
@@ -50,10 +68,10 @@ public class Users extends Controller {
 	 * Shows a view with a form to create a new user.
 	 */
 	@Transactional
-	public static Result create() throws ResultException {
+	public Result create() throws ResultException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		Breadcrumbs breadcrumbs = Breadcrumbs
@@ -66,16 +84,16 @@ public class Users extends Controller {
 	 * Handles post request of user create form.
 	 */
 	@Transactional
-	public static Result submit() throws Exception {
+	public Result submit() throws Exception {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 
 		if (form.hasErrors()) {
-			ControllerUtils.throwCreateUserResultException(studyList,
+			controllerUtils.throwCreateUserResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST);
 		}
 
@@ -83,19 +101,19 @@ public class Users extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String password = requestData.get(UserModel.PASSWORD);
 		String passwordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
-		List<ValidationError> errorList = UserService.validateNewUser(newUser,
+		List<ValidationError> errorList = userService.validateNewUser(newUser,
 				password, passwordRepeat);
 		if (!errorList.isEmpty()) {
 			for (ValidationError error : errorList) {
 				form.reject(error);
 			}
-			ControllerUtils.throwCreateUserResultException(studyList,
+			controllerUtils.throwCreateUserResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST);
 		}
 
 		String passwordHash = UserService.getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
-		PersistanceUtils.addUser(newUser);
+		persistanceUtils.addUser(newUser);
 		return redirect(routes.Home.home());
 	}
 
@@ -103,14 +121,14 @@ public class Users extends Controller {
 	 * Shows view with form to edit a user profile.
 	 */
 	@Transactional
-	public static Result editProfile(String email) throws ResultException {
+	public Result editProfile(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".editProfile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel user = controllerUtils.retrieveUser(email);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		controllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
@@ -123,20 +141,19 @@ public class Users extends Controller {
 	 * Handles post request of user edit profile form.
 	 */
 	@Transactional
-	public static Result submitEditedProfile(String email)
-			throws ResultException {
+	public Result submitEditedProfile(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".submitEditedProfile: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel user = controllerUtils.retrieveUser(email);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		controllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		if (form.hasErrors()) {
-			ControllerUtils.throwEditUserResultException(studyList,
+			controllerUtils.throwEditUserResultException(studyList,
 					loggedInUser, form, loggedInUser, Http.Status.BAD_REQUEST);
 		}
 		// Update user in database
@@ -144,7 +161,7 @@ public class Users extends Controller {
 		// unaltered. For the password we have an extra form.
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String name = requestData.get(UserModel.NAME);
-		PersistanceUtils.updateUser(user, name);
+		persistanceUtils.updateUser(user, name);
 		return redirect(routes.Users.profile(email));
 	}
 
@@ -152,14 +169,14 @@ public class Users extends Controller {
 	 * Shows view to change the password of a user.
 	 */
 	@Transactional
-	public static Result changePassword(String email) throws ResultException {
+	public Result changePassword(String email) throws ResultException {
 		Logger.info(CLASS_NAME + ".changePassword: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel user = controllerUtils.retrieveUser(email);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		controllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
@@ -172,35 +189,35 @@ public class Users extends Controller {
 	 * Handles post request of change password form.
 	 */
 	@Transactional
-	public static Result submitChangedPassword(String email) throws Exception {
+	public Result submitChangedPassword(String email) throws Exception {
 		Logger.info(CLASS_NAME + ".submitChangedPassword: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
+		UserModel user = controllerUtils.retrieveUser(email);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		controllerUtils.checkUserLoggedIn(user, loggedInUser);
 
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String newPassword = requestData.get(UserModel.NEW_PASSWORD);
 		String newPasswordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
 		String oldPasswordHash = UserService.getHashMDFive(requestData
 				.get(UserModel.OLD_PASSWORD));
-		List<ValidationError> errorList = UserService.validateChangePassword(user,
-				newPassword, newPasswordRepeat, oldPasswordHash);
+		List<ValidationError> errorList = userService.validateChangePassword(
+				user, newPassword, newPasswordRepeat, oldPasswordHash);
 		if (!errorList.isEmpty()) {
 			for (ValidationError error : errorList) {
 				form.reject(error);
 			}
-			ControllerUtils.throwChangePasswordUserResultException(studyList,
+			controllerUtils.throwChangePasswordUserResultException(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, loggedInUser);
 		}
 		// Update password hash in DB
 		String newPasswordHash = UserService.getHashMDFive(newPassword);
 		user.setPasswordHash(newPasswordHash);
-		user.merge();
+		userDao.merge(user);
 		return redirect(routes.Users.profile(email));
 	}
 

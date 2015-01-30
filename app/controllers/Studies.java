@@ -8,6 +8,7 @@ import java.util.Set;
 
 import models.ComponentModel;
 import models.StudyModel;
+import models.UserDao;
 import models.UserModel;
 import models.workers.ClosedStandaloneWorker;
 import models.workers.TesterWorker;
@@ -29,6 +30,7 @@ import services.PersistanceUtils;
 import services.StudyBinder;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
 
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
@@ -46,21 +48,32 @@ public class Studies extends Controller {
 	public static final String COMPONENT_ORDER_UP = "up";
 	private static final String CLASS_NAME = Studies.class.getSimpleName();
 
+	private final UserDao userDao;
+	private final PersistanceUtils persistanceUtils;
+	private final ControllerUtils controllerUtils;
+
+	@Inject
+	public Studies(UserDao userDao, PersistanceUtils persistanceUtils, ControllerUtils controllerUtils) {
+		this.userDao = userDao;
+		this.persistanceUtils = persistanceUtils;
+		this.controllerUtils = controllerUtils;
+	}
+
 	/**
 	 * Shows the index view with details regarding a study.
 	 */
 	@Transactional
-	public static Result index(Long studyId, String errorMsg, int httpStatus)
+	public Result index(Long studyId, String errorMsg, int httpStatus)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		Set<Worker> workerSet = ControllerUtils.retrieveWorkers(study);
+		Set<Worker> workerSet = controllerUtils.retrieveWorkers(study);
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study);
 		return status(httpStatus, views.html.jatos.study.index.render(
@@ -69,13 +82,12 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	public static Result index(Long studyId, String errorMsg)
-			throws ResultException {
+	public Result index(Long studyId, String errorMsg) throws ResultException {
 		return index(studyId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
-	public static Result index(Long studyId) throws ResultException {
+	public Result index(Long studyId) throws ResultException {
 		return index(studyId, null, Http.Status.OK);
 	}
 
@@ -83,10 +95,10 @@ public class Studies extends Controller {
 	 * Shows a view with a form to create a new study.
 	 */
 	@Transactional
-	public static Result create() throws ResultException {
+	public Result create() throws ResultException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 
@@ -105,10 +117,10 @@ public class Studies extends Controller {
 	 * POST request of the form to create a new study.
 	 */
 	@Transactional
-	public static Result submit() throws ResultException {
+	public Result submit() throws ResultException {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 
@@ -119,12 +131,12 @@ public class Studies extends Controller {
 			failStudyCreate(loggedInUser, studyList, study, errorList);
 		}
 
-		PersistanceUtils.addStudy(study, loggedInUser);
+		persistanceUtils.addStudy(study, loggedInUser);
 		createStudyAssetsDir(loggedInUser, studyList, study);
 		return redirect(routes.Studies.index(study.getId(), null));
 	}
 
-	private static void failStudyCreate(UserModel loggedInUser,
+	private void failStudyCreate(UserModel loggedInUser,
 			List<StudyModel> studyList, StudyModel study,
 			List<ValidationError> errorList) throws ResultException {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
@@ -134,7 +146,7 @@ public class Studies extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForHome(Breadcrumbs.NEW_STUDY);
 		Call submitAction = routes.Studies.submit();
-		ControllerUtils
+		controllerUtils
 				.throwEditStudyResultException(studyList, loggedInUser, form,
 						Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
 						false);
@@ -144,14 +156,14 @@ public class Studies extends Controller {
 	 * Shows a form to edit the study properties.
 	 */
 	@Transactional
-	public static Result edit(Long studyId) throws ResultException {
+	public Result edit(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Messages messages = new Messages();
 		if (study.isLocked()) {
@@ -169,15 +181,15 @@ public class Studies extends Controller {
 	 * POST request of the edit form to change the properties of a study.
 	 */
 	@Transactional
-	public static Result submitEdited(Long studyId) throws ResultException {
+	public Result submitEdited(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStudyLocked(study);
 
 		StudyModel updatedStudy = StudyBinder.bindStudyFromRequest(request()
 				.body().asFormUrlEncoded());
@@ -187,12 +199,12 @@ public class Studies extends Controller {
 		}
 
 		String oldDirName = study.getDirName();
-		PersistanceUtils.updateStudysProperties(study, updatedStudy);
+		persistanceUtils.updateStudysProperties(study, updatedStudy);
 		renameStudyAssetsDir(study, loggedInUser, studyList, oldDirName);
 		return redirect(routes.Studies.index(studyId, null));
 	}
 
-	private static void failStudyEdit(UserModel loggedInUser,
+	private void failStudyEdit(UserModel loggedInUser,
 			List<StudyModel> studyList, StudyModel study,
 			List<ValidationError> errorList) throws ResultException {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
@@ -202,7 +214,7 @@ public class Studies extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.EDIT_PROPERTIES);
 		Call submitAction = routes.Studies.submitEdited(study.getId());
-		ControllerUtils.throwEditStudyResultException(studyList, loggedInUser,
+		controllerUtils.throwEditStudyResultException(studyList, loggedInUser,
 				form, Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
 				study.isLocked());
 	}
@@ -213,12 +225,12 @@ public class Studies extends Controller {
 	 * Swap the locked field of a study.
 	 */
 	@Transactional
-	public static Result swapLock(Long studyId) throws ResultException {
+	public Result swapLock(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".swapLock: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		study.setLocked(!study.isLocked());
 		study.merge();
@@ -231,40 +243,40 @@ public class Studies extends Controller {
 	 * Remove a study
 	 */
 	@Transactional
-	public static Result remove(Long studyId) throws ResultException {
+	public Result remove(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStudyLocked(study);
 
-		PersistanceUtils.removeStudy(study);
+		persistanceUtils.removeStudy(study);
 		removeStudyAssetsDir(study);
 		return ok();
 	}
 
 	/**
-	 * Ajax request 
+	 * Ajax request
 	 * 
 	 * Clones a study.
 	 */
 	@Transactional
-	public static Result cloneStudy(Long studyId) throws ResultException {
+	public Result cloneStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".cloneStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		StudyModel clone = new StudyModel(study);
 		cloneStudyAssetsDir(study, clone);
-		PersistanceUtils.addStudy(clone, loggedInUser);
+		persistanceUtils.addStudy(clone, loggedInUser);
 		return ok();
 	}
 
 	@Transactional
-	public static Result changeMembers(Long studyId) throws ResultException {
+	public Result changeMembers(Long studyId) throws ResultException {
 		return changeMembers(studyId, null, Http.Status.OK);
 	}
 
@@ -272,17 +284,17 @@ public class Studies extends Controller {
 	 * Shows a view with a form to change members of a study.
 	 */
 	@Transactional
-	public static Result changeMembers(Long studyId, String errorMsg,
-			int httpStatus) throws ResultException {
+	public Result changeMembers(Long studyId, String errorMsg, int httpStatus)
+			throws ResultException {
 		Logger.info(CLASS_NAME + ".changeMembers: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		List<UserModel> userList = UserModel.findAll();
+		List<UserModel> userList = userDao.findAll();
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.CHANGE_MEMBERS);
@@ -295,14 +307,13 @@ public class Studies extends Controller {
 	 * POST request that handles changed members of a study.
 	 */
 	@Transactional
-	public static Result submitChangedMembers(Long studyId)
-			throws ResultException {
+	public Result submitChangedMembers(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".submitChangedMembers: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		String[] checkedUsers = request().body().asFormUrlEncoded()
 				.get(StudyModel.MEMBERS);
@@ -310,18 +321,18 @@ public class Studies extends Controller {
 		return redirect(routes.Studies.index(studyId, null));
 	}
 
-	private static void persistCheckedUsers(Long studyId, StudyModel study,
+	private void persistCheckedUsers(Long studyId, StudyModel study,
 			String[] checkedUsers) throws ResultException {
 		if (checkedUsers == null || checkedUsers.length < 1) {
 			String errorMsg = ErrorMessages.STUDY_AT_LEAST_ONE_MEMBER;
-			ControllerUtils.throwChangeMemberOfStudiesResultException(errorMsg,
+			controllerUtils.throwChangeMemberOfStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		study.getMemberList().clear();
 		for (String email : checkedUsers) {
-			UserModel user = UserModel.findByEmail(email);
+			UserModel user = userDao.findByEmail(email);
 			if (user != null) {
-				PersistanceUtils.addMemberToStudy(study, user);
+				persistanceUtils.addMemberToStudy(study, user);
 			}
 		}
 	}
@@ -332,17 +343,17 @@ public class Studies extends Controller {
 	 * Change the oder of components within a study.
 	 */
 	@Transactional
-	public static Result changeComponentOrder(Long studyId, Long componentId,
+	public Result changeComponentOrder(Long studyId, Long componentId,
 			String direction) throws ResultException {
 		Logger.info(CLASS_NAME + ".changeComponentOrder: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStudyLocked(study);
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 
 		switch (direction) {
@@ -368,12 +379,12 @@ public class Studies extends Controller {
 	 * Publix.startStudy() action.
 	 */
 	@Transactional
-	public static Result showStudy(Long studyId) throws ResultException {
+	public Result showStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".showStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_STUDY);
 		String queryStr = "?" + JatosPublix.JATOS_WORKER_ID + "="
@@ -390,20 +401,20 @@ public class Studies extends Controller {
 	 * kind of run.
 	 */
 	@Transactional
-	public static Result createClosedStandaloneRun(Long studyId)
+	public Result createClosedStandaloneRun(Long studyId)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".createClosedStandaloneRun: studyId "
 				+ studyId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		JsonNode json = request().body().asJson();
 		if (json == null) {
 			String errorMsg = ErrorMessages
 					.studyCreationOfStandaloneRunFailed(studyId);
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		String comment = json.findPath(ClosedStandaloneWorker.COMMENT).asText()
@@ -412,7 +423,7 @@ public class Studies extends Controller {
 		checkWorker(studyId, worker);
 		worker.persist();
 
-		String url = ControllerUtils.getReferer()
+		String url = controllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
 						study.getId()).url() + "?"
 				+ ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID + "="
@@ -427,18 +438,18 @@ public class Studies extends Controller {
 	 * run.
 	 */
 	@Transactional
-	public static Result createTesterRun(Long studyId) throws ResultException {
+	public Result createTesterRun(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".createTesterRun: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		JsonNode json = request().body().asJson();
 		if (json == null) {
 			String errorMsg = ErrorMessages
 					.studyCreationOfTesterRunFailed(studyId);
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
@@ -446,19 +457,19 @@ public class Studies extends Controller {
 		checkWorker(studyId, worker);
 		worker.persist();
 
-		String url = ControllerUtils.getReferer()
+		String url = controllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
 						study.getId()).url() + "?" + TesterPublix.TESTER_ID
 				+ "=" + worker.getId();
 		return ok(url);
 	}
 
-	private static void checkWorker(Long studyId, Worker worker)
+	private void checkWorker(Long studyId, Worker worker)
 			throws ResultException {
 		List<ValidationError> errorList = worker.validate();
 		if (errorList != null && !errorList.isEmpty()) {
 			String errorMsg = errorList.get(0).message();
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 	}
@@ -468,21 +479,20 @@ public class Studies extends Controller {
 	 * Mechanical Turk.
 	 */
 	@Transactional
-	public static Result showMTurkSourceCode(Long studyId)
-			throws ResultException {
+	public Result showMTurkSourceCode(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".showMTurkSourceCode: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
-		URL jatosURL = ControllerUtils.getRefererUrl();
+		URL jatosURL = controllerUtils.getRefererUrl();
 		if (jatosURL == null) {
 			String errorMsg = ErrorMessages.COULDNT_GENERATE_JATOS_URL;
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
@@ -497,18 +507,18 @@ public class Studies extends Controller {
 	 * Returns all Components of the given study as JSON.
 	 */
 	@Transactional
-	public static Result tableDataByStudy(Long studyId) throws ResultException {
+	public Result tableDataByStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		String dataAsJson = null;
 		try {
 			dataAsJson = JsonUtils.allComponentsForUI(study.getComponentList());
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
-			ControllerUtils.throwAjaxResultException(errorMsg,
+			controllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
@@ -518,15 +528,15 @@ public class Studies extends Controller {
 	 * Shows view that lists all Workers that did the given study.
 	 */
 	@Transactional
-	public static Result workers(Long studyId, String errorMsg, int httpStatus)
+	public Result workers(Long studyId, String errorMsg, int httpStatus)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
@@ -536,13 +546,12 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	public static Result workers(Long studyId, String errorMsg)
-			throws ResultException {
+	public Result workers(Long studyId, String errorMsg) throws ResultException {
 		return workers(studyId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
-	public static Result workers(Long studyId) throws ResultException {
+	public Result workers(Long studyId) throws ResultException {
 		return workers(studyId, null, Http.Status.OK);
 	}
 
@@ -550,7 +559,7 @@ public class Studies extends Controller {
 	 * Creates a study assets dir in the file system. It's a wrapper around the
 	 * corresponding IOUtils method.
 	 */
-	private static void createStudyAssetsDir(UserModel loggedInUser,
+	private void createStudyAssetsDir(UserModel loggedInUser,
 			List<StudyModel> studyList, StudyModel study)
 			throws ResultException {
 		List<ValidationError> errorList;
@@ -568,9 +577,9 @@ public class Studies extends Controller {
 	 * Renames study assets dir. It's a wrapper around the corresponding IOUtils
 	 * method.
 	 */
-	private static void renameStudyAssetsDir(StudyModel study,
-			UserModel loggedInUser, List<StudyModel> studyList,
-			String oldDirName) throws ResultException {
+	private void renameStudyAssetsDir(StudyModel study, UserModel loggedInUser,
+			List<StudyModel> studyList, String oldDirName)
+			throws ResultException {
 		List<ValidationError> errorList;
 		try {
 			IOUtils.renameStudyAssetsDir(oldDirName, study.getDirName());
@@ -586,13 +595,12 @@ public class Studies extends Controller {
 	 * Removes study assets dir. It's a wrapper around the corresponding IOUtils
 	 * method.
 	 */
-	private static void removeStudyAssetsDir(StudyModel study)
-			throws ResultException {
+	private void removeStudyAssetsDir(StudyModel study) throws ResultException {
 		try {
 			IOUtils.removeStudyAssetsDir(study.getDirName());
 		} catch (IOException e) {
 			String errorMsg = e.getMessage();
-			ControllerUtils.throwAjaxResultException(errorMsg,
+			controllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -601,14 +609,14 @@ public class Studies extends Controller {
 	 * Copy study assets' dir and it's content to cloned study assets' dir. It's
 	 * a wrapper around the corresponding IOUtils method.
 	 */
-	private static void cloneStudyAssetsDir(StudyModel study, StudyModel clone)
+	private void cloneStudyAssetsDir(StudyModel study, StudyModel clone)
 			throws ResultException {
 		try {
 			String destDirName = IOUtils.cloneStudyAssetsDirectory(study
 					.getDirName());
 			clone.setDirName(destDirName);
 		} catch (IOException e) {
-			ControllerUtils.throwAjaxResultException(e.getMessage(),
+			controllerUtils.throwAjaxResultException(e.getMessage(),
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 	}

@@ -24,6 +24,7 @@ import play.mvc.Result;
 import services.UserService;
 
 import com.google.common.collect.ImmutableMap;
+import common.Global;
 
 import controllers.Users;
 
@@ -34,7 +35,8 @@ import controllers.Users;
  */
 public class AuthenticationControllerTest {
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
+	private static ControllerTestUtils utils = Global.INJECTOR
+			.getInstance(ControllerTestUtils.class);
 	
 	@BeforeClass
 	public static void startApp() throws Exception {

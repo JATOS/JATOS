@@ -6,8 +6,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import models.UserDao;
 import models.UserModel;
 import play.data.validation.ValidationError;
+
+import com.google.inject.Inject;
 
 /**
  * Service class mostly for Users controller. Handles everything around
@@ -21,12 +24,21 @@ public class UserService {
 	public static final String ADMIN_PASSWORD = "admin";
 	public static final String ADMIN_NAME = "Admin";
 
-	public static UserModel createAdmin() throws UnsupportedEncodingException,
+	private final UserDao userDao;
+	private final PersistanceUtils persistanceUtils;
+
+	@Inject
+	public UserService(UserDao userDao, PersistanceUtils persistanceUtils) {
+		this.userDao = userDao;
+		this.persistanceUtils = persistanceUtils;
+	}
+
+	public UserModel createAdmin() throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
 		String passwordHash = getHashMDFive(ADMIN_PASSWORD);
 		UserModel adminUser = new UserModel(ADMIN_EMAIL, ADMIN_NAME,
 				passwordHash);
-		PersistanceUtils.addUser(adminUser);
+		persistanceUtils.addUser(adminUser);
 		return adminUser;
 	}
 
@@ -45,13 +57,13 @@ public class UserService {
 		return sb.toString();
 	}
 
-	public static List<ValidationError> validateNewUser(UserModel newUser,
+	public List<ValidationError> validateNewUser(UserModel newUser,
 			String password, String passwordRepeat)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 
 		// Check if user with this email already exists.
-		if (UserModel.findByEmail(newUser.getEmail()) != null) {
+		if (userDao.findByEmail(newUser.getEmail()) != null) {
 			errorList.add(new ValidationError(UserModel.EMAIL,
 					ErrorMessages.THIS_EMAIL_IS_ALREADY_REGISTERED));
 		}
@@ -60,7 +72,7 @@ public class UserService {
 		return errorList;
 	}
 
-	public static List<ValidationError> validateChangePassword(UserModel user,
+	public List<ValidationError> validateChangePassword(UserModel user,
 			String password, String passwordRepeat, String oldPasswordHash)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
@@ -75,7 +87,7 @@ public class UserService {
 		return errorList;
 	}
 
-	public static void checkPasswords(String password, String passwordRepeat,
+	public void checkPasswords(String password, String passwordRepeat,
 			List<ValidationError> errorList)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 

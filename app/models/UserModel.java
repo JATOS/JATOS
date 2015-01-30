@@ -173,26 +173,4 @@ public class UserModel {
 		return errorList.isEmpty() ? null : errorList;
 	}
 
-	public static UserModel findByEmail(String email) {
-		return JPA.em().find(UserModel.class, email);
-	}
-
-	public static List<UserModel> findAll() {
-		TypedQuery<UserModel> query = JPA.em().createQuery(
-				"SELECT e FROM UserModel e", UserModel.class);
-		return query.getResultList();
-	}
-
-	public void persist() {
-		JPA.em().persist(this);
-	}
-
-	public void merge() {
-		JPA.em().merge(this);
-	}
-
-	public void remove() {
-		JPA.em().remove(this);
-	}
-
 }

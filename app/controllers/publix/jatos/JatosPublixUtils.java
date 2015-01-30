@@ -1,6 +1,7 @@
 package controllers.publix.jatos;
 
 import models.StudyModel;
+import models.UserDao;
 import models.UserModel;
 import models.workers.JatosWorker;
 import models.workers.Worker;
@@ -21,6 +22,7 @@ import exceptions.PublixException;
 public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 
 	private JatosErrorMessages errorMessages;
+	private static UserDao userDao = new UserDao();
 
 	public JatosPublixUtils(JatosErrorMessages errorMessages) {
 		super(errorMessages);
@@ -43,7 +45,7 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 		if (email == null) {
 			throw new ForbiddenPublixException(ErrorMessages.NO_USER_LOGGED_IN);
 		}
-		UserModel loggedInUser = UserModel.findByEmail(email);
+		UserModel loggedInUser = userDao.findByEmail(email);
 		if (loggedInUser == null) {
 			throw new ForbiddenPublixException(
 					ErrorMessages.userNotExist(email));

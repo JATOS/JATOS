@@ -13,6 +13,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import common.Global;
+
 import play.mvc.Result;
 import services.Breadcrumbs;
 import controllers.Users;
@@ -24,7 +26,8 @@ import controllers.Users;
  */
 public class HomeControllerTest {
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
+	private static ControllerTestUtils utils = Global.INJECTOR
+			.getInstance(ControllerTestUtils.class);
 	
 	@BeforeClass
 	public static void startApp() throws Exception {

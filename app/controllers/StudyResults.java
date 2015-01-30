@@ -23,6 +23,9 @@ import services.IOUtils;
 import services.JsonUtils;
 import services.Messages;
 import services.PersistanceUtils;
+
+import com.google.inject.Inject;
+
 import exceptions.ResultException;
 
 /**
@@ -34,19 +37,29 @@ public class StudyResults extends Controller {
 
 	private static final String CLASS_NAME = StudyResults.class.getSimpleName();
 
+	private final PersistanceUtils persistanceUtils;
+	private final ControllerUtils controllerUtils;
+
+	@Inject
+	public StudyResults(PersistanceUtils persistanceUtils,
+			ControllerUtils controllerUtils) {
+		this.persistanceUtils = persistanceUtils;
+		this.controllerUtils = controllerUtils;
+	}
+
 	/**
 	 * Shows view with all StudyResults of a study.
 	 */
 	@Transactional
-	public static Result index(Long studyId, String errorMsg, int httpStatus)
+	public Result index(Long studyId, String errorMsg, int httpStatus)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
@@ -57,13 +70,12 @@ public class StudyResults extends Controller {
 	}
 
 	@Transactional
-	public static Result index(Long studyId, String errorMsg)
-			throws ResultException {
+	public Result index(Long studyId, String errorMsg) throws ResultException {
 		return index(studyId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
-	public static Result index(Long studyId) throws ResultException {
+	public Result index(Long studyId) throws ResultException {
 		return index(studyId, null, Http.Status.OK);
 	}
 
@@ -73,19 +85,19 @@ public class StudyResults extends Controller {
 	 * Takes a string with a list of StudyResults and removes them all.
 	 */
 	@Transactional
-	public static Result remove(String studyResultIds) throws ResultException {
+	public Result remove(String studyResultIds) throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: studyResultIds " + studyResultIds
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 
-		List<Long> studyResultIdList = ControllerUtils
+		List<Long> studyResultIdList = controllerUtils
 				.extractResultIds(studyResultIds);
 		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
 		checkAllStudyResults(studyResultList, loggedInUser, true);
 
 		for (StudyResult studyResult : studyResultList) {
-			PersistanceUtils.removeStudyResult(studyResult);
+			persistanceUtils.removeStudyResult(studyResult);
 		}
 		return ok();
 	}
@@ -96,18 +108,18 @@ public class StudyResults extends Controller {
 	 * Returns all StudyResults of a study in JSON format.
 	 */
 	@Transactional
-	public static Result tableDataByStudy(Long studyId) throws ResultException {
+	public Result tableDataByStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 		String dataAsJson = null;
 		try {
 			dataAsJson = JsonUtils.allStudyResultsForUI(study);
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
-			ControllerUtils.throwAjaxResultException(errorMsg,
+			controllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
@@ -119,14 +131,13 @@ public class StudyResults extends Controller {
 	 * Returns all StudyResults belonging to a worker as JSON.
 	 */
 	@Transactional
-	public static Result tableDataByWorker(Long workerId)
-			throws ResultException {
+	public Result tableDataByWorker(Long workerId) throws ResultException {
 		Logger.info(CLASS_NAME + ".tableDataByWorker: workerId " + workerId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		Worker worker = Worker.findById(workerId);
-		ControllerUtils.checkWorker(worker, workerId);
+		controllerUtils.checkWorker(worker, workerId);
 
 		List<StudyResult> allowedStudyResultList = getAllowedStudyResultList(
 				loggedInUser, worker);
@@ -135,7 +146,7 @@ public class StudyResults extends Controller {
 			dataAsJson = JsonUtils.allStudyResultsForUI(allowedStudyResultList);
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
-			ControllerUtils.throwAjaxResultException(errorMsg,
+			controllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
@@ -145,8 +156,8 @@ public class StudyResults extends Controller {
 	 * Generate the list of StudyResults that the logged-in user is allowed to
 	 * see.
 	 */
-	private static List<StudyResult> getAllowedStudyResultList(
-			UserModel loggedInUser, Worker worker) {
+	private List<StudyResult> getAllowedStudyResultList(UserModel loggedInUser,
+			Worker worker) {
 		List<StudyResult> allowedStudyResultList = new ArrayList<StudyResult>();
 		for (StudyResult studyResult : worker.getStudyResultList()) {
 			if (studyResult.getStudy().hasMember(loggedInUser)) {
@@ -163,16 +174,15 @@ public class StudyResults extends Controller {
 	 * specified in the given string as text.
 	 */
 	@Transactional
-	public static Result exportData(String studyResultIds)
-			throws ResultException {
+	public Result exportData(String studyResultIds) throws ResultException {
 		Logger.info(CLASS_NAME + ".exportData: studyResultIds "
 				+ studyResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 
-		List<Long> studyResultIdList = ControllerUtils
+		List<Long> studyResultIdList = controllerUtils
 				.extractResultIds(studyResultIds);
 		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
 		checkAllStudyResults(studyResultList, loggedInUser, false);
@@ -192,7 +202,7 @@ public class StudyResults extends Controller {
 	/**
 	 * Put all ComponentResult's data into a String each in a separate line.
 	 */
-	private static String getStudyResultData(List<StudyResult> studyResultList)
+	private String getStudyResultData(List<StudyResult> studyResultList)
 			throws ResultException {
 		StringBuilder sb = new StringBuilder();
 		for (StudyResult studyResult : studyResultList) {
@@ -215,15 +225,15 @@ public class StudyResults extends Controller {
 	/**
 	 * Get all StudyResults or throw a ResultException if one doesn't exist.
 	 */
-	private static List<StudyResult> getAllStudyResults(
-			List<Long> studyResultIdList) throws ResultException {
+	private List<StudyResult> getAllStudyResults(List<Long> studyResultIdList)
+			throws ResultException {
 		List<StudyResult> studyResultList = new ArrayList<>();
 		for (Long studyResultId : studyResultIdList) {
 			StudyResult studyResult = StudyResult.findById(studyResultId);
 			if (studyResult == null) {
 				String errorMsg = ErrorMessages
 						.studyResultNotExist(studyResultId);
-				ControllerUtils.throwAjaxResultException(errorMsg,
+				controllerUtils.throwAjaxResultException(errorMsg,
 						Http.Status.NOT_FOUND);
 			}
 			studyResultList.add(studyResult);
@@ -231,15 +241,15 @@ public class StudyResults extends Controller {
 		return studyResultList;
 	}
 
-	private static void checkAllStudyResults(List<StudyResult> studyResultList,
+	private void checkAllStudyResults(List<StudyResult> studyResultList,
 			UserModel loggedInUser, boolean studyMustNotBeLocked)
 			throws ResultException {
 		for (StudyResult studyResult : studyResultList) {
 			StudyModel study = studyResult.getStudy();
-			ControllerUtils.checkStandardForStudy(study, study.getId(),
+			controllerUtils.checkStandardForStudy(study, study.getId(),
 					loggedInUser);
 			if (studyMustNotBeLocked) {
-				ControllerUtils.checkStudyLocked(study);
+				controllerUtils.checkStudyLocked(study);
 			}
 		}
 	}

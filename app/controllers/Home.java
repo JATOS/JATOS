@@ -11,6 +11,9 @@ import play.mvc.Http;
 import play.mvc.Result;
 import services.Breadcrumbs;
 import services.Messages;
+
+import com.google.inject.Inject;
+
 import exceptions.ResultException;
 
 /**
@@ -22,15 +25,21 @@ public class Home extends Controller {
 
 	private static final String CLASS_NAME = Home.class.getSimpleName();
 
+	private final ControllerUtils controllerUtils;
+
+	@Inject
+	public Home(ControllerUtils controllerUtils) {
+		this.controllerUtils = controllerUtils;
+	}
+
 	/**
 	 * Shows home view
 	 */
 	@Transactional
-	public static Result home(String errorMsg, int httpStatus)
-			throws ResultException {
+	public Result home(String errorMsg, int httpStatus) throws ResultException {
 		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
 		Messages messages = new Messages().error(errorMsg);
@@ -40,7 +49,7 @@ public class Home extends Controller {
 	}
 
 	@Transactional
-	public static Result home() throws ResultException {
+	public Result home() throws ResultException {
 		return home(null, Http.Status.OK);
 	}
 

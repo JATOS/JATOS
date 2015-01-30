@@ -14,6 +14,9 @@ import org.junit.rules.ExpectedException;
 
 import play.mvc.HandlerRef;
 import services.IOUtils;
+
+import common.Global;
+
 import controllers.Studies;
 import controllers.Users;
 import exceptions.ResultException;
@@ -25,7 +28,8 @@ import exceptions.ResultException;
  */
 public class AccessControllerTest {
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
+	private static ControllerTestUtils utils = Global.INJECTOR
+			.getInstance(ControllerTestUtils.class);
 	private static StudyModel studyTemplate;
 	private static UserModel testUser;
 

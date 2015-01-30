@@ -24,6 +24,7 @@ import services.PersistanceUtils;
 import services.ZipUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
 
 import exceptions.ResultException;
 
@@ -46,6 +47,15 @@ public class ImportExport extends Controller {
 	public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
 
+	private final PersistanceUtils persistanceUtils;
+	private final ControllerUtils controllerUtils;
+
+	@Inject
+	public ImportExport(PersistanceUtils persistanceUtils, ControllerUtils controllerUtils) {
+		this.persistanceUtils = persistanceUtils;
+		this.controllerUtils = controllerUtils;
+	}
+
 	/**
 	 * Ajax request
 	 * 
@@ -54,10 +64,10 @@ public class ImportExport extends Controller {
 	 * importStudyConfirmed(). Returns JSON.
 	 */
 	@Transactional
-	public static Result importStudy() throws ResultException {
+	public Result importStudy() throws ResultException {
 		Logger.info(CLASS_NAME + ".importStudy: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 
 		File tempUnzippedStudyDir = unzipUploadedFile();
 		StudyModel uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, false);
@@ -73,7 +83,7 @@ public class ImportExport extends Controller {
 		if (studyExists && !currentStudy.hasMember(loggedInUser)) {
 			String errorMsg = ErrorMessages.studyImportNotMember(currentStudy
 					.getTitle());
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.FORBIDDEN);
 		}
 		if (dirExists
@@ -82,7 +92,7 @@ public class ImportExport extends Controller {
 			String errorMsg = ErrorMessages
 					.studyAssetsDirExistsBelongsToDifferentStudy(uploadedStudy
 							.getDirName());
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.FORBIDDEN);
 		}
 
@@ -103,16 +113,16 @@ public class ImportExport extends Controller {
 	 * of an importStudy() call.
 	 */
 	@Transactional
-	public static Result importStudyConfirmed() throws ResultException {
+	public Result importStudyConfirmed() throws ResultException {
 		Logger.info(CLASS_NAME + ".importStudyConfirmed: "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 
 		// Get confirmation: overwrite study's properties and/or study assets
 		JsonNode json = request().body().asJson();
 		if (json == null) {
 			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 		Boolean studysPropertiesConfirm = json.findPath(
@@ -121,7 +131,7 @@ public class ImportExport extends Controller {
 				.asBoolean();
 		if (studysPropertiesConfirm == null || studysDirConfirm == null) {
 			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 
@@ -132,9 +142,9 @@ public class ImportExport extends Controller {
 
 		boolean studyExists = (currentStudy != null);
 		if (studyExists) {
-			ControllerUtils.checkStandardForStudy(currentStudy,
+			controllerUtils.checkStandardForStudy(currentStudy,
 					currentStudy.getId(), loggedInUser);
-			ControllerUtils.checkStudyLocked(currentStudy);
+			controllerUtils.checkStudyLocked(currentStudy);
 			if (studysDirConfirm) {
 				if (studysPropertiesConfirm) {
 					moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy,
@@ -148,13 +158,13 @@ public class ImportExport extends Controller {
 			}
 			if (studysPropertiesConfirm) {
 				if (studysDirConfirm) {
-					PersistanceUtils.updateStudysProperties(currentStudy,
+					persistanceUtils.updateStudysProperties(currentStudy,
 							importedStudy);
 				} else {
 					// If we don't overwrite the current study dir with the
 					// uploaded one, don't change the study dir name in the
 					// properties
-					PersistanceUtils.updateStudysPropertiesWODirName(
+					persistanceUtils.updateStudysPropertiesWODirName(
 							currentStudy, importedStudy);
 				}
 				updateStudysComponents(currentStudy, importedStudy);
@@ -165,7 +175,7 @@ public class ImportExport extends Controller {
 		} else {
 			moveStudyAssetsDir(tempUnzippedStudyDir, null,
 					importedStudy.getDirName(), loggedInUser);
-			PersistanceUtils.addStudy(importedStudy, loggedInUser);
+			persistanceUtils.addStudy(importedStudy, loggedInUser);
 			tempUnzippedStudyDir.delete();
 			return ok(importedStudy.getId().toString());
 		}
@@ -175,12 +185,12 @@ public class ImportExport extends Controller {
 	 * Get unzipped study dir File object stored in Java's temp directory. Name
 	 * is stored in session. Discard session variable afterwards.
 	 */
-	private static File getUnzippedStudyDir() throws ResultException {
+	private File getUnzippedStudyDir() throws ResultException {
 		String unzippedStudyDirName = session(SESSION_UNZIPPED_STUDY_DIR);
 		session().remove(SESSION_UNZIPPED_STUDY_DIR);
 		if (unzippedStudyDirName == null || unzippedStudyDirName.isEmpty()) {
 			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 		File unzippedStudyDir = new File(System.getProperty("java.io.tmpdir"),
@@ -192,7 +202,7 @@ public class ImportExport extends Controller {
 	 * Deletes current study assets' dir and moves imported study assets' dir
 	 * from Java's temp dir to study assets root dir
 	 */
-	private static void moveStudyAssetsDir(File unzippedStudyDir,
+	private void moveStudyAssetsDir(File unzippedStudyDir,
 			StudyModel currentStudy, String studyAssetsDirName,
 			UserModel loggedInUser) throws ResultException {
 		try {
@@ -210,23 +220,23 @@ public class ImportExport extends Controller {
 				IOUtils.moveStudyAssetsDir(studyAssetsDir, studyAssetsDirName);
 			} else {
 				String errorMsg = ErrorMessages.MORE_THAN_ONE_DIR_IN_ZIP;
-				ControllerUtils.throwHomeResultException(errorMsg,
+				controllerUtils.throwHomeResultException(errorMsg,
 						Http.Status.BAD_REQUEST);
 			}
 		} catch (IOException e) {
 			String errorMsg = "Study not imported: " + e.getMessage();
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 	}
 
-	private static StudyModel unmarshalStudy(File tempDir,
-			boolean deleteAfterwards) throws ResultException {
+	private StudyModel unmarshalStudy(File tempDir, boolean deleteAfterwards)
+			throws ResultException {
 		File[] studyFileList = IOUtils.findFiles(tempDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		if (studyFileList.length != 1) {
 			String errorMsg = ErrorMessages.STUDY_INVALID;
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 		File studyFile = studyFileList[0];
@@ -234,12 +244,12 @@ public class ImportExport extends Controller {
 		StudyModel study = uploadUnmarshaller.unmarshalling(studyFile,
 				StudyModel.class);
 		if (study == null) {
-			ControllerUtils.throwHomeResultException(
+			controllerUtils.throwHomeResultException(
 					uploadUnmarshaller.getErrorMsg(), Http.Status.BAD_REQUEST);
 		}
 		if (study.validate() != null) {
 			String errorMsg = ErrorMessages.STUDY_INVALID;
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 		if (deleteAfterwards) {
@@ -248,19 +258,19 @@ public class ImportExport extends Controller {
 		return study;
 	}
 
-	private static File unzipUploadedFile() throws ResultException {
+	private File unzipUploadedFile() throws ResultException {
 		// Get file from request
 		FilePart filePart = request().body().asMultipartFormData()
 				.getFile(StudyModel.STUDY);
 		if (filePart == null) {
 			String errorMsg = ErrorMessages.FILE_MISSING;
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 		if (!filePart.getKey().equals(StudyModel.STUDY)) {
 			// If wrong key the upload comes from wrong form
 			String errorMsg = ErrorMessages.NO_STUDY_UPLOAD;
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 
@@ -269,7 +279,7 @@ public class ImportExport extends Controller {
 			tempDir = ZipUtil.unzip(filePart.getFile());
 		} catch (IOException e1) {
 			String errorMsg = ErrorMessages.IMPORT_OF_STUDY_FAILED;
-			ControllerUtils.throwHomeResultException(errorMsg,
+			controllerUtils.throwHomeResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return tempDir;
@@ -279,7 +289,7 @@ public class ImportExport extends Controller {
 	 * Update the components of the current study with the one of the imported
 	 * study.
 	 */
-	private static void updateStudysComponents(StudyModel currentStudy,
+	private void updateStudysComponents(StudyModel currentStudy,
 			StudyModel updatedStudy) {
 		// Clear list and rebuild it from updated study
 		List<ComponentModel> currentComponentList = new ArrayList<ComponentModel>(
@@ -296,14 +306,14 @@ public class ImportExport extends Controller {
 				}
 			}
 			if (currentComponent != null) {
-				PersistanceUtils.updateComponentsProperties(currentComponent,
+				persistanceUtils.updateComponentsProperties(currentComponent,
 						updatedComponent);
 				currentStudy.addComponent(currentComponent);
 				currentComponentList.remove(currentComponent);
 			} else {
 				// If the updated component doesn't exist in the current study
 				// add it.
-				PersistanceUtils.addComponent(currentStudy, updatedComponent);
+				persistanceUtils.addComponent(currentStudy, updatedComponent);
 			}
 		}
 
@@ -326,14 +336,14 @@ public class ImportExport extends Controller {
 	 * directory and the study as JSON as a .jas file.
 	 */
 	@Transactional
-	public static Result exportStudy(Long studyId) throws ResultException {
+	public Result exportStudy(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
 
 		File zipFile = null;
 		try {
@@ -349,7 +359,7 @@ public class ImportExport extends Controller {
 			studyAsJsonFile.delete();
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.studyExportFailure(studyId);
-			ControllerUtils.throwAjaxResultException(errorMsg,
+			controllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 
@@ -370,7 +380,7 @@ public class ImportExport extends Controller {
 	 * Export of a component. Returns a .jac file with the component in JSON.
 	 */
 	@Transactional
-	public static Result exportComponent(Long studyId, Long componentId)
+	public Result exportComponent(Long studyId, Long componentId)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".exportComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
@@ -378,9 +388,9 @@ public class ImportExport extends Controller {
 		// Remove cookie of jQuery.fileDownload plugin
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 
 		String componentAsJson = null;
@@ -388,7 +398,7 @@ public class ImportExport extends Controller {
 			componentAsJson = JsonUtils.asJsonForIO(component);
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.componentExportFailure(componentId);
-			ControllerUtils.throwAjaxResultException(errorMsg,
+			controllerUtils.throwAjaxResultException(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 
@@ -410,25 +420,25 @@ public class ImportExport extends Controller {
 	 * happens in importComponentConfirmed(). Returns JSON with the results.
 	 */
 	@Transactional
-	public static Result importComponent(Long studyId) throws ResultException {
+	public Result importComponent(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".importComponent: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStudyLocked(study);
 
 		FilePart filePart = request().body().asMultipartFormData()
 				.getFile(ComponentModel.COMPONENT);
 		if (filePart == null) {
 			String errorMsg = ErrorMessages.FILE_MISSING;
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		// If wrong key the upload comes from the wrong form
 		if (!filePart.getKey().equals(ComponentModel.COMPONENT)) {
 			String errorMsg = ErrorMessages.NO_COMPONENT_UPLOAD;
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 
@@ -455,15 +465,14 @@ public class ImportExport extends Controller {
 	 * Actual import of component.
 	 */
 	@Transactional
-	public static Result importComponentConfirmed(Long studyId)
-			throws ResultException {
+	public Result importComponentConfirmed(Long studyId) throws ResultException {
 		Logger.info(CLASS_NAME + ".importComponentConfirmed: " + "studyId "
 				+ studyId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
-		ControllerUtils.checkStudyLocked(study);
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		controllerUtils.checkStudyLocked(study);
 
 		File componentFile = getTempComponentFile(study);
 		ComponentModel uploadedComponent = unmarshalComponent(componentFile,
@@ -472,10 +481,10 @@ public class ImportExport extends Controller {
 				.findByUuid(uploadedComponent.getUuid());
 		boolean componentExists = (currentComponent != null);
 		if (componentExists) {
-			PersistanceUtils.updateComponentsProperties(currentComponent,
+			persistanceUtils.updateComponentsProperties(currentComponent,
 					uploadedComponent);
 		} else {
-			PersistanceUtils.addComponent(study, uploadedComponent);
+			persistanceUtils.addComponent(study, uploadedComponent);
 		}
 		return ok();
 	}
@@ -484,13 +493,12 @@ public class ImportExport extends Controller {
 	 * Get component's File object. Name is stored in session. Discard session
 	 * variable afterwards.
 	 */
-	private static File getTempComponentFile(StudyModel study)
-			throws ResultException {
+	private File getTempComponentFile(StudyModel study) throws ResultException {
 		String tempComponentFileName = session(SESSION_TEMP_COMPONENT_FILE);
 		session().remove(SESSION_TEMP_COMPONENT_FILE);
 		if (tempComponentFileName == null || tempComponentFileName.isEmpty()) {
 			String errorMsg = ErrorMessages.IMPORT_OF_COMPONENT_FAILED;
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, study.getId());
 		}
 		File tempComponentFile = new File(System.getProperty("java.io.tmpdir"),
@@ -498,18 +506,18 @@ public class ImportExport extends Controller {
 		return tempComponentFile;
 	}
 
-	private static ComponentModel unmarshalComponent(File file, StudyModel study)
+	private ComponentModel unmarshalComponent(File file, StudyModel study)
 			throws ResultException {
 		ComponentModel component = new UploadUnmarshaller().unmarshalling(file,
 				ComponentModel.class);
 		if (component == null) {
 			String errorMsg = ErrorMessages.NO_COMPONENT_UPLOAD;
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, study.getId());
 		}
 		if (component.validate() != null) {
 			String errorMsg = ErrorMessages.COMPONENT_INVALID;
-			ControllerUtils.throwStudiesResultException(errorMsg,
+			controllerUtils.throwStudiesResultException(errorMsg,
 					Http.Status.BAD_REQUEST, study.getId());
 		}
 		return component;

@@ -14,10 +14,15 @@ import com.google.inject.Injector;
 import exceptions.PublixException;
 import exceptions.ResultException;
 
+/**
+ * Play's Global class. We use Guice for dependency injection.
+ * 
+ * @author Kristian Lange
+ */
 public class Global extends GlobalSettings {
 
 	private static final String CLASS_NAME = Global.class.getSimpleName();
-	private static final Injector INJECTOR = createInjector();
+	public static final Injector INJECTOR = createInjector();
 
 	@Override
 	public <A> A getControllerInstance(Class<A> controllerClass)
@@ -25,10 +30,6 @@ public class Global extends GlobalSettings {
 		return INJECTOR.getInstance(controllerClass);
 	}
 
-	/**
-	 * Needed for non-static action methods in controllers. Used in Publix
-	 * interface.
-	 */
 	private static Injector createInjector() {
 		return Guice.createInjector();
 	}
@@ -36,7 +37,8 @@ public class Global extends GlobalSettings {
 	@Override
 	public void onStart(Application app) {
 		Logger.info(CLASS_NAME + ".onStart: Application has started");
-		Initializer.initialize();
+		// Do some JATOS specific initialisation
+		INJECTOR.getInstance(Initializer.class).initialize();
 	}
 
 	@Override

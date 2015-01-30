@@ -30,6 +30,7 @@ import services.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
+import common.Global;
 
 import controllers.Studies;
 import controllers.Users;
@@ -42,7 +43,8 @@ import exceptions.ResultException;
  */
 public class StudiesControllerTest {
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
+	private static ControllerTestUtils utils = Global.INJECTOR
+			.getInstance(ControllerTestUtils.class);
 	private static StudyModel studyTemplate;
 
 	@Rule

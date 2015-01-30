@@ -22,6 +22,9 @@ import services.IOUtils;
 import services.JsonUtils;
 import services.Messages;
 import services.PersistanceUtils;
+
+import com.google.inject.Inject;
+
 import exceptions.ResultException;
 
 /**
@@ -34,21 +37,31 @@ public class ComponentResults extends Controller {
 	private static final String CLASS_NAME = ComponentResults.class
 			.getSimpleName();
 
+	private final ControllerUtils controllerUtils;
+	private final PersistanceUtils persistanceUtils;
+
+	@Inject
+	public ComponentResults(ControllerUtils controllerUtils,
+			PersistanceUtils persistanceUtils) {
+		this.controllerUtils = controllerUtils;
+		this.persistanceUtils = persistanceUtils;
+	}
+
 	/**
 	 * Shows a view with all component results of a component of a study.
 	 */
 	@Transactional
-	public static Result index(Long studyId, Long componentId, String errorMsg,
+	public Result index(Long studyId, Long componentId, String errorMsg,
 			int httpStatus) throws ResultException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
 		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 
 		Messages messages = new Messages().error(errorMsg);
@@ -60,14 +73,13 @@ public class ComponentResults extends Controller {
 	}
 
 	@Transactional
-	public static Result index(Long studyId, Long componentId, String errorMsg)
+	public Result index(Long studyId, Long componentId, String errorMsg)
 			throws ResultException {
 		return index(studyId, componentId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
-	public static Result index(Long studyId, Long componentId)
-			throws ResultException {
+	public Result index(Long studyId, Long componentId) throws ResultException {
 		return index(studyId, componentId, null, Http.Status.OK);
 	}
 
@@ -77,20 +89,19 @@ public class ComponentResults extends Controller {
 	 * Removes all ComponentResults specified in the parameter.
 	 */
 	@Transactional
-	public static Result remove(String componentResultIds)
-			throws ResultException {
+	public Result remove(String componentResultIds) throws ResultException {
 		Logger.info(CLASS_NAME + ".remove: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 
-		List<Long> componentResultIdList = ControllerUtils
+		List<Long> componentResultIdList = controllerUtils
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
 		checkAllComponentResults(componentResultList, loggedInUser, true);
 
 		for (ComponentResult componentResult : componentResultList) {
-			PersistanceUtils.removeComponentResult(componentResult);
+			persistanceUtils.removeComponentResult(componentResult);
 		}
 		return ok();
 	}
@@ -101,15 +112,15 @@ public class ComponentResults extends Controller {
 	 * Returns all ComponentResults as JSON for a given component.
 	 */
 	@Transactional
-	public static Result tableDataByComponent(Long studyId, Long componentId)
+	public Result tableDataByComponent(Long studyId, Long componentId)
 			throws ResultException {
 		Logger.info(CLASS_NAME + ".tableDataByComponent: studyId " + studyId
 				+ ", " + "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
+		controllerUtils.checkStandardForComponents(studyId, componentId, study,
 				loggedInUser, component);
 		String dataAsJson = null;
 		try {
@@ -127,16 +138,15 @@ public class ComponentResults extends Controller {
 	 * component.
 	 */
 	@Transactional
-	public static Result exportData(String componentResultIds)
-			throws ResultException {
+	public Result exportData(String componentResultIds) throws ResultException {
 		Logger.info(CLASS_NAME + ".exportData: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
 		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
 
-		List<Long> componentResultIdList = ControllerUtils
+		List<Long> componentResultIdList = controllerUtils
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
 		checkAllComponentResults(componentResultList, loggedInUser, true);
@@ -156,7 +166,7 @@ public class ComponentResults extends Controller {
 	/**
 	 * Put all ComponentResult's data into a String each in a separate line.
 	 */
-	private static String getComponentResultData(
+	private String getComponentResultData(
 			List<ComponentResult> componentResultList) throws ResultException {
 		StringBuilder sb = new StringBuilder();
 		Iterator<ComponentResult> iterator = componentResultList.iterator();
@@ -173,7 +183,7 @@ public class ComponentResults extends Controller {
 		return sb.toString();
 	}
 
-	private static List<ComponentResult> getAllComponentResults(
+	private List<ComponentResult> getAllComponentResults(
 			List<Long> componentResultIdList) throws ResultException {
 		List<ComponentResult> componentResultList = new ArrayList<>();
 		for (Long componentResultId : componentResultIdList) {
@@ -182,7 +192,7 @@ public class ComponentResults extends Controller {
 			if (componentResult == null) {
 				String errorMsg = ErrorMessages
 						.componentResultNotExist(componentResultId);
-				ControllerUtils.throwAjaxResultException(errorMsg,
+				controllerUtils.throwAjaxResultException(errorMsg,
 						Http.Status.NOT_FOUND);
 			}
 			componentResultList.add(componentResult);
@@ -190,16 +200,16 @@ public class ComponentResults extends Controller {
 		return componentResultList;
 	}
 
-	private static void checkAllComponentResults(
+	private void checkAllComponentResults(
 			List<ComponentResult> componentResultList, UserModel loggedInUser,
 			boolean studyMustNotBeLocked) throws ResultException {
 		for (ComponentResult componentResult : componentResultList) {
 			ComponentModel component = componentResult.getComponent();
 			StudyModel study = component.getStudy();
-			ControllerUtils.checkStandardForComponents(study.getId(),
+			controllerUtils.checkStandardForComponents(study.getId(),
 					component.getId(), study, loggedInUser, component);
 			if (studyMustNotBeLocked) {
-				ControllerUtils.checkStudyLocked(study);
+				controllerUtils.checkStudyLocked(study);
 			}
 		}
 	}

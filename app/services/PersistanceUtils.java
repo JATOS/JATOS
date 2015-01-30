@@ -2,8 +2,11 @@ package services;
 
 import java.util.List;
 
+import com.google.inject.Inject;
+
 import models.ComponentModel;
 import models.StudyModel;
+import models.UserDao;
 import models.UserModel;
 import models.results.ComponentResult;
 import models.results.StudyResult;
@@ -26,10 +29,17 @@ public class PersistanceUtils {
 	public static boolean IN_MEMORY_DB = Play.application().configuration()
 			.getString("db.default.url").contains("jdbc:h2:mem:");
 
+	private final UserDao userDao;
+
+	@Inject
+	public PersistanceUtils(UserDao userDao) {
+		this.userDao = userDao;
+	}
+
 	/**
 	 * Creates StudyResult and adds it to the worker.
 	 */
-	public static StudyResult createStudyResult(StudyModel study, Worker worker) {
+	public StudyResult createStudyResult(StudyModel study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);
 		studyResult.persist();
 		worker.addStudyResult(studyResult);
@@ -40,8 +50,8 @@ public class PersistanceUtils {
 	/**
 	 * Creates ComponentResult and adds it to the study.
 	 */
-	public static ComponentResult createComponentResult(
-			StudyResult studyResult, ComponentModel component) {
+	public ComponentResult createComponentResult(StudyResult studyResult,
+			ComponentModel component) {
 		ComponentResult componentResult = new ComponentResult(component);
 		componentResult.setStudyResult(studyResult);
 		componentResult.persist();
@@ -54,8 +64,7 @@ public class PersistanceUtils {
 	/**
 	 * Create MTWorker. Distinguishes between normal and sandbox.
 	 */
-	public static MTWorker createMTWorker(String mtWorkerId,
-			boolean mTurkSandbox) {
+	public MTWorker createMTWorker(String mtWorkerId, boolean mTurkSandbox) {
 		MTWorker worker;
 		if (mTurkSandbox) {
 			worker = new MTSandboxWorker(mtWorkerId);
@@ -69,34 +78,34 @@ public class PersistanceUtils {
 	/**
 	 * Persist user und creates it's JatosWorker.
 	 */
-	public static void addUser(UserModel user) {
+	public void addUser(UserModel user) {
 		JatosWorker worker = new JatosWorker(user);
 		worker.persist();
 		user.setWorker(worker);
-		user.persist();
+		userDao.persist(user);
 		worker.merge();
 	}
 
 	/**
 	 * Changes name of user.
 	 */
-	public static void updateUser(UserModel user, String name) {
+	public void updateUser(UserModel user, String name) {
 		user.setName(name);
-		user.merge();
+		userDao.merge(user);
 	}
 
 	/**
 	 * Persist study and add member.
 	 */
-	public static void addStudy(StudyModel study, UserModel loggedInUser) {
+	public void addStudy(StudyModel study, UserModel loggedInUser) {
 		study.persist();
-		PersistanceUtils.addMemberToStudy(study, loggedInUser);
+		addMemberToStudy(study, loggedInUser);
 	}
 
 	/**
 	 * Add member to study.
 	 */
-	public static void addMemberToStudy(StudyModel study, UserModel member) {
+	public void addMemberToStudy(StudyModel study, UserModel member) {
 		study.addMember(member);
 		study.merge();
 	}
@@ -104,8 +113,7 @@ public class PersistanceUtils {
 	/**
 	 * Update properties of study with properties of updatedStudy.
 	 */
-	public static void updateStudysProperties(StudyModel study,
-			StudyModel updatedStudy) {
+	public void updateStudysProperties(StudyModel study, StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
 		study.setDirName(updatedStudy.getDirName());
@@ -118,7 +126,7 @@ public class PersistanceUtils {
 	 * Update properties of study with properties of updatedStudy (excluding
 	 * study's dir name).
 	 */
-	public static void updateStudysPropertiesWODirName(StudyModel study,
+	public void updateStudysPropertiesWODirName(StudyModel study,
 			StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
@@ -130,7 +138,7 @@ public class PersistanceUtils {
 	/**
 	 * Remove study and its components
 	 */
-	public static void removeStudy(StudyModel study) {
+	public void removeStudy(StudyModel study) {
 		// Remove all study's components
 		for (ComponentModel component : study.getComponentList()) {
 			component.remove();
@@ -145,7 +153,7 @@ public class PersistanceUtils {
 	/**
 	 * Persist component and add to study.
 	 */
-	public static void addComponent(StudyModel study, ComponentModel component) {
+	public void addComponent(StudyModel study, ComponentModel component) {
 		component.setStudy(study);
 		study.addComponent(component);
 		component.persist();
@@ -155,7 +163,7 @@ public class PersistanceUtils {
 	/**
 	 * Update component's properties with the ones from updatedComponent
 	 */
-	public static void updateComponentsProperties(ComponentModel component,
+	public void updateComponentsProperties(ComponentModel component,
 			ComponentModel updatedComponent) {
 		component.setTitle(updatedComponent.getTitle());
 		component.setReloadable(updatedComponent.isReloadable());
@@ -169,7 +177,7 @@ public class PersistanceUtils {
 	/**
 	 * Change and persist active property.
 	 */
-	public static void changeActive(ComponentModel component, boolean active) {
+	public void changeActive(ComponentModel component, boolean active) {
 		component.setActive(active);
 		component.merge();
 	}
@@ -178,8 +186,7 @@ public class PersistanceUtils {
 	 * Remove component from study, all its ComponentResults and the component
 	 * itself.
 	 */
-	public static void removeComponent(StudyModel study,
-			ComponentModel component) {
+	public void removeComponent(StudyModel study, ComponentModel component) {
 		// Remove component from study
 		study.removeComponent(component);
 		study.merge();
@@ -197,7 +204,7 @@ public class PersistanceUtils {
 	/**
 	 * Remove ComponentResult form its StudyResult and remove itself.
 	 */
-	public static void removeComponentResult(ComponentResult componentResult) {
+	public void removeComponentResult(ComponentResult componentResult) {
 		StudyResult studyResult = componentResult.getStudyResult();
 		studyResult.removeComponentResult(componentResult);
 		studyResult.merge();
@@ -208,7 +215,7 @@ public class PersistanceUtils {
 	 * Remove StudyResult and all its ComponentResults. Remove study result from
 	 * worker.
 	 */
-	public static void removeStudyResult(StudyResult studyResult) {
+	public void removeStudyResult(StudyResult studyResult) {
 		// Remove all component results of this study result
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
@@ -228,7 +235,7 @@ public class PersistanceUtils {
 	 * Removes all StudyResults including their ComponentResult of the specified
 	 * study.
 	 */
-	public static void removeAllStudyResults(StudyModel study) {
+	public void removeAllStudyResults(StudyModel study) {
 		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
 		for (StudyResult studyResult : studyResultList) {
 			removeStudyResult(studyResult);
@@ -238,7 +245,7 @@ public class PersistanceUtils {
 	/**
 	 * Removes a Worker including its StudyResults and their ComponentResults.
 	 */
-	public static void removeWorker(Worker worker) {
+	public void removeWorker(Worker worker) {
 		// Don't remove JATOS' own workers
 		if (worker instanceof JatosWorker) {
 			return;
