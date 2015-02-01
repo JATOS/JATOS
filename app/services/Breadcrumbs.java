@@ -3,6 +3,8 @@ package services;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.google.inject.Singleton;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -15,6 +17,7 @@ import controllers.routes;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class Breadcrumbs {
 
 	public static final String HOME = "Home";

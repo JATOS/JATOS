@@ -1,5 +1,9 @@
+import static org.fest.assertions.Assertions.assertThat;
+import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
+import static play.test.Helpers.redirectLocation;
+import static play.test.Helpers.status;
 
 import java.io.IOException;
 
@@ -11,13 +15,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import common.Global;
-
 import play.mvc.HandlerRef;
-import services.IOUtils;
+import play.mvc.Result;
+import utils.IOUtils;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
 import controllers.Studies;
 import controllers.Users;
-import exceptions.ResultException;
 
 /**
  * Testing actions if study is locked
@@ -26,8 +32,7 @@ import exceptions.ResultException;
  */
 public class LockedStudyControllerTest {
 
-	private static ControllerTestUtils utils = Global.INJECTOR
-			.getInstance(ControllerTestUtils.class);
+	private static ControllerTestUtils utils;
 	private static StudyModel studyTemplate;
 
 	@Rule
@@ -35,6 +40,8 @@ public class LockedStudyControllerTest {
 
 	@BeforeClass
 	public static void startApp() throws Exception {
+		Injector injector = Guice.createInjector();
+		utils = injector.getInstance(ControllerTestUtils.class);
 		utils.startApp();
 		studyTemplate = utils.importExampleStudy();
 	}
@@ -46,12 +53,12 @@ public class LockedStudyControllerTest {
 	}
 
 	private void checkDenyLocked(HandlerRef ref) {
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("Unlock it if you want to make changes.");
-		callAction(
+		Result result = callAction(
 				ref,
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						utils.admin.getEmail()));
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(redirectLocation(result)).contains("/jatos/");
 	}
 
 	@Test

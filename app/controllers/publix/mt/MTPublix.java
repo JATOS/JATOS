@@ -7,13 +7,19 @@ import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import play.Logger;
 import play.mvc.Result;
-import services.PersistanceUtils;
+import utils.JsonUtils;
+import utils.PersistanceUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
 import controllers.ControllerUtils;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixInterceptor;
 import controllers.publix.PublixUtils;
+import daos.ComponentResultDao;
 import exceptions.BadRequestPublixException;
 import exceptions.PublixException;
 
@@ -22,6 +28,7 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	public static final String HIT_ID = "hitId";
@@ -39,12 +46,16 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	private static final String CLASS_NAME = MTPublix.class.getSimpleName();
 
-	protected static final MTErrorMessages errorMessages = new MTErrorMessages();
-	protected static final MTPublixUtils utils = new MTPublixUtils(
-			errorMessages);
+	private final MTPublixUtils publixUtils;
+	private final MTErrorMessages errorMessages;
 
-	public MTPublix() {
-		super(utils);
+	@Inject
+	public MTPublix(MTPublixUtils publixUtils, MTErrorMessages errorMessages,
+			PersistanceUtils persistanceUtils,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
+		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils);
+		this.publixUtils = publixUtils;
+		this.errorMessages = errorMessages;
 	}
 
 	@Override
@@ -57,7 +68,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ "Parameters from MTurk: workerId " + mtWorkerId + ", "
 				+ "assignmentId " + mtAssignmentId + ", " + "hitId " + mtHitId);
 
-		StudyModel study = utils.retrieveStudy(studyId);
+		StudyModel study = publixUtils.retrieveStudy(studyId);
 
 		// Check if it's just a preview coming from MTurk. We don't allow
 		// previews.
@@ -65,28 +76,29 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				&& mtAssignmentId.equals(ASSIGNMENT_ID_NOT_AVAILABLE)) {
 			// It's a preview coming from Mechanical Turk -> no previews
 			throw new BadRequestPublixException(
-					MTErrorMessages.noPreviewAvailable(studyId));
+					errorMessages.noPreviewAvailable(studyId));
 		}
 
 		// Check worker and create if doesn't exists
 		if (mtWorkerId == null) {
-			throw new BadRequestPublixException(PublixErrorMessages.NO_MTURK_WORKERID);
+			throw new BadRequestPublixException(
+					PublixErrorMessages.NO_MTURK_WORKERID);
 		}
 		MTWorker worker = MTWorker.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
 			String workerType = session(PublixInterceptor.WORKER_TYPE);
 			boolean isRequestFromMTurkSandbox = workerType
 					.equals(MTSandboxWorker.WORKER_TYPE);
-			worker = PersistanceUtils.createMTWorker(mtWorkerId,
+			worker = persistanceUtils.createMTWorker(mtWorkerId,
 					isRequestFromMTurkSandbox);
 		}
-		utils.checkWorkerAllowedToStartStudy(worker, study);
+		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));
 
-		utils.finishAllPriorStudyResults(worker, study);
-		PersistanceUtils.createStudyResult(study, worker);
+		publixUtils.finishAllPriorStudyResults(worker, study);
+		persistanceUtils.createStudyResult(study, worker);
 
-		ComponentModel firstComponent = utils
+		ComponentModel firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, firstComponent.getId()));
@@ -98,15 +110,15 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
-		StudyModel study = utils.retrieveStudy(studyId);
-		MTWorker worker = utils.retrieveTypedWorker(session(WORKER_ID));
-		utils.checkWorkerAllowedToDoStudy(worker, study);
+		StudyModel study = publixUtils.retrieveStudy(studyId);
+		MTWorker worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
+		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
 
-		StudyResult studyResult = utils.retrieveWorkersLastStudyResult(worker,
-				study);
+		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
+				worker, study);
 		String confirmationCode;
-		if (!utils.studyDone(studyResult)) {
-			confirmationCode = utils.finishStudy(successful, errorMsg,
+		if (!publixUtils.studyDone(studyResult)) {
+			confirmationCode = publixUtils.finishStudy(successful, errorMsg,
 					studyResult);
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();

@@ -6,13 +6,19 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import play.mvc.With;
 import services.UserService;
+
+import com.google.inject.Singleton;
+import common.JatosGuiAction;
 
 /**
  * Controller that deals with login/logout.
  * 
  * @author Kristian Lange
  */
+@With(JatosGuiAction.class)
+@Singleton
 public class Authentication extends Controller {
 
 	private static final String CLASS_NAME = Authentication.class

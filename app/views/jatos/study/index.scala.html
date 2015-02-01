@@ -1,7 +1,8 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs:
-services.Breadcrumbs, messages: services.Messages, study: StudyModel,
-workerSet: Set[workers.Worker]) @views.html.jatos.main(studyList,
-loggedInUser, breadcrumbs, messages){
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs:services.Breadcrumbs, messages: services.Messages, study: StudyModel,
+workerSet: Set[workers.Worker], baseUrl: String)
+
+@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
 
 <!-- Toolbar -->
 <div id="studyToolbar" class="btn-toolbar" role="toolbar">
@@ -131,7 +132,7 @@ loggedInUser, breadcrumbs, messages){
 
 <script type="text/javascript">
 
-var studyProperties = @Html(services.JsonUtils.studyForUI(study));
+var studyProperties = @Html(utils.JsonUtils.studyForUI(study));
 
 var componentsTable;
 $(document).ready(function() {
@@ -416,7 +417,7 @@ $('#studyToolbar').on('click', '#closedStandaloneRun', function() {
 $('#studyToolbar').on('click', '#openStandaloneRun', function() {
 	var title = "Open standalone run";
 	var preText = "Use this link";
-	var url = "@ControllerUtils.getReferer()" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?openStandalone";
+	var url = "@baseUrl" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?openStandalone";
 	var html = "<p>" + url + "</p>"; 
 	var postText = "or press \"Run\" to start one right away. Remember to allow open standalone runs in your study's properties.";
 	askConfirmation(title, preText, html, postText, 'Run', function() {

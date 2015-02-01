@@ -13,10 +13,12 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import common.Global;
-
 import play.mvc.Result;
 import services.Breadcrumbs;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
 import controllers.Users;
 
 /**
@@ -26,11 +28,12 @@ import controllers.Users;
  */
 public class HomeControllerTest {
 
-	private static ControllerTestUtils utils = Global.INJECTOR
-			.getInstance(ControllerTestUtils.class);
+	private static ControllerTestUtils utils;
 	
 	@BeforeClass
 	public static void startApp() throws Exception {
+		Injector injector = Guice.createInjector();
+		utils = injector.getInstance(ControllerTestUtils.class);
 		utils.startApp();
 	}
 

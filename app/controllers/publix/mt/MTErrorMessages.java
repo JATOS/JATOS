@@ -1,5 +1,7 @@
 package controllers.publix.mt;
 
+import com.google.inject.Singleton;
+
 import controllers.publix.PublixErrorMessages;
 import models.workers.MTWorker;
 
@@ -8,6 +10,7 @@ import models.workers.MTWorker;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class MTErrorMessages extends PublixErrorMessages<MTWorker> {
 
 	@Override
@@ -49,7 +52,7 @@ public class MTErrorMessages extends PublixErrorMessages<MTWorker> {
 		return errorMsg;
 	}
 	
-	public static String noPreviewAvailable(Long studyId) {
+	public String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
 		return errorMsg;
 	}

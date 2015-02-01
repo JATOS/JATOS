@@ -79,7 +79,7 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 
 <script>
 @if(form.hasErrors) {
-	showWarning("Study wasn't saved");
+	showWarning(@services.ErrorMessages.STUDY_WASNT_SAVED);
 }
 @for(error <- form.globalErrors) {
 	showError("@error.message");

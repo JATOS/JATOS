@@ -24,7 +24,8 @@ import play.mvc.Result;
 import services.UserService;
 
 import com.google.common.collect.ImmutableMap;
-import common.Global;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import controllers.Users;
 
@@ -35,11 +36,12 @@ import controllers.Users;
  */
 public class AuthenticationControllerTest {
 
-	private static ControllerTestUtils utils = Global.INJECTOR
-			.getInstance(ControllerTestUtils.class);
+	private static ControllerTestUtils utils;
 	
 	@BeforeClass
 	public static void startApp() throws Exception {
+		Injector injector = Guice.createInjector();
+		utils = injector.getInstance(ControllerTestUtils.class);
 		utils.startApp();
 	}
 
@@ -63,7 +65,7 @@ public class AuthenticationControllerTest {
 		Result result = callAction(controllers.routes.ref.Authentication
 				.logout());
 		assertThat(status(result)).isEqualTo(SEE_OTHER);
-		redirectLocation(result).contains("login");
+		assertThat(redirectLocation(result)).contains("login");
 		assertThat(!session(result).containsKey(Users.SESSION_EMAIL));
 	}
 

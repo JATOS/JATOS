@@ -1,9 +1,12 @@
-package services;
+package utils;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.google.inject.Singleton;
+
+@Singleton
 public class DateUtils {
 
 	public static final String DATE_FORMAT_FILE = "yyyyMMddHHmmss";

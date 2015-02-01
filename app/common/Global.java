@@ -11,9 +11,6 @@ import play.mvc.SimpleResult;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import exceptions.PublixException;
-import exceptions.ResultException;
-
 /**
  * Play's Global class. We use Guice for dependency injection.
  * 
@@ -22,7 +19,7 @@ import exceptions.ResultException;
 public class Global extends GlobalSettings {
 
 	private static final String CLASS_NAME = Global.class.getSimpleName();
-	public static final Injector INJECTOR = createInjector();
+	private static final Injector INJECTOR = createInjector();
 
 	@Override
 	public <A> A getControllerInstance(Class<A> controllerClass)
@@ -43,32 +40,7 @@ public class Global extends GlobalSettings {
 
 	@Override
 	public Promise<SimpleResult> onError(RequestHeader request, Throwable t) {
-		Throwable cause = t.getCause();
-		Throwable causeCause = t.getCause().getCause();
-		
-		// Handle PublixException from Publix (public API) controllers
-		if (cause instanceof PublixException) {
-			PublixException publixException = (PublixException) cause;
-			SimpleResult result = publixException.getSimpleResult();
-			return Promise.<SimpleResult> pure(result);
-		}
-		if (causeCause instanceof PublixException) {
-			PublixException publixException = (PublixException) causeCause;
-			SimpleResult result = publixException.getSimpleResult();
-			return Promise.<SimpleResult> pure(result);
-		}
-		
-		// Handle ResultException from JATOS' GUI controllers
-		if (cause instanceof ResultException) {
-			ResultException resultException = (ResultException) cause;
-			SimpleResult result = resultException.getResult();
-			return Promise.<SimpleResult> pure(result);
-		}
-		if (causeCause instanceof ResultException) {
-			ResultException resultException = (ResultException) causeCause;
-			SimpleResult result = resultException.getResult();
-			return Promise.<SimpleResult> pure(result);
-		}
+		// Make sure no internal error msg is ever shown
 		return Promise.<SimpleResult> pure(Results
 				.internalServerError(views.html.publix.error
 						.render("Internal server error")));

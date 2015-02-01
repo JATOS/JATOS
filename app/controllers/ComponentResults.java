@@ -15,36 +15,69 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.mvc.With;
 import services.Breadcrumbs;
-import services.DateUtils;
+import services.ComponentService;
 import services.ErrorMessages;
-import services.IOUtils;
-import services.JsonUtils;
+import services.JatosGuiExceptionThrower;
 import services.Messages;
-import services.PersistanceUtils;
+import services.ResultService;
+import services.StudyService;
+import services.UserService;
+import utils.DateUtils;
+import utils.IOUtils;
+import utils.JsonUtils;
+import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
-import exceptions.ResultException;
+import common.JatosGuiAction;
+import daos.ComponentDao;
+import daos.ComponentResultDao;
+import daos.StudyDao;
+import exceptions.JatosGuiException;
 
 /**
  * Controller that deals with requests regarding ComponentResult.
  * 
  * @author Kristian Lange
  */
+@With(JatosGuiAction.class)
+@Singleton
 public class ComponentResults extends Controller {
 
 	private static final String CLASS_NAME = ComponentResults.class
 			.getSimpleName();
 
-	private final ControllerUtils controllerUtils;
 	private final PersistanceUtils persistanceUtils;
+	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final StudyService studyService;
+	private final ComponentService componentService;
+	private final UserService userService;
+	private final ResultService resultService;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
+	private final ComponentResultDao componentResultDao;
+	private final JsonUtils jsonUtils;
 
 	@Inject
-	public ComponentResults(ControllerUtils controllerUtils,
-			PersistanceUtils persistanceUtils) {
-		this.controllerUtils = controllerUtils;
+	public ComponentResults(PersistanceUtils persistanceUtils,
+			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			StudyService studyService, ComponentService componentService,
+			UserService userService, ResultService resultService,
+			StudyDao studyDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
 		this.persistanceUtils = persistanceUtils;
+		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.studyService = studyService;
+		this.componentService = componentService;
+		this.userService = userService;
+		this.resultService = resultService;
+		this.studyDao = studyDao;
+		this.componentDao = componentDao;
+		this.componentResultDao = componentResultDao;
+		this.jsonUtils = jsonUtils;
 	}
 
 	/**
@@ -52,17 +85,17 @@ public class ComponentResults extends Controller {
 	 */
 	@Transactional
 	public Result index(Long studyId, Long componentId, String errorMsg,
-			int httpStatus) throws ResultException {
+			int httpStatus) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
-		ComponentModel component = ComponentModel.findById(componentId);
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		ComponentModel component = componentDao.findById(componentId);
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		controllerUtils.checkStandardForComponents(studyId, componentId, study,
-				loggedInUser, component);
+		componentService.checkStandardForComponents(studyId, componentId,
+				study, loggedInUser, component);
 
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
@@ -74,12 +107,13 @@ public class ComponentResults extends Controller {
 
 	@Transactional
 	public Result index(Long studyId, Long componentId, String errorMsg)
-			throws ResultException {
+			throws JatosGuiException {
 		return index(studyId, componentId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
-	public Result index(Long studyId, Long componentId) throws ResultException {
+	public Result index(Long studyId, Long componentId)
+			throws JatosGuiException {
 		return index(studyId, componentId, null, Http.Status.OK);
 	}
 
@@ -89,13 +123,13 @@ public class ComponentResults extends Controller {
 	 * Removes all ComponentResults specified in the parameter.
 	 */
 	@Transactional
-	public Result remove(String componentResultIds) throws ResultException {
+	public Result remove(String componentResultIds) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".remove: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> componentResultIdList = controllerUtils
+		List<Long> componentResultIdList = resultService
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
 		checkAllComponentResults(componentResultList, loggedInUser, true);
@@ -113,18 +147,18 @@ public class ComponentResults extends Controller {
 	 */
 	@Transactional
 	public Result tableDataByComponent(Long studyId, Long componentId)
-			throws ResultException {
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".tableDataByComponent: studyId " + studyId
 				+ ", " + "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
-		ComponentModel component = ComponentModel.findById(componentId);
-		controllerUtils.checkStandardForComponents(studyId, componentId, study,
-				loggedInUser, component);
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		ComponentModel component = componentDao.findById(componentId);
+		componentService.checkStandardForComponents(studyId, componentId,
+				study, loggedInUser, component);
 		String dataAsJson = null;
 		try {
-			dataAsJson = JsonUtils.allComponentResultsForUI(component);
+			dataAsJson = jsonUtils.allComponentResultsForUI(component);
 		} catch (IOException e) {
 			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
 		}
@@ -138,15 +172,16 @@ public class ComponentResults extends Controller {
 	 * component.
 	 */
 	@Transactional
-	public Result exportData(String componentResultIds) throws ResultException {
+	public Result exportData(String componentResultIds)
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".exportData: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
-		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		response().discardCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> componentResultIdList = controllerUtils
+		List<Long> componentResultIdList = resultService
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
 		checkAllComponentResults(componentResultList, loggedInUser, true);
@@ -158,8 +193,8 @@ public class ComponentResults extends Controller {
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
 		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME,
-				ControllerUtils.JQDOWNLOAD_COOKIE_CONTENT);
+		response().setCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME,
+				ImportExport.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(componentResultDataAsStr);
 	}
 
@@ -167,7 +202,7 @@ public class ComponentResults extends Controller {
 	 * Put all ComponentResult's data into a String each in a separate line.
 	 */
 	private String getComponentResultData(
-			List<ComponentResult> componentResultList) throws ResultException {
+			List<ComponentResult> componentResultList) throws JatosGuiException {
 		StringBuilder sb = new StringBuilder();
 		Iterator<ComponentResult> iterator = componentResultList.iterator();
 		while (iterator.hasNext()) {
@@ -184,15 +219,15 @@ public class ComponentResults extends Controller {
 	}
 
 	private List<ComponentResult> getAllComponentResults(
-			List<Long> componentResultIdList) throws ResultException {
+			List<Long> componentResultIdList) throws JatosGuiException {
 		List<ComponentResult> componentResultList = new ArrayList<>();
 		for (Long componentResultId : componentResultIdList) {
-			ComponentResult componentResult = ComponentResult
+			ComponentResult componentResult = componentResultDao
 					.findById(componentResultId);
 			if (componentResult == null) {
 				String errorMsg = ErrorMessages
 						.componentResultNotExist(componentResultId);
-				controllerUtils.throwAjaxResultException(errorMsg,
+				jatosGuiExceptionThrower.throwAjax(errorMsg,
 						Http.Status.NOT_FOUND);
 			}
 			componentResultList.add(componentResult);
@@ -202,14 +237,14 @@ public class ComponentResults extends Controller {
 
 	private void checkAllComponentResults(
 			List<ComponentResult> componentResultList, UserModel loggedInUser,
-			boolean studyMustNotBeLocked) throws ResultException {
+			boolean studyMustNotBeLocked) throws JatosGuiException {
 		for (ComponentResult componentResult : componentResultList) {
 			ComponentModel component = componentResult.getComponent();
 			StudyModel study = component.getStudy();
-			controllerUtils.checkStandardForComponents(study.getId(),
+			componentService.checkStandardForComponents(study.getId(),
 					component.getId(), study, loggedInUser, component);
 			if (studyMustNotBeLocked) {
-				controllerUtils.checkStudyLocked(study);
+				studyService.checkStudyLocked(study);
 			}
 		}
 	}

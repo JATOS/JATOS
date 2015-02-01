@@ -27,12 +27,13 @@ import play.api.mvc.MultipartFormData;
 import play.api.mvc.MultipartFormData.FilePart;
 import play.libs.Scala;
 import play.mvc.Result;
-import services.IOUtils;
-import services.JsonUtils;
+import utils.IOUtils;
+import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import common.Global;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import controllers.ImportExport;
 import controllers.Users;
@@ -49,11 +50,12 @@ public class ImportExportControllerTest {
 	private static final String TEST_STUDY_ZIP_PATH = "test/assets/basic_example_study.zip";
 	private static final String TEST_STUDY_BKP_ZIP_PATH = "test/assets/basic_example_study_bkp.zip";
 
-	private static ControllerTestUtils utils = Global.INJECTOR
-			.getInstance(ControllerTestUtils.class);
+	private static ControllerTestUtils utils;
 
 	@BeforeClass
 	public static void startApp() throws Exception {
+		Injector injector = Guice.createInjector();
+		utils = injector.getInstance(ControllerTestUtils.class);
 		utils.startApp();
 	}
 
@@ -104,7 +106,7 @@ public class ImportExportControllerTest {
 		assertThat(!unzippedStudyDir.exists());
 
 		// Clean up, third call: remove()
-		StudyModel importedStudy = StudyModel
+		StudyModel importedStudy = utils.studyDao
 				.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617");
 		result = callAction(
 				controllers.routes.ref.Studies.remove(importedStudy.getId()),

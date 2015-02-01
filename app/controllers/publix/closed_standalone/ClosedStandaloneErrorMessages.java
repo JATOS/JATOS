@@ -1,5 +1,7 @@
 package controllers.publix.closed_standalone;
 
+import com.google.inject.Singleton;
+
 import controllers.publix.PublixErrorMessages;
 import models.workers.ClosedStandaloneWorker;
 
@@ -8,6 +10,7 @@ import models.workers.ClosedStandaloneWorker;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class ClosedStandaloneErrorMessages extends PublixErrorMessages<ClosedStandaloneWorker> {
 
 	@Override

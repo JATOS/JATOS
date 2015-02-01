@@ -4,16 +4,19 @@ import java.io.File;
 import java.util.List;
 import java.util.UUID;
 
-import com.google.inject.Inject;
-
 import models.ComponentModel;
 import models.StudyModel;
-import models.UserDao;
 import models.UserModel;
 import play.Logger;
 import play.db.jpa.JPA;
 import services.UserService;
+
+import com.google.inject.Inject;
+
 import controllers.publix.StudyAssets;
+import daos.ComponentDao;
+import daos.StudyDao;
+import daos.UserDao;
 
 /**
  * This Initializer is called once with every start and does some JATOS specific
@@ -25,13 +28,18 @@ public class Initializer {
 
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
 
-	private UserDao userDao;
-	private UserService userService;
+	private final UserDao userDao;
+	private final UserService userService;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
 
 	@Inject
-	public Initializer(UserDao userDao, UserService userService) {
+	public Initializer(UserDao userDao, UserService userService,
+			StudyDao studyDao, ComponentDao componentDao) {
 		this.userDao = userDao;
 		this.userService = userService;
+		this.studyDao = studyDao;
+		this.componentDao = componentDao;
 	}
 
 	/**
@@ -47,7 +55,7 @@ public class Initializer {
 	/**
 	 * Check whether studies assets root directory exists and create if not.
 	 */
-	private static void checkStudyAssetsRootDir() {
+	private void checkStudyAssetsRootDir() {
 		boolean success = new File(StudyAssets.STUDY_ASSETS_ROOT_PATH).mkdir();
 		if (success) {
 			Logger.info(CLASS_NAME
@@ -59,21 +67,21 @@ public class Initializer {
 	/**
 	 * Migration from older DB schema: generate UUID for all studies/components.
 	 */
-	private static void checkUuid() {
+	private void checkUuid() {
 		JPA.withTransaction(new play.libs.F.Callback0() {
 			@Override
 			public void invoke() throws Throwable {
-				List<StudyModel> studyModelList = StudyModel.findAll();
+				List<StudyModel> studyModelList = studyDao.findAll();
 				for (StudyModel study : studyModelList) {
 					if (study.getUuid() == null || study.getUuid().isEmpty()) {
 						study.setUuid(UUID.randomUUID().toString());
-						study.merge();
+						studyDao.merge(study);
 					}
 					for (ComponentModel component : study.getComponentList()) {
 						if (component.getUuid() == null
 								|| component.getUuid().isEmpty()) {
 							component.setUuid(UUID.randomUUID().toString());
-							component.merge();
+							componentDao.merge(component);
 						}
 					}
 				}

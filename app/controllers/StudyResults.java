@@ -16,35 +16,61 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.mvc.With;
 import services.Breadcrumbs;
-import services.DateUtils;
 import services.ErrorMessages;
-import services.IOUtils;
-import services.JsonUtils;
+import services.JatosGuiExceptionThrower;
 import services.Messages;
-import services.PersistanceUtils;
+import services.ResultService;
+import services.StudyService;
+import services.UserService;
+import services.WorkerService;
+import utils.DateUtils;
+import utils.IOUtils;
+import utils.JsonUtils;
+import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
-import exceptions.ResultException;
+import common.JatosGuiAction;
+import daos.StudyDao;
+import exceptions.JatosGuiException;
 
 /**
  * Controller for actions around StudyResults in the JATOS GUI.
  * 
  * @author Kristian Lange
  */
+@With(JatosGuiAction.class)
+@Singleton
 public class StudyResults extends Controller {
 
 	private static final String CLASS_NAME = StudyResults.class.getSimpleName();
 
 	private final PersistanceUtils persistanceUtils;
-	private final ControllerUtils controllerUtils;
+	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final StudyService studyService;
+	private final UserService userService;
+	private final WorkerService workerService;
+	private final ResultService resultService;
+	private final StudyDao studyDao;
+	private final JsonUtils jsonUtils;
 
 	@Inject
 	public StudyResults(PersistanceUtils persistanceUtils,
-			ControllerUtils controllerUtils) {
+			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			StudyService studyService, UserService userService,
+			WorkerService workerService, ResultService resultService,
+			StudyDao studyDao, JsonUtils jsonUtils) {
 		this.persistanceUtils = persistanceUtils;
-		this.controllerUtils = controllerUtils;
+		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.studyService = studyService;
+		this.userService = userService;
+		this.workerService = workerService;
+		this.resultService = resultService;
+		this.studyDao = studyDao;
+		this.jsonUtils = jsonUtils;
 	}
 
 	/**
@@ -52,14 +78,14 @@ public class StudyResults extends Controller {
 	 */
 	@Transactional
 	public Result index(Long studyId, String errorMsg, int httpStatus)
-			throws ResultException {
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
@@ -70,12 +96,12 @@ public class StudyResults extends Controller {
 	}
 
 	@Transactional
-	public Result index(Long studyId, String errorMsg) throws ResultException {
+	public Result index(Long studyId, String errorMsg) throws JatosGuiException {
 		return index(studyId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
-	public Result index(Long studyId) throws ResultException {
+	public Result index(Long studyId) throws JatosGuiException {
 		return index(studyId, null, Http.Status.OK);
 	}
 
@@ -85,13 +111,13 @@ public class StudyResults extends Controller {
 	 * Takes a string with a list of StudyResults and removes them all.
 	 */
 	@Transactional
-	public Result remove(String studyResultIds) throws ResultException {
+	public Result remove(String studyResultIds) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".remove: studyResultIds " + studyResultIds
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> studyResultIdList = controllerUtils
+		List<Long> studyResultIdList = resultService
 				.extractResultIds(studyResultIds);
 		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
 		checkAllStudyResults(studyResultList, loggedInUser, true);
@@ -108,18 +134,18 @@ public class StudyResults extends Controller {
 	 * Returns all StudyResults of a study in JSON format.
 	 */
 	@Transactional
-	public Result tableDataByStudy(Long studyId) throws ResultException {
+	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
-		controllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		String dataAsJson = null;
 		try {
-			dataAsJson = JsonUtils.allStudyResultsForUI(study);
+			dataAsJson = jsonUtils.allStudyResultsForUI(study);
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
-			controllerUtils.throwAjaxResultException(errorMsg,
+			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
@@ -131,22 +157,22 @@ public class StudyResults extends Controller {
 	 * Returns all StudyResults belonging to a worker as JSON.
 	 */
 	@Transactional
-	public Result tableDataByWorker(Long workerId) throws ResultException {
+	public Result tableDataByWorker(Long workerId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".tableDataByWorker: workerId " + workerId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		Worker worker = Worker.findById(workerId);
-		controllerUtils.checkWorker(worker, workerId);
+		workerService.checkWorker(worker, workerId);
 
 		List<StudyResult> allowedStudyResultList = getAllowedStudyResultList(
 				loggedInUser, worker);
 		String dataAsJson = null;
 		try {
-			dataAsJson = JsonUtils.allStudyResultsForUI(allowedStudyResultList);
+			dataAsJson = jsonUtils.allStudyResultsForUI(allowedStudyResultList);
 		} catch (IOException e) {
 			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
-			controllerUtils.throwAjaxResultException(errorMsg,
+			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
@@ -174,15 +200,15 @@ public class StudyResults extends Controller {
 	 * specified in the given string as text.
 	 */
 	@Transactional
-	public Result exportData(String studyResultIds) throws ResultException {
+	public Result exportData(String studyResultIds) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".exportData: studyResultIds "
 				+ studyResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
-		UserModel loggedInUser = controllerUtils.retrieveLoggedInUser();
+		response().discardCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> studyResultIdList = controllerUtils
+		List<Long> studyResultIdList = resultService
 				.extractResultIds(studyResultIds);
 		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
 		checkAllStudyResults(studyResultList, loggedInUser, false);
@@ -194,8 +220,8 @@ public class StudyResults extends Controller {
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
 		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME,
-				ControllerUtils.JQDOWNLOAD_COOKIE_CONTENT);
+		response().setCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME,
+				ImportExport.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(studyResultDataAsStr);
 	}
 
@@ -203,7 +229,7 @@ public class StudyResults extends Controller {
 	 * Put all ComponentResult's data into a String each in a separate line.
 	 */
 	private String getStudyResultData(List<StudyResult> studyResultList)
-			throws ResultException {
+			throws JatosGuiException {
 		StringBuilder sb = new StringBuilder();
 		for (StudyResult studyResult : studyResultList) {
 			Iterator<ComponentResult> iterator = studyResult
@@ -223,17 +249,17 @@ public class StudyResults extends Controller {
 	}
 
 	/**
-	 * Get all StudyResults or throw a ResultException if one doesn't exist.
+	 * Get all StudyResults or throw a JatosGuiException if one doesn't exist.
 	 */
 	private List<StudyResult> getAllStudyResults(List<Long> studyResultIdList)
-			throws ResultException {
+			throws JatosGuiException {
 		List<StudyResult> studyResultList = new ArrayList<>();
 		for (Long studyResultId : studyResultIdList) {
 			StudyResult studyResult = StudyResult.findById(studyResultId);
 			if (studyResult == null) {
 				String errorMsg = ErrorMessages
 						.studyResultNotExist(studyResultId);
-				controllerUtils.throwAjaxResultException(errorMsg,
+				jatosGuiExceptionThrower.throwAjax(errorMsg,
 						Http.Status.NOT_FOUND);
 			}
 			studyResultList.add(studyResult);
@@ -243,13 +269,13 @@ public class StudyResults extends Controller {
 
 	private void checkAllStudyResults(List<StudyResult> studyResultList,
 			UserModel loggedInUser, boolean studyMustNotBeLocked)
-			throws ResultException {
+			throws JatosGuiException {
 		for (StudyResult studyResult : studyResultList) {
 			StudyModel study = studyResult.getStudy();
-			controllerUtils.checkStandardForStudy(study, study.getId(),
+			studyService.checkStandardForStudy(study, study.getId(),
 					loggedInUser);
 			if (studyMustNotBeLocked) {
-				controllerUtils.checkStudyLocked(study);
+				studyService.checkStudyLocked(study);
 			}
 		}
 	}

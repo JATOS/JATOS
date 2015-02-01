@@ -1,15 +1,23 @@
 package controllers.publix.jatos;
 
 import models.StudyModel;
-import models.UserDao;
 import models.UserModel;
 import models.workers.JatosWorker;
 import models.workers.Worker;
 import services.ErrorMessages;
+import utils.PersistanceUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
 import controllers.Users;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
+import daos.ComponentDao;
+import daos.ComponentResultDao;
+import daos.StudyDao;
+import daos.UserDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
@@ -19,14 +27,20 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 
 	private JatosErrorMessages errorMessages;
-	private static UserDao userDao = new UserDao();
+	private UserDao userDao = new UserDao();
 
-	public JatosPublixUtils(JatosErrorMessages errorMessages) {
-		super(errorMessages);
+	@Inject
+	public JatosPublixUtils(JatosErrorMessages errorMessages, UserDao userDao,
+			PersistanceUtils persistanceUtils, StudyDao studyDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao) {
+		super(errorMessages, persistanceUtils, studyDao, componentDao,
+				componentResultDao);
 		this.errorMessages = errorMessages;
+		this.userDao = userDao;
 	}
 
 	@Override
@@ -64,8 +78,7 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 			throws ForbiddenPublixException {
 		if (!study.hasAllowedWorker(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerTypeNotAllowed(worker
-							.getUIWorkerType()));
+					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 		UserModel loggedInUser = worker.getUser();
 		// User has to be a member of this study
@@ -81,7 +94,8 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 		}
 	}
 
-	public String retrieveJatosShowFromSession() throws ForbiddenPublixException {
+	public String retrieveJatosShowFromSession()
+			throws ForbiddenPublixException {
 		String jatosShow = Publix.session(JatosPublix.JATOS_SHOW);
 		if (jatosShow == null) {
 			throw new ForbiddenPublixException(

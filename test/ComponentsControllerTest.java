@@ -19,21 +19,20 @@ import models.StudyModel;
 import org.apache.http.HttpHeaders;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import common.Global;
 
 import play.db.jpa.JPA;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import services.Breadcrumbs;
-import services.IOUtils;
+import utils.IOUtils;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
 import controllers.Components;
 import controllers.Users;
 import controllers.publix.jatos.JatosPublix;
-import exceptions.ResultException;
 
 /**
  * Testing actions of controller.Components.
@@ -42,15 +41,13 @@ import exceptions.ResultException;
  */
 public class ComponentsControllerTest {
 
-	private static ControllerTestUtils utils = Global.INJECTOR
-			.getInstance(ControllerTestUtils.class);
+	private static ControllerTestUtils utils;
 	private static StudyModel studyTemplate;
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
-	
 	@BeforeClass
 	public static void startApp() throws Exception {
+		Injector injector = Guice.createInjector();
+		utils = injector.getInstance(ControllerTestUtils.class);
 		utils.startApp();
 		studyTemplate = utils.importExampleStudy();
 	}
@@ -98,17 +95,15 @@ public class ComponentsControllerTest {
 		studyClone.getComponent(1).setHtmlFilePath(null);
 		JPA.em().getTransaction().commit();
 
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("HTML file path is empty.");
-		try {
-			callAction(
-					controllers.routes.ref.Components.showComponent(studyClone
-							.getId(), studyClone.getComponent(1).getId()),
-					fakeRequest().withSession(Users.SESSION_EMAIL,
-							utils.admin.getEmail()));
-		} finally {
-			utils.removeStudy(studyClone);
-		}
+		Result result = callAction(
+				controllers.routes.ref.Components.showComponent(
+						studyClone.getId(), studyClone.getComponent(1).getId()),
+				fakeRequest().withSession(Users.SESSION_EMAIL,
+						utils.admin.getEmail()));
+		assertThat(contentAsString(result))
+				.contains("HTML file path is empty.");
+
+		utils.removeStudy(studyClone);
 	}
 
 	/**
@@ -177,7 +172,7 @@ public class ComponentsControllerTest {
 				controllers.routes.ref.Components.submit(studyClone.getId()),
 				request);
 		assertEquals(SEE_OTHER, status(result));
-		headers(result).get(HttpHeaders.LOCATION).contains("show");
+		assertThat(headers(result).get(HttpHeaders.LOCATION)).contains("show");
 
 		// Clean up
 		utils.removeStudy(studyClone);
@@ -197,13 +192,13 @@ public class ComponentsControllerTest {
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				utils.admin.getEmail()).withFormUrlEncodedBody(form);
-		thrown.expect(ResultException.class);
-		try {
-			callAction(controllers.routes.ref.Components.submit(studyClone
-					.getId()), request);
-		} finally {
-			utils.removeStudy(studyClone);
-		}
+		Result result = callAction(
+				controllers.routes.ref.Components.submit(studyClone.getId()),
+				request);
+		assertThat(contentAsString(result)).contains(
+				"Problems deserializing JSON data string: invalid JSON format");
+
+		utils.removeStudy(studyClone);
 	}
 
 	@Test
@@ -251,7 +246,7 @@ public class ComponentsControllerTest {
 
 		// Clean up - can't remove study due to some RollbackException. No idea
 		// why. At least remove study assets dir.
-		// utils.removeStudy(studyClone);
+		// publixUtils.removeStudy(studyClone);
 		IOUtils.removeStudyAssetsDir(studyClone.getDirName());
 	}
 

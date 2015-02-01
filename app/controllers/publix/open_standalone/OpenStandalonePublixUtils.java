@@ -1,12 +1,20 @@
 package controllers.publix.open_standalone;
 
-import controllers.publix.Publix;
-import controllers.publix.PublixErrorMessages;
-import controllers.publix.PublixUtils;
 import models.StudyModel;
 import models.workers.OpenStandaloneWorker;
 import models.workers.Worker;
 import play.mvc.Http.Cookie;
+import utils.PersistanceUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+import controllers.publix.Publix;
+import controllers.publix.PublixErrorMessages;
+import controllers.publix.PublixUtils;
+import daos.ComponentDao;
+import daos.ComponentResultDao;
+import daos.StudyDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
@@ -15,12 +23,18 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
-public class OpenStandalonePublixUtils extends PublixUtils<OpenStandaloneWorker> {
+@Singleton
+public class OpenStandalonePublixUtils extends
+		PublixUtils<OpenStandaloneWorker> {
 
 	private OpenStandaloneErrorMessages errorMessages;
 
-	public OpenStandalonePublixUtils(OpenStandaloneErrorMessages errorMessages) {
-		super(errorMessages);
+	@Inject
+	public OpenStandalonePublixUtils(OpenStandaloneErrorMessages errorMessages,
+			PersistanceUtils persistanceUtils, StudyDao studyDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao) {
+		super(errorMessages, persistanceUtils, studyDao, componentDao,
+				componentResultDao);
 		this.errorMessages = errorMessages;
 	}
 
@@ -46,8 +60,7 @@ public class OpenStandalonePublixUtils extends PublixUtils<OpenStandaloneWorker>
 			StudyModel study) throws ForbiddenPublixException {
 		if (!study.hasAllowedWorker(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerTypeNotAllowed(worker
-							.getUIWorkerType()));
+					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 		// Standalone workers can't repeat the same study
 		if (finishedStudyAlready(worker, study)) {
@@ -58,9 +71,8 @@ public class OpenStandalonePublixUtils extends PublixUtils<OpenStandaloneWorker>
 
 	public void checkAllowedToDoStudy(StudyModel study)
 			throws ForbiddenPublixException {
-		// Check if study was done before - cookie has the study id stored 
-		Cookie cookie = Publix.request().cookie(
-				OpenStandalonePublix.COOKIE);
+		// Check if study was done before - cookie has the study id stored
+		Cookie cookie = Publix.request().cookie(OpenStandalonePublix.COOKIE);
 		if (cookie != null) {
 			String[] studyIdArray = cookie.value().split(",");
 			for (String idStr : studyIdArray) {
@@ -73,16 +85,14 @@ public class OpenStandalonePublixUtils extends PublixUtils<OpenStandaloneWorker>
 	}
 
 	public void addStudyToCookie(StudyModel study) {
-		Cookie cookie = Publix.request().cookie(
-				OpenStandalonePublix.COOKIE);
+		Cookie cookie = Publix.request().cookie(OpenStandalonePublix.COOKIE);
 		String value;
 		if (cookie != null) {
 			value = cookie.value() + "," + study.getId();
 		} else {
 			value = study.getId().toString();
 		}
-		Publix.response().setCookie(
-				OpenStandalonePublix.COOKIE, value);
+		Publix.response().setCookie(OpenStandalonePublix.COOKIE, value);
 	}
 
 }

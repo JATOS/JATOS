@@ -6,11 +6,22 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-import models.UserDao;
 import models.UserModel;
 import play.data.validation.ValidationError;
+import play.mvc.Controller;
+import play.mvc.Http;
+import play.mvc.Results;
+import play.mvc.SimpleResult;
+import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+import controllers.ControllerUtils;
+import controllers.Users;
+import controllers.routes;
+import daos.UserDao;
+import exceptions.JatosGuiException;
 
 /**
  * Service class mostly for Users controller. Handles everything around
@@ -18,6 +29,7 @@ import com.google.inject.Inject;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class UserService {
 
 	public static final String ADMIN_EMAIL = "admin";
@@ -26,11 +38,65 @@ public class UserService {
 
 	private final UserDao userDao;
 	private final PersistanceUtils persistanceUtils;
+	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 
 	@Inject
-	public UserService(UserDao userDao, PersistanceUtils persistanceUtils) {
+	public UserService(UserDao userDao, PersistanceUtils persistanceUtils,
+			JatosGuiExceptionThrower jatosGuiExceptionThrower) {
 		this.userDao = userDao;
 		this.persistanceUtils = persistanceUtils;
+		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+	}
+	
+	/**
+	 * Retrieves the user with the given email form the DB. Throws a
+	 * JatosGuiException if it doesn't exist.
+	 */
+	public UserModel retrieveUser(String email) throws JatosGuiException {
+		UserModel user = userDao.findByEmail(email);
+		if (user == null) {
+			String errorMsg = ErrorMessages.userNotExist(email);
+			jatosGuiExceptionThrower.throwHome(errorMsg,
+					Http.Status.BAD_REQUEST);
+		}
+		return user;
+	}
+
+	/**
+	 * Retrieves the user with the given email form the DB. Throws a
+	 * JatosGuiException if it doesn't exist. The JatosGuiException will
+	 * redirect to the login screen.
+	 */
+	public UserModel retrieveLoggedInUser() throws JatosGuiException {
+		String email = Controller.session(Users.SESSION_EMAIL);
+		UserModel loggedInUser = null;
+		if (email != null) {
+			loggedInUser = userDao.findByEmail(email);
+		}
+		if (loggedInUser == null) {
+			String errorMsg = ErrorMessages.NO_USER_LOGGED_IN;
+			SimpleResult result = null;
+			if (ControllerUtils.isAjax()) {
+				result = Results.badRequest(errorMsg);
+			} else {
+				result = (SimpleResult) Results.redirect(routes.Authentication
+						.login());
+			}
+			throw new JatosGuiException(result, errorMsg);
+		}
+		return loggedInUser;
+	}
+
+	/**
+	 * Throws a JatosGuiException in case the user's email isn't equal to the
+	 * loggedInUser' email. Distinguishes between normal and Ajax request.
+	 */
+	public void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
+			throws JatosGuiException {
+		if (!user.getEmail().equals(loggedInUser.getEmail())) {
+			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
+			jatosGuiExceptionThrower.throwHome(errorMsg, Http.Status.FORBIDDEN);
+		}
 	}
 
 	public UserModel createAdmin() throws UnsupportedEncodingException,

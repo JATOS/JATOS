@@ -1,10 +1,17 @@
 package controllers.publix.tester;
 
-import controllers.publix.PublixErrorMessages;
-import controllers.publix.PublixUtils;
 import models.StudyModel;
 import models.workers.TesterWorker;
 import models.workers.Worker;
+import utils.PersistanceUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+import controllers.publix.PublixUtils;
+import daos.ComponentDao;
+import daos.ComponentResultDao;
+import daos.StudyDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
@@ -13,12 +20,17 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class TesterPublixUtils extends PublixUtils<TesterWorker> {
 
 	private TesterErrorMessages errorMessages;
 
-	public TesterPublixUtils(TesterErrorMessages errorMessages) {
-		super(errorMessages);
+	@Inject
+	public TesterPublixUtils(TesterErrorMessages errorMessages,
+			PersistanceUtils persistanceUtils, StudyDao studyDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao) {
+		super(errorMessages, persistanceUtils, studyDao, componentDao,
+				componentResultDao);
 		this.errorMessages = errorMessages;
 	}
 
@@ -32,7 +44,7 @@ public class TesterPublixUtils extends PublixUtils<TesterWorker> {
 		}
 		return (TesterWorker) worker;
 	}
-	
+
 	@Override
 	public void checkWorkerAllowedToStartStudy(TesterWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
@@ -44,8 +56,7 @@ public class TesterPublixUtils extends PublixUtils<TesterWorker> {
 			StudyModel study) throws ForbiddenPublixException {
 		if (!study.hasAllowedWorker(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerTypeNotAllowed(worker
-							.getUIWorkerType()));
+					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 	}
 

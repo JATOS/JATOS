@@ -1,11 +1,19 @@
 package controllers.publix.mt;
 
-import controllers.publix.PublixErrorMessages;
-import controllers.publix.PublixUtils;
 import models.StudyModel;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
+import utils.PersistanceUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+import controllers.publix.PublixErrorMessages;
+import controllers.publix.PublixUtils;
+import daos.ComponentDao;
+import daos.ComponentResultDao;
+import daos.StudyDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
@@ -14,12 +22,17 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class MTPublixUtils extends PublixUtils<MTWorker> {
 
 	private MTErrorMessages errorMessages;
 
-	public MTPublixUtils(MTErrorMessages errorMessages) {
-		super(errorMessages);
+	@Inject
+	public MTPublixUtils(MTErrorMessages errorMessages,
+			PersistanceUtils persistanceUtils, StudyDao studyDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao) {
+		super(errorMessages, persistanceUtils, studyDao, componentDao,
+				componentResultDao);
 		this.errorMessages = errorMessages;
 	}
 
@@ -50,8 +63,7 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 			throws ForbiddenPublixException {
 		if (!study.hasAllowedWorker(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerTypeNotAllowed(worker
-							.getUIWorkerType()));
+					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 		// Sandbox workers can repeat studies
 		if (worker instanceof MTSandboxWorker) {

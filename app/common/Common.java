@@ -17,6 +17,11 @@ public class Common {
 	public static final String VERSION = Play.application().configuration()
 			.getString("application.version");
 	
+	/**
+	 * Is true if an in-memory database is used.
+	 */
+	public static boolean IN_MEMORY_DB = Play.application().configuration()
+			.getString("db.default.url").contains("jdbc:h2:mem:");
 	
 	private static String getBasePath() {
 		String tempBasePath = Play.application().path().getAbsolutePath();

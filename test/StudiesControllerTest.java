@@ -18,23 +18,21 @@ import models.workers.ClosedStandaloneWorker;
 import org.apache.http.HttpHeaders;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import play.mvc.Result;
 import play.test.FakeRequest;
 import services.Breadcrumbs;
-import services.IOUtils;
-import services.JsonUtils;
+import utils.IOUtils;
+import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
-import common.Global;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import controllers.Studies;
 import controllers.Users;
-import exceptions.ResultException;
 
 /**
  * Testing actions of controller.Studies.
@@ -43,40 +41,38 @@ import exceptions.ResultException;
  */
 public class StudiesControllerTest {
 
-	private static ControllerTestUtils utils = Global.INJECTOR
-			.getInstance(ControllerTestUtils.class);
+	private static ControllerTestUtils testUtils;
 	private static StudyModel studyTemplate;
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	@BeforeClass
 	public static void startApp() throws Exception {
-		utils.startApp();
-		studyTemplate = utils.importExampleStudy();
+		Injector injector = Guice.createInjector();
+		testUtils = injector.getInstance(ControllerTestUtils.class);
+		testUtils.startApp();
+		studyTemplate = testUtils.importExampleStudy();
 	}
 
 	@AfterClass
 	public static void stopApp() throws IOException {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		utils.stopApp();
+		testUtils.stopApp();
 	}
 
 	@Test
 	public void callIndex() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.index(studyClone.getId(), null),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
 		assertThat(contentAsString(result)).contains("Components");
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
@@ -84,7 +80,7 @@ public class StudiesControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.create(),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
@@ -94,7 +90,7 @@ public class StudiesControllerTest {
 	@Test
 	public void callSubmit() throws Exception {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail()).withFormUrlEncodedBody(
+				testUtils.admin.getEmail()).withFormUrlEncodedBody(
 				ImmutableMap.of(StudyModel.TITLE, "Title Test",
 						StudyModel.DESCRIPTION, "Description test.",
 						StudyModel.DIRNAME, "dirName_submit",
@@ -109,62 +105,65 @@ public class StudiesControllerTest {
 				.split("/");
 		Long studyId = Long.valueOf(locationArray[locationArray.length - 1]);
 
-		StudyModel study = StudyModel.findById(studyId);
+		StudyModel study = testUtils.studyDao.findById(studyId);
 		assertEquals("Title Test", study.getTitle());
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
 		assertEquals("{ }", study.getJsonData());
 		assertThat((study.getComponentList().isEmpty()));
-		assertThat((study.getMemberList().contains(utils.admin)));
+		assertThat((study.getMemberList().contains(testUtils.admin)));
 		assertThat((!study.isLocked()));
 		assertThat((study.getAllowedWorkerList().isEmpty()));
 
 		// Clean up
-		utils.removeStudy(study);
+		testUtils.removeStudy(study);
 	}
 
 	@Test
 	public void callSubmitValidationError() {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail()).withFormUrlEncodedBody(
+				testUtils.admin.getEmail()).withFormUrlEncodedBody(
 		// Fill with non-valid values
 				ImmutableMap.of(StudyModel.TITLE, " ", StudyModel.DESCRIPTION,
 						"Description test.", StudyModel.DIRNAME, "%.test",
 						StudyModel.JSON_DATA, "{",
 						StudyModel.ALLOWED_WORKER_LIST, "WrongWorker"));
 
-		thrown.expect(ResultException.class);
-		callAction(controllers.routes.ref.Studies.submit(), request);
+		Result result = callAction(controllers.routes.ref.Studies.submit(),
+				request);
+		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_STUDY);
+		assertThat(contentAsString(result)).contains(
+				"Problems deserializing JSON data string: invalid JSON format");
 	}
 
 	@Test
 	public void callSubmitStudyAssetsDirExists() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail()).withFormUrlEncodedBody(
+				testUtils.admin.getEmail()).withFormUrlEncodedBody(
 				ImmutableMap.of(StudyModel.TITLE, "Title Test",
 						StudyModel.DESCRIPTION, "Description test.",
 						StudyModel.DIRNAME, studyClone.getDirName(),
 						StudyModel.JSON_DATA, "{}",
 						StudyModel.ALLOWED_WORKER_LIST, ""));
 
-		thrown.expect(ResultException.class);
-		try {
-			callAction(controllers.routes.ref.Studies.submit(), request);
-		} finally {
-			utils.removeStudy(studyClone);
-		}
+		Result result = callAction(controllers.routes.ref.Studies.submit(),
+				request);
+		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_STUDY);
+		assertThat(contentAsString(result)).contains(
+				"couldn&#x27;t be created because it already exists.");
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callEdit() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.edit(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
@@ -172,15 +171,15 @@ public class StudiesControllerTest {
 				Breadcrumbs.EDIT_PROPERTIES);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSubmitEdited() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail()).withFormUrlEncodedBody(
+				testUtils.admin.getEmail()).withFormUrlEncodedBody(
 				ImmutableMap.of(StudyModel.TITLE, "Title Test",
 						StudyModel.DESCRIPTION, "Description test.",
 						StudyModel.DIRNAME, "dirName_submitEdited",
@@ -194,68 +193,68 @@ public class StudiesControllerTest {
 		// It would be nice to test the edited study here
 		// Clean up
 		studyClone.setDirName("dirName_submitEdited");
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSwapLock() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.swapLock(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains("true");
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callRemove() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.remove(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 	}
 
 	@Test
 	public void callCloneStudy() throws Exception {
-		StudyModel study = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel study = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.cloneStudy(study.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
 		IOUtils.removeStudyAssetsDir(study.getDirName() + "_clone");
-		utils.removeStudy(study);
+		testUtils.removeStudy(study);
 	}
 
 	@Test
 	public void callChangeMember() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies
 						.changeMembers(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSubmitChangedMembers() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.submitChangedMembers(studyClone
@@ -263,35 +262,33 @@ public class StudiesControllerTest {
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL,
-								utils.admin.getEmail()));
+								testUtils.admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSubmitChangedMembersZeroMembers() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("An study should have at least one member.");
-		try {
-			callAction(
-					controllers.routes.ref.Studies.submitChangedMembers(studyClone
-							.getId()),
-					fakeRequest().withFormUrlEncodedBody(
-					// Just put some gibberish in the map
-							ImmutableMap.of("bla", "blu")).withSession(
-							Users.SESSION_EMAIL, utils.admin.getEmail()));
-		} finally {
-			utils.removeStudy(studyClone);
-		}
+		Result result = callAction(
+				controllers.routes.ref.Studies.submitChangedMembers(studyClone
+						.getId()),
+				fakeRequest().withFormUrlEncodedBody(
+				// Just put some gibberish in the map
+						ImmutableMap.of("bla", "blu")).withSession(
+						Users.SESSION_EMAIL, testUtils.admin.getEmail()));
+		assertThat(contentAsString(result)).contains(
+				"An study should have at least one member.");
+
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callChangeComponentOrder() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		// Move first component one down
 		Result result = callAction(
@@ -301,7 +298,7 @@ public class StudiesControllerTest {
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL,
-								utils.admin.getEmail()));
+								testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Move second component one up
@@ -312,30 +309,30 @@ public class StudiesControllerTest {
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL,
-								utils.admin.getEmail()));
+								testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callShowStudy() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.showStudy(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						testUtils.admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callCreateClosedStandaloneRun() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
@@ -343,16 +340,16 @@ public class StudiesControllerTest {
 				controllers.routes.ref.Studies.createClosedStandaloneRun(studyClone
 						.getId()),
 				fakeRequest().withJsonBody(jsonNode).withSession(
-						Users.SESSION_EMAIL, utils.admin.getEmail()));
+						Users.SESSION_EMAIL, testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callCreateTesterRun() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
@@ -360,44 +357,44 @@ public class StudiesControllerTest {
 				controllers.routes.ref.Studies.createTesterRun(studyClone
 						.getId()),
 				fakeRequest().withJsonBody(jsonNode).withSession(
-						Users.SESSION_EMAIL, utils.admin.getEmail()));
+						Users.SESSION_EMAIL, testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callShowMTurkSourceCode() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.showMTurkSourceCode(studyClone
 						.getId()),
 				fakeRequest().withHeader("Referer",
 						"http://www.example.com:9000").withSession(
-						Users.SESSION_EMAIL, utils.admin.getEmail()));
+						Users.SESSION_EMAIL, testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(
 				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 	@Test
 	public void callWorkers() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = testUtils.cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.workers(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						testUtils.admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(Breadcrumbs.WORKERS);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		testUtils.removeStudy(studyClone);
 	}
 
 }

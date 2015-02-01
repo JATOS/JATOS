@@ -1,5 +1,7 @@
 package controllers.publix.open_standalone;
 
+import com.google.inject.Singleton;
+
 import controllers.publix.PublixErrorMessages;
 import models.workers.OpenStandaloneWorker;
 
@@ -8,6 +10,7 @@ import models.workers.OpenStandaloneWorker;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class OpenStandaloneErrorMessages extends
 		PublixErrorMessages<OpenStandaloneWorker> {
 

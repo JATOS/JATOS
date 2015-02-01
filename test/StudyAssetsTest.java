@@ -12,27 +12,32 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import common.Global;
-
 import play.mvc.Result;
-import services.IOUtils;
+import utils.IOUtils;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
 import controllers.publix.StudyAssets;
 
 /**
- * Testing controller.Studies
+ * Testing controller.publix.StudyAssets
  * 
  * @author Kristian Lange
  */
 public class StudyAssetsTest {
 
-	private static ControllerTestUtils utils = Global.INJECTOR
-			.getInstance(ControllerTestUtils.class);
+	private static ControllerTestUtils utils;
+	private static StudyAssets studyAssets;
 	private static StudyModel studyTemplate;
-	
+
 	@BeforeClass
 	public static void startApp() throws Exception {
+		Injector injector = Guice.createInjector();
+		utils = injector.getInstance(ControllerTestUtils.class);
 		utils.startApp();
 		studyTemplate = utils.importExampleStudy();
+		studyAssets = injector.getInstance(StudyAssets.class);
 	}
 
 	@AfterClass
@@ -40,7 +45,7 @@ public class StudyAssetsTest {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
 		utils.stopApp();
 	}
-	
+
 	@Test
 	public void simpleCheck() {
 		int a = 1 + 1;
@@ -59,7 +64,7 @@ public class StudyAssetsTest {
 	public void testAt() throws IOException {
 		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
-		Result result = StudyAssets.at("basic_example_study/hello_world.html");
+		Result result = studyAssets.at("basic_example_study/hello_world.html");
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
@@ -68,10 +73,10 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testAtNotFound() {
-		Result result = StudyAssets.at("non/existend/filepath");
+		Result result = studyAssets.at("non/existend/filepath");
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 
-		result = StudyAssets.at("non/&?/filepath");
+		result = studyAssets.at("non/&?/filepath");
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 	}
 
@@ -80,7 +85,7 @@ public class StudyAssetsTest {
 		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
 
 		// Although this file exists, it shouldn't be found
-		Result result = StudyAssets.at("../../conf/application.conf");
+		Result result = studyAssets.at("../../conf/application.conf");
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 
 		// Clean up

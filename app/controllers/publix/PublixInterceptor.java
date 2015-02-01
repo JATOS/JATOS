@@ -11,9 +11,13 @@ import play.db.jpa.Transactional;
 import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
+import play.mvc.With;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
+import common.PublixAction;
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.mt.MTPublix;
@@ -48,17 +52,31 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
+@With(PublixAction.class)
 public class PublixInterceptor extends Controller implements IPublix {
 
 	public static final String WORKER_TYPE = "workerType";
 
 	private static Object lock = new Object();
 
-	private IPublix jatosPublix = new JatosPublix();
-	private IPublix mtPublix = new MTPublix();
-	private IPublix testerPublix = new TesterPublix();
-	private IPublix closedStandalonePublix = new ClosedStandalonePublix();
-	private IPublix openStandalonePublix = new OpenStandalonePublix();
+	private final JatosPublix jatosPublix;
+	private final MTPublix mtPublix;
+	private final TesterPublix testerPublix;
+	private final ClosedStandalonePublix closedStandalonePublix;
+	private final OpenStandalonePublix openStandalonePublix;
+
+	@Inject
+	public PublixInterceptor(JatosPublix jatosPublix, MTPublix mtPublix,
+			TesterPublix testerPublix,
+			ClosedStandalonePublix closedStandalonePublix,
+			OpenStandalonePublix openStandalonePublix) {
+		this.jatosPublix = jatosPublix;
+		this.mtPublix = mtPublix;
+		this.testerPublix = testerPublix;
+		this.closedStandalonePublix = closedStandalonePublix;
+		this.openStandalonePublix = openStandalonePublix;
+	}
 
 	@Override
 	@Transactional
@@ -232,7 +250,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return result;
 		}
 	}
-	
+
 	@Override
 	@Transactional
 	public Result getStudySessionData(Long studyId) throws PublixException,
@@ -313,10 +331,12 @@ public class PublixInterceptor extends Controller implements IPublix {
 				result = mtPublix.getComponentProperties(studyId, componentId);
 				break;
 			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.getComponentProperties(studyId, componentId);
+				result = jatosPublix.getComponentProperties(studyId,
+						componentId);
 				break;
 			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.getComponentProperties(studyId, componentId);
+				result = testerPublix.getComponentProperties(studyId,
+						componentId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
 				result = closedStandalonePublix.getComponentProperties(studyId,

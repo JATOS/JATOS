@@ -1,4 +1,4 @@
-package services;
+package utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +26,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import common.Common;
+
+import daos.ComponentResultDao;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and
@@ -34,6 +38,7 @@ import common.Common;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class JsonUtils {
 
 	public static final String DATA = "data";
@@ -46,6 +51,13 @@ public class JsonUtils {
 	 */
 	public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
 			.setTimeZone(TimeZone.getDefault());
+
+	private final ComponentResultDao componentResultDao;
+
+	@Inject
+	public JsonUtils(ComponentResultDao componentResultDao) {
+		this.componentResultDao = componentResultDao;
+	}
 
 	/**
 	 * Helper class for selectively marshaling an Object to JSON. Only fields of
@@ -120,8 +132,7 @@ public class JsonUtils {
 	 * 
 	 * @throws JsonProcessingException
 	 */
-	public static String asJsonForPublix(Object obj)
-			throws JsonProcessingException {
+	public String asJsonForPublix(Object obj) throws JsonProcessingException {
 		ObjectWriter objectWriter = OBJECTMAPPER
 				.writerWithView(JsonForPublix.class);
 		String componentAsJson = objectWriter.writeValueAsString(obj);
@@ -132,8 +143,7 @@ public class JsonUtils {
 	 * Returns the data string of a componentResult limited to
 	 * MAX_CHAR_PER_RESULT characters.
 	 */
-	public static String componentResultDataForUI(
-			ComponentResult componentResult) {
+	public String componentResultDataForUI(ComponentResult componentResult) {
 		final int MAX_CHAR_PER_RESULT = 1000;
 		String data = componentResult.getData();
 		if (data != null) {
@@ -154,7 +164,7 @@ public class JsonUtils {
 	 * Returns all studyResults of a study as a JSON string. It's including the
 	 * studyResult's componentResults.
 	 */
-	public static String allStudyResultsForUI(StudyModel study)
+	public String allStudyResultsForUI(StudyModel study)
 			throws JsonProcessingException {
 		return allStudyResultsForUI(StudyResult.findAllByStudy(study));
 	}
@@ -163,7 +173,7 @@ public class JsonUtils {
 	 * Returns all studyResults as a JSON string. It's including the
 	 * studyResult's componentResults.
 	 */
-	public static String allStudyResultsForUI(List<StudyResult> studyResultList)
+	public String allStudyResultsForUI(List<StudyResult> studyResultList)
 			throws JsonProcessingException {
 		ObjectNode allStudyResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allStudyResultsNode.arrayNode();
@@ -180,11 +190,11 @@ public class JsonUtils {
 	 * Returns JSON of all ComponentResuls of the specified component. The JSON
 	 * string is intended for use in JATOS' GUI.
 	 */
-	public static String allComponentResultsForUI(ComponentModel component)
+	public String allComponentResultsForUI(ComponentModel component)
 			throws JsonProcessingException {
 		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allComponentResultsNode.arrayNode();
-		List<ComponentResult> componentResultList = ComponentResult
+		List<ComponentResult> componentResultList = componentResultDao
 				.findAllByComponent(component);
 		for (ComponentResult componentResult : componentResultList) {
 			ObjectNode componentResultNode = componentResultAsJsonNode(componentResult);
@@ -200,7 +210,7 @@ public class JsonUtils {
 	 * Returns ObjectNode of the given StudyResult. It contains the worker,
 	 * study's ID and title, and all ComponentResults.
 	 */
-	private static ObjectNode studyResultAsJsonNode(StudyResult studyResult) {
+	private ObjectNode studyResultAsJsonNode(StudyResult studyResult) {
 		ObjectNode studyResultNode = OBJECTMAPPER.valueToTree(studyResult);
 
 		// Add worker
@@ -228,8 +238,7 @@ public class JsonUtils {
 	 * Returns an ObjectNode of the given ComponentResult. It contains the study
 	 * ID, component ID and component title.
 	 */
-	private static ObjectNode componentResultAsJsonNode(
-			ComponentResult componentResult) {
+	private ObjectNode componentResultAsJsonNode(ComponentResult componentResult) {
 		ObjectNode componentResultNode = OBJECTMAPPER
 				.valueToTree(componentResult);
 
@@ -266,14 +275,14 @@ public class JsonUtils {
 	 * the 'resultCount', the number of ComponentResults of this component so
 	 * far. Intended for use in JATOS' GUI.
 	 */
-	public static String allComponentsForUI(List<ComponentModel> componentList)
+	public String allComponentsForUI(List<ComponentModel> componentList)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
 		for (ComponentModel component : componentList) {
 			ObjectNode componentNode = OBJECTMAPPER.valueToTree(component);
 			// Add count of component's results
 			componentNode.put("resultCount",
-					ComponentResult.countByComponent(component));
+					componentResultDao.countByComponent(component));
 			arrayNode.add(componentNode);
 		}
 		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
@@ -286,7 +295,7 @@ public class JsonUtils {
 	 * Returns a JSON string for the given set of workers. Intended for use in
 	 * JATOS' GUI.
 	 */
-	public static String allWorkersForUI(Set<Worker> workerSet)
+	public String allWorkersForUI(Set<Worker> workerSet)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
 		for (Worker worker : workerSet) {
@@ -302,7 +311,7 @@ public class JsonUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> T initializeAndUnproxy(T obj) {
+	public <T> T initializeAndUnproxy(T obj) {
 		Hibernate.initialize(obj);
 		if (obj instanceof HibernateProxy) {
 			obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()
@@ -329,7 +338,7 @@ public class JsonUtils {
 	 * Marshals the given object into JSON, adds the application's version, and
 	 * returns it as String. It uses the view JsonForIO.
 	 */
-	public static String asJsonForIO(Object obj) throws IOException {
+	public String asJsonForIO(Object obj) throws IOException {
 		ObjectNode node = generateNodeWithVersionForIO(obj);
 		return OBJECTMAPPER.writer().writeValueAsString(node);
 	}
@@ -338,7 +347,7 @@ public class JsonUtils {
 	 * Marshals the given object into JSON, adds the application's version, and
 	 * saves it into the given File. It uses the view JsonForIO.
 	 */
-	public static void asJsonForIO(Object obj, File file) throws IOException {
+	public void asJsonForIO(Object obj, File file) throws IOException {
 		ObjectNode node = generateNodeWithVersionForIO(obj);
 		OBJECTMAPPER.writer().writeValue(file, node);
 	}
@@ -347,7 +356,7 @@ public class JsonUtils {
 	 * Generic JSON marshaler that adds the JATOS version to the JSON string.
 	 * Intended for file IO.
 	 */
-	private static ObjectNode generateNodeWithVersionForIO(Object obj)
+	private ObjectNode generateNodeWithVersionForIO(Object obj)
 			throws IOException {
 		ObjectNode node = OBJECTMAPPER.createObjectNode();
 		node.put(VERSION, Common.VERSION);
@@ -362,53 +371,11 @@ public class JsonUtils {
 	 * Accepts an JSON String and turns the data object within this JSON String
 	 * into an object of the given type.
 	 */
-	public static <T> T unmarshallingIO(String jsonStr, Class<T> modelClass)
+	public <T> T unmarshallingIO(String jsonStr, Class<T> modelClass)
 			throws JsonProcessingException, IOException {
 		JsonNode node = OBJECTMAPPER.readTree(jsonStr).findValue(DATA);
 		T object = OBJECTMAPPER.treeToValue(node, modelClass);
 		return object;
-	}
-
-	/**
-	 * Unmarshalling of an JSON string without throwing an exception. Instead
-	 * error message and Exception are stored within the instance.
-	 * 
-	 * @author Kristian Lange
-	 */
-	public static class UploadUnmarshaller {
-
-		private String errorMsg;
-		private Exception exception;
-
-		public String getErrorMsg() {
-			return errorMsg;
-		}
-
-		public Exception getException() {
-			return exception;
-		}
-
-		public <T> T unmarshalling(File file, Class<T> modelClass) {
-			T object = null;
-			String jsonStr = null;
-			try {
-				// Don't unmarshall file directly so we can create error
-				// messages.
-				jsonStr = IOUtils.readFile(file);
-			} catch (IOException e) {
-				errorMsg = ErrorMessages.COULDNT_READ_FILE;
-				exception = e;
-				return null;
-			}
-			try {
-				object = JsonUtils.unmarshallingIO(jsonStr, modelClass);
-			} catch (IOException e) {
-				errorMsg = ErrorMessages.COULDNT_READ_JSON;
-				exception = e;
-				return null;
-			}
-			return object;
-		}
 	}
 
 }

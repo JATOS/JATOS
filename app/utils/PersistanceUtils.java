@@ -1,12 +1,9 @@
-package services;
+package utils;
 
 import java.util.List;
 
-import com.google.inject.Inject;
-
 import models.ComponentModel;
 import models.StudyModel;
-import models.UserDao;
 import models.UserModel;
 import models.results.ComponentResult;
 import models.results.StudyResult;
@@ -14,26 +11,35 @@ import models.workers.JatosWorker;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
-import play.Play;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+import daos.ComponentDao;
+import daos.ComponentResultDao;
+import daos.StudyDao;
+import daos.UserDao;
 
 /**
  * Utility class that provides persistence methods.
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class PersistanceUtils {
 
-	/**
-	 * Is true if an in-memory database is used.
-	 */
-	public static boolean IN_MEMORY_DB = Play.application().configuration()
-			.getString("db.default.url").contains("jdbc:h2:mem:");
-
 	private final UserDao userDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
+	private final ComponentResultDao componentResultDao;
 
 	@Inject
-	public PersistanceUtils(UserDao userDao) {
+	public PersistanceUtils(UserDao userDao, StudyDao studyDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao) {
 		this.userDao = userDao;
+		this.studyDao = studyDao;
+		this.componentDao = componentDao;
+		this.componentResultDao = componentResultDao;
 	}
 
 	/**
@@ -54,10 +60,10 @@ public class PersistanceUtils {
 			ComponentModel component) {
 		ComponentResult componentResult = new ComponentResult(component);
 		componentResult.setStudyResult(studyResult);
-		componentResult.persist();
+		componentResultDao.persist(componentResult);
 		studyResult.addComponentResult(componentResult);
 		studyResult.merge();
-		componentResult.merge();
+		componentResultDao.merge(componentResult);
 		return componentResult;
 	}
 
@@ -98,7 +104,7 @@ public class PersistanceUtils {
 	 * Persist study and add member.
 	 */
 	public void addStudy(StudyModel study, UserModel loggedInUser) {
-		study.persist();
+		studyDao.persist(study);
 		addMemberToStudy(study, loggedInUser);
 	}
 
@@ -107,7 +113,7 @@ public class PersistanceUtils {
 	 */
 	public void addMemberToStudy(StudyModel study, UserModel member) {
 		study.addMember(member);
-		study.merge();
+		studyDao.merge(study);
 	}
 
 	/**
@@ -119,7 +125,7 @@ public class PersistanceUtils {
 		study.setDirName(updatedStudy.getDirName());
 		study.setJsonData(updatedStudy.getJsonData());
 		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
-		study.merge();
+		studyDao.merge(study);
 	}
 
 	/**
@@ -132,7 +138,7 @@ public class PersistanceUtils {
 		study.setDescription(updatedStudy.getDescription());
 		study.setJsonData(updatedStudy.getJsonData());
 		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
-		study.merge();
+		studyDao.merge(study);
 	}
 
 	/**
@@ -141,13 +147,13 @@ public class PersistanceUtils {
 	public void removeStudy(StudyModel study) {
 		// Remove all study's components
 		for (ComponentModel component : study.getComponentList()) {
-			component.remove();
+			componentDao.remove(component);
 		}
 		// Remove study's StudyResults and ComponentResults
 		for (StudyResult studyResult : StudyResult.findAllByStudy(study)) {
 			removeStudyResult(studyResult);
 		}
-		study.remove();
+		studyDao.remove(study);
 	}
 
 	/**
@@ -156,8 +162,8 @@ public class PersistanceUtils {
 	public void addComponent(StudyModel study, ComponentModel component) {
 		component.setStudy(study);
 		study.addComponent(component);
-		component.persist();
-		study.merge();
+		componentDao.persist(component);
+		studyDao.merge(study);
 	}
 
 	/**
@@ -171,7 +177,7 @@ public class PersistanceUtils {
 		component.setComments(updatedComponent.getComments());
 		component.setJsonData(updatedComponent.getJsonData());
 		component.setActive(updatedComponent.isActive());
-		component.merge();
+		componentDao.merge(component);
 	}
 
 	/**
@@ -179,7 +185,7 @@ public class PersistanceUtils {
 	 */
 	public void changeActive(ComponentModel component, boolean active) {
 		component.setActive(active);
-		component.merge();
+		componentDao.merge(component);
 	}
 
 	/**
@@ -189,16 +195,16 @@ public class PersistanceUtils {
 	public void removeComponent(StudyModel study, ComponentModel component) {
 		// Remove component from study
 		study.removeComponent(component);
-		study.merge();
+		studyDao.merge(study);
 		// Remove component's ComponentResults
-		for (ComponentResult componentResult : ComponentResult
+		for (ComponentResult componentResult : componentResultDao
 				.findAllByComponent(component)) {
 			StudyResult studyResult = componentResult.getStudyResult();
 			studyResult.removeComponentResult(componentResult);
 			studyResult.merge();
-			componentResult.remove();
+			componentResultDao.remove(componentResult);
 		}
-		component.remove();
+		componentDao.remove(component);
 	}
 
 	/**
@@ -208,7 +214,7 @@ public class PersistanceUtils {
 		StudyResult studyResult = componentResult.getStudyResult();
 		studyResult.removeComponentResult(componentResult);
 		studyResult.merge();
-		componentResult.remove();
+		componentResultDao.remove(componentResult);
 	}
 
 	/**
@@ -219,7 +225,7 @@ public class PersistanceUtils {
 		// Remove all component results of this study result
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
-			componentResult.remove();
+			componentResultDao.remove(componentResult);
 		}
 
 		// Remove study result from worker
@@ -255,7 +261,7 @@ public class PersistanceUtils {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
 			for (ComponentResult componentResult : studyResult
 					.getComponentResultList()) {
-				componentResult.remove();
+				componentResultDao.remove(componentResult);
 			}
 			studyResult.remove();
 		}

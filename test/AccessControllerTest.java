@@ -1,5 +1,11 @@
+import static org.fest.assertions.Assertions.assertThat;
+import static play.mvc.Http.Status.FORBIDDEN;
+import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
+import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.fakeRequest;
+import static play.test.Helpers.redirectLocation;
+import static play.test.Helpers.status;
 
 import java.io.IOException;
 
@@ -8,18 +14,17 @@ import models.UserModel;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import play.mvc.HandlerRef;
-import services.IOUtils;
+import play.mvc.Result;
+import utils.IOUtils;
 
-import common.Global;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import controllers.Studies;
 import controllers.Users;
-import exceptions.ResultException;
 
 /**
  * Testing whether actions do proper access control
@@ -28,16 +33,14 @@ import exceptions.ResultException;
  */
 public class AccessControllerTest {
 
-	private static ControllerTestUtils utils = Global.INJECTOR
-			.getInstance(ControllerTestUtils.class);
+	private static ControllerTestUtils utils;
 	private static StudyModel studyTemplate;
 	private static UserModel testUser;
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
-
 	@BeforeClass
 	public static void startApp() throws Exception {
+		Injector injector = Guice.createInjector();
+		utils = injector.getInstance(ControllerTestUtils.class);
 		utils.startApp();
 		studyTemplate = utils.importExampleStudy();
 		testUser = utils.createAndPersistUser("bla@bla.com", "Bla", "bla");
@@ -50,38 +53,39 @@ public class AccessControllerTest {
 	}
 
 	private void checkDeniedAccess(HandlerRef ref) {
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("No user logged in");
 		// Call action without testUser in session
-		callAction(ref);
+		Result result = callAction(ref);
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(redirectLocation(result)).contains("/jatos/login");
 	}
 
 	private void checkNotMember(HandlerRef ref, StudyModel study) {
 		utils.removeMember(study, utils.admin);
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("isn't member of study");
-		callAction(
+		Result result = callAction(
 				ref,
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						utils.admin.getEmail()));
+		assertThat(status(result)).isEqualTo(FORBIDDEN);
+		assertThat(contentAsString(result)).contains("isn't member of study");
 	}
 
 	private void checkRightUser(HandlerRef ref) {
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("You must be logged in as");
-		callAction(
+		Result result = callAction(
 				ref,
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						utils.admin.getEmail()));
+		assertThat(status(result)).isEqualTo(FORBIDDEN);
+		assertThat(contentAsString(result))
+				.contains("You must be logged in as");
 	}
 
 	private void checkRemoveJatosWorker(HandlerRef ref) {
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("is a worker of JATOS");
-		callAction(
+		Result result = callAction(
 				ref,
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						utils.admin.getEmail()));
+		assertThat(status(result)).isEqualTo(FORBIDDEN);
+		assertThat(contentAsString(result)).contains("is a worker of JATOS");
 	}
 
 	@Test

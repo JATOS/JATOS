@@ -1,5 +1,7 @@
 package controllers.publix.tester;
 
+import com.google.inject.Singleton;
+
 import controllers.publix.PublixErrorMessages;
 import models.workers.TesterWorker;
 
@@ -8,6 +10,7 @@ import models.workers.TesterWorker;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class TesterErrorMessages extends PublixErrorMessages<TesterWorker> {
 
 	@Override

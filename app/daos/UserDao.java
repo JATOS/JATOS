@@ -1,9 +1,12 @@
-package models;
+package daos;
 
 import java.util.List;
 
 import javax.persistence.TypedQuery;
 
+import com.google.inject.Singleton;
+
+import models.UserModel;
 import play.db.jpa.JPA;
 
 /**
@@ -11,6 +14,7 @@ import play.db.jpa.JPA;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class UserDao extends AbstractDao<UserModel> {
 
 	public UserModel authenticate(String email, String passwordHash) {

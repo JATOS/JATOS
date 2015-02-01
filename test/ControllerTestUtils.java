@@ -6,7 +6,6 @@ import java.security.NoSuchAlgorithmException;
 import javax.persistence.EntityManager;
 
 import models.StudyModel;
-import models.UserDao;
 import models.UserModel;
 
 import org.apache.commons.io.FileUtils;
@@ -17,15 +16,19 @@ import play.db.jpa.JPAPlugin;
 import play.test.FakeApplication;
 import play.test.Helpers;
 import scala.Option;
-import services.IOUtils;
-import services.JsonUtils.UploadUnmarshaller;
-import services.PersistanceUtils;
 import services.UserService;
-import services.ZipUtil;
+import utils.IOUtils;
+import utils.JsonUtils;
+import utils.PersistanceUtils;
+import utils.UploadUnmarshaller;
+import utils.ZipUtil;
 
 import com.google.inject.Inject;
 
 import controllers.publix.StudyAssets;
+import daos.ComponentResultDao;
+import daos.StudyDao;
+import daos.UserDao;
 
 /**
  * Utils class to test controllers. Set up a fake application with it's own
@@ -41,15 +44,21 @@ public class ControllerTestUtils {
 	protected FakeApplication application;
 	protected EntityManager entityManager;
 	protected UserModel admin;
-
-	private final UserDao userDao;
-	private final PersistanceUtils persistanceUtils;
+	protected final UserDao userDao;
+	protected final StudyDao studyDao;
+	protected final PersistanceUtils persistanceUtils;
+	protected final ComponentResultDao componentResultDao;
+	protected final JsonUtils jsonUtils;
 
 	@Inject
 	public ControllerTestUtils(UserDao userDao,
-			PersistanceUtils persistanceUtils) {
+			PersistanceUtils persistanceUtils, StudyDao studyDao,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
 		this.userDao = userDao;
 		this.persistanceUtils = persistanceUtils;
+		this.studyDao = studyDao;
+		this.componentResultDao = componentResultDao;
+		this.jsonUtils = jsonUtils;
 	}
 
 	protected void startApp() throws Exception {
@@ -90,9 +99,8 @@ public class ControllerTestUtils {
 		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		File studyFile = studyFileList[0];
-		UploadUnmarshaller uploadUnmarshaller = new UploadUnmarshaller();
-		StudyModel importedStudy = uploadUnmarshaller.unmarshalling(studyFile,
-				StudyModel.class);
+		StudyModel importedStudy = new UploadUnmarshaller(jsonUtils)
+				.unmarshalling(studyFile, StudyModel.class);
 		studyFile.delete();
 
 		File[] dirArray = IOUtils.findDirectories(tempUnzippedStudyDir);
@@ -147,7 +155,7 @@ public class ControllerTestUtils {
 	protected synchronized void removeMember(StudyModel studyClone,
 			UserModel member) {
 		entityManager.getTransaction().begin();
-		StudyModel.findById(studyClone.getId()).removeMember(member);
+		studyDao.findById(studyClone.getId()).removeMember(member);
 		entityManager.getTransaction().commit();
 	}
 

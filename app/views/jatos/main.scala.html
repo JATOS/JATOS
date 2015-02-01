@@ -167,8 +167,8 @@ function showError(msg) {
 </div>
 
 <script>
-var messages = @Html(services.JsonUtils.asJson(messages));
-var breadcrumbs = @Html(services.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
+var messages = @Html(utils.JsonUtils.asJson(messages));
+var breadcrumbs = @Html(utils.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
 
 if (messages != null) {
 	messages.successList.forEach(function(success) {
@@ -192,7 +192,7 @@ if (messages != null) {
 	showError('@flash.get("error")');
 }
 
-@if(services.PersistanceUtils.IN_MEMORY_DB) {
+@if(common.Common.IN_MEMORY_DB) {
 	showWarning("You are using an in-memory database. This is fine for initial evalution of JATOS. Unfortunately after closing JATOS all changes and results will be lost. If you want to continue working with JATOS, it's strongly recommended to setup a disk-based database.")
 }
 

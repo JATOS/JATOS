@@ -1,4 +1,4 @@
-package services;
+package utils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,11 +12,14 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import com.google.inject.Singleton;
+
 /**
  * Utility class that does zipping and unzipping.
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class ZipUtil {
 
 	private static final int BUFFER_SIZE = 4096;

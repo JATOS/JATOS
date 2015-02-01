@@ -27,10 +27,13 @@ import org.w3c.dom.Document;
 
 import play.Logger;
 import play.mvc.Http.RequestBody;
-import services.PersistanceUtils;
+import utils.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import daos.ComponentDao;
+import daos.ComponentResultDao;
+import daos.StudyDao;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
 import exceptions.ForbiddenReloadException;
@@ -48,10 +51,20 @@ public abstract class PublixUtils<T extends Worker> {
 
 	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
 
-	private PublixErrorMessages<T> errorMessages;
+	private final PublixErrorMessages<T> errorMessages;
+	private final PersistanceUtils persistanceUtils;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
+	private final ComponentResultDao componentResultDao;
 
-	public PublixUtils(PublixErrorMessages<T> errorMessages) {
+	public PublixUtils(PublixErrorMessages<T> errorMessages,
+			PersistanceUtils persistanceUtils, StudyDao studyDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao) {
 		this.errorMessages = errorMessages;
+		this.persistanceUtils = persistanceUtils;
+		this.studyDao = studyDao;
+		this.componentDao = componentDao;
+		this.componentResultDao = componentResultDao;
 	}
 
 	public abstract void checkWorkerAllowedToStartStudy(T worker,
@@ -73,13 +86,13 @@ public abstract class PublixUtils<T extends Worker> {
 			workerId = Long.parseLong(workerIdStr);
 		} catch (NumberFormatException e) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerNotExist(workerIdStr));
+					errorMessages.workerNotExist(workerIdStr));
 		}
 
 		Worker worker = Worker.findById(workerId);
 		if (worker == null) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerNotExist(workerId));
+					errorMessages.workerNotExist(workerId));
 		}
 		return worker;
 	}
@@ -104,7 +117,7 @@ public abstract class PublixUtils<T extends Worker> {
 					// component and study with FAIL
 					finishComponentResult(lastComponentResult,
 							ComponentState.FAIL);
-					String errorMsg = PublixErrorMessages
+					String errorMsg = errorMessages
 							.componentNotAllowedToReload(studyResult.getStudy()
 									.getId(), component.getId());
 					// exceptionalFinishStudy(studyResult, errorMsg);
@@ -115,21 +128,21 @@ public abstract class PublixUtils<T extends Worker> {
 						ComponentState.FINISHED);
 			}
 		}
-		return PersistanceUtils.createComponentResult(studyResult, component);
+		return persistanceUtils.createComponentResult(studyResult, component);
 	}
 
 	private void finishComponentResult(ComponentResult componentResult,
 			ComponentState state) {
 		componentResult.setComponentState(state);
 		componentResult.setEndDate(new Timestamp(new Date().getTime()));
-		componentResult.merge();
+		componentResultDao.merge(componentResult);
 	}
 
 	/**
 	 * Sets cookie with studyId and componentId so the component script has them
 	 * too.
 	 */
-	public static void setIdCookie(StudyResult studyResult,
+	public String getIdCookieValue(StudyResult studyResult,
 			ComponentResult componentResult, Worker worker) {
 		StudyModel study = studyResult.getStudy();
 		ComponentModel component = componentResult.getComponent();
@@ -155,7 +168,7 @@ public abstract class PublixUtils<T extends Worker> {
 				sb.append("&");
 			}
 		}
-		Publix.response().setCookie(Publix.ID_COOKIE_NAME, sb.toString());
+		return sb.toString();
 	}
 
 	/**
@@ -177,7 +190,7 @@ public abstract class PublixUtils<T extends Worker> {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
 			componentResult.setData(null);
-			componentResult.merge();
+			componentResultDao.merge(componentResult);
 		}
 
 		// Set StudyResult to state ABORTED and set message
@@ -352,8 +365,7 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 		if (component == null) {
 			throw new NotFoundPublixException(
-					PublixErrorMessages.studyHasNoActiveComponents(study
-							.getId()));
+					errorMessages.studyHasNoActiveComponents(study.getId()));
 		}
 		return component;
 	}
@@ -373,21 +385,19 @@ public abstract class PublixUtils<T extends Worker> {
 	public ComponentModel retrieveComponent(StudyModel study, Long componentId)
 			throws NotFoundPublixException, BadRequestPublixException,
 			ForbiddenPublixException {
-		ComponentModel component = ComponentModel.findById(componentId);
+		ComponentModel component = componentDao.findById(componentId);
 		if (component == null) {
-			throw new NotFoundPublixException(
-					PublixErrorMessages.componentNotExist(study.getId(),
-							componentId));
+			throw new NotFoundPublixException(errorMessages.componentNotExist(
+					study.getId(), componentId));
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
 			throw new BadRequestPublixException(
-					PublixErrorMessages.componentNotBelongToStudy(
-							study.getId(), componentId));
+					errorMessages.componentNotBelongToStudy(study.getId(),
+							componentId));
 		}
 		if (!component.isActive()) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.componentNotActive(study.getId(),
-							componentId));
+					errorMessages.componentNotActive(study.getId(), componentId));
 		}
 		return component;
 	}
@@ -404,18 +414,17 @@ public abstract class PublixUtils<T extends Worker> {
 			component = study.getComponent(position);
 		} catch (IndexOutOfBoundsException e) {
 			throw new NotFoundPublixException(
-					PublixErrorMessages.noComponentAtPosition(study.getId(),
-							position));
+					errorMessages.noComponentAtPosition(study.getId(), position));
 		}
 		return component;
 	}
 
 	public StudyModel retrieveStudy(Long studyId)
 			throws NotFoundPublixException {
-		StudyModel study = StudyModel.findById(studyId);
+		StudyModel study = studyDao.findById(studyId);
 		if (study == null) {
 			throw new NotFoundPublixException(
-					PublixErrorMessages.studyNotExist(studyId));
+					errorMessages.studyNotExist(studyId));
 		}
 		return study;
 	}
@@ -434,8 +443,8 @@ public abstract class PublixUtils<T extends Worker> {
 			ComponentModel component) throws PublixException {
 		if (!component.getStudy().equals(study)) {
 			throw new BadRequestPublixException(
-					PublixErrorMessages.componentNotBelongToStudy(
-							study.getId(), component.getId()));
+					errorMessages.componentNotBelongToStudy(study.getId(),
+							component.getId()));
 		}
 	}
 

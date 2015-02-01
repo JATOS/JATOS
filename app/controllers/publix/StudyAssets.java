@@ -3,12 +3,14 @@ package controllers.publix;
 import java.io.File;
 import java.io.IOException;
 
+import com.google.inject.Singleton;
+
 import models.ComponentModel;
 import play.Logger;
 import play.Play;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.IOUtils;
+import utils.IOUtils;
 import common.Common;
 
 /**
@@ -17,6 +19,7 @@ import common.Common;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class StudyAssets extends Controller {
 
 	/**
@@ -76,7 +79,7 @@ public class StudyAssets extends Controller {
 	 * Action called while routing. Translates the given file path from the URL into a
 	 * file path of the OS's file system and returns the file.
 	 */
-	public static Result at(String filePath) {
+	public Result at(String filePath) {
 		File file;
 		try {
 			filePath = filePath.replace("/", File.separator);

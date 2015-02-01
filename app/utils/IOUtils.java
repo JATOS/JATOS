@@ -1,4 +1,4 @@
-package services;
+package utils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,6 +9,9 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.inject.Singleton;
+
+import services.ErrorMessages;
 import controllers.publix.StudyAssets;
 
 /**
@@ -16,6 +19,7 @@ import controllers.publix.StudyAssets;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class IOUtils {
 
 	public static final String STUDY_FILE_SUFFIX = "jas";

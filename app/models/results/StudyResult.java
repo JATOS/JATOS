@@ -22,7 +22,7 @@ import javax.persistence.TypedQuery;
 import models.StudyModel;
 import models.workers.Worker;
 import play.db.jpa.JPA;
-import services.DateUtils;
+import utils.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;

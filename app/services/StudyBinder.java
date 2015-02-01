@@ -2,11 +2,14 @@ package services;
 
 import java.util.Map;
 
+import com.google.inject.Singleton;
+
 import models.StudyModel;
 
 /**
  * @author Kristian Lange
  */
+@Singleton
 public class StudyBinder {
 
 	/**

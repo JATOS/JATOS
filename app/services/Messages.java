@@ -3,11 +3,14 @@ package services;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.inject.Singleton;
+
 /**
  * Container class for messages destined for JATOS' GUI views
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class Messages {
 
 	private List<String> successList = new ArrayList<>();
