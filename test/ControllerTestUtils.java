@@ -20,7 +20,6 @@ import services.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
 import utils.PersistanceUtils;
-import utils.UploadUnmarshaller;
 import utils.ZipUtil;
 
 import com.google.inject.Inject;
@@ -102,7 +101,7 @@ public class ControllerTestUtils {
 		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		File studyFile = studyFileList[0];
-		StudyModel importedStudy = new UploadUnmarshaller(jsonUtils)
+		StudyModel importedStudy = new JsonUtils.UploadUnmarshaller()
 				.unmarshalling(studyFile, StudyModel.class);
 		studyFile.delete();
 

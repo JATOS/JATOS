@@ -24,8 +24,8 @@ import services.StudyService;
 import services.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
+import utils.JsonUtils.UploadUnmarshaller;
 import utils.PersistanceUtils;
-import utils.UploadUnmarshaller;
 import utils.ZipUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -266,8 +266,7 @@ public class ImportExport extends Controller {
 					Http.Status.BAD_REQUEST);
 		}
 		File studyFile = studyFileList[0];
-		UploadUnmarshaller uploadUnmarshaller = new UploadUnmarshaller(
-				jsonUtils);
+		UploadUnmarshaller uploadUnmarshaller = new JsonUtils.UploadUnmarshaller();
 		StudyModel study = uploadUnmarshaller.unmarshalling(studyFile,
 				StudyModel.class);
 		if (study == null) {
@@ -535,7 +534,7 @@ public class ImportExport extends Controller {
 
 	private ComponentModel unmarshalComponent(File file, StudyModel study)
 			throws JatosGuiException {
-		ComponentModel component = new UploadUnmarshaller(jsonUtils)
+		ComponentModel component = new JsonUtils.UploadUnmarshaller()
 				.unmarshalling(file, ComponentModel.class);
 		if (component == null) {
 			String errorMsg = ErrorMessages.NO_COMPONENT_UPLOAD;

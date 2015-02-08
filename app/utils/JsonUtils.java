@@ -18,6 +18,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.Logger;
+import services.ErrorMessages;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,8 +29,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.Common;
+
 import daos.ComponentResultDao;
 import daos.StudyResultDao;
 
@@ -57,7 +58,8 @@ public class JsonUtils {
 	private final StudyResultDao studyResultDao;
 
 	@Inject
-	public JsonUtils(ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
+	public JsonUtils(ComponentResultDao componentResultDao,
+			StudyResultDao studyResultDao) {
 		this.componentResultDao = componentResultDao;
 		this.studyResultDao = studyResultDao;
 	}
@@ -265,8 +267,7 @@ public class JsonUtils {
 	 * the number of StudyResults of the study so far. This JSON is intended for
 	 * JATOS' GUI.
 	 */
-	public String studyForUI(StudyModel study)
-			throws JsonProcessingException {
+	public String studyForUI(StudyModel study) throws JsonProcessingException {
 		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
 		studyNode.put("resultCount", studyResultDao.countByStudy(study));
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(studyNode);
@@ -374,11 +375,53 @@ public class JsonUtils {
 	 * Accepts an JSON String and turns the data object within this JSON String
 	 * into an object of the given type.
 	 */
-	public <T> T unmarshallingIO(String jsonStr, Class<T> modelClass)
+	public static <T> T unmarshallingIO(String jsonStr, Class<T> modelClass)
 			throws JsonProcessingException, IOException {
 		JsonNode node = OBJECTMAPPER.readTree(jsonStr).findValue(DATA);
 		T object = OBJECTMAPPER.treeToValue(node, modelClass);
 		return object;
+	}
+
+	/**
+	 * Unmarshalling of an JSON string without throwing an exception. Instead
+	 * error message and Exception are stored within the instance.
+	 * 
+	 * @author Kristian Lange
+	 */
+	public static class UploadUnmarshaller {
+
+		private String errorMsg;
+		private Exception exception;
+
+		public String getErrorMsg() {
+			return errorMsg;
+		}
+
+		public Exception getException() {
+			return exception;
+		}
+
+		public <T> T unmarshalling(File file, Class<T> modelClass) {
+			T object = null;
+			String jsonStr = null;
+			try {
+				// Don't unmarshall file directly so we can create error
+				// messages.
+				jsonStr = IOUtils.readFile(file);
+			} catch (IOException e) {
+				errorMsg = ErrorMessages.COULDNT_READ_FILE;
+				exception = e;
+				return null;
+			}
+			try {
+				object = unmarshallingIO(jsonStr, modelClass);
+			} catch (IOException e) {
+				errorMsg = ErrorMessages.COULDNT_READ_JSON;
+				exception = e;
+				return null;
+			}
+			return object;
+		}
 	}
 
 }
