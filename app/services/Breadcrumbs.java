@@ -3,8 +3,6 @@ package services;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.google.inject.Singleton;
-
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -17,7 +15,6 @@ import controllers.routes;
  * 
  * @author Kristian Lange
  */
-@Singleton
 public class Breadcrumbs {
 
 	public static final String HOME = "Home";
@@ -31,7 +28,7 @@ public class Breadcrumbs {
 	public static final String CHANGE_PASSWORD = "Change Password";
 	public static final String EDIT_PROFILE = "Edit Profile";
 	public static final String NEW_USER = "New User";
-	
+
 	private Map<String, String> breadcrumbs = new LinkedHashMap<>();
 
 	public Map<String, String> getBreadcrumbs() {
@@ -55,8 +52,8 @@ public class Breadcrumbs {
 	public static Breadcrumbs generateForHome(String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		if (last != null) {
-			breadcrumbs = new Breadcrumbs().put(HOME, routes.Home.home())
-					.put(last, "");
+			breadcrumbs = new Breadcrumbs().put(HOME, routes.Home.home()).put(
+					last, "");
 		} else {
 			breadcrumbs.put(HOME, "");
 		}
@@ -94,7 +91,7 @@ public class Breadcrumbs {
 		}
 		return breadcrumbs;
 	}
-	
+
 	public static Breadcrumbs generateForWorker(Worker worker) {
 		return generateForWorker(worker, null);
 	}
@@ -102,8 +99,7 @@ public class Breadcrumbs {
 	public static Breadcrumbs generateForWorker(Worker worker, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs()
 				.put(HOME, routes.Home.home())
-				.put("Worker " + worker.getId(), "")
-				.put(last, "");
+				.put("Worker " + worker.getId(), "").put(last, "");
 		return breadcrumbs;
 	}
 
