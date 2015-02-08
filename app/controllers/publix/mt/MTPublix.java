@@ -18,7 +18,6 @@ import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixInterceptor;
-import controllers.publix.PublixUtils;
 import daos.ComponentResultDao;
 import daos.StudyResultDao;
 import daos.workers.MTWorkerDao;
@@ -130,7 +129,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
 
-		PublixUtils.discardIdCookie();
+		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
 			return ok(confirmationCode);
 		} else {

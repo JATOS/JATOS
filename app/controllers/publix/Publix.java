@@ -277,7 +277,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			publixUtils.abortStudy(message, studyResult);
 		}
 
-		PublixUtils.discardIdCookie();
+		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
@@ -301,7 +301,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			publixUtils.finishStudy(successful, errorMsg, studyResult);
 		}
 
-		PublixUtils.discardIdCookie();
+		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
@@ -338,7 +338,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	 * Like an internal redirect or an proxy. The URL in the browser doesn't
 	 * change.
 	 */
-	public static Promise<Result> forwardTo(String url) {
+	public Promise<Result> forwardTo(String url) {
 		Promise<WS.Response> response = WS.url(url).get();
 		return response.map(new Function<WS.Response, Result>() {
 			public Result apply(WS.Response response) {

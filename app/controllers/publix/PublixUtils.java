@@ -183,7 +183,7 @@ public abstract class PublixUtils<T extends Worker> {
 	/**
 	 * Discard cookie with studyId and componentId.
 	 */
-	public static void discardIdCookie() {
+	public void discardIdCookie() {
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 	}
 
@@ -240,7 +240,7 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 	}
 
-	public static String getRequestBodyAsString(RequestBody requestBody) {
+	public String getRequestBodyAsString(RequestBody requestBody) {
 		String text = requestBody.asText();
 		if (text != null) {
 			return text;
@@ -262,7 +262,7 @@ public abstract class PublixUtils<T extends Worker> {
 	/**
 	 * Convert XML-Document to String
 	 */
-	public static String asString(Document doc) {
+	public String asString(Document doc) {
 		try {
 			DOMSource domSource = new DOMSource(doc);
 			StringWriter writer = new StringWriter();

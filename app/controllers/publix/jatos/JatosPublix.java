@@ -20,7 +20,6 @@ import controllers.routes;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
-import controllers.publix.PublixUtils;
 import controllers.publix.StudyAssets;
 import daos.ComponentResultDao;
 import daos.StudyResultDao;
@@ -212,7 +211,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			Publix.session().remove(JatosPublix.JATOS_SHOW);
 		}
 
-		PublixUtils.discardIdCookie();
+		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
@@ -239,7 +238,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			Publix.session().remove(JatosPublix.JATOS_SHOW);
 		}
 
-		PublixUtils.discardIdCookie();
+		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);
 		} else {
