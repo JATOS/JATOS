@@ -27,7 +27,6 @@ import services.ComponentService;
 import services.ErrorMessages;
 import services.JatosGuiExceptionThrower;
 import services.Messages;
-import services.StudyBinder;
 import services.StudyService;
 import services.UserService;
 import services.WorkerService;
@@ -164,7 +163,7 @@ public class Studies extends Controller {
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 
-		StudyModel study = StudyBinder.bindStudyFromRequest(request().body()
+		StudyModel study = studyService.bindStudyFromRequest(request().body()
 				.asFormUrlEncoded());
 		List<ValidationError> errorList = study.validate();
 		if (errorList != null) {
@@ -227,7 +226,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		studyService.checkStudyLocked(study);
 
-		StudyModel updatedStudy = StudyBinder.bindStudyFromRequest(request()
+		StudyModel updatedStudy = studyService.bindStudyFromRequest(request()
 				.body().asFormUrlEncoded());
 		List<ValidationError> errorList = updatedStudy.validate();
 		if (errorList != null) {
