@@ -48,7 +48,8 @@ import exceptions.PublixException;
  * the link) will be forwarded to OpenStandalonePublix.<br>
  * 
  * TODO: Move @Transactional out of controller and get rid of synchronisation
- * and JPA transaction handling
+ * and JPA transaction handling. We need a lock for a worker to prevent the same
+ * worker doing the same study in parallel.
  * 
  * @author Kristian Lange
  */
