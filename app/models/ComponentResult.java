@@ -1,4 +1,4 @@
-package models.results;
+package models;
 
 import java.sql.Timestamp;
 import java.util.Date;
@@ -12,7 +12,6 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
-import models.ComponentModel;
 import utils.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -21,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
- * Domain model and DAO of a component result.
+ * Domain model of a component result.
  * 
  * @author Kristian Lange
  */

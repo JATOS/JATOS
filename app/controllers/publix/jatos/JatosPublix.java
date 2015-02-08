@@ -1,9 +1,9 @@
 package controllers.publix.jatos;
 
 import models.ComponentModel;
+import models.ComponentResult;
 import models.StudyModel;
-import models.results.ComponentResult;
-import models.results.StudyResult;
+import models.StudyResult;
 import models.workers.JatosWorker;
 import play.Logger;
 import play.libs.F.Promise;
@@ -23,6 +23,7 @@ import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
 import controllers.publix.StudyAssets;
 import daos.ComponentResultDao;
+import daos.StudyResultDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
@@ -51,8 +52,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public JatosPublix(JatosPublixUtils publixUtils,
 			JatosErrorMessages jatosErrorMessages,
 			PersistanceUtils persistanceUtils,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
-		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils);
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao) {
+		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 	}
 

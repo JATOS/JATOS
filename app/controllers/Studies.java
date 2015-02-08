@@ -38,14 +38,16 @@ import utils.PersistanceUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
+
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.tester.TesterPublix;
 import daos.ComponentDao;
 import daos.StudyDao;
+import daos.StudyResultDao;
 import daos.UserDao;
+import daos.workers.WorkerDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -71,13 +73,16 @@ public class Studies extends Controller {
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 	private final JsonUtils jsonUtils;
+	private final StudyResultDao studyResultDao;
+	private final WorkerDao workerDao;
 
 	@Inject
 	public Studies(UserDao userDao, PersistanceUtils persistanceUtils,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, WorkerService workerService,
-			StudyDao studyDao, ComponentDao componentDao, JsonUtils jsonUtils) {
+			StudyDao studyDao, ComponentDao componentDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, WorkerDao workerDao) {
 		this.userDao = userDao;
 		this.persistanceUtils = persistanceUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
@@ -88,6 +93,8 @@ public class Studies extends Controller {
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.jsonUtils = jsonUtils;
+		this.studyResultDao = studyResultDao;
+		this.workerDao = workerDao;
 	}
 
 	/**
@@ -108,9 +115,10 @@ public class Studies extends Controller {
 		Messages messages = new Messages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study);
 		String baseUrl = ControllerUtils.getReferer();
+		int studyResultCount = studyResultDao.countByStudy(study);
 		return status(httpStatus, views.html.jatos.study.index.render(
 				studyList, loggedInUser, breadcrumbs, messages, study,
-				workerSet, baseUrl));
+				workerSet, baseUrl, studyResultCount));
 	}
 
 	@Transactional
@@ -446,7 +454,7 @@ public class Studies extends Controller {
 				.trim();
 		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
 		checkWorker(studyId, worker);
-		worker.persist();
+		workerDao.persist(worker);
 
 		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
@@ -480,7 +488,7 @@ public class Studies extends Controller {
 		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
 		TesterWorker worker = new TesterWorker(comment);
 		checkWorker(studyId, worker);
-		worker.persist();
+		workerDao.persist(worker);
 
 		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(

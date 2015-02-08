@@ -7,9 +7,9 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import models.ComponentModel;
+import models.ComponentResult;
 import models.StudyModel;
-import models.results.ComponentResult;
-import models.results.StudyResult;
+import models.StudyResult;
 import models.workers.Worker;
 
 import org.hibernate.Hibernate;
@@ -28,9 +28,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.Common;
 
+import common.Common;
 import daos.ComponentResultDao;
+import daos.StudyResultDao;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and
@@ -53,10 +54,12 @@ public class JsonUtils {
 			.setTimeZone(TimeZone.getDefault());
 
 	private final ComponentResultDao componentResultDao;
+	private final StudyResultDao studyResultDao;
 
 	@Inject
-	public JsonUtils(ComponentResultDao componentResultDao) {
+	public JsonUtils(ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
 		this.componentResultDao = componentResultDao;
+		this.studyResultDao = studyResultDao;
 	}
 
 	/**
@@ -166,7 +169,7 @@ public class JsonUtils {
 	 */
 	public String allStudyResultsForUI(StudyModel study)
 			throws JsonProcessingException {
-		return allStudyResultsForUI(StudyResult.findAllByStudy(study));
+		return allStudyResultsForUI(studyResultDao.findAllByStudy(study));
 	}
 
 	/**
@@ -262,10 +265,10 @@ public class JsonUtils {
 	 * the number of StudyResults of the study so far. This JSON is intended for
 	 * JATOS' GUI.
 	 */
-	public static String studyForUI(StudyModel study)
+	public String studyForUI(StudyModel study)
 			throws JsonProcessingException {
 		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
-		studyNode.put("resultCount", StudyResult.countByStudy(study));
+		studyNode.put("resultCount", studyResultDao.countByStudy(study));
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(studyNode);
 		return asJsonStr;
 	}

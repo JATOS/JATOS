@@ -16,11 +16,11 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import models.ComponentModel;
+import models.ComponentResult;
+import models.ComponentResult.ComponentState;
 import models.StudyModel;
-import models.results.ComponentResult;
-import models.results.ComponentResult.ComponentState;
-import models.results.StudyResult;
-import models.results.StudyResult.StudyState;
+import models.StudyResult;
+import models.StudyResult.StudyState;
 import models.workers.Worker;
 
 import org.w3c.dom.Document;
@@ -30,10 +30,13 @@ import play.mvc.Http.RequestBody;
 import utils.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Singleton;
 
 import daos.ComponentDao;
 import daos.ComponentResultDao;
 import daos.StudyDao;
+import daos.StudyResultDao;
+import daos.workers.WorkerDao;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
 import exceptions.ForbiddenReloadException;
@@ -47,6 +50,7 @@ import exceptions.UnsupportedMediaTypePublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public abstract class PublixUtils<T extends Worker> {
 
 	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
@@ -56,15 +60,20 @@ public abstract class PublixUtils<T extends Worker> {
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 	private final ComponentResultDao componentResultDao;
+	private final StudyResultDao studyResultDao;
+	private final WorkerDao workerDao;
 
 	public PublixUtils(PublixErrorMessages<T> errorMessages,
 			PersistanceUtils persistanceUtils, StudyDao studyDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao) {
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			StudyResultDao studyResultDao, WorkerDao workerDao) {
 		this.errorMessages = errorMessages;
 		this.persistanceUtils = persistanceUtils;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.componentResultDao = componentResultDao;
+		this.studyResultDao = studyResultDao;
+		this.workerDao = workerDao;
 	}
 
 	public abstract void checkWorkerAllowedToStartStudy(T worker,
@@ -89,7 +98,7 @@ public abstract class PublixUtils<T extends Worker> {
 					errorMessages.workerNotExist(workerIdStr));
 		}
 
-		Worker worker = Worker.findById(workerId);
+		Worker worker = workerDao.findById(workerId);
 		if (worker == null) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotExist(workerId));
@@ -197,7 +206,7 @@ public abstract class PublixUtils<T extends Worker> {
 		studyResult.setStudyState(StudyState.ABORTED);
 		studyResult.setAbortMsg(message);
 		studyResult.setEndDate(new Timestamp(new Date().getTime()));
-		studyResult.merge();
+		studyResultDao.merge(studyResult);
 	}
 
 	public String finishStudy(Boolean successful, String errorMsg,
@@ -218,7 +227,7 @@ public abstract class PublixUtils<T extends Worker> {
 		studyResult.setEndDate(new Timestamp(new Date().getTime()));
 		// Clear study session data before finishing
 		studyResult.setStudySessionData(null);
-		studyResult.merge();
+		studyResultDao.merge(studyResult);
 		return confirmationCode;
 	}
 

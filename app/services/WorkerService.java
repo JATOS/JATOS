@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import models.StudyModel;
-import models.results.StudyResult;
+import models.StudyResult;
 import models.workers.Worker;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -13,6 +13,7 @@ import play.mvc.Http;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import daos.StudyResultDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -24,10 +25,13 @@ import exceptions.JatosGuiException;
 public class WorkerService extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final StudyResultDao studyResultDao;
 
 	@Inject
-	public WorkerService(JatosGuiExceptionThrower jatosGuiExceptionThrower) {
+	public WorkerService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			StudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.studyResultDao = studyResultDao;
 	}
 
 	/**
@@ -47,7 +51,8 @@ public class WorkerService extends Controller {
 	 * Retrieve all workersProvider that did this study.
 	 */
 	public Set<Worker> retrieveWorkers(StudyModel study) {
-		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
+		List<StudyResult> studyResultList = studyResultDao
+				.findAllByStudy(study);
 		Set<Worker> workerSet = new HashSet<>();
 		for (StudyResult studyResult : studyResultList) {
 			workerSet.add(studyResult.getWorker());

@@ -1,18 +1,18 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel,
-breadcrumbs:services.Breadcrumbs, messages: services.Messages, study: StudyModel,
-workerSet: Set[workers.Worker], baseUrl: String)
-
-@views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
+breadcrumbs:services.Breadcrumbs, messages: services.Messages, study:
+StudyModel, workerSet: Set[workers.Worker], baseUrl: String,
+studyResultsCount: Integer) @views.html.jatos.main(studyList,
+loggedInUser, breadcrumbs, messages){
 
 <!-- Toolbar -->
 <div id="studyToolbar" class="btn-toolbar" role="toolbar">
 	<div class="btn-group">
 		<button id="showStudy" type="button" class="btn btn-primary">Show</button>
 		<button id="studyResults" type="button" class="btn btn-primary">
-			Results <span class="badge">@results.StudyResult.countByStudy(study)</span>
+			Results <span class="badge">@studyResultsCount</span>
 		</button>
 		<button id="workers" type="button" class="btn btn-primary">
-			Workers <span class="badge">@workerSet.size()
+			Workers <span class="badge">@workerSet.size() 
 		</button>
 		<button id="editStudy" type="button" class="btn btn-primary">Properties</button>
 		<button id="lockStudy" type="button" class="btn btn-primary">@if(study.isLocked()){Unlock}else{Lock}</button>
@@ -132,8 +132,6 @@ workerSet: Set[workers.Worker], baseUrl: String)
 
 <script type="text/javascript">
 
-var studyProperties = @Html(utils.JsonUtils.studyForUI(study));
-
 var componentsTable;
 $(document).ready(function() {
 	componentsTable = $('#componentsTable').DataTable({
@@ -225,27 +223,27 @@ $(document).ready(function() {
 	});
 	
 	$('#componentsTable tbody').on('click', '.showComponent', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
+		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/show";
 	});
 	
 	$('#componentsTable tbody').on('click', '.componentResults', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
+		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/results";
 	});
 	
 	$('#componentsTable tbody').on('click', '.editComponent', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
+		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/edit";
 	});
 	
 	$('#componentsTable tbody').on('click', '.exportComponent', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
+		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/export";
 	});
 	
 	$('#componentsTable tbody').on('click', '.cloneComponent', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
+		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/clone";
 	});
 	
@@ -260,7 +258,7 @@ $(document).ready(function() {
 		var postText = "Do you want to proceed?";
 		askConfirmation(title, preText, null, postText, 'Delete', function() {
 			$.ajax({
-				url : "/jatos/" + studyProperties.id +"/" + componentId + "/remove",
+				url : "/jatos/" + @study.getId() +"/" + componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
 					var tr = $(element).closest('tr');
@@ -291,7 +289,7 @@ $(document).ready(function() {
 		var componentId = getComponentId(this);
 		var active = $(this).prop('checked');
 		$.ajax({
-			url : "/jatos/" + studyProperties.id +"/" + componentId
+			url : "/jatos/" + @study.getId() +"/" + componentId
 					+ "/changeProperty?active=" + active,
 			type : "POST",
 			error : function(err) {
@@ -317,7 +315,7 @@ $(document).ready(function() {
 
 function ajaxChangeComponentOrder(componentId, direction, tr) {
 	$.ajax({
-		url : "/jatos/" + studyProperties.id + "/changeComponentOrder"
+		url : "/jatos/" + @study.getId() + "/changeComponentOrder"
 				+ "?componentId=" + componentId + "&direction="
 				+ direction,
 		type : "POST",
@@ -353,7 +351,7 @@ function swapRowData(row1, row2) {
 
 $('#studyToolbar').on('click', '#lockStudy', function() {
 	$.ajax({
-		url : "/jatos/" + studyProperties.id +"/swapLock",
+		url : "/jatos/" + @study.getId() +"/swapLock",
 		type : "POST",
 		success : function(response) {
 			if (response == 'true') {
@@ -457,8 +455,8 @@ $('#studyToolbar').on('click', '#testerRun', function() {
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
 	var title = "Confirm Delete";
-	var preText = "You are about to delete the study \"" + studyProperties.title 
-		+ "\" (ID " + studyProperties.id + ") "
+	var preText = "You are about to delete the study \"@study.getTitle()\" " 
+		+ "(ID @study.getId()) "
 		+ "<b>with all its components, results, and the entire study assets directory, "
 		+ "including the HTML files</b>.";
 	var postText = "Do you want to proceed?";

@@ -8,11 +8,11 @@ import javax.persistence.TypedQuery;
 import com.google.inject.Singleton;
 
 import models.ComponentModel;
-import models.results.ComponentResult;
+import models.ComponentResult;
 import play.db.jpa.JPA;
 
 /**
- * DAO for UserModel
+ * DAO for ComponentResult model
  * 
  * @author Kristian Lange
  */

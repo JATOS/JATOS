@@ -14,6 +14,7 @@ import com.google.inject.Singleton;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import daos.ComponentResultDao;
+import daos.StudyResultDao;
 import exceptions.PublixException;
 
 /**
@@ -37,8 +38,10 @@ public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
 	public ClosedStandalonePublix(ClosedStandaloneErrorMessages errorMessages,
 			ClosedStandalonePublixUtils publixUtils,
 			PersistanceUtils persistanceUtils,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
-		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils);
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao) {
+		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 	}
 

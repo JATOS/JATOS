@@ -7,9 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import models.ComponentModel;
+import models.ComponentResult;
 import models.StudyModel;
 import models.UserModel;
-import models.results.ComponentResult;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;

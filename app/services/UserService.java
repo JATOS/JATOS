@@ -47,7 +47,7 @@ public class UserService {
 		this.persistanceUtils = persistanceUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 	}
-	
+
 	/**
 	 * Retrieves the user with the given email form the DB. Throws a
 	 * JatosGuiException if it doesn't exist.
@@ -108,7 +108,7 @@ public class UserService {
 		return adminUser;
 	}
 
-	public static String getHashMDFive(String str)
+	public String getHashMDFive(String str)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 		byte[] strBytes = str.getBytes("UTF-8");
 		MessageDigest md = MessageDigest.getInstance("MD5");
@@ -144,7 +144,7 @@ public class UserService {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 
 		// Authenticate
-		if (UserModel.authenticate(user.getEmail(), oldPasswordHash) == null) {
+		if (userDao.authenticate(user.getEmail(), oldPasswordHash) == null) {
 			errorList.add(new ValidationError(UserModel.OLD_PASSWORD,
 					ErrorMessages.WRONG_OLD_PASSWORD));
 		}

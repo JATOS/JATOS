@@ -3,10 +3,10 @@ package utils;
 import java.util.List;
 
 import models.ComponentModel;
+import models.ComponentResult;
 import models.StudyModel;
+import models.StudyResult;
 import models.UserModel;
-import models.results.ComponentResult;
-import models.results.StudyResult;
 import models.workers.JatosWorker;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
@@ -18,7 +18,9 @@ import com.google.inject.Singleton;
 import daos.ComponentDao;
 import daos.ComponentResultDao;
 import daos.StudyDao;
+import daos.StudyResultDao;
 import daos.UserDao;
+import daos.workers.WorkerDao;
 
 /**
  * Utility class that provides persistence methods.
@@ -32,14 +34,19 @@ public class PersistanceUtils {
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 	private final ComponentResultDao componentResultDao;
+	private final StudyResultDao studyResultDao;
+	private final WorkerDao workerDao;
 
 	@Inject
 	public PersistanceUtils(UserDao userDao, StudyDao studyDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao) {
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			StudyResultDao studyResultDao, WorkerDao workerDao) {
 		this.userDao = userDao;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.componentResultDao = componentResultDao;
+		this.studyResultDao = studyResultDao;
+		this.workerDao = workerDao;
 	}
 
 	/**
@@ -47,9 +54,9 @@ public class PersistanceUtils {
 	 */
 	public StudyResult createStudyResult(StudyModel study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);
-		studyResult.persist();
+		studyResultDao.persist(studyResult);
 		worker.addStudyResult(studyResult);
-		worker.merge();
+		workerDao.merge(worker);
 		return studyResult;
 	}
 
@@ -62,7 +69,7 @@ public class PersistanceUtils {
 		componentResult.setStudyResult(studyResult);
 		componentResultDao.persist(componentResult);
 		studyResult.addComponentResult(componentResult);
-		studyResult.merge();
+		studyResultDao.merge(studyResult);
 		componentResultDao.merge(componentResult);
 		return componentResult;
 	}
@@ -77,7 +84,7 @@ public class PersistanceUtils {
 		} else {
 			worker = new MTWorker(mtWorkerId);
 		}
-		worker.persist();
+		workerDao.persist(worker);
 		return worker;
 	}
 
@@ -86,10 +93,10 @@ public class PersistanceUtils {
 	 */
 	public void addUser(UserModel user) {
 		JatosWorker worker = new JatosWorker(user);
-		worker.persist();
+		workerDao.persist(worker);
 		user.setWorker(worker);
 		userDao.persist(user);
-		worker.merge();
+		workerDao.merge(worker);
 	}
 
 	/**
@@ -150,7 +157,7 @@ public class PersistanceUtils {
 			componentDao.remove(component);
 		}
 		// Remove study's StudyResults and ComponentResults
-		for (StudyResult studyResult : StudyResult.findAllByStudy(study)) {
+		for (StudyResult studyResult : studyResultDao.findAllByStudy(study)) {
 			removeStudyResult(studyResult);
 		}
 		studyDao.remove(study);
@@ -201,7 +208,7 @@ public class PersistanceUtils {
 				.findAllByComponent(component)) {
 			StudyResult studyResult = componentResult.getStudyResult();
 			studyResult.removeComponentResult(componentResult);
-			studyResult.merge();
+			studyResultDao.merge(studyResult);
 			componentResultDao.remove(componentResult);
 		}
 		componentDao.remove(component);
@@ -213,7 +220,7 @@ public class PersistanceUtils {
 	public void removeComponentResult(ComponentResult componentResult) {
 		StudyResult studyResult = componentResult.getStudyResult();
 		studyResult.removeComponentResult(componentResult);
-		studyResult.merge();
+		studyResultDao.merge(studyResult);
 		componentResultDao.remove(componentResult);
 	}
 
@@ -231,10 +238,10 @@ public class PersistanceUtils {
 		// Remove study result from worker
 		Worker worker = studyResult.getWorker();
 		worker.removeStudyResult(studyResult);
-		worker.merge();
+		workerDao.merge(worker);
 
 		// Remove studyResult
-		studyResult.remove();
+		studyResultDao.remove(studyResult);
 	}
 
 	/**
@@ -242,7 +249,8 @@ public class PersistanceUtils {
 	 * study.
 	 */
 	public void removeAllStudyResults(StudyModel study) {
-		List<StudyResult> studyResultList = StudyResult.findAllByStudy(study);
+		List<StudyResult> studyResultList = studyResultDao
+				.findAllByStudy(study);
 		for (StudyResult studyResult : studyResultList) {
 			removeStudyResult(studyResult);
 		}
@@ -263,11 +271,11 @@ public class PersistanceUtils {
 					.getComponentResultList()) {
 				componentResultDao.remove(componentResult);
 			}
-			studyResult.remove();
+			studyResultDao.remove(studyResult);
 		}
 
 		// Remove worker
-		worker.remove();
+		workerDao.remove(worker);
 	}
 
 }

@@ -5,10 +5,8 @@ import java.util.UUID;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.TypedQuery;
 
 import play.data.validation.ValidationError;
-import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,11 +44,11 @@ public class MTWorker extends Worker {
 	public String getMTWorkerId() {
 		return this.mtWorkerId;
 	}
-	
+
 	public String getWorkerType() {
 		return WORKER_TYPE;
 	}
-	
+
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}
@@ -64,45 +62,10 @@ public class MTWorker extends Worker {
 	public String generateConfirmationCode() {
 		return UUID.randomUUID().toString();
 	}
-	
+
 	@Override
 	public List<ValidationError> validate() {
 		return null;
-	}
-
-	/**
-	 * Retrieves the worker with the given MTurk worker ID in a case insensitive
-	 * way.
-	 */
-	public static MTWorker findByMTWorkerId(String mtWorkerId) {
-		String queryStr = "SELECT e FROM Worker e WHERE "
-				+ "upper(e.mtWorkerId)=:mtWorkerId";
-		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
-		List<Worker> workerList = query.setParameter("mtWorkerId", mtWorkerId)
-				.getResultList();
-		MTWorker worker = workerList.isEmpty() ? null : (MTWorker) workerList
-				.get(0);
-		return worker;
-	}
-
-	public static MTWorker findByMTWorkerIdAndWorkerType(String mtWorkerId) {
-		return findByMTWorkerId(mtWorkerId, WORKER_TYPE);
-	}
-
-	/**
-	 * Retrieves the worker with the given MTurk worker ID and type in a case
-	 * insensitive way.
-	 */
-	protected static MTWorker findByMTWorkerId(String mtWorkerId,
-			String workerType) {
-		String queryStr = "SELECT e FROM Worker e WHERE "
-				+ "upper(e.mtWorkerId)=:mtWorkerId and e.workerType=:workerType";
-		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
-		List<Worker> workerList = query.setParameter("mtWorkerId", mtWorkerId)
-				.setParameter(Worker.DISCRIMINATOR, workerType).getResultList();
-		MTWorker worker = workerList.isEmpty() ? null : (MTWorker) workerList
-				.get(0);
-		return worker;
 	}
 
 }

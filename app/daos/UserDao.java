@@ -4,10 +4,10 @@ import java.util.List;
 
 import javax.persistence.TypedQuery;
 
-import com.google.inject.Singleton;
-
 import models.UserModel;
 import play.db.jpa.JPA;
+
+import com.google.inject.Singleton;
 
 /**
  * DAO for UserModel

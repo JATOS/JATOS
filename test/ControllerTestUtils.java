@@ -48,17 +48,20 @@ public class ControllerTestUtils {
 	protected final StudyDao studyDao;
 	protected final PersistanceUtils persistanceUtils;
 	protected final ComponentResultDao componentResultDao;
+	protected final UserService userService;
 	protected final JsonUtils jsonUtils;
 
 	@Inject
 	public ControllerTestUtils(UserDao userDao,
 			PersistanceUtils persistanceUtils, StudyDao studyDao,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			UserService userService) {
 		this.userDao = userDao;
 		this.persistanceUtils = persistanceUtils;
 		this.studyDao = studyDao;
 		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
+		this.userService = userService;
 	}
 
 	protected void startApp() throws Exception {
@@ -124,7 +127,7 @@ public class ControllerTestUtils {
 	protected synchronized UserModel createAndPersistUser(String email,
 			String name, String password) throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
-		String passwordHash = UserService.getHashMDFive(password);
+		String passwordHash = userService.getHashMDFive(password);
 		UserModel user = new UserModel(email, name, passwordHash);
 		entityManager.getTransaction().begin();
 		persistanceUtils.addUser(user);

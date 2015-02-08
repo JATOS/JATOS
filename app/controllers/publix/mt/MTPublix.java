@@ -2,7 +2,7 @@ package controllers.publix.mt;
 
 import models.ComponentModel;
 import models.StudyModel;
-import models.results.StudyResult;
+import models.StudyResult;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import play.Logger;
@@ -20,6 +20,8 @@ import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixInterceptor;
 import controllers.publix.PublixUtils;
 import daos.ComponentResultDao;
+import daos.StudyResultDao;
+import daos.workers.MTWorkerDao;
 import exceptions.BadRequestPublixException;
 import exceptions.PublixException;
 
@@ -48,14 +50,18 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	private final MTPublixUtils publixUtils;
 	private final MTErrorMessages errorMessages;
+	private final MTWorkerDao mtWorkerDao;
 
 	@Inject
 	public MTPublix(MTPublixUtils publixUtils, MTErrorMessages errorMessages,
 			PersistanceUtils persistanceUtils,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
-		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils);
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
+		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
+		this.mtWorkerDao = mtWorkerDao;
 	}
 
 	@Override
@@ -84,7 +90,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			throw new BadRequestPublixException(
 					PublixErrorMessages.NO_MTURK_WORKERID);
 		}
-		MTWorker worker = MTWorker.findByMTWorkerId(mtWorkerId);
+		MTWorker worker = mtWorkerDao.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
 			String workerType = session(PublixInterceptor.WORKER_TYPE);
 			boolean isRequestFromMTurkSandbox = workerType

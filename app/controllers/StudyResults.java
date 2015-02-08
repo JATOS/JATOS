@@ -6,10 +6,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import models.ComponentResult;
 import models.StudyModel;
+import models.StudyResult;
 import models.UserModel;
-import models.results.ComponentResult;
-import models.results.StudyResult;
 import models.workers.Worker;
 import play.Logger;
 import play.db.jpa.Transactional;
@@ -32,9 +32,11 @@ import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
+
 import daos.StudyDao;
+import daos.StudyResultDao;
+import daos.workers.WorkerDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -56,13 +58,16 @@ public class StudyResults extends Controller {
 	private final ResultService resultService;
 	private final StudyDao studyDao;
 	private final JsonUtils jsonUtils;
+	private final StudyResultDao studyResultDao;
+	private final WorkerDao workerDao;
 
 	@Inject
 	public StudyResults(PersistanceUtils persistanceUtils,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
 			WorkerService workerService, ResultService resultService,
-			StudyDao studyDao, JsonUtils jsonUtils) {
+			StudyDao studyDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, WorkerDao workerDao) {
 		this.persistanceUtils = persistanceUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
@@ -71,6 +76,8 @@ public class StudyResults extends Controller {
 		this.resultService = resultService;
 		this.studyDao = studyDao;
 		this.jsonUtils = jsonUtils;
+		this.studyResultDao = studyResultDao;
+		this.workerDao = workerDao;
 	}
 
 	/**
@@ -162,7 +169,7 @@ public class StudyResults extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		Worker worker = Worker.findById(workerId);
+		Worker worker = workerDao.findById(workerId);
 		workerService.checkWorker(worker, workerId);
 
 		List<StudyResult> allowedStudyResultList = getAllowedStudyResultList(
@@ -255,7 +262,7 @@ public class StudyResults extends Controller {
 			throws JatosGuiException {
 		List<StudyResult> studyResultList = new ArrayList<>();
 		for (Long studyResultId : studyResultIdList) {
-			StudyResult studyResult = StudyResult.findById(studyResultId);
+			StudyResult studyResult = studyResultDao.findById(studyResultId);
 			if (studyResult == null) {
 				String errorMsg = ErrorMessages
 						.studyResultNotExist(studyResultId);

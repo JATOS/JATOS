@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Set;
 
 import models.StudyModel;
+import models.StudyResult;
 import models.UserModel;
-import models.results.StudyResult;
 import models.workers.JatosWorker;
 import models.workers.Worker;
 import play.Logger;
@@ -30,6 +30,7 @@ import com.google.inject.Singleton;
 
 import common.JatosGuiAction;
 import daos.StudyDao;
+import daos.workers.WorkerDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -50,12 +51,13 @@ public class Workers extends Controller {
 	private final WorkerService workerService;
 	private final StudyDao studyDao;
 	private final JsonUtils jsonUtils;
+	private final WorkerDao workerDao;
 
 	@Inject
 	public Workers(PersistanceUtils persistanceUtils,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
-			WorkerService workerService, StudyDao studyDao, JsonUtils jsonUtils) {
+			WorkerService workerService, StudyDao studyDao, JsonUtils jsonUtils, WorkerDao workerDao) {
 		this.persistanceUtils = persistanceUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
@@ -63,6 +65,7 @@ public class Workers extends Controller {
 		this.workerService = workerService;
 		this.studyDao = studyDao;
 		this.jsonUtils = jsonUtils;
+		this.workerDao = workerDao;
 	}
 
 	/**
@@ -76,7 +79,7 @@ public class Workers extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		Worker worker = Worker.findById(workerId);
+		Worker worker = workerDao.findById(workerId);
 		workerService.checkWorker(worker, workerId);
 
 		Messages messages = new Messages().error(errorMsg);
@@ -107,7 +110,7 @@ public class Workers extends Controller {
 	public Result remove(Long workerId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".remove: workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		Worker worker = Worker.findById(workerId);
+		Worker worker = workerDao.findById(workerId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		workerService.checkWorker(worker, workerId);
 

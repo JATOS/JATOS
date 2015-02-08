@@ -118,7 +118,7 @@ public class Users extends Controller {
 					form, errorList, Http.Status.BAD_REQUEST);
 		}
 
-		String passwordHash = UserService.getHashMDFive(password);
+		String passwordHash = userService.getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
 		persistanceUtils.addUser(newUser);
 		return redirect(routes.Home.home());
@@ -210,7 +210,7 @@ public class Users extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String newPassword = requestData.get(UserModel.NEW_PASSWORD);
 		String newPasswordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
-		String oldPasswordHash = UserService.getHashMDFive(requestData
+		String oldPasswordHash = userService.getHashMDFive(requestData
 				.get(UserModel.OLD_PASSWORD));
 		List<ValidationError> errorList = userService.validateChangePassword(
 				user, newPassword, newPasswordRepeat, oldPasswordHash);
@@ -220,7 +220,7 @@ public class Users extends Controller {
 					loggedInUser);
 		}
 		// Update password hash in DB
-		String newPasswordHash = UserService.getHashMDFive(newPassword);
+		String newPasswordHash = userService.getHashMDFive(newPassword);
 		user.setPasswordHash(newPasswordHash);
 		userDao.merge(user);
 		return redirect(routes.Users.profile(email));

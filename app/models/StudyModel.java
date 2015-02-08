@@ -38,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Domain model and DAO of a study.
+ * Domain model of a study.
  * 
  * @author Kristian Lange
  */

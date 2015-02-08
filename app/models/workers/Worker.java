@@ -16,11 +16,9 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
-import javax.persistence.TypedQuery;
 
-import models.results.StudyResult;
+import models.StudyResult;
 import play.data.validation.ValidationError;
-import play.db.jpa.JPA;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -72,7 +70,7 @@ public abstract class Worker {
 	public Long getId() {
 		return this.id;
 	}
-	
+
 	public void setStudyResultList(List<StudyResult> studyResultList) {
 		this.studyResultList = studyResultList;
 	}
@@ -122,28 +120,6 @@ public abstract class Worker {
 			return false;
 		}
 		return true;
-	}
-
-	public static Worker findById(Long id) {
-		return JPA.em().find(Worker.class, id);
-	}
-
-	public static List<Worker> findAll() {
-		TypedQuery<Worker> query = JPA.em().createQuery(
-				"SELECT e FROM Worker e", Worker.class);
-		return query.getResultList();
-	}
-
-	public void persist() {
-		JPA.em().persist(this);
-	}
-
-	public void merge() {
-		JPA.em().merge(this);
-	}
-
-	public void remove() {
-		JPA.em().remove(this);
 	}
 
 }

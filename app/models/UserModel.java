@@ -11,7 +11,6 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
-import javax.persistence.TypedQuery;
 
 import models.workers.JatosWorker;
 
@@ -19,13 +18,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import play.db.jpa.JPA;
 import services.ErrorMessages;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Domain model and DAO of a user.
+ * Domain model of a user.
  * 
  * @author Kristian Lange
  */
@@ -140,16 +138,6 @@ public class UserModel {
 			return false;
 		}
 		return true;
-	}
-
-	public static UserModel authenticate(String email, String passwordHash) {
-		String queryStr = "SELECT e FROM UserModel e WHERE "
-				+ "e.email=:email and e.passwordHash=:passwordHash";
-		TypedQuery<UserModel> query = JPA.em().createQuery(queryStr,
-				UserModel.class);
-		List<UserModel> userList = query.setParameter("email", email)
-				.setParameter("passwordHash", passwordHash).getResultList();
-		return userList.isEmpty() ? null : userList.get(0);
 	}
 
 	public List<ValidationError> validate() {

@@ -1,5 +1,7 @@
 package controllers.publix;
 
+import com.google.inject.Singleton;
+
 import models.workers.Worker;
 
 /**
@@ -7,6 +9,7 @@ import models.workers.Worker;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public abstract class PublixErrorMessages<T extends Worker> {
 
 	public abstract String workerNeverStartedStudy(T worker, Long studyId);

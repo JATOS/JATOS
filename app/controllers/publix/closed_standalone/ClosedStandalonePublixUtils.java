@@ -13,6 +13,8 @@ import controllers.publix.PublixUtils;
 import daos.ComponentDao;
 import daos.ComponentResultDao;
 import daos.StudyDao;
+import daos.StudyResultDao;
+import daos.workers.WorkerDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
@@ -31,9 +33,10 @@ public class ClosedStandalonePublixUtils extends
 	public ClosedStandalonePublixUtils(
 			ClosedStandaloneErrorMessages errorMessages,
 			PersistanceUtils persistanceUtils, StudyDao studyDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao) {
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			StudyResultDao studyResultDao, WorkerDao workerDao) {
 		super(errorMessages, persistanceUtils, studyDao, componentDao,
-				componentResultDao);
+				componentResultDao, studyResultDao, workerDao);
 		this.errorMessages = errorMessages;
 	}
 
