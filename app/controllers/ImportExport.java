@@ -129,7 +129,7 @@ public class ImportExport extends Controller {
 		response.put(STUDY_TITLE, uploadedStudy.getTitle());
 		response.put(DIR_EXISTS, dirExists);
 		response.put(DIR_PATH, uploadedStudy.getDirName());
-		String asJson = jsonUtils.asJson(response);
+		String asJson = JsonUtils.asJson(response);
 		return ok(asJson);
 	}
 
@@ -479,7 +479,7 @@ public class ImportExport extends Controller {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put(COMPONENT_EXISTS, componentExists);
 		response.put(COMPONENT_TITLE, uploadedComponent.getTitle());
-		String asJson = jsonUtils.asJson(response);
+		String asJson = JsonUtils.asJson(response);
 		return ok(asJson);
 	}
 
