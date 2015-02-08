@@ -18,9 +18,6 @@ import exceptions.JatosGuiException;
 @Singleton
 public class ResultService {
 
-	public static final String JQDOWNLOAD_COOKIE_NAME = "Set-Cookie";
-	public static final String JQDOWNLOAD_COOKIE_CONTENT = "fileDownload=true; path=/";
-
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 
 	@Inject
