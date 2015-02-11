@@ -9,7 +9,10 @@ import models.StudyModel;
 import models.UserModel;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Before;
 
+import play.GlobalSettings;
 import play.Logger;
 import play.db.jpa.JPA;
 import play.db.jpa.JPAPlugin;
@@ -20,78 +23,64 @@ import services.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
 import utils.ZipUtil;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
+import common.Global;
 import controllers.publix.StudyAssets;
+import daos.ComponentResultDao;
 import daos.IComponentResultDao;
 import daos.IStudyDao;
 import daos.IUserDao;
+import daos.StudyDao;
+import daos.UserDao;
 
 /**
- * Utils class to test controllers. Set up a fake application with it's own
- * database, import a study, etc.
+ * Abstract class for a controller test. Starts fake application.
  * 
  * @author Kristian Lange
  */
-@Singleton
-public class ControllerTestUtils {
-
-	private static final String CLASS_NAME = ControllerTestUtils.class
+public abstract class AControllerTest {
+	
+	private static final String CLASS_NAME = AControllerTest.class
 			.getSimpleName();
 
 	protected FakeApplication application;
 	protected EntityManager entityManager;
+	protected JsonUtils jsonUtils;
+	protected UserService userService;
+	protected IUserDao userDao;
+	protected IStudyDao studyDao;
+	protected IComponentResultDao componentResultDao;
 	protected UserModel admin;
-	protected final JsonUtils jsonUtils;
-	protected final UserService userService;
-	protected final IUserDao userDao;
-	protected final IStudyDao studyDao;
-	protected final IComponentResultDao componentResultDao;
 
-	@Inject
-	public ControllerTestUtils(IUserDao userDao, IStudyDao studyDao,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			UserService userService) {
-		this.userDao = userDao;
-		this.studyDao = studyDao;
-		this.componentResultDao = componentResultDao;
-		this.jsonUtils = jsonUtils;
-		this.userService = userService;
-	}
+	@Before
+	public void startApp() throws Exception {
+		GlobalSettings global = (GlobalSettings) Class.forName("common.Global")
+				.newInstance();
 
-	protected void startApp() throws Exception {
-		application = Helpers.fakeApplication();
+		application = Helpers.fakeApplication(global);
 		Helpers.start(application);
+
+		jsonUtils = Global.INJECTOR.getInstance(JsonUtils.class);
+		userService = Global.INJECTOR.getInstance(UserService.class);
+		userDao = Global.INJECTOR.getInstance(UserDao.class);
+		studyDao = Global.INJECTOR.getInstance(StudyDao.class);
+		componentResultDao = Global.INJECTOR
+				.getInstance(ComponentResultDao.class);
 
 		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
 				.plugin(JPAPlugin.class);
 		entityManager = jpaPlugin.get().em("default");
 		JPA.bindForCurrentThread(entityManager);
-
+		
 		// Get admin (admin is automatically created during initialisation)
 		admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 	}
 
-	protected void stopApp() throws IOException {
+	@After
+	public void stopApp() throws IOException {
 		entityManager.close();
 		JPA.bindForCurrentThread(null);
-		removeStudyAssetsRootDir();
+		ControllerTestUtils.removeStudyAssetsRootDir();
 		Helpers.stop(application);
-	}
-	
-	public void setEntityManager(EntityManager entityManager) {
-		this.entityManager = entityManager;
-	}
-	
-	public void setAdmin(UserModel admin) {
-		this.admin = admin;
-	}
-
-	public UserModel getAdmin() {
-		// Get admin (admin is automatically created during initialisation)
-		return userDao.findByEmail(UserService.ADMIN_EMAIL);
 	}
 
 	protected static void removeStudyAssetsRootDir() throws IOException {
