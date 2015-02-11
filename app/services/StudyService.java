@@ -12,7 +12,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import controllers.routes;
-import daos.ComponentDao;
+import daos.IComponentDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -24,11 +24,11 @@ import exceptions.JatosGuiException;
 public class StudyService extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final ComponentDao componentDao;
+	private final IComponentDao componentDao;
 
 	@Inject
 	public StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			ComponentDao studyDao) {
+			IComponentDao studyDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.componentDao = studyDao;
 	}
@@ -90,7 +90,7 @@ public class StudyService extends Controller {
 		componentDao.changeComponentOrder(component1, index2);
 		componentDao.changeComponentOrder(component2, index1);
 	}
-	
+
 	/**
 	 * Binds study data from a edit/create study request onto a StudyModel.
 	 * Play's default form binder doesn't work here.

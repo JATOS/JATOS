@@ -4,7 +4,6 @@ import models.StudyModel;
 import models.workers.OpenStandaloneWorker;
 import models.workers.Worker;
 import play.mvc.Http.Cookie;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -12,11 +11,10 @@ import com.google.inject.Singleton;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
-import daos.ComponentDao;
-import daos.ComponentResultDao;
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.workers.WorkerDao;
+import daos.IComponentDao;
+import daos.IComponentResultDao;
+import daos.IStudyDao;
+import daos.workers.IWorkerDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
@@ -33,11 +31,10 @@ public class OpenStandalonePublixUtils extends
 
 	@Inject
 	public OpenStandalonePublixUtils(OpenStandaloneErrorMessages errorMessages,
-			PersistanceUtils persistanceUtils, StudyDao studyDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			StudyResultDao studyResultDao, WorkerDao workerDao) {
-		super(errorMessages, persistanceUtils, studyDao, componentDao,
-				componentResultDao, studyResultDao, workerDao);
+			IStudyDao studyDao, IComponentDao componentDao,
+			IComponentResultDao componentResultDao, IWorkerDao workerDao) {
+		super(errorMessages, studyDao, componentDao, componentResultDao,
+				workerDao);
 		this.errorMessages = errorMessages;
 	}
 

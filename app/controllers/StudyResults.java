@@ -28,15 +28,14 @@ import services.WorkerService;
 import utils.DateUtils;
 import utils.IOUtils;
 import utils.JsonUtils;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import common.JatosGuiAction;
 
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.workers.WorkerDao;
+import daos.IStudyDao;
+import daos.IStudyResultDao;
+import daos.workers.IWorkerDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -50,25 +49,22 @@ public class StudyResults extends Controller {
 
 	private static final String CLASS_NAME = StudyResults.class.getSimpleName();
 
-	private final PersistanceUtils persistanceUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final JsonUtils jsonUtils;
 	private final StudyService studyService;
 	private final UserService userService;
 	private final WorkerService workerService;
 	private final ResultService resultService;
-	private final StudyDao studyDao;
-	private final JsonUtils jsonUtils;
-	private final StudyResultDao studyResultDao;
-	private final WorkerDao workerDao;
+	private final IStudyDao studyDao;
+	private final IStudyResultDao studyResultDao;
+	private final IWorkerDao workerDao;
 
 	@Inject
-	public StudyResults(PersistanceUtils persistanceUtils,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	public StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
 			WorkerService workerService, ResultService resultService,
-			StudyDao studyDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, WorkerDao workerDao) {
-		this.persistanceUtils = persistanceUtils;
+			IStudyDao studyDao, JsonUtils jsonUtils,
+			IStudyResultDao studyResultDao, IWorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
@@ -130,7 +126,7 @@ public class StudyResults extends Controller {
 		checkAllStudyResults(studyResultList, loggedInUser, true);
 
 		for (StudyResult studyResult : studyResultList) {
-			persistanceUtils.removeStudyResult(studyResult);
+			studyResultDao.removeStudyResult(studyResult);
 		}
 		return ok();
 	}

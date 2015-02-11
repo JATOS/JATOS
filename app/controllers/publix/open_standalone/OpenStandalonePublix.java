@@ -6,16 +6,15 @@ import models.workers.OpenStandaloneWorker;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import daos.ComponentResultDao;
-import daos.StudyResultDao;
-import daos.workers.WorkerDao;
+import daos.AbstractDao;
+import daos.IComponentResultDao;
+import daos.IStudyResultDao;
 import exceptions.PublixException;
 
 /**
@@ -35,17 +34,13 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 			.getSimpleName();
 
 	private final OpenStandalonePublixUtils publixUtils;
-	private final WorkerDao workerDao;
 
 	@Inject
 	public OpenStandalonePublix(OpenStandalonePublixUtils publixUtils,
-			PersistanceUtils persistanceUtils,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, WorkerDao workerDao) {
-		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils,
-				studyResultDao);
+			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			IStudyResultDao studyResultDao) {
+		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
-		this.workerDao = workerDao;
 	}
 
 	@Override
@@ -56,12 +51,12 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 		publixUtils.addStudyToCookie(study);
 
 		OpenStandaloneWorker worker = new OpenStandaloneWorker();
-		workerDao.persist(worker);
+		AbstractDao.persist(worker);
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, worker.getId().toString());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		persistanceUtils.createStudyResult(study, worker);
+		studyResultDao.create(study, worker);
 
 		ComponentModel firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

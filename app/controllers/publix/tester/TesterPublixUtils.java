@@ -3,17 +3,15 @@ package controllers.publix.tester;
 import models.StudyModel;
 import models.workers.TesterWorker;
 import models.workers.Worker;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import controllers.publix.PublixUtils;
-import daos.ComponentDao;
-import daos.ComponentResultDao;
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.workers.WorkerDao;
+import daos.IComponentDao;
+import daos.IComponentResultDao;
+import daos.IStudyDao;
+import daos.workers.IWorkerDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
@@ -29,11 +27,10 @@ public class TesterPublixUtils extends PublixUtils<TesterWorker> {
 
 	@Inject
 	public TesterPublixUtils(TesterErrorMessages errorMessages,
-			PersistanceUtils persistanceUtils, StudyDao studyDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			StudyResultDao studyResultDao, WorkerDao workerDao) {
-		super(errorMessages, persistanceUtils, studyDao, componentDao,
-				componentResultDao, studyResultDao, workerDao);
+			IStudyDao studyDao, IComponentDao componentDao,
+			IComponentResultDao componentResultDao, IWorkerDao workerDao) {
+		super(errorMessages, studyDao, componentDao, componentResultDao,
+				workerDao);
 		this.errorMessages = errorMessages;
 	}
 

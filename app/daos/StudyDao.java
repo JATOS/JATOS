@@ -5,10 +5,14 @@ import java.util.List;
 
 import javax.persistence.TypedQuery;
 
-import com.google.inject.Singleton;
-
+import models.ComponentModel;
 import models.StudyModel;
+import models.StudyResult;
+import models.UserModel;
 import play.db.jpa.JPA;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 /**
  * DAO of StudyModel.
@@ -16,12 +20,103 @@ import play.db.jpa.JPA;
  * @author Kristian Lange
  */
 @Singleton
-public class StudyDao extends AbstractDao<StudyModel> {
+public class StudyDao extends AbstractDao implements IStudyDao {
 
+	private final IStudyResultDao studyResultDao;
+
+	@Inject
+	StudyDao(IStudyResultDao studyResultDao) {
+		this.studyResultDao = studyResultDao;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see daos.IStudyDao#addStudy(models.StudyModel, models.UserModel)
+	 */
+	@Override
+	public void addStudy(StudyModel study, UserModel loggedInUser) {
+		persist(study);
+		addMemberToStudy(study, loggedInUser);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see daos.IStudyDao#addMemberToStudy(models.StudyModel, models.UserModel)
+	 */
+	@Override
+	public void addMemberToStudy(StudyModel study, UserModel member) {
+		study.addMember(member);
+		merge(study);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see daos.IStudyDao#updateStudysProperties(models.StudyModel,
+	 * models.StudyModel)
+	 */
+	@Override
+	public void updateStudysProperties(StudyModel study, StudyModel updatedStudy) {
+		study.setTitle(updatedStudy.getTitle());
+		study.setDescription(updatedStudy.getDescription());
+		study.setDirName(updatedStudy.getDirName());
+		study.setJsonData(updatedStudy.getJsonData());
+		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
+		merge(study);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see daos.IStudyDao#updateStudysPropertiesWODirName(models.StudyModel,
+	 * models.StudyModel)
+	 */
+	@Override
+	public void updateStudysPropertiesWODirName(StudyModel study,
+			StudyModel updatedStudy) {
+		study.setTitle(updatedStudy.getTitle());
+		study.setDescription(updatedStudy.getDescription());
+		study.setJsonData(updatedStudy.getJsonData());
+		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
+		merge(study);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see daos.IStudyDao#removeStudy(models.StudyModel)
+	 */
+	@Override
+	public void removeStudy(StudyModel study) {
+		// Remove all study's components
+		for (ComponentModel component : study.getComponentList()) {
+			remove(component);
+		}
+		// Remove study's StudyResults and ComponentResults
+		for (StudyResult studyResult : studyResultDao.findAllByStudy(study)) {
+			studyResultDao.removeStudyResult(studyResult);
+		}
+		remove(study);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see daos.IStudyDao#findById(java.lang.Long)
+	 */
+	@Override
 	public StudyModel findById(Long id) {
 		return JPA.em().find(StudyModel.class, id);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see daos.IStudyDao#findByUuid(java.lang.String)
+	 */
+	@Override
 	public StudyModel findByUuid(String uuid) {
 		String queryStr = "SELECT e FROM StudyModel e WHERE " + "e.uuid=:uuid";
 		TypedQuery<StudyModel> query = JPA.em().createQuery(queryStr,
@@ -33,12 +128,24 @@ public class StudyDao extends AbstractDao<StudyModel> {
 		return study;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see daos.IStudyDao#findAll()
+	 */
+	@Override
 	public List<StudyModel> findAll() {
 		TypedQuery<StudyModel> query = JPA.em().createQuery(
 				"SELECT e FROM StudyModel e", StudyModel.class);
 		return query.getResultList();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see daos.IStudyDao#findAllByUser(java.lang.String)
+	 */
+	@Override
 	public List<StudyModel> findAllByUser(String memberEmail) {
 		TypedQuery<StudyModel> query = JPA.em().createQuery(
 				"SELECT DISTINCT g FROM UserModel u LEFT JOIN u.studyList g "

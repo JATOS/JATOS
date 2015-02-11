@@ -14,9 +14,9 @@ import services.UserService;
 import com.google.inject.Inject;
 
 import controllers.publix.StudyAssets;
-import daos.ComponentDao;
-import daos.StudyDao;
-import daos.UserDao;
+import daos.AbstractDao;
+import daos.IStudyDao;
+import daos.IUserDao;
 
 /**
  * This Initializer is called once with every start and does some JATOS specific
@@ -28,18 +28,16 @@ public class Initializer {
 
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
 
-	private final UserDao userDao;
 	private final UserService userService;
-	private final StudyDao studyDao;
-	private final ComponentDao componentDao;
+	private final IUserDao userDao;
+	private final IStudyDao studyDao;
 
 	@Inject
-	public Initializer(UserDao userDao, UserService userService,
-			StudyDao studyDao, ComponentDao componentDao) {
+	public Initializer(IUserDao userDao, UserService userService,
+			IStudyDao studyDao) {
 		this.userDao = userDao;
 		this.userService = userService;
 		this.studyDao = studyDao;
-		this.componentDao = componentDao;
 	}
 
 	/**
@@ -75,13 +73,13 @@ public class Initializer {
 				for (StudyModel study : studyModelList) {
 					if (study.getUuid() == null || study.getUuid().isEmpty()) {
 						study.setUuid(UUID.randomUUID().toString());
-						studyDao.merge(study);
+						AbstractDao.merge(study);
 					}
 					for (ComponentModel component : study.getComponentList()) {
 						if (component.getUuid() == null
 								|| component.getUuid().isEmpty()) {
 							component.setUuid(UUID.randomUUID().toString());
-							componentDao.merge(component);
+							AbstractDao.merge(component);
 						}
 					}
 				}

@@ -31,8 +31,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import common.Common;
 
-import daos.ComponentResultDao;
-import daos.StudyResultDao;
+import daos.IComponentResultDao;
+import daos.IStudyResultDao;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and
@@ -54,12 +54,12 @@ public class JsonUtils {
 	public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
 			.setTimeZone(TimeZone.getDefault());
 
-	private final ComponentResultDao componentResultDao;
-	private final StudyResultDao studyResultDao;
+	private final IComponentResultDao componentResultDao;
+	private final IStudyResultDao studyResultDao;
 
 	@Inject
-	public JsonUtils(ComponentResultDao componentResultDao,
-			StudyResultDao studyResultDao) {
+	public JsonUtils(IComponentResultDao componentResultDao,
+			IStudyResultDao studyResultDao) {
 		this.componentResultDao = componentResultDao;
 		this.studyResultDao = studyResultDao;
 	}

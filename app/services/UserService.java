@@ -12,7 +12,6 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Results;
 import play.mvc.SimpleResult;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -20,7 +19,7 @@ import com.google.inject.Singleton;
 import controllers.ControllerUtils;
 import controllers.Users;
 import controllers.routes;
-import daos.UserDao;
+import daos.IUserDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -36,15 +35,13 @@ public class UserService {
 	public static final String ADMIN_PASSWORD = "admin";
 	public static final String ADMIN_NAME = "Admin";
 
-	private final UserDao userDao;
-	private final PersistanceUtils persistanceUtils;
+	private final IUserDao userDao;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 
 	@Inject
-	public UserService(UserDao userDao, PersistanceUtils persistanceUtils,
+	public UserService(IUserDao userDao,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower) {
 		this.userDao = userDao;
-		this.persistanceUtils = persistanceUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 	}
 
@@ -104,7 +101,7 @@ public class UserService {
 		String passwordHash = getHashMDFive(ADMIN_PASSWORD);
 		UserModel adminUser = new UserModel(ADMIN_EMAIL, ADMIN_NAME,
 				passwordHash);
-		persistanceUtils.addUser(adminUser);
+		userDao.addUser(adminUser);
 		return adminUser;
 	}
 

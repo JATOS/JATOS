@@ -9,7 +9,6 @@ import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Result;
 import utils.JsonUtils;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -21,8 +20,8 @@ import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.StudyAssets;
-import daos.ComponentResultDao;
-import daos.StudyResultDao;
+import daos.IComponentResultDao;
+import daos.IStudyResultDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
@@ -50,11 +49,9 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Inject
 	public JatosPublix(JatosPublixUtils publixUtils,
 			JatosErrorMessages jatosErrorMessages,
-			PersistanceUtils persistanceUtils,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao) {
-		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils,
-				studyResultDao);
+			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			IStudyResultDao studyResultDao) {
+		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 	}
 
@@ -84,7 +81,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					PublixErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		persistanceUtils.createStudyResult(study, worker);
+		studyResultDao.create(study, worker);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, componentId));
 	}

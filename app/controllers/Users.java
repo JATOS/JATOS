@@ -16,14 +16,14 @@ import play.mvc.With;
 import services.Breadcrumbs;
 import services.JatosGuiExceptionThrower;
 import services.UserService;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
-import daos.StudyDao;
-import daos.UserDao;
+
+import daos.AbstractDao;
+import daos.IStudyDao;
+import daos.IUserDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -39,19 +39,17 @@ public class Users extends Controller {
 
 	public static final String SESSION_EMAIL = "email";
 
-	private final UserDao userDao;
 	private final UserService userService;
-	private final PersistanceUtils persistanceUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final StudyDao studyDao;
+	private final IUserDao userDao;
+	private final IStudyDao studyDao;
 
 	@Inject
-	public Users(UserDao userDao, UserService userService,
-			PersistanceUtils persistanceUtils,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower, StudyDao studyDao) {
+	public Users(IUserDao userDao, UserService userService,
+			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			IStudyDao studyDao) {
 		this.userDao = userDao;
 		this.userService = userService;
-		this.persistanceUtils = persistanceUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyDao = studyDao;
 	}
@@ -120,7 +118,7 @@ public class Users extends Controller {
 
 		String passwordHash = userService.getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
-		persistanceUtils.addUser(newUser);
+		userDao.addUser(newUser);
 		return redirect(routes.Home.home());
 	}
 
@@ -168,7 +166,7 @@ public class Users extends Controller {
 		// unaltered. For the password we have an extra form.
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String name = requestData.get(UserModel.NAME);
-		persistanceUtils.updateUser(user, name);
+		userDao.updateUser(user, name);
 		return redirect(routes.Users.profile(email));
 	}
 
@@ -222,7 +220,7 @@ public class Users extends Controller {
 		// Update password hash in DB
 		String newPasswordHash = userService.getHashMDFive(newPassword);
 		user.setPasswordHash(newPasswordHash);
-		userDao.merge(user);
+		AbstractDao.merge(user);
 		return redirect(routes.Users.profile(email));
 	}
 

@@ -27,15 +27,14 @@ import services.UserService;
 import utils.DateUtils;
 import utils.IOUtils;
 import utils.JsonUtils;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
-import daos.ComponentDao;
-import daos.ComponentResultDao;
-import daos.StudyDao;
+
+import daos.IComponentDao;
+import daos.IComponentResultDao;
+import daos.IStudyDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -50,25 +49,22 @@ public class ComponentResults extends Controller {
 	private static final String CLASS_NAME = ComponentResults.class
 			.getSimpleName();
 
-	private final PersistanceUtils persistanceUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
 	private final ResultService resultService;
-	private final StudyDao studyDao;
-	private final ComponentDao componentDao;
-	private final ComponentResultDao componentResultDao;
 	private final JsonUtils jsonUtils;
+	private final IStudyDao studyDao;
+	private final IComponentDao componentDao;
+	private final IComponentResultDao componentResultDao;
 
 	@Inject
-	public ComponentResults(PersistanceUtils persistanceUtils,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	public ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, ResultService resultService,
-			StudyDao studyDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
-		this.persistanceUtils = persistanceUtils;
+			IStudyDao studyDao, IComponentDao componentDao,
+			IComponentResultDao componentResultDao, JsonUtils jsonUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
@@ -135,7 +131,7 @@ public class ComponentResults extends Controller {
 		checkAllComponentResults(componentResultList, loggedInUser, true);
 
 		for (ComponentResult componentResult : componentResultList) {
-			persistanceUtils.removeComponentResult(componentResult);
+			componentResultDao.removeComponentResult(componentResult);
 		}
 		return ok();
 	}

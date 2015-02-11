@@ -25,7 +25,6 @@ import services.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
 import utils.JsonUtils.UploadUnmarshaller;
-import utils.PersistanceUtils;
 import utils.ZipUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,8 +32,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import common.JatosGuiAction;
 
-import daos.ComponentDao;
-import daos.StudyDao;
+import daos.AbstractDao;
+import daos.IComponentDao;
+import daos.IStudyDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -61,22 +61,19 @@ public class ImportExport extends Controller {
 
 	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
 
-	private final PersistanceUtils persistanceUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
-	private final StudyDao studyDao;
-	private final ComponentDao componentDao;
 	private final JsonUtils jsonUtils;
+	private final IStudyDao studyDao;
+	private final IComponentDao componentDao;
 
 	@Inject
-	public ImportExport(PersistanceUtils persistanceUtils,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	public ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
-			UserService userService, StudyDao studyDao,
-			ComponentDao componentDao, JsonUtils jsonUtils) {
-		this.persistanceUtils = persistanceUtils;
+			UserService userService, IStudyDao studyDao,
+			IComponentDao componentDao, JsonUtils jsonUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
@@ -184,14 +181,13 @@ public class ImportExport extends Controller {
 			}
 			if (studysPropertiesConfirm) {
 				if (studysDirConfirm) {
-					persistanceUtils.updateStudysProperties(currentStudy,
-							importedStudy);
+					studyDao.updateStudysProperties(currentStudy, importedStudy);
 				} else {
 					// If we don't overwrite the current study dir with the
 					// uploaded one, don't change the study dir name in the
 					// properties
-					persistanceUtils.updateStudysPropertiesWODirName(
-							currentStudy, importedStudy);
+					studyDao.updateStudysPropertiesWODirName(currentStudy,
+							importedStudy);
 				}
 				updateStudysComponents(currentStudy, importedStudy);
 			}
@@ -201,7 +197,7 @@ public class ImportExport extends Controller {
 		} else {
 			moveStudyAssetsDir(tempUnzippedStudyDir, null,
 					importedStudy.getDirName(), loggedInUser);
-			persistanceUtils.addStudy(importedStudy, loggedInUser);
+			studyDao.addStudy(importedStudy, loggedInUser);
 			tempUnzippedStudyDir.delete();
 			return ok(importedStudy.getId().toString());
 		}
@@ -332,14 +328,14 @@ public class ImportExport extends Controller {
 				}
 			}
 			if (currentComponent != null) {
-				persistanceUtils.updateComponentsProperties(currentComponent,
+				componentDao.updateComponentsProperties(currentComponent,
 						updatedComponent);
 				currentStudy.addComponent(currentComponent);
 				currentComponentList.remove(currentComponent);
 			} else {
 				// If the updated component doesn't exist in the current study
 				// add it.
-				persistanceUtils.addComponent(currentStudy, updatedComponent);
+				componentDao.addComponent(currentStudy, updatedComponent);
 			}
 		}
 
@@ -352,7 +348,7 @@ public class ImportExport extends Controller {
 			currentStudy.addComponent(currentComponent);
 		}
 
-		studyDao.merge(currentStudy);
+		AbstractDao.merge(currentStudy);
 	}
 
 	/**
@@ -506,10 +502,10 @@ public class ImportExport extends Controller {
 				.findByUuid(uploadedComponent.getUuid());
 		boolean componentExists = (currentComponent != null);
 		if (componentExists) {
-			persistanceUtils.updateComponentsProperties(currentComponent,
+			componentDao.updateComponentsProperties(currentComponent,
 					uploadedComponent);
 		} else {
-			persistanceUtils.addComponent(study, uploadedComponent);
+			componentDao.addComponent(study, uploadedComponent);
 		}
 		return ok();
 	}

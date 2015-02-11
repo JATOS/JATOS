@@ -4,18 +4,16 @@ import models.StudyModel;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
-import daos.ComponentDao;
-import daos.ComponentResultDao;
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.workers.WorkerDao;
+import daos.IComponentDao;
+import daos.IComponentResultDao;
+import daos.IStudyDao;
+import daos.workers.IWorkerDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
@@ -30,12 +28,11 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 	private MTErrorMessages errorMessages;
 
 	@Inject
-	public MTPublixUtils(MTErrorMessages errorMessages,
-			PersistanceUtils persistanceUtils, StudyDao studyDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			StudyResultDao studyResultDao, WorkerDao workerDao) {
-		super(errorMessages, persistanceUtils, studyDao, componentDao,
-				componentResultDao, studyResultDao, workerDao);
+	public MTPublixUtils(MTErrorMessages errorMessages, IStudyDao studyDao,
+			IComponentDao componentDao, IComponentResultDao componentResultDao,
+			IWorkerDao workerDao) {
+		super(errorMessages, studyDao, componentDao, componentResultDao,
+				workerDao);
 		this.errorMessages = errorMessages;
 	}
 

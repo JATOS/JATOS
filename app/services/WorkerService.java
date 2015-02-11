@@ -13,7 +13,7 @@ import play.mvc.Http;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import daos.StudyResultDao;
+import daos.IStudyResultDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -25,11 +25,11 @@ import exceptions.JatosGuiException;
 public class WorkerService extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final StudyResultDao studyResultDao;
+	private final IStudyResultDao studyResultDao;
 
 	@Inject
 	public WorkerService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyResultDao studyResultDao) {
+			IStudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyResultDao = studyResultDao;
 	}

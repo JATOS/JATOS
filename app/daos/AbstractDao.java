@@ -1,8 +1,8 @@
 package daos;
 
-import com.google.inject.Singleton;
-
 import play.db.jpa.JPA;
+
+import com.google.inject.Singleton;
 
 /**
  * Abstract DAO
@@ -10,21 +10,21 @@ import play.db.jpa.JPA;
  * @author Kristian Lange
  */
 @Singleton
-public abstract class AbstractDao<E> {
+public abstract class AbstractDao {
 
-	public void persist(E entity) {
+	public static void persist(Object entity) {
 		JPA.em().persist(entity);
 	}
 
-	public void merge(E entity) {
+	public static void merge(Object entity) {
 		JPA.em().merge(entity);
 	}
 
-	public void remove(E entity) {
+	public static void remove(Object entity) {
 		JPA.em().remove(entity);
 	}
 
-	public void refresh(E entity) {
+	public static void refresh(Object entity) {
 		JPA.em().refresh(entity);
 	}
 

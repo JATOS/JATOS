@@ -20,15 +20,14 @@ import services.JatosGuiExceptionThrower;
 import services.Messages;
 import services.StudyService;
 import services.UserService;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
+
 import controllers.publix.jatos.JatosPublix;
-import daos.ComponentDao;
-import daos.StudyDao;
+import daos.IComponentDao;
+import daos.IStudyDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -46,21 +45,18 @@ public class Components extends Controller {
 	public static final String EDIT_SUBMIT_AND_SHOW = "Submit & Show";
 	private static final String CLASS_NAME = Components.class.getSimpleName();
 
-	private final PersistanceUtils persistanceUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
-	private final StudyDao studyDao;
-	private final ComponentDao componentDao;
+	private final IStudyDao studyDao;
+	private final IComponentDao componentDao;
 
 	@Inject
-	public Components(PersistanceUtils persistanceUtils,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	public Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
-			UserService userService, StudyDao studyDao,
-			ComponentDao componentDao) {
-		this.persistanceUtils = persistanceUtils;
+			UserService userService, IStudyDao studyDao,
+			IComponentDao componentDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
@@ -148,7 +144,7 @@ public class Components extends Controller {
 		}
 
 		ComponentModel component = form.get();
-		persistanceUtils.addComponent(study, component);
+		componentDao.addComponent(study, component);
 		return redirectAfterEdit(studyId, component.getId(), study);
 	}
 
@@ -214,8 +210,7 @@ public class Components extends Controller {
 
 		// Update component in DB
 		ComponentModel updatedComponent = form.get();
-		persistanceUtils
-				.updateComponentsProperties(component, updatedComponent);
+		componentDao.updateComponentsProperties(component, updatedComponent);
 		return redirectAfterEdit(studyId, componentId, study);
 	}
 
@@ -252,7 +247,7 @@ public class Components extends Controller {
 		studyService.checkStudyLocked(study);
 
 		if (active != null) {
-			persistanceUtils.changeActive(component, active);
+			componentDao.changeActive(component, active);
 		}
 		return ok();
 	}
@@ -274,7 +269,7 @@ public class Components extends Controller {
 		studyService.checkStudyLocked(study);
 
 		ComponentModel clone = new ComponentModel(component);
-		persistanceUtils.addComponent(study, clone);
+		componentDao.addComponent(study, clone);
 		return redirect(routes.Studies.index(studyId, null));
 	}
 
@@ -296,7 +291,7 @@ public class Components extends Controller {
 				study, loggedInUser, component);
 		studyService.checkStudyLocked(study);
 
-		persistanceUtils.removeComponent(study, component);
+		componentDao.removeComponent(study, component);
 		return ok();
 	}
 

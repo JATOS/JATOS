@@ -8,8 +8,24 @@ import play.mvc.Http.RequestHeader;
 import play.mvc.Results;
 import play.mvc.SimpleResult;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
+import daos.ComponentDao;
+import daos.ComponentResultDao;
+import daos.IComponentDao;
+import daos.IComponentResultDao;
+import daos.IStudyDao;
+import daos.IStudyResultDao;
+import daos.IUserDao;
+import daos.StudyDao;
+import daos.StudyResultDao;
+import daos.UserDao;
+import daos.workers.IMTWorkerDao;
+import daos.workers.IWorkerDao;
+import daos.workers.MTWorkerDao;
+import daos.workers.WorkerDao;
 
 /**
  * Play's Global class. We use Guice for dependency injection.
@@ -19,7 +35,7 @@ import com.google.inject.Injector;
 public class Global extends GlobalSettings {
 
 	private static final String CLASS_NAME = Global.class.getSimpleName();
-	private static final Injector INJECTOR = createInjector();
+	public static final Injector INJECTOR = createInjector();
 
 	@Override
 	public <A> A getControllerInstance(Class<A> controllerClass)
@@ -28,7 +44,19 @@ public class Global extends GlobalSettings {
 	}
 
 	private static Injector createInjector() {
-		return Guice.createInjector();
+		return Guice.createInjector(new AbstractModule() {
+
+			@Override
+			protected void configure() {
+				bind(IUserDao.class).to(UserDao.class);
+				bind(IStudyResultDao.class).to(StudyResultDao.class);
+				bind(IStudyDao.class).to(StudyDao.class);
+				bind(IComponentResultDao.class).to(ComponentResultDao.class);
+				bind(IComponentDao.class).to(ComponentDao.class);
+				bind(IMTWorkerDao.class).to(MTWorkerDao.class);
+				bind(IWorkerDao.class).to(WorkerDao.class);
+			}
+		});
 	}
 
 	@Override

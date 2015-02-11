@@ -6,15 +6,14 @@ import models.workers.ClosedStandaloneWorker;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import daos.ComponentResultDao;
-import daos.StudyResultDao;
+import daos.IComponentResultDao;
+import daos.IStudyResultDao;
 import exceptions.PublixException;
 
 /**
@@ -37,11 +36,9 @@ public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
 	@Inject
 	public ClosedStandalonePublix(ClosedStandaloneErrorMessages errorMessages,
 			ClosedStandalonePublixUtils publixUtils,
-			PersistanceUtils persistanceUtils,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao) {
-		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils,
-				studyResultDao);
+			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			IStudyResultDao studyResultDao) {
+		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 	}
 
@@ -58,7 +55,7 @@ public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
 		session(WORKER_ID, workerIdStr);
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		persistanceUtils.createStudyResult(study, worker);
+		studyResultDao.create(study, worker);
 
 		ComponentModel firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

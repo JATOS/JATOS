@@ -8,7 +8,6 @@ import models.workers.MTWorker;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -18,9 +17,9 @@ import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixInterceptor;
-import daos.ComponentResultDao;
-import daos.StudyResultDao;
-import daos.workers.MTWorkerDao;
+import daos.IComponentResultDao;
+import daos.IStudyResultDao;
+import daos.workers.IMTWorkerDao;
 import exceptions.BadRequestPublixException;
 import exceptions.PublixException;
 
@@ -49,15 +48,13 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	private final MTPublixUtils publixUtils;
 	private final MTErrorMessages errorMessages;
-	private final MTWorkerDao mtWorkerDao;
+	private final IMTWorkerDao mtWorkerDao;
 
 	@Inject
 	public MTPublix(MTPublixUtils publixUtils, MTErrorMessages errorMessages,
-			PersistanceUtils persistanceUtils,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
-		super(publixUtils, persistanceUtils, componentResultDao, jsonUtils,
-				studyResultDao);
+			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			IStudyResultDao studyResultDao, IMTWorkerDao mtWorkerDao) {
+		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
 		this.mtWorkerDao = mtWorkerDao;
@@ -94,14 +91,14 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			String workerType = session(PublixInterceptor.WORKER_TYPE);
 			boolean isRequestFromMTurkSandbox = workerType
 					.equals(MTSandboxWorker.WORKER_TYPE);
-			worker = persistanceUtils.createMTWorker(mtWorkerId,
+			worker = mtWorkerDao.createMTWorker(mtWorkerId,
 					isRequestFromMTurkSandbox);
 		}
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		persistanceUtils.createStudyResult(study, worker);
+		studyResultDao.create(study, worker);
 
 		ComponentModel firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

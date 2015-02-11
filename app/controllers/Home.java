@@ -16,9 +16,9 @@ import services.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
-import daos.StudyDao;
+
+import daos.IStudyDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -33,10 +33,10 @@ public class Home extends Controller {
 	private static final String CLASS_NAME = Home.class.getSimpleName();
 
 	private final UserService userService;
-	private final StudyDao studyDao;
+	private final IStudyDao studyDao;
 
 	@Inject
-	public Home(UserService userService, StudyDao studyDao) {
+	public Home(UserService userService, IStudyDao studyDao) {
 		this.userService = userService;
 		this.studyDao = studyDao;
 	}

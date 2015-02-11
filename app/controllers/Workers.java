@@ -23,14 +23,13 @@ import services.StudyService;
 import services.UserService;
 import services.WorkerService;
 import utils.JsonUtils;
-import utils.PersistanceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
-import daos.StudyDao;
-import daos.workers.WorkerDao;
+
+import daos.IStudyDao;
+import daos.workers.IWorkerDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -44,21 +43,19 @@ public class Workers extends Controller {
 
 	private static final String CLASS_NAME = Workers.class.getSimpleName();
 
-	private final PersistanceUtils persistanceUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final UserService userService;
 	private final WorkerService workerService;
-	private final StudyDao studyDao;
 	private final JsonUtils jsonUtils;
-	private final WorkerDao workerDao;
+	private final IStudyDao studyDao;
+	private final IWorkerDao workerDao;
 
 	@Inject
-	public Workers(PersistanceUtils persistanceUtils,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	public Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
-			WorkerService workerService, StudyDao studyDao, JsonUtils jsonUtils, WorkerDao workerDao) {
-		this.persistanceUtils = persistanceUtils;
+			WorkerService workerService, IStudyDao studyDao,
+			JsonUtils jsonUtils, IWorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
@@ -115,7 +112,7 @@ public class Workers extends Controller {
 		workerService.checkWorker(worker, workerId);
 
 		checkRemoval(worker, loggedInUser);
-		persistanceUtils.removeWorker(worker);
+		workerDao.removeWorker(worker);
 		return ok();
 	}
 

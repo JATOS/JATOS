@@ -15,7 +15,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import common.JatosGuiAction;
 
-import daos.UserDao;
+import daos.IUserDao;
 
 /**
  * Controller that deals with login/logout.
@@ -29,11 +29,11 @@ public class Authentication extends Controller {
 	private static final String CLASS_NAME = Authentication.class
 			.getSimpleName();
 
-	private final UserDao userDao;
 	private final UserService userService;
+	private final IUserDao userDao;
 
 	@Inject
-	public Authentication(UserDao userDao, UserService userService) {
+	public Authentication(IUserDao userDao, UserService userService) {
 		this.userDao = userDao;
 		this.userService = userService;
 	}
@@ -77,7 +77,7 @@ public class Authentication extends Controller {
 	}
 
 	/**
-	 * Inner class needed for login template 
+	 * Inner class needed for login template
 	 */
 	public static class Login {
 		public String email;

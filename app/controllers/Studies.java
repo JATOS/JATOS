@@ -32,7 +32,6 @@ import services.UserService;
 import services.WorkerService;
 import utils.IOUtils;
 import utils.JsonUtils;
-import utils.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -42,11 +41,11 @@ import common.JatosGuiAction;
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.tester.TesterPublix;
-import daos.ComponentDao;
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.UserDao;
-import daos.workers.WorkerDao;
+import daos.AbstractDao;
+import daos.IComponentDao;
+import daos.IStudyDao;
+import daos.IStudyResultDao;
+import daos.IUserDao;
 import exceptions.JatosGuiException;
 
 /**
@@ -62,28 +61,25 @@ public class Studies extends Controller {
 	public static final String COMPONENT_ORDER_UP = "up";
 	private static final String CLASS_NAME = Studies.class.getSimpleName();
 
-	private final UserDao userDao;
-	private final PersistanceUtils persistanceUtils;
+	private final JsonUtils jsonUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
 	private final WorkerService workerService;
-	private final StudyDao studyDao;
-	private final ComponentDao componentDao;
-	private final JsonUtils jsonUtils;
-	private final StudyResultDao studyResultDao;
-	private final WorkerDao workerDao;
+	private final IUserDao userDao;
+	private final IStudyDao studyDao;
+	private final IComponentDao componentDao;
+	private final IStudyResultDao studyResultDao;
 
 	@Inject
-	public Studies(UserDao userDao, PersistanceUtils persistanceUtils,
+	public Studies(IUserDao userDao,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, WorkerService workerService,
-			StudyDao studyDao, ComponentDao componentDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, WorkerDao workerDao) {
+			IStudyDao studyDao, IComponentDao componentDao,
+			JsonUtils jsonUtils, IStudyResultDao studyResultDao) {
 		this.userDao = userDao;
-		this.persistanceUtils = persistanceUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
@@ -93,7 +89,6 @@ public class Studies extends Controller {
 		this.componentDao = componentDao;
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
-		this.workerDao = workerDao;
 	}
 
 	/**
@@ -170,7 +165,7 @@ public class Studies extends Controller {
 			failStudyCreate(loggedInUser, studyList, study, errorList);
 		}
 
-		persistanceUtils.addStudy(study, loggedInUser);
+		studyDao.addStudy(study, loggedInUser);
 		createStudyAssetsDir(loggedInUser, studyList, study);
 		return redirect(routes.Studies.index(study.getId(), null));
 	}
@@ -234,7 +229,7 @@ public class Studies extends Controller {
 		}
 
 		String oldDirName = study.getDirName();
-		persistanceUtils.updateStudysProperties(study, updatedStudy);
+		studyDao.updateStudysProperties(study, updatedStudy);
 		renameStudyAssetsDir(study, loggedInUser, studyList, oldDirName);
 		return redirect(routes.Studies.index(studyId, null));
 	}
@@ -265,7 +260,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		study.setLocked(!study.isLocked());
-		studyDao.merge(study);
+		AbstractDao.merge(study);
 		return ok(String.valueOf(study.isLocked()));
 	}
 
@@ -283,7 +278,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		studyService.checkStudyLocked(study);
 
-		persistanceUtils.removeStudy(study);
+		studyDao.removeStudy(study);
 		removeStudyAssetsDir(study);
 		return ok();
 	}
@@ -303,7 +298,7 @@ public class Studies extends Controller {
 
 		StudyModel clone = new StudyModel(study);
 		cloneStudyAssetsDir(study, clone);
-		persistanceUtils.addStudy(clone, loggedInUser);
+		studyDao.addStudy(clone, loggedInUser);
 		return ok();
 	}
 
@@ -364,7 +359,7 @@ public class Studies extends Controller {
 		for (String email : checkedUsers) {
 			UserModel user = userDao.findByEmail(email);
 			if (user != null) {
-				persistanceUtils.addMemberToStudy(study, user);
+				studyDao.addMemberToStudy(study, user);
 			}
 		}
 	}
@@ -401,7 +396,7 @@ public class Studies extends Controller {
 		}
 		// The actual change in order happens within the component model. The
 		// study model we just have to refresh.
-		studyDao.refresh(study);
+		AbstractDao.refresh(study);
 
 		return ok();
 	}
@@ -453,7 +448,7 @@ public class Studies extends Controller {
 				.trim();
 		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
 		checkWorker(studyId, worker);
-		workerDao.persist(worker);
+		AbstractDao.persist(worker);
 
 		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
@@ -487,7 +482,7 @@ public class Studies extends Controller {
 		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
 		TesterWorker worker = new TesterWorker(comment);
 		checkWorker(studyId, worker);
-		workerDao.persist(worker);
+		AbstractDao.persist(worker);
 
 		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
