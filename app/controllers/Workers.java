@@ -52,7 +52,7 @@ public class Workers extends Controller {
 	private final IWorkerDao workerDao;
 
 	@Inject
-	public Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
 			WorkerService workerService, IStudyDao studyDao,
 			JsonUtils jsonUtils, IWorkerDao workerDao) {

@@ -60,7 +60,7 @@ public class StudyResults extends Controller {
 	private final IWorkerDao workerDao;
 
 	@Inject
-	public StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
 			WorkerService workerService, ResultService resultService,
 			IStudyDao studyDao, JsonUtils jsonUtils,

@@ -51,7 +51,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	private final IMTWorkerDao mtWorkerDao;
 
 	@Inject
-	public MTPublix(MTPublixUtils publixUtils, MTErrorMessages errorMessages,
+	MTPublix(MTPublixUtils publixUtils, MTErrorMessages errorMessages,
 			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			IStudyResultDao studyResultDao, IMTWorkerDao mtWorkerDao) {
 		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);

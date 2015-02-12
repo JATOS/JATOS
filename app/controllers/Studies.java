@@ -74,7 +74,7 @@ public class Studies extends Controller {
 	private final IWorkerDao workerDao;
 
 	@Inject
-	public Studies(IUserDao userDao,
+	Studies(IUserDao userDao,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, WorkerService workerService,

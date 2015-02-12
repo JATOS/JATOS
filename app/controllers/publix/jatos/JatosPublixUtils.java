@@ -35,7 +35,7 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	private IUserDao userDao;
 
 	@Inject
-	public JatosPublixUtils(JatosErrorMessages errorMessages, IUserDao userDao,
+	JatosPublixUtils(JatosErrorMessages errorMessages, IUserDao userDao,
 			IStudyDao studyDao, IStudyResultDao studyResultDao,
 			IComponentDao componentDao, IComponentResultDao componentResultDao,
 			IWorkerDao workerDao) {

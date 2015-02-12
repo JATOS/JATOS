@@ -29,7 +29,7 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 	private MTErrorMessages errorMessages;
 
 	@Inject
-	public MTPublixUtils(MTErrorMessages errorMessages, IStudyDao studyDao,
+	MTPublixUtils(MTErrorMessages errorMessages, IStudyDao studyDao,
 			IStudyResultDao studyResultDao, IComponentDao componentDao,
 			IComponentResultDao componentResultDao, IWorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,

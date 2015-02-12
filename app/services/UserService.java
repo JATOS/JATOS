@@ -39,7 +39,7 @@ public class UserService {
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 
 	@Inject
-	public UserService(IUserDao userDao,
+	UserService(IUserDao userDao,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower) {
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;

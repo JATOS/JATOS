@@ -27,7 +27,7 @@ public class StudyService extends Controller {
 	private final IComponentDao componentDao;
 
 	@Inject
-	public StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			IComponentDao studyDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.componentDao = studyDao;

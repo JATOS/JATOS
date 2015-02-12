@@ -58,7 +58,7 @@ public class JsonUtils {
 	private final IStudyResultDao studyResultDao;
 
 	@Inject
-	public JsonUtils(IComponentResultDao componentResultDao,
+	JsonUtils(IComponentResultDao componentResultDao,
 			IStudyResultDao studyResultDao) {
 		this.componentResultDao = componentResultDao;
 		this.studyResultDao = studyResultDao;

@@ -76,7 +76,7 @@ public class StudyDao extends AbstractDao<StudyModel> implements IStudyDao {
 		for (StudyResult studyResult : studyResultDao.findAllByStudy(study)) {
 			studyResultDao.remove(studyResult);
 		}
-		remove(study);
+		super.remove(study);
 	}
 
 	@Override

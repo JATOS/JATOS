@@ -60,7 +60,7 @@ public class ComponentResults extends Controller {
 	private final IComponentResultDao componentResultDao;
 
 	@Inject
-	public ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, ResultService resultService,
 			IStudyDao studyDao, IComponentDao componentDao,

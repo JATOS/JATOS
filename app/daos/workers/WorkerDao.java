@@ -44,7 +44,7 @@ public class WorkerDao extends AbstractDao<Worker> implements IWorkerDao {
 		}
 
 		// Remove worker
-		remove(worker);
+		super.remove(worker);
 	}
 
 	@Override

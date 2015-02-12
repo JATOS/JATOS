@@ -31,7 +31,7 @@ public class OpenStandalonePublixUtils extends
 	private OpenStandaloneErrorMessages errorMessages;
 
 	@Inject
-	public OpenStandalonePublixUtils(OpenStandaloneErrorMessages errorMessages,
+	OpenStandalonePublixUtils(OpenStandaloneErrorMessages errorMessages,
 			IStudyDao studyDao, IStudyResultDao studyResultDao,
 			IComponentDao componentDao, IComponentResultDao componentResultDao,
 			IWorkerDao workerDao) {

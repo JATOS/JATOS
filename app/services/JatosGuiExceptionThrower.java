@@ -34,7 +34,7 @@ public class JatosGuiExceptionThrower {
 	private final Provider<Workers> workersProvider;
 
 	@Inject
-	public JatosGuiExceptionThrower(Provider<Workers> workersProvider,
+	JatosGuiExceptionThrower(Provider<Workers> workersProvider,
 			Provider<Studies> studiesProvider, Provider<Home> homeProvider) {
 		this.homeProvider = homeProvider;
 		this.studiesProvider = studiesProvider;

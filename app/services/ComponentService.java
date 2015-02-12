@@ -23,7 +23,7 @@ public class ComponentService extends Controller {
 	private final StudyService studyService;
 
 	@Inject
-	public ComponentService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	ComponentService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;

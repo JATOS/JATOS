@@ -47,7 +47,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	private final JatosPublixUtils publixUtils;
 
 	@Inject
-	public JatosPublix(JatosPublixUtils publixUtils,
+	JatosPublix(JatosPublixUtils publixUtils,
 			JatosErrorMessages jatosErrorMessages,
 			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			IStudyResultDao studyResultDao) {

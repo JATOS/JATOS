@@ -33,7 +33,7 @@ public class Authentication extends Controller {
 	private final IUserDao userDao;
 
 	@Inject
-	public Authentication(IUserDao userDao, UserService userService) {
+	Authentication(IUserDao userDao, UserService userService) {
 		this.userDao = userDao;
 		this.userService = userService;
 	}

@@ -36,7 +36,7 @@ public class Home extends Controller {
 	private final IStudyDao studyDao;
 
 	@Inject
-	public Home(UserService userService, IStudyDao studyDao) {
+	Home(UserService userService, IStudyDao studyDao) {
 		this.userService = userService;
 		this.studyDao = studyDao;
 	}

@@ -44,7 +44,7 @@ public class Users extends Controller {
 	private final IStudyDao studyDao;
 
 	@Inject
-	public Users(IUserDao userDao, UserService userService,
+	Users(IUserDao userDao, UserService userService,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			IStudyDao studyDao) {
 		this.userDao = userDao;

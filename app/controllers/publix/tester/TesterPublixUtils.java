@@ -27,7 +27,7 @@ public class TesterPublixUtils extends PublixUtils<TesterWorker> {
 	private TesterErrorMessages errorMessages;
 
 	@Inject
-	public TesterPublixUtils(TesterErrorMessages errorMessages,
+	TesterPublixUtils(TesterErrorMessages errorMessages,
 			IStudyDao studyDao, IStudyResultDao studyResultDao,
 			IComponentDao componentDao, IComponentResultDao componentResultDao,
 			IWorkerDao workerDao) {

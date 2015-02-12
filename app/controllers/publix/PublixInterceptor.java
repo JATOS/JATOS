@@ -67,7 +67,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	private final OpenStandalonePublix openStandalonePublix;
 
 	@Inject
-	public PublixInterceptor(JatosPublix jatosPublix, MTPublix mtPublix,
+	PublixInterceptor(JatosPublix jatosPublix, MTPublix mtPublix,
 			TesterPublix testerPublix,
 			ClosedStandalonePublix closedStandalonePublix,
 			OpenStandalonePublix openStandalonePublix) {

@@ -28,7 +28,7 @@ public class WorkerService extends Controller {
 	private final IStudyResultDao studyResultDao;
 
 	@Inject
-	public WorkerService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	WorkerService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			IStudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyResultDao = studyResultDao;

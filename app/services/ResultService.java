@@ -21,7 +21,7 @@ public class ResultService {
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 
 	@Inject
-	public ResultService(JatosGuiExceptionThrower jatosGuiExceptionThrower) {
+	ResultService(JatosGuiExceptionThrower jatosGuiExceptionThrower) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 	}
 

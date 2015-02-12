@@ -74,7 +74,7 @@ public class ComponentDao extends AbstractDao<ComponentModel> implements
 			merge(studyResult);
 			remove(componentResult);
 		}
-		remove(component);
+		super.remove(component);
 	}
 
 	@Override

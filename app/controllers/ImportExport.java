@@ -69,7 +69,7 @@ public class ImportExport extends Controller {
 	private final IComponentDao componentDao;
 
 	@Inject
-	public ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, IStudyDao studyDao,
 			IComponentDao componentDao, JsonUtils jsonUtils) {

@@ -31,7 +31,7 @@ public class TesterPublix extends Publix<TesterWorker> implements IPublix {
 	private final TesterPublixUtils publixUtils;
 
 	@Inject
-	public TesterPublix(TesterPublixUtils publixUtils,
+	TesterPublix(TesterPublixUtils publixUtils,
 			TesterErrorMessages errorMessages,
 			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			IStudyResultDao studyResultDao) {

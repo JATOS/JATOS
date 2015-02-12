@@ -53,7 +53,7 @@ public class Components extends Controller {
 	private final IComponentDao componentDao;
 
 	@Inject
-	public Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, IStudyDao studyDao,
 			IComponentDao componentDao) {

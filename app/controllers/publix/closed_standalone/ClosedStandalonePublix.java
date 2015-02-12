@@ -34,7 +34,7 @@ public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
 	private final ClosedStandalonePublixUtils publixUtils;
 
 	@Inject
-	public ClosedStandalonePublix(ClosedStandaloneErrorMessages errorMessages,
+	ClosedStandalonePublix(ClosedStandaloneErrorMessages errorMessages,
 			ClosedStandalonePublixUtils publixUtils,
 			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			IStudyResultDao studyResultDao) {

@@ -50,7 +50,7 @@ public class StudyResultDao extends AbstractDao<StudyResult> implements
 		merge(worker);
 
 		// Remove studyResult
-		remove(studyResult);
+		super.remove(studyResult);
 	}
 
 	@Override

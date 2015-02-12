@@ -37,7 +37,7 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 	private final WorkerDao workerDao;
 
 	@Inject
-	public OpenStandalonePublix(OpenStandalonePublixUtils publixUtils,
+	OpenStandalonePublix(OpenStandalonePublixUtils publixUtils,
 			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			IStudyResultDao studyResultDao, WorkerDao workerDao) {
 		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);

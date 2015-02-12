@@ -29,7 +29,7 @@ public class ClosedStandalonePublixUtils extends
 	private ClosedStandaloneErrorMessages errorMessages;
 
 	@Inject
-	public ClosedStandalonePublixUtils(
+	ClosedStandalonePublixUtils(
 			ClosedStandaloneErrorMessages errorMessages, IStudyDao studyDao,
 			IStudyResultDao studyResultDao, IComponentDao componentDao,
 			IComponentResultDao componentResultDao, IWorkerDao workerDao) {

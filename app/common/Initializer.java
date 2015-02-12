@@ -34,7 +34,7 @@ public class Initializer {
 	private final IComponentDao componentDao;
 
 	@Inject
-	public Initializer(IUserDao userDao, UserService userService,
+	Initializer(IUserDao userDao, UserService userService,
 			IStudyDao studyDao, IComponentDao componentDao) {
 		this.userDao = userDao;
 		this.userService = userService;

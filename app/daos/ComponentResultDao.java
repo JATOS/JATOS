@@ -43,7 +43,7 @@ public class ComponentResultDao extends AbstractDao<ComponentResult> implements
 		StudyResult studyResult = componentResult.getStudyResult();
 		studyResult.removeComponentResult(componentResult);
 		merge(studyResult);
-		remove(componentResult);
+		super.remove(componentResult);
 	}
 
 	@Override
