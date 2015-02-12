@@ -17,8 +17,8 @@ import models.ComponentModel;
 import models.StudyModel;
 
 import org.apache.http.HttpHeaders;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import play.db.jpa.JPA;
@@ -26,10 +26,6 @@ import play.mvc.Result;
 import play.test.FakeRequest;
 import services.Breadcrumbs;
 import utils.IOUtils;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
 import controllers.Components;
 import controllers.Users;
 import controllers.publix.jatos.JatosPublix;
@@ -39,23 +35,20 @@ import controllers.publix.jatos.JatosPublix;
  * 
  * @author Kristian Lange
  */
-public class ComponentsControllerTest {
+public class ComponentsControllerTest extends AControllerTest {
 
-	private static ControllerTestUtils utils;
 	private static StudyModel studyTemplate;
 
-	@BeforeClass
-	public static void startApp() throws Exception {
-		Injector injector = Guice.createInjector();
-		utils = injector.getInstance(ControllerTestUtils.class);
-		utils.startApp();
-		studyTemplate = utils.importExampleStudy();
+	@Before
+	public void startApp() throws Exception {
+		super.startApp();
+		studyTemplate = importExampleStudy();
 	}
 
-	@AfterClass
-	public static void stopApp() throws IOException {
+	@After
+	public void stopApp() throws IOException {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		utils.stopApp();
+		super.stopApp();
 	}
 
 	/**
@@ -63,13 +56,13 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callShowComponent() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Components.showComponent(
 						studyClone.getId(), studyClone.getComponent(1).getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 		assertThat(session(result).containsKey(JatosPublix.JATOS_SHOW));
 		assertThat(session(result).containsValue(
@@ -80,7 +73,7 @@ public class ComponentsControllerTest {
 				JatosPublix.JATOS_WORKER_ID));
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	/**
@@ -89,7 +82,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callShowComponentNoHtml() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		JPA.em().getTransaction().begin();
 		studyClone.getComponent(1).setHtmlFilePath(null);
@@ -99,11 +92,11 @@ public class ComponentsControllerTest {
 				controllers.routes.ref.Components.showComponent(
 						studyClone.getId(), studyClone.getComponent(1).getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						admin.getEmail()));
 		assertThat(contentAsString(result))
 				.contains("HTML file path is empty.");
 
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	/**
@@ -111,17 +104,17 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callCreate() throws IOException {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Components.create(studyClone.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_COMPONENT);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	/**
@@ -130,7 +123,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmit() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentModel.TITLE, "Title Test");
@@ -140,7 +133,7 @@ public class ComponentsControllerTest {
 		form.put(ComponentModel.JSON_DATA, "{}");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail()).withFormUrlEncodedBody(form);
+				admin.getEmail()).withFormUrlEncodedBody(form);
 
 		Result result = callAction(
 				controllers.routes.ref.Components.submit(studyClone.getId()),
@@ -148,7 +141,7 @@ public class ComponentsControllerTest {
 		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	/**
@@ -157,7 +150,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitAndShow() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentModel.TITLE, "Title Test");
@@ -167,7 +160,7 @@ public class ComponentsControllerTest {
 		form.put(ComponentModel.JSON_DATA, "{}");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail()).withFormUrlEncodedBody(form);
+				admin.getEmail()).withFormUrlEncodedBody(form);
 		Result result = callAction(
 				controllers.routes.ref.Components.submit(studyClone.getId()),
 				request);
@@ -175,7 +168,7 @@ public class ComponentsControllerTest {
 		assertThat(headers(result).get(HttpHeaders.LOCATION)).contains("show");
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	/**
@@ -183,7 +176,7 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitValidationError() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentModel.TITLE, "");
@@ -191,22 +184,22 @@ public class ComponentsControllerTest {
 		form.put(ComponentModel.JSON_DATA, "{");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail()).withFormUrlEncodedBody(form);
+				admin.getEmail()).withFormUrlEncodedBody(form);
 		Result result = callAction(
 				controllers.routes.ref.Components.submit(studyClone.getId()),
 				request);
 		assertThat(contentAsString(result)).contains(
 				"Problems deserializing JSON data string: invalid JSON format");
 
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callChangeProperties() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail());
+				admin.getEmail());
 		Result result = callAction(
 				controllers.routes.ref.Components.changeProperty(
 						studyClone.getId(), studyClone.getComponent(1).getId(),
@@ -214,15 +207,15 @@ public class ComponentsControllerTest {
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callCloneComponent() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail());
+				admin.getEmail());
 		Result result = callAction(
 				controllers.routes.ref.Components.cloneComponent(
 						studyClone.getId(), studyClone.getComponent(1).getId()),
@@ -230,15 +223,15 @@ public class ComponentsControllerTest {
 		assertThat(status(result)).isEqualTo(SEE_OTHER);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callRemove() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				utils.admin.getEmail());
+				admin.getEmail());
 		Result result = callAction(controllers.routes.ref.Components.remove(
 				studyClone.getId(), studyClone.getComponent(1).getId()),
 				request);
@@ -246,7 +239,7 @@ public class ComponentsControllerTest {
 
 		// Clean up - can't remove study due to some RollbackException. No idea
 		// why. At least remove study assets dir.
-		// publixUtils.removeStudy(studyClone);
+		// publixremoveStudy(studyClone);
 		IOUtils.removeStudyAssetsDir(studyClone.getDirName());
 	}
 

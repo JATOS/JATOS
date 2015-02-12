@@ -8,15 +8,14 @@ import java.io.IOException;
 
 import models.StudyModel;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import play.mvc.Result;
 import utils.IOUtils;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import common.Global;
 
 import controllers.publix.StudyAssets;
 
@@ -25,25 +24,22 @@ import controllers.publix.StudyAssets;
  * 
  * @author Kristian Lange
  */
-public class StudyAssetsTest {
+public class StudyAssetsTest extends AControllerTest {
 
-	private static ControllerTestUtils utils;
 	private static StudyAssets studyAssets;
 	private static StudyModel studyTemplate;
 
-	@BeforeClass
-	public static void startApp() throws Exception {
-		Injector injector = Guice.createInjector();
-		utils = injector.getInstance(ControllerTestUtils.class);
-		utils.startApp();
-		studyTemplate = utils.importExampleStudy();
-		studyAssets = injector.getInstance(StudyAssets.class);
+	@Before
+	public void startApp() throws Exception {
+		super.startApp();
+		studyTemplate = importExampleStudy();
+		studyAssets = Global.INJECTOR.getInstance(StudyAssets.class);
 	}
 
-	@AfterClass
-	public static void stopApp() throws IOException {
+	@After
+	public void stopApp() throws IOException {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		utils.stopApp();
+		super.stopApp();
 	}
 
 	@Test
@@ -62,13 +58,13 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testAt() throws IOException {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = studyAssets.at("basic_example_study/hello_world.html");
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
@@ -82,14 +78,14 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testAtPathTraversalAttack() throws IOException {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		// Although this file exists, it shouldn't be found
 		Result result = studyAssets.at("../../conf/application.conf");
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 
 		// Clean up
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test

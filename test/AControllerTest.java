@@ -79,7 +79,7 @@ public abstract class AControllerTest {
 	public void stopApp() throws IOException {
 		entityManager.close();
 		JPA.bindForCurrentThread(null);
-		ControllerTestUtils.removeStudyAssetsRootDir();
+		removeStudyAssetsRootDir();
 		Helpers.stop(application);
 	}
 
