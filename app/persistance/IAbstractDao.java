@@ -1,4 +1,4 @@
-package daos;
+package persistance;
 
 public interface IAbstractDao<T> {
 

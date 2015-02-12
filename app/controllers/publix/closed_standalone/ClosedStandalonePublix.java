@@ -3,6 +3,8 @@ package controllers.publix.closed_standalone;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;
+import persistance.IComponentResultDao;
+import persistance.IStudyResultDao;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -12,8 +14,6 @@ import com.google.inject.Singleton;
 
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import daos.IComponentResultDao;
-import daos.IStudyResultDao;
 import exceptions.PublixException;
 
 /**

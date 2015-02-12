@@ -3,6 +3,9 @@ package controllers.publix.open_standalone;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.OpenStandaloneWorker;
+import persistance.IComponentResultDao;
+import persistance.IStudyResultDao;
+import persistance.workers.WorkerDao;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -12,9 +15,6 @@ import com.google.inject.Singleton;
 
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import daos.IComponentResultDao;
-import daos.IStudyResultDao;
-import daos.workers.WorkerDao;
 import exceptions.PublixException;
 
 /**

@@ -7,13 +7,13 @@ import java.util.Set;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.Worker;
+import persistance.IStudyResultDao;
 import play.mvc.Controller;
 import play.mvc.Http;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import daos.IStudyResultDao;
 import exceptions.JatosGuiException;
 
 /**

@@ -1,4 +1,4 @@
-package daos.workers;
+package persistance.workers;
 
 import java.util.List;
 

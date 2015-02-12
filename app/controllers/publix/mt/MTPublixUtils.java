@@ -1,5 +1,10 @@
 package controllers.publix.mt;
 
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.workers.IWorkerDao;
 import models.StudyModel;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
@@ -10,11 +15,6 @@ import com.google.inject.Singleton;
 
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
-import daos.IComponentDao;
-import daos.IComponentResultDao;
-import daos.IStudyDao;
-import daos.IStudyResultDao;
-import daos.workers.IWorkerDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 

@@ -12,6 +12,12 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 
+import persistance.ComponentResultDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IUserDao;
+import persistance.StudyDao;
+import persistance.UserDao;
 import play.GlobalSettings;
 import play.Logger;
 import play.db.jpa.JPA;
@@ -25,12 +31,6 @@ import utils.JsonUtils;
 import utils.ZipUtil;
 import common.Global;
 import controllers.publix.StudyAssets;
-import daos.ComponentResultDao;
-import daos.IComponentResultDao;
-import daos.IStudyDao;
-import daos.IUserDao;
-import daos.StudyDao;
-import daos.UserDao;
 
 /**
  * Abstract class for a controller test. Starts fake application.

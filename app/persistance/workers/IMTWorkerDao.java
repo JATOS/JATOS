@@ -1,4 +1,4 @@
-package daos.workers;
+package persistance.workers;
 
 import models.workers.MTWorker;
 

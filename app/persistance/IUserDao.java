@@ -1,4 +1,4 @@
-package daos;
+package persistance;
 
 import java.util.List;
 

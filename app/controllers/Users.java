@@ -4,6 +4,8 @@ import java.util.List;
 
 import models.StudyModel;
 import models.UserModel;
+import persistance.IStudyDao;
+import persistance.IUserDao;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -19,10 +21,8 @@ import services.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
-import daos.IStudyDao;
-import daos.IUserDao;
+import common.JatosGuiAction;
 import exceptions.JatosGuiException;
 
 /**

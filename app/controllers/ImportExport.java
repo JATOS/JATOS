@@ -10,6 +10,8 @@ import java.util.Map;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import persistance.IComponentDao;
+import persistance.IStudyDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -30,10 +32,8 @@ import utils.ZipUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
-import daos.IComponentDao;
-import daos.IStudyDao;
+import common.JatosGuiAction;
 import exceptions.JatosGuiException;
 
 /**

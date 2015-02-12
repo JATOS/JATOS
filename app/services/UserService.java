@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import models.UserModel;
+import persistance.IUserDao;
 import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -19,7 +20,6 @@ import com.google.inject.Singleton;
 import controllers.ControllerUtils;
 import controllers.Users;
 import controllers.routes;
-import daos.IUserDao;
 import exceptions.JatosGuiException;
 
 /**

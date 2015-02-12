@@ -5,6 +5,7 @@ import java.util.Map;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import persistance.IComponentDao;
 import play.mvc.Controller;
 import play.mvc.Http;
 
@@ -12,7 +13,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import controllers.routes;
-import daos.IComponentDao;
 import exceptions.JatosGuiException;
 
 /**

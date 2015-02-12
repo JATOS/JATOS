@@ -7,6 +7,9 @@ import java.util.UUID;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import persistance.IComponentDao;
+import persistance.IStudyDao;
+import persistance.IUserDao;
 import play.Logger;
 import play.db.jpa.JPA;
 import services.UserService;
@@ -14,9 +17,6 @@ import services.UserService;
 import com.google.inject.Inject;
 
 import controllers.publix.StudyAssets;
-import daos.IComponentDao;
-import daos.IStudyDao;
-import daos.IUserDao;
 
 /**
  * This Initializer is called once with every start and does some JATOS specific

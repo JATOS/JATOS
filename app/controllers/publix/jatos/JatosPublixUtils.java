@@ -1,5 +1,11 @@
 package controllers.publix.jatos;
 
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.IUserDao;
+import persistance.workers.IWorkerDao;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.JatosWorker;
@@ -13,12 +19,6 @@ import controllers.Users;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
-import daos.IComponentDao;
-import daos.IComponentResultDao;
-import daos.IStudyDao;
-import daos.IStudyResultDao;
-import daos.IUserDao;
-import daos.workers.IWorkerDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 

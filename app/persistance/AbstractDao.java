@@ -1,4 +1,4 @@
-package daos;
+package persistance;
 
 import play.db.jpa.JPA;
 

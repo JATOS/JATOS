@@ -1,4 +1,4 @@
-package daos.workers;
+package persistance.workers;
 
 import java.util.List;
 
@@ -8,11 +8,10 @@ import models.ComponentResult;
 import models.StudyResult;
 import models.workers.JatosWorker;
 import models.workers.Worker;
+import persistance.AbstractDao;
 import play.db.jpa.JPA;
 
 import com.google.inject.Singleton;
-
-import daos.AbstractDao;
 
 /**
  * DAO for abstract Worker model

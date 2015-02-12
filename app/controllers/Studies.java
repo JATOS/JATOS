@@ -13,6 +13,11 @@ import models.UserModel;
 import models.workers.ClosedStandaloneWorker;
 import models.workers.TesterWorker;
 import models.workers.Worker;
+import persistance.IComponentDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.IUserDao;
+import persistance.workers.IWorkerDao;
 import play.Logger;
 import play.api.mvc.Call;
 import play.data.Form;
@@ -36,16 +41,11 @@ import utils.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
+import common.JatosGuiAction;
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.tester.TesterPublix;
-import daos.IComponentDao;
-import daos.IStudyDao;
-import daos.IStudyResultDao;
-import daos.IUserDao;
-import daos.workers.IWorkerDao;
 import exceptions.JatosGuiException;
 
 /**

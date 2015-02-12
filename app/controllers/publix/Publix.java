@@ -7,6 +7,8 @@ import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.Worker;
+import persistance.IComponentResultDao;
+import persistance.IStudyResultDao;
 import play.Logger;
 import play.libs.F.Function;
 import play.libs.F.Promise;
@@ -20,8 +22,6 @@ import com.google.inject.Singleton;
 
 import controllers.ControllerUtils;
 import controllers.Users;
-import daos.IComponentResultDao;
-import daos.IStudyResultDao;
 import exceptions.ForbiddenReloadException;
 import exceptions.PublixException;
 

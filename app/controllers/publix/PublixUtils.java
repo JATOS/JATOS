@@ -25,17 +25,17 @@ import models.workers.Worker;
 
 import org.w3c.dom.Document;
 
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.workers.IWorkerDao;
 import play.Logger;
 import play.mvc.Http.RequestBody;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Singleton;
 
-import daos.IComponentDao;
-import daos.IComponentResultDao;
-import daos.IStudyDao;
-import daos.IStudyResultDao;
-import daos.workers.IWorkerDao;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
 import exceptions.ForbiddenReloadException;

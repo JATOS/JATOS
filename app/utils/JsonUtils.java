@@ -17,6 +17,8 @@ import org.hibernate.proxy.HibernateProxy;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
+import persistance.IComponentResultDao;
+import persistance.IStudyResultDao;
 import play.Logger;
 import services.ErrorMessages;
 
@@ -29,10 +31,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.Common;
 
-import daos.IComponentResultDao;
-import daos.IStudyResultDao;
+import common.Common;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and

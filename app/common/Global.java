@@ -1,5 +1,19 @@
 package common;
 
+import persistance.ComponentDao;
+import persistance.ComponentResultDao;
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.IUserDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.UserDao;
+import persistance.workers.IMTWorkerDao;
+import persistance.workers.IWorkerDao;
+import persistance.workers.MTWorkerDao;
+import persistance.workers.WorkerDao;
 import play.Application;
 import play.GlobalSettings;
 import play.Logger;
@@ -11,21 +25,6 @@ import play.mvc.SimpleResult;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import daos.ComponentDao;
-import daos.ComponentResultDao;
-import daos.IComponentDao;
-import daos.IComponentResultDao;
-import daos.IStudyDao;
-import daos.IStudyResultDao;
-import daos.IUserDao;
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.UserDao;
-import daos.workers.IMTWorkerDao;
-import daos.workers.IWorkerDao;
-import daos.workers.MTWorkerDao;
-import daos.workers.WorkerDao;
 
 /**
  * Play's Global class. We use Guice for dependency injection.

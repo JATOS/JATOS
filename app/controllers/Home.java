@@ -4,6 +4,7 @@ import java.util.List;
 
 import models.StudyModel;
 import models.UserModel;
+import persistance.IStudyDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -16,9 +17,8 @@ import services.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
-import daos.IStudyDao;
+import common.JatosGuiAction;
 import exceptions.JatosGuiException;
 
 /**

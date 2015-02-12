@@ -3,6 +3,11 @@ package controllers.publix.open_standalone;
 import models.StudyModel;
 import models.workers.OpenStandaloneWorker;
 import models.workers.Worker;
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.workers.IWorkerDao;
 import play.mvc.Http.Cookie;
 
 import com.google.inject.Inject;
@@ -11,11 +16,6 @@ import com.google.inject.Singleton;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
-import daos.IComponentDao;
-import daos.IComponentResultDao;
-import daos.IStudyDao;
-import daos.IStudyResultDao;
-import daos.workers.IWorkerDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 

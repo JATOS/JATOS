@@ -3,6 +3,7 @@ package controllers;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
+import persistance.IUserDao;
 import play.Logger;
 import play.data.Form;
 import play.db.jpa.Transactional;
@@ -13,9 +14,8 @@ import services.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
-import daos.IUserDao;
+import common.JatosGuiAction;
 
 /**
  * Controller that deals with login/logout.

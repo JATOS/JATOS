@@ -9,6 +9,8 @@ import models.StudyResult;
 import models.UserModel;
 import models.workers.JatosWorker;
 import models.workers.Worker;
+import persistance.IStudyDao;
+import persistance.workers.IWorkerDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -26,10 +28,8 @@ import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
-import daos.IStudyDao;
-import daos.workers.IWorkerDao;
+import common.JatosGuiAction;
 import exceptions.JatosGuiException;
 
 /**
