@@ -31,10 +31,10 @@ import play.mvc.Http.RequestBody;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Singleton;
 
-import daos.AbstractDao;
 import daos.IComponentDao;
 import daos.IComponentResultDao;
 import daos.IStudyDao;
+import daos.IStudyResultDao;
 import daos.workers.IWorkerDao;
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
@@ -56,15 +56,18 @@ public abstract class PublixUtils<T extends Worker> {
 
 	private final PublixErrorMessages<T> errorMessages;
 	private final IStudyDao studyDao;
+	private final IStudyResultDao studyResultDao;
 	private final IComponentDao componentDao;
 	private final IComponentResultDao componentResultDao;
 	private final IWorkerDao workerDao;
 
 	public PublixUtils(PublixErrorMessages<T> errorMessages,
-			IStudyDao studyDao, IComponentDao componentDao,
-			IComponentResultDao componentResultDao, IWorkerDao workerDao) {
+			IStudyDao studyDao, IStudyResultDao studyResultDao,
+			IComponentDao componentDao, IComponentResultDao componentResultDao,
+			IWorkerDao workerDao) {
 		this.errorMessages = errorMessages;
 		this.studyDao = studyDao;
+		this.studyResultDao = studyResultDao;
 		this.componentDao = componentDao;
 		this.componentResultDao = componentResultDao;
 		this.workerDao = workerDao;
@@ -131,14 +134,14 @@ public abstract class PublixUtils<T extends Worker> {
 						ComponentState.FINISHED);
 			}
 		}
-		return componentResultDao.createComponentResult(studyResult, component);
+		return componentResultDao.create(studyResult, component);
 	}
 
 	private void finishComponentResult(ComponentResult componentResult,
 			ComponentState state) {
 		componentResult.setComponentState(state);
 		componentResult.setEndDate(new Timestamp(new Date().getTime()));
-		AbstractDao.merge(componentResult);
+		componentResultDao.update(componentResult);
 	}
 
 	/**
@@ -193,14 +196,14 @@ public abstract class PublixUtils<T extends Worker> {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
 			componentResult.setData(null);
-			AbstractDao.merge(componentResult);
+			componentResultDao.update(componentResult);
 		}
 
 		// Set StudyResult to state ABORTED and set message
 		studyResult.setStudyState(StudyState.ABORTED);
 		studyResult.setAbortMsg(message);
 		studyResult.setEndDate(new Timestamp(new Date().getTime()));
-		AbstractDao.merge(studyResult);
+		studyResultDao.update(studyResult);
 	}
 
 	public String finishStudy(Boolean successful, String errorMsg,
@@ -221,7 +224,7 @@ public abstract class PublixUtils<T extends Worker> {
 		studyResult.setEndDate(new Timestamp(new Date().getTime()));
 		// Clear study session data before finishing
 		studyResult.setStudySessionData(null);
-		AbstractDao.merge(studyResult);
+		studyResultDao.update(studyResult);
 		return confirmationCode;
 	}
 

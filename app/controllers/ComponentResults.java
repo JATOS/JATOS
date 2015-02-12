@@ -131,7 +131,7 @@ public class ComponentResults extends Controller {
 		checkAllComponentResults(componentResultList, loggedInUser, true);
 
 		for (ComponentResult componentResult : componentResultList) {
-			componentResultDao.removeComponentResult(componentResult);
+			componentResultDao.remove(componentResult);
 		}
 		return ok();
 	}

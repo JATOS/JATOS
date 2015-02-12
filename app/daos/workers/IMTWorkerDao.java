@@ -13,7 +13,7 @@ public interface IMTWorkerDao {
 	 * Create MTWorker. Distinguishes between normal MechTurk and Sandbox
 	 * MechTurk via mTurkSandbox parameter.
 	 */
-	public abstract MTWorker createMTWorker(String mtWorkerId,
+	public abstract MTWorker create(String mtWorkerId,
 			boolean mTurkSandbox);
 
 	/**

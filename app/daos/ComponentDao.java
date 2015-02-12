@@ -20,7 +20,8 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class ComponentDao extends AbstractDao implements IComponentDao {
+public class ComponentDao extends AbstractDao<ComponentModel> implements
+		IComponentDao {
 
 	private final IComponentResultDao componentResultDao;
 
@@ -29,28 +30,21 @@ public class ComponentDao extends AbstractDao implements IComponentDao {
 		this.componentResultDao = componentResultDao;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IComponentDao#addComponent(models.StudyModel,
-	 * models.ComponentModel)
-	 */
 	@Override
-	public void addComponent(StudyModel study, ComponentModel component) {
+	public void create(StudyModel study, ComponentModel component) {
 		component.setStudy(study);
 		study.addComponent(component);
 		persist(component);
 		merge(study);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IComponentDao#updateComponentsProperties(models.ComponentModel,
-	 * models.ComponentModel)
-	 */
 	@Override
-	public void updateComponentsProperties(ComponentModel component,
+	public void update(ComponentModel component) {
+		merge(component);
+	}
+
+	@Override
+	public void updateProperties(ComponentModel component,
 			ComponentModel updatedComponent) {
 		component.setTitle(updatedComponent.getTitle());
 		component.setReloadable(updatedComponent.isReloadable());
@@ -61,25 +55,14 @@ public class ComponentDao extends AbstractDao implements IComponentDao {
 		merge(component);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IComponentDao#changeActive(models.ComponentModel, boolean)
-	 */
 	@Override
 	public void changeActive(ComponentModel component, boolean active) {
 		component.setActive(active);
 		merge(component);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IComponentDao#removeComponent(models.StudyModel,
-	 * models.ComponentModel)
-	 */
 	@Override
-	public void removeComponent(StudyModel study, ComponentModel component) {
+	public void remove(StudyModel study, ComponentModel component) {
 		// Remove component from study
 		study.removeComponent(component);
 		merge(study);
@@ -94,21 +77,11 @@ public class ComponentDao extends AbstractDao implements IComponentDao {
 		remove(component);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IComponentDao#findById(java.lang.Long)
-	 */
 	@Override
 	public ComponentModel findById(Long id) {
 		return JPA.em().find(ComponentModel.class, id);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IComponentDao#findByUuid(java.lang.String)
-	 */
 	@Override
 	public ComponentModel findByUuid(String uuid) {
 		String queryStr = "SELECT e FROM ComponentModel e WHERE "
@@ -122,11 +95,6 @@ public class ComponentDao extends AbstractDao implements IComponentDao {
 		return study;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IComponentDao#findAll()
-	 */
 	@Override
 	public List<ComponentModel> findAll() {
 		TypedQuery<ComponentModel> query = JPA.em().createQuery(
@@ -134,13 +102,8 @@ public class ComponentDao extends AbstractDao implements IComponentDao {
 		return query.getResultList();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IComponentDao#changeComponentOrder(models.ComponentModel, int)
-	 */
 	@Override
-	public void changeComponentOrder(ComponentModel component, int newIndex) {
+	public void changeOrder(ComponentModel component, int newIndex) {
 		String queryStr = "UPDATE ComponentModel SET componentList_order = "
 				+ ":newIndex WHERE id = :id";
 		Query query = JPA.em().createQuery(queryStr);

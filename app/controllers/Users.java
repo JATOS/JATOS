@@ -21,7 +21,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import common.JatosGuiAction;
 
-import daos.AbstractDao;
 import daos.IStudyDao;
 import daos.IUserDao;
 import exceptions.JatosGuiException;
@@ -118,7 +117,7 @@ public class Users extends Controller {
 
 		String passwordHash = userService.getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
-		userDao.addUser(newUser);
+		userDao.create(newUser);
 		return redirect(routes.Home.home());
 	}
 
@@ -166,7 +165,7 @@ public class Users extends Controller {
 		// unaltered. For the password we have an extra form.
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String name = requestData.get(UserModel.NAME);
-		userDao.updateUser(user, name);
+		userDao.updateName(user, name);
 		return redirect(routes.Users.profile(email));
 	}
 
@@ -220,7 +219,7 @@ public class Users extends Controller {
 		// Update password hash in DB
 		String newPasswordHash = userService.getHashMDFive(newPassword);
 		user.setPasswordHash(newPasswordHash);
-		AbstractDao.merge(user);
+		userDao.update(user);
 		return redirect(routes.Users.profile(email));
 	}
 

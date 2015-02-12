@@ -21,7 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import play.db.jpa.JPA;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import services.Breadcrumbs;
@@ -58,11 +57,11 @@ public class ComponentsControllerTest extends AControllerTest {
 	public void callShowComponent() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
-		Result result = callAction(
-				controllers.routes.ref.Components.showComponent(
-						studyClone.getId(), studyClone.getComponent(1).getId()),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						admin.getEmail()));
+		Result result = callAction(controllers.routes.ref.Components
+				.showComponent(studyClone.getId(), studyClone.getComponent(1)
+						.getId()),
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 		assertThat(session(result).containsKey(JatosPublix.JATOS_SHOW));
 		assertThat(session(result).containsValue(
@@ -84,15 +83,15 @@ public class ComponentsControllerTest extends AControllerTest {
 	public void callShowComponentNoHtml() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
-		JPA.em().getTransaction().begin();
+		entityManager.getTransaction().begin();
 		studyClone.getComponent(1).setHtmlFilePath(null);
-		JPA.em().getTransaction().commit();
+		entityManager.getTransaction().commit();
 
-		Result result = callAction(
-				controllers.routes.ref.Components.showComponent(
-						studyClone.getId(), studyClone.getComponent(1).getId()),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						admin.getEmail()));
+		Result result = callAction(controllers.routes.ref.Components
+				.showComponent(studyClone.getId(), studyClone.getComponent(1)
+						.getId()),
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(contentAsString(result))
 				.contains("HTML file path is empty.");
 
@@ -108,8 +107,8 @@ public class ComponentsControllerTest extends AControllerTest {
 
 		Result result = callAction(
 				controllers.routes.ref.Components.create(studyClone.getId()),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						admin.getEmail()));
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_COMPONENT);
 

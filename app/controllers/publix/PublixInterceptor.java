@@ -6,7 +6,6 @@ import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.OpenStandaloneWorker;
 import models.workers.TesterWorker;
-import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.libs.F.Promise;
 import play.mvc.Controller;
@@ -16,8 +15,8 @@ import play.mvc.With;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.PublixAction;
+
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.mt.MTPublix;
@@ -47,9 +46,9 @@ import exceptions.PublixException;
  * 5. Requests coming from an open standalone run (unlimited to everyone with
  * the link) will be forwarded to OpenStandalonePublix.<br>
  * 
- * TODO: Move @Transactional out of controller and get rid of synchronisation
- * and JPA transaction handling. We need a lock for a worker to prevent the same
- * worker doing the same study in parallel.
+ * TODO: Move @Transactional out of controller and get rid of synchronisation.
+ * We need a lock for a worker to prevent the same worker doing the same study
+ * in parallel.
  * 
  * @author Kristian Lange
  */
@@ -109,9 +108,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}
@@ -145,9 +141,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return promise;
 		}
 	}
@@ -211,9 +204,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}
@@ -245,9 +235,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}
@@ -279,9 +266,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}
@@ -313,9 +297,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}
@@ -351,9 +332,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}
@@ -387,9 +365,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}
@@ -426,9 +401,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}
@@ -460,9 +432,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				throw new BadRequestPublixException(
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}
@@ -498,9 +467,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 			}
 			session().remove(WORKER_TYPE);
-			JPA.em().flush();
-			JPA.em().getTransaction().commit();
-			JPA.em().getTransaction().begin();
 			return result;
 		}
 	}

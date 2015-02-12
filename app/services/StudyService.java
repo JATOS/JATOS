@@ -87,8 +87,8 @@ public class StudyService extends Controller {
 			ComponentModel component2) {
 		int index1 = study.getComponentList().indexOf(component1);
 		int index2 = study.getComponentList().indexOf(component2);
-		componentDao.changeComponentOrder(component1, index2);
-		componentDao.changeComponentOrder(component2, index1);
+		componentDao.changeOrder(component1, index2);
+		componentDao.changeOrder(component2, index1);
 	}
 
 	/**

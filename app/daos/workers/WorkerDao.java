@@ -20,15 +20,15 @@ import daos.AbstractDao;
  * @author Kristian Lange
  */
 @Singleton
-public class WorkerDao extends AbstractDao implements IWorkerDao {
+public class WorkerDao extends AbstractDao<Worker> implements IWorkerDao {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.workers.IWorkerDao#removeWorker(models.workers.Worker)
-	 */
 	@Override
-	public void removeWorker(Worker worker) {
+	public void create(Worker worker) {
+		persist(worker);
+	}
+	
+	@Override
+	public void remove(Worker worker) {
 		// Don't remove JATOS' own workers
 		if (worker instanceof JatosWorker) {
 			return;
@@ -47,21 +47,11 @@ public class WorkerDao extends AbstractDao implements IWorkerDao {
 		remove(worker);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.workers.IWorkerDao#findById(java.lang.Long)
-	 */
 	@Override
 	public Worker findById(Long id) {
 		return JPA.em().find(Worker.class, id);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.workers.IWorkerDao#findAll()
-	 */
 	@Override
 	public List<Worker> findAll() {
 		TypedQuery<Worker> query = JPA.em().createQuery(

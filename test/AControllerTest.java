@@ -129,7 +129,7 @@ public abstract class AControllerTest {
 		String passwordHash = userService.getHashMDFive(password);
 		UserModel user = new UserModel(email, name, passwordHash);
 		entityManager.getTransaction().begin();
-		userDao.addUser(user);
+		userDao.create(user);
 		entityManager.getTransaction().commit();
 		return user;
 	}
@@ -138,13 +138,13 @@ public abstract class AControllerTest {
 			throws IOException {
 		IOUtils.removeStudyAssetsDir(study.getDirName());
 		entityManager.getTransaction().begin();
-		studyDao.removeStudy(study);
+		studyDao.remove(study);
 		entityManager.getTransaction().commit();
 	}
 
 	protected synchronized void addStudy(StudyModel study) {
 		entityManager.getTransaction().begin();
-		studyDao.addStudy(study, admin);
+		studyDao.create(study, admin);
 		entityManager.getTransaction().commit();
 	}
 

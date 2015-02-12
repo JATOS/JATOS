@@ -14,7 +14,7 @@ import services.UserService;
 import com.google.inject.Inject;
 
 import controllers.publix.StudyAssets;
-import daos.AbstractDao;
+import daos.IComponentDao;
 import daos.IStudyDao;
 import daos.IUserDao;
 
@@ -31,13 +31,15 @@ public class Initializer {
 	private final UserService userService;
 	private final IUserDao userDao;
 	private final IStudyDao studyDao;
+	private final IComponentDao componentDao;
 
 	@Inject
 	public Initializer(IUserDao userDao, UserService userService,
-			IStudyDao studyDao) {
+			IStudyDao studyDao, IComponentDao componentDao) {
 		this.userDao = userDao;
 		this.userService = userService;
 		this.studyDao = studyDao;
+		this.componentDao = componentDao;
 	}
 
 	/**
@@ -73,13 +75,13 @@ public class Initializer {
 				for (StudyModel study : studyModelList) {
 					if (study.getUuid() == null || study.getUuid().isEmpty()) {
 						study.setUuid(UUID.randomUUID().toString());
-						AbstractDao.merge(study);
+						studyDao.update(study);
 					}
 					for (ComponentModel component : study.getComponentList()) {
 						if (component.getUuid() == null
 								|| component.getUuid().isEmpty()) {
 							component.setUuid(UUID.randomUUID().toString());
-							AbstractDao.merge(component);
+							componentDao.update(component);
 						}
 					}
 				}

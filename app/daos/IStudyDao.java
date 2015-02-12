@@ -10,35 +10,37 @@ import models.UserModel;
  * 
  * @author Kristian Lange
  */
-public interface IStudyDao {
+public interface IStudyDao extends IAbstractDao<StudyModel>{
 
 	/**
 	 * Persist study and add member.
 	 */
-	public abstract void addStudy(StudyModel study, UserModel loggedInUser);
+	public abstract void create(StudyModel study, UserModel loggedInUser);
 
 	/**
 	 * Add member to study.
 	 */
-	public abstract void addMemberToStudy(StudyModel study, UserModel member);
+	public abstract void addMember(StudyModel study, UserModel member);
+
+	public abstract void update(StudyModel study);
 
 	/**
 	 * Update properties of study with properties of updatedStudy.
 	 */
-	public abstract void updateStudysProperties(StudyModel study,
+	public abstract void updateProperties(StudyModel study,
 			StudyModel updatedStudy);
 
 	/**
 	 * Update properties of study with properties of updatedStudy (excluding
 	 * study's dir name).
 	 */
-	public abstract void updateStudysPropertiesWODirName(StudyModel study,
+	public abstract void updatePropertiesWODirName(StudyModel study,
 			StudyModel updatedStudy);
 
 	/**
 	 * Remove study and its components
 	 */
-	public abstract void removeStudy(StudyModel study);
+	public abstract void remove(StudyModel study);
 
 	public abstract StudyModel findById(Long id);
 

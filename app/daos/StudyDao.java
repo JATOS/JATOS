@@ -20,7 +20,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class StudyDao extends AbstractDao implements IStudyDao {
+public class StudyDao extends AbstractDao<StudyModel> implements IStudyDao {
 
 	private final IStudyResultDao studyResultDao;
 
@@ -29,36 +29,25 @@ public class StudyDao extends AbstractDao implements IStudyDao {
 		this.studyResultDao = studyResultDao;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyDao#addStudy(models.StudyModel, models.UserModel)
-	 */
 	@Override
-	public void addStudy(StudyModel study, UserModel loggedInUser) {
+	public void create(StudyModel study, UserModel loggedInUser) {
 		persist(study);
-		addMemberToStudy(study, loggedInUser);
+		addMember(study, loggedInUser);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyDao#addMemberToStudy(models.StudyModel, models.UserModel)
-	 */
 	@Override
-	public void addMemberToStudy(StudyModel study, UserModel member) {
+	public void addMember(StudyModel study, UserModel member) {
 		study.addMember(member);
 		merge(study);
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyDao#updateStudysProperties(models.StudyModel,
-	 * models.StudyModel)
-	 */
+	
 	@Override
-	public void updateStudysProperties(StudyModel study, StudyModel updatedStudy) {
+	public void update(StudyModel study) {
+		merge(study);
+	}
+
+	@Override
+	public void updateProperties(StudyModel study, StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
 		study.setDirName(updatedStudy.getDirName());
@@ -67,14 +56,8 @@ public class StudyDao extends AbstractDao implements IStudyDao {
 		merge(study);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyDao#updateStudysPropertiesWODirName(models.StudyModel,
-	 * models.StudyModel)
-	 */
 	@Override
-	public void updateStudysPropertiesWODirName(StudyModel study,
+	public void updatePropertiesWODirName(StudyModel study,
 			StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
@@ -83,39 +66,24 @@ public class StudyDao extends AbstractDao implements IStudyDao {
 		merge(study);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyDao#removeStudy(models.StudyModel)
-	 */
 	@Override
-	public void removeStudy(StudyModel study) {
+	public void remove(StudyModel study) {
 		// Remove all study's components
 		for (ComponentModel component : study.getComponentList()) {
 			remove(component);
 		}
 		// Remove study's StudyResults and ComponentResults
 		for (StudyResult studyResult : studyResultDao.findAllByStudy(study)) {
-			studyResultDao.removeStudyResult(studyResult);
+			studyResultDao.remove(studyResult);
 		}
 		remove(study);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyDao#findById(java.lang.Long)
-	 */
 	@Override
 	public StudyModel findById(Long id) {
 		return JPA.em().find(StudyModel.class, id);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyDao#findByUuid(java.lang.String)
-	 */
 	@Override
 	public StudyModel findByUuid(String uuid) {
 		String queryStr = "SELECT e FROM StudyModel e WHERE " + "e.uuid=:uuid";
@@ -128,11 +96,6 @@ public class StudyDao extends AbstractDao implements IStudyDao {
 		return study;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyDao#findAll()
-	 */
 	@Override
 	public List<StudyModel> findAll() {
 		TypedQuery<StudyModel> query = JPA.em().createQuery(
@@ -140,11 +103,6 @@ public class StudyDao extends AbstractDao implements IStudyDao {
 		return query.getResultList();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyDao#findAllByUser(java.lang.String)
-	 */
 	@Override
 	public List<StudyModel> findAllByUser(String memberEmail) {
 		TypedQuery<StudyModel> query = JPA.em().createQuery(

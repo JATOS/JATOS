@@ -32,7 +32,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import common.JatosGuiAction;
 
-import daos.AbstractDao;
 import daos.IComponentDao;
 import daos.IStudyDao;
 import exceptions.JatosGuiException;
@@ -181,12 +180,12 @@ public class ImportExport extends Controller {
 			}
 			if (studysPropertiesConfirm) {
 				if (studysDirConfirm) {
-					studyDao.updateStudysProperties(currentStudy, importedStudy);
+					studyDao.updateProperties(currentStudy, importedStudy);
 				} else {
 					// If we don't overwrite the current study dir with the
 					// uploaded one, don't change the study dir name in the
 					// properties
-					studyDao.updateStudysPropertiesWODirName(currentStudy,
+					studyDao.updatePropertiesWODirName(currentStudy,
 							importedStudy);
 				}
 				updateStudysComponents(currentStudy, importedStudy);
@@ -197,7 +196,7 @@ public class ImportExport extends Controller {
 		} else {
 			moveStudyAssetsDir(tempUnzippedStudyDir, null,
 					importedStudy.getDirName(), loggedInUser);
-			studyDao.addStudy(importedStudy, loggedInUser);
+			studyDao.create(importedStudy, loggedInUser);
 			tempUnzippedStudyDir.delete();
 			return ok(importedStudy.getId().toString());
 		}
@@ -328,14 +327,14 @@ public class ImportExport extends Controller {
 				}
 			}
 			if (currentComponent != null) {
-				componentDao.updateComponentsProperties(currentComponent,
+				componentDao.updateProperties(currentComponent,
 						updatedComponent);
 				currentStudy.addComponent(currentComponent);
 				currentComponentList.remove(currentComponent);
 			} else {
 				// If the updated component doesn't exist in the current study
 				// add it.
-				componentDao.addComponent(currentStudy, updatedComponent);
+				componentDao.create(currentStudy, updatedComponent);
 			}
 		}
 
@@ -348,7 +347,7 @@ public class ImportExport extends Controller {
 			currentStudy.addComponent(currentComponent);
 		}
 
-		AbstractDao.merge(currentStudy);
+		studyDao.update(currentStudy);
 	}
 
 	/**
@@ -502,10 +501,9 @@ public class ImportExport extends Controller {
 				.findByUuid(uploadedComponent.getUuid());
 		boolean componentExists = (currentComponent != null);
 		if (componentExists) {
-			componentDao.updateComponentsProperties(currentComponent,
-					uploadedComponent);
+			componentDao.updateProperties(currentComponent, uploadedComponent);
 		} else {
-			componentDao.addComponent(study, uploadedComponent);
+			componentDao.create(study, uploadedComponent);
 		}
 		return ok();
 	}

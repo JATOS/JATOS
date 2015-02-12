@@ -31,10 +31,10 @@ public class ClosedStandalonePublixUtils extends
 	@Inject
 	public ClosedStandalonePublixUtils(
 			ClosedStandaloneErrorMessages errorMessages, IStudyDao studyDao,
-			IComponentDao componentDao, IComponentResultDao componentResultDao,
-			IStudyResultDao studyResultDao, IWorkerDao workerDao) {
-		super(errorMessages, studyDao, componentDao, componentResultDao,
-				workerDao);
+			IStudyResultDao studyResultDao, IComponentDao componentDao,
+			IComponentResultDao componentResultDao, IWorkerDao workerDao) {
+		super(errorMessages, studyDao, studyResultDao, componentDao,
+				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;
 	}
 

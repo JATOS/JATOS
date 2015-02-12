@@ -126,7 +126,7 @@ public class StudyResults extends Controller {
 		checkAllStudyResults(studyResultList, loggedInUser, true);
 
 		for (StudyResult studyResult : studyResultList) {
-			studyResultDao.removeStudyResult(studyResult);
+			studyResultDao.remove(studyResult);
 		}
 		return ok();
 	}

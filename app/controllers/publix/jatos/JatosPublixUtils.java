@@ -16,6 +16,7 @@ import controllers.publix.PublixUtils;
 import daos.IComponentDao;
 import daos.IComponentResultDao;
 import daos.IStudyDao;
+import daos.IStudyResultDao;
 import daos.IUserDao;
 import daos.workers.IWorkerDao;
 import exceptions.ForbiddenPublixException;
@@ -35,10 +36,11 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 
 	@Inject
 	public JatosPublixUtils(JatosErrorMessages errorMessages, IUserDao userDao,
-			IStudyDao studyDao, IComponentDao componentDao,
-			IComponentResultDao componentResultDao, IWorkerDao workerDao) {
-		super(errorMessages, studyDao, componentDao, componentResultDao,
-				workerDao);
+			IStudyDao studyDao, IStudyResultDao studyResultDao,
+			IComponentDao componentDao, IComponentResultDao componentResultDao,
+			IWorkerDao workerDao) {
+		super(errorMessages, studyDao, studyResultDao, componentDao,
+				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;
 		this.userDao = userDao;
 	}

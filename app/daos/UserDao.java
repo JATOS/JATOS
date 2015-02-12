@@ -16,15 +16,10 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class UserDao extends AbstractDao implements IUserDao {
+public class UserDao extends AbstractDao<UserModel> implements IUserDao {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IUserDao#addUser(models.UserModel)
-	 */
 	@Override
-	public void addUser(UserModel user) {
+	public void create(UserModel user) {
 		JatosWorker worker = new JatosWorker(user);
 		persist(worker);
 		user.setWorker(worker);
@@ -32,22 +27,17 @@ public class UserDao extends AbstractDao implements IUserDao {
 		merge(worker);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IUserDao#updateUser(models.UserModel, java.lang.String)
-	 */
 	@Override
-	public void updateUser(UserModel user, String name) {
+	public void update(UserModel user) {
+		merge(user);
+	}
+
+	@Override
+	public void updateName(UserModel user, String name) {
 		user.setName(name);
 		merge(user);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IUserDao#authenticate(java.lang.String, java.lang.String)
-	 */
 	@Override
 	public UserModel authenticate(String email, String passwordHash) {
 		String queryStr = "SELECT e FROM UserModel e WHERE "
@@ -59,21 +49,11 @@ public class UserDao extends AbstractDao implements IUserDao {
 		return userList.isEmpty() ? null : userList.get(0);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IUserDao#findByEmail(java.lang.String)
-	 */
 	@Override
 	public UserModel findByEmail(String email) {
 		return JPA.em().find(UserModel.class, email);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IUserDao#findAll()
-	 */
 	@Override
 	public List<UserModel> findAll() {
 		TypedQuery<UserModel> query = JPA.em().createQuery(

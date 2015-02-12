@@ -17,13 +17,15 @@ public interface IComponentResultDao {
 	 * Creates ComponentResult for the given Component and adds it to the given
 	 * StudyResult.
 	 */
-	public abstract ComponentResult createComponentResult(
-			StudyResult studyResult, ComponentModel component);
+	public abstract ComponentResult create(StudyResult studyResult,
+			ComponentModel component);
+
+	public abstract void update(ComponentResult componentResult);
 
 	/**
 	 * Remove ComponentResult form its StudyResult and then remove itself.
 	 */
-	public abstract void removeComponentResult(ComponentResult componentResult);
+	public abstract void remove(ComponentResult componentResult);
 
 	public abstract ComponentResult findById(Long id);
 

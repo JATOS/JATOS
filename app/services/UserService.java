@@ -101,7 +101,7 @@ public class UserService {
 		String passwordHash = getHashMDFive(ADMIN_PASSWORD);
 		UserModel adminUser = new UserModel(ADMIN_EMAIL, ADMIN_NAME,
 				passwordHash);
-		userDao.addUser(adminUser);
+		userDao.create(adminUser);
 		return adminUser;
 	}
 

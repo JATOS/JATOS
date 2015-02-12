@@ -112,7 +112,7 @@ public class Workers extends Controller {
 		workerService.checkWorker(worker, workerId);
 
 		checkRemoval(worker, loggedInUser);
-		workerDao.removeWorker(worker);
+		workerDao.remove(worker);
 		return ok();
 	}
 

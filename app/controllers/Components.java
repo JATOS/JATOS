@@ -144,7 +144,7 @@ public class Components extends Controller {
 		}
 
 		ComponentModel component = form.get();
-		componentDao.addComponent(study, component);
+		componentDao.create(study, component);
 		return redirectAfterEdit(studyId, component.getId(), study);
 	}
 
@@ -210,7 +210,7 @@ public class Components extends Controller {
 
 		// Update component in DB
 		ComponentModel updatedComponent = form.get();
-		componentDao.updateComponentsProperties(component, updatedComponent);
+		componentDao.updateProperties(component, updatedComponent);
 		return redirectAfterEdit(studyId, componentId, study);
 	}
 
@@ -269,7 +269,7 @@ public class Components extends Controller {
 		studyService.checkStudyLocked(study);
 
 		ComponentModel clone = new ComponentModel(component);
-		componentDao.addComponent(study, clone);
+		componentDao.create(study, clone);
 		return redirect(routes.Studies.index(studyId, null));
 	}
 
@@ -291,7 +291,7 @@ public class Components extends Controller {
 				study, loggedInUser, component);
 		studyService.checkStudyLocked(study);
 
-		componentDao.removeComponent(study, component);
+		componentDao.remove(study, component);
 		return ok();
 	}
 

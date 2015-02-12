@@ -19,13 +19,8 @@ import com.google.inject.Singleton;
 @Singleton
 public class MTWorkerDao extends WorkerDao implements IMTWorkerDao {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.workers.IMTWorkerDao#createMTWorker(java.lang.String, boolean)
-	 */
 	@Override
-	public MTWorker createMTWorker(String mtWorkerId, boolean mTurkSandbox) {
+	public MTWorker create(String mtWorkerId, boolean mTurkSandbox) {
 		MTWorker worker;
 		if (mTurkSandbox) {
 			worker = new MTSandboxWorker(mtWorkerId);
@@ -36,11 +31,6 @@ public class MTWorkerDao extends WorkerDao implements IMTWorkerDao {
 		return worker;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.workers.IMTWorkerDao#findByMTWorkerId(java.lang.String)
-	 */
 	@Override
 	public MTWorker findByMTWorkerId(String mtWorkerId) {
 		String queryStr = "SELECT e FROM Worker e WHERE "

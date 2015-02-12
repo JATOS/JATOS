@@ -15,12 +15,14 @@ public interface IComponentDao {
 	/**
 	 * Persist Component and add it to the given Study.
 	 */
-	public abstract void addComponent(StudyModel study, ComponentModel component);
+	public abstract void create(StudyModel study, ComponentModel component);
+
+	public abstract void update(ComponentModel component);
 
 	/**
 	 * Update component's properties with the ones from updatedComponent.
 	 */
-	public abstract void updateComponentsProperties(ComponentModel component,
+	public abstract void updateProperties(ComponentModel component,
 			ComponentModel updatedComponent);
 
 	/**
@@ -32,8 +34,7 @@ public interface IComponentDao {
 	 * Remove Component: Remove it from the given study, remove all its
 	 * ComponentResults, and remove the component itself.
 	 */
-	public abstract void removeComponent(StudyModel study,
-			ComponentModel component);
+	public abstract void remove(StudyModel study, ComponentModel component);
 
 	public abstract ComponentModel findById(Long id);
 
@@ -41,7 +42,6 @@ public interface IComponentDao {
 
 	public abstract List<ComponentModel> findAll();
 
-	public abstract void changeComponentOrder(ComponentModel component,
-			int newIndex);
+	public abstract void changeOrder(ComponentModel component, int newIndex);
 
 }

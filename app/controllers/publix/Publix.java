@@ -20,7 +20,6 @@ import com.google.inject.Singleton;
 
 import controllers.ControllerUtils;
 import controllers.Users;
-import daos.AbstractDao;
 import daos.IComponentResultDao;
 import daos.IStudyResultDao;
 import exceptions.ForbiddenReloadException;
@@ -137,7 +136,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
-		AbstractDao.merge(studyResult);
+		studyResultDao.update(studyResult);
 		return ok(jsonUtils.asJsonForPublix(study));
 	}
 
@@ -164,7 +163,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		String studySessionData = publixUtils.getDataFromRequestBody(request()
 				.body());
 		studyResult.setStudySessionData(studySessionData);
-		AbstractDao.merge(studyResult);
+		studyResultDao.update(studyResult);
 		return ok();
 	}
 
@@ -193,7 +192,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		}
 
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
-		AbstractDao.merge(componentResult);
+		componentResultDao.update(componentResult);
 		return ok(jsonUtils.asJsonForPublix(component));
 	}
 
@@ -225,7 +224,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				.getDataFromRequestBody(request().body());
 		componentResult.setData(resultData);
 		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
-		AbstractDao.merge(componentResult);
+		componentResultDao.update(componentResult);
 		return ok();
 	}
 
@@ -255,7 +254,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			componentResult.setComponentState(ComponentState.FAIL);
 			componentResult.setErrorMsg(errorMsg);
 		}
-		AbstractDao.merge(componentResult);
+		componentResultDao.update(componentResult);
 		return ok();
 	}
 

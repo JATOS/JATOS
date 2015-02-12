@@ -5,26 +5,29 @@ import play.db.jpa.JPA;
 import com.google.inject.Singleton;
 
 /**
- * Abstract DAO
+ * Abstract DAO: Of the JPA calls only refresh() is public - persist(), merge()
+ * and remove() are protected. The latter ones usually involve changes in
+ * different models and should be handled by the DAO of that type.
  * 
  * @author Kristian Lange
  */
 @Singleton
-public abstract class AbstractDao {
+public abstract class AbstractDao<T> implements IAbstractDao<T> {
 
-	public static void persist(Object entity) {
+	protected void persist(Object entity) {
 		JPA.em().persist(entity);
 	}
 
-	public static void merge(Object entity) {
+	protected void merge(Object entity) {
 		JPA.em().merge(entity);
 	}
 
-	public static void remove(Object entity) {
+	protected void remove(Object entity) {
 		JPA.em().remove(entity);
 	}
 
-	public static void refresh(Object entity) {
+	@Override
+	public void refresh(T entity) {
 		JPA.em().refresh(entity);
 	}
 

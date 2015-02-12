@@ -11,6 +11,7 @@ import controllers.publix.PublixUtils;
 import daos.IComponentDao;
 import daos.IComponentResultDao;
 import daos.IStudyDao;
+import daos.IStudyResultDao;
 import daos.workers.IWorkerDao;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
@@ -27,10 +28,11 @@ public class TesterPublixUtils extends PublixUtils<TesterWorker> {
 
 	@Inject
 	public TesterPublixUtils(TesterErrorMessages errorMessages,
-			IStudyDao studyDao, IComponentDao componentDao,
-			IComponentResultDao componentResultDao, IWorkerDao workerDao) {
-		super(errorMessages, studyDao, componentDao, componentResultDao,
-				workerDao);
+			IStudyDao studyDao, IStudyResultDao studyResultDao,
+			IComponentDao componentDao, IComponentResultDao componentResultDao,
+			IWorkerDao workerDao) {
+		super(errorMessages, studyDao, studyResultDao, componentDao,
+				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;
 	}
 

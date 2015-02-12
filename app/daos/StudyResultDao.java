@@ -19,14 +19,9 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class StudyResultDao extends AbstractDao implements IStudyResultDao {
+public class StudyResultDao extends AbstractDao<StudyResult> implements
+		IStudyResultDao {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyResultDao#create(models.StudyModel,
-	 * models.workers.Worker)
-	 */
 	@Override
 	public StudyResult create(StudyModel study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);
@@ -36,13 +31,13 @@ public class StudyResultDao extends AbstractDao implements IStudyResultDao {
 		return studyResult;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyResultDao#removeStudyResult(models.StudyResult)
-	 */
 	@Override
-	public void removeStudyResult(StudyResult studyResult) {
+	public void update(StudyResult studyResult) {
+		merge(studyResult);
+	}
+
+	@Override
+	public void remove(StudyResult studyResult) {
 		// Remove all component results of this study result
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
@@ -58,34 +53,19 @@ public class StudyResultDao extends AbstractDao implements IStudyResultDao {
 		remove(studyResult);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyResultDao#removeAllStudyResults(models.StudyModel)
-	 */
 	@Override
-	public void removeAllStudyResults(StudyModel study) {
+	public void removeAllOfStudy(StudyModel study) {
 		List<StudyResult> studyResultList = findAllByStudy(study);
 		for (StudyResult studyResult : studyResultList) {
-			removeStudyResult(studyResult);
+			remove(studyResult);
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyResultDao#findById(java.lang.Long)
-	 */
 	@Override
 	public StudyResult findById(Long id) {
 		return JPA.em().find(StudyResult.class, id);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyResultDao#findAll()
-	 */
 	@Override
 	public List<StudyResult> findAll() {
 		String queryStr = "SELECT e FROM StudyResult e";
@@ -94,11 +74,6 @@ public class StudyResultDao extends AbstractDao implements IStudyResultDao {
 		return query.getResultList();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyResultDao#countByStudy(models.StudyModel)
-	 */
 	@Override
 	public int countByStudy(StudyModel study) {
 		String queryStr = "SELECT COUNT(e) FROM StudyResult e WHERE e.study=:studyId";
@@ -108,11 +83,6 @@ public class StudyResultDao extends AbstractDao implements IStudyResultDao {
 		return result.intValue();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see daos.IStudyResultDao#findAllByStudy(models.StudyModel)
-	 */
 	@Override
 	public List<StudyResult> findAllByStudy(StudyModel study) {
 		String queryStr = "SELECT e FROM StudyResult e "

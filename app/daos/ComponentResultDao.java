@@ -18,14 +18,11 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class ComponentResultDao extends AbstractDao implements
+public class ComponentResultDao extends AbstractDao<ComponentResult> implements
 		IComponentResultDao {
 
-	/**
-	 * Creates ComponentResult for the given Component and adds it to the given
-	 * StudyResult.
-	 */
-	public ComponentResult createComponentResult(StudyResult studyResult,
+	@Override
+	public ComponentResult create(StudyResult studyResult,
 			ComponentModel component) {
 		ComponentResult componentResult = new ComponentResult(component);
 		componentResult.setStudyResult(studyResult);
@@ -35,21 +32,26 @@ public class ComponentResultDao extends AbstractDao implements
 		merge(componentResult);
 		return componentResult;
 	}
+	
+	@Override
+	public void update(ComponentResult componentResult) {
+		merge(componentResult);
+	}
 
-	/**
-	 * Remove ComponentResult form its StudyResult and then remove itself.
-	 */
-	public void removeComponentResult(ComponentResult componentResult) {
+	@Override
+	public void remove(ComponentResult componentResult) {
 		StudyResult studyResult = componentResult.getStudyResult();
 		studyResult.removeComponentResult(componentResult);
 		merge(studyResult);
 		remove(componentResult);
 	}
 
+	@Override
 	public ComponentResult findById(Long id) {
 		return JPA.em().find(ComponentResult.class, id);
 	}
 
+	@Override
 	public int countByComponent(ComponentModel component) {
 		String queryStr = "SELECT COUNT(e) FROM ComponentResult e WHERE e.component=:componentId";
 		Query query = JPA.em().createQuery(queryStr);
@@ -58,6 +60,7 @@ public class ComponentResultDao extends AbstractDao implements
 		return result.intValue();
 	}
 
+	@Override
 	public List<ComponentResult> findAllByComponent(ComponentModel component) {
 		String queryStr = "SELECT e FROM ComponentResult e "
 				+ "WHERE e.component=:componentId";

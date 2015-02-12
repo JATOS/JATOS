@@ -12,9 +12,9 @@ import com.google.inject.Singleton;
 
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import daos.AbstractDao;
 import daos.IComponentResultDao;
 import daos.IStudyResultDao;
+import daos.workers.WorkerDao;
 import exceptions.PublixException;
 
 /**
@@ -34,13 +34,15 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 			.getSimpleName();
 
 	private final OpenStandalonePublixUtils publixUtils;
+	private final WorkerDao workerDao;
 
 	@Inject
 	public OpenStandalonePublix(OpenStandalonePublixUtils publixUtils,
 			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao) {
+			IStudyResultDao studyResultDao, WorkerDao workerDao) {
 		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
+		this.workerDao = workerDao;
 	}
 
 	@Override
@@ -51,7 +53,7 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 		publixUtils.addStudyToCookie(study);
 
 		OpenStandaloneWorker worker = new OpenStandaloneWorker();
-		AbstractDao.persist(worker);
+		workerDao.create(worker);
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, worker.getId().toString());
 

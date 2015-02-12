@@ -11,11 +11,13 @@ import models.workers.Worker;
  */
 public interface IWorkerDao {
 
+	public abstract void create(Worker worker);
+	
 	/**
 	 * Removes a Worker including all its StudyResults and all their
 	 * ComponentResults.
 	 */
-	public abstract void removeWorker(Worker worker);
+	public abstract void remove(Worker worker);
 
 	public abstract Worker findById(Long id);
 
