@@ -64,31 +64,32 @@ public class StudyService extends Controller {
 		}
 	}
 
-	public void componentOrderMinusOne(StudyModel study,
+	public void componentPositionMinusOne(StudyModel study,
 			ComponentModel component) {
 		int index = study.getComponentList().indexOf(component);
 		if (index > 0) {
 			ComponentModel prevComponent = study.getComponentList().get(
 					index - 1);
-			componentOrderSwap(study, component, prevComponent);
+			componentPositionSwap(study, component, prevComponent);
 		}
 	}
 
-	public void componentOrderPlusOne(StudyModel study, ComponentModel component) {
+	public void componentPositionPlusOne(StudyModel study,
+			ComponentModel component) {
 		int index = study.getComponentList().indexOf(component);
 		if (index < (study.getComponentList().size() - 1)) {
 			ComponentModel nextComponent = study.getComponentList().get(
 					index + 1);
-			componentOrderSwap(study, component, nextComponent);
+			componentPositionSwap(study, component, nextComponent);
 		}
 	}
 
-	public void componentOrderSwap(StudyModel study, ComponentModel component1,
+	public void componentPositionSwap(StudyModel study, ComponentModel component1,
 			ComponentModel component2) {
-		int index1 = study.getComponentList().indexOf(component1);
-		int index2 = study.getComponentList().indexOf(component2);
-		componentDao.changeOrder(component1, index2);
-		componentDao.changeOrder(component2, index1);
+		int position1 = study.getComponentList().indexOf(component1) + 1;
+		int position2 = study.getComponentList().indexOf(component2) + 1;
+		componentDao.changePosition(component1, position2);
+		componentDao.changePosition(component2, position1);
 	}
 
 	/**

@@ -19,7 +19,7 @@ public interface IUserDao {
 	public abstract void update(UserModel user);
 
 	/**
-	 * Changes name of user.
+	 * Changes only the name of the given user.
 	 */
 	public abstract void updateName(UserModel user, String name);
 

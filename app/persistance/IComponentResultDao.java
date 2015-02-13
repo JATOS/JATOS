@@ -29,6 +29,9 @@ public interface IComponentResultDao {
 
 	public abstract ComponentResult findById(Long id);
 
+	/**
+	 * Returns the number of ComponentResults belonging to the given Component.
+	 */
 	public abstract int countByComponent(ComponentModel component);
 
 	public abstract List<ComponentResult> findAllByComponent(

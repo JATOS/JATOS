@@ -103,11 +103,12 @@ public class ComponentDao extends AbstractDao<ComponentModel> implements
 	}
 
 	@Override
-	public void changeOrder(ComponentModel component, int newIndex) {
+	public void changePosition(ComponentModel component, int newPosition) {
 		String queryStr = "UPDATE ComponentModel SET componentList_order = "
 				+ ":newIndex WHERE id = :id";
 		Query query = JPA.em().createQuery(queryStr);
-		query.setParameter("newIndex", newIndex);
+		// Index is position - 1
+		query.setParameter("newIndex", newPosition - 1);
 		query.setParameter("id", component.getId());
 		query.executeUpdate();
 	}

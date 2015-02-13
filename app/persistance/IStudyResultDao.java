@@ -36,6 +36,9 @@ public interface IStudyResultDao {
 
 	public abstract List<StudyResult> findAll();
 
+	/**
+	 * Returns the number of StudyResults belonging to the given study.
+	 */
 	public abstract int countByStudy(StudyModel study);
 
 	public abstract List<StudyResult> findAllByStudy(StudyModel study);

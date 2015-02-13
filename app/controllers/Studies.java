@@ -387,10 +387,10 @@ public class Studies extends Controller {
 
 		switch (direction) {
 		case COMPONENT_ORDER_UP:
-			studyService.componentOrderMinusOne(study, component);
+			studyService.componentPositionMinusOne(study, component);
 			break;
 		case COMPONENT_ORDER_DOWN:
-			studyService.componentOrderPlusOne(study, component);
+			studyService.componentPositionPlusOne(study, component);
 			break;
 		default:
 			return badRequest(ErrorMessages.studyReorderUnknownDirection(

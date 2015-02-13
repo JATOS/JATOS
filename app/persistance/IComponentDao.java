@@ -42,6 +42,11 @@ public interface IComponentDao {
 
 	public abstract List<ComponentModel> findAll();
 
-	public abstract void changeOrder(ComponentModel component, int newIndex);
+	/**
+	 * Change the position of the given Component within its study. The position
+	 * is like a index of a list but starts at 1 instead of 0.
+	 */
+	public abstract void changePosition(ComponentModel component,
+			int newPosition);
 
 }
