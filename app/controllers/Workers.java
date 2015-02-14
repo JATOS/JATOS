@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+import models.Messages;
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
@@ -20,7 +21,6 @@ import play.mvc.With;
 import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.JatosGuiExceptionThrower;
-import services.Messages;
 import services.StudyService;
 import services.UserService;
 import services.WorkerService;

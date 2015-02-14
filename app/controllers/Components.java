@@ -3,6 +3,7 @@ package controllers;
 import java.util.List;
 
 import models.ComponentModel;
+import models.Messages;
 import models.StudyModel;
 import models.UserModel;
 import persistance.IComponentDao;
@@ -19,7 +20,6 @@ import services.Breadcrumbs;
 import services.ComponentService;
 import services.ErrorMessages;
 import services.JatosGuiExceptionThrower;
-import services.Messages;
 import services.StudyService;
 import services.UserService;
 

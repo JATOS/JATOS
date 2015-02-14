@@ -1,5 +1,5 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel, 
-breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+breadcrumbs: services.Breadcrumbs, messages: Messages,
 submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 
 @views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
@@ -79,7 +79,7 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 
 <script>
 @if(form.hasErrors) {
-	showWarning(@services.ErrorMessages.STUDY_WASNT_SAVED);
+	showWarning("@services.ErrorMessages.STUDY_WASNT_SAVED");
 }
 @for(error <- form.globalErrors) {
 	showError("@error.message");

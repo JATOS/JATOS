@@ -31,7 +31,8 @@ public abstract class ErrorMessages {
 	public static final String STUDY_AT_LEAST_ONE_MEMBER = "An study should have at least one member.";
 	public static final String STUDY_IS_LOCKED = "Study is locked. It's not possible to edit.";
 	public static final String STUDY_WASNT_SAVED = "Study wasn't saved";
-
+	public static final String COMPONENT_WASNT_SAVED = "Component wasn't saved";
+	
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";

@@ -8,6 +8,7 @@ import java.util.List;
 
 import models.ComponentModel;
 import models.ComponentResult;
+import models.Messages;
 import models.StudyModel;
 import models.UserModel;
 import persistance.IComponentDao;
@@ -23,7 +24,6 @@ import services.Breadcrumbs;
 import services.ComponentService;
 import services.ErrorMessages;
 import services.JatosGuiExceptionThrower;
-import services.Messages;
 import services.ResultService;
 import services.StudyService;
 import services.UserService;

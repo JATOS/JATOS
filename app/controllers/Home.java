@@ -2,6 +2,7 @@ package controllers;
 
 import java.util.List;
 
+import models.Messages;
 import models.StudyModel;
 import models.UserModel;
 import persistance.IStudyDao;
@@ -12,7 +13,6 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import services.Breadcrumbs;
-import services.Messages;
 import services.UserService;
 
 import com.google.inject.Inject;

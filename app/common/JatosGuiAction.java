@@ -9,8 +9,8 @@ import exceptions.JatosGuiException;
 
 /**
  * For all actions in a controller that is annotated with JatosGuiAction catch
- * {@link JatosGuiException} and return the SimpleResult stored in the exception (e.g.
- * display an error page).
+ * {@link JatosGuiException} and return the SimpleResult stored in the exception
+ * (e.g. display an error page).
  * 
  * @author Kristian Lange
  */

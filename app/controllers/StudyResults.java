@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import models.ComponentResult;
+import models.Messages;
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
@@ -23,7 +24,6 @@ import play.mvc.With;
 import services.Breadcrumbs;
 import services.ErrorMessages;
 import services.JatosGuiExceptionThrower;
-import services.Messages;
 import services.ResultService;
 import services.StudyService;
 import services.UserService;

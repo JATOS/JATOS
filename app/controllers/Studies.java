@@ -31,7 +31,7 @@ import services.Breadcrumbs;
 import services.ComponentService;
 import services.ErrorMessages;
 import services.JatosGuiExceptionThrower;
-import services.Messages;
+import services.RequestScope;
 import services.StudyService;
 import services.UserService;
 import services.WorkerService;
@@ -41,8 +41,8 @@ import utils.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
+
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.tester.TesterPublix;
@@ -57,11 +57,10 @@ import exceptions.JatosGuiException;
 @Singleton
 public class Studies extends Controller {
 
+	private static final String CLASS_NAME = Studies.class.getSimpleName();
 	public static final String COMPONENT_POSITION_DOWN = "down";
 	public static final String COMPONENT_POSITION_UP = "up";
-	private static final String CLASS_NAME = Studies.class.getSimpleName();
 
-	private final Messages messages;
 	private final JsonUtils jsonUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
@@ -75,13 +74,13 @@ public class Studies extends Controller {
 	private final IWorkerDao workerDao;
 
 	@Inject
-	Studies(Messages messages, IUserDao userDao,
+	Studies(IUserDao userDao,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, WorkerService workerService,
 			IStudyDao studyDao, IComponentDao componentDao,
-			JsonUtils jsonUtils, IStudyResultDao studyResultDao, IWorkerDao workerDao) {
-		this.messages = messages;
+			JsonUtils jsonUtils, IStudyResultDao studyResultDao,
+			IWorkerDao workerDao) {
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
@@ -110,13 +109,14 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
-		messages.error(errorMsg);
+		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study);
 		String baseUrl = ControllerUtils.getReferer();
 		int studyResultCount = studyResultDao.countByStudy(study);
 		return status(httpStatus, views.html.jatos.study.index.render(
-				studyList, loggedInUser, breadcrumbs, messages, study,
-				workerSet, baseUrl, studyResultCount));
+				studyList, loggedInUser, breadcrumbs,
+				RequestScope.getMessages(), study, workerSet, baseUrl,
+				studyResultCount));
 	}
 
 	@Transactional
@@ -200,14 +200,15 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		if (study.isLocked()) {
-			messages.warning(ErrorMessages.STUDY_IS_LOCKED);
+			RequestScope.getMessages().warning(ErrorMessages.STUDY_IS_LOCKED);
 		}
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = routes.Studies.submitEdited(study.getId());
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.EDIT_PROPERTIES);
 		return ok(views.html.jatos.study.edit.render(studyList, loggedInUser,
-				breadcrumbs, messages, submitAction, form, study.isLocked()));
+				breadcrumbs, RequestScope.getMessages(), submitAction, form,
+				study.isLocked()));
 	}
 
 	/**
@@ -228,6 +229,7 @@ public class Studies extends Controller {
 				.body().asFormUrlEncoded());
 		List<ValidationError> errorList = updatedStudy.validate();
 		if (errorList != null) {
+			updatedStudy.setId(studyId);
 			failStudyEdit(loggedInUser, studyList, updatedStudy, errorList);
 		}
 
@@ -325,12 +327,12 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		List<UserModel> userList = userDao.findAll();
-		messages.error(errorMsg);
+		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.CHANGE_MEMBERS);
-		return status(httpStatus,
-				views.html.jatos.study.changeMembers.render(studyList,
-						loggedInUser, breadcrumbs, messages, study, userList));
+		return status(httpStatus, views.html.jatos.study.changeMembers.render(
+				studyList, loggedInUser, breadcrumbs,
+				RequestScope.getMessages(), study, userList));
 	}
 
 	/**
@@ -570,11 +572,12 @@ public class Studies extends Controller {
 				.getEmail());
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
-		messages.error(errorMsg);
+		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.WORKERS);
 		return status(httpStatus, views.html.jatos.study.studysWorkers.render(
-				studyList, loggedInUser, breadcrumbs, messages, study));
+				studyList, loggedInUser, breadcrumbs,
+				RequestScope.getMessages(), study));
 	}
 
 	@Transactional
