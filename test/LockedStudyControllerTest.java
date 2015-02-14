@@ -79,7 +79,7 @@ public class LockedStudyControllerTest extends AControllerTest {
 		lockStudy(studyClone);
 		HandlerRef ref = controllers.routes.ref.Studies.changeComponentOrder(
 				studyClone.getId(), studyClone.getComponent(1).getId(),
-				Studies.COMPONENT_ORDER_DOWN);
+				Studies.COMPONENT_POSITION_DOWN);
 		checkDenyLocked(ref);
 		removeStudy(studyClone);
 	}

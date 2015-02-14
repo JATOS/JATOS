@@ -287,7 +287,7 @@ public class StudiesControllerTest extends AControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.Studies.changeComponentOrder(
 						studyClone.getId(), studyClone.getComponentList()
-								.get(0).getId(), Studies.COMPONENT_ORDER_DOWN),
+								.get(0).getId(), Studies.COMPONENT_POSITION_DOWN),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -297,7 +297,7 @@ public class StudiesControllerTest extends AControllerTest {
 		result = callAction(
 				controllers.routes.ref.Studies.changeComponentOrder(
 						studyClone.getId(), studyClone.getComponentList()
-								.get(1).getId(), Studies.COMPONENT_ORDER_UP),
+								.get(1).getId(), Studies.COMPONENT_POSITION_UP),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));

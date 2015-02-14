@@ -57,10 +57,11 @@ import exceptions.JatosGuiException;
 @Singleton
 public class Studies extends Controller {
 
-	public static final String COMPONENT_ORDER_DOWN = "down";
-	public static final String COMPONENT_ORDER_UP = "up";
+	public static final String COMPONENT_POSITION_DOWN = "down";
+	public static final String COMPONENT_POSITION_UP = "up";
 	private static final String CLASS_NAME = Studies.class.getSimpleName();
 
+	private final Messages messages;
 	private final JsonUtils jsonUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
@@ -74,12 +75,13 @@ public class Studies extends Controller {
 	private final IWorkerDao workerDao;
 
 	@Inject
-	Studies(IUserDao userDao,
+	Studies(Messages messages, IUserDao userDao,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, WorkerService workerService,
 			IStudyDao studyDao, IComponentDao componentDao,
 			JsonUtils jsonUtils, IStudyResultDao studyResultDao, IWorkerDao workerDao) {
+		this.messages = messages;
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
@@ -108,7 +110,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
-		Messages messages = new Messages().error(errorMsg);
+		messages.error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study);
 		String baseUrl = ControllerUtils.getReferer();
 		int studyResultCount = studyResultDao.countByStudy(study);
@@ -197,7 +199,6 @@ public class Studies extends Controller {
 				.getEmail());
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
-		Messages messages = new Messages();
 		if (study.isLocked()) {
 			messages.warning(ErrorMessages.STUDY_IS_LOCKED);
 		}
@@ -324,7 +325,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		List<UserModel> userList = userDao.findAll();
-		Messages messages = new Messages().error(errorMsg);
+		messages.error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.CHANGE_MEMBERS);
 		return status(httpStatus,
@@ -386,10 +387,10 @@ public class Studies extends Controller {
 				study, loggedInUser, component);
 
 		switch (direction) {
-		case COMPONENT_ORDER_UP:
+		case COMPONENT_POSITION_UP:
 			studyService.componentPositionMinusOne(study, component);
 			break;
-		case COMPONENT_ORDER_DOWN:
+		case COMPONENT_POSITION_DOWN:
 			studyService.componentPositionPlusOne(study, component);
 			break;
 		default:
@@ -569,7 +570,7 @@ public class Studies extends Controller {
 				.getEmail());
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
-		Messages messages = new Messages().error(errorMsg);
+		messages.error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.WORKERS);
 		return status(httpStatus, views.html.jatos.study.studysWorkers.render(

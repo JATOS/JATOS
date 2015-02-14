@@ -178,7 +178,7 @@ public class AccessControllerTest extends AControllerTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.changeComponentOrder(
 				studyClone.getId(), studyClone.getComponentList().get(0)
-						.getId(), Studies.COMPONENT_ORDER_DOWN);
+						.getId(), Studies.COMPONENT_POSITION_DOWN);
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
 		removeStudy(studyClone);
