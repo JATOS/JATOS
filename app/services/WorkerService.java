@@ -41,7 +41,7 @@ public class WorkerService extends Controller {
 	public void checkWorker(Worker worker, Long workerId)
 			throws JatosGuiException {
 		if (worker == null) {
-			String errorMsg = ErrorMessages.workerNotExist(workerId);
+			String errorMsg = MessagesStrings.workerNotExist(workerId);
 			jatosGuiExceptionThrower.throwHome(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}

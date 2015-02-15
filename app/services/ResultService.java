@@ -41,13 +41,13 @@ public class ResultService {
 				}
 				resultIdList.add(Long.parseLong(idStr.trim()));
 			} catch (NumberFormatException e) {
-				String errorMsg = ErrorMessages.resultNotExist(idStr);
+				String errorMsg = MessagesStrings.resultNotExist(idStr);
 				jatosGuiExceptionThrower.throwAjax(errorMsg,
 						Http.Status.NOT_FOUND);
 			}
 		}
 		if (resultIdList.size() < 1) {
-			String errorMsg = ErrorMessages.NO_RESULTS_SELECTED;
+			String errorMsg = MessagesStrings.NO_RESULTS_SELECTED;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}

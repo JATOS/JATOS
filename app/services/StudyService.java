@@ -28,9 +28,9 @@ public class StudyService extends Controller {
 
 	@Inject
 	StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			IComponentDao studyDao) {
+			IComponentDao componentDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-		this.componentDao = studyDao;
+		this.componentDao = componentDao;
 	}
 
 	/**
@@ -39,7 +39,7 @@ public class StudyService extends Controller {
 	 */
 	public void checkStudyLocked(StudyModel study) throws JatosGuiException {
 		if (study.isLocked()) {
-			String errorMsg = ErrorMessages.studyLocked(study.getId());
+			String errorMsg = MessagesStrings.studyLocked(study.getId());
 			jatosGuiExceptionThrower.throwRedirectOrForbidden(
 					routes.Studies.index(study.getId(), null), errorMsg);
 		}
@@ -52,13 +52,13 @@ public class StudyService extends Controller {
 	public void checkStandardForStudy(StudyModel study, Long studyId,
 			UserModel user) throws JatosGuiException {
 		if (study == null) {
-			String errorMsg = ErrorMessages.studyNotExist(studyId);
+			String errorMsg = MessagesStrings.studyNotExist(studyId);
 			jatosGuiExceptionThrower.throwHome(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 		// Check that the user is a member of the study
 		if (!study.hasMember(user)) {
-			String errorMsg = ErrorMessages.studyNotMember(user.getName(),
+			String errorMsg = MessagesStrings.studyNotMember(user.getName(),
 					user.getEmail(), studyId, study.getTitle());
 			jatosGuiExceptionThrower.throwHome(errorMsg, Http.Status.FORBIDDEN);
 		}

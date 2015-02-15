@@ -8,7 +8,6 @@ import java.util.List;
 
 import models.ComponentModel;
 import models.ComponentResult;
-import models.Messages;
 import models.StudyModel;
 import models.UserModel;
 import persistance.IComponentDao;
@@ -22,8 +21,9 @@ import play.mvc.Result;
 import play.mvc.With;
 import services.Breadcrumbs;
 import services.ComponentService;
-import services.ErrorMessages;
+import services.MessagesStrings;
 import services.JatosGuiExceptionThrower;
+import services.RequestScope;
 import services.ResultService;
 import services.StudyService;
 import services.UserService;
@@ -33,8 +33,8 @@ import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
+
 import exceptions.JatosGuiException;
 
 /**
@@ -93,12 +93,13 @@ public class ComponentResults extends Controller {
 		componentService.checkStandardForComponents(studyId, componentId,
 				study, loggedInUser, component);
 
-		Messages messages = new Messages().error(errorMsg);
+		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
 				component, Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.componentResults.render(studyList,
-						loggedInUser, breadcrumbs, messages, study, component));
+						loggedInUser, breadcrumbs, RequestScope.getMessages(),
+						study, component));
 	}
 
 	@Transactional
@@ -156,7 +157,7 @@ public class ComponentResults extends Controller {
 		try {
 			dataAsJson = jsonUtils.allComponentResultsForUI(component);
 		} catch (IOException e) {
-			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
+			return internalServerError(MessagesStrings.PROBLEM_GENERATING_JSON_DATA);
 		}
 		return ok(dataAsJson);
 	}
@@ -221,7 +222,7 @@ public class ComponentResults extends Controller {
 			ComponentResult componentResult = componentResultDao
 					.findById(componentResultId);
 			if (componentResult == null) {
-				String errorMsg = ErrorMessages
+				String errorMsg = MessagesStrings
 						.componentResultNotExist(componentResultId);
 				jatosGuiExceptionThrower.throwAjax(errorMsg,
 						Http.Status.NOT_FOUND);

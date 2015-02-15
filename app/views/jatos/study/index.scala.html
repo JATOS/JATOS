@@ -543,7 +543,8 @@ function postComponentImportConfirm() {
 		type: 'POST',
 		url: '@routes.ImportExport.importComponentConfirmed(study.getId())',
 		success: function(result) {
-			window.location.replace('@routes.Studies.index(study.getId())');
+			componentsTable.ajax.reload();
+			showMessages(JSON.parse(result));
 		},
 		error : function(err) {
 			showError(err.responseText);

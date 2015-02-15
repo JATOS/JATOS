@@ -29,7 +29,7 @@ import play.mvc.Result;
 import play.mvc.With;
 import services.Breadcrumbs;
 import services.ComponentService;
-import services.ErrorMessages;
+import services.MessagesStrings;
 import services.JatosGuiExceptionThrower;
 import services.RequestScope;
 import services.StudyService;
@@ -200,7 +200,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		if (study.isLocked()) {
-			RequestScope.getMessages().warning(ErrorMessages.STUDY_IS_LOCKED);
+			RequestScope.getMessages().warning(MessagesStrings.STUDY_IS_LOCKED);
 		}
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = routes.Studies.submitEdited(study.getId());
@@ -356,7 +356,7 @@ public class Studies extends Controller {
 	private void persistCheckedUsers(Long studyId, StudyModel study,
 			String[] checkedUsers) throws JatosGuiException {
 		if (checkedUsers == null || checkedUsers.length < 1) {
-			String errorMsg = ErrorMessages.STUDY_AT_LEAST_ONE_MEMBER;
+			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
 			jatosGuiExceptionThrower.throwChangeMemberOfStudies(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
@@ -396,7 +396,7 @@ public class Studies extends Controller {
 			studyService.componentPositionPlusOne(study, component);
 			break;
 		default:
-			return badRequest(ErrorMessages.studyReorderUnknownDirection(
+			return badRequest(MessagesStrings.studyReorderUnknownDirection(
 					direction, studyId));
 		}
 		// The actual change in order happens within the component model. The
@@ -444,7 +444,7 @@ public class Studies extends Controller {
 
 		JsonNode json = request().body().asJson();
 		if (json == null) {
-			String errorMsg = ErrorMessages
+			String errorMsg = MessagesStrings
 					.studyCreationOfStandaloneRunFailed(studyId);
 			jatosGuiExceptionThrower.throwStudies(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
@@ -479,7 +479,7 @@ public class Studies extends Controller {
 
 		JsonNode json = request().body().asJson();
 		if (json == null) {
-			String errorMsg = ErrorMessages
+			String errorMsg = MessagesStrings
 					.studyCreationOfTesterRunFailed(studyId);
 			jatosGuiExceptionThrower.throwStudies(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
@@ -525,7 +525,7 @@ public class Studies extends Controller {
 		try {
 			jatosURL = ControllerUtils.getRefererUrl();
 		} catch (MalformedURLException e) {
-			String errorMsg = ErrorMessages.COULDNT_GENERATE_JATOS_URL;
+			String errorMsg = MessagesStrings.COULDNT_GENERATE_JATOS_URL;
 			jatosGuiExceptionThrower.throwStudies(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
@@ -551,7 +551,7 @@ public class Studies extends Controller {
 		try {
 			dataAsJson = jsonUtils.allComponentsForUI(study.getComponentList());
 		} catch (IOException e) {
-			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
+			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}

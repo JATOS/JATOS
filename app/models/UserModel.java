@@ -18,7 +18,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import services.ErrorMessages;
+import services.MessagesStrings;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -144,19 +144,19 @@ public class UserModel {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (email == null || email.isEmpty()) {
 			errorList.add(new ValidationError(EMAIL,
-					ErrorMessages.MISSING_EMAIL));
+					MessagesStrings.MISSING_EMAIL));
 		}
 		if (email != null && !Jsoup.isValid(email, Whitelist.none())) {
 			errorList.add(new ValidationError(EMAIL,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (name == null || name.isEmpty()) {
 			errorList
-					.add(new ValidationError(NAME, ErrorMessages.MISSING_NAME));
+					.add(new ValidationError(NAME, MessagesStrings.MISSING_NAME));
 		}
 		if (name != null && !Jsoup.isValid(name, Whitelist.none())) {
 			errorList.add(new ValidationError(NAME,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}

@@ -10,7 +10,7 @@ import models.StudyModel;
 import models.UserModel;
 import models.workers.JatosWorker;
 import models.workers.Worker;
-import services.ErrorMessages;
+import services.MessagesStrings;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -59,12 +59,12 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	public UserModel retrieveUser() throws ForbiddenPublixException {
 		String email = Publix.session(Users.SESSION_EMAIL);
 		if (email == null) {
-			throw new ForbiddenPublixException(ErrorMessages.NO_USER_LOGGED_IN);
+			throw new ForbiddenPublixException(MessagesStrings.NO_USER_LOGGED_IN);
 		}
 		UserModel loggedInUser = userDao.findByEmail(email);
 		if (loggedInUser == null) {
 			throw new ForbiddenPublixException(
-					ErrorMessages.userNotExist(email));
+					MessagesStrings.userNotExist(email));
 		}
 		return loggedInUser;
 	}

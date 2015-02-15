@@ -169,23 +169,23 @@ function showError(msg) {
 <script>
 var messages = @Html(utils.JsonUtils.asJson(messages));
 var breadcrumbs = @Html(utils.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
+showMessages(messages);
 
-if (messages != null) {
-	messages.successList.forEach(function(success) {
-		showSuccess(success);
-	});
-	
-	messages.infoList.forEach(function(info) {
-		showInfo(info);
-	});
-	
-	messages.warningList.forEach(function(warning) {
-		showWarning(warning);
-	});
-	
-	messages.errorList.forEach(function(error) {
-		showError(error);
-	});
+function showMessages(messages) {
+	if (messages != null) {
+		messages.successList.forEach(function(success) {
+			showSuccess(success);
+		});
+		messages.infoList.forEach(function(info) {
+			showInfo(info);
+		});
+		messages.warningList.forEach(function(warning) {
+			showWarning(warning);
+		});
+		messages.errorList.forEach(function(error) {
+			showError(error);
+		});
+	}
 }
 
 @if(flash.contains("error")) {
@@ -330,7 +330,7 @@ function postStudyImportConfirm(jsonData, success) {
 		dataType: 'text',
 		data: jsonData,
 		success: function(result) {
-			window.location.replace("/jatos/" + result);
+			showMessages(JSON.parse(result));
 		},
 		error : function(err) {
 			showError(err.responseText);

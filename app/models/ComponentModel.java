@@ -18,7 +18,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import services.ErrorMessages;
+import services.MessagesStrings;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -216,26 +216,26 @@ public class ComponentModel {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (title == null || title.isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
-					ErrorMessages.MISSING_TITLE));
+					MessagesStrings.MISSING_TITLE));
 		}
 		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (htmlFilePath != null && !htmlFilePath.isEmpty()) {
 			String pathRegEx = "^(\\w+)(\\/\\w+)?\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
 			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.isEmpty())) {
 				errorList.add(new ValidationError(HTML_FILE_PATH,
-						ErrorMessages.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+						MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
 			}
 		}
 		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENTS,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,
-					ErrorMessages.INVALID_JSON_FORMAT));
+					MessagesStrings.INVALID_JSON_FORMAT));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}

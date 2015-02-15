@@ -20,7 +20,7 @@ import org.jsoup.safety.Whitelist;
 import persistance.IComponentResultDao;
 import persistance.IStudyResultDao;
 import play.Logger;
-import services.ErrorMessages;
+import services.MessagesStrings;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -409,14 +409,14 @@ public class JsonUtils {
 				// messages.
 				jsonStr = IOUtils.readFile(file);
 			} catch (IOException e) {
-				errorMsg = ErrorMessages.COULDNT_READ_FILE;
+				errorMsg = MessagesStrings.COULDNT_READ_FILE;
 				exception = e;
 				return null;
 			}
 			try {
 				object = unmarshallingIO(jsonStr, modelClass);
 			} catch (IOException e) {
-				errorMsg = ErrorMessages.COULDNT_READ_JSON;
+				errorMsg = MessagesStrings.COULDNT_READ_JSON;
 				exception = e;
 				return null;
 			}

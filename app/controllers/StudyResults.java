@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import models.ComponentResult;
-import models.Messages;
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
@@ -22,8 +21,9 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import services.Breadcrumbs;
-import services.ErrorMessages;
+import services.MessagesStrings;
 import services.JatosGuiExceptionThrower;
+import services.RequestScope;
 import services.ResultService;
 import services.StudyService;
 import services.UserService;
@@ -34,8 +34,8 @@ import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
+
 import exceptions.JatosGuiException;
 
 /**
@@ -90,12 +90,13 @@ public class StudyResults extends Controller {
 				.getEmail());
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
-		Messages messages = new Messages().error(errorMsg);
+		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.studysStudyResults.render(studyList,
-						loggedInUser, breadcrumbs, messages, study));
+						loggedInUser, breadcrumbs, RequestScope.getMessages(),
+						study));
 	}
 
 	@Transactional
@@ -147,7 +148,7 @@ public class StudyResults extends Controller {
 		try {
 			dataAsJson = jsonUtils.allStudyResultsForUI(study);
 		} catch (IOException e) {
-			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
+			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
@@ -174,7 +175,7 @@ public class StudyResults extends Controller {
 		try {
 			dataAsJson = jsonUtils.allStudyResultsForUI(allowedStudyResultList);
 		} catch (IOException e) {
-			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
+			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
@@ -260,7 +261,7 @@ public class StudyResults extends Controller {
 		for (Long studyResultId : studyResultIdList) {
 			StudyResult studyResult = studyResultDao.findById(studyResultId);
 			if (studyResult == null) {
-				String errorMsg = ErrorMessages
+				String errorMsg = MessagesStrings
 						.studyResultNotExist(studyResultId);
 				jatosGuiExceptionThrower.throwAjax(errorMsg,
 						Http.Status.NOT_FOUND);

@@ -2,7 +2,6 @@ package controllers;
 
 import java.util.List;
 
-import models.Messages;
 import models.StudyModel;
 import models.UserModel;
 import persistance.IStudyDao;
@@ -13,12 +12,13 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import services.Breadcrumbs;
+import services.RequestScope;
 import services.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
+
 import exceptions.JatosGuiException;
 
 /**
@@ -52,10 +52,10 @@ public class Home extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		Messages messages = new Messages().error(errorMsg);
+		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome();
 		return status(httpStatus, views.html.jatos.home.render(studyList,
-				loggedInUser, breadcrumbs, messages));
+				loggedInUser, breadcrumbs, RequestScope.getMessages()));
 	}
 
 	@Transactional

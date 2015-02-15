@@ -1,8 +1,8 @@
 package services;
 
-import com.google.inject.Singleton;
-
 import models.UserModel;
+
+import com.google.inject.Singleton;
 
 /**
  * Helper class with methods that generate error strings.
@@ -10,7 +10,7 @@ import models.UserModel;
  * @author Kristian Lange
  */
 @Singleton
-public abstract class ErrorMessages {
+public abstract class MessagesStrings {
 
 	// General
 	public static final String MISSING_TITLE = "Missing title";
@@ -32,7 +32,7 @@ public abstract class ErrorMessages {
 	public static final String STUDY_IS_LOCKED = "Study is locked. It's not possible to edit.";
 	public static final String STUDY_WASNT_SAVED = "Study wasn't saved";
 	public static final String COMPONENT_WASNT_SAVED = "Component wasn't saved";
-	
+
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
@@ -43,6 +43,7 @@ public abstract class ErrorMessages {
 	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
 	public static final String NO_STUDY_UPLOAD = "Uploaded file isn't intended for studies";
 	public static final String MORE_THAN_ONE_DIR_IN_ZIP = "There are more than one directory in the ZIP file.";
+	public static final String NO_DIR_IN_ZIP_CREATED_NEW = "There is no directory in the ZIP file - new study assets created.";
 	public static final String COULDNT_READ_JSON = "Couldn't read JSON string";
 	public static final String COULDNT_READ_FILE = "Couldn't read file";
 	public static final String FILE_MISSING = "File missing";
@@ -90,9 +91,39 @@ public abstract class ErrorMessages {
 		return errorMsg;
 	}
 
+	public static String studyAssetsOverwritten(String studyAssetsName,
+			Long studyId) {
+		String errorMsg = "Assets \"" + studyAssetsName
+				+ "\" of study with ID " + studyId + " overwritten.";
+		return errorMsg;
+	}
+
+	public static String studysPropertiesOverwritten(Long studyId) {
+		String errorMsg = "Properties of study with ID " + studyId
+				+ " overwritten.";
+		return errorMsg;
+	}
+
+	public static String importedNewStudy(String studyAssetsName, Long studyId) {
+		String errorMsg = "New study imported: ID " + studyId
+				+ " and study assets \"" + studyAssetsName + "\".";
+		return errorMsg;
+	}
+
 	public static String componentExportFailure(Long componentId) {
 		String errorMsg = "Failure during export of component with ID "
 				+ componentId + ".";
+		return errorMsg;
+	}
+
+	public static String componentsPropertiesOverwritten(Long componentId) {
+		String errorMsg = "Properties of component with ID " + componentId
+				+ " overwritten.";
+		return errorMsg;
+	}
+
+	public static String importedNewComponent(Long componentId) {
+		String errorMsg = "New component with ID " + componentId + " imported.";
 		return errorMsg;
 	}
 
@@ -166,7 +197,8 @@ public abstract class ErrorMessages {
 	}
 
 	public static String htmlFilePathEmpty(Long componentId) {
-		String errorMsg = "Component " + componentId + "'s HTML file path is empty.";
+		String errorMsg = "Component " + componentId
+				+ "'s HTML file path is empty.";
 		return errorMsg;
 	}
 

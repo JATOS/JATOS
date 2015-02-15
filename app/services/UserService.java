@@ -52,7 +52,7 @@ public class UserService {
 	public UserModel retrieveUser(String email) throws JatosGuiException {
 		UserModel user = userDao.findByEmail(email);
 		if (user == null) {
-			String errorMsg = ErrorMessages.userNotExist(email);
+			String errorMsg = MessagesStrings.userNotExist(email);
 			jatosGuiExceptionThrower.throwHome(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
@@ -71,7 +71,7 @@ public class UserService {
 			loggedInUser = userDao.findByEmail(email);
 		}
 		if (loggedInUser == null) {
-			String errorMsg = ErrorMessages.NO_USER_LOGGED_IN;
+			String errorMsg = MessagesStrings.NO_USER_LOGGED_IN;
 			SimpleResult result = null;
 			if (ControllerUtils.isAjax()) {
 				result = Results.badRequest(errorMsg);
@@ -91,7 +91,7 @@ public class UserService {
 	public void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
 			throws JatosGuiException {
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			String errorMsg = ErrorMessages.mustBeLoggedInAsUser(user);
+			String errorMsg = MessagesStrings.mustBeLoggedInAsUser(user);
 			jatosGuiExceptionThrower.throwHome(errorMsg, Http.Status.FORBIDDEN);
 		}
 	}
@@ -128,7 +128,7 @@ public class UserService {
 		// Check if user with this email already exists.
 		if (userDao.findByEmail(newUser.getEmail()) != null) {
 			errorList.add(new ValidationError(UserModel.EMAIL,
-					ErrorMessages.THIS_EMAIL_IS_ALREADY_REGISTERED));
+					MessagesStrings.THIS_EMAIL_IS_ALREADY_REGISTERED));
 		}
 
 		checkPasswords(password, passwordRepeat, errorList);
@@ -143,7 +143,7 @@ public class UserService {
 		// Authenticate
 		if (userDao.authenticate(user.getEmail(), oldPasswordHash) == null) {
 			errorList.add(new ValidationError(UserModel.OLD_PASSWORD,
-					ErrorMessages.WRONG_OLD_PASSWORD));
+					MessagesStrings.WRONG_OLD_PASSWORD));
 		}
 
 		checkPasswords(password, passwordRepeat, errorList);
@@ -157,7 +157,7 @@ public class UserService {
 		// Check for non empty passwords
 		if (password.trim().isEmpty() || passwordRepeat.trim().isEmpty()) {
 			errorList.add(new ValidationError(UserModel.PASSWORD,
-					ErrorMessages.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+					MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
 		}
 
 		// Check that both passwords are the same
@@ -165,7 +165,7 @@ public class UserService {
 		String passwordHashRepeat = getHashMDFive(passwordRepeat);
 		if (!passwordHash.equals(passwordHashRepeat)) {
 			errorList.add(new ValidationError(UserModel.PASSWORD,
-					ErrorMessages.PASSWORDS_DONT_MATCH));
+					MessagesStrings.PASSWORDS_DONT_MATCH));
 		}
 	}
 

@@ -30,7 +30,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import services.ErrorMessages;
+import services.MessagesStrings;
 import utils.IOUtils;
 import utils.JsonUtils;
 
@@ -333,30 +333,30 @@ public class StudyModel {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (title == null || title.isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
-					ErrorMessages.MISSING_TITLE));
+					MessagesStrings.MISSING_TITLE));
 		}
 		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (description != null
 				&& !Jsoup.isValid(description, Whitelist.none())) {
 			errorList.add(new ValidationError(DESCRIPTION,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (dirName == null || dirName.isEmpty()) {
 			errorList.add(new ValidationError(DIRNAME,
-					ErrorMessages.MISSING_DIRNAME));
+					MessagesStrings.MISSING_DIRNAME));
 		}
 		Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
 		Matcher matcher = pattern.matcher(dirName);
 		if (dirName != null && matcher.find()) {
 			errorList.add(new ValidationError(DIRNAME,
-					ErrorMessages.INVALID_DIR_NAME));
+					MessagesStrings.INVALID_DIR_NAME));
 		}
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,
-					ErrorMessages.INVALID_JSON_FORMAT));
+					MessagesStrings.INVALID_JSON_FORMAT));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}

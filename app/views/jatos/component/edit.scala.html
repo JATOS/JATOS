@@ -64,7 +64,7 @@ study: StudyModel)
 
 <script>
 @if(form.hasErrors) {
-	showWarning("@services.ErrorMessages.COMPONENT_WASNT_SAVED");
+	showWarning("@services.MessagesStrings.COMPONENT_WASNT_SAVED");
 }
 @for(error <- form.globalErrors) {
 	showError("@error.message");

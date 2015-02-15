@@ -10,7 +10,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import services.ErrorMessages;
+import services.MessagesStrings;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
@@ -63,7 +63,7 @@ public class TesterWorker extends Worker {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (comment != null && !Jsoup.isValid(comment, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENT,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}

@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * Model for messages (success, info, warning, error) destined for JATOS' GUI
- * views. It's not a persistance model.
+ * views. It's not meant to be persisted in a DB.
  * 
  * @author Kristian Lange
  */

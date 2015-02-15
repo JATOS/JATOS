@@ -3,7 +3,6 @@ package controllers;
 import java.util.List;
 
 import models.ComponentModel;
-import models.Messages;
 import models.StudyModel;
 import models.UserModel;
 import persistance.IComponentDao;
@@ -18,15 +17,16 @@ import play.mvc.Result;
 import play.mvc.With;
 import services.Breadcrumbs;
 import services.ComponentService;
-import services.ErrorMessages;
+import services.MessagesStrings;
 import services.JatosGuiExceptionThrower;
+import services.RequestScope;
 import services.StudyService;
 import services.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
+
 import controllers.publix.jatos.JatosPublix;
 import exceptions.JatosGuiException;
 
@@ -83,7 +83,7 @@ public class Components extends Controller {
 
 		if (component.getHtmlFilePath() == null
 				|| component.getHtmlFilePath().isEmpty()) {
-			String errorMsg = ErrorMessages.htmlFilePathEmpty(componentId);
+			String errorMsg = MessagesStrings.htmlFilePathEmpty(componentId);
 			jatosGuiExceptionThrower.throwStudies(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
@@ -164,9 +164,8 @@ public class Components extends Controller {
 		componentService.checkStandardForComponents(studyId, componentId,
 				study, loggedInUser, component);
 
-		Messages messages = new Messages();
 		if (study.isLocked()) {
-			messages.warning(ErrorMessages.STUDY_IS_LOCKED);
+			RequestScope.getMessages().warning(MessagesStrings.STUDY_IS_LOCKED);
 		}
 		Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 				component);
@@ -175,7 +174,8 @@ public class Components extends Controller {
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
 				component, Breadcrumbs.EDIT_PROPERTIES);
 		return ok(views.html.jatos.component.edit.render(studyList,
-				loggedInUser, breadcrumbs, messages, submitAction, form, study));
+				loggedInUser, breadcrumbs, RequestScope.getMessages(),
+				submitAction, form, study));
 	}
 
 	/**

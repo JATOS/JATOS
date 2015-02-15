@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import models.Messages;
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
@@ -19,8 +18,9 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import services.Breadcrumbs;
-import services.ErrorMessages;
+import services.MessagesStrings;
 import services.JatosGuiExceptionThrower;
+import services.RequestScope;
 import services.StudyService;
 import services.UserService;
 import services.WorkerService;
@@ -28,8 +28,8 @@ import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.JatosGuiAction;
+
 import exceptions.JatosGuiException;
 
 /**
@@ -79,12 +79,13 @@ public class Workers extends Controller {
 		Worker worker = workerDao.findById(workerId);
 		workerService.checkWorker(worker, workerId);
 
-		Messages messages = new Messages().error(errorMsg);
+		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorker(worker,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.workersStudyResults.render(studyList,
-						loggedInUser, breadcrumbs, messages, worker));
+						loggedInUser, breadcrumbs, RequestScope.getMessages(),
+						worker));
 	}
 
 	@Transactional
@@ -121,7 +122,7 @@ public class Workers extends Controller {
 		// JatosWorker associated to a JATOS user must not be removed
 		if (worker instanceof JatosWorker) {
 			JatosWorker maWorker = (JatosWorker) worker;
-			String errorMsg = ErrorMessages.removeJatosWorkerNotAllowed(worker
+			String errorMsg = MessagesStrings.removeJatosWorkerNotAllowed(worker
 					.getId(), maWorker.getUser().getName(), maWorker.getUser()
 					.getEmail());
 			jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.FORBIDDEN);
@@ -154,7 +155,7 @@ public class Workers extends Controller {
 			Set<Worker> workerSet = workerService.retrieveWorkers(study);
 			dataAsJson = jsonUtils.allWorkersForUI(workerSet);
 		} catch (IOException e) {
-			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
+			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}

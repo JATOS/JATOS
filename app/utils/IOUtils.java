@@ -11,7 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.inject.Singleton;
 
-import services.ErrorMessages;
+import services.MessagesStrings;
 import controllers.publix.StudyAssets;
 
 /**
@@ -67,7 +67,7 @@ public class IOUtils {
 		File file = new File(purePath, pureFilename);
 		if (!file.getAbsolutePath().equals(fullPath)) {
 			throw new IOException(
-					ErrorMessages.couldntGeneratePathToFileOrDir(filePath));
+					MessagesStrings.couldntGeneratePathToFileOrDir(filePath));
 		}
 		return file;
 	}
@@ -84,11 +84,11 @@ public class IOUtils {
 		File file = new File(purePath, pureFilename);
 		if (!file.getAbsolutePath().equals(fullPath)) {
 			throw new IOException(
-					ErrorMessages.couldntGeneratePathToFileOrDir(fullPath));
+					MessagesStrings.couldntGeneratePathToFileOrDir(fullPath));
 		}
 		if (file == null || !file.exists() || !file.isDirectory()) {
 			throw new IOException(
-					ErrorMessages.studyAssetsDirPathIsntDir(fullPath));
+					MessagesStrings.studyAssetsDirPathIsntDir(fullPath));
 		}
 		return file;
 	}
@@ -106,7 +106,7 @@ public class IOUtils {
 			throws IOException {
 		File file = getFileSecurely(path, filePath);
 		if (file == null || !file.exists() || file.isDirectory()) {
-			throw new IOException(ErrorMessages.FILE_NOT_EXIST_OR_DIR);
+			throw new IOException(MessagesStrings.FILE_NOT_EXIST_OR_DIR);
 		}
 		return file;
 	}
@@ -171,7 +171,7 @@ public class IOUtils {
 			return;
 		}
 		if (!dir.isDirectory()) {
-			throw new IOException(ErrorMessages.studyAssetsDirPathIsntDir(dir
+			throw new IOException(MessagesStrings.studyAssetsDirPathIsntDir(dir
 					.getName()));
 		}
 		FileUtils.deleteDirectory(dir);
@@ -188,7 +188,7 @@ public class IOUtils {
 				srcDirName);
 		if (!srcDir.isDirectory()) {
 			throw new IOException(
-					ErrorMessages.studyAssetsDirPathIsntDir(srcDir.getName()));
+					MessagesStrings.studyAssetsDirPathIsntDir(srcDir.getName()));
 		}
 
 		String destDirName = srcDirName + "_clone";
@@ -220,7 +220,7 @@ public class IOUtils {
 				targetDirName);
 		if (targetDir.exists()) {
 			throw new IOException(
-					ErrorMessages
+					MessagesStrings
 							.studyAssetsDirNotCreatedBecauseExists(targetDir
 									.getName()));
 		}
@@ -238,12 +238,12 @@ public class IOUtils {
 		File dir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH, dirName);
 		if (dir.exists()) {
 			throw new IOException(
-					ErrorMessages.studyAssetsDirNotCreatedBecauseExists(dir
+					MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dir
 							.getName()));
 		}
 		boolean result = dir.mkdirs();
 		if (!result) {
-			throw new IOException(ErrorMessages.studyAssetsDirNotCreated(dir
+			throw new IOException(MessagesStrings.studyAssetsDirNotCreated(dir
 					.getName()));
 		}
 	}
@@ -286,7 +286,7 @@ public class IOUtils {
 		}
 		if (newDir.exists()) {
 			throw new IOException(
-					ErrorMessages.studyAssetsDirNotCreatedBecauseExists(newDir
+					MessagesStrings.studyAssetsDirNotCreatedBecauseExists(newDir
 							.getName()));
 		}
 		if (!oldDir.exists()) {
@@ -295,7 +295,7 @@ public class IOUtils {
 		}
 		boolean result = oldDir.renameTo(newDir);
 		if (!result) {
-			throw new IOException(ErrorMessages.studyAssetsDirNotRenamed(
+			throw new IOException(MessagesStrings.studyAssetsDirNotRenamed(
 					oldDir.getName(), newDir.getName()));
 		}
 	}

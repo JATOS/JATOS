@@ -38,13 +38,13 @@ public class ComponentService extends Controller {
 			throws JatosGuiException {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		if (component == null) {
-			String errorMsg = ErrorMessages.componentNotExist(componentId);
+			String errorMsg = MessagesStrings.componentNotExist(componentId);
 			jatosGuiExceptionThrower.throwHome(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 		// Check component belongs to the study
 		if (!component.getStudy().getId().equals(study.getId())) {
-			String errorMsg = ErrorMessages.componentNotBelongToStudy(studyId,
+			String errorMsg = MessagesStrings.componentNotBelongToStudy(studyId,
 					componentId);
 			jatosGuiExceptionThrower.throwHome(errorMsg,
 					Http.Status.BAD_REQUEST);
