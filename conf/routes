@@ -23,6 +23,7 @@ POST    /publix/:studyId/:componentId/logError           @controllers.publix.Pub
 GET     /jatos/login                                 @controllers.Authentication.login()
 POST    /jatos/login                                 @controllers.Authentication.authenticate()
 GET     /jatos/logout                                @controllers.Authentication.logout()
+GET     /jatos/sidebarStudyList                      @controllers.Home.sidebarStudyList()
 GET     /jatos                                       @controllers.Home.home()
 GET     /jatos/                                      @controllers.Home.home()
 GET     /                                            @controllers.Home.home()

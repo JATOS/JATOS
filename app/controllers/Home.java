@@ -14,11 +14,12 @@ import play.mvc.With;
 import services.Breadcrumbs;
 import services.RequestScope;
 import services.UserService;
+import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
+import common.JatosGuiAction;
 import exceptions.JatosGuiException;
 
 /**
@@ -32,11 +33,13 @@ public class Home extends Controller {
 
 	private static final String CLASS_NAME = Home.class.getSimpleName();
 
+	private final JsonUtils jsonUtils;
 	private final UserService userService;
 	private final IStudyDao studyDao;
 
 	@Inject
-	Home(UserService userService, IStudyDao studyDao) {
+	Home(JsonUtils jsonUtils, UserService userService, IStudyDao studyDao) {
+		this.jsonUtils = jsonUtils;
 		this.userService = userService;
 		this.studyDao = studyDao;
 	}
@@ -61,6 +64,24 @@ public class Home extends Controller {
 	@Transactional
 	public Result home() throws JatosGuiException {
 		return home(null, Http.Status.OK);
+	}
+	
+	/**
+	 * Ajax request
+	 * 
+	 * Returns a list of all studies and their components belonging to the
+	 * logged-in user for use in the GUI's sidebar.
+	 */
+	@Transactional
+	public Result sidebarStudyList() throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".sidebarStudyList: "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
+				.getEmail());
+		
+		
+		return ok(jsonUtils.sidebarStudyList(studyList));
 	}
 
 }

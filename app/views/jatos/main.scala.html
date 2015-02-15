@@ -97,16 +97,10 @@ function showError(msg) {
 
 <div class="container-fluid">
 	<div class="row">
+		<!-- Sidebar -->
 		<div class="col-sm-3 col-md-2 sidebar">
-			<ul class="nav nav-sidebar">
-				@for(study <- studyList) {
-				<li><a href="@routes.Studies.index(study.getId())">@study.getTitle()</a></li>
-				<ul>
-					@for(component <- study.getComponentList()) {
-					<li>@component.getTitle()</li>
-					}
-				</ul>
-				}
+			<ul id="sidebarStudyList" class="nav nav-sidebar">
+			<!-- Is dynamically filled via JavaScript -->
 			</ul>
 		</div>
 
@@ -170,6 +164,7 @@ function showError(msg) {
 var messages = @Html(utils.JsonUtils.asJson(messages));
 var breadcrumbs = @Html(utils.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
 showMessages(messages);
+fillSidebar();
 
 function showMessages(messages) {
 	if (messages != null) {
@@ -285,9 +280,7 @@ function askConfirmationForStudyExists(response) {
 		var studysDirConfirm = $('#studysDirConfirm').is(':checked');
 		var jsonData = JSON.stringify({ "@ImportExport.STUDYS_PROPERTIES_CONFIRM": studysPropertiesConfirm,
 			"@ImportExport.STUDYS_DIR_CONFIRM" : studysDirConfirm });
-		postStudyImportConfirm(jsonData, function (data) {
-			showSuccess("Study successfully overwriten");
-		});
+		postStudyImportConfirm(jsonData);
 	});
 }
 
@@ -301,9 +294,7 @@ function askConfirmationForStudyNotExistsDirExists(response) {
 	askConfirmation(title, preText, null, postText, 'Import', function() {
 		var jsonData = JSON.stringify({ "@ImportExport.STUDYS_PROPERTIES_CONFIRM": true,
 			"@ImportExport.STUDYS_DIR_CONFIRM" : true });
-		postStudyImportConfirm(jsonData, function (data) {
-			showSuccess("Study successfully imported");
-		});
+		postStudyImportConfirm(jsonData);
 	});
 }
 
@@ -316,13 +307,11 @@ function askConfirmationForStudyNotExistsDirNotExists(response) {
 	askConfirmation(title, preText, null, postText, 'Import', function() {
 		var jsonData = JSON.stringify({ "@ImportExport.STUDYS_PROPERTIES_CONFIRM": true,
 			"@ImportExport.STUDYS_DIR_CONFIRM" : true });
-		postStudyImportConfirm(jsonData, function (data) {
-			showSuccess("Study successfully imported");
-		});
+		postStudyImportConfirm(jsonData);
 	});
 }
 
-function postStudyImportConfirm(jsonData, success) {
+function postStudyImportConfirm(jsonData) {
 	$.ajax({
 		type: 'POST',
 		url: '@routes.ImportExport.importStudyConfirmed()',
@@ -331,10 +320,41 @@ function postStudyImportConfirm(jsonData, success) {
 		data: jsonData,
 		success: function(result) {
 			showMessages(JSON.parse(result));
+			fillSidebar();
 		},
 		error : function(err) {
 			showError(err.responseText);
 		}
+	});
+}
+
+function fillSidebar() {
+	$.ajax({
+		type: 'GET',
+		url: '@routes.Home.sidebarStudyList()',
+		success: function(result) {
+			fillSidebarStudyList(JSON.parse(result));
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
+function fillSidebarStudyList(studyArray) {
+	$('#sidebarStudyList').empty();
+	$.each(studyArray, function(index, value) {
+		var studyTitle = value.title;
+		var studyId = value.id;
+		$('#sidebarStudyList').append('<li><a href="/jatos/' + studyId + '">' + studyTitle + '</a></li>');
+		var componentArray = value.componentList;
+		var componentsStr = '<ul>';
+		$.each(componentArray, function(index, value) {
+			var componentName = value.title;
+			componentsStr += '<li>' + componentName + '</li>';
+		});
+		componentsStr += '</ul>';
+		$('#sidebarStudyList').append(componentsStr);
 	});
 }
 

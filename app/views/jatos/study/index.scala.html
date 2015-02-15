@@ -243,8 +243,18 @@ $(document).ready(function() {
 	});
 	
 	$('#componentsTable tbody').on('click', '.cloneComponent', function() {
-		window.location.href = "/jatos/" + @study.getId() +"/"
-			+ getComponentId(this) + "/clone";
+		$.ajax({
+			type: 'GET',
+			url: "/jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
+			success: function(result) {
+				componentsTable.ajax.reload();
+				showMessages(JSON.parse(result));
+				fillSidebar();
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
 	});
 	
 	$('#componentsTable tbody').on('click', '.removeComponent', function() {
@@ -263,6 +273,7 @@ $(document).ready(function() {
 				success : function(result) {
 					var tr = $(element).closest('tr');
 					componentsTable.row(tr).remove().draw();
+					fillSidebar();
 				},
 				error : function(err) {
 					showError(err.responseText);
@@ -320,33 +331,13 @@ function ajaxChangeComponentOrder(componentId, direction, tr) {
 				+ direction,
 		type : "POST",
 		success : function(response) {
-			if (direction == "up") {
-				var clickedRow = componentsTable.row(tr);
-				var clickedRowIndex = clickedRow.index();
-				if (clickedRowIndex < 1) { return }
-				var previousRow = componentsTable.row(clickedRowIndex - 1);
-				swapRowData(clickedRow, previousRow);
-			}
-			if (direction == "down") {
-				var clickedRow = componentsTable.row(tr);
-				var clickedRowIndex = clickedRow.index();
-				if (clickedRowIndex > componentsTable.rows({page:'current'}).data().length - 2) { return }
-				var nextRow = componentsTable.row(clickedRowIndex + 1);
-				swapRowData(clickedRow, nextRow);
-			}
-			componentsTable.draw();
+			componentsTable.ajax.reload();
+			fillSidebar();
 		},
 		error : function(err) {
 			showError(err.responseText);
 		}
 	});
-}
-
-function swapRowData(row1, row2) {
-	var row1Data = row1.data();
-	var row2Data = row2.data();
-	row1.data(row2Data);
-	row2.data(row1Data);
 }
 
 $('#studyToolbar').on('click', '#lockStudy', function() {
@@ -479,7 +470,7 @@ $('#studyToolbar').on('click', '#cloneStudy', function() {
 		url : '@routes.Studies.cloneStudy(study.getId())',
 		type : 'GET',
 		success : function(result) {
-			window.location.replace('@routes.Studies.index(study.getId())');
+			fillSidebar();
 		},
 		error : function(err) {
 			showError(err.responseText);
@@ -545,6 +536,7 @@ function postComponentImportConfirm() {
 		success: function(result) {
 			componentsTable.ajax.reload();
 			showMessages(JSON.parse(result));
+			fillSidebar();
 		},
 		error : function(err) {
 			showError(err.responseText);

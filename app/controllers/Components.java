@@ -22,11 +22,12 @@ import services.JatosGuiExceptionThrower;
 import services.RequestScope;
 import services.StudyService;
 import services.UserService;
+import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
+import common.JatosGuiAction;
 import controllers.publix.jatos.JatosPublix;
 import exceptions.JatosGuiException;
 
@@ -253,6 +254,8 @@ public class Components extends Controller {
 	}
 
 	/**
+	 * Ajax request
+	 * 
 	 * Clone a component.
 	 */
 	@Transactional
@@ -270,7 +273,7 @@ public class Components extends Controller {
 
 		ComponentModel clone = new ComponentModel(component);
 		componentDao.create(study, clone);
-		return redirect(routes.Studies.index(studyId, null));
+		return ok(JsonUtils.asJson(RequestScope.getMessages()));
 	}
 
 	/**

@@ -219,7 +219,7 @@ public class ComponentsControllerTest extends AControllerTest {
 				controllers.routes.ref.Components.cloneComponent(
 						studyClone.getId(), studyClone.getComponent(1).getId()),
 				request);
-		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
 		removeStudy(studyClone);

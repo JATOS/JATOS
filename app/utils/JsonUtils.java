@@ -2,6 +2,7 @@ package utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
@@ -21,6 +22,7 @@ import persistance.IComponentResultDao;
 import persistance.IStudyResultDao;
 import play.Logger;
 import services.MessagesStrings;
+import utils.JsonUtils.SidebarStudy.SidebarComponent;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,7 +33,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.Common;
 
 /**
@@ -272,6 +273,34 @@ public class JsonUtils {
 		studyNode.put("resultCount", studyResultDao.countByStudy(study));
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(studyNode);
 		return asJsonStr;
+	}
+
+	public String sidebarStudyList(List<StudyModel> studyList) {
+		List<SidebarStudy> sidebarStudyList = new ArrayList<>();
+		for (StudyModel study : studyList) {
+			SidebarStudy sidebarStudy = new SidebarStudy();
+			sidebarStudy.id = study.getId();
+			sidebarStudy.title = study.getTitle();
+			for (ComponentModel component : study.getComponentList()) {
+				SidebarComponent sidebarComponent = new SidebarStudy.SidebarComponent();
+				sidebarComponent.id = component.getId();
+				sidebarComponent.title = component.getTitle();
+				sidebarStudy.componentList.add(sidebarComponent);
+			}
+			sidebarStudyList.add(sidebarStudy);
+		}
+		return asJson(sidebarStudyList);
+	}
+
+	static class SidebarStudy {
+		public Long id;
+		public String title;
+		public List<SidebarComponent> componentList = new ArrayList<>();
+
+		static class SidebarComponent {
+			public Long id;
+			public String title;
+		}
 	}
 
 	/**
