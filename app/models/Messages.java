@@ -1,62 +1,75 @@
-package services;
+package models;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Container class for messages destined for JATOS' GUI views
+ * Model for messages (success, info, warning, error) destined for JATOS' GUI
+ * views. It's not meant to be persisted in a DB.
  * 
  * @author Kristian Lange
  */
 public class Messages {
 
-	private List<String> successList = new ArrayList<>();
-	private List<String> infoList = new ArrayList<>();
-	private List<String> warningList = new ArrayList<>();
-	private List<String> errorList = new ArrayList<>();
+	private List<String> successList;
+	private List<String> infoList;
+	private List<String> warningList;
+	private List<String> errorList;
 
 	public List<String> getSuccessList() {
+		if (successList == null) {
+			successList = new ArrayList<>();
+		}
 		return successList;
 	}
 
 	public Messages success(String success) {
 		if (success != null) {
-			this.successList.add(success);
+			this.getSuccessList().add(success);
 		}
 		return this;
 	}
 
 	public List<String> getInfoList() {
+		if (infoList == null) {
+			infoList = new ArrayList<>();
+		}
 		return infoList;
 	}
 
 	public Messages info(String info) {
 		if (info != null) {
-			this.infoList.add(info);
+			this.getInfoList().add(info);
 		}
 		return this;
 	}
 
 	public List<String> getWarningList() {
+		if (warningList == null) {
+			warningList = new ArrayList<>();
+		}
 		return warningList;
 	}
 
 	public Messages warning(String warning) {
 		if (warning != null) {
-			this.warningList.add(warning);
+			this.getWarningList().add(warning);
 		}
 		return this;
 	}
 
 	public List<String> getErrorList() {
+		if (errorList == null) {
+			errorList = new ArrayList<>();
+		}
 		return errorList;
 	}
 
 	public Messages error(String error) {
 		if (error != null) {
-			this.errorList.add(error);
+			this.getErrorList().add(error);
 		}
 		return this;
 	}
-	
+
 }

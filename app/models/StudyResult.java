@@ -1,4 +1,4 @@
-package models.results;
+package models;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -16,13 +16,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 
-import models.StudyModel;
 import models.workers.Worker;
-import play.db.jpa.JPA;
-import services.DateUtils;
+import utils.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -30,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
- * Domain model and DAO of a study result.
+ * Domain model of a study result.
  * 
  * @author Kristian Lange
  */
@@ -259,45 +255,6 @@ public class StudyResult {
 			return false;
 		}
 		return true;
-	}
-
-	public static StudyResult findById(Long id) {
-		return JPA.em().find(StudyResult.class, id);
-	}
-
-	public static List<StudyResult> findAll() {
-		String queryStr = "SELECT e FROM StudyResult e";
-		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
-				StudyResult.class);
-		return query.getResultList();
-	}
-
-	public static int countByStudy(StudyModel study) {
-		String queryStr = "SELECT COUNT(e) FROM StudyResult e WHERE e.study=:studyId";
-		Query query = JPA.em().createQuery(queryStr);
-		Number result = (Number) query.setParameter("studyId", study)
-				.getSingleResult();
-		return result.intValue();
-	}
-
-	public static List<StudyResult> findAllByStudy(StudyModel study) {
-		String queryStr = "SELECT e FROM StudyResult e "
-				+ "WHERE e.study=:studyId";
-		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
-				StudyResult.class);
-		return query.setParameter("studyId", study).getResultList();
-	}
-
-	public void persist() {
-		JPA.em().persist(this);
-	}
-
-	public void remove() {
-		JPA.em().remove(this);
-	}
-
-	public void merge() {
-		JPA.em().merge(this);
 	}
 
 }

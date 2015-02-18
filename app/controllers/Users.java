@@ -4,6 +4,8 @@ import java.util.List;
 
 import models.StudyModel;
 import models.UserModel;
+import persistance.IStudyDao;
+import persistance.IUserDao;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -12,34 +14,57 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.mvc.With;
 import services.Breadcrumbs;
-import services.PersistanceUtils;
+import services.JatosGuiExceptionThrower;
 import services.UserService;
-import exceptions.ResultException;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+import common.JatosGuiAction;
+import exceptions.JatosGuiException;
 
 /**
  * Controller with actions concerning users
  * 
  * @author Kristian Lange
  */
+@With(JatosGuiAction.class)
+@Singleton
 public class Users extends Controller {
 
 	private static final String CLASS_NAME = Users.class.getSimpleName();
 
 	public static final String SESSION_EMAIL = "email";
 
+	private final UserService userService;
+	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final IUserDao userDao;
+	private final IStudyDao studyDao;
+
+	@Inject
+	Users(IUserDao userDao, UserService userService,
+			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			IStudyDao studyDao) {
+		this.userDao = userDao;
+		this.userService = userService;
+		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.studyDao = studyDao;
+	}
+
 	/**
 	 * Shows the profile view of a user
 	 */
 	@Transactional
-	public static Result profile(String email) throws ResultException {
+	public Result profile(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".profile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		UserModel user = userService.retrieveUser(email);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		userService.checkUserLoggedIn(user, loggedInUser);
 
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user);
 		return ok(views.html.jatos.user.profile.render(studyList, loggedInUser,
@@ -50,11 +75,11 @@ public class Users extends Controller {
 	 * Shows a view with a form to create a new user.
 	 */
 	@Transactional
-	public static Result create() throws ResultException {
+	public Result create() throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 		Breadcrumbs breadcrumbs = Breadcrumbs
 				.generateForHome(Breadcrumbs.NEW_USER);
@@ -66,36 +91,33 @@ public class Users extends Controller {
 	 * Handles post request of user create form.
 	 */
 	@Transactional
-	public static Result submit() throws Exception {
+	public Result submit() throws Exception {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 
 		if (form.hasErrors()) {
-			ControllerUtils.throwCreateUserResultException(studyList,
-					loggedInUser, form, Http.Status.BAD_REQUEST);
+			jatosGuiExceptionThrower.throwCreateUser(studyList, loggedInUser,
+					form, null, Http.Status.BAD_REQUEST);
 		}
 
 		UserModel newUser = form.get();
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String password = requestData.get(UserModel.PASSWORD);
 		String passwordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
-		List<ValidationError> errorList = UserService.validateNewUser(newUser,
+		List<ValidationError> errorList = userService.validateNewUser(newUser,
 				password, passwordRepeat);
 		if (!errorList.isEmpty()) {
-			for (ValidationError error : errorList) {
-				form.reject(error);
-			}
-			ControllerUtils.throwCreateUserResultException(studyList,
-					loggedInUser, form, Http.Status.BAD_REQUEST);
+			jatosGuiExceptionThrower.throwCreateUser(studyList, loggedInUser,
+					form, errorList, Http.Status.BAD_REQUEST);
 		}
 
-		String passwordHash = UserService.getHashMDFive(password);
+		String passwordHash = userService.getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
-		PersistanceUtils.addUser(newUser);
+		userDao.create(newUser);
 		return redirect(routes.Home.home());
 	}
 
@@ -103,14 +125,14 @@ public class Users extends Controller {
 	 * Shows view with form to edit a user profile.
 	 */
 	@Transactional
-	public static Result editProfile(String email) throws ResultException {
+	public Result editProfile(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".editProfile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		UserModel user = userService.retrieveUser(email);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		userService.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
@@ -123,28 +145,27 @@ public class Users extends Controller {
 	 * Handles post request of user edit profile form.
 	 */
 	@Transactional
-	public static Result submitEditedProfile(String email)
-			throws ResultException {
+	public Result submitEditedProfile(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".submitEditedProfile: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		UserModel user = userService.retrieveUser(email);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		userService.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		if (form.hasErrors()) {
-			ControllerUtils.throwEditUserResultException(studyList,
-					loggedInUser, form, loggedInUser, Http.Status.BAD_REQUEST);
+			jatosGuiExceptionThrower.throwEditUser(studyList, loggedInUser,
+					form, loggedInUser, Http.Status.BAD_REQUEST);
 		}
 		// Update user in database
 		// Do not update 'email' since it's the ID and should stay
 		// unaltered. For the password we have an extra form.
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String name = requestData.get(UserModel.NAME);
-		PersistanceUtils.updateUser(user, name);
+		userDao.updateName(user, name);
 		return redirect(routes.Users.profile(email));
 	}
 
@@ -152,14 +173,14 @@ public class Users extends Controller {
 	 * Shows view to change the password of a user.
 	 */
 	@Transactional
-	public static Result changePassword(String email) throws ResultException {
+	public Result changePassword(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".changePassword: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		UserModel user = userService.retrieveUser(email);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		userService.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
@@ -172,35 +193,33 @@ public class Users extends Controller {
 	 * Handles post request of change password form.
 	 */
 	@Transactional
-	public static Result submitChangedPassword(String email) throws Exception {
+	public Result submitChangedPassword(String email) throws Exception {
 		Logger.info(CLASS_NAME + ".submitChangedPassword: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel user = ControllerUtils.retrieveUser(email);
+		UserModel user = userService.retrieveUser(email);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkUserLoggedIn(user, loggedInUser);
+		userService.checkUserLoggedIn(user, loggedInUser);
 
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String newPassword = requestData.get(UserModel.NEW_PASSWORD);
 		String newPasswordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
-		String oldPasswordHash = UserService.getHashMDFive(requestData
+		String oldPasswordHash = userService.getHashMDFive(requestData
 				.get(UserModel.OLD_PASSWORD));
-		List<ValidationError> errorList = UserService.validateChangePassword(user,
-				newPassword, newPasswordRepeat, oldPasswordHash);
+		List<ValidationError> errorList = userService.validateChangePassword(
+				user, newPassword, newPasswordRepeat, oldPasswordHash);
 		if (!errorList.isEmpty()) {
-			for (ValidationError error : errorList) {
-				form.reject(error);
-			}
-			ControllerUtils.throwChangePasswordUserResultException(studyList,
-					loggedInUser, form, Http.Status.BAD_REQUEST, loggedInUser);
+			jatosGuiExceptionThrower.throwChangePasswordUser(studyList,
+					loggedInUser, form, errorList, Http.Status.BAD_REQUEST,
+					loggedInUser);
 		}
 		// Update password hash in DB
-		String newPasswordHash = UserService.getHashMDFive(newPassword);
+		String newPasswordHash = userService.getHashMDFive(newPassword);
 		user.setPasswordHash(newPasswordHash);
-		user.merge();
+		userDao.update(user);
 		return redirect(routes.Users.profile(email));
 	}
 

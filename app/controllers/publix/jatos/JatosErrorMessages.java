@@ -1,5 +1,7 @@
 package controllers.publix.jatos;
 
+import com.google.inject.Singleton;
+
 import controllers.publix.PublixErrorMessages;
 import models.workers.JatosWorker;
 
@@ -9,6 +11,7 @@ import models.workers.JatosWorker;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class JatosErrorMessages extends PublixErrorMessages<JatosWorker> {
 
 	@Override

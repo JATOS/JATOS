@@ -3,7 +3,6 @@ package models;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -21,7 +20,6 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
-import javax.persistence.TypedQuery;
 
 import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
@@ -32,16 +30,15 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import play.db.jpa.JPA;
-import services.ErrorMessages;
-import services.IOUtils;
-import services.JsonUtils;
+import services.MessagesStrings;
+import utils.IOUtils;
+import utils.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Domain model and DAO of a study.
+ * Domain model of a study.
  * 
  * @author Kristian Lange
  */
@@ -332,58 +329,34 @@ public class StudyModel {
 		return null;
 	}
 
-	public void componentOrderMinusOne(ComponentModel component) {
-		int index = componentList.indexOf(component);
-		if (index > 0) {
-			ComponentModel prevComponent = componentList.get(index - 1);
-			componentOrderSwap(component, prevComponent);
-		}
-	}
-
-	public void componentOrderPlusOne(ComponentModel component) {
-		int index = componentList.indexOf(component);
-		if (index < (componentList.size() - 1)) {
-			ComponentModel nextComponent = componentList.get(index + 1);
-			componentOrderSwap(component, nextComponent);
-		}
-	}
-
-	public void componentOrderSwap(ComponentModel component1,
-			ComponentModel component2) {
-		int index1 = componentList.indexOf(component1);
-		int index2 = componentList.indexOf(component2);
-		ComponentModel.changeComponentOrder(component1, index2);
-		ComponentModel.changeComponentOrder(component2, index1);
-	}
-
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (title == null || title.isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
-					ErrorMessages.MISSING_TITLE));
+					MessagesStrings.MISSING_TITLE));
 		}
 		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (description != null
 				&& !Jsoup.isValid(description, Whitelist.none())) {
 			errorList.add(new ValidationError(DESCRIPTION,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (dirName == null || dirName.isEmpty()) {
 			errorList.add(new ValidationError(DIRNAME,
-					ErrorMessages.MISSING_DIRNAME));
+					MessagesStrings.MISSING_DIRNAME));
 		}
 		Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
 		Matcher matcher = pattern.matcher(dirName);
 		if (dirName != null && matcher.find()) {
 			errorList.add(new ValidationError(DIRNAME,
-					ErrorMessages.INVALID_DIR_NAME));
+					MessagesStrings.INVALID_DIR_NAME));
 		}
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,
-					ErrorMessages.INVALID_JSON_FORMAT));
+					MessagesStrings.INVALID_JSON_FORMAT));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}
@@ -421,61 +394,6 @@ public class StudyModel {
 			return false;
 		}
 		return true;
-	}
-
-	public static StudyModel findById(Long id) {
-		return JPA.em().find(StudyModel.class, id);
-	}
-
-	public static StudyModel findByUuid(String uuid) {
-		String queryStr = "SELECT e FROM StudyModel e WHERE " + "e.uuid=:uuid";
-		TypedQuery<StudyModel> query = JPA.em().createQuery(queryStr,
-				StudyModel.class);
-		List<StudyModel> studyList = query.setParameter("uuid", uuid)
-				.getResultList();
-		StudyModel study = studyList.isEmpty() ? null : (StudyModel) studyList
-				.get(0);
-		return study;
-	}
-
-	public static List<StudyModel> findAll() {
-		TypedQuery<StudyModel> query = JPA.em().createQuery(
-				"SELECT e FROM StudyModel e", StudyModel.class);
-		return query.getResultList();
-	}
-
-	public static List<StudyModel> findAllByUser(String memberEmail) {
-		TypedQuery<StudyModel> query = JPA.em().createQuery(
-				"SELECT DISTINCT g FROM UserModel u LEFT JOIN u.studyList g "
-						+ "WHERE u.email = :member", StudyModel.class);
-		query.setParameter("member", memberEmail);
-		List<StudyModel> studyList = query.getResultList();
-		// Sometimes the DB returns an element that's just null (bug?). Iterate
-		// through the list and remove all null elements.
-		Iterator<StudyModel> it = studyList.iterator();
-		while (it.hasNext()) {
-			StudyModel study = it.next();
-			if (study == null) {
-				it.remove();
-			}
-		}
-		return studyList;
-	}
-
-	public void persist() {
-		JPA.em().persist(this);
-	}
-
-	public void merge() {
-		JPA.em().merge(this);
-	}
-
-	public void remove() {
-		JPA.em().remove(this);
-	}
-
-	public void refresh() {
-		JPA.em().refresh(this);
 	}
 
 }

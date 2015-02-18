@@ -1,5 +1,7 @@
 package controllers.publix;
 
+import com.google.inject.Singleton;
+
 import models.workers.Worker;
 
 /**
@@ -7,6 +9,7 @@ import models.workers.Worker;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public abstract class PublixErrorMessages<T extends Worker> {
 
 	public abstract String workerNeverStartedStudy(T worker, Long studyId);
@@ -31,68 +34,66 @@ public abstract class PublixErrorMessages<T extends Worker> {
 	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
 	public static final String SUBMITTED_DATA_UNKNOWN_FORMAT = "Submitted data have an unknown format.";
-	
-	public static String workerNotExist(Long workerId) {
+
+	public String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
 	}
 
-	public static String workerNotExist(String workerIdStr) {
+	public String workerNotExist(String workerIdStr) {
 		String errorMsg = "A worker with ID " + workerIdStr + " doesn't exist.";
 		return errorMsg;
 	}
 
-	public static String workerTypeNotAllowed(String workerType) {
+	public String workerTypeNotAllowed(String workerType) {
 		String errorMsg = "It's not allowed to run this study with a worker of type \""
 				+ workerType + "\".";
 		return errorMsg;
 	}
 
-	public static String componentNotAllowedToReload(Long studyId,
-			Long componentId) {
+	public String componentNotAllowedToReload(Long studyId, Long componentId) {
 		String errorMsg = "It's not allowed to reload this component (ID: "
 				+ componentId + "). Unfortunately it is neccessary to finish "
 				+ "this study (ID: " + studyId + ") at this point.";
 		return errorMsg;
 	}
 
-	public static String studyHasNoActiveComponents(Long studyId) {
+	public String studyHasNoActiveComponents(Long studyId) {
 		String errorMsg = "The study with ID " + studyId
 				+ " has no active components.";
 		return errorMsg;
 	}
 
-	public static String componentNotExist(Long componentId) {
+	public String componentNotExist(Long componentId) {
 		String errorMsg = "An component with ID " + componentId
 				+ " doesn't exist.";
 		return errorMsg;
 	}
 
-	public static String componentNotExist(Long studyId, Long componentId) {
+	public String componentNotExist(Long studyId, Long componentId) {
 		String errorMsg = "An component with ID " + componentId + " of study "
 				+ studyId + " doesn't exist.";
 		return errorMsg;
 	}
 
-	public static String componentNotBelongToStudy(Long studyId,
-			Long componentId) {
+	public String componentNotBelongToStudy(Long studyId, Long componentId) {
 		String errorMsg = "There is no study with ID " + studyId
 				+ " that has a component with ID " + componentId + ".";
 		return errorMsg;
 	}
 
-	public static String componentNotActive(Long studyId, Long componentId) {
+	public String componentNotActive(Long studyId, Long componentId) {
 		String errorMsg = "Component with ID " + componentId
 				+ " in study with ID " + studyId + " is not active.";
 		return errorMsg;
 	}
 
-	public static String noComponentAtPosition(Long studyId, Integer position) {
+	public String noComponentAtPosition(Long studyId, Integer position) {
 		String errorMsg = "There is no component at position " + position
 				+ " in study " + studyId + ".";
 		return errorMsg;
 	}
 
-	public static String studyNotExist(Long studyId) {
+	public String studyNotExist(Long studyId) {
 		String errorMsg = "An study with ID " + studyId + " doesn't exist.";
 		return errorMsg;
 	}

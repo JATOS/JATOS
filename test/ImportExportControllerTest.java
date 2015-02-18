@@ -16,8 +16,6 @@ import models.ComponentModel;
 import models.StudyModel;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import play.api.libs.Files.TemporaryFile;
@@ -27,8 +25,8 @@ import play.api.mvc.MultipartFormData;
 import play.api.mvc.MultipartFormData.FilePart;
 import play.libs.Scala;
 import play.mvc.Result;
-import services.IOUtils;
-import services.JsonUtils;
+import utils.IOUtils;
+import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -41,24 +39,12 @@ import controllers.Users;
  * 
  * @author Kristian Lange
  */
-public class ImportExportControllerTest {
+public class ImportExportControllerTest extends AControllerTest {
 
 	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
 	private static final String TEST_STUDY_ZIP_PATH = "test/assets/basic_example_study.zip";
 	private static final String TEST_STUDY_BKP_ZIP_PATH = "test/assets/basic_example_study_bkp.zip";
-
-	private static ControllerTestUtils utils = new ControllerTestUtils();
-
-	@BeforeClass
-	public static void startApp() throws Exception {
-		utils.startApp();
-	}
-
-	@AfterClass
-	public static void stopApp() throws IOException {
-		utils.stopApp();
-	}
 
 	/**
 	 * Checks call to ImportExportController.importStudy() and
@@ -102,12 +88,12 @@ public class ImportExportControllerTest {
 		assertThat(!unzippedStudyDir.exists());
 
 		// Clean up, third call: remove()
-		StudyModel importedStudy = StudyModel
+		StudyModel importedStudy = studyDao
 				.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617");
 		result = callAction(
 				controllers.routes.ref.Studies.remove(importedStudy.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						admin.getEmail()));
 	}
 
 	/**
@@ -117,7 +103,7 @@ public class ImportExportControllerTest {
 	@Test
 	public synchronized void checkCallImportStudyOverride() throws Exception {
 		// Import study manually
-		StudyModel study = utils.importExampleStudy();
+		StudyModel study = importExampleStudy();
 		// Change study a little so we have something to check later
 		study.setTitle("Different Title");
 		// Change a file name
@@ -126,7 +112,7 @@ public class ImportExportControllerTest {
 		File file_renamed = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
 				"hello_world_renamed.html");
 		file_orig.renameTo(file_renamed);
-		utils.addStudy(study);
+		addStudy(study);
 
 		// Check renaming
 		assertThat(file_renamed.exists());
@@ -164,7 +150,7 @@ public class ImportExportControllerTest {
 		study.setTitle("Different Title");
 		// Change a file name
 		file_orig.renameTo(file_renamed);
-		utils.addStudy(study);
+		addStudy(study);
 
 		// Third call: Import same study third time
 		result = callImportStudy();
@@ -185,7 +171,7 @@ public class ImportExportControllerTest {
 		assertThat(!file_orig.exists());
 
 		// Clean-up
-		utils.removeStudy(study);
+		removeStudy(study);
 	}
 
 	/**
@@ -196,9 +182,9 @@ public class ImportExportControllerTest {
 	@Test
 	public synchronized void checkCallImportComponent() throws Exception {
 		// Import study manually and remove first component (Hello World)
-		StudyModel study = utils.importExampleStudy();
+		StudyModel study = importExampleStudy();
 		study.removeComponent(study.getFirstComponent());
-		utils.addStudy(study);
+		addStudy(study);
 
 		// Make a backup of our component file
 		File componentFile = new File(TEST_COMPONENT_JAC_PATH);
@@ -214,7 +200,7 @@ public class ImportExportControllerTest {
 				controllers.routes.ref.ImportExport.importComponent(study
 						.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()).withAnyContent(
+						admin.getEmail()).withAnyContent(
 						getMultiPartFormDataForFileUpload(componentFileBkp,
 								ComponentModel.COMPONENT, "application/json"),
 						"multipart/form-data", "POST"));
@@ -242,7 +228,7 @@ public class ImportExportControllerTest {
 				controllers.routes.ref.ImportExport.importComponentConfirmed(study
 						.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()).withSession(
+						admin.getEmail()).withSession(
 						ImportExport.SESSION_TEMP_COMPONENT_FILE,
 						sessionFileName));
 
@@ -256,40 +242,40 @@ public class ImportExportControllerTest {
 		if (componentFileBkp.exists()) {
 			componentFileBkp.delete();
 		}
-		utils.removeStudy(study);
+		removeStudy(study);
 	}
 
 	@Test
 	public synchronized void checkCallExportStudy() throws Exception {
-		StudyModel study = utils.importExampleStudy();
-		utils.addStudy(study);
+		StudyModel study = importExampleStudy();
+		addStudy(study);
 
 		Result result = callAction(
 				controllers.routes.ref.ImportExport.exportStudy(study.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentType(result)).isEqualTo("application/x-download");
 
 		// Clean-up
-		utils.removeStudy(study);
+		removeStudy(study);
 	}
 
 	@Test
 	public synchronized void checkCallExportComponent() throws Exception {
-		StudyModel study = utils.importExampleStudy();
-		utils.addStudy(study);
+		StudyModel study = importExampleStudy();
+		addStudy(study);
 
 		Result result = callAction(
 				controllers.routes.ref.ImportExport.exportComponent(
 						study.getId(), study.getComponent(1).getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentType(result)).isEqualTo("application/x-download");
 
 		// Clean-up
-		utils.removeStudy(study);
+		removeStudy(study);
 	}
 
 	private Result callImportStudy() throws IOException {
@@ -301,7 +287,7 @@ public class ImportExportControllerTest {
 		Result result = callAction(
 				controllers.routes.ref.ImportExport.importStudy(),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()).withAnyContent(
+						admin.getEmail()).withAnyContent(
 						getMultiPartFormDataForFileUpload(studyZipBkp,
 								StudyModel.STUDY, "application/zip"),
 						"multipart/form-data", "POST"));
@@ -337,7 +323,7 @@ public class ImportExportControllerTest {
 				controllers.routes.ref.ImportExport.importStudyConfirmed(),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL,
-								utils.admin.getEmail())
+								admin.getEmail())
 						.withSession(ImportExport.SESSION_UNZIPPED_STUDY_DIR,
 								unzippedStudyDirName).withJsonBody(jsonObj));
 		return result;

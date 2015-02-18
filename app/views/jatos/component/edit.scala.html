@@ -1,5 +1,5 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel, 
-breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+breadcrumbs: services.Breadcrumbs, messages: Messages,
 submitAction: play.api.mvc.Call, form: Form[ComponentModel],
 study: StudyModel)
 
@@ -64,7 +64,7 @@ study: StudyModel)
 
 <script>
 @if(form.hasErrors) {
-	showWarning("Component wasn't saved");
+	showWarning("@services.MessagesStrings.COMPONENT_WASNT_SAVED");
 }
 @for(error <- form.globalErrors) {
 	showError("@error.message");

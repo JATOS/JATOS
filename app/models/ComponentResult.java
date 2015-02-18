@@ -1,8 +1,7 @@
-package models.results;
+package models;
 
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -12,12 +11,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 
-import models.ComponentModel;
-import play.db.jpa.JPA;
-import services.DateUtils;
+import utils.DateUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -25,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
- * Domain model and DAO of a component result.
+ * Domain model of a component result.
  * 
  * @author Kristian Lange
  */
@@ -51,7 +46,7 @@ public class ComponentResult {
 	 */
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
 	private Timestamp endDate;
-	
+
 	public enum ComponentState {
 		STARTED, // Component was started
 		DATA_RETRIEVED, // Component's jsonData were retrieved
@@ -125,7 +120,7 @@ public class ComponentResult {
 	public Timestamp getStartDate() {
 		return this.startDate;
 	}
-	
+
 	public void setEndDate(Timestamp endDate) {
 		this.endDate = endDate;
 	}
@@ -133,7 +128,7 @@ public class ComponentResult {
 	public Timestamp getEndDate() {
 		return this.endDate;
 	}
-	
+
 	public String getDuration() {
 		return DateUtils.getDurationPretty(startDate, endDate);
 	}
@@ -211,39 +206,6 @@ public class ComponentResult {
 			return false;
 		}
 		return true;
-	}
-
-	public static ComponentResult findById(Long id) {
-		return JPA.em().find(ComponentResult.class, id);
-	}
-
-	public static int countByComponent(ComponentModel component) {
-		String queryStr = "SELECT COUNT(e) FROM ComponentResult e WHERE e.component=:componentId";
-		Query query = JPA.em().createQuery(queryStr);
-		Number result = (Number) query.setParameter("componentId", component)
-				.getSingleResult();
-		return result.intValue();
-	}
-
-	public static List<ComponentResult> findAllByComponent(
-			ComponentModel component) {
-		String queryStr = "SELECT e FROM ComponentResult e "
-				+ "WHERE e.component=:componentId";
-		TypedQuery<ComponentResult> query = JPA.em().createQuery(queryStr,
-				ComponentResult.class);
-		return query.setParameter("componentId", component).getResultList();
-	}
-
-	public void persist() {
-		JPA.em().persist(this);
-	}
-
-	public void remove() {
-		JPA.em().remove(this);
-	}
-
-	public void merge() {
-		JPA.em().merge(this);
 	}
 
 }

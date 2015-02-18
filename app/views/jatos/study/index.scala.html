@@ -1,6 +1,7 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel, breadcrumbs:
-services.Breadcrumbs, messages: services.Messages, study: StudyModel,
-workerSet: Set[workers.Worker]) @views.html.jatos.main(studyList,
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs:services.Breadcrumbs, messages: Messages, study:
+StudyModel, workerSet: Set[workers.Worker], baseUrl: String,
+studyResultsCount: Integer) @views.html.jatos.main(studyList,
 loggedInUser, breadcrumbs, messages){
 
 <!-- Toolbar -->
@@ -8,10 +9,10 @@ loggedInUser, breadcrumbs, messages){
 	<div class="btn-group">
 		<button id="showStudy" type="button" class="btn btn-primary">Show</button>
 		<button id="studyResults" type="button" class="btn btn-primary">
-			Results <span class="badge">@results.StudyResult.countByStudy(study)</span>
+			Results <span class="badge">@studyResultsCount</span>
 		</button>
 		<button id="workers" type="button" class="btn btn-primary">
-			Workers <span class="badge">@workerSet.size()
+			Workers <span class="badge">@workerSet.size() 
 		</button>
 		<button id="editStudy" type="button" class="btn btn-primary">Properties</button>
 		<button id="lockStudy" type="button" class="btn btn-primary">@if(study.isLocked()){Unlock}else{Lock}</button>
@@ -131,8 +132,6 @@ loggedInUser, breadcrumbs, messages){
 
 <script type="text/javascript">
 
-var studyProperties = @Html(services.JsonUtils.studyForUI(study));
-
 var componentsTable;
 $(document).ready(function() {
 	componentsTable = $('#componentsTable').DataTable({
@@ -197,7 +196,10 @@ $(document).ready(function() {
 				}
 			}
 		],
-		"order" : []
+		"order" : [],
+		"oLanguage": {
+			"sEmptyTable": "No components yet"
+		}
 	});
 	
 	componentsTable.on('order.dt search.dt', function () {
@@ -224,28 +226,38 @@ $(document).ready(function() {
 	});
 	
 	$('#componentsTable tbody').on('click', '.showComponent', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
+		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/show";
 	});
 	
 	$('#componentsTable tbody').on('click', '.componentResults', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
+		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/results";
 	});
 	
 	$('#componentsTable tbody').on('click', '.editComponent', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
+		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/edit";
 	});
 	
 	$('#componentsTable tbody').on('click', '.exportComponent', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
+		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/export";
 	});
 	
 	$('#componentsTable tbody').on('click', '.cloneComponent', function() {
-		window.location.href = "/jatos/" + studyProperties.id +"/"
-			+ getComponentId(this) + "/clone";
+		$.ajax({
+			type: 'GET',
+			url: "/jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
+			success: function(result) {
+				componentsTable.ajax.reload();
+				showMessages(JSON.parse(result));
+				fillSidebar();
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
 	});
 	
 	$('#componentsTable tbody').on('click', '.removeComponent', function() {
@@ -259,11 +271,12 @@ $(document).ready(function() {
 		var postText = "Do you want to proceed?";
 		askConfirmation(title, preText, null, postText, 'Delete', function() {
 			$.ajax({
-				url : "/jatos/" + studyProperties.id +"/" + componentId + "/remove",
+				url : "/jatos/" + @study.getId() +"/" + componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
 					var tr = $(element).closest('tr');
 					componentsTable.row(tr).remove().draw();
+					fillSidebar();
 				},
 				error : function(err) {
 					showError(err.responseText);
@@ -275,13 +288,13 @@ $(document).ready(function() {
 	$('#componentsTable tbody').on('click', '.upArrow', function() {
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
-		ajaxChangeComponentOrder(componentId, "@Studies.COMPONENT_ORDER_UP", tr);
+		ajaxChangeComponentOrder(componentId, "@Studies.COMPONENT_POSITION_UP", tr);
 	});
 
 	$('#componentsTable tbody').on('click', '.downArrow', function() {
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
-		ajaxChangeComponentOrder(componentId, "@Studies.COMPONENT_ORDER_DOWN", tr);
+		ajaxChangeComponentOrder(componentId, "@Studies.COMPONENT_POSITION_DOWN", tr);
 	});
 	
 	$('#componentsTable tbody').on('click', '.activeCheckbox', function() {
@@ -290,7 +303,7 @@ $(document).ready(function() {
 		var componentId = getComponentId(this);
 		var active = $(this).prop('checked');
 		$.ajax({
-			url : "/jatos/" + studyProperties.id +"/" + componentId
+			url : "/jatos/" + @study.getId() +"/" + componentId
 					+ "/changeProperty?active=" + active,
 			type : "POST",
 			error : function(err) {
@@ -316,26 +329,13 @@ $(document).ready(function() {
 
 function ajaxChangeComponentOrder(componentId, direction, tr) {
 	$.ajax({
-		url : "/jatos/" + studyProperties.id + "/changeComponentOrder"
+		url : "/jatos/" + @study.getId() + "/changeComponentOrder"
 				+ "?componentId=" + componentId + "&direction="
 				+ direction,
 		type : "POST",
 		success : function(response) {
-			if (direction == "up") {
-				var clickedRow = componentsTable.row(tr);
-				var clickedRowIndex = clickedRow.index();
-				if (clickedRowIndex < 1) { return }
-				var previousRow = componentsTable.row(clickedRowIndex - 1);
-				swapRowData(clickedRow, previousRow);
-			}
-			if (direction == "down") {
-				var clickedRow = componentsTable.row(tr);
-				var clickedRowIndex = clickedRow.index();
-				if (clickedRowIndex > componentsTable.rows({page:'current'}).data().length - 2) { return }
-				var nextRow = componentsTable.row(clickedRowIndex + 1);
-				swapRowData(clickedRow, nextRow);
-			}
-			componentsTable.draw();
+			componentsTable.ajax.reload();
+			fillSidebar();
 		},
 		error : function(err) {
 			showError(err.responseText);
@@ -343,16 +343,9 @@ function ajaxChangeComponentOrder(componentId, direction, tr) {
 	});
 }
 
-function swapRowData(row1, row2) {
-	var row1Data = row1.data();
-	var row2Data = row2.data();
-	row1.data(row2Data);
-	row2.data(row1Data);
-}
-
 $('#studyToolbar').on('click', '#lockStudy', function() {
 	$.ajax({
-		url : "/jatos/" + studyProperties.id +"/swapLock",
+		url : "/jatos/" + @study.getId() +"/swapLock",
 		type : "POST",
 		success : function(response) {
 			if (response == 'true') {
@@ -416,7 +409,7 @@ $('#studyToolbar').on('click', '#closedStandaloneRun', function() {
 $('#studyToolbar').on('click', '#openStandaloneRun', function() {
 	var title = "Open standalone run";
 	var preText = "Use this link";
-	var url = "@ControllerUtils.getReferer()" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?openStandalone";
+	var url = "@baseUrl" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?openStandalone";
 	var html = "<p>" + url + "</p>"; 
 	var postText = "or press \"Run\" to start one right away. Remember to allow open standalone runs in your study's properties.";
 	askConfirmation(title, preText, html, postText, 'Run', function() {
@@ -456,8 +449,8 @@ $('#studyToolbar').on('click', '#testerRun', function() {
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
 	var title = "Confirm Delete";
-	var preText = "You are about to delete the study \"" + studyProperties.title 
-		+ "\" (ID " + studyProperties.id + ") "
+	var preText = "You are about to delete the study \"@study.getTitle()\" " 
+		+ "(ID @study.getId()) "
 		+ "<b>with all its components, results, and the entire study assets directory, "
 		+ "including the HTML files</b>.";
 	var postText = "Do you want to proceed?";
@@ -480,7 +473,7 @@ $('#studyToolbar').on('click', '#cloneStudy', function() {
 		url : '@routes.Studies.cloneStudy(study.getId())',
 		type : 'GET',
 		success : function(result) {
-			window.location.replace('@routes.Studies.index(study.getId())');
+			fillSidebar();
 		},
 		error : function(err) {
 			showError(err.responseText);
@@ -544,7 +537,9 @@ function postComponentImportConfirm() {
 		type: 'POST',
 		url: '@routes.ImportExport.importComponentConfirmed(study.getId())',
 		success: function(result) {
-			window.location.replace('@routes.Studies.index(study.getId())');
+			componentsTable.ajax.reload();
+			showMessages(JSON.parse(result));
+			fillSidebar();
 		},
 		error : function(err) {
 			showError(err.responseText);

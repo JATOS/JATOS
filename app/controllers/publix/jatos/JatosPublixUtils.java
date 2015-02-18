@@ -1,10 +1,20 @@
 package controllers.publix.jatos;
 
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.IUserDao;
+import persistance.workers.IWorkerDao;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.JatosWorker;
 import models.workers.Worker;
-import services.ErrorMessages;
+import services.MessagesStrings;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
 import controllers.Users;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
@@ -18,13 +28,21 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 
 	private JatosErrorMessages errorMessages;
+	private IUserDao userDao;
 
-	public JatosPublixUtils(JatosErrorMessages errorMessages) {
-		super(errorMessages);
+	@Inject
+	JatosPublixUtils(JatosErrorMessages errorMessages, IUserDao userDao,
+			IStudyDao studyDao, IStudyResultDao studyResultDao,
+			IComponentDao componentDao, IComponentResultDao componentResultDao,
+			IWorkerDao workerDao) {
+		super(errorMessages, studyDao, studyResultDao, componentDao,
+				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;
+		this.userDao = userDao;
 	}
 
 	@Override
@@ -41,12 +59,12 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	public UserModel retrieveUser() throws ForbiddenPublixException {
 		String email = Publix.session(Users.SESSION_EMAIL);
 		if (email == null) {
-			throw new ForbiddenPublixException(ErrorMessages.NO_USER_LOGGED_IN);
+			throw new ForbiddenPublixException(MessagesStrings.NO_USER_LOGGED_IN);
 		}
-		UserModel loggedInUser = UserModel.findByEmail(email);
+		UserModel loggedInUser = userDao.findByEmail(email);
 		if (loggedInUser == null) {
 			throw new ForbiddenPublixException(
-					ErrorMessages.userNotExist(email));
+					MessagesStrings.userNotExist(email));
 		}
 		return loggedInUser;
 	}
@@ -62,8 +80,7 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 			throws ForbiddenPublixException {
 		if (!study.hasAllowedWorker(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerTypeNotAllowed(worker
-							.getUIWorkerType()));
+					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 		UserModel loggedInUser = worker.getUser();
 		// User has to be a member of this study
@@ -79,7 +96,8 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 		}
 	}
 
-	public String retrieveJatosShowFromSession() throws ForbiddenPublixException {
+	public String retrieveJatosShowFromSession()
+			throws ForbiddenPublixException {
 		String jatosShow = Publix.session(JatosPublix.JATOS_SHOW);
 		if (jatosShow == null) {
 			throw new ForbiddenPublixException(

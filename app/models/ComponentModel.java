@@ -12,23 +12,20 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 
 import org.hibernate.annotations.GenericGenerator;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import play.db.jpa.JPA;
-import services.ErrorMessages;
-import services.JsonUtils;
+import services.MessagesStrings;
+import utils.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Domain model and DAO of a component.
+ * Domain model of a component.
  * 
  * @author Kristian Lange
  */
@@ -176,7 +173,7 @@ public class ComponentModel {
 	public String getComments() {
 		return this.comments;
 	}
-
+	
 	public String getJsonData() {
 		if (this.jsonData == null) {
 			return null;
@@ -219,26 +216,26 @@ public class ComponentModel {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (title == null || title.isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
-					ErrorMessages.MISSING_TITLE));
+					MessagesStrings.MISSING_TITLE));
 		}
 		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (htmlFilePath != null && !htmlFilePath.isEmpty()) {
 			String pathRegEx = "^(\\w+)(\\/\\w+)?\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
 			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.isEmpty())) {
 				errorList.add(new ValidationError(HTML_FILE_PATH,
-						ErrorMessages.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+						MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
 			}
 		}
 		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENTS,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,
-					ErrorMessages.INVALID_JSON_FORMAT));
+					MessagesStrings.INVALID_JSON_FORMAT));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}
@@ -276,50 +273,6 @@ public class ComponentModel {
 			return false;
 		}
 		return true;
-	}
-
-	public static ComponentModel findById(Long id) {
-		return JPA.em().find(ComponentModel.class, id);
-	}
-
-	public static ComponentModel findByUuid(String uuid) {
-		String queryStr = "SELECT e FROM ComponentModel e WHERE "
-				+ "e.uuid=:uuid";
-		TypedQuery<ComponentModel> query = JPA.em().createQuery(queryStr,
-				ComponentModel.class);
-		List<ComponentModel> studyList = query.setParameter("uuid", uuid)
-				.getResultList();
-		ComponentModel study = studyList.isEmpty() ? null
-				: (ComponentModel) studyList.get(0);
-		return study;
-	}
-
-	public static List<ComponentModel> findAll() {
-		TypedQuery<ComponentModel> query = JPA.em().createQuery(
-				"SELECT e FROM ComponentModel e", ComponentModel.class);
-		return query.getResultList();
-	}
-
-	public static void changeComponentOrder(ComponentModel component,
-			int newIndex) {
-		String queryStr = "UPDATE ComponentModel SET componentList_order = "
-				+ ":newIndex WHERE id = :id";
-		Query query = JPA.em().createQuery(queryStr);
-		query.setParameter("newIndex", newIndex);
-		query.setParameter("id", component.id);
-		query.executeUpdate();
-	}
-
-	public void persist() {
-		JPA.em().persist(this);
-	}
-
-	public void merge() {
-		JPA.em().merge(this);
-	}
-
-	public void remove() {
-		JPA.em().remove(this);
 	}
 
 }

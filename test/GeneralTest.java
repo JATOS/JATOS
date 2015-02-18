@@ -18,7 +18,8 @@ import play.test.FakeApplication;
 import play.test.Helpers;
 import play.test.WithApplication;
 import scala.Option;
-import services.PersistanceUtils;
+
+import common.Common;
 
 /**
  * Testing controller.Studies
@@ -64,7 +65,7 @@ public class GeneralTest extends WithApplication {
 
 	@Test
 	public void databaseH2Mem() {
-		assertThat(PersistanceUtils.IN_MEMORY_DB);
+		assertThat(Common.IN_MEMORY_DB);
 	}
 
 }

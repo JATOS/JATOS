@@ -9,49 +9,74 @@ import models.StudyModel;
 import models.UserModel;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Before;
 
+import persistance.ComponentResultDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IUserDao;
+import persistance.StudyDao;
+import persistance.UserDao;
+import play.GlobalSettings;
 import play.Logger;
 import play.db.jpa.JPA;
 import play.db.jpa.JPAPlugin;
 import play.test.FakeApplication;
 import play.test.Helpers;
 import scala.Option;
-import services.IOUtils;
-import services.JsonUtils.UploadUnmarshaller;
-import services.PersistanceUtils;
 import services.UserService;
-import services.ZipUtil;
+import utils.IOUtils;
+import utils.JsonUtils;
+import utils.ZipUtil;
+import common.Global;
 import controllers.publix.StudyAssets;
 
 /**
- * Utils class to test controllers. Set up a fake application with it's own
- * database, import a study, etc.
+ * Abstract class for a controller test. Starts fake application.
  * 
  * @author Kristian Lange
  */
-public class ControllerTestUtils {
-
-	private static final String CLASS_NAME = ControllerTestUtils.class
+public abstract class AControllerTest {
+	
+	private static final String CLASS_NAME = AControllerTest.class
 			.getSimpleName();
 
 	protected FakeApplication application;
 	protected EntityManager entityManager;
+	protected JsonUtils jsonUtils;
+	protected UserService userService;
+	protected IUserDao userDao;
+	protected IStudyDao studyDao;
+	protected IComponentResultDao componentResultDao;
 	protected UserModel admin;
 
-	protected void startApp() throws Exception {
-		application = Helpers.fakeApplication();
+	@Before
+	public void startApp() throws Exception {
+		GlobalSettings global = (GlobalSettings) Class.forName("common.Global")
+				.newInstance();
+
+		application = Helpers.fakeApplication(global);
 		Helpers.start(application);
+
+		jsonUtils = Global.INJECTOR.getInstance(JsonUtils.class);
+		userService = Global.INJECTOR.getInstance(UserService.class);
+		userDao = Global.INJECTOR.getInstance(UserDao.class);
+		studyDao = Global.INJECTOR.getInstance(StudyDao.class);
+		componentResultDao = Global.INJECTOR
+				.getInstance(ComponentResultDao.class);
 
 		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
 				.plugin(JPAPlugin.class);
 		entityManager = jpaPlugin.get().em("default");
 		JPA.bindForCurrentThread(entityManager);
-
+		
 		// Get admin (admin is automatically created during initialisation)
-		admin = UserModel.findByEmail(UserService.ADMIN_EMAIL);
+		admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 	}
 
-	protected void stopApp() throws IOException {
+	@After
+	public void stopApp() throws IOException {
 		entityManager.close();
 		JPA.bindForCurrentThread(null);
 		removeStudyAssetsRootDir();
@@ -76,9 +101,8 @@ public class ControllerTestUtils {
 		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		File studyFile = studyFileList[0];
-		UploadUnmarshaller uploadUnmarshaller = new UploadUnmarshaller();
-		StudyModel importedStudy = uploadUnmarshaller.unmarshalling(studyFile,
-				StudyModel.class);
+		StudyModel importedStudy = new JsonUtils.UploadUnmarshaller()
+				.unmarshalling(studyFile, StudyModel.class);
 		studyFile.delete();
 
 		File[] dirArray = IOUtils.findDirectories(tempUnzippedStudyDir);
@@ -102,10 +126,10 @@ public class ControllerTestUtils {
 	protected synchronized UserModel createAndPersistUser(String email,
 			String name, String password) throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
-		String passwordHash = UserService.getHashMDFive(password);
+		String passwordHash = userService.getHashMDFive(password);
 		UserModel user = new UserModel(email, name, passwordHash);
 		entityManager.getTransaction().begin();
-		PersistanceUtils.addUser(user);
+		userDao.create(user);
 		entityManager.getTransaction().commit();
 		return user;
 	}
@@ -114,13 +138,13 @@ public class ControllerTestUtils {
 			throws IOException {
 		IOUtils.removeStudyAssetsDir(study.getDirName());
 		entityManager.getTransaction().begin();
-		PersistanceUtils.removeStudy(study);
+		studyDao.remove(study);
 		entityManager.getTransaction().commit();
 	}
 
 	protected synchronized void addStudy(StudyModel study) {
 		entityManager.getTransaction().begin();
-		PersistanceUtils.addStudy(study, admin);
+		studyDao.create(study, admin);
 		entityManager.getTransaction().commit();
 	}
 
@@ -133,7 +157,7 @@ public class ControllerTestUtils {
 	protected synchronized void removeMember(StudyModel studyClone,
 			UserModel member) {
 		entityManager.getTransaction().begin();
-		StudyModel.findById(studyClone.getId()).removeMember(member);
+		studyDao.findById(studyClone.getId()).removeMember(member);
 		entityManager.getTransaction().commit();
 	}
 

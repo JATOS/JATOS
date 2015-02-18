@@ -1,10 +1,19 @@
 package controllers.publix.closed_standalone;
 
-import controllers.publix.PublixErrorMessages;
-import controllers.publix.PublixUtils;
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.workers.IWorkerDao;
 import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;
 import models.workers.Worker;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+import controllers.publix.PublixErrorMessages;
+import controllers.publix.PublixUtils;
 import exceptions.ForbiddenPublixException;
 import exceptions.PublixException;
 
@@ -13,14 +22,19 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class ClosedStandalonePublixUtils extends
 		PublixUtils<ClosedStandaloneWorker> {
 
 	private ClosedStandaloneErrorMessages errorMessages;
 
-	public ClosedStandalonePublixUtils(
-			ClosedStandaloneErrorMessages errorMessages) {
-		super(errorMessages);
+	@Inject
+	ClosedStandalonePublixUtils(
+			ClosedStandaloneErrorMessages errorMessages, IStudyDao studyDao,
+			IStudyResultDao studyResultDao, IComponentDao componentDao,
+			IComponentResultDao componentResultDao, IWorkerDao workerDao) {
+		super(errorMessages, studyDao, studyResultDao, componentDao,
+				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;
 	}
 
@@ -52,8 +66,7 @@ public class ClosedStandalonePublixUtils extends
 			StudyModel study) throws ForbiddenPublixException {
 		if (!study.hasAllowedWorker(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerTypeNotAllowed(worker
-							.getUIWorkerType()));
+					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 		// Closed standalone workers can't repeat the same study
 		if (finishedStudyAlready(worker, study)) {

@@ -3,9 +3,15 @@ package controllers.publix.tester;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.TesterWorker;
+import persistance.IComponentResultDao;
+import persistance.IStudyResultDao;
 import play.Logger;
 import play.mvc.Result;
-import services.PersistanceUtils;
+import utils.JsonUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import exceptions.PublixException;
@@ -15,18 +21,22 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class TesterPublix extends Publix<TesterWorker> implements IPublix {
 
 	public static final String TESTER_ID = "testerId";
 
 	private static final String CLASS_NAME = TesterPublix.class.getSimpleName();
 
-	protected static final TesterErrorMessages errorMessages = new TesterErrorMessages();
-	protected static final TesterPublixUtils utils = new TesterPublixUtils(
-			errorMessages);
+	private final TesterPublixUtils publixUtils;
 
-	public TesterPublix() {
-		super(utils);
+	@Inject
+	TesterPublix(TesterPublixUtils publixUtils,
+			TesterErrorMessages errorMessages,
+			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			IStudyResultDao studyResultDao) {
+		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+		this.publixUtils = publixUtils;
 	}
 
 	@Override
@@ -34,16 +44,16 @@ public class TesterPublix extends Publix<TesterWorker> implements IPublix {
 		String testerId = getQueryString(TESTER_ID);
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ "testerId " + testerId);
-		StudyModel study = utils.retrieveStudy(studyId);
+		StudyModel study = publixUtils.retrieveStudy(studyId);
 
-		TesterWorker worker = utils.retrieveTypedWorker(testerId);
-		utils.checkWorkerAllowedToStartStudy(worker, study);
+		TesterWorker worker = publixUtils.retrieveTypedWorker(testerId);
+		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, testerId);
 
-		utils.finishAllPriorStudyResults(worker, study);
-		PersistanceUtils.createStudyResult(study, worker);
+		publixUtils.finishAllPriorStudyResults(worker, study);
+		studyResultDao.create(study, worker);
 
-		ComponentModel firstComponent = utils
+		ComponentModel firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, firstComponent.getId()));

@@ -1,85 +1,87 @@
+import static org.fest.assertions.Assertions.assertThat;
+import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
+import static play.test.Helpers.redirectLocation;
+import static play.test.Helpers.status;
 
 import java.io.IOException;
 
 import models.StudyModel;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import play.mvc.HandlerRef;
-import services.IOUtils;
+import play.mvc.Result;
+import utils.IOUtils;
 import controllers.Studies;
 import controllers.Users;
-import exceptions.ResultException;
 
 /**
  * Testing actions if study is locked
  * 
  * @author Kristian Lange
  */
-public class LockedStudyControllerTest {
+public class LockedStudyControllerTest extends AControllerTest {
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
 	private static StudyModel studyTemplate;
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 
-	@BeforeClass
-	public static void startApp() throws Exception {
-		utils.startApp();
-		studyTemplate = utils.importExampleStudy();
+	@Before
+	public void startApp() throws Exception {
+		super.startApp();
+		studyTemplate = importExampleStudy();
 	}
 
-	@AfterClass
-	public static void stopApp() throws IOException {
+	@After
+	public void stopApp() throws IOException {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		utils.stopApp();
+		super.stopApp();
 	}
 
 	private void checkDenyLocked(HandlerRef ref) {
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("Unlock it if you want to make changes.");
-		callAction(
-				ref,
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+		Result result = callAction(ref,
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(redirectLocation(result)).contains("/jatos/");
 	}
 
 	@Test
 	public void callStudiesSubmitEdited() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
-		utils.lockStudy(studyClone);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
 		HandlerRef ref = controllers.routes.ref.Studies.submitEdited(studyClone
 				.getId());
 		checkDenyLocked(ref);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesRemove() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
-		utils.lockStudy(studyClone);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
 		HandlerRef ref = controllers.routes.ref.Studies.remove(studyClone
 				.getId());
 		checkDenyLocked(ref);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesChangeComponentOrder() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
-		utils.lockStudy(studyClone);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
 		HandlerRef ref = controllers.routes.ref.Studies.changeComponentOrder(
 				studyClone.getId(), studyClone.getComponent(1).getId(),
-				Studies.COMPONENT_ORDER_DOWN);
+				Studies.COMPONENT_POSITION_DOWN);
 		checkDenyLocked(ref);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 }

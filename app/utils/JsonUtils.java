@@ -1,15 +1,16 @@
-package services;
+package utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
 import models.ComponentModel;
+import models.ComponentResult;
 import models.StudyModel;
-import models.results.ComponentResult;
-import models.results.StudyResult;
+import models.StudyResult;
 import models.workers.Worker;
 
 import org.hibernate.Hibernate;
@@ -17,7 +18,11 @@ import org.hibernate.proxy.HibernateProxy;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
+import persistance.IComponentResultDao;
+import persistance.IStudyResultDao;
 import play.Logger;
+import services.MessagesStrings;
+import utils.JsonUtils.SidebarStudy.SidebarComponent;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,6 +31,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import common.Common;
 
 /**
@@ -34,6 +41,7 @@ import common.Common;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class JsonUtils {
 
 	public static final String DATA = "data";
@@ -46,6 +54,16 @@ public class JsonUtils {
 	 */
 	public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
 			.setTimeZone(TimeZone.getDefault());
+
+	private final IComponentResultDao componentResultDao;
+	private final IStudyResultDao studyResultDao;
+
+	@Inject
+	JsonUtils(IComponentResultDao componentResultDao,
+			IStudyResultDao studyResultDao) {
+		this.componentResultDao = componentResultDao;
+		this.studyResultDao = studyResultDao;
+	}
 
 	/**
 	 * Helper class for selectively marshaling an Object to JSON. Only fields of
@@ -120,8 +138,7 @@ public class JsonUtils {
 	 * 
 	 * @throws JsonProcessingException
 	 */
-	public static String asJsonForPublix(Object obj)
-			throws JsonProcessingException {
+	public String asJsonForPublix(Object obj) throws JsonProcessingException {
 		ObjectWriter objectWriter = OBJECTMAPPER
 				.writerWithView(JsonForPublix.class);
 		String componentAsJson = objectWriter.writeValueAsString(obj);
@@ -132,8 +149,7 @@ public class JsonUtils {
 	 * Returns the data string of a componentResult limited to
 	 * MAX_CHAR_PER_RESULT characters.
 	 */
-	public static String componentResultDataForUI(
-			ComponentResult componentResult) {
+	public String componentResultDataForUI(ComponentResult componentResult) {
 		final int MAX_CHAR_PER_RESULT = 1000;
 		String data = componentResult.getData();
 		if (data != null) {
@@ -154,16 +170,16 @@ public class JsonUtils {
 	 * Returns all studyResults of a study as a JSON string. It's including the
 	 * studyResult's componentResults.
 	 */
-	public static String allStudyResultsForUI(StudyModel study)
+	public String allStudyResultsForUI(StudyModel study)
 			throws JsonProcessingException {
-		return allStudyResultsForUI(StudyResult.findAllByStudy(study));
+		return allStudyResultsForUI(studyResultDao.findAllByStudy(study));
 	}
 
 	/**
 	 * Returns all studyResults as a JSON string. It's including the
 	 * studyResult's componentResults.
 	 */
-	public static String allStudyResultsForUI(List<StudyResult> studyResultList)
+	public String allStudyResultsForUI(List<StudyResult> studyResultList)
 			throws JsonProcessingException {
 		ObjectNode allStudyResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allStudyResultsNode.arrayNode();
@@ -180,11 +196,11 @@ public class JsonUtils {
 	 * Returns JSON of all ComponentResuls of the specified component. The JSON
 	 * string is intended for use in JATOS' GUI.
 	 */
-	public static String allComponentResultsForUI(ComponentModel component)
+	public String allComponentResultsForUI(ComponentModel component)
 			throws JsonProcessingException {
 		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allComponentResultsNode.arrayNode();
-		List<ComponentResult> componentResultList = ComponentResult
+		List<ComponentResult> componentResultList = componentResultDao
 				.findAllByComponent(component);
 		for (ComponentResult componentResult : componentResultList) {
 			ObjectNode componentResultNode = componentResultAsJsonNode(componentResult);
@@ -200,7 +216,7 @@ public class JsonUtils {
 	 * Returns ObjectNode of the given StudyResult. It contains the worker,
 	 * study's ID and title, and all ComponentResults.
 	 */
-	private static ObjectNode studyResultAsJsonNode(StudyResult studyResult) {
+	private ObjectNode studyResultAsJsonNode(StudyResult studyResult) {
 		ObjectNode studyResultNode = OBJECTMAPPER.valueToTree(studyResult);
 
 		// Add worker
@@ -228,8 +244,7 @@ public class JsonUtils {
 	 * Returns an ObjectNode of the given ComponentResult. It contains the study
 	 * ID, component ID and component title.
 	 */
-	private static ObjectNode componentResultAsJsonNode(
-			ComponentResult componentResult) {
+	private ObjectNode componentResultAsJsonNode(ComponentResult componentResult) {
 		ObjectNode componentResultNode = OBJECTMAPPER
 				.valueToTree(componentResult);
 
@@ -253,12 +268,39 @@ public class JsonUtils {
 	 * the number of StudyResults of the study so far. This JSON is intended for
 	 * JATOS' GUI.
 	 */
-	public static String studyForUI(StudyModel study)
-			throws JsonProcessingException {
+	public String studyForUI(StudyModel study) throws JsonProcessingException {
 		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
-		studyNode.put("resultCount", StudyResult.countByStudy(study));
+		studyNode.put("resultCount", studyResultDao.countByStudy(study));
 		String asJsonStr = OBJECTMAPPER.writeValueAsString(studyNode);
 		return asJsonStr;
+	}
+
+	public String sidebarStudyList(List<StudyModel> studyList) {
+		List<SidebarStudy> sidebarStudyList = new ArrayList<>();
+		for (StudyModel study : studyList) {
+			SidebarStudy sidebarStudy = new SidebarStudy();
+			sidebarStudy.id = study.getId();
+			sidebarStudy.title = study.getTitle();
+			for (ComponentModel component : study.getComponentList()) {
+				SidebarComponent sidebarComponent = new SidebarStudy.SidebarComponent();
+				sidebarComponent.id = component.getId();
+				sidebarComponent.title = component.getTitle();
+				sidebarStudy.componentList.add(sidebarComponent);
+			}
+			sidebarStudyList.add(sidebarStudy);
+		}
+		return asJson(sidebarStudyList);
+	}
+
+	static class SidebarStudy {
+		public Long id;
+		public String title;
+		public List<SidebarComponent> componentList = new ArrayList<>();
+
+		static class SidebarComponent {
+			public Long id;
+			public String title;
+		}
 	}
 
 	/**
@@ -266,14 +308,14 @@ public class JsonUtils {
 	 * the 'resultCount', the number of ComponentResults of this component so
 	 * far. Intended for use in JATOS' GUI.
 	 */
-	public static String allComponentsForUI(List<ComponentModel> componentList)
+	public String allComponentsForUI(List<ComponentModel> componentList)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
 		for (ComponentModel component : componentList) {
 			ObjectNode componentNode = OBJECTMAPPER.valueToTree(component);
 			// Add count of component's results
 			componentNode.put("resultCount",
-					ComponentResult.countByComponent(component));
+					componentResultDao.countByComponent(component));
 			arrayNode.add(componentNode);
 		}
 		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
@@ -286,7 +328,7 @@ public class JsonUtils {
 	 * Returns a JSON string for the given set of workers. Intended for use in
 	 * JATOS' GUI.
 	 */
-	public static String allWorkersForUI(Set<Worker> workerSet)
+	public String allWorkersForUI(Set<Worker> workerSet)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
 		for (Worker worker : workerSet) {
@@ -302,7 +344,7 @@ public class JsonUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> T initializeAndUnproxy(T obj) {
+	public <T> T initializeAndUnproxy(T obj) {
 		Hibernate.initialize(obj);
 		if (obj instanceof HibernateProxy) {
 			obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()
@@ -329,7 +371,7 @@ public class JsonUtils {
 	 * Marshals the given object into JSON, adds the application's version, and
 	 * returns it as String. It uses the view JsonForIO.
 	 */
-	public static String asJsonForIO(Object obj) throws IOException {
+	public String asJsonForIO(Object obj) throws IOException {
 		ObjectNode node = generateNodeWithVersionForIO(obj);
 		return OBJECTMAPPER.writer().writeValueAsString(node);
 	}
@@ -338,7 +380,7 @@ public class JsonUtils {
 	 * Marshals the given object into JSON, adds the application's version, and
 	 * saves it into the given File. It uses the view JsonForIO.
 	 */
-	public static void asJsonForIO(Object obj, File file) throws IOException {
+	public void asJsonForIO(Object obj, File file) throws IOException {
 		ObjectNode node = generateNodeWithVersionForIO(obj);
 		OBJECTMAPPER.writer().writeValue(file, node);
 	}
@@ -347,7 +389,7 @@ public class JsonUtils {
 	 * Generic JSON marshaler that adds the JATOS version to the JSON string.
 	 * Intended for file IO.
 	 */
-	private static ObjectNode generateNodeWithVersionForIO(Object obj)
+	private ObjectNode generateNodeWithVersionForIO(Object obj)
 			throws IOException {
 		ObjectNode node = OBJECTMAPPER.createObjectNode();
 		node.put(VERSION, Common.VERSION);
@@ -396,14 +438,14 @@ public class JsonUtils {
 				// messages.
 				jsonStr = IOUtils.readFile(file);
 			} catch (IOException e) {
-				errorMsg = ErrorMessages.COULDNT_READ_FILE;
+				errorMsg = MessagesStrings.COULDNT_READ_FILE;
 				exception = e;
 				return null;
 			}
 			try {
-				object = JsonUtils.unmarshallingIO(jsonStr, modelClass);
+				object = unmarshallingIO(jsonStr, modelClass);
 			} catch (IOException e) {
-				errorMsg = ErrorMessages.COULDNT_READ_JSON;
+				errorMsg = MessagesStrings.COULDNT_READ_JSON;
 				exception = e;
 				return null;
 			}

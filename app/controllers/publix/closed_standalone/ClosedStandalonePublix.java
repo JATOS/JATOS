@@ -3,9 +3,15 @@ package controllers.publix.closed_standalone;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;
+import persistance.IComponentResultDao;
+import persistance.IStudyResultDao;
 import play.Logger;
 import play.mvc.Result;
-import services.PersistanceUtils;
+import utils.JsonUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import exceptions.PublixException;
@@ -16,6 +22,7 @@ import exceptions.PublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
 		implements IPublix {
 
@@ -24,12 +31,15 @@ public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
 	private static final String CLASS_NAME = ClosedStandalonePublix.class
 			.getSimpleName();
 
-	protected static final ClosedStandaloneErrorMessages errorMessages = new ClosedStandaloneErrorMessages();
-	protected static final ClosedStandalonePublixUtils utils = new ClosedStandalonePublixUtils(
-			errorMessages);
+	private final ClosedStandalonePublixUtils publixUtils;
 
-	public ClosedStandalonePublix() {
-		super(utils);
+	@Inject
+	ClosedStandalonePublix(ClosedStandaloneErrorMessages errorMessages,
+			ClosedStandalonePublixUtils publixUtils,
+			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			IStudyResultDao studyResultDao) {
+		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+		this.publixUtils = publixUtils;
 	}
 
 	@Override
@@ -37,17 +47,17 @@ public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
 		String workerIdStr = getQueryString(CLOSEDSTANDALONE_WORKER_ID);
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ CLOSEDSTANDALONE_WORKER_ID + " " + workerIdStr);
-		StudyModel study = utils.retrieveStudy(studyId);
+		StudyModel study = publixUtils.retrieveStudy(studyId);
 
-		ClosedStandaloneWorker worker = utils
+		ClosedStandaloneWorker worker = publixUtils
 				.retrieveTypedWorker(workerIdStr);
-		utils.checkWorkerAllowedToStartStudy(worker, study);
+		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, workerIdStr);
 
-		utils.finishAllPriorStudyResults(worker, study);
-		PersistanceUtils.createStudyResult(study, worker);
+		publixUtils.finishAllPriorStudyResults(worker, study);
+		studyResultDao.create(study, worker);
 
-		ComponentModel firstComponent = utils
+		ComponentModel firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, firstComponent.getId()));

@@ -1,5 +1,5 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel,
-breadcrumbs: services.Breadcrumbs, messages: services.Messages,
+breadcrumbs: services.Breadcrumbs, messages: Messages,
 study: StudyModel, jatosUrl: java.net.URL)
 
 @views.html.jatos.main(studyList, loggedInUser, breadcrumbs, messages){
@@ -79,7 +79,7 @@ study: StudyModel, jatosUrl: java.net.URL)
 <script type="text/javascript">
 
 @if(!study.hasAllowedWorker(workers.MTWorker.WORKER_TYPE)) {
-	showWarning("@services.ErrorMessages.MTWORKER_ALLOWANCE_MISSING");
+	showWarning("@services.MessagesStrings.MTWORKER_ALLOWANCE_MISSING");
 }
 
 </script>

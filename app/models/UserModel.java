@@ -11,7 +11,6 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
-import javax.persistence.TypedQuery;
 
 import models.workers.JatosWorker;
 
@@ -19,13 +18,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import play.db.jpa.JPA;
-import services.ErrorMessages;
+import services.MessagesStrings;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Domain model and DAO of a user.
+ * Domain model of a user.
  * 
  * @author Kristian Lange
  */
@@ -142,57 +140,25 @@ public class UserModel {
 		return true;
 	}
 
-	public static UserModel authenticate(String email, String passwordHash) {
-		String queryStr = "SELECT e FROM UserModel e WHERE "
-				+ "e.email=:email and e.passwordHash=:passwordHash";
-		TypedQuery<UserModel> query = JPA.em().createQuery(queryStr,
-				UserModel.class);
-		List<UserModel> userList = query.setParameter("email", email)
-				.setParameter("passwordHash", passwordHash).getResultList();
-		return userList.isEmpty() ? null : userList.get(0);
-	}
-
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 		if (email == null || email.isEmpty()) {
 			errorList.add(new ValidationError(EMAIL,
-					ErrorMessages.MISSING_EMAIL));
+					MessagesStrings.MISSING_EMAIL));
 		}
 		if (email != null && !Jsoup.isValid(email, Whitelist.none())) {
 			errorList.add(new ValidationError(EMAIL,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (name == null || name.isEmpty()) {
 			errorList
-					.add(new ValidationError(NAME, ErrorMessages.MISSING_NAME));
+					.add(new ValidationError(NAME, MessagesStrings.MISSING_NAME));
 		}
 		if (name != null && !Jsoup.isValid(name, Whitelist.none())) {
 			errorList.add(new ValidationError(NAME,
-					ErrorMessages.NO_HTML_ALLOWED));
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		return errorList.isEmpty() ? null : errorList;
-	}
-
-	public static UserModel findByEmail(String email) {
-		return JPA.em().find(UserModel.class, email);
-	}
-
-	public static List<UserModel> findAll() {
-		TypedQuery<UserModel> query = JPA.em().createQuery(
-				"SELECT e FROM UserModel e", UserModel.class);
-		return query.getResultList();
-	}
-
-	public void persist() {
-		JPA.em().persist(this);
-	}
-
-	public void merge() {
-		JPA.em().merge(this);
-	}
-
-	public void remove() {
-		JPA.em().remove(this);
 	}
 
 }

@@ -7,67 +7,110 @@ import java.util.Iterator;
 import java.util.List;
 
 import models.ComponentModel;
+import models.ComponentResult;
 import models.StudyModel;
 import models.UserModel;
-import models.results.ComponentResult;
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.mvc.With;
 import services.Breadcrumbs;
-import services.DateUtils;
-import services.ErrorMessages;
-import services.IOUtils;
-import services.JsonUtils;
-import services.Messages;
-import services.PersistanceUtils;
-import exceptions.ResultException;
+import services.ComponentService;
+import services.MessagesStrings;
+import services.JatosGuiExceptionThrower;
+import services.RequestScope;
+import services.ResultService;
+import services.StudyService;
+import services.UserService;
+import utils.DateUtils;
+import utils.IOUtils;
+import utils.JsonUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import common.JatosGuiAction;
+
+import exceptions.JatosGuiException;
 
 /**
  * Controller that deals with requests regarding ComponentResult.
  * 
  * @author Kristian Lange
  */
+@With(JatosGuiAction.class)
+@Singleton
 public class ComponentResults extends Controller {
 
 	private static final String CLASS_NAME = ComponentResults.class
 			.getSimpleName();
 
+	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final StudyService studyService;
+	private final ComponentService componentService;
+	private final UserService userService;
+	private final ResultService resultService;
+	private final JsonUtils jsonUtils;
+	private final IStudyDao studyDao;
+	private final IComponentDao componentDao;
+	private final IComponentResultDao componentResultDao;
+
+	@Inject
+	ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			StudyService studyService, ComponentService componentService,
+			UserService userService, ResultService resultService,
+			IStudyDao studyDao, IComponentDao componentDao,
+			IComponentResultDao componentResultDao, JsonUtils jsonUtils) {
+		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.studyService = studyService;
+		this.componentService = componentService;
+		this.userService = userService;
+		this.resultService = resultService;
+		this.studyDao = studyDao;
+		this.componentDao = componentDao;
+		this.componentResultDao = componentResultDao;
+		this.jsonUtils = jsonUtils;
+	}
+
 	/**
 	 * Shows a view with all component results of a component of a study.
 	 */
 	@Transactional
-	public static Result index(Long studyId, Long componentId, String errorMsg,
-			int httpStatus) throws ResultException {
+	public Result index(Long studyId, Long componentId, String errorMsg,
+			int httpStatus) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ComponentModel component = ComponentModel.findById(componentId);
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		ComponentModel component = componentDao.findById(componentId);
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				loggedInUser, component);
+		componentService.checkStandardForComponents(studyId, componentId,
+				study, loggedInUser, component);
 
-		Messages messages = new Messages().error(errorMsg);
+		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
 				component, Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.componentResults.render(studyList,
-						loggedInUser, breadcrumbs, messages, study, component));
+						loggedInUser, breadcrumbs, RequestScope.getMessages(),
+						study, component));
 	}
 
 	@Transactional
-	public static Result index(Long studyId, Long componentId, String errorMsg)
-			throws ResultException {
+	public Result index(Long studyId, Long componentId, String errorMsg)
+			throws JatosGuiException {
 		return index(studyId, componentId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
-	public static Result index(Long studyId, Long componentId)
-			throws ResultException {
+	public Result index(Long studyId, Long componentId)
+			throws JatosGuiException {
 		return index(studyId, componentId, null, Http.Status.OK);
 	}
 
@@ -77,20 +120,19 @@ public class ComponentResults extends Controller {
 	 * Removes all ComponentResults specified in the parameter.
 	 */
 	@Transactional
-	public static Result remove(String componentResultIds)
-			throws ResultException {
+	public Result remove(String componentResultIds) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".remove: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> componentResultIdList = ControllerUtils
+		List<Long> componentResultIdList = resultService
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
 		checkAllComponentResults(componentResultList, loggedInUser, true);
 
 		for (ComponentResult componentResult : componentResultList) {
-			PersistanceUtils.removeComponentResult(componentResult);
+			componentResultDao.remove(componentResult);
 		}
 		return ok();
 	}
@@ -101,21 +143,21 @@ public class ComponentResults extends Controller {
 	 * Returns all ComponentResults as JSON for a given component.
 	 */
 	@Transactional
-	public static Result tableDataByComponent(Long studyId, Long componentId)
-			throws ResultException {
+	public Result tableDataByComponent(Long studyId, Long componentId)
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".tableDataByComponent: studyId " + studyId
 				+ ", " + "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ComponentModel component = ComponentModel.findById(componentId);
-		ControllerUtils.checkStandardForComponents(studyId, componentId, study,
-				loggedInUser, component);
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		ComponentModel component = componentDao.findById(componentId);
+		componentService.checkStandardForComponents(studyId, componentId,
+				study, loggedInUser, component);
 		String dataAsJson = null;
 		try {
-			dataAsJson = JsonUtils.allComponentResultsForUI(component);
+			dataAsJson = jsonUtils.allComponentResultsForUI(component);
 		} catch (IOException e) {
-			return internalServerError(ErrorMessages.PROBLEM_GENERATING_JSON_DATA);
+			return internalServerError(MessagesStrings.PROBLEM_GENERATING_JSON_DATA);
 		}
 		return ok(dataAsJson);
 	}
@@ -127,16 +169,16 @@ public class ComponentResults extends Controller {
 	 * component.
 	 */
 	@Transactional
-	public static Result exportData(String componentResultIds)
-			throws ResultException {
+	public Result exportData(String componentResultIds)
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".exportData: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
+		response().discardCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> componentResultIdList = ControllerUtils
+		List<Long> componentResultIdList = resultService
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
 		checkAllComponentResults(componentResultList, loggedInUser, true);
@@ -148,16 +190,16 @@ public class ComponentResults extends Controller {
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
 		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(ControllerUtils.JQDOWNLOAD_COOKIE_NAME,
-				ControllerUtils.JQDOWNLOAD_COOKIE_CONTENT);
+		response().setCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME,
+				ImportExport.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(componentResultDataAsStr);
 	}
 
 	/**
 	 * Put all ComponentResult's data into a String each in a separate line.
 	 */
-	private static String getComponentResultData(
-			List<ComponentResult> componentResultList) throws ResultException {
+	private String getComponentResultData(
+			List<ComponentResult> componentResultList) throws JatosGuiException {
 		StringBuilder sb = new StringBuilder();
 		Iterator<ComponentResult> iterator = componentResultList.iterator();
 		while (iterator.hasNext()) {
@@ -173,16 +215,16 @@ public class ComponentResults extends Controller {
 		return sb.toString();
 	}
 
-	private static List<ComponentResult> getAllComponentResults(
-			List<Long> componentResultIdList) throws ResultException {
+	private List<ComponentResult> getAllComponentResults(
+			List<Long> componentResultIdList) throws JatosGuiException {
 		List<ComponentResult> componentResultList = new ArrayList<>();
 		for (Long componentResultId : componentResultIdList) {
-			ComponentResult componentResult = ComponentResult
+			ComponentResult componentResult = componentResultDao
 					.findById(componentResultId);
 			if (componentResult == null) {
-				String errorMsg = ErrorMessages
+				String errorMsg = MessagesStrings
 						.componentResultNotExist(componentResultId);
-				ControllerUtils.throwAjaxResultException(errorMsg,
+				jatosGuiExceptionThrower.throwAjax(errorMsg,
 						Http.Status.NOT_FOUND);
 			}
 			componentResultList.add(componentResult);
@@ -190,16 +232,16 @@ public class ComponentResults extends Controller {
 		return componentResultList;
 	}
 
-	private static void checkAllComponentResults(
+	private void checkAllComponentResults(
 			List<ComponentResult> componentResultList, UserModel loggedInUser,
-			boolean studyMustNotBeLocked) throws ResultException {
+			boolean studyMustNotBeLocked) throws JatosGuiException {
 		for (ComponentResult componentResult : componentResultList) {
 			ComponentModel component = componentResult.getComponent();
 			StudyModel study = component.getStudy();
-			ControllerUtils.checkStandardForComponents(study.getId(),
+			componentService.checkStandardForComponents(study.getId(),
 					component.getId(), study, loggedInUser, component);
 			if (studyMustNotBeLocked) {
-				ControllerUtils.checkStudyLocked(study);
+				studyService.checkStudyLocked(study);
 			}
 		}
 	}

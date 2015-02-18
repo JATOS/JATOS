@@ -1,93 +1,94 @@
+import static org.fest.assertions.Assertions.assertThat;
+import static play.mvc.Http.Status.FORBIDDEN;
+import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
+import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.fakeRequest;
+import static play.test.Helpers.redirectLocation;
+import static play.test.Helpers.status;
 
 import java.io.IOException;
 
 import models.StudyModel;
 import models.UserModel;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Rule;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import play.mvc.HandlerRef;
-import services.IOUtils;
+import play.mvc.Result;
+import utils.IOUtils;
 import controllers.Studies;
 import controllers.Users;
-import exceptions.ResultException;
 
 /**
  * Testing whether actions do proper access control
  * 
  * @author Kristian Lange
  */
-public class AccessControllerTest {
+public class AccessControllerTest extends AControllerTest {
 
-	private static ControllerTestUtils utils = new ControllerTestUtils();
 	private static StudyModel studyTemplate;
 	private static UserModel testUser;
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
-
-	@BeforeClass
-	public static void startApp() throws Exception {
-		utils.startApp();
-		studyTemplate = utils.importExampleStudy();
-		testUser = utils.createAndPersistUser("bla@bla.com", "Bla", "bla");
+	@Before
+	public void startApp() throws Exception {
+		super.startApp();
+		studyTemplate = importExampleStudy();
+		testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 	}
 
-	@AfterClass
-	public static void stopApp() throws IOException {
+	@After
+	public void stopApp() throws IOException {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		utils.stopApp();
+		super.stopApp();
 	}
 
 	private void checkDeniedAccess(HandlerRef ref) {
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("No user logged in");
 		// Call action without testUser in session
-		callAction(ref);
+		Result result = callAction(ref);
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(redirectLocation(result)).contains("/jatos/login");
 	}
 
 	private void checkNotMember(HandlerRef ref, StudyModel study) {
-		utils.removeMember(study, utils.admin);
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("isn't member of study");
-		callAction(
+		removeMember(study, admin);
+		Result result = callAction(
 				ref,
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						admin.getEmail()));
+		assertThat(status(result)).isEqualTo(FORBIDDEN);
+		assertThat(contentAsString(result)).contains("isn't member of study");
 	}
 
 	private void checkRightUser(HandlerRef ref) {
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("You must be logged in as");
-		callAction(
+		Result result = callAction(
 				ref,
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						admin.getEmail()));
+		assertThat(status(result)).isEqualTo(FORBIDDEN);
+		assertThat(contentAsString(result))
+				.contains("You must be logged in as");
 	}
 
 	private void checkRemoveJatosWorker(HandlerRef ref) {
-		thrown.expect(ResultException.class);
-		thrown.expectMessage("is a worker of JATOS");
-		callAction(
+		Result result = callAction(
 				ref,
 				fakeRequest().withSession(Users.SESSION_EMAIL,
-						utils.admin.getEmail()));
+						admin.getEmail()));
+		assertThat(status(result)).isEqualTo(FORBIDDEN);
+		assertThat(contentAsString(result)).contains("is a worker of JATOS");
 	}
 
 	@Test
 	public void callStudiesIndex() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.index(
 				studyClone.getId(), null);
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
@@ -104,193 +105,193 @@ public class AccessControllerTest {
 
 	@Test
 	public void callStudiesEdit() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies
 				.edit(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesSubmitEdited() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.submitEdited(studyClone
 				.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesSwapLock() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.swapLock(studyClone
 				.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesRemove() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.remove(studyClone
 				.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesCloneStudy() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.cloneStudy(studyClone
 				.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesChangeMember() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies
 				.changeMembers(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesSubmitChangedMembers() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies
 				.submitChangedMembers(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesChangeComponentOrder() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.changeComponentOrder(
 				studyClone.getId(), studyClone.getComponentList().get(0)
-						.getId(), Studies.COMPONENT_ORDER_DOWN);
+						.getId(), Studies.COMPONENT_POSITION_DOWN);
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesShowStudy() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.showStudy(studyClone
 				.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesCreateClosedStandaloneRun() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies
 				.createClosedStandaloneRun(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesCreateTesterRun() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies
 				.createTesterRun(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesShowMTurkSourceCode() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies
 				.showMTurkSourceCode(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callStudiesWorkers() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.workers(studyClone
 				.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callComponentsShowComponent() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Components.showComponent(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callComponentsCreate() throws IOException {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Components.create(studyClone
 				.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callComponentsSubmit() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Components.submit(studyClone
 				.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callComponentsChangeProperties() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Components.changeProperty(
 				studyClone.getId(), studyClone.getComponent(1).getId(), true);
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callComponentsCloneComponent() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Components.cloneComponent(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callComponentsRemove() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Components.remove(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
@@ -314,42 +315,42 @@ public class AccessControllerTest {
 
 	@Test
 	public void callImportExportImportComponent() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.ImportExport
 				.importComponent(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callImportExportExportComponent() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.ImportExport.exportComponent(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callImportExportExportStudy() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.ImportExport
 				.exportStudy(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callComponentResultsIndex() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.ComponentResults.index(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
@@ -361,13 +362,13 @@ public class AccessControllerTest {
 
 	@Test
 	public void callComponentResultsTableDataByComponent() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.ComponentResults
 				.tableDataByComponent(studyClone.getId(), studyClone
 						.getComponent(1).getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
@@ -380,12 +381,12 @@ public class AccessControllerTest {
 
 	@Test
 	public void callStudyResultsIndex() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.StudyResults.index(studyClone
 				.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
@@ -397,12 +398,12 @@ public class AccessControllerTest {
 
 	@Test
 	public void callStudyResultsTableDataByStudy() throws Exception {
-		StudyModel studyClone = utils.cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.StudyResults
 				.tableDataByStudy(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
-		utils.removeStudy(studyClone);
+		removeStudy(studyClone);
 	}
 
 	@Test
@@ -474,14 +475,14 @@ public class AccessControllerTest {
 
 	@Test
 	public void callWorkersIndex() throws Exception {
-		HandlerRef ref = controllers.routes.ref.Workers.index(utils.admin
+		HandlerRef ref = controllers.routes.ref.Workers.index(admin
 				.getWorker().getId());
 		checkDeniedAccess(ref);
 	}
 
 	@Test
 	public void callWorkersRemove() throws Exception {
-		HandlerRef ref = controllers.routes.ref.Workers.remove(utils.admin
+		HandlerRef ref = controllers.routes.ref.Workers.remove(admin
 				.getWorker().getId());
 		checkDeniedAccess(ref);
 		checkRemoveJatosWorker(ref);

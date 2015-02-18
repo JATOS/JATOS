@@ -1,5 +1,5 @@
 @(studyList: List[StudyModel], user: UserModel, breadcrumbs: services.Breadcrumbs,
-messages: services.Messages)(body: Html)
+messages: Messages)(body: Html)
 
 <html lang="en">
 <head>
@@ -97,16 +97,10 @@ function showError(msg) {
 
 <div class="container-fluid">
 	<div class="row">
+		<!-- Sidebar -->
 		<div class="col-sm-3 col-md-2 sidebar">
-			<ul class="nav nav-sidebar">
-				@for(study <- studyList) {
-				<li><a href="@routes.Studies.index(study.getId())">@study.getTitle()</a></li>
-				<ul>
-					@for(component <- study.getComponentList()) {
-					<li>@component.getTitle()</li>
-					}
-				</ul>
-				}
+			<ul id="sidebarStudyList" class="nav nav-sidebar">
+			<!-- Is dynamically filled via JavaScript -->
 			</ul>
 		</div>
 
@@ -167,32 +161,33 @@ function showError(msg) {
 </div>
 
 <script>
-var messages = @Html(services.JsonUtils.asJson(messages));
-var breadcrumbs = @Html(services.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
+var messages = @Html(utils.JsonUtils.asJson(messages));
+var breadcrumbs = @Html(utils.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
+showMessages(messages);
+fillSidebar();
 
-if (messages != null) {
-	messages.successList.forEach(function(success) {
-		showSuccess(success);
-	});
-	
-	messages.infoList.forEach(function(info) {
-		showInfo(info);
-	});
-	
-	messages.warningList.forEach(function(warning) {
-		showWarning(warning);
-	});
-	
-	messages.errorList.forEach(function(error) {
-		showError(error);
-	});
+function showMessages(messages) {
+	if (messages != null) {
+		messages.successList.forEach(function(success) {
+			showSuccess(success);
+		});
+		messages.infoList.forEach(function(info) {
+			showInfo(info);
+		});
+		messages.warningList.forEach(function(warning) {
+			showWarning(warning);
+		});
+		messages.errorList.forEach(function(error) {
+			showError(error);
+		});
+	}
 }
 
 @if(flash.contains("error")) {
 	showError('@flash.get("error")');
 }
 
-@if(services.PersistanceUtils.IN_MEMORY_DB) {
+@if(common.Common.IN_MEMORY_DB) {
 	showWarning("You are using an in-memory database. This is fine for initial evalution of JATOS. Unfortunately after closing JATOS all changes and results will be lost. If you want to continue working with JATOS, it's strongly recommended to setup a disk-based database.")
 }
 
@@ -285,9 +280,7 @@ function askConfirmationForStudyExists(response) {
 		var studysDirConfirm = $('#studysDirConfirm').is(':checked');
 		var jsonData = JSON.stringify({ "@ImportExport.STUDYS_PROPERTIES_CONFIRM": studysPropertiesConfirm,
 			"@ImportExport.STUDYS_DIR_CONFIRM" : studysDirConfirm });
-		postStudyImportConfirm(jsonData, function (data) {
-			showSuccess("Study successfully overwriten");
-		});
+		postStudyImportConfirm(jsonData);
 	});
 }
 
@@ -301,9 +294,7 @@ function askConfirmationForStudyNotExistsDirExists(response) {
 	askConfirmation(title, preText, null, postText, 'Import', function() {
 		var jsonData = JSON.stringify({ "@ImportExport.STUDYS_PROPERTIES_CONFIRM": true,
 			"@ImportExport.STUDYS_DIR_CONFIRM" : true });
-		postStudyImportConfirm(jsonData, function (data) {
-			showSuccess("Study successfully imported");
-		});
+		postStudyImportConfirm(jsonData);
 	});
 }
 
@@ -316,13 +307,11 @@ function askConfirmationForStudyNotExistsDirNotExists(response) {
 	askConfirmation(title, preText, null, postText, 'Import', function() {
 		var jsonData = JSON.stringify({ "@ImportExport.STUDYS_PROPERTIES_CONFIRM": true,
 			"@ImportExport.STUDYS_DIR_CONFIRM" : true });
-		postStudyImportConfirm(jsonData, function (data) {
-			showSuccess("Study successfully imported");
-		});
+		postStudyImportConfirm(jsonData);
 	});
 }
 
-function postStudyImportConfirm(jsonData, success) {
+function postStudyImportConfirm(jsonData) {
 	$.ajax({
 		type: 'POST',
 		url: '@routes.ImportExport.importStudyConfirmed()',
@@ -330,11 +319,42 @@ function postStudyImportConfirm(jsonData, success) {
 		dataType: 'text',
 		data: jsonData,
 		success: function(result) {
-			window.location.replace("/jatos/" + result);
+			showMessages(JSON.parse(result));
+			fillSidebar();
 		},
 		error : function(err) {
 			showError(err.responseText);
 		}
+	});
+}
+
+function fillSidebar() {
+	$.ajax({
+		type: 'GET',
+		url: '@routes.Home.sidebarStudyList()',
+		success: function(result) {
+			fillSidebarStudyList(JSON.parse(result));
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
+function fillSidebarStudyList(studyArray) {
+	$('#sidebarStudyList').empty();
+	$.each(studyArray, function(index, value) {
+		var studyTitle = value.title;
+		var studyId = value.id;
+		$('#sidebarStudyList').append('<li><a href="/jatos/' + studyId + '">' + studyTitle + '</a></li>');
+		var componentArray = value.componentList;
+		var componentsStr = '<ul>';
+		$.each(componentArray, function(index, value) {
+			var componentName = value.title;
+			componentsStr += '<li>' + componentName + '</li>';
+		});
+		componentsStr += '</ul>';
+		$('#sidebarStudyList').append(componentsStr);
 	});
 }
 

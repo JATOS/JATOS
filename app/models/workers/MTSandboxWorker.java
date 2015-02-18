@@ -29,8 +29,4 @@ public class MTSandboxWorker extends MTWorker {
 		return UI_WORKER_TYPE;
 	}
 
-	public static MTWorker findByMTWorkerId(String mtWorkerId) {
-		return findByMTWorkerId(mtWorkerId, WORKER_TYPE);
-	}
-
 }

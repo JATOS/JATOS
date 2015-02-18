@@ -5,61 +5,97 @@ import java.util.List;
 import java.util.Set;
 
 import models.StudyModel;
+import models.StudyResult;
 import models.UserModel;
-import models.results.StudyResult;
 import models.workers.JatosWorker;
 import models.workers.Worker;
+import persistance.IStudyDao;
+import persistance.workers.IWorkerDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.mvc.With;
 import services.Breadcrumbs;
-import services.ErrorMessages;
-import services.JsonUtils;
-import services.Messages;
-import services.PersistanceUtils;
-import exceptions.ResultException;
+import services.MessagesStrings;
+import services.JatosGuiExceptionThrower;
+import services.RequestScope;
+import services.StudyService;
+import services.UserService;
+import services.WorkerService;
+import utils.JsonUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import common.JatosGuiAction;
+
+import exceptions.JatosGuiException;
 
 /**
  * Controller that handles all worker actions in JATOS' GUI
  * 
  * @author Kristian Lange
  */
+@With(JatosGuiAction.class)
+@Singleton
 public class Workers extends Controller {
 
 	private static final String CLASS_NAME = Workers.class.getSimpleName();
+
+	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final StudyService studyService;
+	private final UserService userService;
+	private final WorkerService workerService;
+	private final JsonUtils jsonUtils;
+	private final IStudyDao studyDao;
+	private final IWorkerDao workerDao;
+
+	@Inject
+	Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			StudyService studyService, UserService userService,
+			WorkerService workerService, IStudyDao studyDao,
+			JsonUtils jsonUtils, IWorkerDao workerDao) {
+		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.studyService = studyService;
+		this.userService = userService;
+		this.workerService = workerService;
+		this.studyDao = studyDao;
+		this.jsonUtils = jsonUtils;
+		this.workerDao = workerDao;
+	}
 
 	/**
 	 * Shows view with worker details.
 	 */
 	@Transactional
-	public static Result index(Long workerId, String errorMsg, int httpStatus)
-			throws ResultException {
+	public Result index(Long workerId, String errorMsg, int httpStatus)
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		List<StudyModel> studyList = StudyModel.findAllByUser(loggedInUser
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		Worker worker = Worker.findById(workerId);
-		ControllerUtils.checkWorker(worker, workerId);
+		Worker worker = workerDao.findById(workerId);
+		workerService.checkWorker(worker, workerId);
 
-		Messages messages = new Messages().error(errorMsg);
+		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorker(worker,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.jatos.result.workersStudyResults.render(studyList,
-						loggedInUser, breadcrumbs, messages, worker));
+						loggedInUser, breadcrumbs, RequestScope.getMessages(),
+						worker));
 	}
 
 	@Transactional
-	public static Result index(Long workerId, String errorMsg)
-			throws ResultException {
+	public Result index(Long workerId, String errorMsg)
+			throws JatosGuiException {
 		return index(workerId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
-	public static Result index(Long workerId) throws ResultException {
+	public Result index(Long workerId) throws JatosGuiException {
 		return index(workerId, null, Http.Status.OK);
 	}
 
@@ -69,36 +105,35 @@ public class Workers extends Controller {
 	 * Remove a worker including its results.
 	 */
 	@Transactional
-	public static Result remove(Long workerId) throws ResultException {
+	public Result remove(Long workerId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".remove: workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		Worker worker = Worker.findById(workerId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkWorker(worker, workerId);
+		Worker worker = workerDao.findById(workerId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		workerService.checkWorker(worker, workerId);
 
 		checkRemoval(worker, loggedInUser);
-		PersistanceUtils.removeWorker(worker);
+		workerDao.remove(worker);
 		return ok();
 	}
 
-	private static void checkRemoval(Worker worker, UserModel loggedInUser)
-			throws ResultException {
+	private void checkRemoval(Worker worker, UserModel loggedInUser)
+			throws JatosGuiException {
 		// JatosWorker associated to a JATOS user must not be removed
 		if (worker instanceof JatosWorker) {
 			JatosWorker maWorker = (JatosWorker) worker;
-			String errorMsg = ErrorMessages.removeJatosWorkerNotAllowed(worker
+			String errorMsg = MessagesStrings.removeJatosWorkerNotAllowed(worker
 					.getId(), maWorker.getUser().getName(), maWorker.getUser()
 					.getEmail());
-			ControllerUtils.throwAjaxResultException(errorMsg,
-					Http.Status.FORBIDDEN);
+			jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.FORBIDDEN);
 		}
 
 		// Check for every study if removal is allowed
 		for (StudyResult studyResult : worker.getStudyResultList()) {
 			StudyModel study = studyResult.getStudy();
-			ControllerUtils.checkStandardForStudy(study, study.getId(),
+			studyService.checkStandardForStudy(study, study.getId(),
 					loggedInUser);
-			ControllerUtils.checkStudyLocked(study);
+			studyService.checkStudyLocked(study);
 		}
 	}
 
@@ -108,20 +143,20 @@ public class Workers extends Controller {
 	 * Returns a list of workers (as JSON) that did the specified study.
 	 */
 	@Transactional
-	public static Result tableDataByStudy(Long studyId) throws ResultException {
+	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = StudyModel.findById(studyId);
-		UserModel loggedInUser = ControllerUtils.retrieveLoggedInUser();
-		ControllerUtils.checkStandardForStudy(study, studyId, loggedInUser);
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		String dataAsJson = null;
 		try {
-			Set<Worker> workerSet = ControllerUtils.retrieveWorkers(study);
-			dataAsJson = JsonUtils.allWorkersForUI(workerSet);
+			Set<Worker> workerSet = workerService.retrieveWorkers(study);
+			dataAsJson = jsonUtils.allWorkersForUI(workerSet);
 		} catch (IOException e) {
-			String errorMsg = ErrorMessages.PROBLEM_GENERATING_JSON_DATA;
-			ControllerUtils.throwAjaxResultException(errorMsg,
+			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
+			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);

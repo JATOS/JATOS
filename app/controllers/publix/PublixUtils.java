@@ -16,20 +16,25 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import models.ComponentModel;
+import models.ComponentResult;
+import models.ComponentResult.ComponentState;
 import models.StudyModel;
-import models.results.ComponentResult;
-import models.results.ComponentResult.ComponentState;
-import models.results.StudyResult;
-import models.results.StudyResult.StudyState;
+import models.StudyResult;
+import models.StudyResult.StudyState;
 import models.workers.Worker;
 
 import org.w3c.dom.Document;
 
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.workers.IWorkerDao;
 import play.Logger;
 import play.mvc.Http.RequestBody;
-import services.PersistanceUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Singleton;
 
 import exceptions.BadRequestPublixException;
 import exceptions.ForbiddenPublixException;
@@ -44,14 +49,28 @@ import exceptions.UnsupportedMediaTypePublixException;
  * 
  * @author Kristian Lange
  */
+@Singleton
 public abstract class PublixUtils<T extends Worker> {
 
 	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
 
-	private PublixErrorMessages<T> errorMessages;
+	private final PublixErrorMessages<T> errorMessages;
+	private final IStudyDao studyDao;
+	private final IStudyResultDao studyResultDao;
+	private final IComponentDao componentDao;
+	private final IComponentResultDao componentResultDao;
+	private final IWorkerDao workerDao;
 
-	public PublixUtils(PublixErrorMessages<T> errorMessages) {
+	public PublixUtils(PublixErrorMessages<T> errorMessages,
+			IStudyDao studyDao, IStudyResultDao studyResultDao,
+			IComponentDao componentDao, IComponentResultDao componentResultDao,
+			IWorkerDao workerDao) {
 		this.errorMessages = errorMessages;
+		this.studyDao = studyDao;
+		this.studyResultDao = studyResultDao;
+		this.componentDao = componentDao;
+		this.componentResultDao = componentResultDao;
+		this.workerDao = workerDao;
 	}
 
 	public abstract void checkWorkerAllowedToStartStudy(T worker,
@@ -73,13 +92,13 @@ public abstract class PublixUtils<T extends Worker> {
 			workerId = Long.parseLong(workerIdStr);
 		} catch (NumberFormatException e) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerNotExist(workerIdStr));
+					errorMessages.workerNotExist(workerIdStr));
 		}
 
-		Worker worker = Worker.findById(workerId);
+		Worker worker = workerDao.findById(workerId);
 		if (worker == null) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.workerNotExist(workerId));
+					errorMessages.workerNotExist(workerId));
 		}
 		return worker;
 	}
@@ -104,7 +123,7 @@ public abstract class PublixUtils<T extends Worker> {
 					// component and study with FAIL
 					finishComponentResult(lastComponentResult,
 							ComponentState.FAIL);
-					String errorMsg = PublixErrorMessages
+					String errorMsg = errorMessages
 							.componentNotAllowedToReload(studyResult.getStudy()
 									.getId(), component.getId());
 					// exceptionalFinishStudy(studyResult, errorMsg);
@@ -115,21 +134,21 @@ public abstract class PublixUtils<T extends Worker> {
 						ComponentState.FINISHED);
 			}
 		}
-		return PersistanceUtils.createComponentResult(studyResult, component);
+		return componentResultDao.create(studyResult, component);
 	}
 
 	private void finishComponentResult(ComponentResult componentResult,
 			ComponentState state) {
 		componentResult.setComponentState(state);
 		componentResult.setEndDate(new Timestamp(new Date().getTime()));
-		componentResult.merge();
+		componentResultDao.update(componentResult);
 	}
 
 	/**
 	 * Sets cookie with studyId and componentId so the component script has them
 	 * too.
 	 */
-	public static void setIdCookie(StudyResult studyResult,
+	public String getIdCookieValue(StudyResult studyResult,
 			ComponentResult componentResult, Worker worker) {
 		StudyModel study = studyResult.getStudy();
 		ComponentModel component = componentResult.getComponent();
@@ -155,13 +174,13 @@ public abstract class PublixUtils<T extends Worker> {
 				sb.append("&");
 			}
 		}
-		Publix.response().setCookie(Publix.ID_COOKIE_NAME, sb.toString());
+		return sb.toString();
 	}
 
 	/**
 	 * Discard cookie with studyId and componentId.
 	 */
-	public static void discardIdCookie() {
+	public void discardIdCookie() {
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 	}
 
@@ -177,14 +196,14 @@ public abstract class PublixUtils<T extends Worker> {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
 			componentResult.setData(null);
-			componentResult.merge();
+			componentResultDao.update(componentResult);
 		}
 
 		// Set StudyResult to state ABORTED and set message
 		studyResult.setStudyState(StudyState.ABORTED);
 		studyResult.setAbortMsg(message);
 		studyResult.setEndDate(new Timestamp(new Date().getTime()));
-		studyResult.merge();
+		studyResultDao.update(studyResult);
 	}
 
 	public String finishStudy(Boolean successful, String errorMsg,
@@ -205,7 +224,7 @@ public abstract class PublixUtils<T extends Worker> {
 		studyResult.setEndDate(new Timestamp(new Date().getTime()));
 		// Clear study session data before finishing
 		studyResult.setStudySessionData(null);
-		studyResult.merge();
+		studyResultDao.update(studyResult);
 		return confirmationCode;
 	}
 
@@ -218,7 +237,7 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 	}
 
-	public static String getRequestBodyAsString(RequestBody requestBody) {
+	public String getRequestBodyAsString(RequestBody requestBody) {
 		String text = requestBody.asText();
 		if (text != null) {
 			return text;
@@ -240,7 +259,7 @@ public abstract class PublixUtils<T extends Worker> {
 	/**
 	 * Convert XML-Document to String
 	 */
-	public static String asString(Document doc) {
+	public String asString(Document doc) {
 		try {
 			DOMSource domSource = new DOMSource(doc);
 			StringWriter writer = new StringWriter();
@@ -352,8 +371,7 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 		if (component == null) {
 			throw new NotFoundPublixException(
-					PublixErrorMessages.studyHasNoActiveComponents(study
-							.getId()));
+					errorMessages.studyHasNoActiveComponents(study.getId()));
 		}
 		return component;
 	}
@@ -373,21 +391,19 @@ public abstract class PublixUtils<T extends Worker> {
 	public ComponentModel retrieveComponent(StudyModel study, Long componentId)
 			throws NotFoundPublixException, BadRequestPublixException,
 			ForbiddenPublixException {
-		ComponentModel component = ComponentModel.findById(componentId);
+		ComponentModel component = componentDao.findById(componentId);
 		if (component == null) {
-			throw new NotFoundPublixException(
-					PublixErrorMessages.componentNotExist(study.getId(),
-							componentId));
+			throw new NotFoundPublixException(errorMessages.componentNotExist(
+					study.getId(), componentId));
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
 			throw new BadRequestPublixException(
-					PublixErrorMessages.componentNotBelongToStudy(
-							study.getId(), componentId));
+					errorMessages.componentNotBelongToStudy(study.getId(),
+							componentId));
 		}
 		if (!component.isActive()) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.componentNotActive(study.getId(),
-							componentId));
+					errorMessages.componentNotActive(study.getId(), componentId));
 		}
 		return component;
 	}
@@ -404,18 +420,17 @@ public abstract class PublixUtils<T extends Worker> {
 			component = study.getComponent(position);
 		} catch (IndexOutOfBoundsException e) {
 			throw new NotFoundPublixException(
-					PublixErrorMessages.noComponentAtPosition(study.getId(),
-							position));
+					errorMessages.noComponentAtPosition(study.getId(), position));
 		}
 		return component;
 	}
 
 	public StudyModel retrieveStudy(Long studyId)
 			throws NotFoundPublixException {
-		StudyModel study = StudyModel.findById(studyId);
+		StudyModel study = studyDao.findById(studyId);
 		if (study == null) {
 			throw new NotFoundPublixException(
-					PublixErrorMessages.studyNotExist(studyId));
+					errorMessages.studyNotExist(studyId));
 		}
 		return study;
 	}
@@ -434,8 +449,8 @@ public abstract class PublixUtils<T extends Worker> {
 			ComponentModel component) throws PublixException {
 		if (!component.getStudy().equals(study)) {
 			throw new BadRequestPublixException(
-					PublixErrorMessages.componentNotBelongToStudy(
-							study.getId(), component.getId()));
+					errorMessages.componentNotBelongToStudy(study.getId(),
+							component.getId()));
 		}
 	}
 

@@ -1,5 +1,19 @@
 package common;
 
+import persistance.ComponentDao;
+import persistance.ComponentResultDao;
+import persistance.IComponentDao;
+import persistance.IComponentResultDao;
+import persistance.IStudyDao;
+import persistance.IStudyResultDao;
+import persistance.IUserDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.UserDao;
+import persistance.workers.IMTWorkerDao;
+import persistance.workers.IWorkerDao;
+import persistance.workers.MTWorkerDao;
+import persistance.workers.WorkerDao;
 import play.Application;
 import play.GlobalSettings;
 import play.Logger;
@@ -8,16 +22,19 @@ import play.mvc.Http.RequestHeader;
 import play.mvc.Results;
 import play.mvc.SimpleResult;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import exceptions.PublixException;
-import exceptions.ResultException;
-
+/**
+ * Play's Global class. We use Guice for dependency injection.
+ * 
+ * @author Kristian Lange
+ */
 public class Global extends GlobalSettings {
 
 	private static final String CLASS_NAME = Global.class.getSimpleName();
-	private static final Injector INJECTOR = createInjector();
+	public static final Injector INJECTOR = createInjector();
 
 	@Override
 	public <A> A getControllerInstance(Class<A> controllerClass)
@@ -25,48 +42,32 @@ public class Global extends GlobalSettings {
 		return INJECTOR.getInstance(controllerClass);
 	}
 
-	/**
-	 * Needed for non-static action methods in controllers. Used in Publix
-	 * interface.
-	 */
 	private static Injector createInjector() {
-		return Guice.createInjector();
+		return Guice.createInjector(new AbstractModule() {
+
+			@Override
+			protected void configure() {
+				bind(IUserDao.class).to(UserDao.class);
+				bind(IStudyResultDao.class).to(StudyResultDao.class);
+				bind(IStudyDao.class).to(StudyDao.class);
+				bind(IComponentResultDao.class).to(ComponentResultDao.class);
+				bind(IComponentDao.class).to(ComponentDao.class);
+				bind(IMTWorkerDao.class).to(MTWorkerDao.class);
+				bind(IWorkerDao.class).to(WorkerDao.class);
+			}
+		});
 	}
 
 	@Override
 	public void onStart(Application app) {
 		Logger.info(CLASS_NAME + ".onStart: Application has started");
-		Initializer.initialize();
+		// Do some JATOS specific initialisation
+		INJECTOR.getInstance(Initializer.class).initialize();
 	}
 
 	@Override
 	public Promise<SimpleResult> onError(RequestHeader request, Throwable t) {
-		Throwable cause = t.getCause();
-		Throwable causeCause = t.getCause().getCause();
-		
-		// Handle PublixException from Publix (public API) controllers
-		if (cause instanceof PublixException) {
-			PublixException publixException = (PublixException) cause;
-			SimpleResult result = publixException.getSimpleResult();
-			return Promise.<SimpleResult> pure(result);
-		}
-		if (causeCause instanceof PublixException) {
-			PublixException publixException = (PublixException) causeCause;
-			SimpleResult result = publixException.getSimpleResult();
-			return Promise.<SimpleResult> pure(result);
-		}
-		
-		// Handle ResultException from JATOS' GUI controllers
-		if (cause instanceof ResultException) {
-			ResultException resultException = (ResultException) cause;
-			SimpleResult result = resultException.getResult();
-			return Promise.<SimpleResult> pure(result);
-		}
-		if (causeCause instanceof ResultException) {
-			ResultException resultException = (ResultException) causeCause;
-			SimpleResult result = resultException.getResult();
-			return Promise.<SimpleResult> pure(result);
-		}
+		// Make sure no internal error msg is ever shown
 		return Promise.<SimpleResult> pure(Results
 				.internalServerError(views.html.publix.error
 						.render("Internal server error")));
