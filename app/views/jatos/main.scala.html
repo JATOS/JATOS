@@ -183,8 +183,20 @@ function showMessages(messages) {
 	}
 }
 
+@if(flash.contains("success")) {
+	showSuccess('@flash.get("success")');
+}
+
 @if(flash.contains("error")) {
 	showError('@flash.get("error")');
+}
+
+@if(flash.contains("warning")) {
+	showWarning('@flash.get("warning")');
+}
+
+@if(flash.contains("info")) {
+	showInfo('@flash.get("info")');
 }
 
 @if(common.Common.IN_MEMORY_DB) {

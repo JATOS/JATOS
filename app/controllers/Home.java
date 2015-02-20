@@ -48,14 +48,13 @@ public class Home extends Controller {
 	 * Shows home view
 	 */
 	@Transactional
-	public Result home(String errorMsg, int httpStatus)
+	public Result home(int httpStatus)
 			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome();
 		return status(httpStatus, views.html.jatos.home.render(studyList,
 				loggedInUser, breadcrumbs, RequestScope.getMessages()));
@@ -63,7 +62,7 @@ public class Home extends Controller {
 
 	@Transactional
 	public Result home() throws JatosGuiException {
-		return home(null, Http.Status.OK);
+		return home(Http.Status.OK);
 	}
 	
 	/**
@@ -79,8 +78,6 @@ public class Home extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		
-		
 		return ok(jsonUtils.sidebarStudyList(studyList));
 	}
 

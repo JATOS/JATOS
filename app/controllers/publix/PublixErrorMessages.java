@@ -97,5 +97,10 @@ public abstract class PublixErrorMessages<T extends Worker> {
 		String errorMsg = "An study with ID " + studyId + " doesn't exist.";
 		return errorMsg;
 	}
+	
+	public String studyFinishedWithMessage(String message) {
+		String msg = "Study finished with message: " + message;
+		return msg;
+	}
 
 }

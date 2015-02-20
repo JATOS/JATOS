@@ -45,6 +45,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	private static final String CLASS_NAME = JatosPublix.class.getSimpleName();
 
 	private final JatosPublixUtils publixUtils;
+	private final JatosErrorMessages errorMessages;
 
 	@Inject
 	JatosPublix(JatosPublixUtils publixUtils,
@@ -53,6 +54,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			IStudyResultDao studyResultDao) {
 		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
+		this.errorMessages = jatosErrorMessages;
 	}
 
 	@Override
@@ -212,7 +214,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
-			return redirect(routes.Studies.index(study.getId(), message));
+			flash("info", errorMessages.studyFinishedWithMessage(message));
+			return redirect(routes.Studies.index(study.getId()));
 		}
 	}
 
@@ -239,7 +242,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);
 		} else {
-			return redirect(routes.Studies.index(study.getId(), errorMsg));
+			flash("info", errorMessages.studyFinishedWithMessage(errorMsg));
+			return redirect(routes.Studies.index(study.getId()));
 		}
 	}
 

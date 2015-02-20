@@ -78,8 +78,8 @@ public class JatosGuiExceptionThrower {
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
-			result = (SimpleResult) homeProvider.get().home(errorMsg,
-					httpStatus);
+			RequestScope.getMessages().error(errorMsg);
+			result = (SimpleResult) homeProvider.get().home(httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
 	}
@@ -95,8 +95,9 @@ public class JatosGuiExceptionThrower {
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
+			RequestScope.getMessages().error(errorMsg);
 			result = (SimpleResult) studiesProvider.get().index(studyId,
-					errorMsg, httpStatus);
+					httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
 	}
@@ -112,8 +113,9 @@ public class JatosGuiExceptionThrower {
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
+			RequestScope.getMessages().error(errorMsg);
 			result = (SimpleResult) studiesProvider.get().changeMembers(
-					studyId, errorMsg, httpStatus);
+					studyId, httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
 	}
@@ -129,8 +131,9 @@ public class JatosGuiExceptionThrower {
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
+			RequestScope.getMessages().error(errorMsg);
 			result = (SimpleResult) workersProvider.get().index(workerId,
-					errorMsg, httpStatus);
+					httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
 	}

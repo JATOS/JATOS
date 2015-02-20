@@ -85,7 +85,7 @@ public class Breadcrumbs {
 				routes.Home.home());
 		if (last != null) {
 			breadcrumbs.put(study.getTitle(),
-					routes.Studies.index(study.getId(), null)).put(last, "");
+					routes.Studies.index(study.getId())).put(last, "");
 		} else {
 			breadcrumbs.put(study.getTitle(), "");
 		}
@@ -108,7 +108,7 @@ public class Breadcrumbs {
 		Breadcrumbs breadcrumbs = new Breadcrumbs()
 				.put(HOME, routes.Home.home())
 				.put(study.getTitle(),
-						routes.Studies.index(study.getId(), null))
+						routes.Studies.index(study.getId()))
 				.put(component.getTitle(), "").put(last, "");
 		return breadcrumbs;
 	}

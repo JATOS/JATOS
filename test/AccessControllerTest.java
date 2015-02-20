@@ -85,7 +85,7 @@ public class AccessControllerTest extends AControllerTest {
 	public void callStudiesIndex() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies.index(
-				studyClone.getId(), null);
+				studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
 		removeStudy(studyClone);

@@ -224,7 +224,7 @@ public class Components extends Controller {
 			return redirect(routes.Components.showComponent(studyId,
 					componentId));
 		} else {
-			return redirect(routes.Studies.index(study.getId(), null));
+			return redirect(routes.Studies.index(study.getId()));
 		}
 	}
 

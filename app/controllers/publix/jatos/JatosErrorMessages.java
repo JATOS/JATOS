@@ -52,5 +52,5 @@ public class JatosErrorMessages extends PublixErrorMessages<JatosWorker> {
 				+ " isn't a JATOS worker.";
 		return errorMsg;
 	}
-
+	
 }

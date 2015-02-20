@@ -11,6 +11,7 @@ import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.ClosedStandaloneWorker;
+import models.workers.MTWorker;
 import models.workers.TesterWorker;
 import models.workers.Worker;
 import persistance.IComponentDao;
@@ -41,8 +42,8 @@ import utils.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
+import common.JatosGuiAction;
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.tester.TesterPublix;
@@ -98,7 +99,7 @@ public class Studies extends Controller {
 	 * Shows the index view with details regarding a study.
 	 */
 	@Transactional
-	public Result index(Long studyId, String errorMsg, int httpStatus)
+	public Result index(Long studyId, int httpStatus)
 			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
@@ -109,7 +110,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
-		RequestScope.getMessages().error(errorMsg);
+		//RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study);
 		String baseUrl = ControllerUtils.getReferer();
 		int studyResultCount = studyResultDao.countByStudy(study);
@@ -120,13 +121,8 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	public Result index(Long studyId, String errorMsg) throws JatosGuiException {
-		return index(studyId, errorMsg, Http.Status.OK);
-	}
-
-	@Transactional
 	public Result index(Long studyId) throws JatosGuiException {
-		return index(studyId, null, Http.Status.OK);
+		return index(studyId, Http.Status.OK);
 	}
 
 	/**
@@ -171,7 +167,7 @@ public class Studies extends Controller {
 
 		studyDao.create(study, loggedInUser);
 		createStudyAssetsDir(loggedInUser, studyList, study);
-		return redirect(routes.Studies.index(study.getId(), null));
+		return redirect(routes.Studies.index(study.getId()));
 	}
 
 	private void failStudyCreate(UserModel loggedInUser,
@@ -236,7 +232,7 @@ public class Studies extends Controller {
 		String oldDirName = study.getDirName();
 		studyDao.updateProperties(study, updatedStudy);
 		renameStudyAssetsDir(study, loggedInUser, studyList, oldDirName);
-		return redirect(routes.Studies.index(studyId, null));
+		return redirect(routes.Studies.index(studyId));
 	}
 
 	private void failStudyEdit(UserModel loggedInUser,
@@ -309,14 +305,14 @@ public class Studies extends Controller {
 
 	@Transactional
 	public Result changeMembers(Long studyId) throws JatosGuiException {
-		return changeMembers(studyId, null, Http.Status.OK);
+		return changeMembers(studyId, Http.Status.OK);
 	}
 
 	/**
 	 * Shows a view with a form to change members of a study.
 	 */
 	@Transactional
-	public Result changeMembers(Long studyId, String errorMsg, int httpStatus)
+	public Result changeMembers(Long studyId, int httpStatus)
 			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".changeMembers: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
@@ -327,7 +323,6 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		List<UserModel> userList = userDao.findAll();
-		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.CHANGE_MEMBERS);
 		return status(httpStatus, views.html.jatos.study.changeMembers.render(
@@ -350,7 +345,7 @@ public class Studies extends Controller {
 		String[] checkedUsers = request().body().asFormUrlEncoded()
 				.get(StudyModel.MEMBERS);
 		persistCheckedUsers(studyId, study, checkedUsers);
-		return redirect(routes.Studies.index(studyId, null));
+		return redirect(routes.Studies.index(studyId));
 	}
 
 	private void persistCheckedUsers(Long studyId, StudyModel study,
@@ -529,10 +524,15 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwStudies(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
+		if (!study.hasAllowedWorker(MTWorker.WORKER_TYPE)) {
+			RequestScope.getMessages().warning(
+					MessagesStrings.MTWORKER_ALLOWANCE_MISSING);
+		}
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 		return ok(views.html.jatos.study.mTurkSourceCode.render(studyList,
-				loggedInUser, breadcrumbs, null, study, jatosURL));
+				loggedInUser, breadcrumbs, RequestScope.getMessages(), study,
+				jatosURL));
 	}
 
 	/**

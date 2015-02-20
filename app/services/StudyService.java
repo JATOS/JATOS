@@ -41,7 +41,7 @@ public class StudyService extends Controller {
 		if (study.isLocked()) {
 			String errorMsg = MessagesStrings.studyLocked(study.getId());
 			jatosGuiExceptionThrower.throwRedirectOrForbidden(
-					routes.Studies.index(study.getId(), null), errorMsg);
+					routes.Studies.index(study.getId()), errorMsg);
 		}
 	}
 

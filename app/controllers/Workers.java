@@ -69,7 +69,7 @@ public class Workers extends Controller {
 	 * Shows view with worker details.
 	 */
 	@Transactional
-	public Result index(Long workerId, String errorMsg, int httpStatus)
+	public Result index(Long workerId, int httpStatus)
 			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
@@ -79,7 +79,6 @@ public class Workers extends Controller {
 		Worker worker = workerDao.findById(workerId);
 		workerService.checkWorker(worker, workerId);
 
-		RequestScope.getMessages().error(errorMsg);
 		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorker(worker,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
@@ -89,14 +88,8 @@ public class Workers extends Controller {
 	}
 
 	@Transactional
-	public Result index(Long workerId, String errorMsg)
-			throws JatosGuiException {
-		return index(workerId, errorMsg, Http.Status.OK);
-	}
-
-	@Transactional
 	public Result index(Long workerId) throws JatosGuiException {
-		return index(workerId, null, Http.Status.OK);
+		return index(workerId, Http.Status.OK);
 	}
 
 	/**
