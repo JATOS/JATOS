@@ -1,12 +1,9 @@
 package controllers;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
-import models.ComponentResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
@@ -21,8 +18,8 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import services.Breadcrumbs;
-import services.MessagesStrings;
 import services.JatosGuiExceptionThrower;
+import services.MessagesStrings;
 import services.RequestScope;
 import services.ResultService;
 import services.StudyService;
@@ -123,8 +120,9 @@ public class StudyResults extends Controller {
 
 		List<Long> studyResultIdList = resultService
 				.extractResultIds(studyResultIds);
-		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
-		checkAllStudyResults(studyResultList, loggedInUser, true);
+		List<StudyResult> studyResultList = resultService
+				.getAllStudyResults(studyResultIdList);
+		resultService.checkAllStudyResults(studyResultList, loggedInUser, true);
 
 		for (StudyResult studyResult : studyResultList) {
 			studyResultDao.remove(studyResult);
@@ -169,8 +167,8 @@ public class StudyResults extends Controller {
 		Worker worker = workerDao.findById(workerId);
 		workerService.checkWorker(worker, workerId);
 
-		List<StudyResult> allowedStudyResultList = getAllowedStudyResultList(
-				loggedInUser, worker);
+		List<StudyResult> allowedStudyResultList = resultService
+				.getAllowedStudyResultList(loggedInUser, worker);
 		String dataAsJson = null;
 		try {
 			dataAsJson = jsonUtils.allStudyResultsForUI(allowedStudyResultList);
@@ -180,21 +178,6 @@ public class StudyResults extends Controller {
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
-	}
-
-	/**
-	 * Generate the list of StudyResults that the logged-in user is allowed to
-	 * see.
-	 */
-	private List<StudyResult> getAllowedStudyResultList(UserModel loggedInUser,
-			Worker worker) {
-		List<StudyResult> allowedStudyResultList = new ArrayList<StudyResult>();
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().hasMember(loggedInUser)) {
-				allowedStudyResultList.add(studyResult);
-			}
-		}
-		return allowedStudyResultList;
 	}
 
 	/**
@@ -214,9 +197,12 @@ public class StudyResults extends Controller {
 
 		List<Long> studyResultIdList = resultService
 				.extractResultIds(studyResultIds);
-		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
-		checkAllStudyResults(studyResultList, loggedInUser, false);
-		String studyResultDataAsStr = getStudyResultData(studyResultList);
+		List<StudyResult> studyResultList = resultService
+				.getAllStudyResults(studyResultIdList);
+		resultService
+				.checkAllStudyResults(studyResultList, loggedInUser, false);
+		String studyResultDataAsStr = resultService
+				.getStudyResultData(studyResultList);
 
 		response().setContentType("application/x-download");
 		String filename = "results_" + DateUtils.getDateForFile(new Date())
@@ -227,61 +213,6 @@ public class StudyResults extends Controller {
 		response().setCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME,
 				ImportExport.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(studyResultDataAsStr);
-	}
-
-	/**
-	 * Put all ComponentResult's data into a String each in a separate line.
-	 */
-	private String getStudyResultData(List<StudyResult> studyResultList)
-			throws JatosGuiException {
-		StringBuilder sb = new StringBuilder();
-		for (StudyResult studyResult : studyResultList) {
-			Iterator<ComponentResult> iterator = studyResult
-					.getComponentResultList().iterator();
-			while (iterator.hasNext()) {
-				ComponentResult componentResult = iterator.next();
-				String data = componentResult.getData();
-				if (data != null) {
-					sb.append(data);
-					if (iterator.hasNext()) {
-						sb.append("\n");
-					}
-				}
-			}
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Get all StudyResults or throw a JatosGuiException if one doesn't exist.
-	 */
-	private List<StudyResult> getAllStudyResults(List<Long> studyResultIdList)
-			throws JatosGuiException {
-		List<StudyResult> studyResultList = new ArrayList<>();
-		for (Long studyResultId : studyResultIdList) {
-			StudyResult studyResult = studyResultDao.findById(studyResultId);
-			if (studyResult == null) {
-				String errorMsg = MessagesStrings
-						.studyResultNotExist(studyResultId);
-				jatosGuiExceptionThrower.throwAjax(errorMsg,
-						Http.Status.NOT_FOUND);
-			}
-			studyResultList.add(studyResult);
-		}
-		return studyResultList;
-	}
-
-	private void checkAllStudyResults(List<StudyResult> studyResultList,
-			UserModel loggedInUser, boolean studyMustNotBeLocked)
-			throws JatosGuiException {
-		for (StudyResult studyResult : studyResultList) {
-			StudyModel study = studyResult.getStudy();
-			studyService.checkStandardForStudy(study, study.getId(),
-					loggedInUser);
-			if (studyMustNotBeLocked) {
-				studyService.checkStudyLocked(study);
-			}
-		}
 	}
 
 }

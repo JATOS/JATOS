@@ -1,11 +1,14 @@
 package services;
 
+import java.util.List;
 import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
+import models.workers.Worker;
 import persistance.IComponentDao;
+import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http;
 
@@ -42,6 +45,16 @@ public class StudyService extends Controller {
 			String errorMsg = MessagesStrings.studyLocked(study.getId());
 			jatosGuiExceptionThrower.throwRedirectOrForbidden(
 					routes.Studies.index(study.getId()), errorMsg);
+		}
+	}
+	
+	public void checkWorker(Long studyId, Worker worker)
+			throws JatosGuiException {
+		List<ValidationError> errorList = worker.validate();
+		if (errorList != null && !errorList.isEmpty()) {
+			String errorMsg = errorList.get(0).message();
+			jatosGuiExceptionThrower.throwStudies(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
 		}
 	}
 

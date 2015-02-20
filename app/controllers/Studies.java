@@ -344,16 +344,16 @@ public class Studies extends Controller {
 
 		String[] checkedUsers = request().body().asFormUrlEncoded()
 				.get(StudyModel.MEMBERS);
-		persistCheckedUsers(studyId, study, checkedUsers);
+		persistCheckedUsers(study, checkedUsers);
 		return redirect(routes.Studies.index(studyId));
 	}
 
-	private void persistCheckedUsers(Long studyId, StudyModel study,
+	private void persistCheckedUsers(StudyModel study,
 			String[] checkedUsers) throws JatosGuiException {
 		if (checkedUsers == null || checkedUsers.length < 1) {
 			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
 			jatosGuiExceptionThrower.throwChangeMemberOfStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
+					Http.Status.BAD_REQUEST, study.getId());
 		}
 		study.getMemberList().clear();
 		for (String email : checkedUsers) {
@@ -447,7 +447,7 @@ public class Studies extends Controller {
 		String comment = json.findPath(ClosedStandaloneWorker.COMMENT).asText()
 				.trim();
 		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
-		checkWorker(studyId, worker);
+		studyService.checkWorker(studyId, worker);
 		workerDao.create(worker);
 
 		String url = ControllerUtils.getReferer()
@@ -481,7 +481,7 @@ public class Studies extends Controller {
 		}
 		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
 		TesterWorker worker = new TesterWorker(comment);
-		checkWorker(studyId, worker);
+		studyService.checkWorker(studyId, worker);
 		workerDao.create(worker);
 
 		String url = ControllerUtils.getReferer()
@@ -489,16 +489,6 @@ public class Studies extends Controller {
 						study.getId()).url() + "?" + TesterPublix.TESTER_ID
 				+ "=" + worker.getId();
 		return ok(url);
-	}
-
-	private void checkWorker(Long studyId, Worker worker)
-			throws JatosGuiException {
-		List<ValidationError> errorList = worker.validate();
-		if (errorList != null && !errorList.isEmpty()) {
-			String errorMsg = errorList.get(0).message();
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
 	}
 
 	/**

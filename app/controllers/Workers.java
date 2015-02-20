@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import models.StudyModel;
-import models.StudyResult;
 import models.UserModel;
-import models.workers.JatosWorker;
 import models.workers.Worker;
 import persistance.IStudyDao;
 import persistance.workers.IWorkerDao;
@@ -18,8 +16,8 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import services.Breadcrumbs;
-import services.MessagesStrings;
 import services.JatosGuiExceptionThrower;
+import services.MessagesStrings;
 import services.RequestScope;
 import services.StudyService;
 import services.UserService;
@@ -69,8 +67,7 @@ public class Workers extends Controller {
 	 * Shows view with worker details.
 	 */
 	@Transactional
-	public Result index(Long workerId, int httpStatus)
-			throws JatosGuiException {
+	public Result index(Long workerId, int httpStatus) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
@@ -105,29 +102,9 @@ public class Workers extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		workerService.checkWorker(worker, workerId);
 
-		checkRemoval(worker, loggedInUser);
+		workerService.checkRemovalAllowed(worker, loggedInUser);
 		workerDao.remove(worker);
 		return ok();
-	}
-
-	private void checkRemoval(Worker worker, UserModel loggedInUser)
-			throws JatosGuiException {
-		// JatosWorker associated to a JATOS user must not be removed
-		if (worker instanceof JatosWorker) {
-			JatosWorker maWorker = (JatosWorker) worker;
-			String errorMsg = MessagesStrings.removeJatosWorkerNotAllowed(worker
-					.getId(), maWorker.getUser().getName(), maWorker.getUser()
-					.getEmail());
-			jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.FORBIDDEN);
-		}
-
-		// Check for every study if removal is allowed
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			StudyModel study = studyResult.getStudy();
-			studyService.checkStandardForStudy(study, study.getId(),
-					loggedInUser);
-			studyService.checkStudyLocked(study);
-		}
 	}
 
 	/**

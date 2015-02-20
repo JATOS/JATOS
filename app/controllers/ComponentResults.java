@@ -1,9 +1,7 @@
 package controllers;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import models.ComponentModel;
@@ -22,10 +20,8 @@ import play.mvc.With;
 import services.Breadcrumbs;
 import services.ComponentService;
 import services.MessagesStrings;
-import services.JatosGuiExceptionThrower;
 import services.RequestScope;
 import services.ResultService;
-import services.StudyService;
 import services.UserService;
 import utils.DateUtils;
 import utils.IOUtils;
@@ -49,8 +45,6 @@ public class ComponentResults extends Controller {
 	private static final String CLASS_NAME = ComponentResults.class
 			.getSimpleName();
 
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
 	private final ResultService resultService;
@@ -60,13 +54,10 @@ public class ComponentResults extends Controller {
 	private final IComponentResultDao componentResultDao;
 
 	@Inject
-	ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService, ComponentService componentService,
+	ComponentResults(ComponentService componentService,
 			UserService userService, ResultService resultService,
 			IStudyDao studyDao, IComponentDao componentDao,
 			IComponentResultDao componentResultDao, JsonUtils jsonUtils) {
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-		this.studyService = studyService;
 		this.componentService = componentService;
 		this.userService = userService;
 		this.resultService = resultService;
@@ -128,8 +119,10 @@ public class ComponentResults extends Controller {
 
 		List<Long> componentResultIdList = resultService
 				.extractResultIds(componentResultIds);
-		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
-		checkAllComponentResults(componentResultList, loggedInUser, true);
+		List<ComponentResult> componentResultList = resultService
+				.getAllComponentResults(componentResultIdList);
+		resultService.checkAllComponentResults(componentResultList,
+				loggedInUser, true);
 
 		for (ComponentResult componentResult : componentResultList) {
 			componentResultDao.remove(componentResult);
@@ -180,9 +173,12 @@ public class ComponentResults extends Controller {
 
 		List<Long> componentResultIdList = resultService
 				.extractResultIds(componentResultIds);
-		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
-		checkAllComponentResults(componentResultList, loggedInUser, true);
-		String componentResultDataAsStr = getComponentResultData(componentResultList);
+		List<ComponentResult> componentResultList = resultService
+				.getAllComponentResults(componentResultIdList);
+		resultService.checkAllComponentResults(componentResultList,
+				loggedInUser, true);
+		String componentResultDataAsStr = resultService
+				.getComponentResultData(componentResultList);
 
 		response().setContentType("application/x-download");
 		String filename = "results_" + DateUtils.getDateForFile(new Date())
@@ -195,54 +191,4 @@ public class ComponentResults extends Controller {
 		return ok(componentResultDataAsStr);
 	}
 
-	/**
-	 * Put all ComponentResult's data into a String each in a separate line.
-	 */
-	private String getComponentResultData(
-			List<ComponentResult> componentResultList) throws JatosGuiException {
-		StringBuilder sb = new StringBuilder();
-		Iterator<ComponentResult> iterator = componentResultList.iterator();
-		while (iterator.hasNext()) {
-			ComponentResult componentResult = iterator.next();
-			String data = componentResult.getData();
-			if (data != null) {
-				sb.append(data);
-				if (iterator.hasNext()) {
-					sb.append("\n");
-				}
-			}
-		}
-		return sb.toString();
-	}
-
-	private List<ComponentResult> getAllComponentResults(
-			List<Long> componentResultIdList) throws JatosGuiException {
-		List<ComponentResult> componentResultList = new ArrayList<>();
-		for (Long componentResultId : componentResultIdList) {
-			ComponentResult componentResult = componentResultDao
-					.findById(componentResultId);
-			if (componentResult == null) {
-				String errorMsg = MessagesStrings
-						.componentResultNotExist(componentResultId);
-				jatosGuiExceptionThrower.throwAjax(errorMsg,
-						Http.Status.NOT_FOUND);
-			}
-			componentResultList.add(componentResult);
-		}
-		return componentResultList;
-	}
-
-	private void checkAllComponentResults(
-			List<ComponentResult> componentResultList, UserModel loggedInUser,
-			boolean studyMustNotBeLocked) throws JatosGuiException {
-		for (ComponentResult componentResult : componentResultList) {
-			ComponentModel component = componentResult.getComponent();
-			StudyModel study = component.getStudy();
-			componentService.checkStandardForComponents(study.getId(),
-					component.getId(), study, loggedInUser, component);
-			if (studyMustNotBeLocked) {
-				studyService.checkStudyLocked(study);
-			}
-		}
-	}
 }
