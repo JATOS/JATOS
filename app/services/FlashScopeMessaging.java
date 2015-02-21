@@ -43,19 +43,19 @@ public class FlashScopeMessaging {
 
 	public static void success(String msg) {
 		if (msg != null) {
-			Controller.flash(SUCCESS);
+			Controller.flash(SUCCESS, msg);
 		}
 	}
 
 	public static void error(String msg) {
 		if (msg != null) {
-			Controller.flash(ERROR);
+			Controller.flash(ERROR, msg);
 		}
 	}
 
 	public static void warning(String msg) {
 		if (msg != null) {
-			Controller.flash(WARNING);
+			Controller.flash(WARNING, msg);
 		}
 	}
 
