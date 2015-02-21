@@ -1,0 +1,108 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel, 
+breadcrumbs: services.gui.Breadcrumbs,
+submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
+
+@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+
+@helper.form(action = submitAction, 'class -> "form-horizontal", 'role -> "form") {
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="title">Title:</label>
+	<div class="col-xs-10">
+		<input type="text" class="form-control" id="title" name="@StudyModel.TITLE" value="@form(StudyModel.TITLE).value" placeholder="Your title">
+	</div>
+</div>
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="description">Description:</label>
+	<div class="col-xs-10">
+		<textarea rows="3" class="form-control" id="description" name="@StudyModel.DESCRIPTION" placeholder="Your description">@form(StudyModel.DESCRIPTION).value</textarea>
+		<span class="help-block">Explain what your study is doing. In case you want to use the Mechanical Turk, this description will be shown to the participants.</span>
+	</div>
+</div>
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="dirName">Study assets' directory name:</label>
+	<div class="col-xs-10">
+		<input type="text" class="form-control" id="dirName" name="@StudyModel.DIRNAME" value="@form(StudyModel.DIRNAME).value" placeholder="Study assets' directory name">
+	<span class="help-block">Enter the name of the directory of your study assets in the file system of the JATOS server. All HTML, JavaScript, CSS, and images goes in there.</span>
+	</div>
+</div>
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="jsonData">JSON input:</label>
+	<div class="col-xs-10">
+		<textarea rows="6" class="form-control" id="jsonData" name="@StudyModel.JSON_DATA" placeholder="Put your JSON string here">@form(StudyModel.JSON_DATA).value</textarea>
+		<span class="help-block">Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed.</span>
+	</div>
+</div>
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="jsonData">Allowed worker types:</label>
+	<div class="col-xs-10">
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.JatosWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.JatosWorker.WORKER_TYPE)) {checked}
+					>@workers.JatosWorker.UI_WORKER_TYPE
+		</label>
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.TesterWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.TesterWorker.WORKER_TYPE)) {checked}
+					>@workers.TesterWorker.UI_WORKER_TYPE
+		</label>
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.MTWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.MTWorker.WORKER_TYPE)) {checked}
+					>@workers.MTWorker.UI_WORKER_TYPE
+		</label>
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.ClosedStandaloneWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.ClosedStandaloneWorker.WORKER_TYPE)) {checked}
+					>@workers.ClosedStandaloneWorker.UI_WORKER_TYPE
+		</label>
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.OpenStandaloneWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.OpenStandaloneWorker.WORKER_TYPE)) {checked}
+					>@workers.OpenStandaloneWorker.UI_WORKER_TYPE
+		</label>
+		<span class="help-block">Which workers are allowed to run this study?</span>
+	</div>
+</div>
+
+<div class="form-group">
+	<div class="col-xs-offset-2 col-xs-10">
+		<input type="submit" class="btn btn-primary" value="Submit">
+	</div>
+</div>
+
+}
+
+<script>
+@if(form.hasErrors) {
+	showWarning("@services.gui.MessagesStrings.STUDY_WASNT_SAVED");
+}
+@for(error <- form.globalErrors) {
+	showError("@error.message");
+}
+@for(error <- form(StudyModel.TITLE).errors) {
+	$('#title').closest(".form-group").addClass("has-error");
+	$('#title').after('<span class="help-block">@error.message</span>');
+}
+@for(error <- form(StudyModel.DESCRIPTION).errors) {
+	$('#description').closest(".form-group").addClass("has-error");
+	$('#description').after('<span class="help-block">@error.message</span>');
+}
+@for(error <- form(StudyModel.DIRNAME).errors) {
+	$('#dirName').closest(".form-group").addClass("has-error");
+	$('#dirName').after('<span class="help-block">@error.message</span>');
+}
+@for(error <- form(StudyModel.JSON_DATA).errors) {
+	$('#jsonData').closest(".form-group").addClass("has-error");
+	$('#jsonData').after('<span class="help-block">@error.message</span>');
+}
+@if(studyIsLocked) {
+	$(':input').attr("disabled", true);
+}
+</script>
+
+}

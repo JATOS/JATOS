@@ -10,11 +10,11 @@ import static play.test.Helpers.status;
 import org.junit.Test;
 
 import play.mvc.Result;
-import services.Breadcrumbs;
-import controllers.Users;
+import services.gui.Breadcrumbs;
+import controllers.gui.Users;
 
 /**
- * Testing actions of controller.Home.
+ * Testing actions of controller.gui.Home.
  * 
  * @author Kristian Lange
  */
@@ -22,7 +22,7 @@ public class HomeControllerTest extends AControllerTest {
 
 	@Test
 	public void callHome() throws Exception {
-		Result result = callAction(controllers.routes.ref.Home.home(),
+		Result result = callAction(controllers.gui.routes.ref.Home.home(),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);

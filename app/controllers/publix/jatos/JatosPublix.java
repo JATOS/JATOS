@@ -10,21 +10,21 @@ import persistance.IStudyResultDao;
 import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Result;
+import services.FlashScopeMessaging;
 import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import controllers.ControllerUtils;
-import controllers.Users;
-import controllers.routes;
+import controllers.gui.ControllerUtils;
+import controllers.gui.Users;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.StudyAssets;
-import exceptions.ForbiddenPublixException;
-import exceptions.ForbiddenReloadException;
-import exceptions.PublixException;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.PublixException;
 
 /**
  * Implementation of JATOS' public API for studies and components that are
@@ -214,8 +214,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
-			flash("info", errorMessages.studyFinishedWithMessage(message));
-			return redirect(routes.Studies.index(study.getId()));
+			if (message != null) {
+				FlashScopeMessaging.info(errorMessages
+						.studyFinishedWithMessage(message));
+			}
+			return redirect(controllers.gui.routes.Studies.index(study.getId()));
 		}
 	}
 
@@ -242,8 +245,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);
 		} else {
-			flash("info", errorMessages.studyFinishedWithMessage(errorMsg));
-			return redirect(routes.Studies.index(study.getId()));
+			if (errorMsg != null) {
+				FlashScopeMessaging.info(errorMessages
+						.studyFinishedWithMessage(errorMsg));
+			}
+			return redirect(controllers.gui.routes.Studies.index(study.getId()));
 		}
 	}
 

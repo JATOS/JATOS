@@ -21,7 +21,7 @@ import org.jsoup.safety.Whitelist;
 import persistance.IComponentResultDao;
 import persistance.IStudyResultDao;
 import play.Logger;
-import services.MessagesStrings;
+import services.gui.MessagesStrings;
 import utils.JsonUtils.SidebarStudy.SidebarComponent;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
 import common.Common;
 
 /**

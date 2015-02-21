@@ -1,26 +1,25 @@
 package controllers.publix.jatos;
 
+import models.StudyModel;
+import models.UserModel;
+import models.workers.JatosWorker;
+import models.workers.Worker;
 import persistance.IComponentDao;
 import persistance.IComponentResultDao;
 import persistance.IStudyDao;
 import persistance.IStudyResultDao;
 import persistance.IUserDao;
 import persistance.workers.IWorkerDao;
-import models.StudyModel;
-import models.UserModel;
-import models.workers.JatosWorker;
-import models.workers.Worker;
-import services.MessagesStrings;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import controllers.Users;
+import controllers.gui.Users;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
-import exceptions.ForbiddenPublixException;
-import exceptions.PublixException;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * Special PublixUtils for JatosPublix (studies or components started via JATOS'
@@ -59,12 +58,13 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	public UserModel retrieveUser() throws ForbiddenPublixException {
 		String email = Publix.session(Users.SESSION_EMAIL);
 		if (email == null) {
-			throw new ForbiddenPublixException(MessagesStrings.NO_USER_LOGGED_IN);
+			throw new ForbiddenPublixException(
+					JatosErrorMessages.NO_USER_LOGGED_IN);
 		}
 		UserModel loggedInUser = userDao.findByEmail(email);
 		if (loggedInUser == null) {
 			throw new ForbiddenPublixException(
-					MessagesStrings.userNotExist(email));
+					errorMessages.userNotExist(email));
 		}
 		return loggedInUser;
 	}

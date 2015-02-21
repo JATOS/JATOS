@@ -15,13 +15,13 @@ import utils.JsonUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import controllers.ControllerUtils;
+import controllers.gui.ControllerUtils;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixInterceptor;
-import exceptions.BadRequestPublixException;
-import exceptions.PublixException;
+import exceptions.publix.BadRequestPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * Implementation of JATOS' public API for studies that are started via MTurk.

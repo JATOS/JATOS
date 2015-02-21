@@ -5,7 +5,7 @@ import play.libs.F;
 import play.libs.F.Promise;
 import play.mvc.Http;
 import play.mvc.SimpleResult;
-import exceptions.PublixException;
+import exceptions.publix.PublixException;
 
 /**
  * For all actions in a controller that is annotated with PublixAction catch

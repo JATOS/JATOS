@@ -12,7 +12,7 @@ import persistance.IStudyDao;
 import persistance.IUserDao;
 import play.Logger;
 import play.db.jpa.JPA;
-import services.UserService;
+import services.gui.UserService;
 
 import com.google.inject.Inject;
 

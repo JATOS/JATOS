@@ -2,8 +2,8 @@ package controllers.publix;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import exceptions.BadRequestPublixException;
-import exceptions.PublixException;
+import exceptions.publix.BadRequestPublixException;
+import exceptions.publix.PublixException;
 import play.libs.F.Promise;
 import play.mvc.Result;
 

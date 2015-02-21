@@ -18,8 +18,8 @@ import org.junit.rules.ExpectedException;
 import play.mvc.HandlerRef;
 import play.mvc.Result;
 import utils.IOUtils;
-import controllers.Studies;
-import controllers.Users;
+import controllers.gui.Studies;
+import controllers.gui.Users;
 
 /**
  * Testing actions if study is locked
@@ -57,7 +57,7 @@ public class LockedStudyControllerTest extends AControllerTest {
 	public void callStudiesSubmitEdited() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
-		HandlerRef ref = controllers.routes.ref.Studies.submitEdited(studyClone
+		HandlerRef ref = controllers.gui.routes.ref.Studies.submitEdited(studyClone
 				.getId());
 		checkDenyLocked(ref);
 		removeStudy(studyClone);
@@ -67,7 +67,7 @@ public class LockedStudyControllerTest extends AControllerTest {
 	public void callStudiesRemove() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
-		HandlerRef ref = controllers.routes.ref.Studies.remove(studyClone
+		HandlerRef ref = controllers.gui.routes.ref.Studies.remove(studyClone
 				.getId());
 		checkDenyLocked(ref);
 		removeStudy(studyClone);
@@ -77,7 +77,7 @@ public class LockedStudyControllerTest extends AControllerTest {
 	public void callStudiesChangeComponentOrder() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
-		HandlerRef ref = controllers.routes.ref.Studies.changeComponentOrder(
+		HandlerRef ref = controllers.gui.routes.ref.Studies.changeComponentOrder(
 				studyClone.getId(), studyClone.getComponent(1).getId(),
 				Studies.COMPONENT_POSITION_DOWN);
 		checkDenyLocked(ref);

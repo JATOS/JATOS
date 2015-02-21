@@ -14,7 +14,7 @@ import com.google.inject.Singleton;
 
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import exceptions.PublixException;
+import exceptions.publix.PublixException;
 
 /**
  * Implementation of JATOS' public API for studies run by tester worker.

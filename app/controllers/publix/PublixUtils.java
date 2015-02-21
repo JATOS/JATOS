@@ -36,12 +36,12 @@ import play.mvc.Http.RequestBody;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Singleton;
 
-import exceptions.BadRequestPublixException;
-import exceptions.ForbiddenPublixException;
-import exceptions.ForbiddenReloadException;
-import exceptions.NotFoundPublixException;
-import exceptions.PublixException;
-import exceptions.UnsupportedMediaTypePublixException;
+import exceptions.publix.BadRequestPublixException;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.NotFoundPublixException;
+import exceptions.publix.PublixException;
+import exceptions.publix.UnsupportedMediaTypePublixException;
 
 /**
  * Utilility class with functions that are common for all classes that extend

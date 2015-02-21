@@ -11,7 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.inject.Singleton;
 
-import services.MessagesStrings;
+import services.gui.MessagesStrings;
 import controllers.publix.StudyAssets;
 
 /**

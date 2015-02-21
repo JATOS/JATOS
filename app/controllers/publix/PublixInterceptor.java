@@ -15,15 +15,15 @@ import play.mvc.With;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.PublixAction;
 
+import common.PublixAction;
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.mt.MTPublix;
 import controllers.publix.open_standalone.OpenStandalonePublix;
 import controllers.publix.tester.TesterPublix;
-import exceptions.BadRequestPublixException;
-import exceptions.PublixException;
+import exceptions.publix.BadRequestPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * Interceptor for Publix: it intercepts requests for JATOS' public API and

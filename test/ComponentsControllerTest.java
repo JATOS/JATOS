@@ -23,10 +23,10 @@ import org.junit.Test;
 
 import play.mvc.Result;
 import play.test.FakeRequest;
-import services.Breadcrumbs;
+import services.gui.Breadcrumbs;
 import utils.IOUtils;
-import controllers.Components;
-import controllers.Users;
+import controllers.gui.Components;
+import controllers.gui.Users;
 import controllers.publix.jatos.JatosPublix;
 
 /**
@@ -57,7 +57,7 @@ public class ComponentsControllerTest extends AControllerTest {
 	public void callShowComponent() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
-		Result result = callAction(controllers.routes.ref.Components
+		Result result = callAction(controllers.gui.routes.ref.Components
 				.showComponent(studyClone.getId(), studyClone.getComponent(1)
 						.getId()),
 				fakeRequest()
@@ -87,7 +87,7 @@ public class ComponentsControllerTest extends AControllerTest {
 		studyClone.getComponent(1).setHtmlFilePath(null);
 		entityManager.getTransaction().commit();
 
-		Result result = callAction(controllers.routes.ref.Components
+		Result result = callAction(controllers.gui.routes.ref.Components
 				.showComponent(studyClone.getId(), studyClone.getComponent(1)
 						.getId()),
 				fakeRequest()
@@ -106,7 +106,7 @@ public class ComponentsControllerTest extends AControllerTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.routes.ref.Components.create(studyClone.getId()),
+				controllers.gui.routes.ref.Components.create(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -135,7 +135,7 @@ public class ComponentsControllerTest extends AControllerTest {
 				admin.getEmail()).withFormUrlEncodedBody(form);
 
 		Result result = callAction(
-				controllers.routes.ref.Components.submit(studyClone.getId()),
+				controllers.gui.routes.ref.Components.submit(studyClone.getId()),
 				request);
 		assertEquals(SEE_OTHER, status(result));
 
@@ -161,7 +161,7 @@ public class ComponentsControllerTest extends AControllerTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(form);
 		Result result = callAction(
-				controllers.routes.ref.Components.submit(studyClone.getId()),
+				controllers.gui.routes.ref.Components.submit(studyClone.getId()),
 				request);
 		assertEquals(SEE_OTHER, status(result));
 		assertThat(headers(result).get(HttpHeaders.LOCATION)).contains("show");
@@ -185,7 +185,7 @@ public class ComponentsControllerTest extends AControllerTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(form);
 		Result result = callAction(
-				controllers.routes.ref.Components.submit(studyClone.getId()),
+				controllers.gui.routes.ref.Components.submit(studyClone.getId()),
 				request);
 		assertThat(contentAsString(result)).contains(
 				"Problems deserializing JSON data string: invalid JSON format");
@@ -200,7 +200,7 @@ public class ComponentsControllerTest extends AControllerTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail());
 		Result result = callAction(
-				controllers.routes.ref.Components.changeProperty(
+				controllers.gui.routes.ref.Components.changeProperty(
 						studyClone.getId(), studyClone.getComponent(1).getId(),
 						true), request);
 		assertThat(status(result)).isEqualTo(OK);
@@ -216,7 +216,7 @@ public class ComponentsControllerTest extends AControllerTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail());
 		Result result = callAction(
-				controllers.routes.ref.Components.cloneComponent(
+				controllers.gui.routes.ref.Components.cloneComponent(
 						studyClone.getId(), studyClone.getComponent(1).getId()),
 				request);
 		assertThat(status(result)).isEqualTo(OK);
@@ -231,7 +231,7 @@ public class ComponentsControllerTest extends AControllerTest {
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail());
-		Result result = callAction(controllers.routes.ref.Components.remove(
+		Result result = callAction(controllers.gui.routes.ref.Components.remove(
 				studyClone.getId(), studyClone.getComponent(1).getId()),
 				request);
 		assertThat(status(result)).isEqualTo(OK);

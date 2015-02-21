@@ -20,10 +20,10 @@ import utils.JsonUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Singleton;
 
-import controllers.ControllerUtils;
-import controllers.Users;
-import exceptions.ForbiddenReloadException;
-import exceptions.PublixException;
+import controllers.gui.ControllerUtils;
+import controllers.gui.Users;
+import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.PublixException;
 
 /**
  * Abstract controller class for all controller that implement the IPublix

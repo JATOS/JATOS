@@ -1,0 +1,242 @@
+@(studyList: List[StudyModel], loggedInUser: UserModel,
+breadcrumbs: services.gui.Breadcrumbs, worker: workers.Worker)
+
+@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+
+<!-- Worker Info Panel -->
+<div class="panel panel-default">
+	<div class="panel-body">
+	Worker ID: @worker.getId()<br>
+	Worker Type: @worker.getUIWorkerType()<br>
+	@if(worker.getWorkerType().equals(workers.MTWorker.WORKER_TYPE) || worker.getWorkerType().equals(workers.MTSandboxWorker.WORKER_TYPE)) {
+		MTurk Worker ID: @worker.asInstanceOf[workers.MTWorker].getMTWorkerId()
+	}
+	@if(worker.getWorkerType().equals(workers.JatosWorker.WORKER_TYPE)) {
+		User Email Address: @worker.asInstanceOf[workers.JatosWorker].getUser().getEmail()
+	}
+	@if(worker.getWorkerType().equals(workers.TesterWorker.WORKER_TYPE)) {
+		Comment: @worker.asInstanceOf[workers.TesterWorker].getComment()
+	}
+	@if(worker.getWorkerType().equals(workers.ClosedStandaloneWorker.WORKER_TYPE)) {
+		Comment: @worker.asInstanceOf[workers.ClosedStandaloneWorker].getComment()
+	}
+	</div>
+</div>
+
+
+<!-- Toolbar -->
+<div id="resultsToolbar" class="btn-toolbar pull-right" role="toolbar">
+	<div class="btn-group" aria-hidden="true">
+		<button type="button" class="exportData btn btn-primary btn-sm">Export Data</button>
+		<button type="button" class="remove btn btn-primary btn-sm">Delete</button>
+	</div>
+</div>
+
+<!-- Results table -->
+<table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
+	<thead>
+		<tr>
+			<th></th>
+			<th>Result ID</th>
+			<th>Start Time (Server)</th>
+			<th>Duration</th>
+			<th>Study ID</th>
+			<th>Study Title</th>
+			<th>Confirmation Code</th>
+			<th>State</th>
+			<th>Messages</th>
+		</tr>
+	</thead>
+	<tfoot>
+		<tr>
+			<th></th>
+			<th>Result ID</th>
+			<th>Start Time (Server)</th>
+			<th>Duration</th>
+			<th>Study ID</th>
+			<th>Study Title</th>
+			<th>Confirmation Code</th>
+			<th>State</th>
+			<th>Messages</th>
+		</tr>
+	</tfoot>
+</table>
+
+<script type="text/javascript">
+
+var resultsTable;
+$(document).ready(function() {
+	resultsTable = $('#resultsTable').DataTable({
+		"ajax": {
+			"type": "GET",
+			"url" : "@controllers.gui.routes.StudyResults.tableDataByWorker(worker.getId())",
+			"error": function(reason) {
+					showError("Couldn't read results data.")
+			}
+		},
+		"order": [[ 2, "desc" ]],
+		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+		"pageLength": 10,
+		"columns": [
+			{
+				"class": 'details-control',
+				"orderable": false,
+				"data": null,
+				"defaultContent": ''
+			},
+			{ "data": "id" },
+			{
+				"class": 'time',
+				"data": "startDate"
+			},
+			{
+				"data": "duration",
+				"render": function (data, type, full, meta) {
+					return (data) ? data : "not yet";
+				}
+			},
+			{
+				"data": "studyId",
+				"render": function (data, type, full, meta) {
+					return '<a href="/jatos/'
+						+ data + '">' + data + '</a>';
+				}
+			},
+			{ "data": "studyTitle" },
+			{ "data": getConfirmationCode },
+			{ "data": "studyState" },
+			{ 
+				"data": getMessages,
+				"width": "20%"
+			}
+		]
+	});
+	var tableTools = new $.fn.dataTable.TableTools(resultsTable, {
+		"sRowSelect": "multi",
+		"aButtons": [ "select_all", "select_none" ],
+		"sRowSelector": "td:not(:first-child):not(:last-child)"
+	});
+	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
+	
+	function getConfirmationCode(data, type, dataToSet) {
+		return (data.confirmationCode != null) ? data.confirmationCode : "none";
+	}
+	
+	function getMessages(data, type, dataToSet) {
+		var messages = [];
+		if (data.errorMsg != null) {
+			messages.push(data.errorMsg);
+			messages.push("<br>");
+		}
+		if (data.abortMsg != null) {
+			messages.push(data.abortMsg);
+		}
+		return messages.join("");
+	}
+	
+	$('#resultsTable tbody').on('click', 'td.details-control', function() {
+		var tr = $(this).closest('tr');
+		var row = resultsTable.row(tr);
+		if (row.child.isShown()) {
+			row.child.hide();
+			tr.removeClass('shown');
+		}
+		else {
+			row.child(childRowFormat(row.data())).show();
+			tr.addClass('shown');
+			tr.next().addClass('info');
+		}
+	});
+});
+
+$('#resultsToolbar').on('click', '.exportData', function() {
+	var oTT = TableTools.fnGetInstance('resultsTable');
+	var selectedTrs = oTT.fnGetSelected();
+	var ids = [];
+	selectedTrs.forEach(function(selectedTr) {
+		var rowData = resultsTable.row(selectedTr).data();
+		ids.push(rowData.id);
+	});
+	if(ids.length == 0) {
+		showError("No results selected");
+		return;
+	}
+	var url = '/jatos/studyresult'
+		+ '/exportData?studyResultIds=' + ids.toString();
+	$.fileDownload(url)
+		.fail(function () { showError("Export of results failed"); });
+	return false; //this is critical to stop the click event which will trigger a normal file download
+});
+
+$('#resultsToolbar').on('click', '.remove', function() {
+	var oTT = TableTools.fnGetInstance('resultsTable');
+	var selectedTrs = oTT.fnGetSelected();
+	var ids = [];
+	selectedTrs.forEach(function(selectedTr) {
+		var rowData = resultsTable.row(selectedTr).data();
+		ids.push(rowData.id);
+	});
+	if(ids.length <= 0) {
+		showError("No results selected");
+		return;
+	}
+	var title = "Confirm Delete";
+	var preText = "You are about to delete the study results "
+		+ "(ID " + ids.join(", ") + ") " 
+		+ "<b>with all their component results</b>.";
+	var postText = "Do you want to proceed?";
+	askConfirmation(title, preText, null, postText, 'Delete', function() {
+		var url = '/jatos/studyresult/remove?studyResultIds=' + ids.toString();
+		$.ajax({
+			url : url,
+			type : 'GET',
+			success : function(result) {
+				selectedTrs.forEach(function(selectedTr) {
+					resultsTable.row(selectedTr).remove().draw();
+				});
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
+});
+
+function childRowFormat(data) {
+	// `data` is the original data object for the row
+	var html = [];
+	html.push('<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
+		'<tr class="info">',
+		'<td><b>Result ID</b></td>',
+		'<td><b>Comp. ID</b></td>',
+		'<td><b>Component Title</b></td>',
+		'<td><b>Start Time (Server)</b></td>',
+		'<td><b>Duration</b></td>',
+		'<td><b>State</b></td>',
+		'</tr>');
+		if(data.componentResults.length > 0) {
+			data.componentResults.forEach(function(componentResult) {
+				var duration = (componentResult.duration) ? componentResult.duration : "not yet";
+				html.push('<tr class="info">',
+					'<td>' + componentResult.id + '</td>',
+					'<td>' + componentResult.componentId + '</td>',
+					'<td>' + componentResult.componentTitle + '</td>',
+					'<td>' + componentResult.startDate + '</td>',
+					'<td>' + duration + '</td>',
+					'<td>' + componentResult.componentState + '</td>',
+					'</tr><tr class="info">',
+					'<td colspan="6"><pre class="details-data">' + componentResult.data + '</pre></td>',
+					'</tr>');
+			});
+		} else {
+			html.push('<tr class="info">',
+				'<td colspan="6">empty</td>',
+				'</tr>');
+		}
+		html.push('</table>');
+	return html.join("");
+}
+
+</script>
+
+}

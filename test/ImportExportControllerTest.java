@@ -31,8 +31,8 @@ import utils.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import controllers.ImportExport;
-import controllers.Users;
+import controllers.gui.ImportExport;
+import controllers.gui.Users;
 
 /**
  * Testing actions of controller.ImportExport
@@ -91,7 +91,7 @@ public class ImportExportControllerTest extends AControllerTest {
 		StudyModel importedStudy = studyDao
 				.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617");
 		result = callAction(
-				controllers.routes.ref.Studies.remove(importedStudy.getId()),
+				controllers.gui.routes.ref.Studies.remove(importedStudy.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						admin.getEmail()));
 	}
@@ -197,7 +197,7 @@ public class ImportExportControllerTest extends AControllerTest {
 
 		// First call: ImportExport.importComponent()
 		Result result = callAction(
-				controllers.routes.ref.ImportExport.importComponent(study
+				controllers.gui.routes.ref.ImportExport.importComponent(study
 						.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						admin.getEmail()).withAnyContent(
@@ -225,7 +225,7 @@ public class ImportExportControllerTest extends AControllerTest {
 
 		// Second call: ImportExport.importComponentConfirmed()
 		result = callAction(
-				controllers.routes.ref.ImportExport.importComponentConfirmed(study
+				controllers.gui.routes.ref.ImportExport.importComponentConfirmed(study
 						.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						admin.getEmail()).withSession(
@@ -251,7 +251,7 @@ public class ImportExportControllerTest extends AControllerTest {
 		addStudy(study);
 
 		Result result = callAction(
-				controllers.routes.ref.ImportExport.exportStudy(study.getId()),
+				controllers.gui.routes.ref.ImportExport.exportStudy(study.getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -267,7 +267,7 @@ public class ImportExportControllerTest extends AControllerTest {
 		addStudy(study);
 
 		Result result = callAction(
-				controllers.routes.ref.ImportExport.exportComponent(
+				controllers.gui.routes.ref.ImportExport.exportComponent(
 						study.getId(), study.getComponent(1).getId()),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						admin.getEmail()));
@@ -285,7 +285,7 @@ public class ImportExportControllerTest extends AControllerTest {
 		FileUtils.copyFile(studyZip, studyZipBkp);
 
 		Result result = callAction(
-				controllers.routes.ref.ImportExport.importStudy(),
+				controllers.gui.routes.ref.ImportExport.importStudy(),
 				fakeRequest().withSession(Users.SESSION_EMAIL,
 						admin.getEmail()).withAnyContent(
 						getMultiPartFormDataForFileUpload(studyZipBkp,
@@ -320,7 +320,7 @@ public class ImportExportControllerTest extends AControllerTest {
 		jsonObj.put(ImportExport.STUDYS_DIR_CONFIRM, overrideDir);
 
 		Result result = callAction(
-				controllers.routes.ref.ImportExport.importStudyConfirmed(),
+				controllers.gui.routes.ref.ImportExport.importStudyConfirmed(),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL,
 								admin.getEmail())

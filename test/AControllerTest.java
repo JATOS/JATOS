@@ -25,7 +25,7 @@ import play.db.jpa.JPAPlugin;
 import play.test.FakeApplication;
 import play.test.Helpers;
 import scala.Option;
-import services.UserService;
+import services.gui.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
 import utils.ZipUtil;

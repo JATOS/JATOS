@@ -3,73 +3,83 @@ package models;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /**
  * Model for messages (success, info, warning, error) destined for JATOS' GUI
- * views. It's not meant to be persisted in a DB.
+ * views.
  * 
  * @author Kristian Lange
  */
 public class Messages {
 
+	@JsonInclude(Include.NON_NULL)
 	private List<String> successList;
+	
+	@JsonInclude(Include.NON_NULL)
 	private List<String> infoList;
+	
+	@JsonInclude(Include.NON_NULL)
 	private List<String> warningList;
+	
+	@JsonInclude(Include.NON_NULL)
 	private List<String> errorList;
 
 	public List<String> getSuccessList() {
-		if (successList == null) {
-			successList = new ArrayList<>();
-		}
 		return successList;
 	}
 
-	public Messages success(String success) {
-		if (success != null) {
-			this.getSuccessList().add(success);
+	public void success(String success) {
+		if (success == null) {
+			return;
 		}
-		return this;
+		if (successList == null) {
+			successList = new ArrayList<>();
+		}
+		getSuccessList().add(success);
 	}
 
 	public List<String> getInfoList() {
-		if (infoList == null) {
-			infoList = new ArrayList<>();
-		}
 		return infoList;
 	}
 
-	public Messages info(String info) {
-		if (info != null) {
-			this.getInfoList().add(info);
+	public void info(String info) {
+		if (info == null) {
+			return;
 		}
-		return this;
+		if (infoList == null) {
+			infoList = new ArrayList<>();
+		}
+		this.getInfoList().add(info);
 	}
 
 	public List<String> getWarningList() {
-		if (warningList == null) {
-			warningList = new ArrayList<>();
-		}
 		return warningList;
 	}
 
-	public Messages warning(String warning) {
-		if (warning != null) {
-			this.getWarningList().add(warning);
+	public void warning(String warning) {
+		if (warning == null) {
+			return;
 		}
-		return this;
+		if (warningList == null) {
+			warningList = new ArrayList<>();
+		}
+		this.getWarningList().add(warning);
 	}
 
 	public List<String> getErrorList() {
-		if (errorList == null) {
-			errorList = new ArrayList<>();
-		}
 		return errorList;
 	}
 
-	public Messages error(String error) {
-		if (error != null) {
-			this.getErrorList().add(error);
+	public void error(String error) {
+		if (error == null) {
+			return;
 		}
-		return this;
+		if (errorList == null) {
+			errorList = new ArrayList<>();
+		}
+		this.getErrorList().add(error);
 	}
 
 }

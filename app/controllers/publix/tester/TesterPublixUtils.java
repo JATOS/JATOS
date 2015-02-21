@@ -13,8 +13,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import controllers.publix.PublixUtils;
-import exceptions.ForbiddenPublixException;
-import exceptions.PublixException;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * Special PublixUtils for TesterPublix
