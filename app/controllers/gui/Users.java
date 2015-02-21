@@ -21,7 +21,6 @@ import services.gui.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.JatosGuiAction;
 
 import exceptions.gui.JatosGuiException;
 

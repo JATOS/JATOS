@@ -1,7 +1,6 @@
 package exceptions.gui;
 
-import common.JatosGuiAction;
-
+import controllers.gui.JatosGuiAction;
 import play.mvc.SimpleResult;
 
 /**

@@ -17,8 +17,6 @@ import services.gui.UserService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import common.JatosGuiAction;
-
 /**
  * Controller that deals with login/logout.
  * 
@@ -74,7 +72,7 @@ public class Authentication extends Controller {
 	public Result logout() {
 		Logger.info(CLASS_NAME + ".logout: " + session(Users.SESSION_EMAIL));
 		session().remove(Users.SESSION_EMAIL);
-		FlashScopeMessaging.error(MessagesStrings.YOUVE_BEEN_LOGGED_OUT);
+		FlashScopeMessaging.success(MessagesStrings.YOUVE_BEEN_LOGGED_OUT);
 		return redirect(controllers.gui.routes.Authentication.login());
 	}
 
