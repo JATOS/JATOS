@@ -161,10 +161,11 @@ function showError(msg) {
 
 <script>
 var messagesRequestScope = @Html(services.RequestScopeMessaging.getAsJson());
-var messagesFlashScope = @Html(services.FlashScopeMessaging.getAsJson());
-var breadcrumbs = @Html(breadcrumbs)['breadcrumbs'];
 showMessages(messagesRequestScope);
+var messagesFlashScope = @Html(services.FlashScopeMessaging.getAsJson());
 showMessages(messagesFlashScope);
+var breadcrumbs = @Html(breadcrumbs)['breadcrumbs'];
+showBreadcrumbs(breadcrumbs);
 fillSidebar();
 
 function showMessages(messages) {
@@ -196,14 +197,16 @@ function showMessages(messages) {
 	showWarning("You are using an in-memory database. This is fine for initial evalution of JATOS. Unfortunately after closing JATOS all changes and results will be lost. If you want to continue working with JATOS, it's strongly recommended to setup a disk-based database.")
 }
 
-for (var key in breadcrumbs) {
-	var breadcrumb;
-	if (breadcrumbs[key] === null || breadcrumbs[key] === "") {
-		breadcrumb = '<li class="active">' + key + '</li>';
-	} else {
-		breadcrumb = '<li><a href="' + breadcrumbs[key] + '">' + key + '</a></li>';
+function showBreadcrumbs (breadcrumbs) {
+	for (var key in breadcrumbs) {
+		var breadcrumb;
+		if (breadcrumbs[key] === null || breadcrumbs[key] === "") {
+			breadcrumb = '<li class="active">' + key + '</li>';
+		} else {
+			breadcrumb = '<li><a href="' + breadcrumbs[key] + '">' + key + '</a></li>';
+		}
+		$("#breadcrumbs").append(breadcrumb);
 	}
-	$("#breadcrumbs").append(breadcrumb);
 }
 
 function askConfirmation(title, preText, html, postText, buttonText, action) {
