@@ -147,7 +147,7 @@ public class JatosGuiExceptionThrower {
 	public void throwEditStudy(List<StudyModel> studyList,
 			UserModel loggedInUser, Form<StudyModel> form,
 			List<ValidationError> errorList, int httpStatus,
-			Breadcrumbs breadcrumbs, Call submitAction, boolean studyIsLocked)
+			String breadcrumbs, Call submitAction, boolean studyIsLocked)
 			throws JatosGuiException {
 		SimpleResult result = null;
 		if (ControllerUtils.isAjax()) {
@@ -172,7 +172,7 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwEditComponent(List<StudyModel> studyList,
 			UserModel loggedInUser, Form<ComponentModel> form, int httpStatus,
-			Breadcrumbs breadcrumbs, Call submitAction, StudyModel study)
+			String breadcrumbs, Call submitAction, StudyModel study)
 			throws JatosGuiException {
 		SimpleResult result = null;
 		if (ControllerUtils.isAjax()) {
@@ -203,7 +203,7 @@ public class JatosGuiExceptionThrower {
 					form.reject(error);
 				}
 			}
-			Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome("New User");
+			String breadcrumbs = Breadcrumbs.generateForHome("New User");
 			result = Results.status(httpStatus, views.html.gui.user.create
 					.render(studyList, loggedInUser, breadcrumbs, form));
 		}
@@ -222,7 +222,7 @@ public class JatosGuiExceptionThrower {
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus);
 		} else {
-			Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
+			String breadcrumbs = Breadcrumbs.generateForUser(user,
 					"Edit Profile");
 			result = Results.status(httpStatus, views.html.gui.user.editProfile
 					.render(studyList, loggedInUser, breadcrumbs, user,
@@ -249,7 +249,7 @@ public class JatosGuiExceptionThrower {
 					form.reject(error);
 				}
 			}
-			Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
+			String breadcrumbs = Breadcrumbs.generateForUser(user,
 					"Change Password");
 			result = Results.status(httpStatus,
 					views.html.gui.user.changePassword.render(studyList,

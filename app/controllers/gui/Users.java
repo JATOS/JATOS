@@ -65,7 +65,7 @@ public class Users extends Controller {
 				.getEmail());
 		userService.checkUserLoggedIn(user, loggedInUser);
 
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user);
+		String breadcrumbs = Breadcrumbs.generateForUser(user);
 		return ok(views.html.gui.user.profile.render(studyList, loggedInUser,
 				breadcrumbs, user));
 	}
@@ -80,7 +80,7 @@ public class Users extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		Breadcrumbs breadcrumbs = Breadcrumbs
+		String breadcrumbs = Breadcrumbs
 				.generateForHome(Breadcrumbs.NEW_USER);
 		return ok(views.html.gui.user.create.render(studyList, loggedInUser,
 				breadcrumbs, Form.form(UserModel.class)));
@@ -134,7 +134,7 @@ public class Users extends Controller {
 		userService.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
+		String breadcrumbs = Breadcrumbs.generateForUser(user,
 				Breadcrumbs.EDIT_PROFILE);
 		return ok(views.html.gui.user.editProfile.render(studyList,
 				loggedInUser, breadcrumbs, user, form));
@@ -182,7 +182,7 @@ public class Users extends Controller {
 		userService.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForUser(user,
+		String breadcrumbs = Breadcrumbs.generateForUser(user,
 				Breadcrumbs.CHANGE_PASSWORD);
 		return ok(views.html.gui.user.changePassword.render(studyList,
 				loggedInUser, breadcrumbs, form));

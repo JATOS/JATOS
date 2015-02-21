@@ -108,8 +108,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
-		// RequestScope.getMessages().error(errorMsg);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study);
+		String breadcrumbs = Breadcrumbs.generateForStudy(study);
 		String baseUrl = ControllerUtils.getReferer();
 		int studyResultCount = studyResultDao.countByStudy(study);
 		return status(httpStatus, views.html.gui.study.index.render(studyList,
@@ -138,7 +137,7 @@ public class Studies extends Controller {
 		// It's a generic template for editing a study. We have to tell it the
 		// submit action.
 		Call submitAction = controllers.gui.routes.Studies.submit();
-		Breadcrumbs breadcrumbs = Breadcrumbs
+		String breadcrumbs = Breadcrumbs
 				.generateForHome(Breadcrumbs.NEW_STUDY);
 		return ok(views.html.gui.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, submitAction, form, false));
@@ -171,7 +170,7 @@ public class Studies extends Controller {
 			List<StudyModel> studyList, StudyModel study,
 			List<ValidationError> errorList) throws JatosGuiException {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
-		Breadcrumbs breadcrumbs = Breadcrumbs
+		String breadcrumbs = Breadcrumbs
 				.generateForHome(Breadcrumbs.NEW_STUDY);
 		Call submitAction = controllers.gui.routes.Studies.submit();
 		jatosGuiExceptionThrower.throwEditStudy(studyList, loggedInUser, form,
@@ -198,7 +197,7 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = controllers.gui.routes.Studies.submitEdited(study
 				.getId());
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.EDIT_PROPERTIES);
 		return ok(views.html.gui.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, submitAction, form, study.isLocked()));
@@ -236,7 +235,7 @@ public class Studies extends Controller {
 			List<StudyModel> studyList, StudyModel study,
 			List<ValidationError> errorList) throws JatosGuiException {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.EDIT_PROPERTIES);
 		Call submitAction = controllers.gui.routes.Studies.submitEdited(study
 				.getId());
@@ -321,7 +320,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		List<UserModel> userList = userDao.findAll();
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.CHANGE_MEMBERS);
 		return status(httpStatus, views.html.gui.study.changeMembers.render(
 				studyList, loggedInUser, breadcrumbs, study, userList));
@@ -515,7 +514,7 @@ public class Studies extends Controller {
 			RequestScopeMessaging
 					.warning(MessagesStrings.MTWORKER_ALLOWANCE_MISSING);
 		}
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 		return ok(views.html.gui.study.mTurkSourceCode.render(studyList,
 				loggedInUser, breadcrumbs, study, jatosURL));
@@ -559,7 +558,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		RequestScopeMessaging.error(errorMsg);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.WORKERS);
 		return status(httpStatus, views.html.gui.study.studysWorkers.render(
 				studyList, loggedInUser, breadcrumbs, study));

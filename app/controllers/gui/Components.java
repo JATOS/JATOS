@@ -111,7 +111,7 @@ public class Components extends Controller {
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class);
 		Call submitAction = controllers.gui.routes.Components.submit(studyId);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.NEW_COMPONENT);
 		return ok(views.html.gui.component.edit.render(studyList, loggedInUser,
 				breadcrumbs, submitAction, form, study));
@@ -136,7 +136,7 @@ public class Components extends Controller {
 		if (form.hasErrors()) {
 			Call submitAction = controllers.gui.routes.Components
 					.submit(studyId);
-			Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+			String breadcrumbs = Breadcrumbs.generateForStudy(study,
 					Breadcrumbs.NEW_COMPONENT);
 			jatosGuiExceptionThrower.throwEditComponent(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
@@ -171,7 +171,7 @@ public class Components extends Controller {
 				component);
 		Call submitAction = controllers.gui.routes.Components.submitEdited(
 				studyId, componentId);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
+		String breadcrumbs = Breadcrumbs.generateForComponent(study,
 				component, Breadcrumbs.EDIT_PROPERTIES);
 		return ok(views.html.gui.component.edit.render(studyList, loggedInUser,
 				breadcrumbs, submitAction, form, study));
@@ -200,7 +200,7 @@ public class Components extends Controller {
 		if (form.hasErrors()) {
 			Call submitAction = controllers.gui.routes.Components.submitEdited(
 					studyId, componentId);
-			Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
+			String breadcrumbs = Breadcrumbs.generateForComponent(study,
 					component, Breadcrumbs.EDIT_PROPERTIES);
 			jatosGuiExceptionThrower.throwEditComponent(studyList,
 					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,

@@ -84,7 +84,7 @@ public class ComponentResults extends Controller {
 				study, loggedInUser, component);
 
 		RequestScopeMessaging.error(errorMsg);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForComponent(study,
+		String breadcrumbs = Breadcrumbs.generateForComponent(study,
 				component, Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.gui.result.componentResults.render(studyList,

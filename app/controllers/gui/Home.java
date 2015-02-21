@@ -52,7 +52,7 @@ public class Home extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForHome();
+		String breadcrumbs = Breadcrumbs.generateForHome();
 		return status(httpStatus, views.html.gui.home.render(studyList,
 				loggedInUser, breadcrumbs));
 	}

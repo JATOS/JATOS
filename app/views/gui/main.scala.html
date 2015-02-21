@@ -1,4 +1,4 @@
-@(studyList: List[StudyModel], user: UserModel, breadcrumbs: services.gui.Breadcrumbs)(body: Html)
+@(studyList: List[StudyModel], user: UserModel, breadcrumbs: String)(body: Html)
 
 <html lang="en">
 <head>
@@ -162,7 +162,7 @@ function showError(msg) {
 <script>
 var messagesRequestScope = @Html(services.RequestScopeMessaging.getAsJson());
 var messagesFlashScope = @Html(services.FlashScopeMessaging.getAsJson());
-var breadcrumbs = @Html(utils.JsonUtils.asJson(breadcrumbs))['breadcrumbs'];
+var breadcrumbs = @Html(breadcrumbs)['breadcrumbs'];
 showMessages(messagesRequestScope);
 showMessages(messagesFlashScope);
 fillSidebar();

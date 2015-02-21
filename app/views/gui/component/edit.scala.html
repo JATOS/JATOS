@@ -1,6 +1,5 @@
 @(studyList: List[StudyModel], loggedInUser: UserModel, 
-breadcrumbs: services.gui.Breadcrumbs,
-submitAction: play.api.mvc.Call, form: Form[ComponentModel],
+breadcrumbs: String, submitAction: play.api.mvc.Call, form: Form[ComponentModel],
 study: StudyModel)
 
 @views.html.gui.main(studyList, loggedInUser, breadcrumbs){

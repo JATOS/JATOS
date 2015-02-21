@@ -8,6 +8,7 @@ import models.StudyModel;
 import models.UserModel;
 import models.workers.Worker;
 import play.mvc.Call;
+import utils.JsonUtils;
 
 /**
  * Provides breadcrumbs for different views of JATOS' GUI.
@@ -44,11 +45,11 @@ public class Breadcrumbs {
 		return this;
 	}
 
-	public static Breadcrumbs generateForHome() {
+	public static String generateForHome() {
 		return generateForHome(null);
 	}
 
-	public static Breadcrumbs generateForHome(String last) {
+	public static String generateForHome(String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		if (last != null) {
 			breadcrumbs = new Breadcrumbs().put(HOME,
@@ -56,14 +57,14 @@ public class Breadcrumbs {
 		} else {
 			breadcrumbs.put(HOME, "");
 		}
-		return breadcrumbs;
+		return JsonUtils.asJson(breadcrumbs);
 	}
 
-	public static Breadcrumbs generateForUser(UserModel user) {
+	public static String generateForUser(UserModel user) {
 		return generateForUser(user, null);
 	}
 
-	public static Breadcrumbs generateForUser(UserModel user, String last) {
+	public static String generateForUser(UserModel user, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs().put(HOME,
 				controllers.gui.routes.Home.home());
 		if (last != null) {
@@ -73,14 +74,14 @@ public class Breadcrumbs {
 		} else {
 			breadcrumbs.put(user.toString(), "");
 		}
-		return breadcrumbs;
+		return JsonUtils.asJson(breadcrumbs);
 	}
 
-	public static Breadcrumbs generateForStudy(StudyModel study) {
+	public static String generateForStudy(StudyModel study) {
 		return generateForStudy(study, null);
 	}
 
-	public static Breadcrumbs generateForStudy(StudyModel study, String last) {
+	public static String generateForStudy(StudyModel study, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs().put(HOME,
 				controllers.gui.routes.Home.home());
 		if (last != null) {
@@ -90,28 +91,28 @@ public class Breadcrumbs {
 		} else {
 			breadcrumbs.put(study.getTitle(), "");
 		}
-		return breadcrumbs;
+		return JsonUtils.asJson(breadcrumbs);
 	}
 
-	public static Breadcrumbs generateForWorker(Worker worker) {
+	public static String generateForWorker(Worker worker) {
 		return generateForWorker(worker, null);
 	}
 
-	public static Breadcrumbs generateForWorker(Worker worker, String last) {
+	public static String generateForWorker(Worker worker, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs()
 				.put(HOME, controllers.gui.routes.Home.home())
 				.put("Worker " + worker.getId(), "").put(last, "");
-		return breadcrumbs;
+		return JsonUtils.asJson(breadcrumbs);
 	}
 
-	public static Breadcrumbs generateForComponent(StudyModel study,
+	public static String generateForComponent(StudyModel study,
 			ComponentModel component, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs()
 				.put(HOME, controllers.gui.routes.Home.home())
 				.put(study.getTitle(),
 						controllers.gui.routes.Studies.index(study.getId()))
 				.put(component.getTitle(), "").put(last, "");
-		return breadcrumbs;
+		return JsonUtils.asJson(breadcrumbs);
 	}
 
 }

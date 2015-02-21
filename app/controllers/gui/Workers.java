@@ -74,7 +74,7 @@ public class Workers extends Controller {
 		Worker worker = workerDao.findById(workerId);
 		workerService.checkWorker(worker, workerId);
 
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForWorker(worker,
+		String breadcrumbs = Breadcrumbs.generateForWorker(worker,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.gui.result.workersStudyResults.render(studyList,

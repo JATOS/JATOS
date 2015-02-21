@@ -87,7 +87,7 @@ public class StudyResults extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		RequestScopeMessaging.error(errorMsg);
-		Breadcrumbs breadcrumbs = Breadcrumbs.generateForStudy(study,
+		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.gui.result.studysStudyResults.render(studyList,
