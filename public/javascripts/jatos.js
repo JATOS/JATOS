@@ -1,14 +1,24 @@
 /**
- * JATOS JavaScript Library
- * 
+ * jatos.js (JATOS JavaScript Library)
+ * http://jatos.org
  * Author Kristian Lange 2014
+ * Licensed under Apache License 2.0
+ * 
+ * Plugin: jquery.ajax-retry
+ * https://github.com/johnkpaul/jquery-ajax-retry
+ * Copyright (c) 2012 John Paul
+ * Licensed under the MIT license.
  */
+
+var httpTimeout = 5000;
+var httpRetry = 5;
+var httpRetryWait = 500;
 
 var jatos = {};
 var onErrorCallback;
 var onLoadCallback;
 
-window.addEventListener('load', onload);
+window.addEventListener('load', loadScripts(initJatos));
 
 /**
  * Defines callback function that is to be called when jatos.js is finished its
@@ -24,18 +34,37 @@ jatos.onLoad = function(callback) {
  */
 jatos.onError = function(callback) {
 	onErrorCallback = callback;
+	$(document).ajaxError(function(event, jqxhr, settings, thrownError) {
+		if (jqxhr.statusText == 'timeout') {
+			onErrorCallback("JATOS server not responding while trying to get URL " + settings.url);
+		} else {
+			onErrorCallback(jqxhr.responseText);
+		}
+	});
+};
+
+/**
+ * Load and run additional JS.
+ */
+function loadScripts(successCallback) {
+	// Plugin to retry ajax calls 
+	$.ajax({
+		url: "/assets/javascripts/jquery.ajax-retry.min.js",
+		dataType: "script",
+		cache: true
+	}).done(successCallback);
 }
 
 /**
  * Initialising jatos.js.
  */
-function onload() {
+function initJatos() {
 	var studyPropertiesReady = false;
 	var studySessionDataReady = false;
 	var componentPropertiesReady = false;
 
 	/**
-	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope
+	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope.
 	 * This function is automatically called after the page is loaded, so it's
 	 * not necessary to call it again.
 	 */
@@ -74,16 +103,17 @@ function onload() {
 
 	/**
 	 * Gets the study's properties from the JATOS server and stores them in
-	 * jatos.studyProperties and jatos.studyJsonInput (just the
-	 * JSON input data of the properties).
+	 * jatos.studyProperties and jatos.studyJsonInput (just the JSON input data
+	 * of the properties).
 	 */
 	getStudyProperties = function() {
 		$.ajax({
 			url : "/publix/" + jatos.studyId + "/getProperties",
 			type : "GET",
 			dataType : 'json',
+			timeout : httpTimeout,
 			success : function(response) {
-				// Legacy names
+				// Legacy names TODO remove
 				jatos.studyData = response;
 				jatos.studyJsonData = $.parseJSON(jatos.studyData.jsonData);
 				delete jatos.studyData.jsonData;
@@ -92,14 +122,9 @@ function onload() {
 				jatos.studyJsonInput = jatos.studyJsonData;
 				studyPropertiesReady = true;
 				ready();
-			},
-			error : function(err) {
-				if (onErrorCallback) {
-					onErrorCallback(err.responseText);
-				}
 			}
-		});
-	}
+		}).retry({times : httpRetry, timeout : httpRetryWait});
+	};
 
 	/**
 	 * Gets the study's session data from the JATOS server and stores them in
@@ -110,6 +135,7 @@ function onload() {
 			url : "/publix/" + jatos.studyId + "/getSessionData",
 			type : "GET",
 			dataType : 'text',
+			timeout : httpTimeout,
 			success : function(response) {
 				try {
 					jatos.studySessionData = $.parseJSON(response);
@@ -124,19 +150,14 @@ function onload() {
 				});
 				studySessionDataReady = true;
 				ready();
-			},
-			error : function(err) {
-				if (onErrorCallback) {
-					onErrorCallback(err.responseText);
-				}
 			}
-		});
+		}).retry({times : httpRetry, timeout : httpRetryWait});
 	}
 
 	/**
 	 * Gets the component's properties from the JATOS server and stores them in
-	 * jatos.componentProperties and jatos.componentJsonInput
-	 * (just the JSON input data of the properties).
+	 * jatos.componentProperties and jatos.componentJsonInput (just the JSON
+	 * input data of the properties).
 	 */
 	getComponentProperties = function() {
 		$.ajax({
@@ -144,6 +165,7 @@ function onload() {
 					+ "/getProperties",
 			type : "GET",
 			dataType : 'json',
+			timeout : httpTimeout,
 			success : function(response) {
 				// Legacy names
 				jatos.componentData = response;
@@ -156,13 +178,8 @@ function onload() {
 				document.title = jatos.componentData.title;
 				componentPropertiesReady = true;
 				ready();
-			},
-			error : function(err) {
-				if (onErrorCallback) {
-					onErrorCallback(err.responseText);
-				}
 			}
-		});
+		}).retry({times : httpRetry, timeout : httpRetryWait});
 	}
 
 	readIdCookie();
@@ -190,20 +207,18 @@ jatos.submitResultData = function(resultData, success, error) {
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
+		timeout : httpTimeout,
 		success : function(response) {
 			if (success) {
 				success(response)
 			}
 		},
 		error : function(err) {
-			if (onErrorCallback) {
-				onErrorCallback(err.responseText);
-			}
 			if (error) {
-				error(response)
+				error(err)
 			}
 		}
-	});
+	}).retry({times : httpRetry, timeout : httpRetryWait});
 }
 
 /**
@@ -243,17 +258,13 @@ jatos.setStudySessionData = function(sessionData, complete) {
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
-		error : function(err) {
-			if (onErrorCallback) {
-				onErrorCallback(err.responseText);
-			}
-		},
+		timeout : httpTimeout,
 		complete : function() {
 			if (complete) {
 				complete()
 			}
 		}
-	});
+	}).retry({times : httpRetry, timeout : httpRetryWait});
 }
 
 /**
@@ -355,20 +366,18 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 			url : fullUrl,
 			processData : false,
 			type : "GET",
+			timeout : httpTimeout,
 			success : function(response) {
 				if (success) {
 					success(response)
 				}
 			},
 			error : function(err) {
-				if (onErrorCallback) {
-					onErrorCallback(err.responseText);
-				}
 				if (error) {
-					error(response)
+					error(err)
 				}
 			}
-		});
+		}).retry({times : httpRetry, timeout : httpRetryWait});
 	}
 	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 }
@@ -396,20 +405,18 @@ jatos.abortStudyAjax = function(message, success, error) {
 		url : fullUrl,
 		processData : false,
 		type : "GET",
+		timeout : httpTimeout,
 		success : function(response) {
 			if (success) {
 				success(response)
 			}
 		},
 		error : function(err) {
-			if (onErrorCallback) {
-				onErrorCallback(err.responseText);
-			}
 			if (error) {
-				error(response)
+				error(err)
 			}
 		}
-	});
+	}).retry({times : httpRetry, timeout : httpRetryWait});
 }
 
 /**
@@ -458,20 +465,18 @@ jatos.endStudyAjax = function(successful, errorMsg, success, error) {
 		url : fullUrl,
 		processData : false,
 		type : "GET",
+		timeout : httpTimeout,
 		success : function(response) {
 			if (success) {
 				success(response)
 			}
 		},
 		error : function(err) {
-			if (onErrorCallback) {
-				onErrorCallback(err.responseText);
-			}
 			if (error) {
-				error(response)
+				error(err)
 			}
 		}
-	});
+	}).retry({times : httpRetry, timeout : httpRetryWait});
 }
 
 /**
@@ -508,8 +513,9 @@ jatos.logError = function(logErrorMsg) {
 		data : logErrorMsg,
 		processData : false,
 		type : "POST",
-		contentType : "text/plain"
-	});
+		contentType : "text/plain",
+		timeout : httpTimeout
+	}).retry({times : httpRetry, timeout : httpRetryWait});
 }
 
 /**
@@ -526,3 +532,4 @@ jatos.addJatosIds = function(obj) {
 	obj.studyResultId = jatos.studyResultId;
 	obj.componentResultId = jatos.componentResultId;
 }
+
