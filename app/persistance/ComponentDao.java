@@ -83,16 +83,16 @@ public class ComponentDao extends AbstractDao<ComponentModel> implements
 	}
 
 	@Override
-	public ComponentModel findByUuid(String uuid) {
+	public ComponentModel findByUuid(String uuid, StudyModel study) {
 		String queryStr = "SELECT e FROM ComponentModel e WHERE "
-				+ "e.uuid=:uuid";
+				+ "e.uuid=:uuid and e.study=:study";
 		TypedQuery<ComponentModel> query = JPA.em().createQuery(queryStr,
 				ComponentModel.class);
 		List<ComponentModel> studyList = query.setParameter("uuid", uuid)
-				.getResultList();
-		ComponentModel study = studyList.isEmpty() ? null
+				.setParameter("study", study).getResultList();
+		ComponentModel component = studyList.isEmpty() ? null
 				: (ComponentModel) studyList.get(0);
-		return study;
+		return component;
 	}
 
 	@Override

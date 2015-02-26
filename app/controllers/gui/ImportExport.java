@@ -269,8 +269,8 @@ public class ImportExport extends Controller {
 		session(SESSION_TEMP_COMPONENT_FILE, filePart.getFile().getName());
 
 		boolean componentExists = componentDao.findByUuid(uploadedComponent
-				.getUuid()) != null;
-
+				.getUuid(), study) != null;
+		
 		// Create response
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put(COMPONENT_EXISTS, componentExists);
@@ -299,7 +299,7 @@ public class ImportExport extends Controller {
 		ComponentModel uploadedComponent = importExportService
 				.unmarshalComponent(componentFile, study);
 		ComponentModel currentComponent = componentDao
-				.findByUuid(uploadedComponent.getUuid());
+				.findByUuid(uploadedComponent.getUuid(), study);
 		boolean componentExists = (currentComponent != null);
 		if (componentExists) {
 			componentDao.updateProperties(currentComponent, uploadedComponent);

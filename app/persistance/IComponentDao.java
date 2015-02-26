@@ -38,7 +38,11 @@ public interface IComponentDao {
 
 	public abstract ComponentModel findById(Long id);
 
-	public abstract ComponentModel findByUuid(String uuid);
+	/**
+	 * Searches for components with this UUID within the study with the given
+	 * ID.
+	 */
+	public abstract ComponentModel findByUuid(String uuid, StudyModel study);
 
 	public abstract List<ComponentModel> findAll();
 
