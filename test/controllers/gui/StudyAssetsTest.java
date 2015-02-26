@@ -23,7 +23,7 @@ import controllers.publix.StudyAssets;
  * 
  * @author Kristian Lange
  */
-public class StudyAssetsTest extends AGuiControllerTest {
+public class StudyAssetsTest extends ATestGuiController {
 
 	private static StudyAssets studyAssets;
 	private static StudyModel studyTemplate;

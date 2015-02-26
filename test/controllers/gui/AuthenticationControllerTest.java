@@ -28,7 +28,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class AuthenticationControllerTest extends AGuiControllerTest {
+public class AuthenticationControllerTest extends ATestGuiController {
 
 	@Test
 	public void callLogin() throws Exception {

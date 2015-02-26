@@ -35,7 +35,7 @@ import controllers.publix.jatos.JatosPublix;
  * 
  * @author Kristian Lange
  */
-public class ComponentsControllerTest extends AGuiControllerTest {
+public class ComponentsControllerTest extends ATestGuiController {
 
 	private static StudyModel studyTemplate;
 

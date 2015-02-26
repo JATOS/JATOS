@@ -38,7 +38,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class StudiesControllerTest extends AGuiControllerTest {
+public class StudiesControllerTest extends ATestGuiController {
 
 	private static StudyModel studyTemplate;
 

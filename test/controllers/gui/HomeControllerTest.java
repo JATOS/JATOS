@@ -20,7 +20,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class HomeControllerTest extends AGuiControllerTest {
+public class HomeControllerTest extends ATestGuiController {
 
 	@Test
 	public void callHome() throws Exception {

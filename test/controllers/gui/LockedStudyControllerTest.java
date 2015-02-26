@@ -27,7 +27,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class LockedStudyControllerTest extends AGuiControllerTest {
+public class LockedStudyControllerTest extends ATestGuiController {
 
 	private static StudyModel studyTemplate;
 

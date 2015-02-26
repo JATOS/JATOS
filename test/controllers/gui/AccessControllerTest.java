@@ -28,7 +28,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class AccessControllerTest extends AGuiControllerTest {
+public class AccessControllerTest extends ATestGuiController {
 
 	private static StudyModel studyTemplate;
 	private static UserModel testUser;

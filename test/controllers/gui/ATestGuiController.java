@@ -39,9 +39,9 @@ import controllers.publix.StudyAssets;
  * 
  * @author Kristian Lange
  */
-public abstract class AGuiControllerTest {
+public abstract class ATestGuiController {
 	
-	private static final String CLASS_NAME = AGuiControllerTest.class
+	private static final String CLASS_NAME = ATestGuiController.class
 			.getSimpleName();
 
 	protected FakeApplication application;

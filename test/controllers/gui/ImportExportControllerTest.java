@@ -40,7 +40,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class ImportExportControllerTest extends AGuiControllerTest {
+public class ImportExportControllerTest extends ATestGuiController {
 
 	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
