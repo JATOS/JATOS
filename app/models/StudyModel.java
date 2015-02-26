@@ -59,8 +59,9 @@ public class StudyModel {
 	private Long id;
 
 	/**
-	 * Universally unique ID. Used for import/export between different JATOS
-	 * instances.
+	 * Universally (world-wide) unique ID. Used for import/export between
+	 * different JATOS instances. On one JATOS instance it is only allowed to
+	 * have one study with the same UUID.
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	@GeneratedValue(generator = "uuid2")

@@ -516,7 +516,7 @@ function importComponentConfirm(data) {
 	if (response.componentExists) {
 		var title = "Component already exists";
 		var preText = "It seems a component \"" + response.componentTitle 
-			+ "\" already exist.";
+			+ "\" already exist in this study.";
 		var postText = "Do you want to overwrite this component?";
 		askConfirmation(title, preText, null, postText, 'Overwrite', function() {
 			postComponentImportConfirm();

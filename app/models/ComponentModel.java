@@ -46,8 +46,10 @@ public class ComponentModel {
 	private Long id;
 
 	/**
-	 * Universally unique ID. Used for import/export between different JATOS
-	 * instances.
+	 * Universally, (world-wide) unique ID. Used for import/export between
+	 * different JATOS instances. A study can have only one component with the
+	 * same UUID, although it is allowed to have other studies that have this
+	 * component with this UUID.
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	@GeneratedValue(generator = "uuid2")
@@ -173,7 +175,7 @@ public class ComponentModel {
 	public String getComments() {
 		return this.comments;
 	}
-	
+
 	public String getJsonData() {
 		if (this.jsonData == null) {
 			return null;
@@ -225,8 +227,10 @@ public class ComponentModel {
 		if (htmlFilePath != null && !htmlFilePath.isEmpty()) {
 			String pathRegEx = "^(\\w+)(\\/\\w+)?\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
 			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.isEmpty())) {
-				errorList.add(new ValidationError(HTML_FILE_PATH,
-						MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+				errorList
+						.add(new ValidationError(
+								HTML_FILE_PATH,
+								MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
 			}
 		}
 		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
