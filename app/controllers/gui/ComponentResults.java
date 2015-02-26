@@ -20,6 +20,7 @@ import play.mvc.With;
 import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.ComponentService;
+import services.gui.ImportExportService;
 import services.gui.MessagesStrings;
 import services.gui.ResultService;
 import services.gui.UserService;
@@ -166,7 +167,7 @@ public class ComponentResults extends Controller {
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME);
+		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
 		List<Long> componentResultIdList = resultService
@@ -184,8 +185,8 @@ public class ComponentResults extends Controller {
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
 		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME,
-				ImportExport.JQDOWNLOAD_COOKIE_CONTENT);
+		response().setCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME,
+				ImportExportService.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(componentResultDataAsStr);
 	}
 

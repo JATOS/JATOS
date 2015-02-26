@@ -1,3 +1,4 @@
+package controllers.gui;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static play.mvc.Http.Status.OK;
@@ -37,7 +38,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class StudiesControllerTest extends AControllerTest {
+public class StudiesControllerTest extends AGuiControllerTest {
 
 	private static StudyModel studyTemplate;
 
@@ -57,8 +58,8 @@ public class StudiesControllerTest extends AControllerTest {
 	public void callIndex() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
-		Result result = callAction(controllers.gui.routes.ref.Studies.index(
-				studyClone.getId()),
+		Result result = callAction(
+				controllers.gui.routes.ref.Studies.index(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -180,8 +181,8 @@ public class StudiesControllerTest extends AControllerTest {
 						StudyModel.JSON_DATA, "{}",
 						StudyModel.ALLOWED_WORKER_LIST, ""));
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.submitEdited(studyClone.getId()),
-				request);
+				controllers.gui.routes.ref.Studies.submitEdited(studyClone
+						.getId()), request);
 		assertEquals(SEE_OTHER, status(result));
 
 		// It would be nice to test the edited study here
@@ -194,8 +195,8 @@ public class StudiesControllerTest extends AControllerTest {
 	public void callSwapLock() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
-		Result result = callAction(
-				controllers.gui.routes.ref.Studies.swapLock(studyClone.getId()),
+		Result result = callAction(controllers.gui.routes.ref.Studies
+				.swapLock(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -236,8 +237,8 @@ public class StudiesControllerTest extends AControllerTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies
-						.changeMembers(studyClone.getId()),
+				controllers.gui.routes.ref.Studies.changeMembers(studyClone
+						.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -287,7 +288,8 @@ public class StudiesControllerTest extends AControllerTest {
 		Result result = callAction(
 				controllers.gui.routes.ref.Studies.changeComponentOrder(
 						studyClone.getId(), studyClone.getComponentList()
-								.get(0).getId(), Studies.COMPONENT_POSITION_DOWN),
+								.get(0).getId(),
+						Studies.COMPONENT_POSITION_DOWN),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -312,7 +314,8 @@ public class StudiesControllerTest extends AControllerTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.showStudy(studyClone.getId()),
+				controllers.gui.routes.ref.Studies
+						.showStudy(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));

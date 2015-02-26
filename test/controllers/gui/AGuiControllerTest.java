@@ -1,3 +1,5 @@
+package controllers.gui;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -37,9 +39,9 @@ import controllers.publix.StudyAssets;
  * 
  * @author Kristian Lange
  */
-public abstract class AControllerTest {
+public abstract class AGuiControllerTest {
 	
-	private static final String CLASS_NAME = AControllerTest.class
+	private static final String CLASS_NAME = AGuiControllerTest.class
 			.getSimpleName();
 
 	protected FakeApplication application;

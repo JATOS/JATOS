@@ -1,3 +1,5 @@
+package controllers.gui;
+
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.callAction;
@@ -18,7 +20,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class HomeControllerTest extends AControllerTest {
+public class HomeControllerTest extends AGuiControllerTest {
 
 	@Test
 	public void callHome() throws Exception {

@@ -14,7 +14,6 @@ import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
-import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import play.mvc.With;
 import services.RequestScopeMessaging;
@@ -41,19 +40,6 @@ import exceptions.gui.JatosGuiException;
 @With(JatosGuiAction.class)
 @Singleton
 public class ImportExport extends Controller {
-
-	public static final String COMPONENT_TITLE = "componentTitle";
-	public static final String COMPONENT_EXISTS = "componentExists";
-	public static final String DIR_PATH = "dirPath";
-	public static final String DIR_EXISTS = "dirExists";
-	public static final String STUDY_TITLE = "studyTitle";
-	public static final String STUDY_EXISTS = "studyExists";
-	public static final String STUDYS_DIR_CONFIRM = "studysDirConfirm";
-	public static final String STUDYS_PROPERTIES_CONFIRM = "studysPropertiesConfirm";
-	public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
-	public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
-	public static final String JQDOWNLOAD_COOKIE_NAME = "Set-Cookie";
-	public static final String JQDOWNLOAD_COOKIE_CONTENT = "fileDownload=true; path=/";
 
 	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
 
@@ -99,7 +85,8 @@ public class ImportExport extends Controller {
 				tempUnzippedStudyDir, false);
 
 		// Remember study assets' dir name
-		session(SESSION_UNZIPPED_STUDY_DIR, tempUnzippedStudyDir.getName());
+		session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
+				tempUnzippedStudyDir.getName());
 
 		StudyModel currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
 		boolean studyExists = currentStudy != null;
@@ -110,10 +97,10 @@ public class ImportExport extends Controller {
 
 		// Create response
 		Map<String, Object> response = new HashMap<String, Object>();
-		response.put(STUDY_EXISTS, studyExists);
-		response.put(STUDY_TITLE, uploadedStudy.getTitle());
-		response.put(DIR_EXISTS, dirExists);
-		response.put(DIR_PATH, uploadedStudy.getDirName());
+		response.put(ImportExportService.STUDY_EXISTS, studyExists);
+		response.put(ImportExportService.STUDY_TITLE, uploadedStudy.getTitle());
+		response.put(ImportExportService.DIR_EXISTS, dirExists);
+		response.put(ImportExportService.DIR_PATH, uploadedStudy.getDirName());
 		String asJson = JsonUtils.asJson(response);
 		return ok(asJson);
 	}
@@ -138,9 +125,9 @@ public class ImportExport extends Controller {
 					Http.Status.BAD_REQUEST);
 		}
 		Boolean studysPropertiesConfirm = json.findPath(
-				STUDYS_PROPERTIES_CONFIRM).asBoolean();
-		Boolean studysDirConfirm = json.findPath(STUDYS_DIR_CONFIRM)
-				.asBoolean();
+				ImportExportService.STUDYS_PROPERTIES_CONFIRM).asBoolean();
+		Boolean studysDirConfirm = json.findPath(
+				ImportExportService.STUDYS_DIR_CONFIRM).asBoolean();
 		if (studysPropertiesConfirm == null || studysDirConfirm == null) {
 			String errorMsg = MessagesStrings.IMPORT_OF_STUDY_FAILED;
 			jatosGuiExceptionThrower.throwHome(errorMsg,
@@ -176,7 +163,7 @@ public class ImportExport extends Controller {
 		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
+		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
@@ -190,7 +177,8 @@ public class ImportExport extends Controller {
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + zipFileName);
 		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(JQDOWNLOAD_COOKIE_NAME, JQDOWNLOAD_COOKIE_CONTENT);
+		response().setCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME,
+				ImportExportService.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(zipFile);
 	}
 
@@ -206,7 +194,7 @@ public class ImportExport extends Controller {
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
+		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
@@ -229,7 +217,8 @@ public class ImportExport extends Controller {
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
 		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(JQDOWNLOAD_COOKIE_NAME, JQDOWNLOAD_COOKIE_CONTENT);
+		response().setCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME,
+				ImportExportService.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(componentAsJson);
 	}
 
@@ -243,40 +232,7 @@ public class ImportExport extends Controller {
 	public Result importComponent(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".importComponent: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		studyService.checkStudyLocked(study);
-
-		FilePart filePart = request().body().asMultipartFormData()
-				.getFile(ComponentModel.COMPONENT);
-		if (filePart == null) {
-			String errorMsg = MessagesStrings.FILE_MISSING;
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
-		// If wrong key the upload comes from the wrong form
-		if (!filePart.getKey().equals(ComponentModel.COMPONENT)) {
-			String errorMsg = MessagesStrings.NO_COMPONENT_UPLOAD;
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
-
-		ComponentModel uploadedComponent = importExportService
-				.unmarshalComponent(filePart.getFile(), study);
-
-		// Remember component's file name
-		session(SESSION_TEMP_COMPONENT_FILE, filePart.getFile().getName());
-
-		boolean componentExists = componentDao.findByUuid(uploadedComponent
-				.getUuid(), study) != null;
-		
-		// Create response
-		Map<String, Object> response = new HashMap<String, Object>();
-		response.put(COMPONENT_EXISTS, componentExists);
-		response.put(COMPONENT_TITLE, uploadedComponent.getTitle());
-		String asJson = JsonUtils.asJson(response);
-		return ok(asJson);
+		return ok(importExportService.importComponent(studyId));
 	}
 
 	/**
@@ -298,8 +254,8 @@ public class ImportExport extends Controller {
 		File componentFile = importExportService.getTempComponentFile(study);
 		ComponentModel uploadedComponent = importExportService
 				.unmarshalComponent(componentFile, study);
-		ComponentModel currentComponent = componentDao
-				.findByUuid(uploadedComponent.getUuid(), study);
+		ComponentModel currentComponent = componentDao.findByUuid(
+				uploadedComponent.getUuid(), study);
 		boolean componentExists = (currentComponent != null);
 		if (componentExists) {
 			componentDao.updateProperties(currentComponent, uploadedComponent);

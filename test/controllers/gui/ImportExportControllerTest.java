@@ -1,3 +1,4 @@
+package controllers.gui;
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.callAction;
@@ -25,13 +26,13 @@ import play.api.mvc.MultipartFormData;
 import play.api.mvc.MultipartFormData.FilePart;
 import play.libs.Scala;
 import play.mvc.Result;
+import services.gui.ImportExportService;
 import utils.IOUtils;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import controllers.gui.ImportExport;
 import controllers.gui.Users;
 
 /**
@@ -39,7 +40,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class ImportExportControllerTest extends AControllerTest {
+public class ImportExportControllerTest extends AGuiControllerTest {
 
 	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
@@ -62,14 +63,14 @@ public class ImportExportControllerTest extends AControllerTest {
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
 				.readTree(contentAsString(result));
 		// Study does not exist
-		assertThat(!jsonNode.get(ImportExport.STUDY_EXISTS).asBoolean());
-		assertThat(jsonNode.has(ImportExport.STUDY_TITLE));
+		assertThat(!jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean());
+		assertThat(jsonNode.has(ImportExportService.STUDY_TITLE));
 		// Study assets dir does not exist
-		assertThat(!jsonNode.get(ImportExport.DIR_EXISTS).asBoolean());
-		assertThat(jsonNode.has(ImportExport.DIR_PATH));
+		assertThat(!jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean());
+		assertThat(jsonNode.has(ImportExportService.DIR_PATH));
 		// Name of unzipped study dir in session
 		String unzippedStudyDirName = session(result).get(
-				ImportExport.SESSION_UNZIPPED_STUDY_DIR);
+				ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
 		assertThat(unzippedStudyDirName != null
 				&& !unzippedStudyDirName.isEmpty());
 		// There should be a unzipped study dir in tmp
@@ -91,9 +92,10 @@ public class ImportExportControllerTest extends AControllerTest {
 		StudyModel importedStudy = studyDao
 				.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617");
 		result = callAction(
-				controllers.gui.routes.ref.Studies.remove(importedStudy.getId()),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						admin.getEmail()));
+				controllers.gui.routes.ref.Studies
+						.remove(importedStudy.getId()),
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 	}
 
 	/**
@@ -127,12 +129,12 @@ public class ImportExportControllerTest extends AControllerTest {
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
 				.readTree(contentAsString(result));
 		// Study exists already
-		assertThat(jsonNode.get(ImportExport.STUDY_EXISTS).asBoolean());
+		assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean());
 		// Study assets dir exists already
-		assertThat(jsonNode.get(ImportExport.DIR_EXISTS).asBoolean());
+		assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean());
 
 		String unzippedStudyDirName = session(result).get(
-				ImportExport.SESSION_UNZIPPED_STUDY_DIR);
+				ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
 
 		// Second call: confirm (allow override of properties and dir)
 		result = callImportStudyConfirmed(unzippedStudyDirName, true, true);
@@ -156,7 +158,7 @@ public class ImportExportControllerTest extends AControllerTest {
 		result = callImportStudy();
 
 		unzippedStudyDirName = session(result).get(
-				ImportExport.SESSION_UNZIPPED_STUDY_DIR);
+				ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
 
 		// Fourth call: confirm (do not allow override)
 		result = callImportStudyConfirmed(unzippedStudyDirName, false, false);
@@ -199,11 +201,14 @@ public class ImportExportControllerTest extends AControllerTest {
 		Result result = callAction(
 				controllers.gui.routes.ref.ImportExport.importComponent(study
 						.getId()),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						admin.getEmail()).withAnyContent(
-						getMultiPartFormDataForFileUpload(componentFileBkp,
-								ComponentModel.COMPONENT, "application/json"),
-						"multipart/form-data", "POST"));
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail())
+						.withAnyContent(
+								getMultiPartFormDataForFileUpload(
+										componentFileBkp,
+										ComponentModel.COMPONENT,
+										"application/json"),
+								"multipart/form-data", "POST"));
 
 		// Tests
 		assertThat(status(result)).isEqualTo(OK);
@@ -211,12 +216,13 @@ public class ImportExportControllerTest extends AControllerTest {
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
 				.readTree(contentAsString(result));
 		// Component does not exist
-		assertThat(!jsonNode.get(ImportExport.COMPONENT_EXISTS).asBoolean());
-		assertThat(jsonNode.has(ImportExport.COMPONENT_TITLE));
+		assertThat(!jsonNode.get(ImportExportService.COMPONENT_EXISTS)
+				.asBoolean());
+		assertThat(jsonNode.has(ImportExportService.COMPONENT_TITLE));
 
 		// The component's file name should be in session
 		String sessionFileName = session(result).get(
-				ImportExport.SESSION_TEMP_COMPONENT_FILE);
+				ImportExportService.SESSION_TEMP_COMPONENT_FILE);
 		assertThat(sessionFileName != null && !sessionFileName.isEmpty());
 		// The component file should exist in tmp
 		File tmpComponentFile = new File(System.getProperty("java.io.tmpdir"),
@@ -227,10 +233,11 @@ public class ImportExportControllerTest extends AControllerTest {
 		result = callAction(
 				controllers.gui.routes.ref.ImportExport.importComponentConfirmed(study
 						.getId()),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						admin.getEmail()).withSession(
-						ImportExport.SESSION_TEMP_COMPONENT_FILE,
-						sessionFileName));
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail())
+						.withSession(
+								ImportExportService.SESSION_TEMP_COMPONENT_FILE,
+								sessionFileName));
 
 		// Tests
 		assertThat(status(result)).isEqualTo(OK);
@@ -251,9 +258,10 @@ public class ImportExportControllerTest extends AControllerTest {
 		addStudy(study);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.ImportExport.exportStudy(study.getId()),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						admin.getEmail()));
+				controllers.gui.routes.ref.ImportExport.exportStudy(study
+						.getId()),
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentType(result)).isEqualTo("application/x-download");
 
@@ -269,8 +277,8 @@ public class ImportExportControllerTest extends AControllerTest {
 		Result result = callAction(
 				controllers.gui.routes.ref.ImportExport.exportComponent(
 						study.getId(), study.getComponent(1).getId()),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						admin.getEmail()));
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentType(result)).isEqualTo("application/x-download");
 
@@ -286,11 +294,12 @@ public class ImportExportControllerTest extends AControllerTest {
 
 		Result result = callAction(
 				controllers.gui.routes.ref.ImportExport.importStudy(),
-				fakeRequest().withSession(Users.SESSION_EMAIL,
-						admin.getEmail()).withAnyContent(
-						getMultiPartFormDataForFileUpload(studyZipBkp,
-								StudyModel.STUDY, "application/zip"),
-						"multipart/form-data", "POST"));
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail())
+						.withAnyContent(
+								getMultiPartFormDataForFileUpload(studyZipBkp,
+										StudyModel.STUDY, "application/zip"),
+								"multipart/form-data", "POST"));
 		// Clean up
 		if (studyZipBkp.exists()) {
 			studyZipBkp.delete();
@@ -316,15 +325,16 @@ public class ImportExportControllerTest extends AControllerTest {
 	private Result callImportStudyConfirmed(String unzippedStudyDirName,
 			boolean overrideProperties, boolean overrideDir) {
 		ObjectNode jsonObj = JsonUtils.OBJECTMAPPER.createObjectNode();
-		jsonObj.put(ImportExport.STUDYS_PROPERTIES_CONFIRM, overrideProperties);
-		jsonObj.put(ImportExport.STUDYS_DIR_CONFIRM, overrideDir);
+		jsonObj.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM,
+				overrideProperties);
+		jsonObj.put(ImportExportService.STUDYS_DIR_CONFIRM, overrideDir);
 
 		Result result = callAction(
 				controllers.gui.routes.ref.ImportExport.importStudyConfirmed(),
 				fakeRequest()
-						.withSession(Users.SESSION_EMAIL,
-								admin.getEmail())
-						.withSession(ImportExport.SESSION_UNZIPPED_STUDY_DIR,
+						.withSession(Users.SESSION_EMAIL, admin.getEmail())
+						.withSession(
+								ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
 								unzippedStudyDirName).withJsonBody(jsonObj));
 		return result;
 	}

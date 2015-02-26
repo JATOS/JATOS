@@ -1,3 +1,4 @@
+package controllers.gui;
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.NOT_FOUND;
 import static play.mvc.Http.Status.OK;
@@ -14,9 +15,7 @@ import org.junit.Test;
 
 import play.mvc.Result;
 import utils.IOUtils;
-
 import common.Global;
-
 import controllers.publix.StudyAssets;
 
 /**
@@ -24,7 +23,7 @@ import controllers.publix.StudyAssets;
  * 
  * @author Kristian Lange
  */
-public class StudyAssetsTest extends AControllerTest {
+public class StudyAssetsTest extends AGuiControllerTest {
 
 	private static StudyAssets studyAssets;
 	private static StudyModel studyTemplate;

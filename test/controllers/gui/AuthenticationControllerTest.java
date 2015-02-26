@@ -1,3 +1,4 @@
+package controllers.gui;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -27,7 +28,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class AuthenticationControllerTest extends AControllerTest {
+public class AuthenticationControllerTest extends AGuiControllerTest {
 
 	@Test
 	public void callLogin() throws Exception {

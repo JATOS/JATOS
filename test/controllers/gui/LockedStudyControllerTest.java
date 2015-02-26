@@ -1,3 +1,4 @@
+package controllers.gui;
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
@@ -26,7 +27,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class LockedStudyControllerTest extends AControllerTest {
+public class LockedStudyControllerTest extends AGuiControllerTest {
 
 	private static StudyModel studyTemplate;
 
@@ -57,8 +58,8 @@ public class LockedStudyControllerTest extends AControllerTest {
 	public void callStudiesSubmitEdited() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
-		HandlerRef ref = controllers.gui.routes.ref.Studies.submitEdited(studyClone
-				.getId());
+		HandlerRef ref = controllers.gui.routes.ref.Studies
+				.submitEdited(studyClone.getId());
 		checkDenyLocked(ref);
 		removeStudy(studyClone);
 	}
@@ -77,9 +78,10 @@ public class LockedStudyControllerTest extends AControllerTest {
 	public void callStudiesChangeComponentOrder() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
-		HandlerRef ref = controllers.gui.routes.ref.Studies.changeComponentOrder(
-				studyClone.getId(), studyClone.getComponent(1).getId(),
-				Studies.COMPONENT_POSITION_DOWN);
+		HandlerRef ref = controllers.gui.routes.ref.Studies
+				.changeComponentOrder(studyClone.getId(), studyClone
+						.getComponent(1).getId(),
+						Studies.COMPONENT_POSITION_DOWN);
 		checkDenyLocked(ref);
 		removeStudy(studyClone);
 	}
