@@ -288,13 +288,13 @@ $(document).ready(function() {
 	$('#componentsTable tbody').on('click', '.upArrow', function() {
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
-		ajaxChangeComponentOrder(componentId, "@Studies.COMPONENT_POSITION_UP", tr);
+		ajaxChangeComponentOrder(componentId, "@controllers.gui.Studies.COMPONENT_POSITION_UP", tr);
 	});
 
 	$('#componentsTable tbody').on('click', '.downArrow', function() {
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
-		ajaxChangeComponentOrder(componentId, "@Studies.COMPONENT_POSITION_DOWN", tr);
+		ajaxChangeComponentOrder(componentId, "@controllers.gui.Studies.COMPONENT_POSITION_DOWN", tr);
 	});
 	
 	$('#componentsTable tbody').on('click', '.activeCheckbox', function() {
