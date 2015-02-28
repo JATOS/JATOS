@@ -1,49 +1,44 @@
-package controllers.gui;
+package gui.controllers;
+
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.status;
-
-import java.io.IOException;
-
+import gui.AbstractGuiTest;
 import models.StudyModel;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import controllers.gui.Studies;
+import controllers.gui.Users;
 import play.mvc.HandlerRef;
 import play.mvc.Result;
 import utils.IOUtils;
-import controllers.gui.Studies;
-import controllers.gui.Users;
 
 /**
  * Testing actions if study is locked
  * 
  * @author Kristian Lange
  */
-public class LockedStudyControllerTest extends ATestGuiController {
+public class LockedStudyControllerTest extends AbstractGuiTest {
 
 	private static StudyModel studyTemplate;
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 
-	@Before
-	public void startApp() throws Exception {
-		super.startApp();
+	@Override
+	public void before() throws Exception {
 		studyTemplate = importExampleStudy();
 	}
 
-	@After
-	public void stopApp() throws IOException {
+	@Override
+	public void after() throws Exception {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		super.stopApp();
 	}
 
 	private void checkDenyLocked(HandlerRef ref) {

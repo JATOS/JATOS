@@ -1,4 +1,5 @@
-package controllers.gui;
+package gui.controllers;
+
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -12,6 +13,7 @@ import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
+import gui.AbstractGuiTest;
 import models.UserModel;
 
 import org.junit.Test;
@@ -28,7 +30,17 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class AuthenticationControllerTest extends ATestGuiController {
+public class AuthenticationControllerTest extends AbstractGuiTest {
+
+	@Override
+	public void before() throws Exception {
+		// Nothing additional to AbstractGuiTest to to do before test
+	}
+
+	@Override
+	public void after() throws Exception {
+		// Nothing additional to AbstractGuiTest to to do after test
+	}
 
 	@Test
 	public void callLogin() throws Exception {

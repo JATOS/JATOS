@@ -1,4 +1,5 @@
-package controllers.gui;
+package gui.controllers;
+
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.callAction;
@@ -7,6 +8,7 @@ import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
+import gui.AbstractGuiTest;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,12 +42,20 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class ImportExportControllerTest extends ATestGuiController {
+public class ImportExportControllerTest extends AbstractGuiTest {
 
-	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
-	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
 	private static final String TEST_STUDY_ZIP_PATH = "test/assets/basic_example_study.zip";
 	private static final String TEST_STUDY_BKP_ZIP_PATH = "test/assets/basic_example_study_bkp.zip";
+
+	@Override
+	public void before() throws Exception {
+		// Nothing additional to AbstractGuiTest to to do before test
+	}
+
+	@Override
+	public void after() throws Exception {
+		// Nothing additional to AbstractGuiTest to to do after test
+	}
 
 	/**
 	 * Checks call to ImportExportController.importStudy() and
@@ -188,12 +198,7 @@ public class ImportExportControllerTest extends ATestGuiController {
 		study.removeComponent(study.getFirstComponent());
 		addStudy(study);
 
-		// Make a backup of our component file
-		File componentFile = new File(TEST_COMPONENT_JAC_PATH);
-		File componentFileBkp = new File(System.getProperty("java.io.tmpdir"),
-				TEST_COMPONENT_BKP_JAC_FILENAME);
-		FileUtils.copyFile(componentFile, componentFileBkp);
-
+		File componentFile = getExampleComponentFile();
 		assertThat(study.getFirstComponent().getTitle()).doesNotContain(
 				"Hello World");
 
@@ -205,7 +210,7 @@ public class ImportExportControllerTest extends ATestGuiController {
 						.withSession(Users.SESSION_EMAIL, admin.getEmail())
 						.withAnyContent(
 								getMultiPartFormDataForFileUpload(
-										componentFileBkp,
+										componentFile,
 										ComponentModel.COMPONENT,
 										"application/json"),
 								"multipart/form-data", "POST"));
@@ -246,8 +251,8 @@ public class ImportExportControllerTest extends ATestGuiController {
 		// TODO Check override of component
 
 		// Clean-up
-		if (componentFileBkp.exists()) {
-			componentFileBkp.delete();
+		if (componentFile.exists()) {
+			componentFile.delete();
 		}
 		removeStudy(study);
 	}

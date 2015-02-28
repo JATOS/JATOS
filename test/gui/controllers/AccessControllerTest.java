@@ -1,4 +1,5 @@
-package controllers.gui;
+package gui.controllers;
+
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.FORBIDDEN;
 import static play.mvc.Http.Status.SEE_OTHER;
@@ -7,43 +8,40 @@ import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.status;
+import gui.AbstractGuiTest;
 
 import java.io.IOException;
 
 import models.StudyModel;
 import models.UserModel;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
+import controllers.gui.Studies;
+import controllers.gui.Users;
 import play.mvc.HandlerRef;
 import play.mvc.Result;
 import utils.IOUtils;
-import controllers.gui.Studies;
-import controllers.gui.Users;
 
 /**
  * Testing whether actions do proper access control
  * 
  * @author Kristian Lange
  */
-public class AccessControllerTest extends ATestGuiController {
+public class AccessControllerTest extends AbstractGuiTest {
 
 	private static StudyModel studyTemplate;
 	private static UserModel testUser;
 
-	@Before
-	public void startApp() throws Exception {
-		super.startApp();
+	@Override
+	public void before() throws Exception {
 		studyTemplate = importExampleStudy();
 		testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 	}
 
-	@After
-	public void stopApp() throws IOException {
+	@Override
+	public void after() throws Exception {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		super.stopApp();
 	}
 
 	private void checkDeniedAccess(HandlerRef ref) {

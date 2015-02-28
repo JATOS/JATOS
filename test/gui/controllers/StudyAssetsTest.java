@@ -1,16 +1,16 @@
-package controllers.gui;
+package gui.controllers;
+
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.NOT_FOUND;
 import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.status;
+import gui.AbstractGuiTest;
 
 import java.io.File;
 import java.io.IOException;
 
 import models.StudyModel;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import play.mvc.Result;
@@ -23,22 +23,20 @@ import controllers.publix.StudyAssets;
  * 
  * @author Kristian Lange
  */
-public class StudyAssetsTest extends ATestGuiController {
+public class StudyAssetsTest extends AbstractGuiTest {
 
 	private static StudyAssets studyAssets;
-	private static StudyModel studyTemplate;
+	private static StudyModel studyExample;
 
-	@Before
-	public void startApp() throws Exception {
-		super.startApp();
-		studyTemplate = importExampleStudy();
-		studyAssets = Global.INJECTOR.getInstance(StudyAssets.class);
+	@Override
+	public void before() throws Exception {
+		studyExample = importExampleStudy();
 	}
 
-	@After
-	public void stopApp() throws IOException {
-		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		super.stopApp();
+	@Override
+	public void after() throws Exception {
+		IOUtils.removeStudyAssetsDir(studyExample.getDirName());
+		studyAssets = Global.INJECTOR.getInstance(StudyAssets.class);
 	}
 
 	@Test
@@ -57,7 +55,7 @@ public class StudyAssetsTest extends ATestGuiController {
 
 	@Test
 	public void testAt() throws IOException {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyExample);
 
 		Result result = studyAssets.at("basic_example_study/hello_world.html");
 		assertThat(status(result)).isEqualTo(OK);
@@ -77,7 +75,7 @@ public class StudyAssetsTest extends ATestGuiController {
 
 	@Test
 	public void testAtPathTraversalAttack() throws IOException {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		StudyModel studyClone = cloneAndPersistStudy(studyExample);
 
 		// Although this file exists, it shouldn't be found
 		Result result = studyAssets.at("../../conf/application.conf");

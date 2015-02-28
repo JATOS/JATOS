@@ -1,4 +1,4 @@
-package controllers.gui;
+package gui.controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.OK;
@@ -8,6 +8,7 @@ import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.status;
+import gui.AbstractGuiTest;
 
 import org.junit.Test;
 
@@ -20,8 +21,18 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class HomeControllerTest extends ATestGuiController {
+public class HomeControllerTest extends AbstractGuiTest {
 
+	@Override
+	public void before() throws Exception {
+		// Nothing additional to AbstractGuiTest to to do before test
+	}
+
+	@Override
+	public void after() throws Exception {
+		// Nothing additional to AbstractGuiTest to to do after test
+	}
+	
 	@Test
 	public void callHome() throws Exception {
 		Result result = callAction(controllers.gui.routes.ref.Home.home(),

@@ -47,50 +47,34 @@ public class ImportExportService extends Controller {
 	public static final String JQDOWNLOAD_COOKIE_CONTENT = "fileDownload=true; path=/";
 
 	private final StudyService studyService;
-	private final UserService userService;
 	private final JsonUtils jsonUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final IStudyDao studyDao;
 	private final IComponentDao componentDao;
 
 	@Inject
-	ImportExportService(StudyService studyService, UserService userService,
-			JsonUtils jsonUtils,
+	ImportExportService(StudyService studyService, JsonUtils jsonUtils,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			IStudyDao studyDao, IComponentDao componentDao) {
 		this.studyService = studyService;
-		this.userService = userService;
 		this.jsonUtils = jsonUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 	}
 
-	public ObjectNode importComponent(Long studyId) throws JatosGuiException {
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		studyService.checkStudyLocked(study);
-
-		FilePart filePart = request().body().asMultipartFormData()
-				.getFile(ComponentModel.COMPONENT);
+	public ObjectNode importComponent(StudyModel study, FilePart filePart)
+			throws IOException {
 		if (filePart == null) {
-			String errorMsg = MessagesStrings.FILE_MISSING;
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
+			throw new IOException(MessagesStrings.FILE_MISSING);
 		}
 		// If wrong key the upload comes from the wrong form
 		if (!filePart.getKey().equals(ComponentModel.COMPONENT)) {
-			String errorMsg = MessagesStrings.NO_COMPONENT_UPLOAD;
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
+			throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
 		}
 
 		ComponentModel uploadedComponent = unmarshalComponent(
 				filePart.getFile(), study);
-
-		// Remember component's file name
-		session(SESSION_TEMP_COMPONENT_FILE, filePart.getFile().getName());
 
 		boolean componentExists = componentDao.findByUuid(
 				uploadedComponent.getUuid(), study) != null;
@@ -100,6 +84,23 @@ public class ImportExportService extends Controller {
 		objectNode.put(COMPONENT_EXISTS, componentExists);
 		objectNode.put(COMPONENT_TITLE, uploadedComponent.getTitle());
 		return objectNode;
+	}
+	
+	public void importComponentConfirmed(StudyModel study) throws IOException {
+		File componentFile = getTempComponentFile(study);
+		ComponentModel uploadedComponent = unmarshalComponent(componentFile, study);
+		ComponentModel currentComponent = componentDao.findByUuid(
+				uploadedComponent.getUuid(), study);
+		boolean componentExists = (currentComponent != null);
+		if (componentExists) {
+			componentDao.updateProperties(currentComponent, uploadedComponent);
+			RequestScopeMessaging.success(MessagesStrings
+					.componentsPropertiesOverwritten(currentComponent.getId()));
+		} else {
+			componentDao.create(study, uploadedComponent);
+			RequestScopeMessaging.success(MessagesStrings
+					.importedNewComponent(uploadedComponent.getId()));
+		}
 	}
 
 	public void checkStudyImport(UserModel loggedInUser,
@@ -269,14 +270,13 @@ public class ImportExportService extends Controller {
 	/**
 	 * Get component's File object. Name is stored in session. Discard session
 	 * variable afterwards.
+	 * @throws IOException 
 	 */
-	public File getTempComponentFile(StudyModel study) throws JatosGuiException {
+	public File getTempComponentFile(StudyModel study) throws IOException {
 		String tempComponentFileName = session(SESSION_TEMP_COMPONENT_FILE);
 		session().remove(SESSION_TEMP_COMPONENT_FILE);
 		if (tempComponentFileName == null || tempComponentFileName.isEmpty()) {
-			String errorMsg = MessagesStrings.IMPORT_OF_COMPONENT_FAILED;
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, study.getId());
+			throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
 		}
 		File tempComponentFile = new File(System.getProperty("java.io.tmpdir"),
 				tempComponentFileName);
@@ -328,18 +328,14 @@ public class ImportExportService extends Controller {
 	}
 
 	public ComponentModel unmarshalComponent(File file, StudyModel study)
-			throws JatosGuiException {
+			throws IOException {
 		ComponentModel component = new JsonUtils.UploadUnmarshaller()
 				.unmarshalling(file, ComponentModel.class);
 		if (component == null) {
-			String errorMsg = MessagesStrings.NO_COMPONENT_UPLOAD;
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, study.getId());
+			throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
 		}
 		if (component.validate() != null) {
-			String errorMsg = MessagesStrings.COMPONENT_INVALID;
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, study.getId());
+			throw new IOException(MessagesStrings.COMPONENT_INVALID);
 		}
 		return component;
 	}

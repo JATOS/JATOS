@@ -1,4 +1,5 @@
-package controllers.gui;
+package gui.controllers;
+
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static play.mvc.Http.Status.OK;
@@ -9,6 +10,7 @@ import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.headers;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
+import gui.AbstractGuiTest;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -18,8 +20,6 @@ import models.ComponentModel;
 import models.StudyModel;
 
 import org.apache.http.HttpHeaders;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import play.mvc.Result;
@@ -35,20 +35,18 @@ import controllers.publix.jatos.JatosPublix;
  * 
  * @author Kristian Lange
  */
-public class ComponentsControllerTest extends ATestGuiController {
+public class ComponentsControllerTest extends AbstractGuiTest {
 
 	private static StudyModel studyTemplate;
 
-	@Before
-	public void startApp() throws Exception {
-		super.startApp();
+	@Override
+	public void before() throws Exception {
 		studyTemplate = importExampleStudy();
 	}
 
-	@After
-	public void stopApp() throws IOException {
+	@Override
+	public void after() throws Exception {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
-		super.stopApp();
 	}
 
 	/**

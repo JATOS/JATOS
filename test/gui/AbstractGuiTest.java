@@ -1,4 +1,5 @@
-package controllers.gui;
+package gui;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -14,8 +15,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 
-import persistance.ComponentResultDao;
-import persistance.IComponentResultDao;
 import persistance.IStudyDao;
 import persistance.IUserDao;
 import persistance.StudyDao;
@@ -39,10 +38,13 @@ import controllers.publix.StudyAssets;
  * 
  * @author Kristian Lange
  */
-public abstract class ATestGuiController {
-	
-	private static final String CLASS_NAME = ATestGuiController.class
+public abstract class AbstractGuiTest {
+
+	private static final String CLASS_NAME = AbstractGuiTest.class
 			.getSimpleName();
+	
+	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
+	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
 
 	protected FakeApplication application;
 	protected EntityManager entityManager;
@@ -50,8 +52,11 @@ public abstract class ATestGuiController {
 	protected UserService userService;
 	protected IUserDao userDao;
 	protected IStudyDao studyDao;
-	protected IComponentResultDao componentResultDao;
 	protected UserModel admin;
+
+	public abstract void before() throws Exception;
+
+	public abstract void after() throws Exception;
 
 	@Before
 	public void startApp() throws Exception {
@@ -61,24 +66,27 @@ public abstract class ATestGuiController {
 		application = Helpers.fakeApplication(global);
 		Helpers.start(application);
 
+		// Use Guice dependency injection
 		jsonUtils = Global.INJECTOR.getInstance(JsonUtils.class);
 		userService = Global.INJECTOR.getInstance(UserService.class);
 		userDao = Global.INJECTOR.getInstance(UserDao.class);
 		studyDao = Global.INJECTOR.getInstance(StudyDao.class);
-		componentResultDao = Global.INJECTOR
-				.getInstance(ComponentResultDao.class);
 
 		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
 				.plugin(JPAPlugin.class);
 		entityManager = jpaPlugin.get().em("default");
 		JPA.bindForCurrentThread(entityManager);
-		
+
 		// Get admin (admin is automatically created during initialisation)
 		admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+
+		before();
 	}
 
 	@After
-	public void stopApp() throws IOException {
+	public void stopApp() throws Exception {
+		after();
+
 		entityManager.close();
 		JPA.bindForCurrentThread(null);
 		removeStudyAssetsRootDir();
@@ -112,6 +120,17 @@ public abstract class ATestGuiController {
 
 		tempUnzippedStudyDir.delete();
 		return importedStudy;
+	}
+	
+	/**
+	 * Makes a backup of our component file
+	 */
+	protected synchronized File getExampleComponentFile() throws IOException {
+		File componentFile = new File(TEST_COMPONENT_JAC_PATH);
+		File componentFileBkp = new File(System.getProperty("java.io.tmpdir"),
+				TEST_COMPONENT_BKP_JAC_FILENAME);
+		FileUtils.copyFile(componentFile, componentFileBkp);
+		return componentFileBkp;
 	}
 
 	protected synchronized StudyModel cloneAndPersistStudy(

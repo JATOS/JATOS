@@ -14,6 +14,7 @@ import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
+import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import play.mvc.With;
 import services.RequestScopeMessaging;
@@ -27,6 +28,7 @@ import utils.IOUtils;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -232,7 +234,25 @@ public class ImportExport extends Controller {
 	public Result importComponent(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".importComponent: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		return ok(importExportService.importComponent(studyId));
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		studyService.checkStudyLocked(study);
+
+		FilePart filePart = request().body().asMultipartFormData()
+				.getFile(ComponentModel.COMPONENT);
+		ObjectNode json = null;
+		try {
+			json = importExportService.importComponent(study,
+					filePart);
+		} catch (IOException e) {
+			jatosGuiExceptionThrower.throwStudies(e.getMessage(),
+					Http.Status.BAD_REQUEST, study.getId());
+		}
+		// Remember component's file name
+		session(ImportExportService.SESSION_TEMP_COMPONENT_FILE, filePart
+				.getFile().getName());
+		return ok(json);
 	}
 
 	/**
@@ -251,20 +271,11 @@ public class ImportExport extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		studyService.checkStudyLocked(study);
 
-		File componentFile = importExportService.getTempComponentFile(study);
-		ComponentModel uploadedComponent = importExportService
-				.unmarshalComponent(componentFile, study);
-		ComponentModel currentComponent = componentDao.findByUuid(
-				uploadedComponent.getUuid(), study);
-		boolean componentExists = (currentComponent != null);
-		if (componentExists) {
-			componentDao.updateProperties(currentComponent, uploadedComponent);
-			RequestScopeMessaging.success(MessagesStrings
-					.componentsPropertiesOverwritten(currentComponent.getId()));
-		} else {
-			componentDao.create(study, uploadedComponent);
-			RequestScopeMessaging.success(MessagesStrings
-					.importedNewComponent(uploadedComponent.getId()));
+		try {
+			importExportService.importComponentConfirmed(study);
+		} catch (IOException e) {
+			jatosGuiExceptionThrower.throwStudies(e.getMessage(),
+					Http.Status.BAD_REQUEST, study.getId());
 		}
 		return ok(RequestScopeMessaging.getAsJson());
 	}
