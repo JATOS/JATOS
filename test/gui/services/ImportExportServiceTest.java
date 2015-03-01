@@ -1,21 +1,16 @@
 package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import gui.AbstractGuiTest;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
 
 import org.junit.Test;
 
-import play.api.mvc.RequestHeader;
 import play.db.jpa.JPA;
-import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import services.gui.ImportExportService;
 
@@ -33,18 +28,19 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 
 	@Override
 	public void before() throws Exception {
-//		importExportService = Global.INJECTOR
-//				.getInstance(ImportExportService.class);
-//
-//		Map<String, String> flashData = Collections.emptyMap();
-//		Map<String, Object> argData = Collections.emptyMap();
-//		Long id = 2L;
-//		RequestHeader header = mock(RequestHeader.class);
-//		Http.Request request = mock(Http.Request.class);
-//		Http.Context context = new Http.Context(id, header, request, flashData,
-//				flashData, argData);
-//		Http.Context.current.set(context);
-//		JPA.bindForCurrentThread(entityManager);
+		importExportService = Global.INJECTOR
+				.getInstance(ImportExportService.class);
+		//
+		// Map<String, String> flashData = Collections.emptyMap();
+		// Map<String, Object> argData = Collections.emptyMap();
+		// Long id = 2L;
+		// RequestHeader header = mock(RequestHeader.class);
+		// Http.Request request = mock(Http.Request.class);
+		// Http.Context context = new Http.Context(id, header, request,
+		// flashData,
+		// flashData, argData);
+		// Http.Context.current.set(context);
+		// JPA.bindForCurrentThread(entityManager);
 	}
 
 	@Override
@@ -59,7 +55,7 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 		assertThat(a).isEqualTo(2);
 	}
 
-//	@Test
+	// @Test
 	public void importExistingComponent() throws Exception {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
@@ -102,7 +98,7 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 		removeStudy(study);
 	}
 
-//	@Test
+	// @Test
 	public void importNewComponent() throws Exception {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
@@ -138,6 +134,22 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 			componentFile.delete();
 		}
 		removeStudy(study);
+	}
+
+//	@Test
+	public void importNewStudy() throws Exception {
+		File studyFile = getExampleStudyFile();
+		FilePart filePart = new FilePart(StudyModel.STUDY, studyFile.getName(),
+				"multipart/form-data", studyFile);
+		ObjectNode jsonNode = importExportService.importStudy(admin, filePart);
+		assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
+				.isFalse();
+		assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
+				.isEqualTo("Basic Example Study");
+		assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean())
+				.isFalse();
+		assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText())
+				.isEqualTo(studyFile.getName());
 	}
 
 }

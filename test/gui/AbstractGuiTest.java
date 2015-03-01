@@ -42,6 +42,8 @@ import controllers.publix.StudyAssets;
  */
 public abstract class AbstractGuiTest {
 
+	private static final String BASIC_EXAMPLE_STUDY_ZIP = "test/assets/basic_example_study.zip";
+
 	private static final String CLASS_NAME = AbstractGuiTest.class
 			.getSimpleName();
 	
@@ -110,7 +112,7 @@ public abstract class AbstractGuiTest {
 
 	protected StudyModel importExampleStudy() throws NoSuchAlgorithmException,
 			IOException {
-		File studyZip = new File("test/assets/basic_example_study.zip");
+		File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
 		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
@@ -124,6 +126,14 @@ public abstract class AbstractGuiTest {
 
 		tempUnzippedStudyDir.delete();
 		return importedStudy;
+	}
+
+	protected synchronized File getExampleStudyFile() throws IOException {
+		File studyFile = new File(BASIC_EXAMPLE_STUDY_ZIP);
+		File studyFileBkp = new File(System.getProperty("java.io.tmpdir"),
+				BASIC_EXAMPLE_STUDY_ZIP);
+		FileUtils.copyFile(studyFile, studyFileBkp);
+		return studyFileBkp;
 	}
 	
 	/**
