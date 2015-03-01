@@ -320,6 +320,14 @@ public class StudyModel {
 		}
 		return null;
 	}
+	
+	@JsonIgnore
+	public ComponentModel getLastComponent() {
+		if (componentList.size() > 0) {
+			return componentList.get(componentList.size() - 1);
+		}
+		return null;
+	}
 
 	@JsonIgnore
 	public ComponentModel getNextComponent(ComponentModel component) {
