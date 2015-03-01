@@ -15,6 +15,8 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 
+import persistance.ComponentDao;
+import persistance.IComponentDao;
 import persistance.IStudyDao;
 import persistance.IUserDao;
 import persistance.StudyDao;
@@ -52,6 +54,7 @@ public abstract class AbstractGuiTest {
 	protected UserService userService;
 	protected IUserDao userDao;
 	protected IStudyDao studyDao;
+	protected IComponentDao componentDao;
 	protected UserModel admin;
 
 	public abstract void before() throws Exception;
@@ -71,6 +74,7 @@ public abstract class AbstractGuiTest {
 		userService = Global.INJECTOR.getInstance(UserService.class);
 		userDao = Global.INJECTOR.getInstance(UserDao.class);
 		studyDao = Global.INJECTOR.getInstance(StudyDao.class);
+		componentDao = Global.INJECTOR.getInstance(ComponentDao.class);
 
 		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
 				.plugin(JPAPlugin.class);

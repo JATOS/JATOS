@@ -15,7 +15,7 @@ import common.RequestScope;
  */
 public class RequestScopeMessaging {
 
-	private static final String MESSAGES = "messages";
+	public static final String MESSAGES = "messages";
 
 	public static String getAsJson() {
 		Messages messages = ((Messages) RequestScope.get(MESSAGES));
