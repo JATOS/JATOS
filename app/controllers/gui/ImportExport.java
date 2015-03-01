@@ -2,8 +2,6 @@ package controllers.gui;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
@@ -82,29 +80,11 @@ public class ImportExport extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		File tempUnzippedStudyDir = importExportService.unzipUploadedFile();
-		StudyModel uploadedStudy = importExportService.unmarshalStudy(
-				tempUnzippedStudyDir, false);
+		// Get file from request
+		FilePart filePart = request().body().asMultipartFormData()
+				.getFile(StudyModel.STUDY);
 
-		// Remember study assets' dir name
-		session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
-				tempUnzippedStudyDir.getName());
-
-		StudyModel currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
-		boolean studyExists = currentStudy != null;
-		boolean dirExists = IOUtils.checkStudyAssetsDirExists(uploadedStudy
-				.getDirName());
-		importExportService.checkStudyImport(loggedInUser, uploadedStudy,
-				currentStudy, studyExists, dirExists);
-
-		// Create response
-		Map<String, Object> response = new HashMap<String, Object>();
-		response.put(ImportExportService.STUDY_EXISTS, studyExists);
-		response.put(ImportExportService.STUDY_TITLE, uploadedStudy.getTitle());
-		response.put(ImportExportService.DIR_EXISTS, dirExists);
-		response.put(ImportExportService.DIR_PATH, uploadedStudy.getDirName());
-		String asJson = JsonUtils.asJson(response);
-		return ok(asJson);
+		return ok(importExportService.importStudy(loggedInUser, filePart));
 	}
 
 	/**

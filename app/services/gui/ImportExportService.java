@@ -105,6 +105,33 @@ public class ImportExportService extends Controller {
 		}
 	}
 
+	public ObjectNode importStudy(UserModel loggedInUser, FilePart filePart)
+			throws JatosGuiException {
+		File tempUnzippedStudyDir = unzipUploadedFile(filePart);
+		StudyModel uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, false);
+
+		// Remember study assets' dir name
+		session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
+				tempUnzippedStudyDir.getName());
+
+		StudyModel currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
+		boolean studyExists = currentStudy != null;
+		boolean dirExists = IOUtils.checkStudyAssetsDirExists(uploadedStudy
+				.getDirName());
+		checkStudyImport(loggedInUser, uploadedStudy, currentStudy,
+				studyExists, dirExists);
+
+		// Create JSON response
+		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		objectNode.put(ImportExportService.STUDY_EXISTS, studyExists);
+		objectNode.put(ImportExportService.STUDY_TITLE,
+				uploadedStudy.getTitle());
+		objectNode.put(ImportExportService.DIR_EXISTS, dirExists);
+		objectNode
+				.put(ImportExportService.DIR_PATH, uploadedStudy.getDirName());
+		return objectNode;
+	}
+
 	public void checkStudyImport(UserModel loggedInUser,
 			StudyModel uploadedStudy, StudyModel currentStudy,
 			boolean studyExists, boolean dirExists) throws JatosGuiException {
@@ -302,10 +329,7 @@ public class ImportExportService extends Controller {
 		return unzippedStudyDir;
 	}
 
-	public File unzipUploadedFile() throws JatosGuiException {
-		// Get file from request
-		FilePart filePart = request().body().asMultipartFormData()
-				.getFile(StudyModel.STUDY);
+	public File unzipUploadedFile(FilePart filePart) throws JatosGuiException {
 		if (filePart == null) {
 			String errorMsg = MessagesStrings.FILE_MISSING;
 			jatosGuiExceptionThrower.throwHome(errorMsg,
