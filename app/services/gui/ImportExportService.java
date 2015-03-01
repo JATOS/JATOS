@@ -85,10 +85,12 @@ public class ImportExportService extends Controller {
 		objectNode.put(COMPONENT_TITLE, uploadedComponent.getTitle());
 		return objectNode;
 	}
-	
-	public void importComponentConfirmed(StudyModel study) throws IOException {
-		File componentFile = getTempComponentFile(study);
-		ComponentModel uploadedComponent = unmarshalComponent(componentFile, study);
+
+	public void importComponentConfirmed(StudyModel study,
+			String tempComponentFileName) throws IOException {
+		File componentFile = getTempComponentFile(study, tempComponentFileName);
+		ComponentModel uploadedComponent = unmarshalComponent(componentFile,
+				study);
 		ComponentModel currentComponent = componentDao.findByUuid(
 				uploadedComponent.getUuid(), study);
 		boolean componentExists = (currentComponent != null);
@@ -270,11 +272,11 @@ public class ImportExportService extends Controller {
 	/**
 	 * Get component's File object. Name is stored in session. Discard session
 	 * variable afterwards.
-	 * @throws IOException 
+	 * 
+	 * @throws IOException
 	 */
-	public File getTempComponentFile(StudyModel study) throws IOException {
-		String tempComponentFileName = session(SESSION_TEMP_COMPONENT_FILE);
-		session().remove(SESSION_TEMP_COMPONENT_FILE);
+	public File getTempComponentFile(StudyModel study,
+			String tempComponentFileName) throws IOException {
 		if (tempComponentFileName == null || tempComponentFileName.isEmpty()) {
 			throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
 		}

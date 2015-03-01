@@ -243,8 +243,7 @@ public class ImportExport extends Controller {
 				.getFile(ComponentModel.COMPONENT);
 		ObjectNode json = null;
 		try {
-			json = importExportService.importComponent(study,
-					filePart);
+			json = importExportService.importComponent(study, filePart);
 		} catch (IOException e) {
 			jatosGuiExceptionThrower.throwStudies(e.getMessage(),
 					Http.Status.BAD_REQUEST, study.getId());
@@ -272,10 +271,14 @@ public class ImportExport extends Controller {
 		studyService.checkStudyLocked(study);
 
 		try {
-			importExportService.importComponentConfirmed(study);
+			String tempComponentFileName = session(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
+			importExportService.importComponentConfirmed(study,
+					tempComponentFileName);
 		} catch (IOException e) {
 			jatosGuiExceptionThrower.throwStudies(e.getMessage(),
 					Http.Status.BAD_REQUEST, study.getId());
+		} finally {
+			session().remove(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
 		}
 		return ok(RequestScopeMessaging.getAsJson());
 	}
