@@ -9,7 +9,7 @@ import play.api.mvc.Call;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.mvc.Results;
-import play.mvc.SimpleResult;
+import play.mvc.Result;
 import services.RequestScopeMessaging;
 
 import com.google.inject.Inject;
@@ -48,7 +48,7 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwAjax(String errorMsg, int httpStatus)
 			throws JatosGuiException {
-		SimpleResult result = Results.status(httpStatus, errorMsg);
+		Result result = Results.status(httpStatus, errorMsg);
 		throw new JatosGuiException(result, errorMsg);
 	}
 
@@ -59,7 +59,7 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwRedirectOrForbidden(Call call, String errorMsg)
 			throws JatosGuiException {
-		SimpleResult result;
+		Result result;
 		if (ControllerUtils.isAjax()) {
 			result = Results.forbidden(errorMsg);
 		} else {
@@ -75,12 +75,12 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwHome(String errorMsg, int httpStatus)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = (SimpleResult) homeProvider.get().home(httpStatus);
+			result = (Result) homeProvider.get().home(httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
 	}
@@ -92,12 +92,12 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwStudies(String errorMsg, int httpStatus, Long studyId)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = (SimpleResult) studiesProvider.get().index(studyId,
+			result = (Result) studiesProvider.get().index(studyId,
 					httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
@@ -110,12 +110,12 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwChangeMemberOfStudies(String errorMsg, int httpStatus,
 			Long studyId) throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = (SimpleResult) studiesProvider.get().changeMembers(
+			result = (Result) studiesProvider.get().changeMembers(
 					studyId, httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
@@ -128,12 +128,12 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwWorker(String errorMsg, int httpStatus, Long workerId)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = (SimpleResult) workersProvider.get().index(workerId,
+			result = (Result) workersProvider.get().index(workerId,
 					httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
@@ -149,7 +149,7 @@ public class JatosGuiExceptionThrower {
 			List<ValidationError> errorList, int httpStatus,
 			String breadcrumbs, Call submitAction, boolean studyIsLocked)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus);
 		} else {
@@ -174,7 +174,7 @@ public class JatosGuiExceptionThrower {
 			UserModel loggedInUser, Form<ComponentModel> form, int httpStatus,
 			String breadcrumbs, Call submitAction, StudyModel study)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus);
 		} else {
@@ -194,7 +194,7 @@ public class JatosGuiExceptionThrower {
 			UserModel loggedInUser, Form<UserModel> form,
 			List<ValidationError> errorList, int httpStatus)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus);
 		} else {
@@ -218,7 +218,7 @@ public class JatosGuiExceptionThrower {
 	public void throwEditUser(List<StudyModel> studyList,
 			UserModel loggedInUser, Form<UserModel> form, UserModel user,
 			int httpStatus) throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus);
 		} else {
@@ -240,7 +240,7 @@ public class JatosGuiExceptionThrower {
 			UserModel loggedInUser, Form<UserModel> form,
 			List<ValidationError> errorList, int httpStatus, UserModel user)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus);
 		} else {

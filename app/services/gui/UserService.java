@@ -12,7 +12,7 @@ import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Results;
-import play.mvc.SimpleResult;
+import play.mvc.Result;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -71,11 +71,11 @@ public class UserService {
 		}
 		if (loggedInUser == null) {
 			String errorMsg = MessagesStrings.NO_USER_LOGGED_IN;
-			SimpleResult result = null;
+			Result result = null;
 			if (ControllerUtils.isAjax()) {
 				result = Results.badRequest(errorMsg);
 			} else {
-				result = (SimpleResult) Results
+				result = (Result) Results
 						.redirect(controllers.gui.routes.Authentication.login());
 			}
 			throw new JatosGuiException(result, errorMsg);

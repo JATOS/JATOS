@@ -12,7 +12,7 @@ import persistance.IStudyResultDao;
 import play.Logger;
 import play.libs.F.Function;
 import play.libs.F.Promise;
-import play.libs.WS;
+import play.libs.ws.*;
 import play.mvc.Controller;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -336,9 +336,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	 * change.
 	 */
 	public Promise<Result> forwardTo(String url) {
-		Promise<WS.Response> response = WS.url(url).get();
-		return response.map(new Function<WS.Response, Result>() {
-			public Result apply(WS.Response response) {
+		Promise<WSResponse> response = WS.url(url).get();
+		return response.map(new Function<WSResponse, Result>() {
+			public Result apply(WSResponse response) {
 				// Prevent browser from caching pages - this would be an
 				// security issue and additionally confuse the study flow
 				response().setHeader("Cache-control", "no-cache, no-store");

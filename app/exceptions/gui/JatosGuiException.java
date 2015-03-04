@@ -1,11 +1,11 @@
 package exceptions.gui;
 
 import controllers.gui.JatosGuiAction;
-import play.mvc.SimpleResult;
+import play.mvc.Result;
 
 /**
  * Exception for any kind of exceptional behaviour within one of JATOS' GUI
- * actions. A SimpleResult is defined that will be displayed instead of the
+ * actions. A Result is defined that will be displayed instead of the
  * normal action's output. All JatosGuiExceptions are caught by
  * {@link JatosGuiAction}.
  * 
@@ -14,19 +14,19 @@ import play.mvc.SimpleResult;
 @SuppressWarnings("serial")
 public class JatosGuiException extends Exception {
 
-	private SimpleResult simpleResult;
+	private Result simpleResult;
 
-	public JatosGuiException(SimpleResult result, String message) {
+	public JatosGuiException(Result result, String message) {
 		super(message);
 		this.simpleResult = result;
 	}
 
-	public JatosGuiException(SimpleResult result) {
+	public JatosGuiException(Result result) {
 		super();
 		this.simpleResult = result;
 	}
 
-	public SimpleResult getSimpleResult() {
+	public Result getSimpleResult() {
 		return simpleResult;
 	}
 
