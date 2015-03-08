@@ -1,6 +1,5 @@
 package gui;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -12,8 +11,11 @@ import models.StudyModel;
 import models.UserModel;
 
 import org.apache.commons.io.FileUtils;
+import org.h2.tools.Server;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 
 import persistance.ComponentDao;
 import persistance.IComponentDao;
@@ -46,7 +48,7 @@ public abstract class AbstractGuiTest {
 
 	private static final String CLASS_NAME = AbstractGuiTest.class
 			.getSimpleName();
-	
+
 	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
 
@@ -59,9 +61,16 @@ public abstract class AbstractGuiTest {
 	protected IComponentDao componentDao;
 	protected UserModel admin;
 
+	private static Server server;
+
 	public abstract void before() throws Exception;
 
 	public abstract void after() throws Exception;
+
+	@BeforeClass
+	public static void startDB() throws Exception {
+//		server = Server.createTcpServer().start();
+	}
 
 	@Before
 	public void startApp() throws Exception {
@@ -92,11 +101,21 @@ public abstract class AbstractGuiTest {
 	@After
 	public void stopApp() throws Exception {
 		after();
+		// entityManager.getTransaction().begin();
+		// entityManager.createQuery("DROP ALL OBJECTS DELETE FILES");
+		// entityManager.getTransaction().commit();
 
-		entityManager.close();
+		if (entityManager.isOpen()) {
+			entityManager.close();
+		}
 		JPA.bindForCurrentThread(null);
 		removeStudyAssetsRootDir();
 		Helpers.stop(application);
+	}
+
+	@AfterClass
+	public static void stopDB() throws Exception {
+		server.stop();
 	}
 
 	protected static void removeStudyAssetsRootDir() throws IOException {
@@ -135,7 +154,7 @@ public abstract class AbstractGuiTest {
 		FileUtils.copyFile(studyFile, studyFileBkp);
 		return studyFileBkp;
 	}
-	
+
 	/**
 	 * Makes a backup of our component file
 	 */
@@ -149,12 +168,15 @@ public abstract class AbstractGuiTest {
 
 	protected synchronized StudyModel cloneAndPersistStudy(
 			StudyModel studyToBeCloned) throws IOException {
+		entityManager.getTransaction().begin();
 		StudyModel studyClone = new StudyModel(studyToBeCloned);
 		String destDirName;
 		destDirName = IOUtils
 				.cloneStudyAssetsDirectory(studyClone.getDirName());
 		studyClone.setDirName(destDirName);
-		addStudy(studyClone);
+//		addStudy(studyClone);
+		studyDao.create(studyClone, admin);
+		entityManager.getTransaction().commit();
 		return studyClone;
 	}
 
@@ -165,6 +187,7 @@ public abstract class AbstractGuiTest {
 		UserModel user = new UserModel(email, name, passwordHash);
 		entityManager.getTransaction().begin();
 		userDao.create(user);
+		userDao.refresh(user);
 		entityManager.getTransaction().commit();
 		return user;
 	}

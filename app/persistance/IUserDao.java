@@ -9,7 +9,7 @@ import models.UserModel;
  * 
  * @author Kristian Lange
  */
-public interface IUserDao {
+public interface IUserDao extends IAbstractDao<UserModel> {
 
 	/**
 	 * Persist user und creates it's JatosWorker.
@@ -28,6 +28,5 @@ public interface IUserDao {
 	public abstract UserModel findByEmail(String email);
 
 	public abstract List<UserModel> findAll();
-
 
 }

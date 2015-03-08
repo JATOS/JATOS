@@ -66,11 +66,11 @@ public class Global extends GlobalSettings {
 	}
 
 	@Override
-    public Promise<Result> onError(RequestHeader request, Throwable t) {
-        return Promise.<Result>pure(Results.internalServerError(views.html.publix.error
-						.render("Internal server error")
-        ));
-    }
+	public Promise<Result> onError(RequestHeader request, Throwable t) {
+		return Promise.<Result> pure(Results
+				.internalServerError(views.html.publix.error
+						.render("Internal server error")));
+	}
 
 	@Override
 	public Promise<Result> onHandlerNotFound(RequestHeader request) {

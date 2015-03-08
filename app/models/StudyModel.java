@@ -133,7 +133,8 @@ public class StudyModel {
 	}
 
 	/**
-	 * Constructor for cloning (without members or locked)
+	 * Constructor for cloning (without fields id, date, memberList, uuid, and
+	 * locked)
 	 */
 	public StudyModel(StudyModel study) {
 		// Don't clone fields 'memberList' and 'locked'
@@ -320,7 +321,7 @@ public class StudyModel {
 		}
 		return null;
 	}
-	
+
 	@JsonIgnore
 	public ComponentModel getLastComponent() {
 		if (componentList.size() > 0) {

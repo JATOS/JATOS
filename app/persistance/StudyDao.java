@@ -30,9 +30,9 @@ public class StudyDao extends AbstractDao<StudyModel> implements IStudyDao {
 	}
 
 	@Override
-	public void create(StudyModel study, UserModel loggedInUser) {
+	public void create(StudyModel study, UserModel user) {
 		persist(study);
-		addMember(study, loggedInUser);
+		addMember(study, user);
 	}
 
 	@Override

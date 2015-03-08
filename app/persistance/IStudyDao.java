@@ -10,12 +10,12 @@ import models.UserModel;
  * 
  * @author Kristian Lange
  */
-public interface IStudyDao extends IAbstractDao<StudyModel>{
+public interface IStudyDao extends IAbstractDao<StudyModel> {
 
 	/**
 	 * Persist study and add member.
 	 */
-	public abstract void create(StudyModel study, UserModel loggedInUser);
+	public abstract void create(StudyModel study, UserModel user);
 
 	/**
 	 * Add member to study.

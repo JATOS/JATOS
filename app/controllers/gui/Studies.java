@@ -297,6 +297,7 @@ public class Studies extends Controller {
 		StudyModel clone = new StudyModel(study);
 		cloneStudyAssetsDir(study, clone);
 		studyDao.create(clone, loggedInUser);
+		Logger.info(clone.getFirstComponent().getUuid());
 		return ok();
 	}
 

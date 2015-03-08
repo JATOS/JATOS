@@ -54,14 +54,14 @@ public class Authentication extends Controller {
 	public Result authenticate() throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
 		Form<Login> loginForm = Form.form(Login.class).bindFromRequest();
-		String email = loginForm.get().email;
-		String password = loginForm.get().password;
+		String email = loginForm.data().get("email");
+		String password = loginForm.data().get("password");
 		String passwordHash = userService.getHashMDFive(password);
 		if (userDao.authenticate(email, passwordHash) == null) {
 			loginForm.reject("Invalid user or password");
 			return badRequest(views.html.gui.auth.login.render(loginForm));
 		} else {
-			session(Users.SESSION_EMAIL, loginForm.get().email);
+			session(Users.SESSION_EMAIL, email);
 			return redirect(controllers.gui.routes.Home.home());
 		}
 	}
