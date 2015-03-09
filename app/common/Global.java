@@ -69,21 +69,22 @@ public class Global extends GlobalSettings {
 	public Promise<SimpleResult> onError(RequestHeader request, Throwable t) {
 		// Make sure no internal error msg is ever shown
 		return Promise.<SimpleResult> pure(Results
-				.internalServerError(views.html.publix.error
-						.render("Internal server error")));
+				.internalServerError(views.html.error
+						.render("Internal JATOS error")));
 	}
 
 	@Override
 	public Promise<SimpleResult> onHandlerNotFound(RequestHeader request) {
-		return Promise.<SimpleResult> pure(Results
-				.notFound(views.html.publix.error.render("Requested page \""
-						+ request.uri() + "\" doesn't exist.")));
+		return Promise.<SimpleResult> pure(Results.notFound(views.html.error
+				.render("Requested page \"" + request.uri()
+						+ "\" doesn't exist.")));
 	}
 
 	@Override
 	public Promise<SimpleResult> onBadRequest(RequestHeader request,
 			String error) {
-		return Promise.<SimpleResult> pure(Results.badRequest("bad request"));
+		return Promise.<SimpleResult> pure(Results.badRequest(views.html.error
+				.render("bad request")));
 	}
 
 }

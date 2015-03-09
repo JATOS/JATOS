@@ -90,7 +90,7 @@ public class StudyAssets extends Controller {
 		} catch (IOException e) {
 			Logger.info(CLASS_NAME + ".at: failed loading from path "
 					+ STUDY_ASSETS_ROOT_PATH + File.separator + filePath);
-			return notFound(views.html.publix.error.render("Resource \""
+			return notFound(views.html.error.render("Resource \""
 					+ filePath + "\" couldn't be found."));
 		}
 		return ok(file, true);
