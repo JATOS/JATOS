@@ -39,7 +39,7 @@ public abstract class MessagesStrings {
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";
 	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email address is already registered.";
 	public static final String YOUVE_BEEN_LOGGED_OUT = "You've been logged out";
-	
+
 	// Export / import
 	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
 	public static final String NO_STUDY_UPLOAD = "Uploaded file isn't intended for studies";
@@ -117,14 +117,16 @@ public abstract class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String componentsPropertiesOverwritten(Long componentId) {
-		String errorMsg = "Properties of component with ID " + componentId
-				+ " overwritten.";
+	public static String componentsPropertiesOverwritten(Long componentId,
+			String title) {
+		String errorMsg = "Properties of component \"" + title + "\"  with ID "
+				+ componentId + " overwritten.";
 		return errorMsg;
 	}
 
-	public static String importedNewComponent(Long componentId) {
-		String errorMsg = "New component with ID " + componentId + " imported.";
+	public static String importedNewComponent(Long componentId, String title) {
+		String errorMsg = "New component \"" + title + "\" with ID "
+				+ componentId + " imported.";
 		return errorMsg;
 	}
 
@@ -239,7 +241,7 @@ public abstract class MessagesStrings {
 
 	public static String studyAssetsDirPathIsntDir(String dirName) {
 		return "Study assets' directory path \"" + dirName
-				+ "\"doesn't lead to a directory.";
+				+ "\" doesn't lead to a directory.";
 	}
 
 	public static String clonedStudyAssetsDirNotCreatedBecauseExists(

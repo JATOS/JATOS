@@ -97,11 +97,12 @@ public class ImportExportService extends Controller {
 		if (componentExists) {
 			componentDao.updateProperties(currentComponent, uploadedComponent);
 			RequestScopeMessaging.success(MessagesStrings
-					.componentsPropertiesOverwritten(currentComponent.getId()));
+					.componentsPropertiesOverwritten(currentComponent.getId(),
+							uploadedComponent.getTitle()));
 		} else {
 			componentDao.create(study, uploadedComponent);
-			RequestScopeMessaging.success(MessagesStrings
-					.importedNewComponent(uploadedComponent.getId()));
+			RequestScopeMessaging.success(MessagesStrings.importedNewComponent(
+					uploadedComponent.getId(), uploadedComponent.getTitle()));
 		}
 	}
 
