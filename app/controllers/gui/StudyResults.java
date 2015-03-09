@@ -8,9 +8,9 @@ import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
 import models.workers.Worker;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.workers.IWorkerDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.workers.WorkerDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -52,16 +52,16 @@ public class StudyResults extends Controller {
 	private final UserService userService;
 	private final WorkerService workerService;
 	private final ResultService resultService;
-	private final IStudyDao studyDao;
-	private final IStudyResultDao studyResultDao;
-	private final IWorkerDao workerDao;
+	private final StudyDao studyDao;
+	private final StudyResultDao studyResultDao;
+	private final WorkerDao workerDao;
 
 	@Inject
 	StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
 			WorkerService workerService, ResultService resultService,
-			IStudyDao studyDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao, IWorkerDao workerDao) {
+			StudyDao studyDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;

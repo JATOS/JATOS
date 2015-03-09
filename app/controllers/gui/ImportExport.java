@@ -6,8 +6,8 @@ import java.io.IOException;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
+import persistance.ComponentDao;
+import persistance.StudyDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -49,14 +49,14 @@ public class ImportExport extends Controller {
 	private final UserService userService;
 	private final ImportExportService importExportService;
 	private final JsonUtils jsonUtils;
-	private final IStudyDao studyDao;
-	private final IComponentDao componentDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
 
 	@Inject
 	ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, ImportExportService importExportService,
-			IStudyDao studyDao, IComponentDao componentDao, JsonUtils jsonUtils) {
+			StudyDao studyDao, ComponentDao componentDao, JsonUtils jsonUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;

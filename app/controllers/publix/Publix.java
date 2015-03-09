@@ -7,8 +7,8 @@ import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.Worker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import play.Logger;
 import play.libs.F.Function;
 import play.libs.F.Promise;
@@ -48,11 +48,11 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 	protected final PublixUtils<T> publixUtils;
 	protected final JsonUtils jsonUtils;
-	protected final IComponentResultDao componentResultDao;
-	protected final IStudyResultDao studyResultDao;
+	protected final ComponentResultDao componentResultDao;
+	protected final StudyResultDao studyResultDao;
 
-	public Publix(PublixUtils<T> utils, IComponentResultDao componentResultDao,
-			JsonUtils jsonUtils, IStudyResultDao studyResultDao) {
+	public Publix(PublixUtils<T> utils, ComponentResultDao componentResultDao,
+			JsonUtils jsonUtils, StudyResultDao studyResultDao) {
 		this.publixUtils = utils;
 		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;

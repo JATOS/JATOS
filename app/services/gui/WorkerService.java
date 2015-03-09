@@ -9,7 +9,7 @@ import models.StudyResult;
 import models.UserModel;
 import models.workers.JatosWorker;
 import models.workers.Worker;
-import persistance.IStudyResultDao;
+import persistance.StudyResultDao;
 import play.mvc.Controller;
 import play.mvc.Http;
 
@@ -28,11 +28,11 @@ public class WorkerService extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
-	private final IStudyResultDao studyResultDao;
+	private final StudyResultDao studyResultDao;
 
 	@Inject
 	WorkerService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService, IStudyResultDao studyResultDao) {
+			StudyService studyService, StudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.studyResultDao = studyResultDao;

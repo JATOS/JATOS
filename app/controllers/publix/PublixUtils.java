@@ -25,11 +25,11 @@ import models.workers.Worker;
 
 import org.w3c.dom.Document;
 
-import persistance.IComponentDao;
-import persistance.IComponentResultDao;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.workers.IWorkerDao;
+import persistance.ComponentDao;
+import persistance.ComponentResultDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.workers.WorkerDao;
 import play.Logger;
 import play.mvc.Http.RequestBody;
 
@@ -55,16 +55,15 @@ public abstract class PublixUtils<T extends Worker> {
 	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
 
 	private final PublixErrorMessages<T> errorMessages;
-	private final IStudyDao studyDao;
-	private final IStudyResultDao studyResultDao;
-	private final IComponentDao componentDao;
-	private final IComponentResultDao componentResultDao;
-	private final IWorkerDao workerDao;
+	private final StudyDao studyDao;
+	private final StudyResultDao studyResultDao;
+	private final ComponentDao componentDao;
+	private final ComponentResultDao componentResultDao;
+	private final WorkerDao workerDao;
 
-	public PublixUtils(PublixErrorMessages<T> errorMessages,
-			IStudyDao studyDao, IStudyResultDao studyResultDao,
-			IComponentDao componentDao, IComponentResultDao componentResultDao,
-			IWorkerDao workerDao) {
+	public PublixUtils(PublixErrorMessages<T> errorMessages, StudyDao studyDao,
+			StudyResultDao studyResultDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, WorkerDao workerDao) {
 		this.errorMessages = errorMessages;
 		this.studyDao = studyDao;
 		this.studyResultDao = studyResultDao;

@@ -10,8 +10,8 @@ import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
 import models.workers.Worker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import play.mvc.Http;
 
 import com.google.inject.Inject;
@@ -30,13 +30,13 @@ public class ResultService {
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final ComponentService componentService;
 	private final StudyService studyService;
-	private final IComponentResultDao componentResultDao;
-	private final IStudyResultDao studyResultDao;
+	private final ComponentResultDao componentResultDao;
+	private final StudyResultDao studyResultDao;
 
 	@Inject
 	ResultService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			ComponentService componentService, StudyService studyService,
-			IComponentResultDao componentResultDao, IStudyResultDao studyResultDao) {
+			ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.componentService = componentService;
 		this.studyService = studyService;
@@ -170,7 +170,7 @@ public class ResultService {
 		}
 		return allowedStudyResultList;
 	}
-	
+
 	/**
 	 * Put all ComponentResult's data into a String each in a separate line.
 	 */

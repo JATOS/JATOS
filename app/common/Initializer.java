@@ -7,9 +7,9 @@ import java.util.UUID;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
-import persistance.IUserDao;
+import persistance.ComponentDao;
+import persistance.StudyDao;
+import persistance.UserDao;
 import play.Logger;
 import play.db.jpa.JPA;
 import services.gui.UserService;
@@ -29,13 +29,13 @@ public class Initializer {
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
 
 	private final UserService userService;
-	private final IUserDao userDao;
-	private final IStudyDao studyDao;
-	private final IComponentDao componentDao;
+	private final UserDao userDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
 
 	@Inject
-	Initializer(IUserDao userDao, UserService userService,
-			IStudyDao studyDao, IComponentDao componentDao) {
+	Initializer(UserDao userDao, UserService userService, StudyDao studyDao,
+			ComponentDao componentDao) {
 		this.userDao = userDao;
 		this.userService = userService;
 		this.studyDao = studyDao;

@@ -3,8 +3,8 @@ package controllers.publix.open_standalone;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.OpenStandaloneWorker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.Logger;
 import play.mvc.Result;
@@ -38,8 +38,8 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 
 	@Inject
 	OpenStandalonePublix(OpenStandalonePublixUtils publixUtils,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao, WorkerDao workerDao) {
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, WorkerDao workerDao) {
 		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 		this.workerDao = workerDao;

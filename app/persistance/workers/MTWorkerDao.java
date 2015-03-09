@@ -17,9 +17,12 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class MTWorkerDao extends WorkerDao implements IMTWorkerDao {
+public class MTWorkerDao extends WorkerDao {
 
-	@Override
+	/**
+	 * Create MTWorker. Distinguishes between normal MechTurk and Sandbox
+	 * MechTurk via mTurkSandbox parameter.
+	 */
 	public MTWorker create(String mtWorkerId, boolean mTurkSandbox) {
 		MTWorker worker;
 		if (mTurkSandbox) {
@@ -31,7 +34,10 @@ public class MTWorkerDao extends WorkerDao implements IMTWorkerDao {
 		return worker;
 	}
 
-	@Override
+	/**
+	 * Retrieves the worker with the given MTurk worker ID in a case insensitive
+	 * way.
+	 */
 	public MTWorker findByMTWorkerId(String mtWorkerId) {
 		String queryStr = "SELECT e FROM Worker e WHERE "
 				+ "upper(e.mtWorkerId)=:mtWorkerId";

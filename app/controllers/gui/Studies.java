@@ -14,11 +14,11 @@ import models.workers.ClosedStandaloneWorker;
 import models.workers.MTWorker;
 import models.workers.TesterWorker;
 import models.workers.Worker;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.IUserDao;
-import persistance.workers.IWorkerDao;
+import persistance.ComponentDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.UserDao;
+import persistance.workers.WorkerDao;
 import play.Logger;
 import play.api.mvc.Call;
 import play.data.Form;
@@ -67,20 +67,19 @@ public class Studies extends Controller {
 	private final ComponentService componentService;
 	private final UserService userService;
 	private final WorkerService workerService;
-	private final IUserDao userDao;
-	private final IStudyDao studyDao;
-	private final IComponentDao componentDao;
-	private final IStudyResultDao studyResultDao;
-	private final IWorkerDao workerDao;
+	private final UserDao userDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
+	private final StudyResultDao studyResultDao;
+	private final WorkerDao workerDao;
 
 	@Inject
-	Studies(IUserDao userDao,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	Studies(UserDao userDao, JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, WorkerService workerService,
-			IStudyDao studyDao, IComponentDao componentDao,
-			JsonUtils jsonUtils, IStudyResultDao studyResultDao,
-			IWorkerDao workerDao) {
+			StudyDao studyDao, ComponentDao componentDao,
+			JsonUtils jsonUtils, StudyResultDao studyResultDao,
+			WorkerDao workerDao) {
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
@@ -137,8 +136,7 @@ public class Studies extends Controller {
 		// It's a generic template for editing a study. We have to tell it the
 		// submit action.
 		Call submitAction = controllers.gui.routes.Studies.submit();
-		String breadcrumbs = Breadcrumbs
-				.generateForHome(Breadcrumbs.NEW_STUDY);
+		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_STUDY);
 		return ok(views.html.gui.study.edit.render(studyList, loggedInUser,
 				breadcrumbs, submitAction, form, false));
 	}
@@ -170,8 +168,7 @@ public class Studies extends Controller {
 			List<StudyModel> studyList, StudyModel study,
 			List<ValidationError> errorList) throws JatosGuiException {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
-		String breadcrumbs = Breadcrumbs
-				.generateForHome(Breadcrumbs.NEW_STUDY);
+		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_STUDY);
 		Call submitAction = controllers.gui.routes.Studies.submit();
 		jatosGuiExceptionThrower.throwEditStudy(studyList, loggedInUser, form,
 				errorList, Http.Status.BAD_REQUEST, breadcrumbs, submitAction,

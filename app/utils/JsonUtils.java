@@ -18,8 +18,8 @@ import org.hibernate.proxy.HibernateProxy;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import play.Logger;
 import services.gui.MessagesStrings;
 import utils.JsonUtils.SidebarStudy.SidebarComponent;
@@ -33,7 +33,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.Common;
 
 /**
@@ -56,12 +55,12 @@ public class JsonUtils {
 	public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
 			.setTimeZone(TimeZone.getDefault());
 
-	private final IComponentResultDao componentResultDao;
-	private final IStudyResultDao studyResultDao;
+	private final ComponentResultDao componentResultDao;
+	private final StudyResultDao studyResultDao;
 
 	@Inject
-	JsonUtils(IComponentResultDao componentResultDao,
-			IStudyResultDao studyResultDao) {
+	JsonUtils(ComponentResultDao componentResultDao,
+			StudyResultDao studyResultDao) {
 		this.componentResultDao = componentResultDao;
 		this.studyResultDao = studyResultDao;
 	}

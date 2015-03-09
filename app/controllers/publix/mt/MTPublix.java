@@ -5,9 +5,9 @@ import models.StudyModel;
 import models.StudyResult;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
-import persistance.workers.IMTWorkerDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
+import persistance.workers.MTWorkerDao;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -48,12 +48,12 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	private final MTPublixUtils publixUtils;
 	private final MTErrorMessages errorMessages;
-	private final IMTWorkerDao mtWorkerDao;
+	private final MTWorkerDao mtWorkerDao;
 
 	@Inject
 	MTPublix(MTPublixUtils publixUtils, MTErrorMessages errorMessages,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao, IMTWorkerDao mtWorkerDao) {
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
 		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
@@ -91,8 +91,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			String workerType = session(PublixInterceptor.WORKER_TYPE);
 			boolean isRequestFromMTurkSandbox = workerType
 					.equals(MTSandboxWorker.WORKER_TYPE);
-			worker = mtWorkerDao.create(mtWorkerId,
-					isRequestFromMTurkSandbox);
+			worker = mtWorkerDao.create(mtWorkerId, isRequestFromMTurkSandbox);
 		}
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));

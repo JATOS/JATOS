@@ -4,12 +4,12 @@ import models.StudyModel;
 import models.UserModel;
 import models.workers.JatosWorker;
 import models.workers.Worker;
-import persistance.IComponentDao;
-import persistance.IComponentResultDao;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.IUserDao;
-import persistance.workers.IWorkerDao;
+import persistance.ComponentDao;
+import persistance.ComponentResultDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.UserDao;
+import persistance.workers.WorkerDao;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -31,13 +31,13 @@ import exceptions.publix.PublixException;
 public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 
 	private JatosErrorMessages errorMessages;
-	private IUserDao userDao;
+	private UserDao userDao;
 
 	@Inject
-	JatosPublixUtils(JatosErrorMessages errorMessages, IUserDao userDao,
-			IStudyDao studyDao, IStudyResultDao studyResultDao,
-			IComponentDao componentDao, IComponentResultDao componentResultDao,
-			IWorkerDao workerDao) {
+	JatosPublixUtils(JatosErrorMessages errorMessages, UserDao userDao,
+			StudyDao studyDao, StudyResultDao studyResultDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			WorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
 				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;

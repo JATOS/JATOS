@@ -8,8 +8,8 @@ import java.util.List;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
+import persistance.ComponentDao;
+import persistance.StudyDao;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
@@ -49,13 +49,13 @@ public class ImportExportService extends Controller {
 	private final StudyService studyService;
 	private final JsonUtils jsonUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final IStudyDao studyDao;
-	private final IComponentDao componentDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
 
 	@Inject
 	ImportExportService(StudyService studyService, JsonUtils jsonUtils,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			IStudyDao studyDao, IComponentDao componentDao) {
+			StudyDao studyDao, ComponentDao componentDao) {
 		this.studyService = studyService;
 		this.jsonUtils = jsonUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;

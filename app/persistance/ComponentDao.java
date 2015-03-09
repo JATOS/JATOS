@@ -20,17 +20,18 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class ComponentDao extends AbstractDao<ComponentModel> implements
-		IComponentDao {
+public class ComponentDao extends AbstractDao<ComponentModel> {
 
-	private final IComponentResultDao componentResultDao;
+	private final ComponentResultDao componentResultDao;
 
 	@Inject
-	ComponentDao(IComponentResultDao componentResultDao) {
+	ComponentDao(ComponentResultDao componentResultDao) {
 		this.componentResultDao = componentResultDao;
 	}
 
-	@Override
+	/**
+	 * Persist Component and add it to the given Study.
+	 */
 	public void create(StudyModel study, ComponentModel component) {
 		component.setStudy(study);
 		study.addComponent(component);
@@ -38,12 +39,13 @@ public class ComponentDao extends AbstractDao<ComponentModel> implements
 		merge(study);
 	}
 
-	@Override
 	public void update(ComponentModel component) {
 		merge(component);
 	}
 
-	@Override
+	/**
+	 * Update component's properties with the ones from updatedComponent.
+	 */
 	public void updateProperties(ComponentModel component,
 			ComponentModel updatedComponent) {
 		component.setTitle(updatedComponent.getTitle());
@@ -55,13 +57,18 @@ public class ComponentDao extends AbstractDao<ComponentModel> implements
 		merge(component);
 	}
 
-	@Override
+	/**
+	 * Change and persist active property of a Component.
+	 */
 	public void changeActive(ComponentModel component, boolean active) {
 		component.setActive(active);
 		merge(component);
 	}
 
-	@Override
+	/**
+	 * Remove Component: Remove it from the given study, remove all its
+	 * ComponentResults, and remove the component itself.
+	 */
 	public void remove(StudyModel study, ComponentModel component) {
 		// Remove component from study
 		study.removeComponent(component);
@@ -77,12 +84,14 @@ public class ComponentDao extends AbstractDao<ComponentModel> implements
 		super.remove(component);
 	}
 
-	@Override
 	public ComponentModel findById(Long id) {
 		return JPA.em().find(ComponentModel.class, id);
 	}
 
-	@Override
+	/**
+	 * Searches for components with this UUID within the study with the given
+	 * ID.
+	 */
 	public ComponentModel findByUuid(String uuid, StudyModel study) {
 		String queryStr = "SELECT e FROM ComponentModel e WHERE "
 				+ "e.uuid=:uuid and e.study=:study";
@@ -95,14 +104,16 @@ public class ComponentDao extends AbstractDao<ComponentModel> implements
 		return component;
 	}
 
-	@Override
 	public List<ComponentModel> findAll() {
 		TypedQuery<ComponentModel> query = JPA.em().createQuery(
 				"SELECT e FROM ComponentModel e", ComponentModel.class);
 		return query.getResultList();
 	}
 
-	@Override
+	/**
+	 * Change the position of the given Component within its study. The position
+	 * is like a index of a list but starts at 1 instead of 0.
+	 */
 	public void changePosition(ComponentModel component, int newPosition) {
 		String queryStr = "UPDATE ComponentModel SET componentList_order = "
 				+ ":newIndex WHERE id = :id";

@@ -3,8 +3,8 @@ package controllers.publix.tester;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.TesterWorker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -33,8 +33,8 @@ public class TesterPublix extends Publix<TesterWorker> implements IPublix {
 	@Inject
 	TesterPublix(TesterPublixUtils publixUtils,
 			TesterErrorMessages errorMessages,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao) {
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao) {
 		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 	}

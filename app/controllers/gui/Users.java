@@ -4,8 +4,8 @@ import java.util.List;
 
 import models.StudyModel;
 import models.UserModel;
-import persistance.IStudyDao;
-import persistance.IUserDao;
+import persistance.StudyDao;
+import persistance.UserDao;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -39,13 +39,12 @@ public class Users extends Controller {
 
 	private final UserService userService;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final IUserDao userDao;
-	private final IStudyDao studyDao;
+	private final UserDao userDao;
+	private final StudyDao studyDao;
 
 	@Inject
-	Users(IUserDao userDao, UserService userService,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			IStudyDao studyDao) {
+	Users(UserDao userDao, UserService userService,
+			JatosGuiExceptionThrower jatosGuiExceptionThrower, StudyDao studyDao) {
 		this.userDao = userDao;
 		this.userService = userService;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
@@ -80,8 +79,7 @@ public class Users extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		String breadcrumbs = Breadcrumbs
-				.generateForHome(Breadcrumbs.NEW_USER);
+		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_USER);
 		return ok(views.html.gui.user.create.render(studyList, loggedInUser,
 				breadcrumbs, Form.form(UserModel.class)));
 	}

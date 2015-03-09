@@ -3,7 +3,7 @@ package controllers.gui;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
-import persistance.IUserDao;
+import persistance.UserDao;
 import play.Logger;
 import play.data.Form;
 import play.db.jpa.Transactional;
@@ -30,10 +30,10 @@ public class Authentication extends Controller {
 			.getSimpleName();
 
 	private final UserService userService;
-	private final IUserDao userDao;
+	private final UserDao userDao;
 
 	@Inject
-	Authentication(IUserDao userDao, UserService userService) {
+	Authentication(UserDao userDao, UserService userService) {
 		this.userDao = userDao;
 		this.userService = userService;
 	}

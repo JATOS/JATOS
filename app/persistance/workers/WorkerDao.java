@@ -19,14 +19,16 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class WorkerDao extends AbstractDao<Worker> implements IWorkerDao {
+public class WorkerDao extends AbstractDao<Worker> {
 
-	@Override
 	public void create(Worker worker) {
 		persist(worker);
 	}
-	
-	@Override
+
+	/**
+	 * Removes a Worker including all its StudyResults and all their
+	 * ComponentResults.
+	 */
 	public void remove(Worker worker) {
 		// Don't remove JATOS' own workers
 		if (worker instanceof JatosWorker) {
@@ -46,12 +48,10 @@ public class WorkerDao extends AbstractDao<Worker> implements IWorkerDao {
 		super.remove(worker);
 	}
 
-	@Override
 	public Worker findById(Long id) {
 		return JPA.em().find(Worker.class, id);
 	}
 
-	@Override
 	public List<Worker> findAll() {
 		TypedQuery<Worker> query = JPA.em().createQuery(
 				"SELECT e FROM Worker e", Worker.class);

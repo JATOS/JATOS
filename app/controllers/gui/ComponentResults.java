@@ -8,9 +8,9 @@ import models.ComponentModel;
 import models.ComponentResult;
 import models.StudyModel;
 import models.UserModel;
-import persistance.IComponentDao;
-import persistance.IComponentResultDao;
-import persistance.IStudyDao;
+import persistance.ComponentDao;
+import persistance.ComponentResultDao;
+import persistance.StudyDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -49,15 +49,15 @@ public class ComponentResults extends Controller {
 	private final UserService userService;
 	private final ResultService resultService;
 	private final JsonUtils jsonUtils;
-	private final IStudyDao studyDao;
-	private final IComponentDao componentDao;
-	private final IComponentResultDao componentResultDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
+	private final ComponentResultDao componentResultDao;
 
 	@Inject
 	ComponentResults(ComponentService componentService,
 			UserService userService, ResultService resultService,
-			IStudyDao studyDao, IComponentDao componentDao,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils) {
+			StudyDao studyDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
 		this.componentService = componentService;
 		this.userService = userService;
 		this.resultService = resultService;
@@ -85,8 +85,8 @@ public class ComponentResults extends Controller {
 				study, loggedInUser, component);
 
 		RequestScopeMessaging.error(errorMsg);
-		String breadcrumbs = Breadcrumbs.generateForComponent(study,
-				component, Breadcrumbs.RESULTS);
+		String breadcrumbs = Breadcrumbs.generateForComponent(study, component,
+				Breadcrumbs.RESULTS);
 		return status(httpStatus,
 				views.html.gui.result.componentResults.render(studyList,
 						loggedInUser, breadcrumbs, study, component));

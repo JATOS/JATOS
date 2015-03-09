@@ -7,7 +7,7 @@ import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.Worker;
-import persistance.IComponentDao;
+import persistance.ComponentDao;
 import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -26,11 +26,11 @@ import exceptions.gui.JatosGuiException;
 public class StudyService extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final IComponentDao componentDao;
+	private final ComponentDao componentDao;
 
 	@Inject
 	StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			IComponentDao componentDao) {
+			ComponentDao componentDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.componentDao = componentDao;
 	}

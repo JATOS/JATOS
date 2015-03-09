@@ -1,6 +1,5 @@
 package gui;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -16,9 +15,6 @@ import org.junit.After;
 import org.junit.Before;
 
 import persistance.ComponentDao;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
-import persistance.IUserDao;
 import persistance.StudyDao;
 import persistance.UserDao;
 import play.GlobalSettings;
@@ -32,7 +28,9 @@ import services.gui.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
 import utils.ZipUtil;
+
 import common.Global;
+
 import controllers.publix.StudyAssets;
 
 /**
@@ -46,7 +44,7 @@ public abstract class AbstractGuiTest {
 
 	private static final String CLASS_NAME = AbstractGuiTest.class
 			.getSimpleName();
-	
+
 	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
 
@@ -54,9 +52,9 @@ public abstract class AbstractGuiTest {
 	protected EntityManager entityManager;
 	protected JsonUtils jsonUtils;
 	protected UserService userService;
-	protected IUserDao userDao;
-	protected IStudyDao studyDao;
-	protected IComponentDao componentDao;
+	protected UserDao userDao;
+	protected StudyDao studyDao;
+	protected ComponentDao componentDao;
 	protected UserModel admin;
 
 	public abstract void before() throws Exception;
@@ -135,7 +133,7 @@ public abstract class AbstractGuiTest {
 		FileUtils.copyFile(studyFile, studyFileBkp);
 		return studyFileBkp;
 	}
-	
+
 	/**
 	 * Makes a backup of our component file
 	 */

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import models.UserModel;
-import persistance.IUserDao;
+import persistance.UserDao;
 import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -34,11 +34,11 @@ public class UserService {
 	public static final String ADMIN_PASSWORD = "admin";
 	public static final String ADMIN_NAME = "Admin";
 
-	private final IUserDao userDao;
+	private final UserDao userDao;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 
 	@Inject
-	UserService(IUserDao userDao,
+	UserService(UserDao userDao,
 			JatosGuiExceptionThrower jatosGuiExceptionThrower) {
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;

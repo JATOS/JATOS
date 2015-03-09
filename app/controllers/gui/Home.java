@@ -4,7 +4,7 @@ import java.util.List;
 
 import models.StudyModel;
 import models.UserModel;
-import persistance.IStudyDao;
+import persistance.StudyDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -33,10 +33,10 @@ public class Home extends Controller {
 
 	private final JsonUtils jsonUtils;
 	private final UserService userService;
-	private final IStudyDao studyDao;
+	private final StudyDao studyDao;
 
 	@Inject
-	Home(JsonUtils jsonUtils, UserService userService, IStudyDao studyDao) {
+	Home(JsonUtils jsonUtils, UserService userService, StudyDao studyDao) {
 		this.jsonUtils = jsonUtils;
 		this.userService = userService;
 		this.studyDao = studyDao;

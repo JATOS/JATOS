@@ -5,8 +5,8 @@ import java.util.List;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
+import persistance.ComponentDao;
+import persistance.StudyDao;
 import play.Logger;
 import play.api.mvc.Call;
 import play.data.Form;
@@ -48,14 +48,14 @@ public class Components extends Controller {
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
-	private final IStudyDao studyDao;
-	private final IComponentDao componentDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
 
 	@Inject
 	Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
-			UserService userService, IStudyDao studyDao,
-			IComponentDao componentDao) {
+			UserService userService, StudyDao studyDao,
+			ComponentDao componentDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
@@ -171,8 +171,8 @@ public class Components extends Controller {
 				component);
 		Call submitAction = controllers.gui.routes.Components.submitEdited(
 				studyId, componentId);
-		String breadcrumbs = Breadcrumbs.generateForComponent(study,
-				component, Breadcrumbs.EDIT_PROPERTIES);
+		String breadcrumbs = Breadcrumbs.generateForComponent(study, component,
+				Breadcrumbs.EDIT_PROPERTIES);
 		return ok(views.html.gui.component.edit.render(studyList, loggedInUser,
 				breadcrumbs, submitAction, form, study));
 	}
