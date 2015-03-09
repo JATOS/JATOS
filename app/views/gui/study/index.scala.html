@@ -511,8 +511,7 @@ $('#studyToolbar').on('change', '#importComponentBrowser', function() {
 	});
 });
 
-function importComponentConfirm(data) {
-	response = $.parseJSON(data);
+function importComponentConfirm(response) {
 	if (response.componentExists) {
 		var title = "Component already exists";
 		var preText = "It seems a component \"" + response.componentTitle 

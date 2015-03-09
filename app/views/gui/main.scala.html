@@ -257,8 +257,7 @@ $('#jatosHeader').on('change', '#importStudyBrowser', function() {
 	});
 });
 	
-function importStudyConfirm(data) {
-	response = $.parseJSON(data);
+function importStudyConfirm(response) {
 	if (response.studyExists) {
 		askConfirmationForStudyExists(response);
 	} else if (response.dirExists) {
