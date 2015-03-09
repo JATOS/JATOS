@@ -19,7 +19,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class WorkerDao extends AbstractDao<Worker> {
+public class WorkerDao extends AbstractDao {
 
 	public void create(Worker worker) {
 		persist(worker);

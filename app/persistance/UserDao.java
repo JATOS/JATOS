@@ -16,7 +16,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class UserDao extends AbstractDao<UserModel> {
+public class UserDao extends AbstractDao {
 
 	/**
 	 * Persist user und creates it's JatosWorker.

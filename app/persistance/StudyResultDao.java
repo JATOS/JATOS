@@ -19,7 +19,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class StudyResultDao extends AbstractDao<StudyResult> {
+public class StudyResultDao extends AbstractDao {
 
 	/**
 	 * Creates StudyResult and adds it to the given Worker.

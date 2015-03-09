@@ -20,7 +20,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class StudyDao extends AbstractDao<StudyModel> {
+public class StudyDao extends AbstractDao {
 
 	private final StudyResultDao studyResultDao;
 

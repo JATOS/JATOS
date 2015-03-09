@@ -20,7 +20,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class ComponentDao extends AbstractDao<ComponentModel> {
+public class ComponentDao extends AbstractDao {
 
 	private final ComponentResultDao componentResultDao;
 

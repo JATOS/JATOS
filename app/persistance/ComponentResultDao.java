@@ -18,7 +18,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class ComponentResultDao extends AbstractDao<ComponentResult> {
+public class ComponentResultDao extends AbstractDao {
 
 	/**
 	 * Creates ComponentResult for the given Component and adds it to the given
