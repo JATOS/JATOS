@@ -212,7 +212,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
-			return ok();
+			return ok().as("text/html");
 		} else {
 			if (message != null) {
 				FlashScopeMessaging.info(errorMessages

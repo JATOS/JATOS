@@ -229,7 +229,8 @@ public class Components extends Controller {
 	/**
 	 * Ajax POST
 	 * 
-	 * Request to change the property 'active' of a component.
+	 * Request to change the property 'active' of a component. In future this
+	 * action is intended for other properties too.
 	 */
 	@Transactional
 	public Result changeProperty(Long studyId, Long componentId, Boolean active)
@@ -248,7 +249,7 @@ public class Components extends Controller {
 		if (active != null) {
 			componentDao.changeActive(component, active);
 		}
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**
@@ -269,7 +270,7 @@ public class Components extends Controller {
 				study, loggedInUser, component);
 		studyService.checkStudyLocked(study);
 
-		ComponentModel clone = new ComponentModel(component);
+		ComponentModel clone = component.clone();
 		componentDao.create(study, clone);
 		return ok(RequestScopeMessaging.getAsJson());
 	}
@@ -293,7 +294,7 @@ public class Components extends Controller {
 		studyService.checkStudyLocked(study);
 
 		componentDao.remove(study, component);
-		return ok();
+		return ok().as("text/html");
 	}
 
 }

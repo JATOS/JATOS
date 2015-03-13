@@ -126,7 +126,7 @@ public class StudyResults extends Controller {
 		for (StudyResult studyResult : studyResultList) {
 			studyResultDao.remove(studyResult);
 		}
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**

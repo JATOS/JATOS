@@ -101,7 +101,7 @@ public class Workers extends Controller {
 
 		workerService.checkRemovalAllowed(worker, loggedInUser);
 		workerDao.remove(worker);
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**

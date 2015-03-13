@@ -23,6 +23,7 @@ import play.Logger;
 import play.api.mvc.Call;
 import play.data.Form;
 import play.data.validation.ValidationError;
+import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -275,7 +276,7 @@ public class Studies extends Controller {
 
 		studyDao.remove(study);
 		removeStudyAssetsDir(study);
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**
@@ -291,10 +292,11 @@ public class Studies extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
-		StudyModel clone = new StudyModel(study);
+		StudyModel clone = study.clone();
 		cloneStudyAssetsDir(study, clone);
 		studyDao.create(clone, loggedInUser);
-		return ok();
+		JPA.em().flush();
+		return ok().as("text/html");
 	}
 
 	@Transactional
@@ -391,7 +393,7 @@ public class Studies extends Controller {
 		// study model we just have to refresh.
 		studyDao.refresh(study);
 
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**

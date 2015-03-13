@@ -164,7 +164,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				.body());
 		studyResult.setStudySessionData(studySessionData);
 		studyResultDao.update(studyResult);
-		return ok();
+		return ok().as("text/html");
 	}
 
 	@Override
@@ -225,7 +225,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		componentResult.setData(resultData);
 		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
 		componentResultDao.update(componentResult);
-		return ok();
+		return ok().as("text/html");
 	}
 
 	@Override
@@ -255,7 +255,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			componentResult.setErrorMsg(errorMsg);
 		}
 		componentResultDao.update(componentResult);
-		return ok();
+		return ok().as("text/html");
 	}
 
 	@Override
@@ -276,7 +276,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
-			return ok();
+			return ok().as("text/html");
 		} else {
 			return ok(views.html.publix.abort.render());
 		}
@@ -300,7 +300,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
-			return ok();
+			return ok().as("text/html");
 		} else {
 			if (!successful) {
 				return ok(views.html.publix.error.render(errorMsg));
@@ -316,7 +316,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.error(CLASS_NAME + " - logging component script error: studyId "
 				+ studyId + ", " + "componentId " + componentId + ", "
 				+ "error message \"" + msg + "\".");
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**

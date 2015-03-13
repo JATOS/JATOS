@@ -126,7 +126,7 @@ public class ComponentResults extends Controller {
 		for (ComponentResult componentResult : componentResultList) {
 			componentResultDao.remove(componentResult);
 		}
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**
