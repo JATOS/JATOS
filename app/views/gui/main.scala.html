@@ -341,7 +341,7 @@ function fillSidebar() {
 		type: 'GET',
 		url: '@controllers.gui.routes.Home.sidebarStudyList()',
 		success: function(result) {
-			fillSidebarStudyList(JSON.parse(result));
+			fillSidebarStudyList(result);
 		},
 		error : function(err) {
 			showError(err.responseText);

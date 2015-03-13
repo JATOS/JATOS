@@ -3,6 +3,8 @@ package utils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
@@ -33,6 +35,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
 import common.Common;
 
 /**
@@ -275,7 +278,10 @@ public class JsonUtils {
 		return asJsonStr;
 	}
 
-	public String sidebarStudyList(List<StudyModel> studyList) {
+	/**
+	 * Returns the JSON data for the sidebar (study title, ID and components)
+	 */
+	public JsonNode sidebarStudyList(List<StudyModel> studyList) {
 		List<SidebarStudy> sidebarStudyList = new ArrayList<>();
 		for (StudyModel study : studyList) {
 			SidebarStudy sidebarStudy = new SidebarStudy();
@@ -289,7 +295,15 @@ public class JsonUtils {
 			}
 			sidebarStudyList.add(sidebarStudy);
 		}
-		return asJson(sidebarStudyList);
+		Collections.sort(sidebarStudyList, new SidebarStudyComparator());
+		return asJsonNode(sidebarStudyList);
+	}
+
+	private class SidebarStudyComparator implements Comparator<SidebarStudy> {
+		@Override
+		public int compare(SidebarStudy ss1, SidebarStudy ss2) {
+			return ss1.title.compareTo(ss2.title);
+		}
 	}
 
 	static class SidebarStudy {
@@ -365,6 +379,13 @@ public class JsonUtils {
 			Logger.error(CLASS_NAME + ".asJson: error marshalling object");
 		}
 		return objectAsJson;
+	}
+
+	/**
+	 * Generic JSON marshaler.
+	 */
+	public static JsonNode asJsonNode(Object obj) {
+		return OBJECTMAPPER.valueToTree(obj);
 	}
 
 	/**
