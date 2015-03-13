@@ -2,6 +2,7 @@ package persistance;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.TypedQuery;
 
@@ -23,16 +24,24 @@ import com.google.inject.Singleton;
 public class StudyDao extends AbstractDao {
 
 	private final StudyResultDao studyResultDao;
+	private final ComponentDao componentDao;
 
 	@Inject
-	StudyDao(StudyResultDao studyResultDao) {
+	StudyDao(StudyResultDao studyResultDao, ComponentDao componentDao) {
 		this.studyResultDao = studyResultDao;
+		this.componentDao = componentDao;
 	}
 
 	/**
-	 * Persist study and add member.
+	 * Persist study and it's components and add member.
 	 */
 	public void create(StudyModel study, UserModel loggedInUser) {
+		if (study.getUuid() == null) {
+			study.setUuid(UUID.randomUUID().toString());
+		}
+		for (ComponentModel component : study.getComponentList()) {
+			componentDao.create(component);
+		}
 		persist(study);
 		addMember(study, loggedInUser);
 	}

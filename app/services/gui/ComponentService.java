@@ -44,8 +44,8 @@ public class ComponentService extends Controller {
 		}
 		// Check component belongs to the study
 		if (!component.getStudy().getId().equals(study.getId())) {
-			String errorMsg = MessagesStrings.componentNotBelongToStudy(studyId,
-					componentId);
+			String errorMsg = MessagesStrings.componentNotBelongToStudy(
+					studyId, componentId);
 			jatosGuiExceptionThrower.throwHome(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}

@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -13,7 +14,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 
-import org.hibernate.annotations.GenericGenerator;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
@@ -51,9 +51,8 @@ public class ComponentModel {
 	 * same UUID, although it is allowed to have other studies that have this
 	 * component with this UUID.
 	 */
+	@Column(unique = true, nullable = false)
 	@JsonView(JsonUtils.JsonForIO.class)
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "uuid2")
 	private String uuid;
 
 	@JsonIgnore
@@ -103,17 +102,23 @@ public class ComponentModel {
 
 	public ComponentModel() {
 	}
-
+	
 	/**
-	 * Constructor for cloning
+	 * Clones a ComponentModel. Does not clone id, uuid, or date.
+	 * 
+	 * @see java.lang.Object#clone()
 	 */
-	public ComponentModel(ComponentModel component) {
-		this.study = component.study;
-		this.title = component.title;
-		this.htmlFilePath = component.htmlFilePath;
-		this.reloadable = component.reloadable;
-		this.active = component.active;
-		this.jsonData = component.jsonData;
+	@Override
+	public ComponentModel clone() {
+		ComponentModel clone = new ComponentModel();
+		clone.setStudy(study);
+		clone.setTitle(title);
+		clone.setHtmlFilePath(htmlFilePath);
+		clone.setReloadable(reloadable);
+		clone.setActive(active);
+		clone.setJsonData(jsonData);
+		clone.setComments(comments);
+		return clone;
 	}
 
 	public void setId(Long id) {

@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -25,7 +26,6 @@ import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
 import models.workers.TesterWorker;
 
-import org.hibernate.annotations.GenericGenerator;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
@@ -63,9 +63,8 @@ public class StudyModel {
 	 * different JATOS instances. On one JATOS instance it is only allowed to
 	 * have one study with the same UUID.
 	 */
+	@Column(unique = true, nullable = false)
 	@JsonView(JsonUtils.JsonForIO.class)
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "uuid2")
 	private String uuid;
 
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
@@ -131,25 +130,30 @@ public class StudyModel {
 		addAllowedWorker(TesterWorker.WORKER_TYPE);
 		addAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
 	}
-
+	
 	/**
-	 * Constructor for cloning (without members or locked)
+	 * Clones a StudyModel. It does not copy the memberList, id, uuid, date or
+	 * locked (set to false).
+	 * 
+	 * @see java.lang.Object#clone()
 	 */
-	public StudyModel(StudyModel study) {
-		// Don't clone fields 'memberList' and 'locked'
-		this.description = study.description;
-		this.dirName = study.dirName;
-		this.jsonData = study.jsonData;
-		this.title = study.title;
-		this.locked = false;
-		for (String worker : study.allowedWorkerList) {
-			this.allowedWorkerList.add(worker);
+	@Override
+	public StudyModel clone() {
+		StudyModel clone = new StudyModel();
+		clone.setDescription(description);
+		clone.setDirName(dirName);
+		clone.setJsonData(jsonData);
+		clone.setTitle(title);
+		clone.setLocked(false);
+		for (String workerType : allowedWorkerList) {
+			clone.addAllowedWorker(workerType);
 		}
-		for (ComponentModel component : study.componentList) {
-			ComponentModel clone = new ComponentModel(component);
-			clone.setStudy(this);
-			this.componentList.add(clone);
+		for (ComponentModel component : componentList) {
+			ComponentModel componentClone = component.clone();
+			componentClone.setStudy(clone);
+			clone.addComponent(componentClone);
 		}
+		return clone;
 	}
 
 	public void setId(Long id) {
@@ -320,7 +324,7 @@ public class StudyModel {
 		}
 		return null;
 	}
-	
+
 	@JsonIgnore
 	public ComponentModel getLastComponent() {
 		if (componentList.size() > 0) {

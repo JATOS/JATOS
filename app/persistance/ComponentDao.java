@@ -1,6 +1,7 @@
 package persistance;
 
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -33,10 +34,21 @@ public class ComponentDao extends AbstractDao {
 	 * Persist Component and add it to the given Study.
 	 */
 	public void create(StudyModel study, ComponentModel component) {
+		component.setUuid(UUID.randomUUID().toString());
 		component.setStudy(study);
 		study.addComponent(component);
 		persist(component);
 		merge(study);
+	}
+	
+	/**
+	 * Persist Component.
+	 */
+	public void create(ComponentModel component) {
+		if (component.getUuid() == null) {
+			component.setUuid(UUID.randomUUID().toString());
+		}
+		persist(component);
 	}
 
 	public void update(ComponentModel component) {
