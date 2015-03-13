@@ -209,7 +209,12 @@ public class Components extends Controller {
 
 		// Update component in DB
 		ComponentModel updatedComponent = form.get();
-		componentDao.updateProperties(component, updatedComponent);
+		component.setTitle(updatedComponent.getTitle());
+		component.setReloadable(updatedComponent.isReloadable());
+		component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
+		component.setComments(updatedComponent.getComments());
+		component.setJsonData(updatedComponent.getJsonData());
+		componentDao.update(component);
 		return redirectAfterEdit(studyId, componentId, study);
 	}
 

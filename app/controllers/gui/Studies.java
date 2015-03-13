@@ -224,7 +224,13 @@ public class Studies extends Controller {
 		}
 
 		String oldDirName = study.getDirName();
-		studyDao.updateProperties(study, updatedStudy);
+		
+		study.setTitle(updatedStudy.getTitle());
+		study.setDescription(updatedStudy.getDescription());
+		study.setDirName(updatedStudy.getDirName());
+		study.setJsonData(updatedStudy.getJsonData());
+		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
+		studyDao.update(study);
 		renameStudyAssetsDir(study, loggedInUser, studyList, oldDirName);
 		return redirect(controllers.gui.routes.Studies.index(studyId));
 	}
