@@ -34,7 +34,9 @@ public class ComponentDao extends AbstractDao {
 	 * Persist Component and add it to the given Study.
 	 */
 	public void create(StudyModel study, ComponentModel component) {
-		component.setUuid(UUID.randomUUID().toString());
+		if (component.getUuid() == null) {
+			component.setUuid(UUID.randomUUID().toString());
+		}
 		component.setStudy(study);
 		study.addComponent(component);
 		persist(component);

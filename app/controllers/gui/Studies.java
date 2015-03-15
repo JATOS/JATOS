@@ -298,7 +298,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
-		StudyModel clone = study.clone();
+		StudyModel clone = studyService.clone(study);
 		cloneStudyAssetsDir(study, clone);
 		studyDao.create(clone, loggedInUser);
 		JPA.em().flush();
@@ -382,7 +382,7 @@ public class Studies extends Controller {
 		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		studyService.checkStudyLocked(study);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 
 		switch (direction) {
 		case COMPONENT_POSITION_UP:

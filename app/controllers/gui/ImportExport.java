@@ -180,8 +180,9 @@ public class ImportExport extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 
 		String componentAsJson = null;
 		try {

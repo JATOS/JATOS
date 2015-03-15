@@ -27,12 +27,36 @@ public class StudyService extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final ComponentDao componentDao;
+	private final ComponentService componentService;
 
+	/**
+	 * Clones a StudyModel. It does not copy the memberList, id, uuid, date or
+	 * locked (set to false).
+	 */
+	public StudyModel clone(StudyModel study) {
+		StudyModel clone = new StudyModel();
+		clone.setDescription(study.getDescription());
+		clone.setDirName(study.getDirName());
+		clone.setJsonData(study.getJsonData());
+		clone.setTitle(study.getTitle());
+		clone.setLocked(false);
+		for (String workerType : study.getAllowedWorkerList()) {
+			clone.addAllowedWorker(workerType);
+		}
+		for (ComponentModel component : study.getComponentList()) {
+			ComponentModel componentClone = componentService.clone(component);
+			componentClone.setStudy(clone);
+			clone.addComponent(componentClone);
+		}
+		return clone;
+	}
+	
 	@Inject
 	StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			ComponentDao componentDao) {
+			ComponentDao componentDao, ComponentService componentService) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.componentDao = componentDao;
+		this.componentService = componentService;
 	}
 
 	/**

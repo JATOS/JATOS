@@ -358,7 +358,7 @@ public class JsonUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T initializeAndUnproxy(T obj) {
+	public static <T> T initializeAndUnproxy(T obj) {
 		Hibernate.initialize(obj);
 		if (obj instanceof HibernateProxy) {
 			obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()

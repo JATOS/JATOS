@@ -102,24 +102,6 @@ public class ComponentModel {
 
 	public ComponentModel() {
 	}
-	
-	/**
-	 * Clones a ComponentModel. Does not clone id, uuid, or date.
-	 * 
-	 * @see java.lang.Object#clone()
-	 */
-	@Override
-	public ComponentModel clone() {
-		ComponentModel clone = new ComponentModel();
-		clone.setStudy(study);
-		clone.setTitle(title);
-		clone.setHtmlFilePath(htmlFilePath);
-		clone.setReloadable(reloadable);
-		clone.setActive(active);
-		clone.setJsonData(jsonData);
-		clone.setComments(comments);
-		return clone;
-	}
 
 	public void setId(Long id) {
 		this.id = id;

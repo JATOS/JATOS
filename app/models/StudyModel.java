@@ -130,31 +130,6 @@ public class StudyModel {
 		addAllowedWorker(TesterWorker.WORKER_TYPE);
 		addAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
 	}
-	
-	/**
-	 * Clones a StudyModel. It does not copy the memberList, id, uuid, date or
-	 * locked (set to false).
-	 * 
-	 * @see java.lang.Object#clone()
-	 */
-	@Override
-	public StudyModel clone() {
-		StudyModel clone = new StudyModel();
-		clone.setDescription(description);
-		clone.setDirName(dirName);
-		clone.setJsonData(jsonData);
-		clone.setTitle(title);
-		clone.setLocked(false);
-		for (String workerType : allowedWorkerList) {
-			clone.addAllowedWorker(workerType);
-		}
-		for (ComponentModel component : componentList) {
-			ComponentModel componentClone = component.clone();
-			componentClone.setStudy(clone);
-			clone.addComponent(componentClone);
-		}
-		return clone;
-	}
 
 	public void setId(Long id) {
 		this.id = id;

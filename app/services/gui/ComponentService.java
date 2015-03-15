@@ -1,7 +1,6 @@
 package services.gui;
 
 import models.ComponentModel;
-import models.StudyModel;
 import models.UserModel;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -20,13 +19,25 @@ import exceptions.gui.JatosGuiException;
 public class ComponentService extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final StudyService studyService;
 
 	@Inject
-	ComponentService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService) {
+	ComponentService(JatosGuiExceptionThrower jatosGuiExceptionThrower) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-		this.studyService = studyService;
+	}
+
+	/**
+	 * Clones a ComponentModel. Does not clone id, uuid, or date.
+	 */
+	public ComponentModel clone(ComponentModel component) {
+		ComponentModel clone = new ComponentModel();
+		clone.setStudy(component.getStudy());
+		clone.setTitle(component.getTitle());
+		clone.setHtmlFilePath(component.getHtmlFilePath());
+		clone.setReloadable(component.isReloadable());
+		clone.setActive(component.isActive());
+		clone.setJsonData(component.getJsonData());
+		clone.setComments(component.getComments());
+		return clone;
 	}
 
 	/**
@@ -34,16 +45,15 @@ public class ComponentService extends Controller {
 	 * of a problem. Distinguishes between normal and Ajax request.
 	 */
 	public void checkStandardForComponents(Long studyId, Long componentId,
-			StudyModel study, UserModel loggedInUser, ComponentModel component)
+			UserModel loggedInUser, ComponentModel component)
 			throws JatosGuiException {
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		if (component == null) {
 			String errorMsg = MessagesStrings.componentNotExist(componentId);
 			jatosGuiExceptionThrower.throwHome(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
 		// Check component belongs to the study
-		if (!component.getStudy().getId().equals(study.getId())) {
+		if (!component.getStudy().getId().equals(studyId)) {
 			String errorMsg = MessagesStrings.componentNotBelongToStudy(
 					studyId, componentId);
 			jatosGuiExceptionThrower.throwHome(errorMsg,

@@ -23,6 +23,7 @@ import services.gui.ComponentService;
 import services.gui.ImportExportService;
 import services.gui.MessagesStrings;
 import services.gui.ResultService;
+import services.gui.StudyService;
 import services.gui.UserService;
 import utils.DateUtils;
 import utils.IOUtils;
@@ -45,6 +46,7 @@ public class ComponentResults extends Controller {
 	private static final String CLASS_NAME = ComponentResults.class
 			.getSimpleName();
 
+	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
 	private final ResultService resultService;
@@ -54,10 +56,11 @@ public class ComponentResults extends Controller {
 	private final ComponentResultDao componentResultDao;
 
 	@Inject
-	ComponentResults(ComponentService componentService,
+	ComponentResults(StudyService studyService, ComponentService componentService,
 			UserService userService, ResultService resultService,
 			StudyDao studyDao, ComponentDao componentDao,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
+		this.studyService = studyService;
 		this.componentService = componentService;
 		this.userService = userService;
 		this.resultService = resultService;
@@ -81,8 +84,9 @@ public class ComponentResults extends Controller {
 		ComponentModel component = componentDao.findById(componentId);
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = Breadcrumbs.generateForComponent(study, component,
@@ -143,8 +147,9 @@ public class ComponentResults extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 		String dataAsJson = null;
 		try {
 			dataAsJson = jsonUtils.allComponentResultsForUI(component);

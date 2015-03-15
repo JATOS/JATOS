@@ -79,8 +79,9 @@ public class ResultService {
 		for (ComponentResult componentResult : componentResultList) {
 			ComponentModel component = componentResult.getComponent();
 			StudyModel study = component.getStudy();
+			studyService.checkStandardForStudy(study, study.getId(), loggedInUser);
 			componentService.checkStandardForComponents(study.getId(),
-					component.getId(), study, loggedInUser, component);
+					component.getId(), loggedInUser, component);
 			if (studyMustNotBeLocked) {
 				studyService.checkStudyLocked(study);
 			}

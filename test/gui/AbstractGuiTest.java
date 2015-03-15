@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 
 import javax.persistence.EntityManager;
 
@@ -11,8 +12,11 @@ import models.StudyModel;
 import models.UserModel;
 
 import org.apache.commons.io.FileUtils;
+import org.h2.tools.Server;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 
 import persistance.ComponentDao;
 import persistance.StudyDao;
@@ -24,13 +28,12 @@ import play.db.jpa.JPAPlugin;
 import play.test.FakeApplication;
 import play.test.Helpers;
 import scala.Option;
+import services.gui.StudyService;
 import services.gui.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
 import utils.ZipUtil;
-
 import common.Global;
-
 import controllers.publix.StudyAssets;
 
 /**
@@ -48,10 +51,12 @@ public abstract class AbstractGuiTest {
 	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
 
+	protected static Server server;
 	protected FakeApplication application;
 	protected EntityManager entityManager;
 	protected JsonUtils jsonUtils;
 	protected UserService userService;
+	protected StudyService studyService;
 	protected UserDao userDao;
 	protected StudyDao studyDao;
 	protected ComponentDao componentDao;
@@ -72,6 +77,7 @@ public abstract class AbstractGuiTest {
 		// Use Guice dependency injection
 		jsonUtils = Global.INJECTOR.getInstance(JsonUtils.class);
 		userService = Global.INJECTOR.getInstance(UserService.class);
+		studyService = Global.INJECTOR.getInstance(StudyService.class);
 		userDao = Global.INJECTOR.getInstance(UserDao.class);
 		studyDao = Global.INJECTOR.getInstance(StudyDao.class);
 		componentDao = Global.INJECTOR.getInstance(ComponentDao.class);
@@ -95,6 +101,17 @@ public abstract class AbstractGuiTest {
 		JPA.bindForCurrentThread(null);
 		removeStudyAssetsRootDir();
 		Helpers.stop(application);
+	}
+	
+	@BeforeClass
+	public static void startDB() throws SQLException {
+		server = Server.createTcpServer().start();
+		System.out.println("URL: jdbc:h2:" + server.getURL() + "/mem:test/jatos");
+	}
+	
+	@AfterClass
+	public static void stopDB() {
+		server.stop();
 	}
 
 	protected static void removeStudyAssetsRootDir() throws IOException {
@@ -147,7 +164,7 @@ public abstract class AbstractGuiTest {
 
 	protected synchronized StudyModel cloneAndPersistStudy(
 			StudyModel studyToBeCloned) throws IOException {
-		StudyModel studyClone = studyToBeCloned.clone();
+		StudyModel studyClone = studyService.clone(studyToBeCloned);
 		String destDirName;
 		destDirName = IOUtils
 				.cloneStudyAssetsDirectory(studyClone.getDirName());

@@ -77,8 +77,9 @@ public class Components extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		StudyModel study = studyDao.findById(studyId);
 		ComponentModel component = componentDao.findById(componentId);
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 
 		if (component.getHtmlFilePath() == null
 				|| component.getHtmlFilePath().isEmpty()) {
@@ -161,8 +162,9 @@ public class Components extends Controller {
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 		ComponentModel component = componentDao.findById(componentId);
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 
 		if (study.isLocked()) {
 			RequestScopeMessaging.warning(MessagesStrings.STUDY_IS_LOCKED);
@@ -191,8 +193,9 @@ public class Components extends Controller {
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 		ComponentModel component = componentDao.findById(componentId);
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 		studyService.checkStudyLocked(study);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
@@ -247,8 +250,9 @@ public class Components extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 		studyService.checkStudyLocked(study);
 
 		if (active != null) {
@@ -271,11 +275,12 @@ public class Components extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 		studyService.checkStudyLocked(study);
 
-		ComponentModel clone = component.clone();
+		ComponentModel clone = componentService.clone(component);
 		componentDao.create(study, clone);
 		return ok(RequestScopeMessaging.getAsJson());
 	}
@@ -294,8 +299,9 @@ public class Components extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
+		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+				loggedInUser, component);
 		studyService.checkStudyLocked(study);
 
 		componentDao.remove(study, component);
