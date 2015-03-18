@@ -15,6 +15,8 @@ import play.mvc.Http;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -50,7 +52,7 @@ public class StudyService extends Controller {
 		}
 		return clone;
 	}
-	
+
 	@Inject
 	StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			ComponentDao componentDao, ComponentService componentService) {
@@ -60,15 +62,18 @@ public class StudyService extends Controller {
 	}
 
 	/**
-	 * Throws a JatosGuiException if a study is locked. Distinguishes between
-	 * normal and Ajax request.
+	 * Throws a JatosGuiException if a study is locked.
+	 * 
+	 * @param study
+	 * @throws ForbiddenException
 	 */
-	public void checkStudyLocked(StudyModel study) throws JatosGuiException {
+	public void checkStudyLocked(StudyModel study) throws ForbiddenException {
 		if (study.isLocked()) {
 			String errorMsg = MessagesStrings.studyLocked(study.getId());
-			jatosGuiExceptionThrower.throwRedirectOrForbidden(
-					controllers.gui.routes.Studies.index(study.getId()),
-					errorMsg);
+			throw new ForbiddenException(errorMsg);
+			// jatosGuiExceptionThrower.throwRedirectOrForbidden(
+			// controllers.gui.routes.Studies.index(study.getId()),
+			// errorMsg);
 		}
 	}
 
@@ -87,17 +92,16 @@ public class StudyService extends Controller {
 	 * Distinguishes between normal and Ajax request.
 	 */
 	public void checkStandardForStudy(StudyModel study, Long studyId,
-			UserModel user) throws JatosGuiException {
+			UserModel user) throws ForbiddenException, BadRequestException {
 		if (study == null) {
 			String errorMsg = MessagesStrings.studyNotExist(studyId);
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throw new BadRequestException(errorMsg);
 		}
 		// Check that the user is a member of the study
 		if (!study.hasMember(user)) {
 			String errorMsg = MessagesStrings.studyNotMember(user.getName(),
 					user.getEmail(), studyId, study.getTitle());
-			jatosGuiExceptionThrower.throwHome(errorMsg, Http.Status.FORBIDDEN);
+			throw new ForbiddenException(errorMsg);
 		}
 	}
 

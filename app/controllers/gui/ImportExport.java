@@ -30,6 +30,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -84,7 +86,14 @@ public class ImportExport extends Controller {
 		FilePart filePart = request().body().asMultipartFormData()
 				.getFile(StudyModel.STUDY);
 
-		return ok(importExportService.importStudy(loggedInUser, filePart));
+		JsonNode jsonNode = null;
+		try {
+			jsonNode = importExportService.importStudy(loggedInUser, filePart);
+		} catch (ForbiddenException | IOException e) {
+			importExportService.cleanupAfterStudyImport();
+			jatosGuiExceptionThrower.throwHome(e);
+		}
+		return ok(jsonNode);
 	}
 
 	/**
@@ -101,36 +110,13 @@ public class ImportExport extends Controller {
 
 		// Get confirmation: overwrite study's properties and/or study assets
 		JsonNode json = request().body().asJson();
-		if (json == null) {
-			String errorMsg = MessagesStrings.IMPORT_OF_STUDY_FAILED;
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+		try {
+			importExportService.importStudyConfirmed(loggedInUser, json);
+		} catch (ForbiddenException | IOException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		} finally {
+			importExportService.cleanupAfterStudyImport();
 		}
-		Boolean studysPropertiesConfirm = json.findPath(
-				ImportExportService.STUDYS_PROPERTIES_CONFIRM).asBoolean();
-		Boolean studysDirConfirm = json.findPath(
-				ImportExportService.STUDYS_DIR_CONFIRM).asBoolean();
-		if (studysPropertiesConfirm == null || studysDirConfirm == null) {
-			String errorMsg = MessagesStrings.IMPORT_OF_STUDY_FAILED;
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
-		}
-
-		File tempUnzippedStudyDir = importExportService.getUnzippedStudyDir();
-		StudyModel importedStudy = importExportService.unmarshalStudy(
-				tempUnzippedStudyDir, true);
-		StudyModel currentStudy = studyDao.findByUuid(importedStudy.getUuid());
-
-		boolean studyExists = (currentStudy != null);
-		if (studyExists) {
-			importExportService.overwriteExistingStudy(loggedInUser,
-					studysPropertiesConfirm, studysDirConfirm,
-					tempUnzippedStudyDir, importedStudy, currentStudy);
-		} else {
-			importExportService.importNewStudy(loggedInUser,
-					tempUnzippedStudyDir, importedStudy);
-		}
-		tempUnzippedStudyDir.delete();
 		return ok(RequestScopeMessaging.getAsJson());
 	}
 
@@ -148,7 +134,11 @@ public class ImportExport extends Controller {
 		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 
 		File zipFile = importExportService.createStudyExportZipFile(studyId,
 				study);
@@ -180,7 +170,11 @@ public class ImportExport extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 		componentService.checkStandardForComponents(studyId, componentId,
 				loggedInUser, component);
 
@@ -217,21 +211,18 @@ public class ImportExport extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		studyService.checkStudyLocked(study);
-
-		FilePart filePart = request().body().asMultipartFormData()
-				.getFile(ComponentModel.COMPONENT);
 		ObjectNode json = null;
 		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			studyService.checkStudyLocked(study);
+
+			FilePart filePart = request().body().asMultipartFormData()
+					.getFile(ComponentModel.COMPONENT);
 			json = importExportService.importComponent(study, filePart);
-		} catch (IOException e) {
-			jatosGuiExceptionThrower.throwStudies(e.getMessage(),
-					Http.Status.BAD_REQUEST, study.getId());
+		} catch (ForbiddenException | BadRequestException | IOException e) {
+			importExportService.cleanupAfterComponentImport(study);
+			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
 		}
-		// Remember component's file name
-		session(ImportExportService.SESSION_TEMP_COMPONENT_FILE, filePart
-				.getFile().getName());
 		return ok(json);
 	}
 
@@ -248,18 +239,17 @@ public class ImportExport extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		studyService.checkStudyLocked(study);
 
 		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			studyService.checkStudyLocked(study);
 			String tempComponentFileName = session(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
 			importExportService.importComponentConfirmed(study,
 					tempComponentFileName);
-		} catch (IOException e) {
-			jatosGuiExceptionThrower.throwStudies(e.getMessage(),
-					Http.Status.BAD_REQUEST, study.getId());
+		} catch (ForbiddenException | IOException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
 		} finally {
-			session().remove(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
+			importExportService.cleanupAfterComponentImport(study);
 		}
 		return ok(RequestScopeMessaging.getAsJson());
 	}

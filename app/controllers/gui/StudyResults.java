@@ -33,6 +33,8 @@ import utils.JsonUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -85,7 +87,11 @@ public class StudyResults extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+		}
 
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
@@ -121,7 +127,12 @@ public class StudyResults extends Controller {
 				.extractResultIds(studyResultIds);
 		List<StudyResult> studyResultList = resultService
 				.getAllStudyResults(studyResultIdList);
-		resultService.checkAllStudyResults(studyResultList, loggedInUser, true);
+		try {
+			resultService.checkAllStudyResults(studyResultList, loggedInUser,
+					true);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 
 		for (StudyResult studyResult : studyResultList) {
 			studyResultDao.remove(studyResult);
@@ -140,14 +151,16 @@ public class StudyResults extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		String dataAsJson = null;
 		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			dataAsJson = jsonUtils.allStudyResultsForUI(study);
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		return ok(dataAsJson);
 	}
@@ -198,8 +211,12 @@ public class StudyResults extends Controller {
 				.extractResultIds(studyResultIds);
 		List<StudyResult> studyResultList = resultService
 				.getAllStudyResults(studyResultIdList);
-		resultService
-				.checkAllStudyResults(studyResultList, loggedInUser, false);
+		try {
+			resultService.checkAllStudyResults(studyResultList, loggedInUser,
+					false);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 		String studyResultDataAsStr = resultService
 				.getStudyResultData(studyResultList);
 

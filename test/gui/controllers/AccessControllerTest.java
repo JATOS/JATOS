@@ -3,11 +3,7 @@ package gui.controllers;
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.FORBIDDEN;
 import static play.mvc.Http.Status.SEE_OTHER;
-import static play.test.Helpers.callAction;
-import static play.test.Helpers.contentAsString;
-import static play.test.Helpers.fakeRequest;
-import static play.test.Helpers.redirectLocation;
-import static play.test.Helpers.status;
+import static play.test.Helpers.*;
 import gui.AbstractGuiTest;
 
 import java.io.IOException;
@@ -21,6 +17,7 @@ import controllers.gui.Studies;
 import controllers.gui.Users;
 import play.mvc.HandlerRef;
 import play.mvc.Result;
+import services.FlashScopeMessaging;
 import utils.IOUtils;
 
 /**
@@ -115,7 +112,13 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.submitEdited(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		removeMember(studyClone, admin);
+		Result result = callAction(ref,
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(flash(result).get(FlashScopeMessaging.ERROR)).contains(
+				"isn't member of study");
 		removeStudy(studyClone);
 	}
 
@@ -165,7 +168,14 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.submitChangedMembers(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		// Check not member
+		removeMember(studyClone, admin);
+		Result result = callAction(ref,
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(flash(result).get(FlashScopeMessaging.ERROR)).contains(
+				"isn't member of study");
 		removeStudy(studyClone);
 	}
 

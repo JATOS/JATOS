@@ -16,7 +16,6 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import services.gui.Breadcrumbs;
-import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 
 import com.google.inject.Inject;
@@ -38,16 +37,13 @@ public class Users extends Controller {
 	public static final String SESSION_EMAIL = "email";
 
 	private final UserService userService;
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final UserDao userDao;
 	private final StudyDao studyDao;
 
 	@Inject
-	Users(UserDao userDao, UserService userService,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower, StudyDao studyDao) {
+	Users(UserDao userDao, UserService userService, StudyDao studyDao) {
 		this.userDao = userDao;
 		this.userService = userService;
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyDao = studyDao;
 	}
 
@@ -97,8 +93,8 @@ public class Users extends Controller {
 				.getEmail());
 
 		if (form.hasErrors()) {
-			jatosGuiExceptionThrower.throwCreateUser(studyList, loggedInUser,
-					form, null, Http.Status.BAD_REQUEST);
+			return showCreateUserAfterError(studyList, loggedInUser, form,
+					null, Http.Status.BAD_REQUEST);
 		}
 
 		UserModel newUser = form.get();
@@ -108,14 +104,63 @@ public class Users extends Controller {
 		List<ValidationError> errorList = userService.validateNewUser(newUser,
 				password, passwordRepeat);
 		if (!errorList.isEmpty()) {
-			jatosGuiExceptionThrower.throwCreateUser(studyList, loggedInUser,
-					form, errorList, Http.Status.BAD_REQUEST);
+			return showCreateUserAfterError(studyList, loggedInUser, form,
+					errorList, Http.Status.BAD_REQUEST);
 		}
 
 		String passwordHash = userService.getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
 		userDao.create(newUser);
 		return redirect(controllers.gui.routes.Home.home());
+	}
+
+	private Result showCreateUserAfterError(List<StudyModel> studyList,
+			UserModel loggedInUser, Form<UserModel> form,
+			List<ValidationError> errorList, int httpStatus) {
+		if (ControllerUtils.isAjax()) {
+			return status(httpStatus);
+		} else {
+			if (errorList != null) {
+				for (ValidationError error : errorList) {
+					form.reject(error);
+				}
+			}
+			String breadcrumbs = Breadcrumbs.generateForHome("New User");
+			return status(httpStatus, views.html.gui.user.create.render(
+					studyList, loggedInUser, breadcrumbs, form));
+		}
+	}
+
+	private Result showEditUserAfterError(List<StudyModel> studyList,
+			UserModel loggedInUser, Form<UserModel> form, UserModel user,
+			int httpStatus) {
+		if (ControllerUtils.isAjax()) {
+			return status(httpStatus);
+		} else {
+			String breadcrumbs = Breadcrumbs.generateForUser(user,
+					"Edit Profile");
+			return status(httpStatus, views.html.gui.user.editProfile.render(
+					studyList, loggedInUser, breadcrumbs, user, form));
+		}
+	}
+
+	private Result showChangePasswordAfterError(List<StudyModel> studyList,
+			UserModel loggedInUser, Form<UserModel> form,
+			List<ValidationError> errorList, int httpStatus, UserModel user) {
+		if (ControllerUtils.isAjax()) {
+			return status(httpStatus);
+		} else {
+			if (errorList != null) {
+				for (ValidationError error : errorList) {
+					form.reject(error);
+				}
+			}
+			String breadcrumbs = Breadcrumbs.generateForUser(user,
+					"Change Password");
+			return status(httpStatus,
+					views.html.gui.user.changePassword.render(studyList,
+							loggedInUser, breadcrumbs, form));
+		}
 	}
 
 	/**
@@ -154,8 +199,8 @@ public class Users extends Controller {
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		if (form.hasErrors()) {
-			jatosGuiExceptionThrower.throwEditUser(studyList, loggedInUser,
-					form, loggedInUser, Http.Status.BAD_REQUEST);
+			return showEditUserAfterError(studyList, loggedInUser, form, loggedInUser,
+					Http.Status.BAD_REQUEST);
 		}
 		// Update user in database
 		// Do not update 'email' since it's the ID and should stay
@@ -209,9 +254,8 @@ public class Users extends Controller {
 		List<ValidationError> errorList = userService.validateChangePassword(
 				user, newPassword, newPasswordRepeat, oldPasswordHash);
 		if (!errorList.isEmpty()) {
-			jatosGuiExceptionThrower.throwChangePasswordUser(studyList,
-					loggedInUser, form, errorList, Http.Status.BAD_REQUEST,
-					loggedInUser);
+			return showChangePasswordAfterError(studyList, loggedInUser, form,
+					errorList, Http.Status.BAD_REQUEST, loggedInUser);
 		}
 		// Update password hash in DB
 		String newPasswordHash = userService.getHashMDFive(newPassword);

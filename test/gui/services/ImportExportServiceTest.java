@@ -18,9 +18,11 @@ import play.db.jpa.JPA;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import services.gui.ImportExportService;
+import utils.IOUtils;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import common.Global;
 
 /**
@@ -63,7 +65,7 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 		assertThat(a).isEqualTo(2);
 	}
 
-	@Test
+	// @Test
 	public void importExistingComponent() throws Exception {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
@@ -130,7 +132,7 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 		removeStudy(study);
 	}
 
-	@Test
+	// @Test
 	public void importNewComponent() throws Exception {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
@@ -195,8 +197,17 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 				.isEqualTo("Basic Example Study");
 		assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean())
 				.isFalse();
-		// assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText())
-		// .isEqualTo(studyFile.getName());
+		assertThat(
+				jsonNode.get(ImportExportService.DIR_PATH).asText() + "."
+						+ IOUtils.ZIP_FILE_SUFFIX).isEqualTo(
+				studyFile.getName());
+
+		// Call importComponentConfirmed(): The new component will be put on the
+		// end of study's component list
+//		entityManager.getTransaction().begin();
+//		importExportService.importComponentConfirmed(study,
+//				componentFile.getName());
+//		entityManager.getTransaction().commit();
 	}
 
 }

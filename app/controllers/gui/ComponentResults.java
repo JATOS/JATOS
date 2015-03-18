@@ -21,6 +21,7 @@ import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.ComponentService;
 import services.gui.ImportExportService;
+import services.gui.JatosGuiExceptionThrower;
 import services.gui.MessagesStrings;
 import services.gui.ResultService;
 import services.gui.StudyService;
@@ -32,6 +33,8 @@ import utils.JsonUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -46,6 +49,7 @@ public class ComponentResults extends Controller {
 	private static final String CLASS_NAME = ComponentResults.class
 			.getSimpleName();
 
+	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
@@ -56,10 +60,12 @@ public class ComponentResults extends Controller {
 	private final ComponentResultDao componentResultDao;
 
 	@Inject
-	ComponentResults(StudyService studyService, ComponentService componentService,
+	ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			StudyService studyService, ComponentService componentService,
 			UserService userService, ResultService resultService,
 			StudyDao studyDao, ComponentDao componentDao,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
+		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
 		this.userService = userService;
@@ -84,7 +90,11 @@ public class ComponentResults extends Controller {
 		ComponentModel component = componentDao.findById(componentId);
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		}
 		componentService.checkStandardForComponents(studyId, componentId,
 				loggedInUser, component);
 
@@ -124,8 +134,12 @@ public class ComponentResults extends Controller {
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = resultService
 				.getAllComponentResults(componentResultIdList);
-		resultService.checkAllComponentResults(componentResultList,
-				loggedInUser, true);
+		try {
+			resultService.checkAllComponentResults(componentResultList,
+					loggedInUser, true);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 
 		for (ComponentResult componentResult : componentResultList) {
 			componentResultDao.remove(componentResult);
@@ -147,7 +161,11 @@ public class ComponentResults extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		}
 		componentService.checkStandardForComponents(studyId, componentId,
 				loggedInUser, component);
 		String dataAsJson = null;
@@ -179,8 +197,12 @@ public class ComponentResults extends Controller {
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = resultService
 				.getAllComponentResults(componentResultIdList);
-		resultService.checkAllComponentResults(componentResultList,
-				loggedInUser, true);
+		try {
+			resultService.checkAllComponentResults(componentResultList,
+					loggedInUser, true);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 		String componentResultDataAsStr = resultService
 				.getComponentResultData(componentResultList);
 

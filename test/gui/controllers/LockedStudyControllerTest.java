@@ -1,7 +1,6 @@
 package gui.controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.redirectLocation;
@@ -13,11 +12,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import controllers.gui.Studies;
-import controllers.gui.Users;
 import play.mvc.HandlerRef;
+import play.mvc.Http;
 import play.mvc.Result;
 import utils.IOUtils;
+import controllers.gui.Studies;
+import controllers.gui.Users;
 
 /**
  * Testing actions if study is locked
@@ -41,12 +41,15 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
 	}
 
-	private void checkDenyLocked(HandlerRef ref) {
+	private void checkDenyLocked(HandlerRef ref, int statusCode,
+			String redirectPath) {
 		Result result = callAction(ref,
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
-		assertThat(status(result)).isEqualTo(SEE_OTHER);
-		assertThat(redirectLocation(result)).contains("/jatos/");
+		assertThat(status(result)).isEqualTo(statusCode);
+		if (statusCode == Http.Status.SEE_OTHER) {
+			assertThat(redirectLocation(result)).isEqualTo(redirectPath);
+		}
 	}
 
 	@Test
@@ -55,7 +58,8 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 		lockStudy(studyClone);
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.submitEdited(studyClone.getId());
-		checkDenyLocked(ref);
+		checkDenyLocked(ref, Http.Status.SEE_OTHER,
+				"/jatos/" + studyClone.getId());
 		removeStudy(studyClone);
 	}
 
@@ -65,7 +69,7 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 		lockStudy(studyClone);
 		HandlerRef ref = controllers.gui.routes.ref.Studies.remove(studyClone
 				.getId());
-		checkDenyLocked(ref);
+		checkDenyLocked(ref, Http.Status.FORBIDDEN, null);
 		removeStudy(studyClone);
 	}
 
@@ -77,7 +81,7 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 				.changeComponentOrder(studyClone.getId(), studyClone
 						.getComponent(1).getId(),
 						Studies.COMPONENT_POSITION_DOWN);
-		checkDenyLocked(ref);
+		checkDenyLocked(ref, Http.Status.FORBIDDEN, null);
 		removeStudy(studyClone);
 	}
 

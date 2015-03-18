@@ -17,6 +17,8 @@ import play.mvc.Http;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -75,11 +77,13 @@ public class ResultService {
 
 	public void checkAllComponentResults(
 			List<ComponentResult> componentResultList, UserModel loggedInUser,
-			boolean studyMustNotBeLocked) throws JatosGuiException {
+			boolean studyMustNotBeLocked) throws JatosGuiException,
+			ForbiddenException, BadRequestException {
 		for (ComponentResult componentResult : componentResultList) {
 			ComponentModel component = componentResult.getComponent();
 			StudyModel study = component.getStudy();
-			studyService.checkStandardForStudy(study, study.getId(), loggedInUser);
+			studyService.checkStandardForStudy(study, study.getId(),
+					loggedInUser);
 			componentService.checkStandardForComponents(study.getId(),
 					component.getId(), loggedInUser, component);
 			if (studyMustNotBeLocked) {
@@ -90,7 +94,7 @@ public class ResultService {
 
 	public void checkAllStudyResults(List<StudyResult> studyResultList,
 			UserModel loggedInUser, boolean studyMustNotBeLocked)
-			throws JatosGuiException {
+			throws ForbiddenException, BadRequestException {
 		for (StudyResult studyResult : studyResultList) {
 			StudyModel study = studyResult.getStudy();
 			studyService.checkStandardForStudy(study, study.getId(),

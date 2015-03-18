@@ -16,6 +16,8 @@ import play.mvc.Http;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -53,16 +55,18 @@ public class WorkerService extends Controller {
 
 	/**
 	 * Check whether the removal of this worker is allowed.
+	 * @throws BadRequestException 
+	 * @throws ForbiddenException 
 	 */
 	public void checkRemovalAllowed(Worker worker, UserModel loggedInUser)
-			throws JatosGuiException {
+			throws ForbiddenException, BadRequestException {
 		// JatosWorker associated to a JATOS user must not be removed
 		if (worker instanceof JatosWorker) {
 			JatosWorker maWorker = (JatosWorker) worker;
 			String errorMsg = MessagesStrings.removeJatosWorkerNotAllowed(
 					worker.getId(), maWorker.getUser().getName(), maWorker
 							.getUser().getEmail());
-			jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.FORBIDDEN);
+			throw new ForbiddenException(errorMsg);
 		}
 
 		// Check for every study if removal is allowed

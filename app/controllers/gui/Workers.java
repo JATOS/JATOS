@@ -26,6 +26,8 @@ import utils.JsonUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -99,7 +101,11 @@ public class Workers extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		workerService.checkWorker(worker, workerId);
 
-		workerService.checkRemovalAllowed(worker, loggedInUser);
+		try {
+			workerService.checkRemovalAllowed(worker, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 		workerDao.remove(worker);
 		return ok().as("text/html");
 	}
@@ -115,16 +121,19 @@ public class Workers extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		String dataAsJson = null;
 		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+
 			Set<Worker> workerSet = workerService.retrieveWorkers(study);
 			dataAsJson = jsonUtils.allWorkersForUI(workerSet);
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		return ok(dataAsJson);
 	}
