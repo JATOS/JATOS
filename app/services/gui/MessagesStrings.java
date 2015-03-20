@@ -239,8 +239,8 @@ public abstract class MessagesStrings {
 				+ ").";
 	}
 
-	public static String studyAssetsDirPathIsntDir(String dirName) {
-		return "Study assets' directory path \"" + dirName
+	public static String dirPathIsntDir(String dirName) {
+		return "Directory path \"" + dirName
 				+ "\" doesn't lead to a directory.";
 	}
 

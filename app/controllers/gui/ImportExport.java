@@ -86,12 +86,23 @@ public class ImportExport extends Controller {
 		FilePart filePart = request().body().asMultipartFormData()
 				.getFile(StudyModel.STUDY);
 
+		if (filePart == null) {
+			jatosGuiExceptionThrower.throwAjax(MessagesStrings.FILE_MISSING,
+					Http.Status.BAD_REQUEST);
+		}
+		if (!filePart.getKey().equals(StudyModel.STUDY)) {
+			// If wrong key the upload comes from wrong form
+			jatosGuiExceptionThrower.throwAjax(MessagesStrings.NO_STUDY_UPLOAD,
+					Http.Status.BAD_REQUEST);
+		}
+
 		JsonNode jsonNode = null;
 		try {
-			jsonNode = importExportService.importStudy(loggedInUser, filePart);
+			jsonNode = importExportService.importStudy(loggedInUser,
+					filePart.getFile());
 		} catch (ForbiddenException | IOException e) {
 			importExportService.cleanupAfterStudyImport();
-			jatosGuiExceptionThrower.throwHome(e);
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		return ok(jsonNode);
 	}
@@ -140,8 +151,14 @@ public class ImportExport extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		File zipFile = importExportService.createStudyExportZipFile(studyId,
-				study);
+		File zipFile = null;
+		try {
+			zipFile = importExportService.createStudyExportZipFile(study);
+		} catch (IOException e) {
+			String errorMsg = MessagesStrings.studyExportFailure(studyId);
+			jatosGuiExceptionThrower.throwAjax(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
+		}
 
 		String zipFileName = IOUtils.generateFileName(study.getTitle(),
 				IOUtils.ZIP_FILE_SUFFIX);

@@ -1,5 +1,6 @@
 package services.gui;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -8,9 +9,11 @@ import models.StudyModel;
 import models.UserModel;
 import models.workers.Worker;
 import persistance.ComponentDao;
+import persistance.StudyDao;
 import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http;
+import utils.IOUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -20,7 +23,7 @@ import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
- * Utility class for all JATOS Controllers (not Publix).
+ * Service class for JATOS Controllers (not Publix).
  * 
  * @author Kristian Lange
  */
@@ -28,8 +31,19 @@ import exceptions.gui.JatosGuiException;
 public class StudyService extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final ComponentDao componentDao;
 	private final ComponentService componentService;
+	private final ComponentDao componentDao;
+	private final StudyDao studyDao;
+
+	@Inject
+	StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			ComponentService componentService, ComponentDao componentDao,
+			StudyDao studyDao) {
+		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.componentService = componentService;
+		this.componentDao = componentDao;
+		this.studyDao = studyDao;
+	}
 
 	/**
 	 * Clones a StudyModel. It does not copy the memberList, id, uuid, date or
@@ -51,14 +65,6 @@ public class StudyService extends Controller {
 			clone.addComponent(componentClone);
 		}
 		return clone;
-	}
-
-	@Inject
-	StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			ComponentDao componentDao, ComponentService componentService) {
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-		this.componentDao = componentDao;
-		this.componentService = componentService;
 	}
 
 	/**
@@ -156,4 +162,14 @@ public class StudyService extends Controller {
 		return study;
 	}
 
+	/**
+	 * Renames the directory in the file system and persists the study's
+	 * property.
+	 */
+	public void renameStudyAssetsDir(StudyModel study, String newDirName)
+			throws IOException {
+		IOUtils.renameStudyAssetsDir(study.getDirName(), newDirName);
+		study.setDirName(newDirName);
+		studyDao.update(study);
+	}
 }

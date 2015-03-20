@@ -55,11 +55,12 @@ public class IOUtils {
 
 	/**
 	 * Gets the File object (can be an directory) while preventing a path
-	 * traversal attack.
+	 * traversal attack. path and filePath together build the full path (like
+	 * path/filePath). path must be a directory.
 	 */
 	public static File getFileSecurely(String path, String filePath)
 			throws IOException {
-		path = getExistingStudyAssetsDirSecurely(path).getAbsolutePath();
+		path = getExistingDirSecurely(path).getAbsolutePath();
 		String fullPath = path + File.separator + filePath;
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
@@ -73,10 +74,10 @@ public class IOUtils {
 	}
 
 	/**
-	 * Gets the File object of the study assets' directory while preventing a
-	 * path traversal attack and checks if the directory actually exists.
+	 * Gets the File object of the directory while preventing a path traversal
+	 * attack and checks if the directory actually exists.
 	 */
-	public static File getExistingStudyAssetsDirSecurely(String fullPath)
+	public static File getExistingDirSecurely(String fullPath)
 			throws IOException {
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
@@ -88,7 +89,7 @@ public class IOUtils {
 		}
 		if (file == null || !file.exists() || !file.isDirectory()) {
 			throw new IOException(
-					MessagesStrings.studyAssetsDirPathIsntDir(fullPath));
+					MessagesStrings.dirPathIsntDir(fullPath));
 		}
 		return file;
 	}
@@ -117,9 +118,16 @@ public class IOUtils {
 	 */
 	public static File getFileInStudyAssetsDir(String dirName, String filePath)
 			throws IOException {
-		String studyPath = generateStudyAssetsPath(dirName);
-		File file = getFileSecurely(studyPath, filePath);
-		return file;
+		String studyAssetsPath = generateStudyAssetsPath(dirName);
+		return getFileSecurely(studyAssetsPath, filePath);
+	}
+	
+	/**
+	 * Gets the study assets with the given directory name.
+	 */
+	public static File getStudyAssetsDir(String dirName) throws IOException {
+		String studyAssetsPath = generateStudyAssetsPath(dirName);
+		return getExistingDirSecurely(studyAssetsPath);
 	}
 
 	/**
@@ -171,7 +179,7 @@ public class IOUtils {
 			return;
 		}
 		if (!dir.isDirectory()) {
-			throw new IOException(MessagesStrings.studyAssetsDirPathIsntDir(dir
+			throw new IOException(MessagesStrings.dirPathIsntDir(dir
 					.getName()));
 		}
 		FileUtils.deleteDirectory(dir);
@@ -188,7 +196,7 @@ public class IOUtils {
 				srcDirName);
 		if (!srcDir.isDirectory()) {
 			throw new IOException(
-					MessagesStrings.studyAssetsDirPathIsntDir(srcDir.getName()));
+					MessagesStrings.dirPathIsntDir(srcDir.getName()));
 		}
 
 		String destDirName = srcDirName + "_clone";
@@ -286,8 +294,9 @@ public class IOUtils {
 		}
 		if (newDir.exists()) {
 			throw new IOException(
-					MessagesStrings.studyAssetsDirNotCreatedBecauseExists(newDir
-							.getName()));
+					MessagesStrings
+							.studyAssetsDirNotCreatedBecauseExists(newDir
+									.getName()));
 		}
 		if (!oldDir.exists()) {
 			createStudyAssetsDir(newDirName);

@@ -258,18 +258,19 @@ public class Studies extends Controller {
 		List<ValidationError> errorList = updatedStudy.validate();
 		if (errorList != null) {
 			updatedStudy.setId(studyId);
-			return failStudyEdit(loggedInUser, studyList, updatedStudy, errorList);
+			return failStudyEdit(loggedInUser, studyList, updatedStudy,
+					errorList);
 		}
 
 		String oldDirName = study.getDirName();
 
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
-		study.setDirName(updatedStudy.getDirName());
 		study.setJsonData(updatedStudy.getJsonData());
 		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
 		studyDao.update(study);
-		renameStudyAssetsDir(study, loggedInUser, studyList, oldDirName);
+		renameStudyAssetsDir(study, loggedInUser, studyList,
+				updatedStudy.getDirName(), oldDirName);
 		return redirect(controllers.gui.routes.Studies.index(studyId));
 	}
 
@@ -281,8 +282,8 @@ public class Studies extends Controller {
 				Breadcrumbs.EDIT_PROPERTIES);
 		Call submitAction = controllers.gui.routes.Studies.submitEdited(study
 				.getId());
-		return showEditStudyAfterError(studyList, loggedInUser, form, errorList,
-				Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
+		return showEditStudyAfterError(studyList, loggedInUser, form,
+				errorList, Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
 				study.isLocked());
 	}
 
@@ -683,7 +684,8 @@ public class Studies extends Controller {
 			List<ValidationError> errorList = new ArrayList<>();
 			errorList.add(new ValidationError(StudyModel.DIRNAME, e
 					.getMessage()));
-			Result result = failStudyCreate(loggedInUser, studyList, study, errorList);
+			Result result = failStudyCreate(loggedInUser, studyList, study,
+					errorList);
 			throw new JatosGuiException((SimpleResult) result);
 		}
 	}
@@ -693,11 +695,11 @@ public class Studies extends Controller {
 	 * method.
 	 */
 	private void renameStudyAssetsDir(StudyModel study, UserModel loggedInUser,
-			List<StudyModel> studyList, String oldDirName)
+			List<StudyModel> studyList, String newDirName, String oldDirName)
 			throws JatosGuiException {
 		List<ValidationError> errorList;
 		try {
-			IOUtils.renameStudyAssetsDir(oldDirName, study.getDirName());
+			studyService.renameStudyAssetsDir(study, newDirName);
 		} catch (IOException e) {
 			errorList = new ArrayList<>();
 			errorList.add(new ValidationError(StudyModel.DIRNAME, e
