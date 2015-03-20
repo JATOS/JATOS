@@ -21,7 +21,7 @@ import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
- * Utility class for all JATOS Controllers (not Publix).
+ * Service class for JATOS Controllers (not Publix)..
  * 
  * @author Kristian Lange
  */
