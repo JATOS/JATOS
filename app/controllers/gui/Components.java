@@ -242,14 +242,7 @@ public class Components extends Controller {
 					Http.Status.BAD_REQUEST, breadcrumbs, submitAction, study);
 		}
 
-		// Update component in DB
-		ComponentModel updatedComponent = form.get();
-		component.setTitle(updatedComponent.getTitle());
-		component.setReloadable(updatedComponent.isReloadable());
-		component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
-		component.setComments(updatedComponent.getComments());
-		component.setJsonData(updatedComponent.getJsonData());
-		componentDao.update(component);
+		componentService.updateComponentAfterEdit(component, form.get());
 		return redirectAfterEdit(studyId, componentId, study);
 	}
 

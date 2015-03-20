@@ -2,6 +2,7 @@ package services.gui;
 
 import models.ComponentModel;
 import models.UserModel;
+import persistance.ComponentDao;
 import play.mvc.Controller;
 import play.mvc.Http;
 
@@ -19,10 +20,13 @@ import exceptions.gui.JatosGuiException;
 public class ComponentService extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final ComponentDao componentDao;
 
 	@Inject
-	ComponentService(JatosGuiExceptionThrower jatosGuiExceptionThrower) {
+	ComponentService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			ComponentDao componentDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.componentDao = componentDao;
 	}
 
 	/**
@@ -59,6 +63,19 @@ public class ComponentService extends Controller {
 			jatosGuiExceptionThrower.throwHome(errorMsg,
 					Http.Status.BAD_REQUEST);
 		}
+	}
+
+	/**
+	 * Updates some but not all fields of a ComponentModel and persists it.
+	 */
+	public void updateComponentAfterEdit(ComponentModel component,
+			ComponentModel updatedComponent) {
+		component.setTitle(updatedComponent.getTitle());
+		component.setReloadable(updatedComponent.isReloadable());
+		component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
+		component.setComments(updatedComponent.getComments());
+		component.setJsonData(updatedComponent.getJsonData());
+		componentDao.update(component);
 	}
 
 }
