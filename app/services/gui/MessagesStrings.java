@@ -136,6 +136,12 @@ public abstract class MessagesStrings {
 				+ " that has a component with ID " + componentId + ".";
 		return errorMsg;
 	}
+	
+	public static String componentHasNoStudy(Long componentId) {
+		String errorMsg = "The component with ID " + componentId
+				+ " doesn't belong to any study.";
+		return errorMsg;
+	}
 
 	public static String userNotExist(String email) {
 		String errorMsg = "An user with email " + email + " doesn't exist.";
@@ -169,6 +175,12 @@ public abstract class MessagesStrings {
 	public static String resultNotExist(String resultIdStr) {
 		String errorMsg = "An result with ID \"" + resultIdStr
 				+ "\" doesn't exist.";
+		return errorMsg;
+	}
+	
+	public static String resultIdMalformed(String resultIdStr) {
+		String errorMsg = "The result ID \"" + resultIdStr
+				+ "\" is malformed.";
 		return errorMsg;
 	}
 

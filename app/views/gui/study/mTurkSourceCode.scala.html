@@ -1,7 +1,7 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel,
+@(loggedInUser: UserModel,
 breadcrumbs: String, study: StudyModel, jatosUrl: java.net.URL)
 
-@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs){
 
 <h3>Source code for Mechanical Turk</h3>
 <p>Copy & paste this code into the 'source' field of your study's design layout in Mechanical Turk</p>

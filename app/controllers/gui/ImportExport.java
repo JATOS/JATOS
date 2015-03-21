@@ -189,11 +189,11 @@ public class ImportExport extends Controller {
 		ComponentModel component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			componentService.checkStandardForComponents(studyId, componentId,
+					loggedInUser, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		componentService.checkStandardForComponents(studyId, componentId,
-				loggedInUser, component);
 
 		String componentAsJson = null;
 		try {

@@ -105,8 +105,6 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -117,7 +115,7 @@ public class Studies extends Controller {
 		String breadcrumbs = Breadcrumbs.generateForStudy(study);
 		String baseUrl = ControllerUtils.getReferer();
 		int studyResultCount = studyResultDao.countByStudy(study);
-		return status(httpStatus, views.html.gui.study.index.render(studyList,
+		return status(httpStatus, views.html.gui.study.index.render(
 				loggedInUser, breadcrumbs, study, workerSet, baseUrl,
 				studyResultCount));
 	}
@@ -135,17 +133,14 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
-
 		StudyModel study = new StudyModel();
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		// It's a generic template for editing a study. We have to tell it the
 		// submit action.
 		Call submitAction = controllers.gui.routes.Studies.submit();
 		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_STUDY);
-		return ok(views.html.gui.study.edit.render(studyList, loggedInUser,
-				breadcrumbs, submitAction, form, false));
+		return ok(views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
+				submitAction, form, false));
 	}
 
 	/**
@@ -177,12 +172,11 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_STUDY);
 		Call submitAction = controllers.gui.routes.Studies.submit();
-		return showEditStudyAfterError(studyList, loggedInUser, form,
-				errorList, Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
-				false);
+		return showEditStudyAfterError(loggedInUser, form, errorList,
+				Http.Status.BAD_REQUEST, breadcrumbs, submitAction, false);
 	}
 
-	private Result showEditStudyAfterError(List<StudyModel> studyList,
+	private Result showEditStudyAfterError(
 			UserModel loggedInUser, Form<StudyModel> form,
 			List<ValidationError> errorList, int httpStatus,
 			String breadcrumbs, Call submitAction, boolean studyIsLocked) {
@@ -195,7 +189,7 @@ public class Studies extends Controller {
 				}
 			}
 			return status(httpStatus, views.html.gui.study.edit.render(
-					studyList, loggedInUser, breadcrumbs, submitAction, form,
+					loggedInUser, breadcrumbs, submitAction, form,
 					studyIsLocked));
 		}
 	}
@@ -209,8 +203,6 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -225,8 +217,8 @@ public class Studies extends Controller {
 				.getId());
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.EDIT_PROPERTIES);
-		return ok(views.html.gui.study.edit.render(studyList, loggedInUser,
-				breadcrumbs, submitAction, form, study.isLocked()));
+		return ok(views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
+				submitAction, form, study.isLocked()));
 	}
 
 	/**
@@ -282,7 +274,7 @@ public class Studies extends Controller {
 				Breadcrumbs.EDIT_PROPERTIES);
 		Call submitAction = controllers.gui.routes.Studies.submitEdited(study
 				.getId());
-		return showEditStudyAfterError(studyList, loggedInUser, form,
+		return showEditStudyAfterError(loggedInUser, form,
 				errorList, Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
 				study.isLocked());
 	}
@@ -371,8 +363,6 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -383,7 +373,7 @@ public class Studies extends Controller {
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.CHANGE_MEMBERS);
 		return status(httpStatus, views.html.gui.study.changeMembers.render(
-				studyList, loggedInUser, breadcrumbs, study, userList));
+				loggedInUser, breadcrumbs, study, userList));
 	}
 
 	/**
@@ -444,11 +434,11 @@ public class Studies extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			studyService.checkStudyLocked(study);
+			componentService.checkStandardForComponents(studyId, componentId,
+					loggedInUser, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		componentService.checkStandardForComponents(studyId, componentId,
-				loggedInUser, component);
 
 		switch (direction) {
 		case COMPONENT_POSITION_UP:
@@ -522,7 +512,7 @@ public class Studies extends Controller {
 		String comment = json.findPath(ClosedStandaloneWorker.COMMENT).asText()
 				.trim();
 		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
-		studyService.checkWorker(studyId, worker);
+		checkWorker(studyId, worker);
 		workerDao.create(worker);
 
 		String url = ControllerUtils.getReferer()
@@ -531,6 +521,16 @@ public class Studies extends Controller {
 				+ ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID + "="
 				+ worker.getId();
 		return ok(url);
+	}
+
+	private void checkWorker(Long studyId, Worker worker)
+			throws JatosGuiException {
+		List<ValidationError> errorList = worker.validate();
+		if (errorList != null && !errorList.isEmpty()) {
+			String errorMsg = errorList.get(0).message();
+			jatosGuiExceptionThrower.throwStudies(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
+		}
 	}
 
 	/**
@@ -560,7 +560,7 @@ public class Studies extends Controller {
 		}
 		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
 		TesterWorker worker = new TesterWorker(comment);
-		studyService.checkWorker(studyId, worker);
+		checkWorker(studyId, worker);
 		workerDao.create(worker);
 
 		String url = ControllerUtils.getReferer()
@@ -581,8 +581,6 @@ public class Studies extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -603,8 +601,8 @@ public class Studies extends Controller {
 		}
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
-		return ok(views.html.gui.study.mTurkSourceCode.render(studyList,
-				loggedInUser, breadcrumbs, study, jatosURL));
+		return ok(views.html.gui.study.mTurkSourceCode.render(loggedInUser,
+				breadcrumbs, study, jatosURL));
 	}
 
 	/**
@@ -645,8 +643,6 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -657,7 +653,7 @@ public class Studies extends Controller {
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.WORKERS);
 		return status(httpStatus, views.html.gui.study.studysWorkers.render(
-				studyList, loggedInUser, breadcrumbs, study));
+				loggedInUser, breadcrumbs, study));
 	}
 
 	@Transactional

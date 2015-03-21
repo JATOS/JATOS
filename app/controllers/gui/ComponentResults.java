@@ -35,6 +35,7 @@ import com.google.inject.Singleton;
 
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
+import exceptions.NotFoundException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -88,22 +89,20 @@ public class ComponentResults extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			componentService.checkStandardForComponents(studyId, componentId,
+					loggedInUser, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwHome(e);
 		}
-		componentService.checkStandardForComponents(studyId, componentId,
-				loggedInUser, component);
 
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = Breadcrumbs.generateForComponent(study, component,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
-				views.html.gui.result.componentResults.render(studyList,
-						loggedInUser, breadcrumbs, study, component));
+				views.html.gui.result.componentResults.render(loggedInUser,
+						breadcrumbs, study, component));
 	}
 
 	@Transactional
@@ -130,14 +129,15 @@ public class ComponentResults extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> componentResultIdList = resultService
-				.extractResultIds(componentResultIds);
-		List<ComponentResult> componentResultList = resultService
-				.getAllComponentResults(componentResultIdList);
+		List<ComponentResult> componentResultList = null;
 		try {
+			List<Long> componentResultIdList = resultService
+					.extractResultIds(componentResultIds);
+			componentResultList = resultService
+					.getAllComponentResults(componentResultIdList);
 			resultService.checkAllComponentResults(componentResultList,
 					loggedInUser, true);
-		} catch (ForbiddenException | BadRequestException e) {
+		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
@@ -163,11 +163,11 @@ public class ComponentResults extends Controller {
 		ComponentModel component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			componentService.checkStandardForComponents(studyId, componentId,
+					loggedInUser, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwHome(e);
 		}
-		componentService.checkStandardForComponents(studyId, componentId,
-				loggedInUser, component);
 		String dataAsJson = null;
 		try {
 			dataAsJson = jsonUtils.allComponentResultsForUI(component);
@@ -193,14 +193,15 @@ public class ComponentResults extends Controller {
 		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> componentResultIdList = resultService
-				.extractResultIds(componentResultIds);
-		List<ComponentResult> componentResultList = resultService
-				.getAllComponentResults(componentResultIdList);
+		List<ComponentResult> componentResultList = null;
 		try {
+			List<Long> componentResultIdList = resultService
+					.extractResultIds(componentResultIds);
+			componentResultList = resultService
+					.getAllComponentResults(componentResultIdList);
 			resultService.checkAllComponentResults(componentResultList,
 					loggedInUser, true);
-		} catch (ForbiddenException | BadRequestException e) {
+		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		String componentResultDataAsStr = resultService

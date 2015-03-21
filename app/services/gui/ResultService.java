@@ -12,14 +12,13 @@ import models.UserModel;
 import models.workers.Worker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
-import play.mvc.Http;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
-import exceptions.gui.JatosGuiException;
+import exceptions.NotFoundException;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -29,17 +28,14 @@ import exceptions.gui.JatosGuiException;
 @Singleton
 public class ResultService {
 
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final ComponentService componentService;
 	private final StudyService studyService;
 	private final ComponentResultDao componentResultDao;
 	private final StudyResultDao studyResultDao;
 
 	@Inject
-	ResultService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			ComponentService componentService, StudyService studyService,
+	ResultService(ComponentService componentService, StudyService studyService,
 			ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.componentService = componentService;
 		this.studyService = studyService;
 		this.componentResultDao = componentResultDao;
@@ -48,37 +44,39 @@ public class ResultService {
 
 	/**
 	 * Parses a String with result IDs and returns them in a List<Long>. Throws
-	 * a JatosGuiException if an ID is not a number or if the original String
-	 * doesn't contain any ID.
+	 * an Exception if an ID is not a number or if the original String doesn't
+	 * contain any ID.
 	 */
 	public List<Long> extractResultIds(String resultIds)
-			throws JatosGuiException {
+			throws BadRequestException {
 		String[] resultIdStrArray = resultIds.split(",");
 		List<Long> resultIdList = new ArrayList<>();
 		for (String idStr : resultIdStrArray) {
 			try {
-				if (idStr.isEmpty()) {
+				if (idStr.trim().isEmpty()) {
 					continue;
 				}
 				resultIdList.add(Long.parseLong(idStr.trim()));
 			} catch (NumberFormatException e) {
-				String errorMsg = MessagesStrings.resultNotExist(idStr);
-				jatosGuiExceptionThrower.throwAjax(errorMsg,
-						Http.Status.NOT_FOUND);
+				throw new BadRequestException(
+						MessagesStrings.resultIdMalformed(idStr));
 			}
 		}
 		if (resultIdList.size() < 1) {
-			String errorMsg = MessagesStrings.NO_RESULTS_SELECTED;
-			jatosGuiExceptionThrower.throwAjax(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throw new BadRequestException(MessagesStrings.NO_RESULTS_SELECTED);
 		}
 		return resultIdList;
 	}
 
+	/**
+	 * Checks a list of ComponentResult. Checks each ComponentResult whether
+	 * the belonging Study and Component are fine. It also checks whether the
+	 * study is locked. In case of any problem an Exception is thrown.
+	 */
 	public void checkAllComponentResults(
 			List<ComponentResult> componentResultList, UserModel loggedInUser,
-			boolean studyMustNotBeLocked) throws JatosGuiException,
-			ForbiddenException, BadRequestException {
+			boolean studyMustNotBeLocked) throws ForbiddenException,
+			BadRequestException {
 		for (ComponentResult componentResult : componentResultList) {
 			ComponentModel component = componentResult.getComponent();
 			StudyModel study = component.getStudy();
@@ -92,6 +90,11 @@ public class ResultService {
 		}
 	}
 
+	/**
+	 * Checks a list of StudyResult. Checks each StudyResult whether
+	 * the belonging Study is fine. It also checks whether the
+	 * study is locked. In case of any problem an Exception is thrown.
+	 */
 	public void checkAllStudyResults(List<StudyResult> studyResultList,
 			UserModel loggedInUser, boolean studyMustNotBeLocked)
 			throws ForbiddenException, BadRequestException {
@@ -105,17 +108,19 @@ public class ResultService {
 		}
 	}
 
+	/**
+	 * Gets the corresponding ComponentResult for a list of IDs.
+	 */
 	public List<ComponentResult> getAllComponentResults(
-			List<Long> componentResultIdList) throws JatosGuiException {
+			List<Long> componentResultIdList) throws NotFoundException {
 		List<ComponentResult> componentResultList = new ArrayList<>();
 		for (Long componentResultId : componentResultIdList) {
 			ComponentResult componentResult = componentResultDao
 					.findById(componentResultId);
 			if (componentResult == null) {
-				String errorMsg = MessagesStrings
-						.componentResultNotExist(componentResultId);
-				jatosGuiExceptionThrower.throwAjax(errorMsg,
-						Http.Status.NOT_FOUND);
+				throw new NotFoundException(
+						MessagesStrings
+								.componentResultNotExist(componentResultId));
 			}
 			componentResultList.add(componentResult);
 		}
@@ -126,7 +131,7 @@ public class ResultService {
 	 * Put all ComponentResult's data into a String each in a separate line.
 	 */
 	public String getComponentResultData(
-			List<ComponentResult> componentResultList) throws JatosGuiException {
+			List<ComponentResult> componentResultList) {
 		StringBuilder sb = new StringBuilder();
 		Iterator<ComponentResult> iterator = componentResultList.iterator();
 		while (iterator.hasNext()) {
@@ -143,18 +148,18 @@ public class ResultService {
 	}
 
 	/**
-	 * Get all StudyResults or throw a JatosGuiException if one doesn't exist.
+	 * Get all StudyResults or throw an Exception if one doesn't exist.
+	 * 
+	 * @throws NotFoundException
 	 */
 	public List<StudyResult> getAllStudyResults(List<Long> studyResultIdList)
-			throws JatosGuiException {
+			throws NotFoundException {
 		List<StudyResult> studyResultList = new ArrayList<>();
 		for (Long studyResultId : studyResultIdList) {
 			StudyResult studyResult = studyResultDao.findById(studyResultId);
 			if (studyResult == null) {
-				String errorMsg = MessagesStrings
-						.studyResultNotExist(studyResultId);
-				jatosGuiExceptionThrower.throwAjax(errorMsg,
-						Http.Status.NOT_FOUND);
+				throw new NotFoundException(
+						MessagesStrings.studyResultNotExist(studyResultId));
 			}
 			studyResultList.add(studyResult);
 		}
@@ -179,8 +184,7 @@ public class ResultService {
 	/**
 	 * Put all ComponentResult's data into a String each in a separate line.
 	 */
-	public String getStudyResultData(List<StudyResult> studyResultList)
-			throws JatosGuiException {
+	public String getStudyResultData(List<StudyResult> studyResultList) {
 		StringBuilder sb = new StringBuilder();
 		for (StudyResult studyResult : studyResultList) {
 			Iterator<ComponentResult> iterator = studyResult

@@ -35,6 +35,7 @@ import com.google.inject.Singleton;
 
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
+import exceptions.NotFoundException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -85,8 +86,6 @@ public class StudyResults extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -97,8 +96,8 @@ public class StudyResults extends Controller {
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
-				views.html.gui.result.studysStudyResults.render(studyList,
-						loggedInUser, breadcrumbs, study));
+				views.html.gui.result.studysStudyResults.render(loggedInUser,
+						breadcrumbs, study));
 	}
 
 	@Transactional
@@ -123,14 +122,15 @@ public class StudyResults extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> studyResultIdList = resultService
-				.extractResultIds(studyResultIds);
-		List<StudyResult> studyResultList = resultService
-				.getAllStudyResults(studyResultIdList);
+		List<StudyResult> studyResultList = null;
 		try {
+			List<Long> studyResultIdList = resultService
+					.extractResultIds(studyResultIds);
+			studyResultList = resultService
+					.getAllStudyResults(studyResultIdList);
 			resultService.checkAllStudyResults(studyResultList, loggedInUser,
 					true);
-		} catch (ForbiddenException | BadRequestException e) {
+		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
@@ -207,14 +207,15 @@ public class StudyResults extends Controller {
 		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> studyResultIdList = resultService
-				.extractResultIds(studyResultIds);
-		List<StudyResult> studyResultList = resultService
-				.getAllStudyResults(studyResultIdList);
+		List<StudyResult> studyResultList = null;
 		try {
+			List<Long> studyResultIdList = resultService
+					.extractResultIds(studyResultIds);
+			studyResultList = resultService
+					.getAllStudyResults(studyResultIdList);
 			resultService.checkAllStudyResults(studyResultList, loggedInUser,
 					false);
-		} catch (ForbiddenException | BadRequestException e) {
+		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		String studyResultDataAsStr = resultService

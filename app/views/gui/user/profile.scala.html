@@ -1,7 +1,7 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel,
+@(loggedInUser: UserModel,
 breadcrumbs: String, user: UserModel)
 
-@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs){
 
 <div id="toolbar" class="btn-group">
 	<button id="editProfile" type="button" class="btn btn-primary">Edit Profile</button>

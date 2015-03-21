@@ -1,7 +1,6 @@
 package controllers.gui;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 
 import models.StudyModel;
@@ -71,16 +70,14 @@ public class Workers extends Controller {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		Worker worker = workerDao.findById(workerId);
 		workerService.checkWorker(worker, workerId);
 
 		String breadcrumbs = Breadcrumbs.generateForWorker(worker,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
-				views.html.gui.result.workersStudyResults.render(studyList,
-						loggedInUser, breadcrumbs, worker));
+				views.html.gui.result.workersStudyResults.render(loggedInUser,
+						breadcrumbs, worker));
 	}
 
 	@Transactional

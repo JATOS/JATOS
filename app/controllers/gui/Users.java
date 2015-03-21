@@ -56,13 +56,10 @@ public class Users extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel user = userService.retrieveUser(email);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		userService.checkUserLoggedIn(user, loggedInUser);
-
 		String breadcrumbs = Breadcrumbs.generateForUser(user);
-		return ok(views.html.gui.user.profile.render(studyList, loggedInUser,
-				breadcrumbs, user));
+		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
+				user));
 	}
 
 	/**
@@ -73,11 +70,9 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_USER);
-		return ok(views.html.gui.user.create.render(studyList, loggedInUser,
-				breadcrumbs, Form.form(UserModel.class)));
+		return ok(views.html.gui.user.create.render(loggedInUser, breadcrumbs,
+				Form.form(UserModel.class)));
 	}
 
 	/**
@@ -127,7 +122,7 @@ public class Users extends Controller {
 			}
 			String breadcrumbs = Breadcrumbs.generateForHome("New User");
 			return status(httpStatus, views.html.gui.user.create.render(
-					studyList, loggedInUser, breadcrumbs, form));
+					loggedInUser, breadcrumbs, form));
 		}
 	}
 
@@ -140,7 +135,7 @@ public class Users extends Controller {
 			String breadcrumbs = Breadcrumbs.generateForUser(user,
 					"Edit Profile");
 			return status(httpStatus, views.html.gui.user.editProfile.render(
-					studyList, loggedInUser, breadcrumbs, user, form));
+					loggedInUser, breadcrumbs, user, form));
 		}
 	}
 
@@ -158,8 +153,8 @@ public class Users extends Controller {
 			String breadcrumbs = Breadcrumbs.generateForUser(user,
 					"Change Password");
 			return status(httpStatus,
-					views.html.gui.user.changePassword.render(studyList,
-							loggedInUser, breadcrumbs, form));
+					views.html.gui.user.changePassword.render(loggedInUser,
+							breadcrumbs, form));
 		}
 	}
 
@@ -172,15 +167,12 @@ public class Users extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel user = userService.retrieveUser(email);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		userService.checkUserLoggedIn(user, loggedInUser);
-
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		String breadcrumbs = Breadcrumbs.generateForUser(user,
 				Breadcrumbs.EDIT_PROFILE);
-		return ok(views.html.gui.user.editProfile.render(studyList,
-				loggedInUser, breadcrumbs, user, form));
+		return ok(views.html.gui.user.editProfile.render(loggedInUser,
+				breadcrumbs, user, form));
 	}
 
 	/**
@@ -199,8 +191,8 @@ public class Users extends Controller {
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		if (form.hasErrors()) {
-			return showEditUserAfterError(studyList, loggedInUser, form, loggedInUser,
-					Http.Status.BAD_REQUEST);
+			return showEditUserAfterError(studyList, loggedInUser, form,
+					loggedInUser, Http.Status.BAD_REQUEST);
 		}
 		// Update user in database
 		// Do not update 'email' since it's the ID and should stay
@@ -220,15 +212,13 @@ public class Users extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel user = userService.retrieveUser(email);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		userService.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		String breadcrumbs = Breadcrumbs.generateForUser(user,
 				Breadcrumbs.CHANGE_PASSWORD);
-		return ok(views.html.gui.user.changePassword.render(studyList,
-				loggedInUser, breadcrumbs, form));
+		return ok(views.html.gui.user.changePassword.render(loggedInUser,
+				breadcrumbs, form));
 	}
 
 	/**

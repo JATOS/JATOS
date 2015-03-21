@@ -111,8 +111,6 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			studyService.checkStudyLocked(study);
@@ -124,7 +122,7 @@ public class Components extends Controller {
 		Call submitAction = controllers.gui.routes.Components.submit(studyId);
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.NEW_COMPONENT);
-		return ok(views.html.gui.component.edit.render(studyList, loggedInUser,
+		return ok(views.html.gui.component.edit.render(loggedInUser,
 				breadcrumbs, submitAction, form, study));
 	}
 
@@ -169,8 +167,7 @@ public class Components extends Controller {
 			return status(httpStatus);
 		} else {
 			return status(httpStatus, views.html.gui.component.edit.render(
-					studyList, loggedInUser, breadcrumbs, submitAction, form,
-					study));
+					loggedInUser, breadcrumbs, submitAction, form, study));
 		}
 	}
 
@@ -184,8 +181,6 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		ComponentModel component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
@@ -204,7 +199,7 @@ public class Components extends Controller {
 				studyId, componentId);
 		String breadcrumbs = Breadcrumbs.generateForComponent(study, component,
 				Breadcrumbs.EDIT_PROPERTIES);
-		return ok(views.html.gui.component.edit.render(studyList, loggedInUser,
+		return ok(views.html.gui.component.edit.render(loggedInUser,
 				breadcrumbs, submitAction, form, study));
 	}
 

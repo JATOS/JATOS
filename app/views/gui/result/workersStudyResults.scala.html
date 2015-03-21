@@ -1,7 +1,6 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel,
-breadcrumbs: String, worker: workers.Worker)
+@(loggedInUser: UserModel, breadcrumbs: String, worker: workers.Worker)
 
-@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs){
 
 <!-- Worker Info Panel -->
 <div class="panel panel-default">

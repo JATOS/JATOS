@@ -1,18 +1,14 @@
 package services.gui;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.StudyDao;
-import play.data.validation.ValidationError;
 import play.mvc.Controller;
-import play.mvc.Http;
 import utils.IOUtils;
 
 import com.google.inject.Inject;
@@ -20,7 +16,6 @@ import com.google.inject.Singleton;
 
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
-import exceptions.gui.JatosGuiException;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -30,16 +25,13 @@ import exceptions.gui.JatosGuiException;
 @Singleton
 public class StudyService extends Controller {
 
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final ComponentService componentService;
 	private final ComponentDao componentDao;
 	private final StudyDao studyDao;
 
 	@Inject
-	StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			ComponentService componentService, ComponentDao componentDao,
+	StudyService(ComponentService componentService, ComponentDao componentDao,
 			StudyDao studyDao) {
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.componentService = componentService;
 		this.componentDao = componentDao;
 		this.studyDao = studyDao;
@@ -68,10 +60,7 @@ public class StudyService extends Controller {
 	}
 
 	/**
-	 * Throws a JatosGuiException if a study is locked.
-	 * 
-	 * @param study
-	 * @throws ForbiddenException
+	 * Throws an Exception if a study is locked.
 	 */
 	public void checkStudyLocked(StudyModel study) throws ForbiddenException {
 		if (study.isLocked()) {
@@ -83,19 +72,8 @@ public class StudyService extends Controller {
 		}
 	}
 
-	public void checkWorker(Long studyId, Worker worker)
-			throws JatosGuiException {
-		List<ValidationError> errorList = worker.validate();
-		if (errorList != null && !errorList.isEmpty()) {
-			String errorMsg = errorList.get(0).message();
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
-	}
-
 	/**
-	 * Checks the study and throws a JatosGuiException in case of a problem.
-	 * Distinguishes between normal and Ajax request.
+	 * Checks the study and throws an Exception in case of a problem.
 	 */
 	public void checkStandardForStudy(StudyModel study, Long studyId,
 			UserModel user) throws ForbiddenException, BadRequestException {

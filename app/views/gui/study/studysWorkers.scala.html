@@ -1,7 +1,7 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel,
+@(loggedInUser: UserModel,
 breadcrumbs: String, study: StudyModel)
 
-@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs){
 
 <!-- Workers table -->
 <table id="workersTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
