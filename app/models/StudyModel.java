@@ -319,7 +319,7 @@ public class StudyModel {
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
-		if (title == null || title.isEmpty()) {
+		if (title == null || title.trim().isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.MISSING_TITLE));
 		}
@@ -332,7 +332,7 @@ public class StudyModel {
 			errorList.add(new ValidationError(DESCRIPTION,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (dirName == null || dirName.isEmpty()) {
+		if (dirName == null || dirName.trim().isEmpty()) {
 			errorList.add(new ValidationError(DIRNAME,
 					MessagesStrings.MISSING_DIRNAME));
 		}

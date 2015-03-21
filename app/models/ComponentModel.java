@@ -203,7 +203,7 @@ public class ComponentModel {
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
-		if (title == null || title.isEmpty()) {
+		if (title == null || title.trim().isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.MISSING_TITLE));
 		}
@@ -211,9 +211,10 @@ public class ComponentModel {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (htmlFilePath != null && !htmlFilePath.isEmpty()) {
+		if (htmlFilePath != null && !htmlFilePath.trim().isEmpty()) {
 			String pathRegEx = "^(\\w+)(\\/\\w+)?\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
-			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.isEmpty())) {
+			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.trim()
+					.isEmpty())) {
 				errorList
 						.add(new ValidationError(
 								HTML_FILE_PATH,

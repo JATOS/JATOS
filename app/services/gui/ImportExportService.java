@@ -254,8 +254,7 @@ public class ImportExportService extends Controller {
 				importedStudy.getDirName(), importedStudy.getId()));
 	}
 
-	public File createStudyExportZipFile(StudyModel study)
-			throws IOException {
+	public File createStudyExportZipFile(StudyModel study) throws IOException {
 		File zipFile = null;
 		String studyFileName = IOUtils.generateFileName(study.getTitle());
 		String studyFileSuffix = "." + IOUtils.STUDY_FILE_SUFFIX;
@@ -348,7 +347,8 @@ public class ImportExportService extends Controller {
 	 */
 	private File getTempComponentFile(StudyModel study,
 			String tempComponentFileName) {
-		if (tempComponentFileName == null || tempComponentFileName.isEmpty()) {
+		if (tempComponentFileName == null
+				|| tempComponentFileName.trim().isEmpty()) {
 			return null;
 		}
 		File tempComponentFile = new File(System.getProperty("java.io.tmpdir"),
@@ -362,7 +362,8 @@ public class ImportExportService extends Controller {
 	 */
 	private File getUnzippedStudyDir() {
 		String unzippedStudyDirName = session(SESSION_UNZIPPED_STUDY_DIR);
-		if (unzippedStudyDirName == null || unzippedStudyDirName.isEmpty()) {
+		if (unzippedStudyDirName == null
+				|| unzippedStudyDirName.trim().isEmpty()) {
 			return null;
 		}
 		File unzippedStudyDir = new File(System.getProperty("java.io.tmpdir"),
@@ -371,7 +372,7 @@ public class ImportExportService extends Controller {
 	}
 
 	private File unzipUploadedFile(File file) throws IOException {
-		
+
 		File tempDir = null;
 		try {
 			tempDir = ZipUtil.unzip(file);

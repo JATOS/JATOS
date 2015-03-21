@@ -73,13 +73,14 @@ public class Initializer {
 			public void invoke() throws Throwable {
 				List<StudyModel> studyModelList = studyDao.findAll();
 				for (StudyModel study : studyModelList) {
-					if (study.getUuid() == null || study.getUuid().isEmpty()) {
+					if (study.getUuid() == null
+							|| study.getUuid().trim().isEmpty()) {
 						study.setUuid(UUID.randomUUID().toString());
 						studyDao.update(study);
 					}
 					for (ComponentModel component : study.getComponentList()) {
 						if (component.getUuid() == null
-								|| component.getUuid().isEmpty()) {
+								|| component.getUuid().trim().isEmpty()) {
 							component.setUuid(UUID.randomUUID().toString());
 							componentDao.update(component);
 						}

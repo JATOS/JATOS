@@ -88,7 +88,7 @@ public class Components extends Controller {
 		}
 
 		if (component.getHtmlFilePath() == null
-				|| component.getHtmlFilePath().isEmpty()) {
+				|| component.getHtmlFilePath().trim().isEmpty()) {
 			String errorMsg = MessagesStrings.htmlFilePathEmpty(componentId);
 			jatosGuiExceptionThrower.throwStudies(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);

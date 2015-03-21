@@ -54,7 +54,7 @@ public class StudyAssets extends Controller {
 		String tempStudyAssetsRootPath = Play.application().configuration()
 				.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
 		if (tempStudyAssetsRootPath != null
-				&& !tempStudyAssetsRootPath.isEmpty()) {
+				&& !tempStudyAssetsRootPath.trim().isEmpty()) {
 			// Replace ~ with actual home directory
 			tempStudyAssetsRootPath = tempStudyAssetsRootPath.replace("~",
 					System.getProperty("user.home"));
