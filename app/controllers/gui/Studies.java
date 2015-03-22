@@ -407,7 +407,7 @@ public class Studies extends Controller {
 		String[] checkedUsers = request().body().asFormUrlEncoded()
 				.get(StudyModel.MEMBERS);
 		try {
-			studyService.persistCheckedUsers(study, checkedUsers);
+			studyService.exchangeMembers(study, checkedUsers);
 		} catch (BadRequestException e) {
 			SimpleResult result = (SimpleResult) changeMembers(study.getId(),
 					Http.Status.BAD_REQUEST);

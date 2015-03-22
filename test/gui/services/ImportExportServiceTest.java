@@ -1,7 +1,6 @@
 package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import gui.AbstractGuiTest;
@@ -9,22 +8,16 @@ import gui.AbstractGuiTest;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
-import models.workers.MTSandboxWorker;
-import models.workers.MTWorker;
-import models.workers.OpenStandaloneWorker;
 import models.workers.TesterWorker;
 
 import org.junit.Test;
 
-import play.api.mvc.RequestHeader;
 import play.db.jpa.JPA;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
@@ -34,7 +27,6 @@ import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import common.Global;
 
 /**
@@ -53,17 +45,6 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 		mockContext();
 		// Don't know why, but we have to bind entityManager again
 		JPA.bindForCurrentThread(entityManager);
-	}
-
-	private void mockContext() {
-		Map<String, String> flashData = Collections.emptyMap();
-		Map<String, Object> argData = Collections.emptyMap();
-		Long id = 2L;
-		RequestHeader header = mock(RequestHeader.class);
-		Http.Request request = mock(Http.Request.class);
-		Http.Context context = new Http.Context(id, header, request, flashData,
-				flashData, argData);
-		Http.Context.current.set(context);
 	}
 
 	@Override
@@ -233,23 +214,9 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 	}
 
 	private void checkPropertiesOfBasicExampleStudy(StudyModel study) {
-		assertThat(
-				study.getAllowedWorkerList().contains(JatosWorker.WORKER_TYPE))
-				.isTrue();
-		assertThat(
-				study.getAllowedWorkerList().contains(
-						ClosedStandaloneWorker.WORKER_TYPE)).isTrue();
-		assertThat(
-				study.getAllowedWorkerList().contains(
-						MTSandboxWorker.WORKER_TYPE)).isFalse();
-		assertThat(study.getAllowedWorkerList().contains(MTWorker.WORKER_TYPE))
-				.isFalse();
-		assertThat(
-				study.getAllowedWorkerList().contains(
-						OpenStandaloneWorker.WORKER_TYPE)).isFalse();
-		assertThat(
-				study.getAllowedWorkerList().contains(TesterWorker.WORKER_TYPE))
-				.isTrue();
+		assertThat(study.getAllowedWorkerList()).containsOnly(
+				JatosWorker.WORKER_TYPE, ClosedStandaloneWorker.WORKER_TYPE,
+				TesterWorker.WORKER_TYPE);
 		assertThat(study.getComponentList().size() == 8).isTrue();
 		assertThat(study.getComponent(1).getTitle()).isEqualTo("Hello World");
 		assertThat(study.getLastComponent().getTitle())
@@ -415,23 +382,8 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 		importExportService.importStudyConfirmed(admin, node);
 		entityManager.getTransaction().commit();
 
-		assertThat(
-				study.getAllowedWorkerList().contains(JatosWorker.WORKER_TYPE))
-				.isTrue();
-		assertThat(
-				study.getAllowedWorkerList().contains(
-						ClosedStandaloneWorker.WORKER_TYPE)).isFalse();
-		assertThat(
-				study.getAllowedWorkerList().contains(
-						MTSandboxWorker.WORKER_TYPE)).isFalse();
-		assertThat(study.getAllowedWorkerList().contains(MTWorker.WORKER_TYPE))
-				.isFalse();
-		assertThat(
-				study.getAllowedWorkerList().contains(
-						OpenStandaloneWorker.WORKER_TYPE)).isFalse();
-		assertThat(
-				study.getAllowedWorkerList().contains(TesterWorker.WORKER_TYPE))
-				.isFalse();
+		assertThat(study.getAllowedWorkerList()).containsOnly(
+				JatosWorker.WORKER_TYPE);
 		assertThat(study.getComponentList().size() == 7).isTrue();
 		assertThat(study.getComponent(1).getTitle()).isEqualTo(
 				"Show JSON data ");

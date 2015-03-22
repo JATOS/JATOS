@@ -1,10 +1,14 @@
 package gui;
 
+import static org.mockito.Mockito.mock;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Map;
 
 import javax.persistence.EntityManager;
 
@@ -23,8 +27,10 @@ import persistance.StudyDao;
 import persistance.UserDao;
 import play.GlobalSettings;
 import play.Logger;
+import play.api.mvc.RequestHeader;
 import play.db.jpa.JPA;
 import play.db.jpa.JPAPlugin;
+import play.mvc.Http;
 import play.test.FakeApplication;
 import play.test.Helpers;
 import scala.Option;
@@ -113,6 +119,17 @@ public abstract class AbstractGuiTest {
 	public static void stopDB() {
 		server.stop();
 	}
+	
+	protected void mockContext() {
+		Map<String, String> flashData = Collections.emptyMap();
+		Map<String, Object> argData = Collections.emptyMap();
+		Long id = 2L;
+		RequestHeader header = mock(RequestHeader.class);
+		Http.Request request = mock(Http.Request.class);
+		Http.Context context = new Http.Context(id, header, request, flashData,
+				flashData, argData);
+		Http.Context.current.set(context);
+	}
 
 	protected static void removeStudyAssetsRootDir() throws IOException {
 		File assetsRoot = new File(StudyAssets.STUDY_ASSETS_ROOT_PATH);
@@ -164,12 +181,9 @@ public abstract class AbstractGuiTest {
 
 	protected synchronized StudyModel cloneAndPersistStudy(
 			StudyModel studyToBeCloned) throws IOException {
-		StudyModel studyClone = studyService.cloneStudyProperties(studyToBeCloned);
-		String destDirName;
-		destDirName = IOUtils
-				.cloneStudyAssetsDirectory(studyClone.getDirName());
-		studyClone.setDirName(destDirName);
-		addStudy(studyClone);
+		entityManager.getTransaction().begin();
+		StudyModel studyClone = studyService.cloneStudy(studyToBeCloned, admin);
+		entityManager.getTransaction().commit();
 		return studyClone;
 	}
 

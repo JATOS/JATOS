@@ -1,6 +1,7 @@
 package services.gui;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +16,6 @@ import persistance.StudyDao;
 import persistance.UserDao;
 import persistance.workers.WorkerDao;
 import play.data.validation.ValidationError;
-import play.db.jpa.JPA;
 import play.mvc.Controller;
 import services.RequestScopeMessaging;
 import utils.IOUtils;
@@ -57,29 +57,46 @@ public class StudyService extends Controller {
 	 * Clones the given StudyModel and persists it. Copies the corresponding
 	 * study assets.
 	 */
-	public void cloneStudy(StudyModel study, UserModel loggedInUser)
+	public StudyModel cloneStudy(StudyModel study, UserModel loggedInUser)
 			throws IOException {
 		StudyModel clone = cloneStudyProperties(study);
 		String destDirName = IOUtils.cloneStudyAssetsDirectory(study
 				.getDirName());
 		clone.setDirName(destDirName);
 		studyDao.create(clone, loggedInUser);
-		JPA.em().flush();
+		return clone;
 	}
 
-	public void persistCheckedUsers(StudyModel study, String[] checkedUsers)
+	/**
+	 * Deletes all current members of the given study and adds the new users. A
+	 * user is identified by its email. In case of an empty list an Exception is
+	 * thrown.
+	 */
+	public void exchangeMembers(StudyModel study, String[] userEmailArray)
 			throws BadRequestException {
-		if (checkedUsers == null || checkedUsers.length < 1) {
+		if (userEmailArray == null) {
+			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
+			RequestScopeMessaging.error(errorMsg);
+			throw new BadRequestException(errorMsg);
+		}
+		List<UserModel> userList = new ArrayList<>();
+		for (String email : userEmailArray) {
+			UserModel user = userDao.findByEmail(email);
+			if (user == null) {
+				String errorMsg = MessagesStrings.userNotExist(email);
+				RequestScopeMessaging.error(errorMsg);
+				throw new BadRequestException(errorMsg);
+			}
+			userList.add(userDao.findByEmail(email));
+		}
+		if (userList.isEmpty()) {
 			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
 			RequestScopeMessaging.error(errorMsg);
 			throw new BadRequestException(errorMsg);
 		}
 		study.getMemberList().clear();
-		for (String email : checkedUsers) {
-			UserModel user = userDao.findByEmail(email);
-			if (user != null) {
-				studyDao.addMember(study, user);
-			}
+		for (UserModel user : userList) {
+			studyDao.addMember(study, user);
 		}
 	}
 
@@ -87,7 +104,7 @@ public class StudyService extends Controller {
 	 * Clones a StudyModel. It does not copy the memberList, id, uuid, date or
 	 * locked (set to false).
 	 */
-	public StudyModel cloneStudyProperties(StudyModel study) {
+	private StudyModel cloneStudyProperties(StudyModel study) {
 		StudyModel clone = new StudyModel();
 		clone.setDescription(study.getDescription());
 		clone.setDirName(study.getDirName());
