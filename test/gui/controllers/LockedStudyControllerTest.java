@@ -15,8 +15,8 @@ import org.junit.rules.ExpectedException;
 import play.mvc.HandlerRef;
 import play.mvc.Http;
 import play.mvc.Result;
+import services.gui.StudyService;
 import utils.IOUtils;
-import controllers.gui.Studies;
 import controllers.gui.Users;
 
 /**
@@ -80,7 +80,7 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.changeComponentOrder(studyClone.getId(), studyClone
 						.getComponent(1).getId(),
-						Studies.COMPONENT_POSITION_DOWN);
+						StudyService.COMPONENT_POSITION_DOWN);
 		checkDenyLocked(ref, Http.Status.FORBIDDEN, null);
 		removeStudy(studyClone);
 	}

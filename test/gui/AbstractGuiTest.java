@@ -164,7 +164,7 @@ public abstract class AbstractGuiTest {
 
 	protected synchronized StudyModel cloneAndPersistStudy(
 			StudyModel studyToBeCloned) throws IOException {
-		StudyModel studyClone = studyService.clone(studyToBeCloned);
+		StudyModel studyClone = studyService.cloneStudyProperties(studyToBeCloned);
 		String destDirName;
 		destDirName = IOUtils
 				.cloneStudyAssetsDirectory(studyClone.getDirName());

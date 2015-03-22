@@ -21,13 +21,13 @@ import org.junit.Test;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import services.gui.Breadcrumbs;
+import services.gui.StudyService;
 import utils.IOUtils;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 
-import controllers.gui.Studies;
 import controllers.gui.Users;
 
 /**
@@ -284,7 +284,7 @@ public class StudiesControllerTest extends AbstractGuiTest {
 				controllers.gui.routes.ref.Studies.changeComponentOrder(
 						studyClone.getId(), studyClone.getComponentList()
 								.get(0).getId(),
-						Studies.COMPONENT_POSITION_DOWN),
+						StudyService.COMPONENT_POSITION_DOWN),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -294,7 +294,8 @@ public class StudiesControllerTest extends AbstractGuiTest {
 		result = callAction(
 				controllers.gui.routes.ref.Studies.changeComponentOrder(
 						studyClone.getId(), studyClone.getComponentList()
-								.get(1).getId(), Studies.COMPONENT_POSITION_UP),
+								.get(1).getId(),
+						StudyService.COMPONENT_POSITION_UP),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));

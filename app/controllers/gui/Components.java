@@ -81,9 +81,13 @@ public class Components extends Controller {
 		ComponentModel component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		}
+		try {
 			componentService.checkStandardForComponents(studyId, componentId,
 					loggedInUser, component);
-		} catch (ForbiddenException | BadRequestException e) {
+		} catch (BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
 
@@ -237,7 +241,8 @@ public class Components extends Controller {
 					Http.Status.BAD_REQUEST, breadcrumbs, submitAction, study);
 		}
 
-		componentService.updateComponentAfterEdit(component, form.get());
+		ComponentModel editedComponent = form.get();
+		componentService.updateComponentAfterEdit(component, editedComponent);
 		return redirectAfterEdit(studyId, componentId, study);
 	}
 

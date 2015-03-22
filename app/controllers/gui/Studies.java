@@ -18,12 +18,10 @@ import persistance.ComponentDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.UserDao;
-import persistance.workers.WorkerDao;
 import play.Logger;
 import play.api.mvc.Call;
 import play.data.Form;
 import play.data.validation.ValidationError;
-import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -62,8 +60,6 @@ import exceptions.gui.JatosGuiException;
 public class Studies extends Controller {
 
 	private static final String CLASS_NAME = Studies.class.getSimpleName();
-	public static final String COMPONENT_POSITION_DOWN = "down";
-	public static final String COMPONENT_POSITION_UP = "up";
 
 	private final JsonUtils jsonUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
@@ -75,14 +71,13 @@ public class Studies extends Controller {
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 	private final StudyResultDao studyResultDao;
-	private final WorkerDao workerDao;
 
 	@Inject
 	Studies(UserDao userDao, JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, WorkerService workerService,
 			StudyDao studyDao, ComponentDao componentDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, WorkerDao workerDao) {
+			StudyResultDao studyResultDao) {
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
@@ -93,7 +88,6 @@ public class Studies extends Controller {
 		this.componentDao = componentDao;
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
-		this.workerDao = workerDao;
 	}
 
 	/**
@@ -162,7 +156,17 @@ public class Studies extends Controller {
 		}
 
 		studyDao.create(study, loggedInUser);
-		createStudyAssetsDir(loggedInUser, studyList, study);
+		
+		try {
+			IOUtils.createStudyAssetsDir(study.getDirName());
+		} catch (IOException e) {
+			errorList = new ArrayList<>();
+			errorList.add(new ValidationError(StudyModel.DIRNAME, e
+					.getMessage()));
+			return failStudyCreate(loggedInUser, studyList, study,
+					errorList);
+		}
+		
 		return redirect(controllers.gui.routes.Studies.index(study.getId()));
 	}
 
@@ -176,10 +180,10 @@ public class Studies extends Controller {
 				Http.Status.BAD_REQUEST, breadcrumbs, submitAction, false);
 	}
 
-	private Result showEditStudyAfterError(
-			UserModel loggedInUser, Form<StudyModel> form,
-			List<ValidationError> errorList, int httpStatus,
-			String breadcrumbs, Call submitAction, boolean studyIsLocked) {
+	private Result showEditStudyAfterError(UserModel loggedInUser,
+			Form<StudyModel> form, List<ValidationError> errorList,
+			int httpStatus, String breadcrumbs, Call submitAction,
+			boolean studyIsLocked) {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
 		} else {
@@ -254,15 +258,15 @@ public class Studies extends Controller {
 					errorList);
 		}
 
-		String oldDirName = study.getDirName();
-
-		study.setTitle(updatedStudy.getTitle());
-		study.setDescription(updatedStudy.getDescription());
-		study.setJsonData(updatedStudy.getJsonData());
-		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
-		studyDao.update(study);
-		renameStudyAssetsDir(study, loggedInUser, studyList,
-				updatedStudy.getDirName(), oldDirName);
+		studyService.updateStudy(study, updatedStudy);
+		try {
+			studyService.renameStudyAssetsDir(study, updatedStudy.getDirName());
+		} catch (IOException e) {
+			errorList = new ArrayList<>();
+			errorList.add(new ValidationError(StudyModel.DIRNAME, e
+					.getMessage()));
+			return failStudyEdit(loggedInUser, studyList, study, errorList);
+		}
 		return redirect(controllers.gui.routes.Studies.index(studyId));
 	}
 
@@ -274,8 +278,8 @@ public class Studies extends Controller {
 				Breadcrumbs.EDIT_PROPERTIES);
 		Call submitAction = controllers.gui.routes.Studies.submitEdited(study
 				.getId());
-		return showEditStudyAfterError(loggedInUser, form,
-				errorList, Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
+		return showEditStudyAfterError(loggedInUser, form, errorList,
+				Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
 				study.isLocked());
 	}
 
@@ -320,7 +324,12 @@ public class Studies extends Controller {
 		}
 
 		studyDao.remove(study);
-		removeStudyAssetsDir(study);
+		try {
+			IOUtils.removeStudyAssetsDir(study.getDirName());
+		} catch (IOException e) {
+			String errorMsg = e.getMessage();
+			return internalServerError(errorMsg);
+		}
 		return ok().as("text/html");
 	}
 
@@ -338,13 +347,15 @@ public class Studies extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		StudyModel clone = studyService.clone(study);
-		cloneStudyAssetsDir(study, clone);
-		studyDao.create(clone, loggedInUser);
-		JPA.em().flush();
+		try {
+			studyService.cloneStudy(study, loggedInUser);
+		} catch (IOException e) {
+			jatosGuiExceptionThrower.throwAjax(e.getMessage(),
+					Http.Status.INTERNAL_SERVER_ERROR);
+		}
 		return ok().as("text/html");
 	}
 
@@ -395,26 +406,14 @@ public class Studies extends Controller {
 
 		String[] checkedUsers = request().body().asFormUrlEncoded()
 				.get(StudyModel.MEMBERS);
-		persistCheckedUsers(study, checkedUsers);
-		return redirect(controllers.gui.routes.Studies.index(studyId));
-	}
-
-	private void persistCheckedUsers(StudyModel study, String[] checkedUsers)
-			throws JatosGuiException {
-		if (checkedUsers == null || checkedUsers.length < 1) {
-			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
-			RequestScopeMessaging.error(errorMsg);
+		try {
+			studyService.persistCheckedUsers(study, checkedUsers);
+		} catch (BadRequestException e) {
 			SimpleResult result = (SimpleResult) changeMembers(study.getId(),
 					Http.Status.BAD_REQUEST);
-			throw new JatosGuiException(result, errorMsg);
+			throw new JatosGuiException(result, e.getMessage());
 		}
-		study.getMemberList().clear();
-		for (String email : checkedUsers) {
-			UserModel user = userDao.findByEmail(email);
-			if (user != null) {
-				studyDao.addMember(study, user);
-			}
-		}
+		return redirect(controllers.gui.routes.Studies.index(studyId));
 	}
 
 	/**
@@ -436,25 +435,10 @@ public class Studies extends Controller {
 			studyService.checkStudyLocked(study);
 			componentService.checkStandardForComponents(studyId, componentId,
 					loggedInUser, component);
+			studyService.changeComponentPosition(direction, study, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-
-		switch (direction) {
-		case COMPONENT_POSITION_UP:
-			studyService.componentPositionMinusOne(study, component);
-			break;
-		case COMPONENT_POSITION_DOWN:
-			studyService.componentPositionPlusOne(study, component);
-			break;
-		default:
-			return badRequest(MessagesStrings.studyReorderUnknownDirection(
-					direction, studyId));
-		}
-		// The actual change in order happens within the component model. The
-		// study model we just have to refresh.
-		studyDao.refresh(study);
-
 		return ok().as("text/html");
 	}
 
@@ -499,21 +483,24 @@ public class Studies extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		JsonNode json = request().body().asJson();
 		if (json == null) {
 			String errorMsg = MessagesStrings
 					.studyCreationOfStandaloneRunFailed(studyId);
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
+			return badRequest(errorMsg);
 		}
 		String comment = json.findPath(ClosedStandaloneWorker.COMMENT).asText()
 				.trim();
-		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
-		checkWorker(studyId, worker);
-		workerDao.create(worker);
+		ClosedStandaloneWorker worker;
+		try {
+			worker = studyService
+					.createClosedStandaloneWorker(comment, studyId);
+		} catch (BadRequestException e) {
+			return badRequest(e.getMessage());
+		}
 
 		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
@@ -521,16 +508,6 @@ public class Studies extends Controller {
 				+ ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID + "="
 				+ worker.getId();
 		return ok(url);
-	}
-
-	private void checkWorker(Long studyId, Worker worker)
-			throws JatosGuiException {
-		List<ValidationError> errorList = worker.validate();
-		if (errorList != null && !errorList.isEmpty()) {
-			String errorMsg = errorList.get(0).message();
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
 	}
 
 	/**
@@ -548,20 +525,22 @@ public class Studies extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		JsonNode json = request().body().asJson();
 		if (json == null) {
 			String errorMsg = MessagesStrings
 					.studyCreationOfTesterRunFailed(studyId);
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
+			return badRequest(errorMsg);
 		}
 		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
-		TesterWorker worker = new TesterWorker(comment);
-		checkWorker(studyId, worker);
-		workerDao.create(worker);
+		TesterWorker worker;
+		try {
+			worker = studyService.createTesterWorker(comment, studyId);
+		} catch (BadRequestException e) {
+			return badRequest(e.getMessage());
+		}
 
 		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
@@ -665,74 +644,6 @@ public class Studies extends Controller {
 	@Transactional
 	public Result workers(Long studyId) throws JatosGuiException {
 		return workers(studyId, null, Http.Status.OK);
-	}
-
-	/**
-	 * Creates a study assets dir in the file system. It's a wrapper around the
-	 * corresponding IOUtils method.
-	 */
-	private void createStudyAssetsDir(UserModel loggedInUser,
-			List<StudyModel> studyList, StudyModel study)
-			throws JatosGuiException {
-		try {
-			IOUtils.createStudyAssetsDir(study.getDirName());
-		} catch (IOException e) {
-			List<ValidationError> errorList = new ArrayList<>();
-			errorList.add(new ValidationError(StudyModel.DIRNAME, e
-					.getMessage()));
-			Result result = failStudyCreate(loggedInUser, studyList, study,
-					errorList);
-			throw new JatosGuiException((SimpleResult) result);
-		}
-	}
-
-	/**
-	 * Renames study assets dir. It's a wrapper around the corresponding IOUtils
-	 * method.
-	 */
-	private void renameStudyAssetsDir(StudyModel study, UserModel loggedInUser,
-			List<StudyModel> studyList, String newDirName, String oldDirName)
-			throws JatosGuiException {
-		List<ValidationError> errorList;
-		try {
-			studyService.renameStudyAssetsDir(study, newDirName);
-		} catch (IOException e) {
-			errorList = new ArrayList<>();
-			errorList.add(new ValidationError(StudyModel.DIRNAME, e
-					.getMessage()));
-			failStudyEdit(loggedInUser, studyList, study, errorList);
-		}
-	}
-
-	/**
-	 * Removes study assets dir. It's a wrapper around the corresponding IOUtils
-	 * method.
-	 */
-	private void removeStudyAssetsDir(StudyModel study)
-			throws JatosGuiException {
-		try {
-			IOUtils.removeStudyAssetsDir(study.getDirName());
-		} catch (IOException e) {
-			String errorMsg = e.getMessage();
-			jatosGuiExceptionThrower.throwAjax(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
-		}
-	}
-
-	/**
-	 * Copy study assets' dir and it's content to cloned study assets' dir. It's
-	 * a wrapper around the corresponding IOUtils method.
-	 */
-	private void cloneStudyAssetsDir(StudyModel study, StudyModel clone)
-			throws JatosGuiException {
-		try {
-			String destDirName = IOUtils.cloneStudyAssetsDirectory(study
-					.getDirName());
-			clone.setDirName(destDirName);
-		} catch (IOException e) {
-			jatosGuiExceptionThrower.throwAjax(e.getMessage(),
-					Http.Status.INTERNAL_SERVER_ERROR);
-		}
 	}
 
 }

@@ -3,7 +3,12 @@ package gui.controllers;
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.FORBIDDEN;
 import static play.mvc.Http.Status.SEE_OTHER;
-import static play.test.Helpers.*;
+import static play.test.Helpers.callAction;
+import static play.test.Helpers.contentAsString;
+import static play.test.Helpers.fakeRequest;
+import static play.test.Helpers.flash;
+import static play.test.Helpers.redirectLocation;
+import static play.test.Helpers.status;
 import gui.AbstractGuiTest;
 
 import java.io.IOException;
@@ -13,12 +18,12 @@ import models.UserModel;
 
 import org.junit.Test;
 
-import controllers.gui.Studies;
-import controllers.gui.Users;
 import play.mvc.HandlerRef;
 import play.mvc.Result;
 import services.FlashScopeMessaging;
+import services.gui.StudyService;
 import utils.IOUtils;
+import controllers.gui.Users;
 
 /**
  * Testing whether actions do proper access control
@@ -185,7 +190,7 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.changeComponentOrder(studyClone.getId(), studyClone
 						.getComponentList().get(0).getId(),
-						Studies.COMPONENT_POSITION_DOWN);
+						StudyService.COMPONENT_POSITION_DOWN);
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
 		removeStudy(studyClone);
