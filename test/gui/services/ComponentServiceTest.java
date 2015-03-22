@@ -118,7 +118,8 @@ public class ComponentServiceTest extends AbstractGuiTest {
 		addStudy(study);
 		ComponentModel component = study.getFirstComponent();
 		// Study not set automatically, weird!
-		component.setStudy(study);;
+		component.setStudy(study);
+		;
 
 		try {
 			componentService.checkStandardForComponents(study.getId(),
@@ -127,34 +128,37 @@ public class ComponentServiceTest extends AbstractGuiTest {
 			Fail.fail();
 		}
 
-		study.removeComponent(component);
+		long nonExistentStudyId = 2l;
 		try {
-			componentService.checkStandardForComponents(study.getId(),
+			componentService.checkStandardForComponents(nonExistentStudyId,
 					component.getId(), admin, component);
+			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.componentNotBelongToStudy(study.getId(),
+					MessagesStrings.componentNotBelongToStudy(nonExistentStudyId,
 							component.getId()));
 		}
-		
+
 		component.setStudy(null);
 		try {
 			componentService.checkStandardForComponents(study.getId(),
 					component.getId(), admin, component);
+			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
 					MessagesStrings.componentHasNoStudy(component.getId()));
 		}
-		
+
 		component = null;
 		try {
-			componentService.checkStandardForComponents(study.getId(),
-					null, admin, component);
+			componentService.checkStandardForComponents(study.getId(), null,
+					admin, component);
+			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
 					MessagesStrings.componentNotExist(null));
 		}
-		
+
 		// Clean-up
 		removeStudy(study);
 	}

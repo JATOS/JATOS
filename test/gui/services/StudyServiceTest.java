@@ -145,4 +145,49 @@ public class StudyServiceTest extends AbstractGuiTest {
 		removeStudy(study);
 	}
 
+	@Test
+	public void checkUpdateStudy() throws NoSuchAlgorithmException, IOException {
+
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		StudyModel updatedStudy = studyService.cloneStudy(study, admin);
+		updatedStudy.removeAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
+		updatedStudy.removeAllowedWorker(TesterWorker.WORKER_TYPE);
+		updatedStudy.getComponentList().remove(0);
+		updatedStudy.getLastComponent().setTitle("Changed title");
+		updatedStudy.setDescription("Changed description");
+		updatedStudy.setJsonData("{}");
+		updatedStudy.setTitle("Changed Title");
+		updatedStudy.setUuid("changed uuid");
+		updatedStudy.getMemberList().remove(admin);
+		long studyId = study.getId();
+
+		entityManager.getTransaction().begin();
+		studyService.updateStudy(study, updatedStudy);
+		entityManager.getTransaction().commit();
+
+		// Changed
+		assertThat(study.getTitle()).isEqualTo(updatedStudy.getTitle());
+		assertThat(study.getDescription()).isEqualTo(
+				updatedStudy.getDescription());
+		assertThat(study.getJsonData()).isEqualTo(updatedStudy.getJsonData());
+		assertThat(study.getAllowedWorkerList()).containsOnly(
+				JatosWorker.WORKER_TYPE);
+
+		// Unchanged
+		assertThat(study.getComponentList().size() == 8).isTrue();
+		assertThat(study.getComponent(1).getTitle()).isEqualTo("Hello World");
+		assertThat(study.getLastComponent().getTitle())
+				.isEqualTo("Quit button");
+		assertThat(study.getId()).isEqualTo(studyId);
+		assertThat(study.getMemberList().contains(admin)).isTrue();
+		assertThat(study.getUuid()).isEqualTo(
+				"5c85bd82-0258-45c6-934a-97ecc1ad6617");
+
+		// Clean-up
+		removeStudy(study);
+		removeStudy(updatedStudy);
+	}
+
 }

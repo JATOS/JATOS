@@ -59,6 +59,7 @@ public class ResultServiceTest extends AbstractGuiTest {
 
 		try {
 			resultIdList = resultService.extractResultIds("1,b,3");
+			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
 					MessagesStrings.resultIdMalformed("b"));
@@ -66,6 +67,7 @@ public class ResultServiceTest extends AbstractGuiTest {
 
 		try {
 			resultIdList = resultService.extractResultIds("");
+			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
 					MessagesStrings.NO_RESULTS_SELECTED);
@@ -84,6 +86,7 @@ public class ResultServiceTest extends AbstractGuiTest {
 		List<Long> idList = resultService.extractResultIds("1,2,3");
 		try {
 			resultService.getAllComponentResults(idList);
+			Fail.fail();
 		} catch (NotFoundException e) {
 			assertThat(e.getMessage()).isEqualTo(
 					MessagesStrings.componentResultNotExist(1l));
