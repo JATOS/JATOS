@@ -129,7 +129,10 @@ public class StudyService extends Controller {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
 		study.setJsonData(updatedStudy.getJsonData());
-		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
+		study.getAllowedWorkerList().clear();
+		for (String workerType : updatedStudy.getAllowedWorkerList()) {
+			study.addAllowedWorker(workerType);
+		}
 		studyDao.update(study);
 	}
 
