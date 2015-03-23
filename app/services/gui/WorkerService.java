@@ -7,9 +7,13 @@ import java.util.Set;
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
+import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
+import models.workers.TesterWorker;
 import models.workers.Worker;
 import persistance.StudyResultDao;
+import persistance.workers.WorkerDao;
+import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http;
 
@@ -31,13 +35,16 @@ public class WorkerService extends Controller {
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final StudyResultDao studyResultDao;
+	private final WorkerDao workerDao;
 
 	@Inject
 	WorkerService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService, StudyResultDao studyResultDao) {
+			StudyService studyService, StudyResultDao studyResultDao,
+			WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.studyResultDao = studyResultDao;
+		this.workerDao = workerDao;
 	}
 
 	/**
@@ -55,8 +62,9 @@ public class WorkerService extends Controller {
 
 	/**
 	 * Check whether the removal of this worker is allowed.
-	 * @throws BadRequestException 
-	 * @throws ForbiddenException 
+	 * 
+	 * @throws BadRequestException
+	 * @throws ForbiddenException
 	 */
 	public void checkRemovalAllowed(Worker worker, UserModel loggedInUser)
 			throws ForbiddenException, BadRequestException {
@@ -89,6 +97,37 @@ public class WorkerService extends Controller {
 			workerSet.add(studyResult.getWorker());
 		}
 		return workerSet;
+	}
+
+	/**
+	 * Creates, validates and persists a ClosedStandaloneWorker.
+	 */
+	public ClosedStandaloneWorker createClosedStandaloneWorker(String comment,
+			Long studyId) throws BadRequestException {
+		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
+		validateWorker(studyId, worker);
+		workerDao.create(worker);
+		return worker;
+	}
+
+	/**
+	 * Creates, validates and persists a TesterWorker.
+	 */
+	public TesterWorker createTesterWorker(String comment, Long studyId)
+			throws BadRequestException {
+		TesterWorker worker = new TesterWorker(comment);
+		validateWorker(studyId, worker);
+		workerDao.create(worker);
+		return worker;
+	}
+
+	private void validateWorker(Long studyId, Worker worker)
+			throws BadRequestException {
+		List<ValidationError> errorList = worker.validate();
+		if (errorList != null && !errorList.isEmpty()) {
+			String errorMsg = errorList.get(0).message();
+			throw new BadRequestException(errorMsg);
+		}
 	}
 
 }

@@ -156,17 +156,16 @@ public class Studies extends Controller {
 		}
 
 		studyDao.create(study, loggedInUser);
-		
+
 		try {
 			IOUtils.createStudyAssetsDir(study.getDirName());
 		} catch (IOException e) {
 			errorList = new ArrayList<>();
 			errorList.add(new ValidationError(StudyModel.DIRNAME, e
 					.getMessage()));
-			return failStudyCreate(loggedInUser, studyList, study,
-					errorList);
+			return failStudyCreate(loggedInUser, studyList, study, errorList);
 		}
-		
+
 		return redirect(controllers.gui.routes.Studies.index(study.getId()));
 	}
 
@@ -496,8 +495,8 @@ public class Studies extends Controller {
 				.trim();
 		ClosedStandaloneWorker worker;
 		try {
-			worker = studyService
-					.createClosedStandaloneWorker(comment, studyId);
+			worker = workerService.createClosedStandaloneWorker(comment,
+					studyId);
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}
@@ -537,7 +536,7 @@ public class Studies extends Controller {
 		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
 		TesterWorker worker;
 		try {
-			worker = studyService.createTesterWorker(comment, studyId);
+			worker = workerService.createTesterWorker(comment, studyId);
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}

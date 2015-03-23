@@ -8,14 +8,9 @@ import java.util.Map;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.workers.ClosedStandaloneWorker;
-import models.workers.TesterWorker;
-import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.StudyDao;
 import persistance.UserDao;
-import persistance.workers.WorkerDao;
-import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import services.RequestScopeMessaging;
 import utils.IOUtils;
@@ -41,16 +36,14 @@ public class StudyService extends Controller {
 	private final ComponentDao componentDao;
 	private final StudyDao studyDao;
 	private final UserDao userDao;
-	private final WorkerDao workerDao;
 
 	@Inject
 	StudyService(ComponentService componentService, ComponentDao componentDao,
-			StudyDao studyDao, UserDao userDao, WorkerDao workerDao) {
+			StudyDao studyDao, UserDao userDao) {
 		this.componentService = componentService;
 		this.componentDao = componentDao;
 		this.studyDao = studyDao;
 		this.userDao = userDao;
-		this.workerDao = workerDao;
 	}
 
 	/**
@@ -143,9 +136,6 @@ public class StudyService extends Controller {
 		if (study.isLocked()) {
 			String errorMsg = MessagesStrings.studyLocked(study.getId());
 			throw new ForbiddenException(errorMsg);
-			// jatosGuiExceptionThrower.throwRedirectOrForbidden(
-			// controllers.gui.routes.Studies.index(study.getId()),
-			// errorMsg);
 		}
 	}
 
@@ -216,31 +206,6 @@ public class StudyService extends Controller {
 		int position2 = study.getComponentList().indexOf(component2) + 1;
 		componentDao.changePosition(component1, position2);
 		componentDao.changePosition(component2, position1);
-	}
-
-	public ClosedStandaloneWorker createClosedStandaloneWorker(String comment,
-			Long studyId) throws BadRequestException {
-		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
-		checkWorker(studyId, worker);
-		workerDao.create(worker);
-		return worker;
-	}
-
-	public TesterWorker createTesterWorker(String comment, Long studyId)
-			throws BadRequestException {
-		TesterWorker worker = new TesterWorker(comment);
-		checkWorker(studyId, worker);
-		workerDao.create(worker);
-		return worker;
-	}
-
-	private void checkWorker(Long studyId, Worker worker)
-			throws BadRequestException {
-		List<ValidationError> errorList = worker.validate();
-		if (errorList != null && !errorList.isEmpty()) {
-			String errorMsg = errorList.get(0).message();
-			throw new BadRequestException(errorMsg);
-		}
 	}
 
 	/**
