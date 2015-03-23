@@ -2,11 +2,15 @@ package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import gui.AbstractGuiTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
+import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.ClosedStandaloneWorker;
@@ -22,7 +26,6 @@ import play.db.jpa.JPA;
 import services.gui.MessagesStrings;
 import services.gui.StudyService;
 import utils.IOUtils;
-
 import common.Global;
 
 /**
@@ -147,7 +150,6 @@ public class StudyServiceTest extends AbstractGuiTest {
 
 	@Test
 	public void checkUpdateStudy() throws NoSuchAlgorithmException, IOException {
-
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
@@ -188,6 +190,180 @@ public class StudyServiceTest extends AbstractGuiTest {
 		// Clean-up
 		removeStudy(study);
 		removeStudy(updatedStudy);
+	}
+
+	@Test
+	public void testCheckStudyLocked() throws NoSuchAlgorithmException,
+			IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		try {
+			studyService.checkStudyLocked(study);
+		} catch (ForbiddenException e) {
+			Fail.fail();
+		}
+
+		study.setLocked(true);
+		try {
+			studyService.checkStudyLocked(study);
+			Fail.fail();
+		} catch (ForbiddenException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.studyLocked(study.getId()));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void testCheckStandardForStudy() throws NoSuchAlgorithmException,
+			IOException {
+		try {
+			studyService.checkStandardForStudy(null, 1l, admin);
+			Fail.fail();
+		} catch (ForbiddenException e) {
+			Fail.fail();
+		} catch (BadRequestException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.studyNotExist(1l));
+		}
+
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+		try {
+			studyService.checkStandardForStudy(study, study.getId(), admin);
+		} catch (ForbiddenException e) {
+			Fail.fail();
+		} catch (BadRequestException e) {
+			Fail.fail();
+		}
+
+		study.getMemberList().remove(admin);
+		try {
+			studyService.checkStandardForStudy(study, study.getId(), admin);
+			Fail.fail();
+		} catch (ForbiddenException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.studyNotMember(admin.getName(),
+							admin.getEmail(), study.getId(), study.getTitle()));
+		} catch (BadRequestException e) {
+			Fail.fail();
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkChangeComponentPosition() throws NoSuchAlgorithmException,
+			IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		// First component + down -> second
+		ComponentModel component = study.getFirstComponent();
+		try {
+			entityManager.getTransaction().begin();
+			studyService.changeComponentPosition(
+					StudyService.COMPONENT_POSITION_DOWN, study, component);
+			entityManager.getTransaction().commit();
+		} catch (BadRequestException e) {
+			Fail.fail();
+		}
+		assertThat(study.getComponent(2)).isEqualTo(component);
+
+		// Second component + up -> first
+		try {
+			entityManager.getTransaction().begin();
+			studyService.changeComponentPosition(
+					StudyService.COMPONENT_POSITION_UP, study, component);
+			entityManager.getTransaction().commit();
+		} catch (BadRequestException e) {
+			Fail.fail();
+		}
+		assertThat(study.getComponent(1)).isEqualTo(component);
+
+		// First component + up -> still first
+		try {
+			entityManager.getTransaction().begin();
+			studyService.changeComponentPosition(
+					StudyService.COMPONENT_POSITION_UP, study, component);
+			entityManager.getTransaction().commit();
+		} catch (BadRequestException e) {
+			Fail.fail();
+		}
+		assertThat(study.getComponent(1)).isEqualTo(component);
+
+		// Last component + down -> still last
+		component = study.getLastComponent();
+		try {
+			entityManager.getTransaction().begin();
+			studyService.changeComponentPosition(
+					StudyService.COMPONENT_POSITION_DOWN, study, component);
+			entityManager.getTransaction().commit();
+		} catch (BadRequestException e) {
+			Fail.fail();
+		}
+		assertThat(study.getLastComponent()).isEqualTo(component);
+
+		// Last component + down -> still last
+		try {
+			studyService.changeComponentPosition("bla", study, component);
+			Fail.fail();
+		} catch (BadRequestException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.studyReorderUnknownDirection("bla",
+							study.getId()));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkBindStudyFromRequest() {
+		Map<String, String[]> formMap = new HashMap<String, String[]>();
+		String[] titleArray = { "This is a title" };
+		formMap.put(StudyModel.TITLE, titleArray);
+		String[] descArray = { "This is a description" };
+		formMap.put(StudyModel.DESCRIPTION, descArray);
+		String[] dirNameArray = { "dir_name" };
+		formMap.put(StudyModel.DIRNAME, dirNameArray);
+		String[] jsonArray = { "{}" };
+		formMap.put(StudyModel.JSON_DATA, jsonArray);
+		String[] allowedWorkerArray = { JatosWorker.WORKER_TYPE };
+		formMap.put(StudyModel.ALLOWED_WORKER_LIST, allowedWorkerArray);
+
+		StudyModel study = studyService.bindStudyFromRequest(formMap);
+		assertThat(study.getTitle()).isEqualTo("This is a title");
+		assertThat(study.getDescription()).isEqualTo("This is a description");
+		assertThat(study.getDirName()).isEqualTo("dir_name");
+		assertThat(study.getJsonData()).isEqualTo("{ }");
+		assertThat(study.getAllowedWorkerList()).containsOnly(
+				JatosWorker.WORKER_TYPE);
+	}
+
+	@Test
+	public void checkRenameStudyAssetsDir() throws NoSuchAlgorithmException,
+			IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		String oldDirName = study.getDirName();
+
+		entityManager.getTransaction().begin();
+		studyService.renameStudyAssetsDir(study, "changed_dirname");
+		entityManager.getTransaction().commit();
+
+		assertThat(study.getDirName()).isEqualTo("changed_dirname");
+		assertThat(IOUtils.checkStudyAssetsDirExists("changed_dirname"))
+				.isTrue();
+		assertThat(IOUtils.checkStudyAssetsDirExists(oldDirName)).isFalse();
+		
+		// Clean-up
+		removeStudy(study);
 	}
 
 }
