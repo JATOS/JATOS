@@ -67,7 +67,8 @@ public class Users extends Controller {
 			user = userService.retrieveUser(email);
 			userService.checkUserLoggedIn(user, loggedInUser);
 		} catch (BadRequestException | ForbiddenException e) {
-			jatosGuiExceptionThrower.throwHome(e);
+			jatosGuiExceptionThrower.throwRedirect(e,
+					controllers.gui.routes.Home.home());
 		}
 		String breadcrumbs = Breadcrumbs.generateForUser(user);
 		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
@@ -205,7 +206,8 @@ public class Users extends Controller {
 			user = userService.retrieveUser(email);
 			userService.checkUserLoggedIn(user, loggedInUser);
 		} catch (BadRequestException | ForbiddenException e) {
-			jatosGuiExceptionThrower.throwRedirect(e, controllers.gui.routes.Home.home());
+			jatosGuiExceptionThrower.throwRedirect(e,
+					controllers.gui.routes.Home.home());
 		}
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
@@ -268,7 +270,7 @@ public class Users extends Controller {
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 
 		DynamicForm requestData = Form.form().bindFromRequest();
-		String newPassword = requestData.get(UserModel.NEW_PASSWORD);
+		String newPassword = requestData.get(UserModel.PASSWORD);
 		String newPasswordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
 		String oldPasswordHash = userService.getHashMDFive(requestData
 				.get(UserModel.OLD_PASSWORD));

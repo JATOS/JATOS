@@ -35,7 +35,6 @@ public class UserModel {
 	public static final String PASSWORD = "password";
 	public static final String PASSWORD_REPEAT = "passwordRepeat";
 	public static final String OLD_PASSWORD = "oldPassword";
-	public static final String NEW_PASSWORD = "newPassword";
 
 	@Id
 	private String email;
