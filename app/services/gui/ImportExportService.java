@@ -32,7 +32,7 @@ import exceptions.ForbiddenException;
  * @author Kristian Lange
  */
 @Singleton
-public class ImportExportService extends Controller {
+public class ImportExportService {
 
 	public static final String COMPONENT_TITLE = "componentTitle";
 	public static final String COMPONENT_EXISTS = "componentExists";
@@ -67,8 +67,8 @@ public class ImportExportService extends Controller {
 			throw new IOException(MessagesStrings.FILE_MISSING);
 		}
 		// Remember component's file name
-		session(ImportExportService.SESSION_TEMP_COMPONENT_FILE, filePart
-				.getFile().getName());
+		Controller.session(ImportExportService.SESSION_TEMP_COMPONENT_FILE,
+				filePart.getFile().getName());
 
 		// If wrong key the upload comes from the wrong form
 		if (!filePart.getKey().equals(ComponentModel.COMPONENT)) {
@@ -112,14 +112,16 @@ public class ImportExportService extends Controller {
 	}
 
 	public void cleanupAfterComponentImport(StudyModel study) {
-		String tempComponentFileName = session(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
+		String tempComponentFileName = Controller
+				.session(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
 		if (tempComponentFileName != null) {
 			File componentFile = getTempComponentFile(study,
 					tempComponentFileName);
 			if (componentFile != null) {
 				componentFile.delete();
 			}
-			session().remove(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
+			Controller.session().remove(
+					ImportExportService.SESSION_TEMP_COMPONENT_FILE);
 		}
 	}
 
@@ -129,7 +131,7 @@ public class ImportExportService extends Controller {
 		StudyModel uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, false);
 
 		// Remember study assets' dir name
-		session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
+		Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
 				tempUnzippedStudyDir.getName());
 
 		StudyModel currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
@@ -185,7 +187,8 @@ public class ImportExportService extends Controller {
 		if (tempUnzippedStudyDir != null) {
 			tempUnzippedStudyDir.delete();
 		}
-		session().remove(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
+		Controller.session().remove(
+				ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
 	}
 
 	private void checkStudyImport(UserModel loggedInUser,
@@ -361,7 +364,8 @@ public class ImportExportService extends Controller {
 	 * is stored in session. Discard session variable afterwards.
 	 */
 	private File getUnzippedStudyDir() {
-		String unzippedStudyDirName = session(SESSION_UNZIPPED_STUDY_DIR);
+		String unzippedStudyDirName = Controller
+				.session(SESSION_UNZIPPED_STUDY_DIR);
 		if (unzippedStudyDirName == null
 				|| unzippedStudyDirName.trim().isEmpty()) {
 			return null;

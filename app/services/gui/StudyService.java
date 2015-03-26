@@ -11,7 +11,6 @@ import models.UserModel;
 import persistance.ComponentDao;
 import persistance.StudyDao;
 import persistance.UserDao;
-import play.mvc.Controller;
 import services.RequestScopeMessaging;
 import utils.IOUtils;
 
@@ -27,7 +26,7 @@ import exceptions.ForbiddenException;
  * @author Kristian Lange
  */
 @Singleton
-public class StudyService extends Controller {
+public class StudyService {
 
 	public static final String COMPONENT_POSITION_DOWN = "down";
 	public static final String COMPONENT_POSITION_UP = "up";

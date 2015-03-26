@@ -14,7 +14,6 @@ import models.workers.Worker;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.data.validation.ValidationError;
-import play.mvc.Controller;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -28,7 +27,7 @@ import exceptions.ForbiddenException;
  * @author Kristian Lange
  */
 @Singleton
-public class WorkerService extends Controller {
+public class WorkerService {
 
 	private final StudyService studyService;
 	private final StudyResultDao studyResultDao;
@@ -43,8 +42,8 @@ public class WorkerService extends Controller {
 	}
 
 	/**
-	 * Throws a Exception in case the worker doesn't exist.
-	 * Distinguishes between normal and Ajax request.
+	 * Throws a Exception in case the worker doesn't exist. Distinguishes
+	 * between normal and Ajax request.
 	 */
 	public void checkWorker(Worker worker, Long workerId)
 			throws BadRequestException {

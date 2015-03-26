@@ -3,7 +3,6 @@ package services.gui;
 import models.ComponentModel;
 import models.UserModel;
 import persistance.ComponentDao;
-import play.mvc.Controller;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -16,7 +15,7 @@ import exceptions.BadRequestException;
  * @author Kristian Lange
  */
 @Singleton
-public class ComponentService extends Controller {
+public class ComponentService {
 
 	private final ComponentDao componentDao;
 
