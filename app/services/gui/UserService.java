@@ -9,15 +9,14 @@ import java.util.List;
 import models.UserModel;
 import persistance.UserDao;
 import play.data.validation.ValidationError;
-import play.mvc.Http;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.RequestScope;
 
+import common.RequestScope;
 import controllers.gui.Authentication;
 import exceptions.BadRequestException;
-import exceptions.gui.JatosGuiException;
+import exceptions.ForbiddenException;
 
 /**
  * Service class mostly for Users controller. Handles everything around
@@ -33,21 +32,17 @@ public class UserService {
 	public static final String ADMIN_NAME = "Admin";
 
 	private final UserDao userDao;
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 
 	@Inject
-	UserService(UserDao userDao,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower) {
+	UserService(UserDao userDao) {
 		this.userDao = userDao;
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 	}
 
 	/**
-	 * Retrieves the user with the given email form the DB. Throws a
-	 * JatosGuiException if it doesn't exist.
+	 * Retrieves the user with the given email form the DB. Throws an Exception
+	 * if it doesn't exist.
 	 */
-	public UserModel retrieveUser(String email) throws JatosGuiException,
-			BadRequestException {
+	public UserModel retrieveUser(String email) throws BadRequestException {
 		UserModel user = userDao.findByEmail(email);
 		if (user == null) {
 			throw new BadRequestException(MessagesStrings.userNotExist(email));
@@ -64,14 +59,16 @@ public class UserService {
 	}
 
 	/**
-	 * Throws a JatosGuiException in case the user's email isn't equal to the
-	 * loggedInUser' email. Distinguishes between normal and Ajax request.
+	 * Throws an Exception in case the user's email isn't equal to the
+	 * loggedInUser' email.
+	 * 
+	 * @throws ForbiddenException
 	 */
 	public void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
-			throws JatosGuiException {
+			throws ForbiddenException {
 		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			String errorMsg = MessagesStrings.mustBeLoggedInAsUser(user);
-			jatosGuiExceptionThrower.throwHome(errorMsg, Http.Status.FORBIDDEN);
+			throw new ForbiddenException(
+					MessagesStrings.mustBeLoggedInAsUser(user));
 		}
 	}
 
@@ -146,6 +143,31 @@ public class UserService {
 			errorList.add(new ValidationError(UserModel.PASSWORD,
 					MessagesStrings.PASSWORDS_DONT_MATCH));
 		}
+	}
+	
+	/**
+	 * Creates a user, sets password hash and persists it.
+	 */
+	public void createUser(UserModel newUser, String password)
+			throws UnsupportedEncodingException, NoSuchAlgorithmException {
+		String passwordHash = getHashMDFive(password);
+		newUser.setPasswordHash(passwordHash);
+		userDao.create(newUser);
+	}
+	
+	/**
+	 * Change password hash and persist user.
+	 */
+	public void changePasswordHash(UserModel user, String newPasswordHash) {
+		user.setPasswordHash(newPasswordHash);
+		userDao.update(user);
+	}
+	
+	/**
+	 * Changes name and persists user.
+	 */
+	public void updateName(UserModel user, String name) {
+		userDao.updateName(user, name);
 	}
 
 }

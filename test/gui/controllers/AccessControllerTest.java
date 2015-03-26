@@ -469,7 +469,12 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Users
 				.submitEditedProfile(testUser.getEmail());
 		checkDeniedAccess(ref);
-		checkRightUser(ref);
+		Result result = callAction(ref,
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(flash(result).get(FlashScopeMessaging.ERROR)).contains(
+				"You must be logged in as");
 	}
 
 	@Test
@@ -485,7 +490,12 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Users
 				.submitChangedPassword(testUser.getEmail());
 		checkDeniedAccess(ref);
-		checkRightUser(ref);
+		Result result = callAction(ref,
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(flash(result).get(FlashScopeMessaging.ERROR)).contains(
+				"You must be logged in as");
 	}
 
 	@Test
