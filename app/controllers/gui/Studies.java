@@ -27,7 +27,6 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.SimpleResult;
-import play.mvc.With;
 import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.ComponentService;
@@ -43,6 +42,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import controllers.gui.actionannotations.Authenticated;
+import controllers.gui.actionannotations.JatosGui;
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.tester.TesterPublix;
@@ -55,7 +56,8 @@ import exceptions.gui.JatosGuiException;
  * 
  * @author Kristian Lange
  */
-@With(JatosGuiAction.class)
+@JatosGui
+@Authenticated
 @Singleton
 public class Studies extends Controller {
 

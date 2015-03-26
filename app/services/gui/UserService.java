@@ -9,16 +9,14 @@ import java.util.List;
 import models.UserModel;
 import persistance.UserDao;
 import play.data.validation.ValidationError;
-import play.mvc.Controller;
 import play.mvc.Http;
-import play.mvc.Results;
-import play.mvc.SimpleResult;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import common.RequestScope;
 
-import controllers.gui.ControllerUtils;
-import controllers.gui.Users;
+import controllers.gui.Authentication;
+import exceptions.BadRequestException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -48,39 +46,21 @@ public class UserService {
 	 * Retrieves the user with the given email form the DB. Throws a
 	 * JatosGuiException if it doesn't exist.
 	 */
-	public UserModel retrieveUser(String email) throws JatosGuiException {
+	public UserModel retrieveUser(String email) throws JatosGuiException,
+			BadRequestException {
 		UserModel user = userDao.findByEmail(email);
 		if (user == null) {
-			String errorMsg = MessagesStrings.userNotExist(email);
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throw new BadRequestException(MessagesStrings.userNotExist(email));
 		}
 		return user;
 	}
 
 	/**
-	 * Retrieves the user with the given email form the DB. Throws a
-	 * JatosGuiException if it doesn't exist. The JatosGuiException will
-	 * redirect to the login screen.
+	 * Retrieves the user with the given email form the RequestScope. It was put
+	 * into the RequestScope by the AuthenticationAction.
 	 */
-	public UserModel retrieveLoggedInUser() throws JatosGuiException {
-		String email = Controller.session(Users.SESSION_EMAIL);
-		UserModel loggedInUser = null;
-		if (email != null) {
-			loggedInUser = userDao.findByEmail(email);
-		}
-		if (loggedInUser == null) {
-			String errorMsg = MessagesStrings.NO_USER_LOGGED_IN;
-			SimpleResult result = null;
-			if (ControllerUtils.isAjax()) {
-				result = Results.badRequest(errorMsg);
-			} else {
-				result = (SimpleResult) Results
-						.redirect(controllers.gui.routes.Authentication.login());
-			}
-			throw new JatosGuiException(result, errorMsg);
-		}
-		return loggedInUser;
+	public UserModel retrieveLoggedInUser() {
+		return (UserModel) RequestScope.get(Authentication.LOGGED_IN_USER);
 	}
 
 	/**

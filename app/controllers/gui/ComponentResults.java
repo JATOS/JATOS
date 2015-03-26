@@ -9,14 +9,12 @@ import models.ComponentResult;
 import models.StudyModel;
 import models.UserModel;
 import persistance.ComponentDao;
-import persistance.ComponentResultDao;
 import persistance.StudyDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.With;
 import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.ComponentService;
@@ -33,6 +31,8 @@ import utils.JsonUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import controllers.gui.actionannotations.Authenticated;
+import controllers.gui.actionannotations.JatosGui;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
@@ -43,7 +43,8 @@ import exceptions.gui.JatosGuiException;
  * 
  * @author Kristian Lange
  */
-@With(JatosGuiAction.class)
+@JatosGui
+@Authenticated
 @Singleton
 public class ComponentResults extends Controller {
 
@@ -58,14 +59,12 @@ public class ComponentResults extends Controller {
 	private final JsonUtils jsonUtils;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
-	private final ComponentResultDao componentResultDao;
 
 	@Inject
 	ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, ResultService resultService,
-			StudyDao studyDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils) {
+			StudyDao studyDao, ComponentDao componentDao, JsonUtils jsonUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
@@ -73,7 +72,6 @@ public class ComponentResults extends Controller {
 		this.resultService = resultService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
-		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
 	}
 
@@ -129,21 +127,18 @@ public class ComponentResults extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<ComponentResult> componentResultList = null;
 		try {
 			List<Long> componentResultIdList = resultService
 					.extractResultIds(componentResultIds);
-			componentResultList = resultService
+			List<ComponentResult> componentResultList = resultService
 					.getAllComponentResults(componentResultIdList);
 			resultService.checkAllComponentResults(componentResultList,
 					loggedInUser, true);
+			resultService.removeAllComponentResults(componentResultList);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		for (ComponentResult componentResult : componentResultList) {
-			componentResultDao.remove(componentResult);
-		}
 		return ok().as("text/html");
 	}
 
@@ -166,7 +161,7 @@ public class ComponentResults extends Controller {
 			componentService.checkStandardForComponents(studyId, componentId,
 					loggedInUser, component);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		String dataAsJson = null;
 		try {

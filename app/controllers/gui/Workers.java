@@ -13,7 +13,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.With;
 import services.gui.Breadcrumbs;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.MessagesStrings;
@@ -25,6 +24,8 @@ import utils.JsonUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import controllers.gui.actionannotations.Authenticated;
+import controllers.gui.actionannotations.JatosGui;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -34,7 +35,8 @@ import exceptions.gui.JatosGuiException;
  * 
  * @author Kristian Lange
  */
-@With(JatosGuiAction.class)
+@JatosGui
+@Authenticated
 @Singleton
 public class Workers extends Controller {
 

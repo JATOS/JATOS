@@ -1,21 +1,24 @@
-package controllers.gui;
+package controllers.gui.actionannotations;
 
 import play.Logger;
 import play.libs.F;
 import play.libs.F.Promise;
+import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.SimpleResult;
 import services.FlashScopeMessaging;
 import exceptions.gui.JatosGuiException;
 
 /**
- * For all actions in a controller that is annotated with JatosGuiAction catch
+ * For all actions in a controller that is annotated with JatosGui catch
  * {@link JatosGuiException} and return the SimpleResult stored in the exception
- * (e.g. display an error page).
+ * (e.g. display an error page). If there is another exception than
+ * JatosGuiException catch it and redirect to the home view with an internal
+ * error.
  * 
  * @author Kristian Lange
  */
-public class JatosGuiAction extends play.mvc.Action.Simple {
+public class JatosGuiAction extends Action<JatosGui> {
 
 	public F.Promise<SimpleResult> call(Http.Context ctx) throws Throwable {
 		Promise<SimpleResult> call;

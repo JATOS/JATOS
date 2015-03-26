@@ -14,13 +14,16 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.With;
 import services.gui.Breadcrumbs;
+import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import controllers.gui.actionannotations.Authenticated;
+import controllers.gui.actionannotations.JatosGui;
+import exceptions.BadRequestException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -28,7 +31,8 @@ import exceptions.gui.JatosGuiException;
  * 
  * @author Kristian Lange
  */
-@With(JatosGuiAction.class)
+@JatosGui
+@Authenticated
 @Singleton
 public class Users extends Controller {
 
@@ -36,12 +40,15 @@ public class Users extends Controller {
 
 	public static final String SESSION_EMAIL = "email";
 
+	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final UserService userService;
 	private final UserDao userDao;
 	private final StudyDao studyDao;
 
 	@Inject
-	Users(UserDao userDao, UserService userService, StudyDao studyDao) {
+	Users(JatosGuiExceptionThrower jatosGuiExceptionThrower, UserDao userDao,
+			UserService userService, StudyDao studyDao) {
+		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.userDao = userDao;
 		this.userService = userService;
 		this.studyDao = studyDao;
@@ -54,8 +61,13 @@ public class Users extends Controller {
 	public Result profile(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".profile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel user = userService.retrieveUser(email);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		UserModel user = null;
+		try {
+			user = userService.retrieveUser(email);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		}
 		userService.checkUserLoggedIn(user, loggedInUser);
 		String breadcrumbs = Breadcrumbs.generateForUser(user);
 		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
@@ -165,8 +177,13 @@ public class Users extends Controller {
 	public Result editProfile(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".editProfile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel user = userService.retrieveUser(email);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		UserModel user = null;
+		try {
+			user = userService.retrieveUser(email);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		}
 		userService.checkUserLoggedIn(user, loggedInUser);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		String breadcrumbs = Breadcrumbs.generateForUser(user,
@@ -183,11 +200,16 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".submitEditedProfile: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel user = userService.retrieveUser(email);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		UserModel user;
+		try {
+			user = userService.retrieveUser(email);
+		} catch (BadRequestException e) {
+			return redirect(controllers.gui.routes.Home.home());
+		}
+		userService.checkUserLoggedIn(user, loggedInUser);
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		userService.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		if (form.hasErrors()) {
@@ -210,8 +232,13 @@ public class Users extends Controller {
 	public Result changePassword(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".changePassword: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel user = userService.retrieveUser(email);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		UserModel user = null;
+		try {
+			user = userService.retrieveUser(email);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		}
 		userService.checkUserLoggedIn(user, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);

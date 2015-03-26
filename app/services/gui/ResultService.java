@@ -69,9 +69,9 @@ public class ResultService {
 	}
 
 	/**
-	 * Checks a list of ComponentResult. Checks each ComponentResult whether
-	 * the belonging Study and Component are fine. It also checks whether the
-	 * study is locked. In case of any problem an Exception is thrown.
+	 * Checks a list of ComponentResult. Checks each ComponentResult whether the
+	 * belonging Study and Component are fine. It also checks whether the study
+	 * is locked. In case of any problem an Exception is thrown.
 	 */
 	public void checkAllComponentResults(
 			List<ComponentResult> componentResultList, UserModel loggedInUser,
@@ -91,9 +91,9 @@ public class ResultService {
 	}
 
 	/**
-	 * Checks a list of StudyResult. Checks each StudyResult whether
-	 * the belonging Study is fine. It also checks whether the
-	 * study is locked. In case of any problem an Exception is thrown.
+	 * Checks a list of StudyResult. Checks each StudyResult whether the
+	 * belonging Study is fine. It also checks whether the study is locked. In
+	 * case of any problem an Exception is thrown.
 	 */
 	public void checkAllStudyResults(List<StudyResult> studyResultList,
 			UserModel loggedInUser, boolean studyMustNotBeLocked)
@@ -201,6 +201,16 @@ public class ResultService {
 			}
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * Removes all ComponentResult from the list.
+	 */
+	public void removeAllComponentResults(
+			List<ComponentResult> componentResultList) {
+		for (ComponentResult componentResult : componentResultList) {
+			componentResultDao.remove(componentResult);
+		}
 	}
 
 }
