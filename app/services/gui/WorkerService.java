@@ -15,14 +15,12 @@ import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.data.validation.ValidationError;
 import play.mvc.Controller;
-import play.mvc.Http;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
-import exceptions.gui.JatosGuiException;
 
 /**
  * Service class for JATOS Controllers (not Publix)..
@@ -32,31 +30,27 @@ import exceptions.gui.JatosGuiException;
 @Singleton
 public class WorkerService extends Controller {
 
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final StudyResultDao studyResultDao;
 	private final WorkerDao workerDao;
 
 	@Inject
-	WorkerService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService, StudyResultDao studyResultDao,
+	WorkerService(StudyService studyService, StudyResultDao studyResultDao,
 			WorkerDao workerDao) {
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.studyResultDao = studyResultDao;
 		this.workerDao = workerDao;
 	}
 
 	/**
-	 * Throws a JatosGuiException in case the worker doesn't exist.
+	 * Throws a Exception in case the worker doesn't exist.
 	 * Distinguishes between normal and Ajax request.
 	 */
 	public void checkWorker(Worker worker, Long workerId)
-			throws JatosGuiException {
+			throws BadRequestException {
 		if (worker == null) {
-			String errorMsg = MessagesStrings.workerNotExist(workerId);
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throw new BadRequestException(
+					MessagesStrings.workerNotExist(workerId));
 		}
 	}
 

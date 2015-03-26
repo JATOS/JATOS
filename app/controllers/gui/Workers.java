@@ -73,7 +73,12 @@ public class Workers extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		Worker worker = workerDao.findById(workerId);
-		workerService.checkWorker(worker, workerId);
+		try {
+			workerService.checkWorker(worker, workerId);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwRedirect(e,
+					controllers.gui.routes.Home.home());
+		}
 
 		String breadcrumbs = Breadcrumbs.generateForWorker(worker,
 				Breadcrumbs.RESULTS);
@@ -98,7 +103,12 @@ public class Workers extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Worker worker = workerDao.findById(workerId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		workerService.checkWorker(worker, workerId);
+		try {
+			workerService.checkWorker(worker, workerId);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwRedirect(e,
+					controllers.gui.routes.Home.home());
+		}
 
 		try {
 			workerService.checkRemovalAllowed(worker, loggedInUser);

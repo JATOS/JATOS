@@ -179,7 +179,11 @@ public class StudyResults extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		Worker worker = workerDao.findById(workerId);
-		workerService.checkWorker(worker, workerId);
+		try {
+			workerService.checkWorker(worker, workerId);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 
 		List<StudyResult> allowedStudyResultList = resultService
 				.getAllowedStudyResultList(loggedInUser, worker);
