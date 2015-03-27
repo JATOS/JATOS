@@ -9,7 +9,6 @@ import models.StudyResult;
 import models.UserModel;
 import models.workers.Worker;
 import persistance.StudyDao;
-import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.Logger;
 import play.db.jpa.Transactional;
@@ -58,15 +57,13 @@ public class StudyResults extends Controller {
 	private final WorkerService workerService;
 	private final ResultService resultService;
 	private final StudyDao studyDao;
-	private final StudyResultDao studyResultDao;
 	private final WorkerDao workerDao;
 
 	@Inject
 	StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
 			WorkerService workerService, ResultService resultService,
-			StudyDao studyDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, WorkerDao workerDao) {
+			StudyDao studyDao, JsonUtils jsonUtils, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
@@ -74,7 +71,6 @@ public class StudyResults extends Controller {
 		this.resultService = resultService;
 		this.studyDao = studyDao;
 		this.jsonUtils = jsonUtils;
-		this.studyResultDao = studyResultDao;
 		this.workerDao = workerDao;
 	}
 
@@ -123,21 +119,10 @@ public class StudyResults extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-
-		List<StudyResult> studyResultList = null;
 		try {
-			List<Long> studyResultIdList = resultService
-					.extractResultIds(studyResultIds);
-			studyResultList = resultService
-					.getAllStudyResults(studyResultIdList);
-			resultService.checkAllStudyResults(studyResultList, loggedInUser,
-					true);
+			resultService.removeAllStudyResults(studyResultIds, loggedInUser);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
-		}
-
-		for (StudyResult studyResult : studyResultList) {
-			studyResultDao.remove(studyResult);
 		}
 		return ok().as("text/html");
 	}
@@ -213,19 +198,13 @@ public class StudyResults extends Controller {
 		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<StudyResult> studyResultList = null;
+		String studyResultDataAsStr = null;
 		try {
-			List<Long> studyResultIdList = resultService
-					.extractResultIds(studyResultIds);
-			studyResultList = resultService
-					.getAllStudyResults(studyResultIdList);
-			resultService.checkAllStudyResults(studyResultList, loggedInUser,
-					false);
+			studyResultDataAsStr = resultService.generateStudyResultStr(
+					studyResultIds, loggedInUser);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		String studyResultDataAsStr = resultService
-				.getStudyResultData(studyResultList);
 
 		response().setContentType("application/x-download");
 		String filename = "results_" + DateUtils.getDateForFile(new Date())

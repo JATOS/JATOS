@@ -2,10 +2,8 @@ package controllers.gui;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.List;
 
 import models.ComponentModel;
-import models.ComponentResult;
 import models.StudyModel;
 import models.UserModel;
 import persistance.ComponentDao;
@@ -126,19 +124,12 @@ public class ComponentResults extends Controller {
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-
 		try {
-			List<Long> componentResultIdList = resultService
-					.extractResultIds(componentResultIds);
-			List<ComponentResult> componentResultList = resultService
-					.getAllComponentResults(componentResultIdList);
-			resultService.checkAllComponentResults(componentResultList,
-					loggedInUser, true);
-			resultService.removeAllComponentResults(componentResultList);
+			resultService.removeAllComponentResults(componentResultIds,
+					loggedInUser);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-
 		return ok().as("text/html");
 	}
 
@@ -188,19 +179,14 @@ public class ComponentResults extends Controller {
 		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<ComponentResult> componentResultList = null;
+		String componentResultDataAsStr = null;
 		try {
-			List<Long> componentResultIdList = resultService
-					.extractResultIds(componentResultIds);
-			componentResultList = resultService
-					.getAllComponentResults(componentResultIdList);
-			resultService.checkAllComponentResults(componentResultList,
-					loggedInUser, false);
+			componentResultDataAsStr = resultService
+					.generateComponentResultDataStr(componentResultIds,
+							loggedInUser);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		String componentResultDataAsStr = resultService
-				.getComponentResultData(componentResultList);
 
 		response().setContentType("application/x-download");
 		String filename = "results_" + DateUtils.getDateForFile(new Date())

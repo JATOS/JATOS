@@ -109,6 +109,34 @@ public class ResultService {
 	}
 
 	/**
+	 * Retrieves the to the IDs corresponding StudyResults, checks them and
+	 * returns them all in one string.
+	 */
+	public String generateStudyResultStr(String studyResultIds,
+			UserModel loggedInUser) throws BadRequestException,
+			NotFoundException, ForbiddenException {
+		List<Long> studyResultIdList = extractResultIds(studyResultIds);
+		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
+		checkAllStudyResults(studyResultList, loggedInUser, false);
+		String studyResultDataAsStr = getStudyResultData(studyResultList);
+		return studyResultDataAsStr;
+	}
+
+	/**
+	 * Retrieves the to the IDs corresponding ComponentResults, checks them and
+	 * returns them all in one string.
+	 */
+	public String generateComponentResultDataStr(String componentResultIds,
+			UserModel loggedInUser) throws BadRequestException,
+			NotFoundException, ForbiddenException {
+		List<Long> componentResultIdList = extractResultIds(componentResultIds);
+		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
+		checkAllComponentResults(componentResultList, loggedInUser, false);
+		String componentResultDataAsStr = getComponentResultData(componentResultList);
+		return componentResultDataAsStr;
+	}
+
+	/**
 	 * Gets the corresponding ComponentResult for a list of IDs.
 	 */
 	public List<ComponentResult> getAllComponentResults(
@@ -204,12 +232,32 @@ public class ResultService {
 	}
 
 	/**
-	 * Removes all ComponentResult from the list.
+	 * Retrieves all ComponentResults that correspond to the IDs in the given
+	 * String, checks them and removes them.
 	 */
-	public void removeAllComponentResults(
-			List<ComponentResult> componentResultList) {
+	public void removeAllComponentResults(String componentResultIds,
+			UserModel loggedInUser) throws BadRequestException,
+			NotFoundException, ForbiddenException {
+		List<Long> componentResultIdList = extractResultIds(componentResultIds);
+		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
+		checkAllComponentResults(componentResultList, loggedInUser, true);
 		for (ComponentResult componentResult : componentResultList) {
 			componentResultDao.remove(componentResult);
+		}
+	}
+
+	/**
+	 * Retrieves all StudyResults that correspond to the IDs in the given
+	 * String, checks them and removes them.
+	 */
+	public void removeAllStudyResults(String studyResultIds, UserModel loggedInUser)
+			throws BadRequestException, NotFoundException, ForbiddenException {
+		List<StudyResult> studyResultList;
+		List<Long> studyResultIdList = extractResultIds(studyResultIds);
+		studyResultList = getAllStudyResults(studyResultIdList);
+		checkAllStudyResults(studyResultList, loggedInUser, true);
+		for (StudyResult studyResult : studyResultList) {
+			studyResultDao.remove(studyResult);
 		}
 	}
 
