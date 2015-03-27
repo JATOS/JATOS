@@ -18,6 +18,7 @@ import controllers.gui.Home;
 import controllers.gui.Studies;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
+import exceptions.NotFoundException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -168,6 +169,8 @@ public class JatosGuiExceptionThrower {
 			return Http.Status.BAD_REQUEST;
 		} else if (e instanceof IOException) {
 			return Http.Status.BAD_REQUEST;
+		} else if (e instanceof NotFoundException) {
+			return Http.Status.NOT_FOUND;
 		} else {
 			return Http.Status.INTERNAL_SERVER_ERROR;
 		}

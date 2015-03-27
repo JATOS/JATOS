@@ -195,7 +195,7 @@ public class ComponentResults extends Controller {
 			componentResultList = resultService
 					.getAllComponentResults(componentResultIdList);
 			resultService.checkAllComponentResults(componentResultList,
-					loggedInUser, true);
+					loggedInUser, false);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
