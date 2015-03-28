@@ -68,7 +68,6 @@ public class StudyService {
 			throws BadRequestException {
 		if (userEmailArray == null) {
 			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
-			RequestScopeMessaging.error(errorMsg);
 			throw new BadRequestException(errorMsg);
 		}
 		List<UserModel> userList = new ArrayList<>();

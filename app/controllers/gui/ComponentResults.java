@@ -18,7 +18,6 @@ import services.gui.Breadcrumbs;
 import services.gui.ComponentService;
 import services.gui.ImportExportService;
 import services.gui.JatosGuiExceptionThrower;
-import services.gui.MessagesStrings;
 import services.gui.ResultService;
 import services.gui.StudyService;
 import services.gui.UserService;
@@ -158,7 +157,8 @@ public class ComponentResults extends Controller {
 		try {
 			dataAsJson = jsonUtils.allComponentResultsForUI(component);
 		} catch (IOException e) {
-			return internalServerError(MessagesStrings.PROBLEM_GENERATING_JSON_DATA);
+			jatosGuiExceptionThrower.throwAjax(e,
+					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
 	}

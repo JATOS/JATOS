@@ -5,6 +5,9 @@ import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.status;
+
+import java.io.IOException;
+
 import gui.AbstractGuiTest;
 import models.StudyModel;
 
@@ -83,6 +86,19 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 						StudyService.COMPONENT_POSITION_DOWN);
 		checkDenyLocked(ref, Http.Status.FORBIDDEN, null);
 		removeStudy(studyClone);
+	}
+	
+	@Test
+	public void callExportComponentResults() throws IOException {
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		
+		HandlerRef ref = controllers.gui.routes.ref.ComponentResults
+				.exportData("1");
+		Result result = callAction(ref,
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(Http.Status.OK);
 	}
 
 }

@@ -56,6 +56,15 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwAjax(Exception e) throws JatosGuiException {
 		int httpStatus = getHttpStatusFromException(e);
+		throwAjax(e, httpStatus);
+	}
+
+	/**
+	 * Throws a JatosGuiException for an Ajax request (doesn't return a view but
+	 * a simple text) with the exception's message. The HTTP's status code is
+	 * taken from the parameter.
+	 */
+	public void throwAjax(Exception e, int httpStatus) throws JatosGuiException {
 		SimpleResult result = Results.status(httpStatus, e.getMessage());
 		throw new JatosGuiException(result, e.getMessage());
 	}
@@ -113,10 +122,15 @@ public class JatosGuiExceptionThrower {
 		throw new JatosGuiException(result, e.getMessage());
 	}
 
+	/**
+	 * Throws a JatosGuiException with the given SimpleResult and a HTTP status
+	 * according to the exception. Distinguishes between normal and Ajax
+	 * request.
+	 */
 	public void throwResult(Exception e, SimpleResult result)
 			throws JatosGuiException {
-		int httpStatus = getHttpStatusFromException(e);
 		if (ControllerUtils.isAjax()) {
+			int httpStatus = getHttpStatusFromException(e);
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
@@ -129,7 +143,7 @@ public class JatosGuiExceptionThrower {
 	 * non Ajax it shows study's index view. Distinguishes between normal and
 	 * Ajax request.
 	 */
-	public void throwStudies(String errorMsg, int httpStatus, Long studyId)
+	public void throwStudyIndex(String errorMsg, int httpStatus, Long studyId)
 			throws JatosGuiException {
 		SimpleResult result = null;
 		if (ControllerUtils.isAjax()) {

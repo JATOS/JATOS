@@ -101,11 +101,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		checkStandardForStudy(studyId, study, loggedInUser);
 
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
 		String breadcrumbs = Breadcrumbs.generateForStudy(study);
@@ -208,11 +204,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		checkStandardForStudy(studyId, study, loggedInUser);
 
 		if (study.isLocked()) {
 			RequestScopeMessaging.warning(MessagesStrings.STUDY_IS_LOCKED);
@@ -295,11 +287,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		checkStandardForStudy(studyId, study, loggedInUser);
 
 		study.setLocked(!study.isLocked());
 		studyDao.update(study);
@@ -375,11 +363,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		checkStandardForStudy(studyId, study, loggedInUser);
 
 		List<UserModel> userList = userDao.findAll();
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
@@ -453,11 +437,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		checkStandardForStudy(studyId, study, loggedInUser);
 
 		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_STUDY);
 		String queryStr = "?" + JatosPublix.JATOS_WORKER_ID + "="
@@ -561,18 +541,14 @@ public class Studies extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		checkStandardForStudy(studyId, study, loggedInUser);
 
 		URL jatosURL = null;
 		try {
 			jatosURL = ControllerUtils.getRefererUrl();
 		} catch (MalformedURLException e) {
 			String errorMsg = MessagesStrings.COULDNT_GENERATE_JATOS_URL;
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
+			jatosGuiExceptionThrower.throwStudyIndex(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		if (!study.hasAllowedWorker(MTWorker.WORKER_TYPE)) {
@@ -596,11 +572,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		checkStandardForStudy(studyId, study, loggedInUser);
 
 		String dataAsJson = null;
 		try {
@@ -623,11 +595,7 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		checkStandardForStudy(studyId, study, loggedInUser);
 
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
@@ -645,6 +613,15 @@ public class Studies extends Controller {
 	@Transactional
 	public Result workers(Long studyId) throws JatosGuiException {
 		return workers(studyId, null, Http.Status.OK);
+	}
+	
+	private void checkStandardForStudy(Long studyId, StudyModel study,
+			UserModel loggedInUser) throws JatosGuiException {
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		}
 	}
 
 }
