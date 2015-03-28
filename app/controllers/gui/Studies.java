@@ -394,6 +394,7 @@ public class Studies extends Controller {
 		try {
 			studyService.exchangeMembers(study, checkedUsers);
 		} catch (BadRequestException e) {
+			RequestScopeMessaging.error(e.getMessage());
 			SimpleResult result = (SimpleResult) changeMembers(study.getId(),
 					Http.Status.BAD_REQUEST);
 			throw new JatosGuiException(result, e.getMessage());
