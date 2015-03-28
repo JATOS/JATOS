@@ -156,26 +156,6 @@ public class ResultService {
 	}
 
 	/**
-	 * Put all ComponentResult's data into a String each in a separate line.
-	 */
-	public String getComponentResultData(
-			List<ComponentResult> componentResultList) {
-		StringBuilder sb = new StringBuilder();
-		Iterator<ComponentResult> iterator = componentResultList.iterator();
-		while (iterator.hasNext()) {
-			ComponentResult componentResult = iterator.next();
-			String data = componentResult.getData();
-			if (data != null) {
-				sb.append(data);
-				if (iterator.hasNext()) {
-					sb.append("\n");
-				}
-			}
-		}
-		return sb.toString();
-	}
-
-	/**
 	 * Get all StudyResults or throw an Exception if one doesn't exist.
 	 * 
 	 * @throws NotFoundException
@@ -195,8 +175,8 @@ public class ResultService {
 	}
 
 	/**
-	 * Generate the list of StudyResults that the logged-in user is allowed to
-	 * see.
+	 * Generate the list of StudyResults that belong to the given Worker and
+	 * that the logged-in user is allowed to see.
 	 */
 	public List<StudyResult> getAllowedStudyResultList(UserModel loggedInUser,
 			Worker worker) {
@@ -210,21 +190,37 @@ public class ResultService {
 	}
 
 	/**
-	 * Put all ComponentResult's data into a String each in a separate line.
+	 * Put all StudyResult's data into a String each in a separate line.
 	 */
 	public String getStudyResultData(List<StudyResult> studyResultList) {
 		StringBuilder sb = new StringBuilder();
-		for (StudyResult studyResult : studyResultList) {
-			Iterator<ComponentResult> iterator = studyResult
-					.getComponentResultList().iterator();
-			while (iterator.hasNext()) {
-				ComponentResult componentResult = iterator.next();
-				String data = componentResult.getData();
-				if (data != null) {
-					sb.append(data);
-					if (iterator.hasNext()) {
-						sb.append("\n");
-					}
+		Iterator<StudyResult> iterator = studyResultList.iterator();
+		while (iterator.hasNext()) {
+			StudyResult studyResult = iterator.next();
+			String componentResultData = getComponentResultData(studyResult
+					.getComponentResultList());
+			sb.append(componentResultData);
+			if (iterator.hasNext()) {
+				sb.append("\n");
+			}
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Put all ComponentResult's data into a String each in a separate line.
+	 */
+	public String getComponentResultData(
+			List<ComponentResult> componentResultList) {
+		StringBuilder sb = new StringBuilder();
+		Iterator<ComponentResult> iterator = componentResultList.iterator();
+		while (iterator.hasNext()) {
+			ComponentResult componentResult = iterator.next();
+			String data = componentResult.getData();
+			if (data != null) {
+				sb.append(data);
+				if (iterator.hasNext()) {
+					sb.append("\n");
 				}
 			}
 		}
@@ -248,13 +244,13 @@ public class ResultService {
 
 	/**
 	 * Retrieves all StudyResults that correspond to the IDs in the given
-	 * String, checks them and removes them.
+	 * String, checks if you are allowed to remove them and removes them.
 	 */
-	public void removeAllStudyResults(String studyResultIds, UserModel loggedInUser)
-			throws BadRequestException, NotFoundException, ForbiddenException {
-		List<StudyResult> studyResultList;
+	public void removeAllStudyResults(String studyResultIds,
+			UserModel loggedInUser) throws BadRequestException,
+			NotFoundException, ForbiddenException {
 		List<Long> studyResultIdList = extractResultIds(studyResultIds);
-		studyResultList = getAllStudyResults(studyResultIdList);
+		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
 		checkAllStudyResults(studyResultList, loggedInUser, true);
 		for (StudyResult studyResult : studyResultList) {
 			studyResultDao.remove(studyResult);

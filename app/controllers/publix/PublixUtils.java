@@ -294,10 +294,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public StudyResult retrieveWorkersLastStudyResult(T worker, StudyModel study)
 			throws ForbiddenPublixException {
-		StudyResult studyResult;
 		int studyResultListSize = worker.getStudyResultList().size();
 		for (int i = (studyResultListSize - 1); i >= 0; i--) {
-			studyResult = worker.getStudyResultList().get(i);
+			StudyResult studyResult = worker.getStudyResultList().get(i);
 			if (studyResult.getStudy().getId() == study.getId()) {
 				if (studyDone(studyResult)) {
 					throw new ForbiddenPublixException(
