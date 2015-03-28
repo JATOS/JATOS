@@ -22,7 +22,9 @@ import exceptions.NotFoundException;
 import exceptions.gui.JatosGuiException;
 
 /**
- * Class with convenience methods to throw a {@link JatosGuiException}
+ * Class with convenience methods to throw a {@link JatosGuiException}. It
+ * checks whether the call is an Ajax one. It puts the error message into the
+ * RequestScopeMessaging.
  * 
  * @author Kristian Lange
  */
