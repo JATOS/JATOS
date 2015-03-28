@@ -7,7 +7,7 @@ import play.mvc.SimpleResult;
  * Exception for any kind of exceptional behaviour within one of JATOS' GUI
  * actions. A SimpleResult is defined that will be displayed instead of the
  * normal action's output. All JatosGuiExceptions are caught by
- * {@link JatosGuiAction}.
+ * {@link JatosGuiAction} and the {@link JatosGui} annotation.
  * 
  * @author Kristian Lange
  */

@@ -156,7 +156,7 @@ public class Components extends Controller {
 		return redirectAfterEdit(studyId, component.getId(), study);
 	}
 
-	public Result showEditAfterError(List<StudyModel> studyList,
+	private Result showEditAfterError(List<StudyModel> studyList,
 			UserModel loggedInUser, Form<ComponentModel> form, int httpStatus,
 			String breadcrumbs, Call submitAction, StudyModel study) {
 		if (ControllerUtils.isAjax()) {

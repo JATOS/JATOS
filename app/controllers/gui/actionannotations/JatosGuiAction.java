@@ -12,9 +12,9 @@ import exceptions.gui.JatosGuiException;
 /**
  * For all actions in a controller that is annotated with JatosGui catch
  * {@link JatosGuiException} and return the SimpleResult stored in the exception
- * (e.g. display an error page). If there is another exception than
- * JatosGuiException catch it and redirect to the home view with an internal
- * error.
+ * (e.g. display an error page). If there is another Exception than
+ * JatosGuiException catch it too and redirect to the home view with an internal
+ * error, so no internal exception message ever is displayed in the GUI. 
  * 
  * @author Kristian Lange
  */
