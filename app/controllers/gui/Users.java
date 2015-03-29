@@ -24,8 +24,8 @@ import com.google.inject.Singleton;
 
 import controllers.gui.actionannotations.Authenticated;
 import controllers.gui.actionannotations.JatosGui;
-import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
+import exceptions.NotFoundException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -259,7 +259,7 @@ public class Users extends Controller {
 		try {
 			user = userService.retrieveUser(email);
 			userService.checkUserLoggedIn(user, loggedInUser);
-		} catch (BadRequestException | ForbiddenException e) {
+		} catch (ForbiddenException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwRedirect(e,
 					controllers.gui.routes.Home.home());
 		}

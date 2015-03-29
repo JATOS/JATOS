@@ -12,11 +12,11 @@ import play.data.validation.ValidationError;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.RequestScope;
+
 import controllers.gui.Authentication;
-import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
+import exceptions.NotFoundException;
 
 /**
  * Service class mostly for Users controller. Handles everything around
@@ -42,10 +42,10 @@ public class UserService {
 	 * Retrieves the user with the given email form the DB. Throws an Exception
 	 * if it doesn't exist.
 	 */
-	public UserModel retrieveUser(String email) throws BadRequestException {
+	public UserModel retrieveUser(String email) throws NotFoundException {
 		UserModel user = userDao.findByEmail(email);
 		if (user == null) {
-			throw new BadRequestException(MessagesStrings.userNotExist(email));
+			throw new NotFoundException(MessagesStrings.userNotExist(email));
 		}
 		return user;
 	}
@@ -59,14 +59,12 @@ public class UserService {
 	}
 
 	/**
-	 * Throws an Exception in case the user's email isn't equal to the
-	 * loggedInUser' email.
-	 * 
-	 * @throws ForbiddenException
+	 * Throws an Exception in case the user isn't equal to the
+	 * loggedInUser.
 	 */
 	public void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
 			throws ForbiddenException {
-		if (!user.getEmail().equals(loggedInUser.getEmail())) {
+		if (!user.equals(loggedInUser)) {
 			throw new ForbiddenException(
 					MessagesStrings.mustBeLoggedInAsUser(user));
 		}
@@ -116,7 +114,6 @@ public class UserService {
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 
-		// Authenticate
 		if (userDao.authenticate(user.getEmail(), oldPasswordHash) == null) {
 			errorList.add(new ValidationError(UserModel.OLD_PASSWORD,
 					MessagesStrings.WRONG_OLD_PASSWORD));
@@ -144,7 +141,7 @@ public class UserService {
 					MessagesStrings.PASSWORDS_DONT_MATCH));
 		}
 	}
-	
+
 	/**
 	 * Creates a user, sets password hash and persists it.
 	 */
@@ -154,7 +151,7 @@ public class UserService {
 		newUser.setPasswordHash(passwordHash);
 		userDao.create(newUser);
 	}
-	
+
 	/**
 	 * Change password hash and persist user.
 	 */
@@ -162,7 +159,7 @@ public class UserService {
 		user.setPasswordHash(newPasswordHash);
 		userDao.update(user);
 	}
-	
+
 	/**
 	 * Changes name and persists user.
 	 */
