@@ -8,19 +8,25 @@ import static play.test.Helpers.status;
 
 import java.io.IOException;
 
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.ForbiddenReloadException;
 import gui.AbstractGuiTest;
 import models.StudyModel;
+import models.StudyResult;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import common.Global;
+import persistance.StudyResultDao;
 import play.mvc.HandlerRef;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.StudyService;
 import utils.IOUtils;
 import controllers.gui.Users;
+import controllers.publix.jatos.JatosPublixUtils;
 
 /**
  * Testing actions if study is locked
@@ -30,12 +36,16 @@ import controllers.gui.Users;
 public class LockedStudyControllerTest extends AbstractGuiTest {
 
 	private static StudyModel studyTemplate;
+	private JatosPublixUtils jatosPublixUtils;
+	private StudyResultDao studyResultDao;
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 
 	@Override
 	public void before() throws Exception {
+		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
+		jatosPublixUtils = Global.INJECTOR.getInstance(JatosPublixUtils.class);
 		studyTemplate = importExampleStudy();
 	}
 
@@ -89,9 +99,22 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 	}
 	
 	@Test
-	public void callExportComponentResults() throws IOException {
+	public void callExportComponentResults() throws IOException,
+			ForbiddenPublixException, ForbiddenReloadException {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
+		
+		// Create some results
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(studyClone,
+				admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		// Have to set study manually in test - don't know why
+		studyClone.getFirstComponent().setStudy(studyClone);
+		jatosPublixUtils.startComponent(studyClone.getFirstComponent(), studyResult);
+		jatosPublixUtils.startComponent(studyClone.getFirstComponent(), studyResult);
+		entityManager.getTransaction().commit();
 		
 		HandlerRef ref = controllers.gui.routes.ref.ComponentResults
 				.exportData("1");
@@ -99,6 +122,9 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(Http.Status.OK);
+		
+		// Clean up
+		removeStudy(studyClone);
 	}
 
 }
