@@ -62,14 +62,7 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".profile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = null;
-		try {
-			user = userService.retrieveUser(email);
-			userService.checkUserLoggedIn(user, loggedInUser);
-		} catch (BadRequestException | ForbiddenException e) {
-			jatosGuiExceptionThrower.throwRedirect(e,
-					controllers.gui.routes.Home.home());
-		}
+		UserModel user = checkStandard(email, loggedInUser);
 		String breadcrumbs = Breadcrumbs.generateForUser(user);
 		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
 				user));
@@ -178,13 +171,7 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".editProfile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = null;
-		try {
-			user = userService.retrieveUser(email);
-			userService.checkUserLoggedIn(user, loggedInUser);
-		} catch (BadRequestException | ForbiddenException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		UserModel user = checkStandard(email, loggedInUser);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		String breadcrumbs = Breadcrumbs.generateForUser(user,
 				Breadcrumbs.EDIT_PROFILE);
@@ -201,14 +188,7 @@ public class Users extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = null;
-		try {
-			user = userService.retrieveUser(email);
-			userService.checkUserLoggedIn(user, loggedInUser);
-		} catch (BadRequestException | ForbiddenException e) {
-			jatosGuiExceptionThrower.throwRedirect(e,
-					controllers.gui.routes.Home.home());
-		}
+		UserModel user = checkStandard(email, loggedInUser);
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 
@@ -234,13 +214,7 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".changePassword: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = null;
-		try {
-			user = userService.retrieveUser(email);
-			userService.checkUserLoggedIn(user, loggedInUser);
-		} catch (BadRequestException | ForbiddenException e) {
-			jatosGuiExceptionThrower.throwHome(e);
-		}
+		UserModel user = checkStandard(email, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 		String breadcrumbs = Breadcrumbs.generateForUser(user,
@@ -259,14 +233,7 @@ public class Users extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = null;
-		try {
-			user = userService.retrieveUser(email);
-			userService.checkUserLoggedIn(user, loggedInUser);
-		} catch (BadRequestException | ForbiddenException e) {
-			jatosGuiExceptionThrower.throwRedirect(e,
-					controllers.gui.routes.Home.home());
-		}
+		UserModel user = checkStandard(email, loggedInUser);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
 
 		DynamicForm requestData = Form.form().bindFromRequest();
@@ -284,6 +251,19 @@ public class Users extends Controller {
 		userService.changePasswordHash(user, newPasswordHash);
 
 		return redirect(controllers.gui.routes.Users.profile(email));
+	}
+
+	private UserModel checkStandard(String email, UserModel loggedInUser)
+			throws JatosGuiException {
+		UserModel user = null;
+		try {
+			user = userService.retrieveUser(email);
+			userService.checkUserLoggedIn(user, loggedInUser);
+		} catch (BadRequestException | ForbiddenException e) {
+			jatosGuiExceptionThrower.throwRedirect(e,
+					controllers.gui.routes.Home.home());
+		}
+		return user;
 	}
 
 }
