@@ -265,7 +265,7 @@ public class Components extends Controller {
 		if (active != null) {
 			componentDao.changeActive(component, active);
 		}
-		return ok().as("text/html");
+		return ok(String.valueOf(component.isActive()));
 	}
 
 	/**
