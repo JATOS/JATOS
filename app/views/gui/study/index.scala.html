@@ -58,11 +58,14 @@ studyResultsCount: Integer)
 				More <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
-				<li><a href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">Export</a></li>
-				<li><a id="cloneStudy" href="#">Clone</a></li>
-				<li><a
-					href="@controllers.gui.routes.Studies.showMTurkSourceCode(study.getId())">MT
-						Source Code</a></li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Export this study to your local file system (including its components and study assets but without its results)">
+					<a href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">Export</a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Clone this study without its results">
+					<a id="cloneStudy" href="#">Clone</a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Source code to copy-paste into Mechanical Turk">
+					<a href="@controllers.gui.routes.Studies.showMTurkSourceCode(study.getId())">MT Source Code</a></li>
 				<li class="divider"></li>
 				<li><a id="removeStudy" href="#">Delete</a></li>
 			</ul>
@@ -91,7 +94,6 @@ studyResultsCount: Integer)
 </div>
 
 <!-- Components Table -->
-<h3>Components</h3>
 <table id="componentsTable" class="table table-hover table-row-border"
 	cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
@@ -108,7 +110,8 @@ studyResultsCount: Integer)
 
 <!-- Template for active button in Component's row -->
 <div id="componentActiveButtonDiv" style="display: none">
-	<button type="button" class="btn btn-sm btn-default activeButton">
+	<button type="button" class="btn btn-sm btn-default activeButton"
+		data-toggle="tooltip" data-placement="bottom" title="">
 		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
 	</button>
 </div>
@@ -137,8 +140,12 @@ studyResultsCount: Integer)
 				More <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
-				<li><a class="exportComponent" href="#">Export</a></li>
-				<li><a class="cloneComponent" href="#">Clone</a></li>
+				<li  data-toggle="tooltip" data-placement="bottom" title="Export this component to the local file system (without its assets or results)">
+					<a class="exportComponent" href="#">Export</a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Clone this component without its results">
+					<a class="cloneComponent" href="#">Clone</a>
+				</li>
 				<li class="divider"></li>
 				<li><a class="removeComponent" href="#">Delete</a></li>
 			</ul>
@@ -364,6 +371,7 @@ $(document).ready(function() {
 			button.removeClass('btn-warning');
 			button.addClass('btn-info');
 			button.attr('aria-pressed', 'true');
+			button.attr('title', "Click to deactivate this component");
 			button.html($(button.html())
 					.removeClass('glyphicon-remove')
 					.addClass('glyphicon-ok').prop('outerHTML'));
@@ -372,6 +380,7 @@ $(document).ready(function() {
 			button.removeClass('btn-info');
 			button.addClass('btn-warning');
 			button.attr('aria-pressed', 'false');
+			button.attr('title', "Click to activate this component");
 			button.html($(button.html())
 					.removeClass('glyphicon-ok')
 					.addClass('glyphicon-remove').prop('outerHTML'));

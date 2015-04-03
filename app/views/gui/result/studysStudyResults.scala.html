@@ -5,8 +5,14 @@
 <!-- Toolbar -->
 <div id="resultsToolbar" class="btn-toolbar pull-right" role="toolbar">
 	<div class="btn-group" aria-hidden="true">
-		<button type="button" class="exportData btn btn-primary btn-sm">Export Data</button>
-		<button type="button" class="remove btn btn-primary btn-sm">Delete</button>
+		<button type="button" class="exportData btn btn-primary btn-sm"
+			data-toggle="tooltip" data-placement="top" title="Select results and export them as a text file to your local file system">
+			Export Data
+		</button>
+		<button type="button" class="remove btn btn-primary btn-sm"
+			data-toggle="tooltip" data-placement="top" title="Select results and delete them">
+			Delete
+		</button>
 	</div>
 </div>
 
@@ -14,35 +20,37 @@
 <table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
 		<tr>
-			<th></th>
+			<th data-toggle="tooltip" data-placement="top" title="Click on the + icon to open the result's data">Data</th>
 			<th>Result ID</th>
-			<th>Start Time (Server)</th>
+			<th data-toggle="tooltip" data-placement="top" title="Time according to the JATOS server">Start Time (Server)</th>
 			<th>Duration</th>
 			<th>Worker ID</th>
-			<th>Worker Type</th>
-			<th>MTurk Worker ID</th>
-			<th>Confirmation Code</th>
-			<th>State</th>
-			<th>Messages</th>
+			<th data-toggle="tooltip" data-placement="top" title="Type of worker, e.g. MTurk, Tester, Closed Standalone">Worker Type</th>
+			<th data-toggle="tooltip" data-placement="top" title="Mechanical Turk's worker ID">MTurk Worker ID</th>
+			<th data-toggle="tooltip" data-placement="top" title="Confirmation code for Mechanical Turk">Confirmation Code</th>
+			<th data-toggle="tooltip" data-placement="top" title="State of this run, e.g. FINISHED, FAIL, DATA_RETRIEVED">State</th>
+			<th data-toggle="tooltip" data-placement="top" title="Messages that occured during the run">Messages</th>
 		</tr>
 	</thead>
 	<tfoot>
 		<tr>
-			<th></th>
+			<th data-toggle="tooltip" data-placement="top" title="Click on the + icon to open the result's data">Data</th>
 			<th>Result ID</th>
-			<th>Start Time (Server)</th>
+			<th data-toggle="tooltip" data-placement="top" title="Time according to the JATOS server">Start Time (Server)</th>
 			<th>Duration</th>
 			<th>Worker ID</th>
-			<th>Worker Type</th>
-			<th>MTurk Worker ID</th>
-			<th>Confirmation Code</th>
-			<th>State</th>
-			<th>Messages</th>
+			<th data-toggle="tooltip" data-placement="top" title="Type of worker, e.g. MTurk, Tester, Closed Standalone">Worker Type</th>
+			<th data-toggle="tooltip" data-placement="top" title="Mechanical Turk's worker ID">MTurk Worker ID</th>
+			<th data-toggle="tooltip" data-placement="top" title="Confirmation code for Mechanical Turk">Confirmation Code</th>
+			<th data-toggle="tooltip" data-placement="top" title="State of this run, e.g. FINISHED, FAIL, DATA_RETRIEVED">State</th>
+			<th data-toggle="tooltip" data-placement="top" title="Messages that occured during the run">Messages</th>
 		</tr>
 	</tfoot>
 </table>
 
 <script type="text/javascript">
+
+showInfo("Select a result for export or deletion by clicking anywhere on its row.");
 
 var resultsTable;
 $(document).ready(function() {
