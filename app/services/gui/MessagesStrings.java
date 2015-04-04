@@ -1,5 +1,7 @@
 package services.gui;
 
+import models.ComponentResult.ComponentState;
+import models.StudyResult.StudyState;
 import models.UserModel;
 
 import com.google.inject.Singleton;
@@ -61,14 +63,17 @@ public abstract class MessagesStrings {
 	public static final String RESULTS_DATA = "Click on the + icon to open the result's data";
 	public static final String RESULTS_START_TIME = "Time according to the JATOS server";
 	public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. MTurk, Tester, Closed Standalone";
+	public static final String RESULTS_WORKER_ID = "Click on the ID to go to this worker's results";
+	public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
 	public static final String RESULTS_MT_WORKER_ID = "Mechanical Turk's worker ID";
 	public static final String RESULTS_CONFIRMATION_CODE = "Confirmation code for Mechanical Turk";
-	public static final String RESULTS_STUDY_STATE = "Current state of this study's run, e.g. STARTED, FINISHED, FAIL, DATA_RETRIEVED";
+	public static final String RESULTS_STUDY_STATE = "Current state of this study's run, like "
+			+ StudyState.allStatesAsString();
 	public static final String RESULTS_STUDY_MESSAGES = "Messages that occured during the run of this study";
-	public static final String RESULTS_COMPONENT_STATE = "Current state of this component's run, e.g. STARTED, FINISHED, RELOADED, DATA_RETRIEVED, RESULTDATA_POSTED";
+	public static final String RESULTS_COMPONENT_STATE = "Current state of this component's run, like "
+			+ ComponentState.allStatesAsString();
 	public static final String RESULTS_COMPONENT_MESSAGES = "Messages that occured during the run of this component";
 
-	
 	// Other
 	public static final String MTWORKER_ALLOWANCE_MISSING = "Right now workers from Mechnical Turk are not allowed to run this study. You should change this in this study's properties before you run it from Mechanical Turk.";
 	public static final String COULDNT_GENERATE_JATOS_URL = "Couldn't generate JATOS' URL. Try to reload this page.";
@@ -151,7 +156,7 @@ public abstract class MessagesStrings {
 				+ " that has a component with ID " + componentId + ".";
 		return errorMsg;
 	}
-	
+
 	public static String componentHasNoStudy(Long componentId) {
 		String errorMsg = "The component with ID " + componentId
 				+ " doesn't belong to any study.";
@@ -192,10 +197,9 @@ public abstract class MessagesStrings {
 				+ "\" doesn't exist.";
 		return errorMsg;
 	}
-	
+
 	public static String resultIdMalformed(String resultIdStr) {
-		String errorMsg = "The result ID \"" + resultIdStr
-				+ "\" is malformed.";
+		String errorMsg = "The result ID \"" + resultIdStr + "\" is malformed.";
 		return errorMsg;
 	}
 
