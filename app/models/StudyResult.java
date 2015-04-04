@@ -2,6 +2,7 @@ package models;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -56,7 +57,11 @@ public class StudyResult {
 		DATA_RETRIEVED, // Study's jsonData were retrieved
 		FINISHED, // Study successfully finished
 		ABORTED, // Study aborted by worker
-		FAIL // Something went wrong
+		FAIL; // Something went wrong
+		public static String allStatesAsString() {
+			String str = Arrays.toString(values());
+			return str.substring(1, str.length() - 1);
+		}
 	};
 
 	/**

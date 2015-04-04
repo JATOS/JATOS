@@ -1,6 +1,7 @@
 package models;
 
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Date;
 
 import javax.persistence.Entity;
@@ -54,7 +55,11 @@ public class ComponentResult {
 		FINISHED, // Component was finished
 		RELOADED, // Component was reloaded
 		ABORTED, // Component aborted by worker
-		FAIL // Something went wrong
+		FAIL; // Something went wrong
+		public static String allStatesAsString() {
+			String str = Arrays.toString(values());
+			return str.substring(1, str.length() - 1);
+		}
 	};
 
 	/**
