@@ -64,7 +64,7 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.OpenStandaloneWorker.WORKER_TYPE)) {checked}
 					>@workers.OpenStandaloneWorker.UI_WORKER_TYPE
 		</label>
-		<span class="help-block">Which workers are allowed to run this study?</span>
+		<span class="help-block">Which worker types are allowed to run this study?</span>
 	</div>
 </div>
 
