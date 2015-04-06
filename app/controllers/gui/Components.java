@@ -25,8 +25,8 @@ import services.gui.UserService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import controllers.gui.actionannotations.Authenticated;
-import controllers.gui.actionannotations.JatosGui;
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import controllers.publix.jatos.JatosPublix;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
@@ -213,7 +213,8 @@ public class Components extends Controller {
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 		ComponentModel component = componentDao.findById(componentId);
-		checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
+		checkStudyAndLockedAndComponent(studyId, componentId, study,
+				loggedInUser, component);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
 				.bindFromRequest();
@@ -260,7 +261,8 @@ public class Components extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
-		checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
+		checkStudyAndLockedAndComponent(studyId, componentId, study,
+				loggedInUser, component);
 
 		if (active != null) {
 			componentDao.changeActive(component, active);
@@ -282,7 +284,8 @@ public class Components extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
-		checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
+		checkStudyAndLockedAndComponent(studyId, componentId, study,
+				loggedInUser, component);
 
 		ComponentModel clone = componentService.clone(component);
 		componentDao.create(study, clone);
@@ -303,12 +306,13 @@ public class Components extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
-		checkStudyAndLockedAndComponent(studyId, componentId, study, loggedInUser, component);
+		checkStudyAndLockedAndComponent(studyId, componentId, study,
+				loggedInUser, component);
 
 		componentDao.remove(study, component);
 		return ok().as("text/html");
 	}
-	
+
 	private void checkStudyAndLocked(Long studyId, StudyModel study,
 			UserModel loggedInUser) throws JatosGuiException {
 		try {
@@ -319,9 +323,9 @@ public class Components extends Controller {
 		}
 	}
 
-	private void checkStudyAndLockedAndComponent(Long studyId, Long componentId, StudyModel study,
-			UserModel loggedInUser, ComponentModel component)
-			throws JatosGuiException {
+	private void checkStudyAndLockedAndComponent(Long studyId,
+			Long componentId, StudyModel study, UserModel loggedInUser,
+			ComponentModel component) throws JatosGuiException {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			studyService.checkStudyLocked(study);

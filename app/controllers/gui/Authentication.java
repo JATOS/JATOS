@@ -16,7 +16,7 @@ import services.gui.UserService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import controllers.gui.actionannotations.JatosGui;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 
 /**
  * Controller that deals with login/logout.
