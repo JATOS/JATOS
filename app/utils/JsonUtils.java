@@ -322,20 +322,21 @@ public class JsonUtils {
 	 * the 'resultCount', the number of ComponentResults of this component so
 	 * far. Intended for use in JATOS' GUI.
 	 */
-	public String allComponentsForUI(List<ComponentModel> componentList)
+	public JsonNode allComponentsForUI(List<ComponentModel> componentList)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
+		int i = 1;
 		for (ComponentModel component : componentList) {
 			ObjectNode componentNode = OBJECTMAPPER.valueToTree(component);
 			// Add count of component's results
 			componentNode.put("resultCount",
 					componentResultDao.countByComponent(component));
+			componentNode.put(ComponentModel.POSITION, i++);
 			arrayNode.add(componentNode);
 		}
 		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
 		componentsNode.put(DATA, arrayNode);
-		String asJsonStr = OBJECTMAPPER.writeValueAsString(componentsNode);
-		return asJsonStr;
+		return componentsNode;
 	}
 
 	/**

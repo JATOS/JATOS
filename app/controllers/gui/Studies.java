@@ -42,8 +42,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import controllers.gui.actionannotations.Authenticated;
-import controllers.gui.actionannotations.JatosGui;
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.tester.TesterPublix;
@@ -409,7 +409,7 @@ public class Studies extends Controller {
 	 */
 	@Transactional
 	public Result changeComponentOrder(Long studyId, Long componentId,
-			String direction) throws JatosGuiException {
+			String newPosition) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".changeComponentOrder: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
@@ -421,7 +421,7 @@ public class Studies extends Controller {
 			studyService.checkStudyLocked(study);
 			componentService.checkStandardForComponents(studyId, componentId,
 					loggedInUser, component);
-			studyService.changeComponentPosition(direction, study, component);
+			studyService.changeComponentPosition(newPosition, study, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -575,7 +575,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
-		String dataAsJson = null;
+		JsonNode dataAsJson = null;
 		try {
 			dataAsJson = jsonUtils.allComponentsForUI(study.getComponentList());
 		} catch (IOException e) {
@@ -615,7 +615,7 @@ public class Studies extends Controller {
 	public Result workers(Long studyId) throws JatosGuiException {
 		return workers(studyId, null, Http.Status.OK);
 	}
-	
+
 	private void checkStandardForStudy(Long studyId, StudyModel study,
 			UserModel loggedInUser) throws JatosGuiException {
 		try {

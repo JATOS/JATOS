@@ -262,59 +262,64 @@ public class StudyServiceTest extends AbstractGuiTest {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
-		// First component + down -> second
+		// First component to third position
 		ComponentModel component = study.getFirstComponent();
 		try {
 			entityManager.getTransaction().begin();
-			studyService.changeComponentPosition(
-					StudyService.COMPONENT_POSITION_DOWN, study, component);
+			studyService.changeComponentPosition("3", study, component);
 			entityManager.getTransaction().commit();
 		} catch (BadRequestException e) {
 			Fail.fail();
 		}
-		assertThat(study.getComponent(2)).isEqualTo(component);
+		assertThat(study.getComponent(3)).isEqualTo(component);
 
-		// Second component + up -> first
+		// Back to first
 		try {
 			entityManager.getTransaction().begin();
-			studyService.changeComponentPosition(
-					StudyService.COMPONENT_POSITION_UP, study, component);
+			studyService.changeComponentPosition("1", study, component);
 			entityManager.getTransaction().commit();
 		} catch (BadRequestException e) {
 			Fail.fail();
 		}
 		assertThat(study.getComponent(1)).isEqualTo(component);
 
-		// First component + up -> still first
+		// First component to first position -> still first
 		try {
 			entityManager.getTransaction().begin();
-			studyService.changeComponentPosition(
-					StudyService.COMPONENT_POSITION_UP, study, component);
+			studyService.changeComponentPosition("1", study, component);
 			entityManager.getTransaction().commit();
 		} catch (BadRequestException e) {
 			Fail.fail();
 		}
 		assertThat(study.getComponent(1)).isEqualTo(component);
 
-		// Last component + down -> still last
+		// Last component to last position -> still last
 		component = study.getLastComponent();
 		try {
 			entityManager.getTransaction().begin();
-			studyService.changeComponentPosition(
-					StudyService.COMPONENT_POSITION_DOWN, study, component);
+			studyService.changeComponentPosition("8", study, component);
 			entityManager.getTransaction().commit();
 		} catch (BadRequestException e) {
 			Fail.fail();
 		}
 		assertThat(study.getLastComponent()).isEqualTo(component);
 
-		// Last component + down -> still last
+		// NumberFormatException
 		try {
 			studyService.changeComponentPosition("bla", study, component);
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyReorderUnknownDirection("bla",
+					MessagesStrings.COULDNT_CHANGE_POSITION_OF_COMPONENT);
+		}
+
+		// IndexOutOfBoundsException
+		try {
+			studyService.changeComponentPosition("100", study, component);
+			Fail.fail();
+		} catch (BadRequestException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.studyReorderUnknownPosition("100",
 							study.getId()));
 		}
 
@@ -361,7 +366,7 @@ public class StudyServiceTest extends AbstractGuiTest {
 		assertThat(IOUtils.checkStudyAssetsDirExists("changed_dirname"))
 				.isTrue();
 		assertThat(IOUtils.checkStudyAssetsDirExists(oldDirName)).isFalse();
-		
+
 		// Clean-up
 		removeStudy(study);
 	}

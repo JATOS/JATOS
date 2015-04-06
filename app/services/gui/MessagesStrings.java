@@ -77,6 +77,7 @@ public abstract class MessagesStrings {
 	// Other
 	public static final String MTWORKER_ALLOWANCE_MISSING = "Right now workers from Mechnical Turk are not allowed to run this study. You should change this in this study's properties before you run it from Mechanical Turk.";
 	public static final String COULDNT_GENERATE_JATOS_URL = "Couldn't generate JATOS' URL. Try to reload this page.";
+	public static final String COULDNT_CHANGE_POSITION_OF_COMPONENT = "Couldn't change position of componet.";
 
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
@@ -99,9 +100,9 @@ public abstract class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String studyReorderUnknownDirection(String direction,
+	public static String studyReorderUnknownPosition(String position,
 			Long studyId) {
-		String errorMsg = "Unknown direction command. Couldn't reorder "
+		String errorMsg = "Unknown position "+ position +". Couldn't reorder "
 				+ "components in study with ID " + studyId + ".";
 		return errorMsg;
 	}

@@ -106,14 +106,15 @@ studyResultsCount: Integer)
 	cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
 		<tr>
-			<th></th>
+			<th data-toggle="tooltip" data-placement="bottom" title="Position in this study - You can drag and drop it to a new position">#</th>
 			<th data-toggle="tooltip" data-placement="bottom" title="Inactive components won't show up in the next run">Active</th>
-			<th data-toggle="tooltip" data-placement="bottom" title="Position in this study">#</th>
 			<th data-toggle="tooltip" data-placement="bottom" title="ID of this component">ID</th>
 			<th>Title</th>
 			<th></th>
 		</tr>
 	</thead>
+	<tbody class="sortable"> 
+	</tbody>
 </table>
 
 <!-- Template for active button in Component's row -->
@@ -121,6 +122,14 @@ studyResultsCount: Integer)
 	<button type="button" class="btn btn-sm btn-default activeButton"
 		data-toggle="tooltip" data-placement="bottom" title="">
 		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+	</button>
+</div>
+
+<!-- Template for drag button in Component's row -->
+<div id="componentDragButtonDiv" style="display: none">
+	<button type="button" class="btn btn-sm btn-info dragButton"
+		data-toggle="tooltip" data-placement="bottom" title="">
+		<span class="glyphicon glyphicon-sort" aria-hidden="true"></span>
 	</button>
 </div>
 
@@ -216,8 +225,9 @@ $(document).ready(function() {
 				"defaultContent": '',
 				"width": "1px",
 				"render": function (data, type, full, meta) {
-					return '<div class="upArrow"></div>'
-						+ '<div class="downArrow"></div>';
+					var button = $('#componentDragButtonDiv button:first-child').clone();
+					button.html(button.html() + data.position);
+					return button.prop('outerHTML');
 				}
 			},
 			{
@@ -230,11 +240,6 @@ $(document).ready(function() {
 					setButtonActive(button, data.active);
 					return button.prop('outerHTML');
 				}
-			},
-			{
-				"class": 'position',
-				"data": null,
-				"width": "1px"
 			},
 			{
 				"data": "id",
@@ -260,15 +265,6 @@ $(document).ready(function() {
 			"sEmptyTable": "No components yet"
 		}
 	});
-
-	componentsTable.on('order.dt search.dt', function () {
-		componentsTable.column(2, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
-			cell.innerHTML = i + 1;
-		});
-	}).draw();
-
-	// Don't remove. It readjusts the columns width after writing the component's positions
-	componentsTable.columns.adjust().draw();
 	
 	// Adjust the width of every component's toolbar to the widest one
 	componentsTable.on('column-sizing.dt', function (e, settings) {
@@ -309,9 +305,7 @@ $(document).ready(function() {
 			type: 'GET',
 			url: "/jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
 			success: function(result) {
-				componentsTable.ajax.reload();
 				showMessages(result);
-				fillSidebar();
 			},
 			error : function(err) {
 				showError(err.responseText);
@@ -361,7 +355,7 @@ $(document).ready(function() {
 		var checkbox = this;
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
-		var active = $(this).hasClass('active');
+		var active = $(this).hasClass('activeComponent');
 		$.ajax({
 			url : "/jatos/" + @study.getId() +"/" + componentId
 					+ "/changeProperty?active=" + !active,
@@ -377,19 +371,17 @@ $(document).ready(function() {
 	
 	function setButtonActive(button, active) {
 		if (active) {
-			button.addClass('active');
+			button.addClass('activeComponent');
 			button.removeClass('btn-warning');
 			button.addClass('btn-info');
-			button.attr('aria-pressed', 'true');
 			button.attr('title', "Click to deactivate this component");
 			button.html($(button.html())
 					.removeClass('glyphicon-remove')
 					.addClass('glyphicon-ok').prop('outerHTML'));
 		} else {
-			button.removeClass('active');
+			button.removeClass('activeComponent');
 			button.removeClass('btn-info');
 			button.addClass('btn-warning');
-			button.attr('aria-pressed', 'false');
 			button.attr('title', "Click to activate this component");
 			button.html($(button.html())
 					.removeClass('glyphicon-ok')
@@ -397,19 +389,53 @@ $(document).ready(function() {
 		}
 	}
 	
-	function getComponentId(element) {
-		var tr = $(element).closest('tr');
-		var rowData = componentsTable.row(tr).data();
-		return rowData.id;
-	}
-	
-	function getComponentTitle(element) {
-		var tr = $(element).closest('tr');
-		var rowData = componentsTable.row(tr).data();
-		return rowData.title;
-	}
-	
+	$("tbody.sortable").sortable({
+		items: "> tr",
+		handle: '.dragButton',
+		// Interferes with dragging - need to overwrite since default it button 
+		cancel: '',
+		helper: function(e, tr) {
+			var $originals = tr.children();
+			var $helper = tr.clone();
+			$helper.children().each(function(index) {
+				// Set helper cell sizes to match the original sizes
+				$(this).width($originals.eq(index).width());
+			});
+			return $helper;
+		},
+		zIndex: 9999,
+	}).disableSelection();
 });
+
+$("tbody.sortable").on("sortstop", function(event, ui) {
+	var componentId = getComponentId(ui.item);
+	var newPosition = ui.item.index() + 1;
+	$.ajax({
+		url : "/jatos/" + @study.getId() + "/changeComponentOrder"
+				+ "?componentId=" + componentId + "&newPosition="
+				+ newPosition,
+		type : "POST",
+		success : function(response) {
+			componentsTable.ajax.reload();
+			fillSidebar();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+function getComponentId(element) {
+	var tr = $(element).closest('tr');
+	var rowData = componentsTable.row(tr).data();
+	return rowData.id;
+}
+
+function getComponentTitle(element) {
+	var tr = $(element).closest('tr');
+	var rowData = componentsTable.row(tr).data();
+	return rowData.title;
+}
 
 function ajaxChangeComponentOrder(componentId, direction, tr) {
 	$.ajax({
@@ -574,12 +600,6 @@ $('#studyToolbar').on('click', '#cloneStudy', function() {
 		}
 	});
 });
-
-function getComponentId(e) {
-	var componentElement = $(e.target);
-	var componentId = componentElement.attr("component-id");
-	return componentId;
-}
 
 $('#studyToolbar').on('click', '#importComponentButton', function() {
 	$('#importComponentBrowser').trigger("click");

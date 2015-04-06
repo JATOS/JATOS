@@ -8,7 +8,6 @@ import java.util.Map;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import persistance.ComponentDao;
 import persistance.StudyDao;
 import persistance.UserDao;
 import services.RequestScopeMessaging;
@@ -32,15 +31,13 @@ public class StudyService {
 	public static final String COMPONENT_POSITION_UP = "up";
 
 	private final ComponentService componentService;
-	private final ComponentDao componentDao;
 	private final StudyDao studyDao;
 	private final UserDao userDao;
 
 	@Inject
-	StudyService(ComponentService componentService, ComponentDao componentDao,
-			StudyDao studyDao, UserDao userDao) {
+	StudyService(ComponentService componentService, StudyDao studyDao,
+			UserDao userDao) {
 		this.componentService = componentService;
-		this.componentDao = componentDao;
 		this.studyDao = studyDao;
 		this.userDao = userDao;
 	}
@@ -155,55 +152,26 @@ public class StudyService {
 	}
 
 	/**
-	 * Change the position of the component within the study. The direction is
-	 * determined by the direction and can be minus one or plus one. Changes are
-	 * persisted.
+	 * Changes the position of the given component within the given study to the
+	 * new position given in newPosition. Remember the first position is 1 (and
+	 * not 0).
 	 */
-	public void changeComponentPosition(String direction, StudyModel study,
+	public void changeComponentPosition(String newPosition, StudyModel study,
 			ComponentModel component) throws BadRequestException {
-		switch (direction) {
-		case COMPONENT_POSITION_UP:
-			componentPositionMinusOne(study, component);
-			break;
-		case COMPONENT_POSITION_DOWN:
-			componentPositionPlusOne(study, component);
-			break;
-		default:
+		try {
+			int currentIndex = study.getComponentList().indexOf(component);
+			int newIndex = Integer.valueOf(newPosition) - 1;
+			study.getComponentList().remove(currentIndex);
+			study.getComponentList().add(newIndex, component);
+			studyDao.update(study);
+		} catch (NumberFormatException e) {
 			throw new BadRequestException(
-					MessagesStrings.studyReorderUnknownDirection(direction,
+					MessagesStrings.COULDNT_CHANGE_POSITION_OF_COMPONENT);
+		} catch (IndexOutOfBoundsException e) {
+			throw new BadRequestException(
+					MessagesStrings.studyReorderUnknownPosition(newPosition,
 							study.getId()));
 		}
-		// The actual change in order happens within the component model. The
-		// study model we just have to refresh.
-		studyDao.refresh(study);
-	}
-
-	private void componentPositionMinusOne(StudyModel study,
-			ComponentModel component) {
-		int index = study.getComponentList().indexOf(component);
-		if (index > 0) {
-			ComponentModel prevComponent = study.getComponentList().get(
-					index - 1);
-			componentPositionSwap(study, component, prevComponent);
-		}
-	}
-
-	private void componentPositionPlusOne(StudyModel study,
-			ComponentModel component) {
-		int index = study.getComponentList().indexOf(component);
-		if (index < (study.getComponentList().size() - 1)) {
-			ComponentModel nextComponent = study.getComponentList().get(
-					index + 1);
-			componentPositionSwap(study, component, nextComponent);
-		}
-	}
-
-	private void componentPositionSwap(StudyModel study,
-			ComponentModel component1, ComponentModel component2) {
-		int position1 = study.getComponentList().indexOf(component1) + 1;
-		int position2 = study.getComponentList().indexOf(component2) + 1;
-		componentDao.changePosition(component1, position2);
-		componentDao.changePosition(component2, position1);
 	}
 
 	/**

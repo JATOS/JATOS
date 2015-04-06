@@ -50,7 +50,7 @@ POST    /jatos/:studyId/edit                         @controllers.gui.Studies.su
 GET     /jatos/:studyId/changeMembers                @controllers.gui.Studies.changeMembers(studyId: Long)
 POST    /jatos/:studyId/changeMembers                @controllers.gui.Studies.submitChangedMembers(studyId: Long)
 DELETE  /jatos/:studyId/remove                       @controllers.gui.Studies.remove(studyId: Long)
-POST    /jatos/:studyId/changeComponentOrder         @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, direction: String)
+POST    /jatos/:studyId/changeComponentOrder         @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, newPosition: String)
 GET     /jatos/:studyId/mturk                        @controllers.gui.Studies.showMTurkSourceCode(studyId: Long)
 GET     /jatos/:studyId/show                         @controllers.gui.Studies.showStudy(studyId: Long)
 POST    /jatos/:studyId/createClosedStandaloneRun    @controllers.gui.Studies.createClosedStandaloneRun(studyId: Long)
