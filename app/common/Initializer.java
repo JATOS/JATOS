@@ -1,6 +1,7 @@
 package common;
 
 import java.io.File;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,15 +77,20 @@ public class Initializer {
 					if (study.getUuid() == null
 							|| study.getUuid().trim().isEmpty()) {
 						study.setUuid(UUID.randomUUID().toString());
-						studyDao.update(study);
 					}
-					for (ComponentModel component : study.getComponentList()) {
-						if (component.getUuid() == null
+					Iterator<ComponentModel> iterator = study
+							.getComponentList().iterator();
+					while (iterator.hasNext()) {
+						ComponentModel component = iterator.next();
+						if (component == null) {
+							iterator.remove();
+						} else if (component.getUuid() == null
 								|| component.getUuid().trim().isEmpty()) {
 							component.setUuid(UUID.randomUUID().toString());
 							componentDao.update(component);
 						}
 					}
+					studyDao.update(study);
 				}
 			}
 		});
