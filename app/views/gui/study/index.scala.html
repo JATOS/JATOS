@@ -106,7 +106,7 @@ studyResultsCount: Integer)
 	cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
 		<tr>
-			<th data-toggle="tooltip" data-placement="bottom" title="Position in this study - You can drag and drop it to a new position"><span class="glyphicon glyphicon-sort" aria-hidden="true"></span></th>
+			<th data-toggle="tooltip" data-placement="bottom" title="The number in the button shows the position in this study - Use the button to drag and drop the component to a new position"><span class="glyphicon glyphicon-sort" aria-hidden="true"></span></th>
 			<th data-toggle="tooltip" data-placement="bottom" title="Inactive components won't show up in the next run">Active</th>
 			<th data-toggle="tooltip" data-placement="bottom" title="ID of this component">ID</th>
 			<th>Title</th>
@@ -220,6 +220,7 @@ $(document).ready(function() {
 		} ],
 		"columns": [
 			{
+				"class": 'componentDragButton',
 				"data": null,
 				"defaultContent": '',
 				"width": "1px",
@@ -305,6 +306,8 @@ $(document).ready(function() {
 			url: "/jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
 			success: function(result) {
 				showMessages(result);
+				componentsTable.ajax.reload();
+				fillSidebar();
 			},
 			error : function(err) {
 				showError(err.responseText);
@@ -335,18 +338,6 @@ $(document).ready(function() {
 				}
 			});
 		});
-	});
-	
-	$('#componentsTable tbody').on('click', '.upArrow', function() {
-		var tr = $(this).closest('tr');
-		var componentId = getComponentId(this);
-		ajaxChangeComponentOrder(componentId, "@services.gui.StudyService.COMPONENT_POSITION_UP", tr);
-	});
-
-	$('#componentsTable tbody').on('click', '.downArrow', function() {
-		var tr = $(this).closest('tr');
-		var componentId = getComponentId(this);
-		ajaxChangeComponentOrder(componentId, "@services.gui.StudyService.COMPONENT_POSITION_DOWN", tr);
 	});
 	
 	$('#componentsTable tbody').on('click', '.activeButton', function() {

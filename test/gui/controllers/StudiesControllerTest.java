@@ -21,7 +21,6 @@ import org.junit.Test;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import services.gui.Breadcrumbs;
-import services.gui.StudyService;
 import utils.IOUtils;
 import utils.JsonUtils;
 
