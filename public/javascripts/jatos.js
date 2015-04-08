@@ -10,9 +10,23 @@
  * Licensed under the MIT license.
  */
 
+/**
+ * Timeout time for an ajax call
+ */
 var httpTimeout = 5000;
+/**
+ * How many times should jatos.js try to send a failed ajax call.
+ */
 var httpRetry = 5;
+/**
+ * How long should jatos.js wait between a failed ajax call and a retry.
+ */
 var httpRetryWait = 500;
+
+var submittingResultData = false;
+var startingComponent = false;
+var endingComponent = false;
+var abortingComponent = false;
 
 var jatos = {};
 var onErrorCallback;
@@ -200,6 +214,10 @@ function initJatos() {
  *            Function} error - Function to be called in case of error
  */
 jatos.submitResultData = function(resultData, success, error) {
+	if (submittingResultData){
+		return;
+	}
+	submittingResultData = true;
 	$.ajax({
 		url : "/publix/" + jatos.studyId + "/" + jatos.componentId
 				+ "/submitResultData",
@@ -209,11 +227,13 @@ jatos.submitResultData = function(resultData, success, error) {
 		contentType : "text/plain",
 		timeout : httpTimeout,
 		success : function(response) {
+			submittingResultData = false;
 			if (success) {
 				success(response)
 			}
 		},
 		error : function(err) {
+			submittingResultData = false;
 			if (error) {
 				error(err)
 			}
@@ -278,6 +298,10 @@ jatos.setStudySessionData = function(sessionData, complete) {
  *            should be added to the URL
  */
 jatos.startComponent = function(componentId, queryString) {
+	if (startingComponent) {
+		return;
+	}
+	startingComponent = true;
 	var callbackWhenComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/" + componentId + "/start";
 		if (queryString) {
@@ -299,6 +323,10 @@ jatos.startComponent = function(componentId, queryString) {
  *            should be added to the URL
  */
 jatos.startComponentByPos = function(componentPos, queryString) {
+	if (startingComponent) {
+		return;
+	}
+	startingComponent = true;
 	var callbackWhenComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/startComponent?position="
 				+ componentPos;
@@ -320,6 +348,10 @@ jatos.startComponentByPos = function(componentPos, queryString) {
  *            should be added to the URL
  */
 jatos.startNextComponent = function(queryString) {
+	if (startingComponent) {
+		return;
+	}
+	startingComponent = true;
 	var callbackWhenComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/startNextComponent";
 		if (queryString) {
@@ -349,6 +381,10 @@ jatos.startNextComponent = function(queryString) {
  *            Function} error - Function to be called in case of error
  */
 jatos.endComponent = function(successful, errorMsg, success, error) {
+	if (endingComponent) {
+		return;
+	}
+	endingComponent = true;
 	var callbackWhenComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end";
 		var fullUrl;
@@ -368,11 +404,13 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 			type : "GET",
 			timeout : httpTimeout,
 			success : function(response) {
+				endingComponent = false;
 				if (success) {
 					success(response)
 				}
 			},
 			error : function(err) {
+				endingComponent = false;
 				if (error) {
 					error(err)
 				}
@@ -394,6 +432,10 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
  *            Function} error - Function to be called in case of error
  */
 jatos.abortStudyAjax = function(message, success, error) {
+	if (abortingComponent) {
+		return;
+	}
+	abortingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/abort";
 	var fullUrl;
 	if (undefined == message) {
@@ -407,11 +449,13 @@ jatos.abortStudyAjax = function(message, success, error) {
 		type : "GET",
 		timeout : httpTimeout,
 		success : function(response) {
+			abortingComponent = false;
 			if (success) {
 				success(response)
 			}
 		},
 		error : function(err) {
+			abortingComponent = false;
 			if (error) {
 				error(err)
 			}
@@ -426,6 +470,10 @@ jatos.abortStudyAjax = function(message, success, error) {
  *            String} message - Message that should be logged
  */
 jatos.abortStudy = function(message) {
+	if (abortingComponent) {
+		return;
+	}
+	abortingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/abort";
 	if (undefined == message) {
 		window.location.href = url;
@@ -450,6 +498,10 @@ jatos.abortStudy = function(message) {
  *            Function} error - Function to be called in case of error
  */
 jatos.endStudyAjax = function(successful, errorMsg, success, error) {
+	if (endingComponent) {
+		return;
+	}
+	endingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/end";
 	var fullUrl;
 	if (undefined == successful || undefined == errorMsg) {
@@ -467,11 +519,13 @@ jatos.endStudyAjax = function(successful, errorMsg, success, error) {
 		type : "GET",
 		timeout : httpTimeout,
 		success : function(response) {
+			endingComponent = false;
 			if (success) {
 				success(response)
 			}
 		},
 		error : function(err) {
+			endingComponent = false;
 			if (error) {
 				error(err)
 			}
@@ -490,6 +544,10 @@ jatos.endStudyAjax = function(successful, errorMsg, success, error) {
  *            String} errorMsg - Error message that should be logged.
  */
 jatos.endStudy = function(successful, errorMsg) {
+	if (endingComponent) {
+		return;
+	}
+	endingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/end";
 	if (undefined == successful || undefined == errorMsg) {
 		window.location.href = url;
