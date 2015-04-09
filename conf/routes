@@ -27,6 +27,7 @@ GET     /jatos/sidebarStudyList                      @controllers.gui.Home.sideb
 GET     /jatos                                       @controllers.gui.Home.home()
 GET     /jatos/                                      @controllers.gui.Home.home()
 GET     /                                            @controllers.gui.Home.home()
+GET     /jatos/admin/log                             @controllers.gui.Home.log(limit: Integer ?= 1000)
 GET     /jatos/user/create                           @controllers.gui.Users.create()
 POST    /jatos/user/create                           @controllers.gui.Users.submit()
 GET     /jatos/user/:email/editProfile               @controllers.gui.Users.editProfile(email: String)

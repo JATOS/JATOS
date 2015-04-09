@@ -41,7 +41,9 @@ public abstract class MessagesStrings {
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";
 	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email address is already registered.";
 	public static final String YOUVE_BEEN_LOGGED_OUT = "You've been logged out";
-
+	public static final String ONLY_ADMIN_CAN_SEE_LOGS = "Only an admin can see the logs";
+	public static final String COULDNT_OPEN_LOG = "Couldn't open log file";
+	
 	// Export / import
 	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
 	public static final String NO_STUDY_UPLOAD = "Uploaded file isn't intended for studies";
@@ -168,7 +170,12 @@ public abstract class MessagesStrings {
 		String errorMsg = "An user with email " + email + " doesn't exist.";
 		return errorMsg;
 	}
-
+	
+	public static String userMustBeLoggedInToSeeProfile(UserModel user) {
+		return "You must be logged in as " + user.toString()
+				+ " to see the profile of this user.";
+	}
+	
 	public static String componentNotExist(Long componentId) {
 		String errorMsg = "An component with ID " + componentId
 				+ " doesn't exist.";
@@ -240,11 +247,6 @@ public abstract class MessagesStrings {
 	public static String studyExportFailure(Long studyId) {
 		String errorMsg = "Export of study with ID " + studyId + " failed.";
 		return errorMsg;
-	}
-
-	public static String mustBeLoggedInAsUser(UserModel user) {
-		return "You must be logged in as " + user.toString()
-				+ " to see the profile of this user.";
 	}
 
 	public static String studyLocked(Long studyId) {
