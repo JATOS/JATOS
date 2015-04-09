@@ -24,7 +24,7 @@ public class PublixAction extends play.mvc.Action.Simple {
 			Logger.info("PublixException: " + e.getMessage());
 			call = Promise.<SimpleResult> pure(result);
 		} catch (Exception e) {
-			Logger.error(e.toString());
+			Logger.error(e.getMessage(), e);
 			call = Promise
 					.<SimpleResult> pure(internalServerError(views.html.publix.error
 							.render("Internal JATOS error: " + e.getMessage())));

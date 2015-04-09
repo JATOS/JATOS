@@ -42,7 +42,7 @@ public class JatosGuiAction extends Action<JatosGui> {
 			SimpleResult result = e.getSimpleResult();
 			call = Promise.<SimpleResult> pure(result);
 		} catch (Exception e) {
-			Logger.error(e.toString());
+			Logger.error(e.getMessage(), e);
 			FlashScopeMessaging
 					.error("Internal JATOS error: " + e.getMessage());
 			call = Promise
