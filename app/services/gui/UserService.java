@@ -66,7 +66,7 @@ public class UserService {
 			throws ForbiddenException {
 		if (!user.equals(loggedInUser)) {
 			throw new ForbiddenException(
-					MessagesStrings.mustBeLoggedInAsUser(user));
+					MessagesStrings.userMustBeLoggedInToSeeProfile(user));
 		}
 	}
 

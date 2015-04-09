@@ -78,7 +78,7 @@ public class UserServiceTest extends AbstractGuiTest {
 			Fail.fail();
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.mustBeLoggedInAsUser(testUser));
+					MessagesStrings.userMustBeLoggedInToSeeProfile(testUser));
 		}
 	}
 
