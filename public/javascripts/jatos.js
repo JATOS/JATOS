@@ -11,17 +11,23 @@
  */
 
 /**
- * Timeout time for an ajax call
+ * How long should JATOS wait until to retry the HTTP call. Warning: There is a
+ * general problem with HTTP retries. In many cases a JATOS regards a second
+ * call of the same function as a reload of the component. A reload of a
+ * component is often forbidden and leads to failed finish of the study.
+ * Therefore I put the HTTP timeout time to 60 secs. If there is now answer
+ * within this time I assume the call never reached the server and it's our last
+ * hope to continue the study is to retry the call.
  */
-var httpTimeout = 5000;
+var httpTimeout = 60000;
 /**
- * How many times should jatos.js try to send a failed ajax call.
+ * How many times should jatos.js retry to send a failed HTTP call.
  */
 var httpRetry = 5;
 /**
- * How long should jatos.js wait between a failed ajax call and a retry.
+ * How long should jatos.js wait between a failed HTTP call and a retry.
  */
-var httpRetryWait = 500;
+var httpRetryWait = 1000;
 
 var submittingResultData = false;
 var startingComponent = false;
