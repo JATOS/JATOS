@@ -34,6 +34,7 @@ public abstract class PublixErrorMessages<T extends Worker> {
 	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
 	public static final String SUBMITTED_DATA_UNKNOWN_FORMAT = "Submitted data have an unknown format.";
+	public static final String NO_WORKER_IN_SESSION = "Sorry this study is not available to you (any more). Most likely the reason for this error is a forbidden reload of a component.";
 
 	public String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));

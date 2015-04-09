@@ -502,7 +502,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return workerType;
 		}
 		throw new BadRequestPublixException(
-				PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+				PublixErrorMessages.NO_WORKER_IN_SESSION);
 	}
 
 	/**
