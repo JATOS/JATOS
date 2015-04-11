@@ -10,42 +10,76 @@
  * Licensed under the MIT license.
  */
 
+var jatos = {};
+
+// Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
+// or functions or variables)
+(function() {
+	
+jatos.initialized = false;
+
 /**
  * How long should JATOS wait until to retry the HTTP call. Warning: There is a
- * general problem with HTTP retries. In many cases a JATOS regards a second
- * call of the same function as a reload of the component. A reload of a
+ * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
+ * second call of the same function as a reload of the component. A reload of a
  * component is often forbidden and leads to failed finish of the study.
  * Therefore I put the HTTP timeout time to 60 secs. If there is now answer
  * within this time I assume the call never reached the server and it's our last
  * hope to continue the study is to retry the call.
  */
-var httpTimeout = 60000;
+jatos.httpTimeout = 60000;
 /**
  * How many times should jatos.js retry to send a failed HTTP call.
  */
-var httpRetry = 5;
+jatos.httpRetry = 5;
 /**
  * How long should jatos.js wait between a failed HTTP call and a retry.
  */
-var httpRetryWait = 1000;
+jatos.httpRetryWait = 1000;
 
+var onLoadCallbackCalled = false;
 var submittingResultData = false;
 var startingComponent = false;
 var endingComponent = false;
 var abortingComponent = false;
 
-var jatos = {};
-var onErrorCallback;
 var onLoadCallback;
+var onErrorCallback;
 
-window.addEventListener('load', loadScripts(initJatos));
+// Load jatos.js's jQuery and initialise
+getScript('/assets/javascripts/jquery-2.1.1.min.js', function() {
+	loadScripts(initJatos);
+});
 
 /**
- * Defines callback function that is to be called when jatos.js is finished its
+ * Adds a <script> element into HTML's head and call success function when loaded
+ */
+function getScript(url, success) {
+	var script = document.createElement('script');
+	script.src = url;
+	var head = document.getElementsByTagName('head')[0], done = false;
+	script.onload = script.onreadystatechange = function() {
+		if (!done && (!this.readyState || this.readyState == 'loaded'
+				|| this.readyState == 'complete')) {
+			done = true;
+			success();
+			script.onload = script.onreadystatechange = null;
+			head.removeChild(script);
+		}
+	}
+	head.appendChild(script);
+}
+
+/**
+ * Defines callback function that is to be called when jatos.js finished its
  * initialisation.
  */
 jatos.onLoad = function(callback) {
 	onLoadCallback = callback;
+	if (jatos.initialized) {
+		onLoadCallbackCalled = true;
+		onLoadCallback();
+	}
 }
 
 /**
@@ -56,7 +90,8 @@ jatos.onError = function(callback) {
 	onErrorCallback = callback;
 	$(document).ajaxError(function(event, jqxhr, settings, thrownError) {
 		if (jqxhr.statusText == 'timeout') {
-			onErrorCallback("JATOS server not responding while trying to get URL " + settings.url);
+			onErrorCallback("JATOS server not responding while trying to get URL "
+					+ settings.url);
 		} else {
 			onErrorCallback(jqxhr.responseText);
 		}
@@ -115,7 +150,9 @@ function initJatos() {
 	ready = function() {
 		if (studyPropertiesReady && studySessionDataReady
 				&& componentPropertiesReady) {
-			if (onLoadCallback) {
+			jatos.initialized = true;
+			if (onLoadCallback && !onLoadCallbackCalled) {
+				onLoadCallbackCalled = true;
 				onLoadCallback();
 			}
 		}
@@ -131,7 +168,7 @@ function initJatos() {
 			url : "/publix/" + jatos.studyId + "/getProperties",
 			type : "GET",
 			dataType : 'json',
-			timeout : httpTimeout,
+			timeout : jatos.httpTimeout,
 			success : function(response) {
 				// Legacy names TODO remove
 				jatos.studyData = response;
@@ -143,7 +180,7 @@ function initJatos() {
 				studyPropertiesReady = true;
 				ready();
 			}
-		}).retry({times : httpRetry, timeout : httpRetryWait});
+		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	};
 
 	/**
@@ -155,7 +192,7 @@ function initJatos() {
 			url : "/publix/" + jatos.studyId + "/getSessionData",
 			type : "GET",
 			dataType : 'text',
-			timeout : httpTimeout,
+			timeout : jatos.httpTimeout,
 			success : function(response) {
 				try {
 					jatos.studySessionData = $.parseJSON(response);
@@ -171,7 +208,7 @@ function initJatos() {
 				studySessionDataReady = true;
 				ready();
 			}
-		}).retry({times : httpRetry, timeout : httpRetryWait});
+		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	}
 
 	/**
@@ -185,12 +222,11 @@ function initJatos() {
 					+ "/getProperties",
 			type : "GET",
 			dataType : 'json',
-			timeout : httpTimeout,
+			timeout : jatos.httpTimeout,
 			success : function(response) {
 				// Legacy names
 				jatos.componentData = response;
-				jatos.componentJsonData = $
-						.parseJSON(jatos.componentData.jsonData);
+				jatos.componentJsonData = $.parseJSON(jatos.componentData.jsonData);
 				delete jatos.componentData.jsonData;
 				// New names
 				jatos.componentProperties = jatos.componentData;
@@ -199,7 +235,7 @@ function initJatos() {
 				componentPropertiesReady = true;
 				ready();
 			}
-		}).retry({times : httpRetry, timeout : httpRetryWait});
+		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	}
 
 	readIdCookie();
@@ -231,7 +267,7 @@ jatos.submitResultData = function(resultData, success, error) {
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
-		timeout : httpTimeout,
+		timeout : jatos.httpTimeout,
 		success : function(response) {
 			submittingResultData = false;
 			if (success) {
@@ -244,7 +280,7 @@ jatos.submitResultData = function(resultData, success, error) {
 				error(err)
 			}
 		}
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -284,13 +320,13 @@ jatos.setStudySessionData = function(sessionData, complete) {
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
-		timeout : httpTimeout,
+		timeout : jatos.httpTimeout,
 		complete : function() {
 			if (complete) {
 				complete()
 			}
 		}
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -408,7 +444,7 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 			url : fullUrl,
 			processData : false,
 			type : "GET",
-			timeout : httpTimeout,
+			timeout : jatos.httpTimeout,
 			success : function(response) {
 				endingComponent = false;
 				if (success) {
@@ -421,7 +457,7 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 					error(err)
 				}
 			}
-		}).retry({times : httpRetry, timeout : httpRetryWait});
+		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	}
 	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 }
@@ -453,7 +489,7 @@ jatos.abortStudyAjax = function(message, success, error) {
 		url : fullUrl,
 		processData : false,
 		type : "GET",
-		timeout : httpTimeout,
+		timeout : jatos.httpTimeout,
 		success : function(response) {
 			abortingComponent = false;
 			if (success) {
@@ -466,7 +502,7 @@ jatos.abortStudyAjax = function(message, success, error) {
 				error(err)
 			}
 		}
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -523,7 +559,7 @@ jatos.endStudyAjax = function(successful, errorMsg, success, error) {
 		url : fullUrl,
 		processData : false,
 		type : "GET",
-		timeout : httpTimeout,
+		timeout : jatos.httpTimeout,
 		success : function(response) {
 			endingComponent = false;
 			if (success) {
@@ -536,7 +572,7 @@ jatos.endStudyAjax = function(successful, errorMsg, success, error) {
 				error(err)
 			}
 		}
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -578,8 +614,8 @@ jatos.logError = function(logErrorMsg) {
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
-		timeout : httpTimeout
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+		timeout : jatos.httpTimeout
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -596,4 +632,6 @@ jatos.addJatosIds = function(obj) {
 	obj.studyResultId = jatos.studyResultId;
 	obj.componentResultId = jatos.componentResultId;
 }
+
+})();
 
