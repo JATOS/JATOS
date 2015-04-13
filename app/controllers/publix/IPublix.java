@@ -1,5 +1,7 @@
 package controllers.publix;
 
+import java.io.IOException;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import exceptions.publix.BadRequestPublixException;
@@ -49,20 +51,14 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Ajax GET request<br>
-	 * Returns the properties in JSON format that belong to the specified study.
+	 * Returns the study's properties, component's properties, and study's
+	 * session data in JSON format.<br>
+	 * Hint: Study session data are individual for each study run. The study
+	 * session data are different from Play's session and stored within the
+	 * study results.
 	 */
-	public Result getStudyProperties(Long studyId) throws PublixException,
-			JsonProcessingException;
-
-	/**
-	 * HTTP type: Ajax GET request<br>
-	 * Returns the study's session data in JSON format that belong to the
-	 * specified study. Study session data are individual for each study run.
-	 * The study session data are different from Play's session and stored
-	 * within the study results.
-	 */
-	public Result getStudySessionData(Long studyId) throws PublixException,
-			JsonProcessingException;
+	public Result getInitData(Long studyId, Long componentId)
+			throws PublixException, JsonProcessingException, IOException;
 
 	/**
 	 * HTTP type: Ajax POST request<br>
@@ -73,14 +69,6 @@ public interface IPublix {
 	 */
 	public Result setStudySessionData(Long studyId) throws PublixException,
 			JsonProcessingException;
-
-	/**
-	 * HTTP type: Ajax GET request<br>
-	 * Returns the properties in JSON format that belong to the component
-	 * specified by its ID.
-	 */
-	public Result getComponentProperties(Long studyId, Long componentId)
-			throws PublixException, JsonProcessingException;
 
 	/**
 	 * HTTP type: Ajax POST request<br>

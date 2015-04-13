@@ -6,8 +6,6 @@
 GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long)
 GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
 GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null)
-GET     /publix/:studyId/getProperties                   @controllers.publix.PublixInterceptor.getStudyProperties(studyId: Long)
-GET     /publix/:studyId/getSessionData                  @controllers.publix.PublixInterceptor.getStudySessionData(studyId: Long)
 POST    /publix/:studyId/setSessionData                  @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long)
 # Start component by ID
 GET     /publix/:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long)
@@ -15,7 +13,7 @@ GET     /publix/:studyId/:componentId/end                @controllers.publix.Pub
 # Start component by position
 GET     /publix/:studyId/startComponent                  @controllers.publix.PublixInterceptor.startComponentByPosition(studyId: Long, position: Integer)
 GET     /publix/:studyId/startNextComponent              @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long)
-GET     /publix/:studyId/:componentId/getProperties      @controllers.publix.PublixInterceptor.getComponentProperties(studyId: Long, componentId: Long)
+GET     /publix/:studyId/:componentId/initData           @controllers.publix.PublixInterceptor.getInitData(studyId: Long, componentId: Long)
 POST    /publix/:studyId/:componentId/submitResultData   @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long)
 POST    /publix/:studyId/:componentId/logError           @controllers.publix.PublixInterceptor.logError(studyId: Long, componentId: Long)
 

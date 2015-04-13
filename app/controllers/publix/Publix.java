@@ -1,5 +1,7 @@
 package controllers.publix;
 
+import java.io.IOException;
+
 import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
@@ -17,7 +19,6 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import utils.JsonUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Singleton;
 
 import controllers.gui.ControllerUtils;
@@ -127,29 +128,33 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public Result getStudyProperties(Long studyId) throws PublixException,
-			JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getStudyProperties: studyId " + studyId);
+	public Result getInitData(Long studyId, Long componentId)
+			throws PublixException, IOException {
+		Logger.info(CLASS_NAME + ".getInitData: studyId " + studyId + ", "
+				+ "componentId " + componentId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
+		ComponentModel component = publixUtils.retrieveComponent(study,
+				componentId);
 		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		publixUtils.checkComponentBelongsToStudy(study, component);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
+		ComponentState maxAllowedComponentState = ComponentState.STARTED;
+		ComponentResult componentResult;
+		try {
+			componentResult = publixUtils.retrieveStartedComponentResult(
+					component, studyResult, maxAllowedComponentState);
+		} catch (ForbiddenReloadException e) {
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, e.getMessage()));
+		}
 		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
 		studyResultDao.update(studyResult);
-		return ok(jsonUtils.asJsonForPublix(study));
-	}
+		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
+		componentResultDao.update(componentResult);
 
-	@Override
-	public Result getStudySessionData(Long studyId) throws PublixException {
-		Logger.info(CLASS_NAME + ".getStudySessionData: studyId " + studyId);
-		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
-		String studySessionData = studyResult.getStudySessionData();
-		return ok(studySessionData);
+		return ok(jsonUtils.initData(studyResult, study, component));
 	}
 
 	@Override
@@ -165,35 +170,6 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		studyResult.setStudySessionData(studySessionData);
 		studyResultDao.update(studyResult);
 		return ok().as("text/html");
-	}
-
-	@Override
-	public Result getComponentProperties(Long studyId, Long componentId)
-			throws PublixException, JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getComponentProperties: studyId " + studyId
-				+ ", " + "componentId " + componentId);
-		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		ComponentModel component = publixUtils.retrieveComponent(study,
-				componentId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
-		publixUtils.checkComponentBelongsToStudy(study, component);
-
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
-		ComponentState maxAllowedComponentState = ComponentState.STARTED;
-		ComponentResult componentResult;
-		try {
-			componentResult = publixUtils.retrieveStartedComponentResult(
-					component, studyResult, maxAllowedComponentState);
-		} catch (ForbiddenReloadException e) {
-			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, e.getMessage()));
-		}
-
-		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
-		componentResultDao.update(componentResult);
-		return ok(jsonUtils.asJsonForPublix(component));
 	}
 
 	@Override

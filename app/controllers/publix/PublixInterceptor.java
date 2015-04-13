@@ -1,5 +1,7 @@
 package controllers.publix;
 
+import java.io.IOException;
+
 import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
 import models.workers.MTSandboxWorker;
@@ -209,57 +211,27 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result getStudyProperties(Long studyId) throws PublixException,
-			JsonProcessingException {
+	public Result getInitData(Long studyId, Long componentId)
+			throws PublixException, IOException {
 		synchronized (lock) {
 			Result result = null;
 			switch (getWorkerTypeFromSession()) {
 			case MTWorker.WORKER_TYPE:
 			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.getStudyProperties(studyId);
+				result = mtPublix.getInitData(studyId, componentId);
 				break;
 			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.getStudyProperties(studyId);
+				result = jatosPublix.getInitData(studyId, componentId);
 				break;
 			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.getStudyProperties(studyId);
+				result = testerPublix.getInitData(studyId, componentId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.getStudyProperties(studyId);
+				result = closedStandalonePublix.getInitData(studyId,
+						componentId);
 				break;
 			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.getStudyProperties(studyId);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return result;
-		}
-	}
-
-	@Override
-	@Transactional
-	public Result getStudySessionData(Long studyId) throws PublixException,
-			JsonProcessingException {
-		synchronized (lock) {
-			Result result = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.getStudySessionData(studyId);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.getStudySessionData(studyId);
-				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.getStudySessionData(studyId);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.getStudySessionData(studyId);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.getStudySessionData(studyId);
+				result = openStandalonePublix.getInitData(studyId, componentId);
 				break;
 			default:
 				throw new BadRequestPublixException(
@@ -291,41 +263,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 				break;
 			case OpenStandaloneWorker.WORKER_TYPE:
 				result = openStandalonePublix.setStudySessionData(studyId);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return result;
-		}
-	}
-
-	@Override
-	@Transactional
-	public Result getComponentProperties(Long studyId, Long componentId)
-			throws PublixException, JsonProcessingException {
-		synchronized (lock) {
-			Result result = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.getComponentProperties(studyId, componentId);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.getComponentProperties(studyId,
-						componentId);
-				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.getComponentProperties(studyId,
-						componentId);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.getComponentProperties(studyId,
-						componentId);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.getComponentProperties(studyId,
-						componentId);
 				break;
 			default:
 				throw new BadRequestPublixException(

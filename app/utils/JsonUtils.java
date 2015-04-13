@@ -35,7 +35,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.Common;
 
 /**
@@ -138,14 +137,32 @@ public class JsonUtils {
 	/**
 	 * Marshalling an Object into an JSON string. It only considers fields that
 	 * are annotated with 'JsonForPublix'.
-	 * 
-	 * @throws JsonProcessingException
 	 */
 	public String asJsonForPublix(Object obj) throws JsonProcessingException {
 		ObjectWriter objectWriter = OBJECTMAPPER
 				.writerWithView(JsonForPublix.class);
 		String componentAsJson = objectWriter.writeValueAsString(obj);
 		return componentAsJson;
+	}
+
+	/**
+	 * Returns init data: Marshals the study properties and the component
+	 * properties and puts them together with the session data (stored in
+	 * StudyResult) into a new JSON object.
+	 */
+	public ObjectNode initData(StudyResult studyResult, StudyModel study,
+			ComponentModel component) throws IOException,
+			JsonProcessingException {
+		String studyProperties = asJsonForPublix(study);
+		String componentProperties = asJsonForPublix(component);
+		String studySession = studyResult.getStudySessionData();
+		ObjectNode initData = OBJECTMAPPER.createObjectNode();
+		initData.put("studySession", studySession);
+		// This is ugly: first marshaling, now unmarshaling again
+		initData.put("studyProperties", OBJECTMAPPER.readTree(studyProperties));
+		initData.put("componentProperties",
+				OBJECTMAPPER.readTree(componentProperties));
+		return initData;
 	}
 
 	/**
