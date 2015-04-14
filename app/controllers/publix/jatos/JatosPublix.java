@@ -66,6 +66,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		JatosWorker worker = publixUtils.retrieveUser().getWorker();
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, worker.getId().toString());
+		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
+				+ "assigned to worker with ID " + worker.getId());
 
 		Long componentId = null;
 		String jatosShow = publixUtils.retrieveJatosShowFromSession();
@@ -92,8 +94,9 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Promise<Result> startComponent(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID) + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
@@ -149,8 +152,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Override
 	public Result startNextComponent(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
-				+ ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+				+ ", " + "workerId " + session(WORKER_ID) + ", "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
@@ -196,6 +199,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID) + ", "
 				+ "logged-in user email " + session(Users.SESSION_EMAIL) + ", "
 				+ "message \"" + message + "\"");
 		StudyModel study = publixUtils.retrieveStudy(studyId);
@@ -226,6 +230,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID) + ", "
 				+ "logged-in user email " + session(Users.SESSION_EMAIL) + ", "
 				+ "successful " + successful + ", " + "errorMsg \"" + errorMsg
 				+ "\"");

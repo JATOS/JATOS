@@ -65,10 +65,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		// Get MTurk query parameters
 		String mtWorkerId = getQueryString(MT_WORKER_ID);
 		String mtAssignmentId = getQueryString(ASSIGNMENT_ID);
-		String mtHitId = getQueryString(HIT_ID);
-		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "Parameters from MTurk: workerId " + mtWorkerId + ", "
-				+ "assignmentId " + mtAssignmentId + ", " + "hitId " + mtHitId);
+		// String mtHitId = getQueryString(HIT_ID);
+		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId);
 
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 
@@ -95,6 +93,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		}
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));
+		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
+				+ "assigned to worker with ID " + worker.getId());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);

@@ -22,7 +22,6 @@ import utils.JsonUtils;
 import com.google.inject.Singleton;
 
 import controllers.gui.ControllerUtils;
-import controllers.gui.Users;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
 
@@ -97,8 +96,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public Promise<Result> startComponentByPosition(Long studyId,
 			Integer position) throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponentByPosition: studyId "
-				+ studyId + ", " + "position " + position + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+				+ studyId + ", " + "position " + position + ", " + ", "
+				+ "workerId " + session(WORKER_ID));
 		ComponentModel component = publixUtils.retrieveComponentByPosition(
 				studyId, position);
 		return startComponent(studyId, component.getId());
@@ -131,7 +130,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public Result getInitData(Long studyId, Long componentId)
 			throws PublixException, IOException {
 		Logger.info(CLASS_NAME + ".getInitData: studyId " + studyId + ", "
-				+ "componentId " + componentId);
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		ComponentModel component = publixUtils.retrieveComponent(study,
@@ -159,7 +159,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 	@Override
 	public Result setStudySessionData(Long studyId) throws PublixException {
-		Logger.info(CLASS_NAME + ".setStudySessionData: studyId " + studyId);
+		Logger.info(CLASS_NAME + ".setStudySessionData: studyId " + studyId
+				+ ", " + "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
@@ -176,7 +177,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public Result submitResultData(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
-				+ "componentId " + componentId);
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = publixUtils.retrieveComponent(study,
@@ -208,9 +210,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public Result finishComponent(Long studyId, Long componentId,
 			Boolean successful, String errorMsg) throws PublixException {
 		Logger.info(CLASS_NAME + ".finishComponent: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "logged-in user email "
-				+ session(Users.SESSION_EMAIL) + ", " + "successful "
-				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID) + ", " + "successful " + successful + ", "
+				+ "errorMsg \"" + errorMsg + "\"");
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = publixUtils.retrieveComponent(study,
@@ -238,8 +240,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
-				+ "logged-in user email " + session(Users.SESSION_EMAIL) + ", "
-				+ "message \"" + message + "\"");
+				+ ", " + "workerId " + session(WORKER_ID) + ", " + "message \""
+				+ message + "\"");
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		publixUtils.checkWorkerAllowedToDoStudy(worker, study);

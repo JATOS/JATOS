@@ -54,7 +54,7 @@ public abstract class PublixUtils<T extends Worker> {
 
 	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
 
-	private final PublixErrorMessages<T> errorMessages;
+	protected final PublixErrorMessages<T> errorMessages;
 	private final StudyDao studyDao;
 	private final StudyResultDao studyResultDao;
 	private final ComponentDao componentDao;
