@@ -34,7 +34,9 @@ function showSuccess(msg) {
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span aria-hidden="true">&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
-		+ msg + '</div>';
+		+ '<i class="glyphicon glyphicon-ok-circle" aria-hidden="true"></i>'
+		+ '<span>' + msg + '</span>'
+		+ '</div>';
 	$(html).insertAfter( "#breadcrumbs" );
 }
 
@@ -43,7 +45,9 @@ function showInfo(msg) {
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span aria-hidden="true">&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
-		+ msg + '</div>';
+		+ '<i class="glyphicon glyphicon-eye-open" aria-hidden="true"></i>'
+		+ '<span>' + msg + '</span>'
+		+ '</div>';
 	$(html).insertAfter( "#breadcrumbs" );
 }
 
@@ -52,7 +56,9 @@ function showWarning(msg) {
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span aria-hidden="true">&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
-		+ msg + '</div>';
+		+ '<i class="glyphicon glyphicon-warning-sign" aria-hidden="true"></i>'
+		+ '<span>' + msg + '</span>'
+		+ '</div>';
 	$(html).insertAfter( "#breadcrumbs" );
 }
 
@@ -61,7 +67,9 @@ function showError(msg) {
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span aria-hidden="true">&times;</span>'
 		+ '<span class="sr-only">Close</span></button>'
-		+ msg + '</div>';
+		+ '<i class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></i>'
+		+ '<span>' + msg + '</span>'
+		+ '</div>';
 	$(html).insertAfter( "#breadcrumbs" );
 }
 </script>
