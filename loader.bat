@@ -75,6 +75,7 @@ rem ### Functions ###
     start /b %CMD% > nul
   )
   
+  echo To use JATOS go to %address%:%port% in your browser
   goto:eof
 
 :stop

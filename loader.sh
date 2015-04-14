@@ -40,6 +40,7 @@ function start() {
 	jatos -Dconfig.file="$dir/conf/production.conf" -Dapplication.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
 	
 	echo "...started"
+	echo "To use JATOS go to $address:$port in your browser"
 }
 
 function stop() {
