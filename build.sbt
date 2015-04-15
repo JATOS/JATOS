@@ -17,7 +17,7 @@ libraryDependencies ++= Seq(
 	"commons-io" % "commons-io" % "2.4",
 	"org.mockito" % "mockito-core" % "1.9.5" % "test",
 	"org.webjars" %% "webjars-play" % "2.2.2-1",
-	"org.webjars" % "bootstrap" % "3.3.0"
+	"org.webjars" % "bootstrap" % "3.3.4"
 )
 
 play.Project.playJavaSettings
