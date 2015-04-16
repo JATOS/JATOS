@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
 import common.Common;
 
 /**
@@ -303,11 +304,13 @@ public class JsonUtils {
 		for (StudyModel study : studyList) {
 			SidebarStudy sidebarStudy = new SidebarStudy();
 			sidebarStudy.id = study.getId();
+			sidebarStudy.uuid = study.getUuid();
 			sidebarStudy.title = study.getTitle();
 			sidebarStudy.locked = study.isLocked();
 			for (ComponentModel component : study.getComponentList()) {
 				SidebarComponent sidebarComponent = new SidebarStudy.SidebarComponent();
 				sidebarComponent.id = component.getId();
+				sidebarComponent.uuid = component.getUuid();
 				sidebarComponent.title = component.getTitle();
 				sidebarStudy.componentList.add(sidebarComponent);
 			}
@@ -326,12 +329,14 @@ public class JsonUtils {
 
 	static class SidebarStudy {
 		public Long id;
+		public String uuid;
 		public String title;
 		public boolean locked;
 		public List<SidebarComponent> componentList = new ArrayList<>();
 
 		static class SidebarComponent {
 			public Long id;
+			public String uuid;
 			public String title;
 		}
 	}
