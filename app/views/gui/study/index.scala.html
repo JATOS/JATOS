@@ -254,6 +254,7 @@ $(document).ready(function() {
 				"render": function (data, type, full, meta) {
 					var button = $('#componentDragButtonDiv button:first-child').clone();
 					button.html(button.html() + data.position);
+					button.attr('title', "Use this button to drag and drop this component to a new position");
 					return button.prop('outerHTML');
 				}
 			},
