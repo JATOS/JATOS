@@ -32,6 +32,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 @Entity
 public class ComponentModel {
 
+	public static final String ID = "id";
+	public static final String UUID = "uuid";
 	public static final String TITLE = "title";
 	public static final String HTML_FILE_PATH = "htmlFilePath";
 	public static final String JSON_DATA = "jsonData";

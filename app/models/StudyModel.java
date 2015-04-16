@@ -45,6 +45,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 @Entity
 public class StudyModel {
 
+	public static final String ID = "id";
+	public static final String UUID = "uuid";
 	public static final String MEMBERS = "user";
 	public static final String TITLE = "title";
 	public static final String JSON_DATA = "jsonData";
