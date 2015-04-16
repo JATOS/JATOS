@@ -118,13 +118,13 @@ public abstract class MessagesStrings {
 	public static String studyAssetsOverwritten(String studyAssetsName,
 			Long studyId) {
 		String errorMsg = "Assets \"" + studyAssetsName
-				+ "\" of study with ID " + studyId + " overwritten.";
+				+ "\" of study with ID " + studyId + " were overwritten.";
 		return errorMsg;
 	}
 
 	public static String studysPropertiesOverwritten(Long studyId) {
 		String errorMsg = "Properties of study with ID " + studyId
-				+ " overwritten.";
+				+ " were overwritten.";
 		return errorMsg;
 	}
 
@@ -143,7 +143,7 @@ public abstract class MessagesStrings {
 	public static String componentsPropertiesOverwritten(Long componentId,
 			String title) {
 		String errorMsg = "Properties of component \"" + title + "\"  with ID "
-				+ componentId + " overwritten.";
+				+ componentId + " were overwritten.";
 		return errorMsg;
 	}
 
