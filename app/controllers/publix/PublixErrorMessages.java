@@ -13,12 +13,7 @@ import com.google.inject.Singleton;
 public class PublixErrorMessages<T extends Worker> {
 
 	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
-	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS = "This study or component was never started from within JATOS.";
-	public static final String STUDY_NEVER_STARTED_FROM_JATOS = "This study was never started from within JATOS.";
 	public static final String STUDY_NEVER_FINSHED = "Study never finished, but new study started by the same worker";
-	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters";
-	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
-	public static final String NO_TESTER_WORKERID = "Tester's workerId is missing in the query parameters.";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
 	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
@@ -105,6 +100,14 @@ public class PublixErrorMessages<T extends Worker> {
 	public String noComponentAtPosition(Long studyId, Integer position) {
 		String errorMsg = "There is no component at position " + position
 				+ " in study " + studyId + ".";
+		return errorMsg;
+	}
+
+	public String componentNeverStarted(Long studyId, Long componentId,
+			String methodName) {
+		String errorMsg = "Illegal function call " + methodName
+				+ ": component (ID " + componentId + ") of study (ID "
+				+ studyId + ") was never started.";
 		return errorMsg;
 	}
 

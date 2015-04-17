@@ -32,9 +32,11 @@ public class TesterPublix extends Publix<TesterWorker> implements IPublix {
 
 	@Inject
 	TesterPublix(TesterPublixUtils publixUtils,
+			TesterErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 	}
 

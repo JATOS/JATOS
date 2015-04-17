@@ -47,13 +47,16 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	private static final String CLASS_NAME = Publix.class.getSimpleName();
 
 	protected final PublixUtils<T> publixUtils;
+	protected final PublixErrorMessages<T> errorMessages;
 	protected final JsonUtils jsonUtils;
 	protected final ComponentResultDao componentResultDao;
 	protected final StudyResultDao studyResultDao;
 
-	public Publix(PublixUtils<T> utils, ComponentResultDao componentResultDao,
-			JsonUtils jsonUtils, StudyResultDao studyResultDao) {
+	public Publix(PublixUtils<T> utils, PublixErrorMessages<T> errorMessages,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao) {
 		this.publixUtils = utils;
+		this.errorMessages = errorMessages;
 		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
@@ -140,11 +143,10 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		publixUtils.checkComponentBelongsToStudy(study, component);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
-		ComponentState maxAllowedComponentState = ComponentState.STARTED;
 		ComponentResult componentResult;
 		try {
 			componentResult = publixUtils.retrieveStartedComponentResult(
-					component, studyResult, maxAllowedComponentState);
+					component, studyResult);
 		} catch (ForbiddenReloadException e) {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, e.getMessage()));
@@ -188,14 +190,13 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
-		ComponentState maxAllowedComponentState = ComponentState.DATA_RETRIEVED;
-		ComponentResult componentResult;
-		try {
-			componentResult = publixUtils.retrieveStartedComponentResult(
-					component, studyResult, maxAllowedComponentState);
-		} catch (ForbiddenReloadException e) {
+		ComponentResult componentResult = publixUtils
+				.retrieveCurrentComponentResult(studyResult);
+		if (componentResult == null) {
+			String error = errorMessages.componentNeverStarted(studyId,
+					componentId, "submitResultData");
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, e.getMessage()));
+					.finishStudy(studyId, false, error));
 		}
 
 		String resultData = publixUtils
@@ -224,7 +225,13 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				worker, study);
 		ComponentResult componentResult = publixUtils
 				.retrieveCurrentComponentResult(studyResult);
-
+		if (componentResult == null) {
+			String error = errorMessages.componentNeverStarted(studyId,
+					componentId, "submitResultData");
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, error));
+		}
+		
 		if (successful) {
 			componentResult.setComponentState(ComponentState.FINISHED);
 			componentResult.setErrorMsg(errorMsg);

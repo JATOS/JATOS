@@ -20,7 +20,6 @@ import controllers.gui.ControllerUtils;
 import controllers.gui.Users;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import controllers.publix.PublixErrorMessages;
 import controllers.publix.StudyAssets;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
@@ -49,12 +48,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	@Inject
 	JatosPublix(JatosPublixUtils publixUtils,
-			JatosErrorMessages jatosErrorMessages,
+			JatosErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
-		this.errorMessages = jatosErrorMessages;
+		this.errorMessages = errorMessages;
 	}
 
 	@Override
@@ -82,7 +82,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			break;
 		case SHOW_COMPONENT_FINISHED:
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
+					JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);

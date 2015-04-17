@@ -16,7 +16,6 @@ import com.google.inject.Singleton;
 
 import controllers.gui.Users;
 import controllers.publix.Publix;
-import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
@@ -101,7 +100,7 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 		String jatosShow = Publix.session(JatosPublix.JATOS_SHOW);
 		if (jatosShow == null) {
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS);
+					JatosErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS);
 		}
 		return jatosShow;
 	}

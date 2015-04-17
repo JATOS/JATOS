@@ -18,7 +18,6 @@ import com.google.inject.Singleton;
 import controllers.gui.ControllerUtils;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixInterceptor;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
@@ -54,7 +53,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	MTPublix(MTPublixUtils publixUtils, MTErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
 		this.mtWorkerDao = mtWorkerDao;
@@ -82,7 +82,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		// Check worker and create if doesn't exists
 		if (mtWorkerId == null) {
 			throw new BadRequestPublixException(
-					PublixErrorMessages.NO_MTURK_WORKERID);
+					MTErrorMessages.NO_MTURK_WORKERID);
 		}
 		MTWorker worker = mtWorkerDao.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {

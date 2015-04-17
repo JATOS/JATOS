@@ -38,9 +38,11 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 
 	@Inject
 	OpenStandalonePublix(OpenStandalonePublixUtils publixUtils,
+			OpenStandaloneErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, WorkerDao workerDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 		this.workerDao = workerDao;
 	}
@@ -58,7 +60,7 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 		session(WORKER_ID, worker.getId().toString());
 		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
 				+ "assigned to worker with ID " + worker.getId());
-		
+
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);
 

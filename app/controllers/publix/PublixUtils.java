@@ -103,11 +103,11 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Start or restart a component
+	 * Start or restart a component. It either returns a newly started component
+	 * or an exception but never null.
 	 */
 	public ComponentResult startComponent(ComponentModel component,
-			StudyResult studyResult) throws ForbiddenPublixException,
-			ForbiddenReloadException {
+			StudyResult studyResult) throws ForbiddenReloadException {
 		// Deal with the last component
 		ComponentResult lastComponentResult = retrieveLastComponentResult(studyResult);
 		if (lastComponentResult != null) {
@@ -322,7 +322,7 @@ public abstract class PublixUtils<T extends Worker> {
 
 	/**
 	 * Returns the last ComponentResult of this studyResult if it's not
-	 * FINISHED, FAILED, ABORTED or RELOADED. Returns null it it doesn't exists.
+	 * FINISHED, FAILED, ABORTED or RELOADED. Returns null if it doesn't exists.
 	 */
 	public ComponentResult retrieveCurrentComponentResult(
 			StudyResult studyResult) {
@@ -333,18 +333,17 @@ public abstract class PublixUtils<T extends Worker> {
 		return null;
 	}
 
+	/**
+	 * Gets the ComponentResult from the storage or if it doesn't exist yet
+	 * starts one.
+	 */
 	public ComponentResult retrieveStartedComponentResult(
-			ComponentModel component, StudyResult studyResult,
-			ComponentState maxAllowedComponentState)
-			throws ForbiddenPublixException, ForbiddenReloadException {
+			ComponentModel component, StudyResult studyResult)
+			throws ForbiddenReloadException {
 		ComponentResult componentResult = retrieveCurrentComponentResult(studyResult);
 		// Start the component if it was never started (== null) or if it's
-		// a restart of the component (The states of a componentResult are
-		// ordered, e.g. it's forbidden to put DATA_RETRIEVED after
-		// RESULTDATA_POSTED.)
-		if (componentResult == null
-				|| componentResult.getComponentState().ordinal() > maxAllowedComponentState
-						.ordinal()) {
+		// a reload of the component
+		if (componentResult == null) {
 			componentResult = startComponent(component, studyResult);
 		}
 		return componentResult;

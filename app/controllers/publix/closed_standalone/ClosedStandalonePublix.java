@@ -34,11 +34,12 @@ public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
 	private final ClosedStandalonePublixUtils publixUtils;
 
 	@Inject
-	ClosedStandalonePublix(ClosedStandaloneErrorMessages errorMessages,
-			ClosedStandalonePublixUtils publixUtils,
+	ClosedStandalonePublix(ClosedStandalonePublixUtils publixUtils,
+			ClosedStandaloneErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 	}
 
