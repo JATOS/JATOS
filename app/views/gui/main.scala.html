@@ -382,8 +382,7 @@ function fillSidebarStudyList(studyArray) {
 	$('#sidebarStudyList').empty();
 	$.each(studyArray, function(index, study) {
 		var listItem = '<li><a data-toggle="tooltip" data-placement="bottom" title="ID '
-				+ study.id + ', UUID ' + study.uuid 
-				+ '" href="/jatos/' + study.id + '">' + study.title;
+				+ study.id + '" href="/jatos/' + study.id + '">' + study.title;
 		if (study.locked) {
 			listItem = listItem + ' <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>';
 		}
@@ -392,7 +391,7 @@ function fillSidebarStudyList(studyArray) {
 		var componentsStr = '<ul>';
 		$.each(study.componentList, function(index, component) {
 			componentsStr += '<li data-toggle="tooltip" data-placement="bottom" title="ID '
-					+ component.id + ', UUID ' + component.uuid + '">'
+					+ component.id + '">'
 					+ component.title + '</li>';
 		});
 		componentsStr += '</ul>';
