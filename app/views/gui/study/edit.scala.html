@@ -8,11 +8,11 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 <div class="form-group">
 	<div class="col-xs-2"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign text-info" data-toggle="tooltip" title="Unique within this JATOS instance" aria-hidden="true"></span></p></div>
 	<div class="col-xs-10">
-		<p>@form(StudyModel.ID).value</p>
+		<p>@if(form(StudyModel.ID).value != null) {@form(StudyModel.ID).value} else {-}</p>
 	</div>
 	<div class="col-xs-2"><p class="text-right"><strong>UUID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign text-info" data-toggle="tooltip" title="Universally unique identifier - used to keep track of studies between different JATOS instances" aria-hidden="true"></span></p></div>
 	<div class="col-xs-10">
-		<p>@form(StudyModel.UUID).value</p>
+		<p>@if(form(StudyModel.UUID).value != null) {@form(StudyModel.UUID).value} else {-}</p>
 	</div>
 </div>
 
