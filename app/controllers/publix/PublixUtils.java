@@ -290,7 +290,10 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Get the last StudyResult of this worker of this study.
+	 * Gets the last StudyResult of this worker of this study. Throws an
+	 * ForbiddenPublixException if the StudyResult is already 'done' or this
+	 * worker never started a StudyResult of this study. It either returns a
+	 * StudyResult or throws an exception but never returns null.
 	 */
 	public StudyResult retrieveWorkersLastStudyResult(T worker, StudyModel study)
 			throws ForbiddenPublixException {
@@ -307,6 +310,7 @@ public abstract class PublixUtils<T extends Worker> {
 				}
 			}
 		}
+		// This worker never started a StudyResult of this study
 		throw new ForbiddenPublixException(errorMessages.workerNeverDidStudy(
 				worker, study.getId()));
 	}
