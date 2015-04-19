@@ -14,7 +14,6 @@ dist
 /.project
 /RUNNING_PID
 /.settings
-/loader.sh~
 /application.secret
-/studies/
+/study_assets_root/
 /database/
