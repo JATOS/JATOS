@@ -1,7 +1,7 @@
 /**
  * jatos.js (JATOS JavaScript Library)
  * http://jatos.org
- * Author Kristian Lange 2014
+ * Author Kristian Lange 2014 - 2015
  * Licensed under Apache License 2.0
  * 
  * Plugin: jquery.ajax-retry
@@ -60,7 +60,6 @@ var onErrorCallback;
 jatos.jQuery;
 getScript('/assets/javascripts/jquery-1.11.1.min.js', function() {
 	jatos.jQuery = jQuery.noConflict(true);
-	setJQueryAjaxError();
 	loadScripts(initJatos);
 });
 
@@ -87,6 +86,9 @@ function getScript(url, success) {
  * Load and run additional JS.
  */
 function loadScripts(successCallback) {
+	if (!jQueryExists()) {
+		return;
+	}
 	// Plugin to retry ajax calls 
 	jatos.jQuery.ajax({
 		url: "/assets/javascripts/jquery.ajax-retry.min.js",
@@ -104,6 +106,9 @@ function initJatos() {
 	var studySessionDataReady = false;
 	var componentPropertiesReady = false;
 	
+	if (!jQueryExists()) {
+		return;
+	}
 	readIdCookie();
 	getInitData();
 
@@ -190,10 +195,24 @@ function initJatos() {
 	}
 }
 
+function jQueryExists() {
+	if (!jatos.jQuery) {
+		if (onErrorCallback) {
+			onErrorCallback("jatos.js' jQuery not (yet?) loaded");
+		}
+		return false;
+	}
+	return true;
+}
+
 /**
  * Call onLoadCallback() if it already exists and jatos.js is initialised
  */
 function ready() {
+	if (onErrorCallback) {
+		// If we have an error callback also set the jQuery ajax error callback
+		setJQueryAjaxError(onErrorCallback);
+	}
 	if (onLoadCallback && !onLoadCallbackCalled && initialized) {
 		onLoadCallbackCalled = true;
 		onLoadCallback();
@@ -215,23 +234,24 @@ jatos.onLoad = function(callback) {
  */
 jatos.onError = function(callback) {
 	onErrorCallback = callback;
-	setJQueryAjaxError();
+	// If we have an error callback also set the jQuery ajax error callback
+	setJQueryAjaxError(onErrorCallback);
 };
 
 /**
  * Define what jQuery should do if an ajax error happens. This way we can
  * define it once without writing it on every ajax call.
  */
-function setJQueryAjaxError() {
-	if (!onErrorCallback || !jatos.jQuery) {
+function setJQueryAjaxError(callback) {
+	if (!jatos.jQuery || !callback) {
 		return;
 	}
 	jatos.jQuery(document).ajaxError(function(event, jqxhr, settings, thrownError) {
 		if (jqxhr.statusText == 'timeout') {
-			onErrorCallback("JATOS server not responding while trying to get URL "
+			callback("JATOS server not responding while trying to get URL "
 					+ settings.url);
 		} else {
-			onErrorCallback(jqxhr.responseText);
+			callback(jqxhr.responseText);
 		}
 	});
 }
@@ -248,7 +268,7 @@ function setJQueryAjaxError() {
  *            Function} error - Function to be called in case of error
  */
 jatos.submitResultData = function(resultData, success, error) {
-	if (submittingResultData){
+	if (!jQueryExists() || submittingResultData) {
 		return;
 	}
 	submittingResultData = true;
@@ -287,6 +307,9 @@ jatos.submitResultData = function(resultData, success, error) {
  *            finished
  */
 jatos.setStudySessionData = function(sessionData, complete) {
+	if (!jQueryExists()) {
+		return;
+	}
 	var sessionDataStr;
 	try {
 		sessionDataStr = JSON.stringify(sessionData);
@@ -415,7 +438,7 @@ jatos.startNextComponent = function(queryString) {
  *            Function} error - Function to be called in case of error
  */
 jatos.endComponent = function(successful, errorMsg, success, error) {
-	if (endingComponent) {
+	if (!jQueryExists() || endingComponent) {
 		return;
 	}
 	endingComponent = true;
@@ -466,7 +489,7 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
  *            Function} error - Function to be called in case of error
  */
 jatos.abortStudyAjax = function(message, success, error) {
-	if (abortingComponent) {
+	if (!jQueryExists() || abortingComponent) {
 		return;
 	}
 	abortingComponent = true;
@@ -532,7 +555,7 @@ jatos.abortStudy = function(message) {
  *            Function} error - Function to be called in case of error
  */
 jatos.endStudyAjax = function(successful, errorMsg, success, error) {
-	if (endingComponent) {
+	if (!jQueryExists() || endingComponent) {
 		return;
 	}
 	endingComponent = true;
@@ -599,6 +622,9 @@ jatos.endStudy = function(successful, errorMsg) {
  * Logs an error within the JATOS.
  */
 jatos.logError = function(logErrorMsg) {
+	if (!jQueryExists()) {
+		return;
+	}
 	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/" + jatos.componentId
 				+ "/logError",
