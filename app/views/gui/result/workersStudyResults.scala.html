@@ -13,8 +13,8 @@
 	@if(worker.getWorkerType().equals(workers.JatosWorker.WORKER_TYPE)) {
 		User Email Address: @worker.asInstanceOf[workers.JatosWorker].getUser().getEmail()
 	}
-	@if(worker.getWorkerType().equals(workers.TesterWorker.WORKER_TYPE)) {
-		Comment: @worker.asInstanceOf[workers.TesterWorker].getComment()
+	@if(worker.getWorkerType().equals(workers.PMWorker.WORKER_TYPE)) {
+		Comment: @worker.asInstanceOf[workers.PMWorker].getComment()
 	}
 	@if(worker.getWorkerType().equals(workers.ClosedStandaloneWorker.WORKER_TYPE)) {
 		Comment: @worker.asInstanceOf[workers.ClosedStandaloneWorker].getComment()

@@ -3,6 +3,9 @@ package services.gui;
 import models.ComponentResult.ComponentState;
 import models.StudyResult.StudyState;
 import models.UserModel;
+import models.workers.ClosedStandaloneWorker;
+import models.workers.MTWorker;
+import models.workers.PMWorker;
 
 import com.google.inject.Singleton;
 
@@ -64,7 +67,7 @@ public abstract class MessagesStrings {
 	public static final String RESULTS_INFO = "Select a result for export or deletion by clicking anywhere on its row.";
 	public static final String RESULTS_DATA = "Click on the + icon to open the result's data";
 	public static final String RESULTS_START_TIME = "Time according to the JATOS server";
-	public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. MTurk, Tester, Closed Standalone";
+	public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. " + MTWorker.UI_WORKER_TYPE + ", " + PMWorker.UI_WORKER_TYPE + ", " +  ClosedStandaloneWorker.UI_WORKER_TYPE;
 	public static final String RESULTS_WORKER_ID = "Click on the ID to go to this worker's results";
 	public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
 	public static final String RESULTS_MT_WORKER_ID = "Mechanical Turk's worker ID";
@@ -259,8 +262,8 @@ public abstract class MessagesStrings {
 				+ " failed.";
 	}
 
-	public static String studyCreationOfTesterRunFailed(Long studyId) {
-		return "The creation of a tester run for study " + studyId + " failed.";
+	public static String studyCreationOfPersonalMultipleRunFailed(Long studyId) {
+		return "The creation of a personal multiple run for study " + studyId + " failed.";
 	}
 
 	public static String couldntGeneratePathToFileOrDir(String fileStr) {

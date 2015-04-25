@@ -12,7 +12,7 @@ import models.StudyModel;
 import models.UserModel;
 import models.workers.ClosedStandaloneWorker;
 import models.workers.MTWorker;
-import models.workers.TesterWorker;
+import models.workers.PMWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.StudyDao;
@@ -46,7 +46,7 @@ import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
-import controllers.publix.tester.TesterPublix;
+import controllers.publix.personal_multiple.PMPublix;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -495,13 +495,15 @@ public class Studies extends Controller {
 	/**
 	 * Ajax request
 	 * 
-	 * Creates a TesterWorker and returns the URL that can be used for a tester
-	 * run.
+	 * Creates a PMWorker and returns the URL that can be used for a
+	 * personal multiple run.
 	 */
 	@Transactional
-	public Result createTesterRun(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".createTesterRun: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+	public Result createPersonalMultipleRun(Long studyId)
+			throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".createPersonalMultipleRun: studyId "
+				+ studyId + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -513,20 +515,20 @@ public class Studies extends Controller {
 		JsonNode json = request().body().asJson();
 		if (json == null) {
 			String errorMsg = MessagesStrings
-					.studyCreationOfTesterRunFailed(studyId);
+					.studyCreationOfPersonalMultipleRunFailed(studyId);
 			return badRequest(errorMsg);
 		}
-		String comment = json.findPath(TesterWorker.COMMENT).asText().trim();
-		TesterWorker worker;
+		String comment = json.findPath(PMWorker.COMMENT).asText().trim();
+		PMWorker worker;
 		try {
-			worker = workerService.createTesterWorker(comment, studyId);
+			worker = workerService.createPMWorker(comment, studyId);
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}
 
 		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
-						study.getId()).url() + "?" + TesterPublix.TESTER_ID
+						study.getId()).url() + "?" + PMPublix.PERSONAL_MULTIPLE_ID
 				+ "=" + worker.getId();
 		return ok(url);
 	}

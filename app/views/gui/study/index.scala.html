@@ -45,13 +45,18 @@ studyResultsCount: Integer)
 		<div class="btn-group">
 			<button type="button" class="btn btn-primary dropdown-toggle"
 				data-toggle="dropdown">
-				External Runs <span class="caret"></span>
+				<span class="glyphicon glyphicon-globe" aria-hidden="true"></span> External Runs <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
-				<li><a id="testerRun" href="#">Tester Run</a></li>
-				<li><a id="closedStandaloneRun" href="#">Closed Standalone
-						Run</a></li>
-				<li><a id="openStandaloneRun" href="#">Open Standalone Run</a></li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used multiple times and always assigns the results to the same worker.">
+					<a id="personalMultipleRun" href="#">Personal Multiple Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used only once and always assigns the results to the same worker.">
+					<a id="closedStandaloneRun" href="#">Personal Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used only once and creates a new worker with each run. Warning: If a worker deletes their browser’s cookies, or uses a different browser or computer, JATOS will not realise that the worker already ran the study. This way workers can potentially run the same study several times.">
+					<a id="openStandaloneRun" href="#">General Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
+				</li>
 			</ul>
 		</div>
 		<div class="btn-group">
@@ -198,7 +203,7 @@ studyResultsCount: Integer)
 	</div>
 </div>
 
-<!-- Confirmation Modal - Run Standalone or Tester -->
+<!-- Confirmation Modal - Run Standalone or Personal Mutliple -->
 <div class="modal fade" id="confirmModalRun" tabindex="-1" role="dialog"
 	aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
@@ -490,12 +495,12 @@ function setLockButton(locked) {
 		$('#lockStudy').html('Unlock');
 		$('#lockStudy').addClass('btn-warning');
 		$('#lockStudy').removeClass('btn-primary');
-		$("#lockStudy").attr("title", "Press to unlock this study");
+		$("#lockStudy").attr("title", "Press to unlock this study and allow changes.");
 	} else {
 		$('#lockStudy').html('Lock');
 		$('#lockStudy').addClass('btn-primary');
 		$('#lockStudy').removeClass('btn-warning');
-		$("#lockStudy").attr("title", "Press to lock this study");
+		$("#lockStudy").attr("title", "Press to lock this study and prohibit changes.");
 	}
 }
 
@@ -556,22 +561,22 @@ $('#studyToolbar').on('click', '#openStandaloneRun', function() {
 	});
 });
 
-$('#studyToolbar').on('click', '#testerRun', function() {
-	$('#confirmModalRun').find('.modal-title').html("Create tester run");
-	$('#confirmModalRun').find('.modalText').html("You're about to create a tester worker.");
+$('#studyToolbar').on('click', '#personalMultipleRun', function() {
+	$('#confirmModalRun').find('.modal-title').html("Create personal multiple run");
+	$('#confirmModalRun').find('.modalText').html("You're about to create a personal multiple worker. Use a comment to distinguish this worker from others.");
 	$('#confirmModalRun').modal('show');
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
 		var comment = $('#confirmModalRun').find('.comment').val();
-		var jsonData = JSON.stringify({ @workers.TesterWorker.COMMENT: comment });
+		var jsonData = JSON.stringify({ @workers.PMWorker.COMMENT: comment });
 		$.ajax({
 			type: 'POST',
-			url: '@controllers.gui.routes.Studies.createTesterRun(study.getId())',
+			url: '@controllers.gui.routes.Studies.createPersonalMultipleRun(study.getId())',
 			contentType: "application/json; charset=utf-8",
 			dataType: 'text',
 			data: jsonData,
 			success: function(result) {
-				var title = "Tester run";
+				var title = "Personal multiple run";
 				var preText = "Use this link";
 				var html = "<p>" + result + "</p>"; 
 				var postText = "or press \"Run\" to start it right away.";

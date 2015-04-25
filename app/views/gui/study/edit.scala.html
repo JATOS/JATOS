@@ -53,9 +53,9 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 					>@workers.JatosWorker.UI_WORKER_TYPE
 		</label>
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.TesterWorker.WORKER_TYPE"
-					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.TesterWorker.WORKER_TYPE)) {checked}
-					>@workers.TesterWorker.UI_WORKER_TYPE
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.PMWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.PMWorker.WORKER_TYPE)) {checked}
+					>@workers.PMWorker.UI_WORKER_TYPE
 		</label>
 		<label class="checkbox-inline">
 			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.MTWorker.WORKER_TYPE"

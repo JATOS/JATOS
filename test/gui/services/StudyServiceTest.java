@@ -15,7 +15,7 @@ import models.StudyModel;
 import models.UserModel;
 import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
-import models.workers.TesterWorker;
+import models.workers.PMWorker;
 
 import org.fest.assertions.Fail;
 import org.junit.Rule;
@@ -72,7 +72,7 @@ public class StudyServiceTest extends AbstractGuiTest {
 		// Equal
 		assertThat(cloneInDb.getAllowedWorkerList()).containsOnly(
 				JatosWorker.WORKER_TYPE, ClosedStandaloneWorker.WORKER_TYPE,
-				TesterWorker.WORKER_TYPE);
+				PMWorker.WORKER_TYPE);
 		assertThat(cloneInDb.getComponentList().size()).isEqualTo(
 				study.getComponentList().size());
 		assertThat(cloneInDb.getFirstComponent().getTitle()).isEqualTo(
@@ -155,7 +155,7 @@ public class StudyServiceTest extends AbstractGuiTest {
 
 		StudyModel updatedStudy = studyService.cloneStudy(study, admin);
 		updatedStudy.removeAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
-		updatedStudy.removeAllowedWorker(TesterWorker.WORKER_TYPE);
+		updatedStudy.removeAllowedWorker(PMWorker.WORKER_TYPE);
 		updatedStudy.getComponentList().remove(0);
 		updatedStudy.getLastComponent().setTitle("Changed title");
 		updatedStudy.setDescription("Changed description");

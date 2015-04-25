@@ -53,7 +53,7 @@ POST    /jatos/:studyId/changeComponentOrder         @controllers.gui.Studies.ch
 GET     /jatos/:studyId/mturk                        @controllers.gui.Studies.showMTurkSourceCode(studyId: Long)
 GET     /jatos/:studyId/show                         @controllers.gui.Studies.showStudy(studyId: Long)
 POST    /jatos/:studyId/createClosedStandaloneRun    @controllers.gui.Studies.createClosedStandaloneRun(studyId: Long)
-POST    /jatos/:studyId/createTesterRun              @controllers.gui.Studies.createTesterRun(studyId: Long)
+POST    /jatos/:studyId/createPersonalMultipleRun    @controllers.gui.Studies.createPersonalMultipleRun(studyId: Long)
 GET     /jatos/:studyId/clone                        @controllers.gui.Studies.cloneStudy(studyId: Long)
 GET     /jatos/:studyId/export                       @controllers.gui.ImportExport.exportStudy(studyId: Long)
 POST    /jatos/:studyId/swapLock                     @controllers.gui.Studies.swapLock(studyId: Long)

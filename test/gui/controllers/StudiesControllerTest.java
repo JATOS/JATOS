@@ -334,13 +334,13 @@ public class StudiesControllerTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void callCreateTesterRun() throws Exception {
+	public void callCreatePersonalMultipleRun() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.createTesterRun(studyClone
+				controllers.gui.routes.ref.Studies.createPersonalMultipleRun(studyClone
 						.getId()), fakeRequest().withJsonBody(jsonNode)
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);

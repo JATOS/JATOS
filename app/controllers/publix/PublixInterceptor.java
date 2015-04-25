@@ -7,7 +7,7 @@ import models.workers.JatosWorker;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.OpenStandaloneWorker;
-import models.workers.TesterWorker;
+import models.workers.PMWorker;
 import play.db.jpa.Transactional;
 import play.libs.F.Promise;
 import play.mvc.Controller;
@@ -22,7 +22,7 @@ import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.mt.MTPublix;
 import controllers.publix.open_standalone.OpenStandalonePublix;
-import controllers.publix.tester.TesterPublix;
+import controllers.publix.personal_multiple.PMPublix;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
 
@@ -30,7 +30,7 @@ import exceptions.publix.PublixException;
  * Interceptor for Publix: it intercepts requests for JATOS' public API and
  * forwards them to one of the implementations of the API (all extend Publix).
  * Each implementation deals with different workers (e.g. workers from MechTurk,
- * tester workers).
+ * personal multiple workers).
  * 
  * When a study is started the implementation to use is determined by parameters
  * in the request's query string. Then the worker type is put into the session
@@ -40,8 +40,8 @@ import exceptions.publix.PublixException;
  * MTSandboxWorker) will be forwarded to MTPublix.<br>
  * 2. Requests coming from Jatos' UI (if clicked on show study/component) run
  * (JatosWorker) will be forwarded to JatosPublix.<br>
- * 3. Requests coming from a tester run (TesterWorker) will be forwarded to
- * TesterPublix.<br>
+ * 3. Requests coming from a personal multiple run (PMWorker) will be forwarded to
+ * PMPublix.<br>
  * 4. Requests coming from a closed standalone run (limited to pre-created
  * ClosedStandaloneWorker) will be forwarded to ClosedStandalonePublix.<br>
  * 5. Requests coming from an open standalone run (unlimited to everyone with
@@ -63,18 +63,18 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	private final JatosPublix jatosPublix;
 	private final MTPublix mtPublix;
-	private final TesterPublix testerPublix;
+	private final PMPublix pmPublix;
 	private final ClosedStandalonePublix closedStandalonePublix;
 	private final OpenStandalonePublix openStandalonePublix;
 
 	@Inject
 	PublixInterceptor(JatosPublix jatosPublix, MTPublix mtPublix,
-			TesterPublix testerPublix,
+			PMPublix pmPublix,
 			ClosedStandalonePublix closedStandalonePublix,
 			OpenStandalonePublix openStandalonePublix) {
 		this.jatosPublix = jatosPublix;
 		this.mtPublix = mtPublix;
-		this.testerPublix = testerPublix;
+		this.pmPublix = pmPublix;
 		this.closedStandalonePublix = closedStandalonePublix;
 		this.openStandalonePublix = openStandalonePublix;
 	}
@@ -96,8 +96,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case JatosWorker.WORKER_TYPE:
 				result = jatosPublix.startStudy(studyId);
 				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.startStudy(studyId);
+			case PMWorker.WORKER_TYPE:
+				result = pmPublix.startStudy(studyId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
 				result = closedStandalonePublix.startStudy(studyId);
@@ -127,8 +127,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case JatosWorker.WORKER_TYPE:
 				promise = jatosPublix.startComponent(studyId, componentId);
 				break;
-			case TesterWorker.WORKER_TYPE:
-				promise = testerPublix.startComponent(studyId, componentId);
+			case PMWorker.WORKER_TYPE:
+				promise = pmPublix.startComponent(studyId, componentId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
 				promise = closedStandalonePublix.startComponent(studyId,
@@ -161,8 +161,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 		case JatosWorker.WORKER_TYPE:
 			promise = jatosPublix.startComponentByPosition(studyId, position);
 			break;
-		case TesterWorker.WORKER_TYPE:
-			promise = testerPublix.startComponentByPosition(studyId, position);
+		case PMWorker.WORKER_TYPE:
+			promise = pmPublix.startComponentByPosition(studyId, position);
 			break;
 		case ClosedStandaloneWorker.WORKER_TYPE:
 			promise = closedStandalonePublix.startComponentByPosition(studyId,
@@ -192,8 +192,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case JatosWorker.WORKER_TYPE:
 				result = jatosPublix.startNextComponent(studyId);
 				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.startNextComponent(studyId);
+			case PMWorker.WORKER_TYPE:
+				result = pmPublix.startNextComponent(studyId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
 				result = closedStandalonePublix.startNextComponent(studyId);
@@ -223,8 +223,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case JatosWorker.WORKER_TYPE:
 				result = jatosPublix.getInitData(studyId, componentId);
 				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.getInitData(studyId, componentId);
+			case PMWorker.WORKER_TYPE:
+				result = pmPublix.getInitData(studyId, componentId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
 				result = closedStandalonePublix.getInitData(studyId,
@@ -255,8 +255,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case JatosWorker.WORKER_TYPE:
 				result = jatosPublix.setStudySessionData(studyId);
 				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.setStudySessionData(studyId);
+			case PMWorker.WORKER_TYPE:
+				result = pmPublix.setStudySessionData(studyId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
 				result = closedStandalonePublix.setStudySessionData(studyId);
@@ -286,8 +286,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case JatosWorker.WORKER_TYPE:
 				result = jatosPublix.submitResultData(studyId, componentId);
 				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.submitResultData(studyId, componentId);
+			case PMWorker.WORKER_TYPE:
+				result = pmPublix.submitResultData(studyId, componentId);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
 				result = closedStandalonePublix.submitResultData(studyId,
@@ -321,8 +321,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 				result = jatosPublix.finishComponent(studyId, componentId,
 						successful, errorMsg);
 				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.finishComponent(studyId, componentId,
+			case PMWorker.WORKER_TYPE:
+				result = pmPublix.finishComponent(studyId, componentId,
 						successful, errorMsg);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
@@ -355,8 +355,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case JatosWorker.WORKER_TYPE:
 				result = jatosPublix.abortStudy(studyId, message);
 				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix.abortStudy(studyId, message);
+			case PMWorker.WORKER_TYPE:
+				result = pmPublix.abortStudy(studyId, message);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
 				result = closedStandalonePublix.abortStudy(studyId, message);
@@ -386,8 +386,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			case JatosWorker.WORKER_TYPE:
 				result = jatosPublix.finishStudy(studyId, successful, errorMsg);
 				break;
-			case TesterWorker.WORKER_TYPE:
-				result = testerPublix
+			case PMWorker.WORKER_TYPE:
+				result = pmPublix
 						.finishStudy(studyId, successful, errorMsg);
 				break;
 			case ClosedStandaloneWorker.WORKER_TYPE:
@@ -416,8 +416,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			return mtPublix.logError(studyId, componentId);
 		case JatosWorker.WORKER_TYPE:
 			return jatosPublix.logError(studyId, componentId);
-		case TesterWorker.WORKER_TYPE:
-			return testerPublix.logError(studyId, componentId);
+		case PMWorker.WORKER_TYPE:
+			return pmPublix.logError(studyId, componentId);
 		case ClosedStandaloneWorker.WORKER_TYPE:
 			return closedStandalonePublix.logError(studyId, componentId);
 		case OpenStandaloneWorker.WORKER_TYPE:
@@ -466,10 +466,10 @@ public class PublixInterceptor extends Controller implements IPublix {
 				return MTWorker.WORKER_TYPE;
 			}
 		}
-		// Check for tester worker
-		String testerId = Publix.getQueryString(TesterPublix.TESTER_ID);
-		if (testerId != null) {
-			return TesterWorker.WORKER_TYPE;
+		// Check for personal multiple worker
+		String pmWorkerId = Publix.getQueryString(PMPublix.PERSONAL_MULTIPLE_ID);
+		if (pmWorkerId != null) {
+			return PMWorker.WORKER_TYPE;
 		}
 		// Check for closed standalone worker
 		String closedStandaloneWorkerId = Publix

@@ -217,10 +217,10 @@ public class AccessControllerTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void callStudiesCreateTesterRun() throws Exception {
+	public void callStudiesCreatePersonalMultipleRun() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.gui.routes.ref.Studies
-				.createTesterRun(studyClone.getId());
+				.createPersonalMultipleRun(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
 		removeStudy(studyClone);

@@ -24,7 +24,7 @@ import javax.persistence.OrderColumn;
 
 import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
-import models.workers.TesterWorker;
+import models.workers.PMWorker;
 
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
@@ -129,7 +129,7 @@ public class StudyModel {
 	public StudyModel() {
 		// Add default allowed workers
 		addAllowedWorker(JatosWorker.WORKER_TYPE);
-		addAllowedWorker(TesterWorker.WORKER_TYPE);
+		addAllowedWorker(PMWorker.WORKER_TYPE);
 		addAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
 	}
 

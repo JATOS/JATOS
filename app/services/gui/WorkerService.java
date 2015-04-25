@@ -9,7 +9,7 @@ import models.StudyResult;
 import models.UserModel;
 import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
-import models.workers.TesterWorker;
+import models.workers.PMWorker;
 import models.workers.Worker;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
@@ -104,11 +104,11 @@ public class WorkerService {
 	}
 
 	/**
-	 * Creates, validates and persists a TesterWorker.
+	 * Creates, validates and persists a PMWorker (worker for a personal multiple run).
 	 */
-	public TesterWorker createTesterWorker(String comment, Long studyId)
+	public PMWorker createPMWorker(String comment, Long studyId)
 			throws BadRequestException {
-		TesterWorker worker = new TesterWorker(comment);
+		PMWorker worker = new PMWorker(comment);
 		validateWorker(studyId, worker);
 		workerDao.create(worker);
 		return worker;
