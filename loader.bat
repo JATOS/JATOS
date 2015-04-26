@@ -1,6 +1,7 @@
-rem JATOS loader for Windows
+@REM JATOS loader for Windows
+@setlocal enabledelayedexpansion
+
 @echo off
-setlocal EnableDelayedExpansion
 
 rem Change IP address and port here
 set address=127.0.0.1
@@ -57,6 +58,9 @@ rem ### Functions ###
   )
   
   call :checkjava
+  if errorlevel 1 (
+    exit /b 1
+  )
 
   rem # Start JATOS with configuration file and application secret
   set JATOS_OPTS=-Dconfig.file="%JATOS_HOME%\conf\production.conf" -Dapplication.secret=!SECRET! -Dhttp.port=%port% -Dhttp.address=%address%
@@ -70,12 +74,12 @@ rem ### Functions ###
   set CMD=%JAVACMD% %JATOS_OPTS% -cp "%APP_CLASSPATH%" %APP_MAIN_CLASS%
   cd %JATOS_HOME%
   if defined DOUBLECLICKED (
-    start /b %CMD%
+    start /b %CMD% > nul
   ) else (
     start /b %CMD% > nul
   )
   
-  echo To use JATOS go to %address%:%port% in your browser
+  echo To use JATOS put %address%:%port% in your browser's address bar
   goto:eof
 
 :stop
@@ -106,23 +110,24 @@ rem ### Functions ###
     if %%~j==Java set JAVAINSTALLED=1
   )
   
-  if defined %JAVAINSTALLED% (
+  if "%JAVAINSTALLED%"=="" (
     echo.
-    echo A Java JDK or JRE is not installed or can't be found.
+    echo A Java JDK or JRE is not installed or cannot be found.
     if not "%JAVA_HOME%"=="" (
       echo JAVA_HOME = "%JAVA_HOME%"
     )
     echo.
     echo Please go to
     echo   http://www.oracle.com/technetwork/java/javase/downloads/index.html
-    echo and download a valid Java JRE and install before running JATOS.
+    echo and download a valid Java JRE and install it before running JATOS.
     echo.
     echo If you think this message is in error, please check
     echo your environment variables to see if "java.exe" is
     echo available via JAVA_HOME or PATH.
     echo.
-    if defined DOUBLECLICKED pause
-    exit /B 1
+	
+	if defined DOUBLECLICKED pause
+    exit /b 1
   )
   goto:eof
   
