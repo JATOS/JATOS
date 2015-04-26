@@ -521,8 +521,8 @@ $('#studyToolbar').on('click', '#editStudy', function() {
 });
 
 $('#studyToolbar').on('click', '#closedStandaloneRun', function() {
-	$('#confirmModalRun').find('.modal-title').html("Create closed standalone run");
-	$('#confirmModalRun').find('.modalText').html("You're about to create a worker for a closed standalone run.");
+	$('#confirmModalRun').find('.modal-title').html("Create Personal Single Run");
+	$('#confirmModalRun').find('.modalText').html("You're about to create a worker for a Personal Single Run.");
 	$('#confirmModalRun').modal('show');
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
@@ -535,7 +535,7 @@ $('#studyToolbar').on('click', '#closedStandaloneRun', function() {
 			dataType: 'text',
 			data: jsonData,
 			success: function(result) {
-				var title = "Closed standalone run";
+				var title = "Personal Single Run";
 				var preText = "Use this link";
 				var html = "<p>" + result + "</p>"; 
 				var postText = "or press \"Run\" to start it right away.";
@@ -551,19 +551,19 @@ $('#studyToolbar').on('click', '#closedStandaloneRun', function() {
 });
 
 $('#studyToolbar').on('click', '#openStandaloneRun', function() {
-	var title = "Open standalone run";
+	var title = "General Single Run";
 	var preText = "Use this link";
 	var url = "@baseUrl" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?openStandalone";
 	var html = "<p>" + url + "</p>"; 
-	var postText = "or press \"Run\" to start one right away. Remember to allow open standalone runs in your study's properties.";
+	var postText = "or press \"Run\" to start one right away. Remember to allow General Single Workers in your study's properties.";
 	askConfirmation(title, preText, html, postText, 'Run', function() {
 		window.location.href = url;
 	});
 });
 
 $('#studyToolbar').on('click', '#personalMultipleRun', function() {
-	$('#confirmModalRun').find('.modal-title').html("Create personal multiple run");
-	$('#confirmModalRun').find('.modalText').html("You're about to create a personal multiple worker. Use a comment to distinguish this worker from others.");
+	$('#confirmModalRun').find('.modal-title').html("Create Personal Multiple Run");
+	$('#confirmModalRun').find('.modalText').html("You're about to create a Personal Multiple Worker. Use a comment to distinguish this worker from others.");
 	$('#confirmModalRun').modal('show');
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
@@ -576,7 +576,7 @@ $('#studyToolbar').on('click', '#personalMultipleRun', function() {
 			dataType: 'text',
 			data: jsonData,
 			success: function(result) {
-				var title = "Personal multiple run";
+				var title = "Personal Multiple Run";
 				var preText = "Use this link";
 				var html = "<p>" + result + "</p>"; 
 				var postText = "or press \"Run\" to start it right away.";

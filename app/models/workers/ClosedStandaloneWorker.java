@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 public class ClosedStandaloneWorker extends Worker {
 
 	public static final String WORKER_TYPE = "ClosedStandalone";
-	public static final String UI_WORKER_TYPE = "Closed standalone";
+	public static final String UI_WORKER_TYPE = "Personal Single";
 	public static final String COMMENT = "comment";
 
 	private String comment;

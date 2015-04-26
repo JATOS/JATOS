@@ -16,8 +16,8 @@ public class OpenStandaloneErrorMessages extends
 		PublixErrorMessages<OpenStandaloneWorker> {
 
 	public String workerNotCorrectType(Long workerId) {
-		String errorMsg = "The worker with ID " + workerId
-				+ " isn't an open standalone worker.";
+		String errorMsg = "The worker with ID " + workerId + " isn't a "
+				+ OpenStandaloneWorker.UI_WORKER_TYPE + " Worker.";
 		return errorMsg;
 	}
 
