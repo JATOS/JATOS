@@ -79,7 +79,7 @@ rem ### Functions ###
     start /b %CMD% > nul
   )
   
-  echo To use JATOS put %address%:%port% in your browser's address bar
+  echo To use JATOS type %address%:%port% in your browser's address bar
   goto:eof
 
 :stop
