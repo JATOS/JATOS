@@ -26,8 +26,16 @@ mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh
 
 mappings in Universal += file(baseDirectory.value + "/loader.bat") -> ("loader.bat")
 
-mappings in Universal := (mappings in Universal).value filter { case (file, path) => 
-	! path.endsWith(".development.conf")
+mappings in Universal := (mappings in Universal).value filter { 
+	case (file, path) => ! path.endsWith(".development.conf")
+}
+
+mappings in Universal := (mappings in Universal).value filter { 
+	case (file, path) => ! path.endsWith(".testing.conf")
+}
+
+mappings in Universal := (mappings in Universal).value filter { 
+	case (file, path) => ! path.endsWith("jatos.bat")
 }
 
 Keys.fork in Test := false
