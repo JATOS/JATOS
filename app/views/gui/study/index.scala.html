@@ -97,7 +97,7 @@ studyResultsCount: Integer)
 		<button id="lockStudy" type="button" class="btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
 			title="">
-			@if(study.isLocked()) {Unlock} else {Lock}
+			@if(study.isLocked()) {Locked} else {Unlocked}
 		</button>
 	</div>
 	<div class="btn-group">
@@ -492,12 +492,12 @@ $('#studyToolbar').on('click', '#lockStudy', function() {
 
 function setLockButton(locked) {
 	if (locked) {
-		$('#lockStudy').html('Unlock');
+		$('#lockStudy').html('Locked');
 		$('#lockStudy').addClass('btn-warning');
 		$('#lockStudy').removeClass('btn-primary');
 		$("#lockStudy").attr("title", "Press to unlock this study and allow changes.");
 	} else {
-		$('#lockStudy').html('Lock');
+		$('#lockStudy').html('Unlocked');
 		$('#lockStudy').addClass('btn-primary');
 		$('#lockStudy').removeClass('btn-warning');
 		$("#lockStudy").attr("title", "Press to lock this study and prohibit changes.");
