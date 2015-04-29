@@ -6,6 +6,8 @@ version := conf.getString("application.version")
 
 name := "JATOS"
 
+organization := "org.jatos"
+
 libraryDependencies ++= Seq(
 	javaCore,
 	javaJdbc,
@@ -36,6 +38,10 @@ mappings in Universal := (mappings in Universal).value filter {
 
 mappings in Universal := (mappings in Universal).value filter { 
 	case (file, path) => ! path.endsWith("jatos.bat")
+}
+
+mappings in Universal := (mappings in Universal).value filter { 
+	case (file, path) => ! path.contains("share/doc")
 }
 
 Keys.fork in Test := false
