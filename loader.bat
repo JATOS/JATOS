@@ -12,6 +12,7 @@ rem ###################################
 
 set JATOS_HOME=%~dp0
 set JATOS_HOME=%JATOS_HOME:~0,-1%
+set LOCAL_JRE=jre\win32_jre
 
 rem Detect if we were double clicked
 for %%x in (%cmdcmdline%) do if %%~x==/c set DOUBLECLICKED=1
@@ -51,11 +52,6 @@ rem ### Functions ###
     echo !rand!>"%JATOS_HOME%\application.secret"
   )
   set /p SECRET=<"%JATOS_HOME%\application.secret"
-
-  IF NOT EXIST "%JATOS_HOME%\bin\jatos.bat" (
-    echo %JATOS_HOME%\bin\jatos.bat doesn't exist!
-    exit /b 1
-  )
   
   call :checkjava
   if errorlevel 1 (
@@ -99,8 +95,16 @@ rem ### Functions ###
   goto:eof
   
 :checkjava
+  rem Java's path can be defined in PATH or JAVA_HOME
+  rem Don't confuse JAVA_HOME with JATOS_HOME
+  if exist "%JATOS_HOME%\%LOCAL_JRE%" (
+    set "JAVA_HOME=%JATOS_HOME%\%LOCAL_JRE%"
+	echo JATOS uses local JRE
+  )
   if not "%JAVA_HOME%"=="" (
-    if exist "%JAVA_HOME%\bin\java.exe" set "JAVACMD=%JAVA_HOME%\bin\java.exe"
+    if exist "%JAVA_HOME%\bin\java.exe" (
+	  set "JAVACMD=%JAVA_HOME%\bin\java.exe"
+	)
   )
   
   if "%JAVACMD%"=="" set JAVACMD=java
@@ -113,9 +117,6 @@ rem ### Functions ###
   if "%JAVAINSTALLED%"=="" (
     echo.
     echo A Java JDK or JRE is not installed or cannot be found.
-    if not "%JAVA_HOME%"=="" (
-      echo JAVA_HOME = "%JAVA_HOME%"
-    )
     echo.
     echo Please go to
     echo   http://www.oracle.com/technetwork/java/javase/downloads/index.html
