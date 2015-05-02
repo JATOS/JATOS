@@ -5,8 +5,8 @@ import models.ComponentResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.JatosWorker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Result;
@@ -20,7 +20,6 @@ import controllers.gui.ControllerUtils;
 import controllers.gui.Users;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import controllers.publix.PublixErrorMessages;
 import controllers.publix.StudyAssets;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
@@ -49,12 +48,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	@Inject
 	JatosPublix(JatosPublixUtils publixUtils,
-			JatosErrorMessages jatosErrorMessages,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+			JatosErrorMessages errorMessages,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao) {
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
-		this.errorMessages = jatosErrorMessages;
+		this.errorMessages = errorMessages;
 	}
 
 	@Override
@@ -66,6 +66,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		JatosWorker worker = publixUtils.retrieveUser().getWorker();
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, worker.getId().toString());
+		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
+				+ "assigned to worker with ID " + worker.getId());
 
 		Long componentId = null;
 		String jatosShow = publixUtils.retrieveJatosShowFromSession();
@@ -80,7 +82,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			break;
 		case SHOW_COMPONENT_FINISHED:
 			throw new ForbiddenPublixException(
-					PublixErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
+					JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);
@@ -92,8 +94,9 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Promise<Result> startComponent(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID) + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
@@ -149,8 +152,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Override
 	public Result startNextComponent(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
-				+ ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+				+ ", " + "workerId " + session(WORKER_ID) + ", "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
@@ -196,6 +199,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID) + ", "
 				+ "logged-in user email " + session(Users.SESSION_EMAIL) + ", "
 				+ "message \"" + message + "\"");
 		StudyModel study = publixUtils.retrieveStudy(studyId);
@@ -212,7 +216,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
-			return ok();
+			return ok().as("text/html");
 		} else {
 			if (message != null) {
 				FlashScopeMessaging.info(errorMessages
@@ -226,6 +230,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID) + ", "
 				+ "logged-in user email " + session(Users.SESSION_EMAIL) + ", "
 				+ "successful " + successful + ", " + "errorMsg \"" + errorMsg
 				+ "\"");

@@ -3,6 +3,8 @@ package utils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
@@ -18,8 +20,8 @@ import org.hibernate.proxy.HibernateProxy;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import play.Logger;
 import services.gui.MessagesStrings;
 import utils.JsonUtils.SidebarStudy.SidebarComponent;
@@ -56,12 +58,12 @@ public class JsonUtils {
 	public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
 			.setTimeZone(TimeZone.getDefault());
 
-	private final IComponentResultDao componentResultDao;
-	private final IStudyResultDao studyResultDao;
+	private final ComponentResultDao componentResultDao;
+	private final StudyResultDao studyResultDao;
 
 	@Inject
-	JsonUtils(IComponentResultDao componentResultDao,
-			IStudyResultDao studyResultDao) {
+	JsonUtils(ComponentResultDao componentResultDao,
+			StudyResultDao studyResultDao) {
 		this.componentResultDao = componentResultDao;
 		this.studyResultDao = studyResultDao;
 	}
@@ -136,14 +138,32 @@ public class JsonUtils {
 	/**
 	 * Marshalling an Object into an JSON string. It only considers fields that
 	 * are annotated with 'JsonForPublix'.
-	 * 
-	 * @throws JsonProcessingException
 	 */
 	public String asJsonForPublix(Object obj) throws JsonProcessingException {
 		ObjectWriter objectWriter = OBJECTMAPPER
 				.writerWithView(JsonForPublix.class);
 		String componentAsJson = objectWriter.writeValueAsString(obj);
 		return componentAsJson;
+	}
+
+	/**
+	 * Returns init data: Marshals the study properties and the component
+	 * properties and puts them together with the session data (stored in
+	 * StudyResult) into a new JSON object.
+	 */
+	public ObjectNode initData(StudyResult studyResult, StudyModel study,
+			ComponentModel component) throws IOException,
+			JsonProcessingException {
+		String studyProperties = asJsonForPublix(study);
+		String componentProperties = asJsonForPublix(component);
+		String studySession = studyResult.getStudySessionData();
+		ObjectNode initData = OBJECTMAPPER.createObjectNode();
+		initData.put("studySession", studySession);
+		// This is ugly: first marshaling, now unmarshaling again
+		initData.put("studyProperties", OBJECTMAPPER.readTree(studyProperties));
+		initData.put("componentProperties",
+				OBJECTMAPPER.readTree(componentProperties));
+		return initData;
 	}
 
 	/**
@@ -276,30 +296,47 @@ public class JsonUtils {
 		return asJsonStr;
 	}
 
-	public String sidebarStudyList(List<StudyModel> studyList) {
+	/**
+	 * Returns the JSON data for the sidebar (study title, ID and components)
+	 */
+	public JsonNode sidebarStudyList(List<StudyModel> studyList) {
 		List<SidebarStudy> sidebarStudyList = new ArrayList<>();
 		for (StudyModel study : studyList) {
 			SidebarStudy sidebarStudy = new SidebarStudy();
 			sidebarStudy.id = study.getId();
+			sidebarStudy.uuid = study.getUuid();
 			sidebarStudy.title = study.getTitle();
+			sidebarStudy.locked = study.isLocked();
 			for (ComponentModel component : study.getComponentList()) {
 				SidebarComponent sidebarComponent = new SidebarStudy.SidebarComponent();
 				sidebarComponent.id = component.getId();
+				sidebarComponent.uuid = component.getUuid();
 				sidebarComponent.title = component.getTitle();
 				sidebarStudy.componentList.add(sidebarComponent);
 			}
 			sidebarStudyList.add(sidebarStudy);
 		}
-		return asJson(sidebarStudyList);
+		Collections.sort(sidebarStudyList, new SidebarStudyComparator());
+		return asJsonNode(sidebarStudyList);
+	}
+
+	private class SidebarStudyComparator implements Comparator<SidebarStudy> {
+		@Override
+		public int compare(SidebarStudy ss1, SidebarStudy ss2) {
+			return ss1.title.compareTo(ss2.title);
+		}
 	}
 
 	static class SidebarStudy {
 		public Long id;
+		public String uuid;
 		public String title;
+		public boolean locked;
 		public List<SidebarComponent> componentList = new ArrayList<>();
 
 		static class SidebarComponent {
 			public Long id;
+			public String uuid;
 			public String title;
 		}
 	}
@@ -309,20 +346,21 @@ public class JsonUtils {
 	 * the 'resultCount', the number of ComponentResults of this component so
 	 * far. Intended for use in JATOS' GUI.
 	 */
-	public String allComponentsForUI(List<ComponentModel> componentList)
+	public JsonNode allComponentsForUI(List<ComponentModel> componentList)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
+		int i = 1;
 		for (ComponentModel component : componentList) {
 			ObjectNode componentNode = OBJECTMAPPER.valueToTree(component);
 			// Add count of component's results
 			componentNode.put("resultCount",
 					componentResultDao.countByComponent(component));
+			componentNode.put(ComponentModel.POSITION, i++);
 			arrayNode.add(componentNode);
 		}
 		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
 		componentsNode.put(DATA, arrayNode);
-		String asJsonStr = OBJECTMAPPER.writeValueAsString(componentsNode);
-		return asJsonStr;
+		return componentsNode;
 	}
 
 	/**
@@ -345,7 +383,7 @@ public class JsonUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T initializeAndUnproxy(T obj) {
+	public static <T> T initializeAndUnproxy(T obj) {
 		Hibernate.initialize(obj);
 		if (obj instanceof HibernateProxy) {
 			obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer()
@@ -366,6 +404,13 @@ public class JsonUtils {
 			Logger.error(CLASS_NAME + ".asJson: error marshalling object");
 		}
 		return objectAsJson;
+	}
+
+	/**
+	 * Generic JSON marshaler.
+	 */
+	public static JsonNode asJsonNode(Object obj) {
+		return OBJECTMAPPER.valueToTree(obj);
 	}
 
 	/**

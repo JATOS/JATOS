@@ -1,13 +1,13 @@
-package controllers.publix.tester;
+package controllers.publix.personal_multiple;
 
-import persistance.IComponentDao;
-import persistance.IComponentResultDao;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.workers.IWorkerDao;
 import models.StudyModel;
-import models.workers.TesterWorker;
+import models.workers.PMWorker;
 import models.workers.Worker;
+import persistance.ComponentDao;
+import persistance.ComponentResultDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.workers.WorkerDao;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -17,44 +17,43 @@ import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 
 /**
- * Special PublixUtils for TesterPublix
+ * Special PublixUtils for PMPublix
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class TesterPublixUtils extends PublixUtils<TesterWorker> {
+public class PMPublixUtils extends PublixUtils<PMWorker> {
 
-	private TesterErrorMessages errorMessages;
+	private PMErrorMessages errorMessages;
 
 	@Inject
-	TesterPublixUtils(TesterErrorMessages errorMessages,
-			IStudyDao studyDao, IStudyResultDao studyResultDao,
-			IComponentDao componentDao, IComponentResultDao componentResultDao,
-			IWorkerDao workerDao) {
+	PMPublixUtils(PMErrorMessages errorMessages, StudyDao studyDao,
+			StudyResultDao studyResultDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, WorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
 				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;
 	}
 
 	@Override
-	public TesterWorker retrieveTypedWorker(String workerIdStr)
+	public PMWorker retrieveTypedWorker(String workerIdStr)
 			throws PublixException {
 		Worker worker = retrieveWorker(workerIdStr);
-		if (!(worker instanceof TesterWorker)) {
+		if (!(worker instanceof PMWorker)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotCorrectType(worker.getId()));
 		}
-		return (TesterWorker) worker;
+		return (PMWorker) worker;
 	}
 
 	@Override
-	public void checkWorkerAllowedToStartStudy(TesterWorker worker,
+	public void checkWorkerAllowedToStartStudy(PMWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
 		checkWorkerAllowedToDoStudy(worker, study);
 	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(TesterWorker worker,
+	public void checkWorkerAllowedToDoStudy(PMWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
 		if (!study.hasAllowedWorker(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(

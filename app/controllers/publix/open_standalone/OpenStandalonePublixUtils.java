@@ -3,11 +3,11 @@ package controllers.publix.open_standalone;
 import models.StudyModel;
 import models.workers.OpenStandaloneWorker;
 import models.workers.Worker;
-import persistance.IComponentDao;
-import persistance.IComponentResultDao;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.workers.IWorkerDao;
+import persistance.ComponentDao;
+import persistance.ComponentResultDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.workers.WorkerDao;
 import play.mvc.Http.Cookie;
 
 import com.google.inject.Inject;
@@ -32,9 +32,9 @@ public class OpenStandalonePublixUtils extends
 
 	@Inject
 	OpenStandalonePublixUtils(OpenStandaloneErrorMessages errorMessages,
-			IStudyDao studyDao, IStudyResultDao studyResultDao,
-			IComponentDao componentDao, IComponentResultDao componentResultDao,
-			IWorkerDao workerDao) {
+			StudyDao studyDao, StudyResultDao studyResultDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			WorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
 				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;

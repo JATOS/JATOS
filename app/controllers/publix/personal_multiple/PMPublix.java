@@ -1,10 +1,10 @@
-package controllers.publix.tester;
+package controllers.publix.personal_multiple;
 
 import models.ComponentModel;
 import models.StudyModel;
-import models.workers.TesterWorker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import models.workers.PMWorker;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -17,38 +17,39 @@ import controllers.publix.Publix;
 import exceptions.publix.PublixException;
 
 /**
- * Implementation of JATOS' public API for studies run by tester worker.
+ * Implementation of JATOS' public API for studies run by personal multiple
+ * worker.
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class TesterPublix extends Publix<TesterWorker> implements IPublix {
+public class PMPublix extends Publix<PMWorker> implements IPublix {
 
-	public static final String TESTER_ID = "testerId";
+	public static final String PERSONAL_MULTIPLE_ID = "personalMultipleId";
 
-	private static final String CLASS_NAME = TesterPublix.class.getSimpleName();
+	private static final String CLASS_NAME = PMPublix.class.getSimpleName();
 
-	private final TesterPublixUtils publixUtils;
+	private final PMPublixUtils publixUtils;
 
 	@Inject
-	TesterPublix(TesterPublixUtils publixUtils,
-			TesterErrorMessages errorMessages,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+	PMPublix(PMPublixUtils publixUtils, PMErrorMessages errorMessages,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao) {
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 	}
 
 	@Override
 	public Result startStudy(Long studyId) throws PublixException {
-		String testerId = getQueryString(TESTER_ID);
+		String workerId = getQueryString(PERSONAL_MULTIPLE_ID);
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "testerId " + testerId);
+				+ "workerId " + workerId);
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 
-		TesterWorker worker = publixUtils.retrieveTypedWorker(testerId);
+		PMWorker worker = publixUtils.retrieveTypedWorker(workerId);
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
-		session(WORKER_ID, testerId);
+		session(WORKER_ID, workerId);
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);

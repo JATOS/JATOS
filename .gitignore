@@ -3,6 +3,7 @@ project/project
 project/target
 target
 /.target
+bin
 tmp
 .history
 dist
@@ -14,7 +15,7 @@ dist
 /.project
 /RUNNING_PID
 /.settings
-/loader.sh~
 /application.secret
-/studies/
+/study_assets_root/
 /database/
+.DS_Store

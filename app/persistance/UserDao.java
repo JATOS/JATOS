@@ -16,9 +16,11 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class UserDao extends AbstractDao<UserModel> implements IUserDao {
+public class UserDao extends AbstractDao {
 
-	@Override
+	/**
+	 * Persist user und creates it's JatosWorker.
+	 */
 	public void create(UserModel user) {
 		JatosWorker worker = new JatosWorker(user);
 		persist(worker);
@@ -27,18 +29,18 @@ public class UserDao extends AbstractDao<UserModel> implements IUserDao {
 		merge(worker);
 	}
 
-	@Override
 	public void update(UserModel user) {
 		merge(user);
 	}
 
-	@Override
+	/**
+	 * Changes only the name of the given user.
+	 */
 	public void updateName(UserModel user, String name) {
 		user.setName(name);
 		merge(user);
 	}
 
-	@Override
 	public UserModel authenticate(String email, String passwordHash) {
 		String queryStr = "SELECT e FROM UserModel e WHERE "
 				+ "e.email=:email and e.passwordHash=:passwordHash";
@@ -49,12 +51,10 @@ public class UserDao extends AbstractDao<UserModel> implements IUserDao {
 		return userList.isEmpty() ? null : userList.get(0);
 	}
 
-	@Override
 	public UserModel findByEmail(String email) {
 		return JPA.em().find(UserModel.class, email);
 	}
 
-	@Override
 	public List<UserModel> findAll() {
 		TypedQuery<UserModel> query = JPA.em().createQuery(
 				"SELECT e FROM UserModel e", UserModel.class);

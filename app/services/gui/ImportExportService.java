@@ -8,10 +8,9 @@ import java.util.List;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
+import persistance.ComponentDao;
+import persistance.StudyDao;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import services.RequestScopeMessaging;
 import utils.IOUtils;
@@ -19,19 +18,21 @@ import utils.JsonUtils;
 import utils.JsonUtils.UploadUnmarshaller;
 import utils.ZipUtil;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import exceptions.gui.JatosGuiException;
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 
 /**
- * Utility class for all JATOS Controllers (not Publix).
+ * Service class for JATOS Controllers (not Publix).
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class ImportExportService extends Controller {
+public class ImportExportService {
 
 	public static final String COMPONENT_TITLE = "componentTitle";
 	public static final String COMPONENT_EXISTS = "componentExists";
@@ -48,17 +49,14 @@ public class ImportExportService extends Controller {
 
 	private final StudyService studyService;
 	private final JsonUtils jsonUtils;
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final IStudyDao studyDao;
-	private final IComponentDao componentDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
 
 	@Inject
 	ImportExportService(StudyService studyService, JsonUtils jsonUtils,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			IStudyDao studyDao, IComponentDao componentDao) {
+			StudyDao studyDao, ComponentDao componentDao) {
 		this.studyService = studyService;
 		this.jsonUtils = jsonUtils;
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 	}
@@ -68,6 +66,10 @@ public class ImportExportService extends Controller {
 		if (filePart == null) {
 			throw new IOException(MessagesStrings.FILE_MISSING);
 		}
+		// Remember component's file name
+		Controller.session(ImportExportService.SESSION_TEMP_COMPONENT_FILE,
+				filePart.getFile().getName());
+
 		// If wrong key the upload comes from the wrong form
 		if (!filePart.getKey().equals(ComponentModel.COMPONENT)) {
 			throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
@@ -89,6 +91,9 @@ public class ImportExportService extends Controller {
 	public void importComponentConfirmed(StudyModel study,
 			String tempComponentFileName) throws IOException {
 		File componentFile = getTempComponentFile(study, tempComponentFileName);
+		if (componentFile == null) {
+			throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
+		}
 		ComponentModel uploadedComponent = unmarshalComponent(componentFile,
 				study);
 		ComponentModel currentComponent = componentDao.findByUuid(
@@ -97,21 +102,36 @@ public class ImportExportService extends Controller {
 		if (componentExists) {
 			componentDao.updateProperties(currentComponent, uploadedComponent);
 			RequestScopeMessaging.success(MessagesStrings
-					.componentsPropertiesOverwritten(currentComponent.getId()));
+					.componentsPropertiesOverwritten(currentComponent.getId(),
+							uploadedComponent.getTitle()));
 		} else {
 			componentDao.create(study, uploadedComponent);
-			RequestScopeMessaging.success(MessagesStrings
-					.importedNewComponent(uploadedComponent.getId()));
+			RequestScopeMessaging.success(MessagesStrings.importedNewComponent(
+					uploadedComponent.getId(), uploadedComponent.getTitle()));
 		}
 	}
 
-	public ObjectNode importStudy(UserModel loggedInUser, FilePart filePart)
-			throws JatosGuiException {
-		File tempUnzippedStudyDir = unzipUploadedFile(filePart);
+	public void cleanupAfterComponentImport(StudyModel study) {
+		String tempComponentFileName = Controller
+				.session(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
+		if (tempComponentFileName != null) {
+			File componentFile = getTempComponentFile(study,
+					tempComponentFileName);
+			if (componentFile != null) {
+				componentFile.delete();
+			}
+			Controller.session().remove(
+					ImportExportService.SESSION_TEMP_COMPONENT_FILE);
+		}
+	}
+
+	public ObjectNode importStudy(UserModel loggedInUser, File file)
+			throws IOException, ForbiddenException {
+		File tempUnzippedStudyDir = unzipUploadedFile(file);
 		StudyModel uploadedStudy = unmarshalStudy(tempUnzippedStudyDir, false);
 
 		// Remember study assets' dir name
-		session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
+		Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
 				tempUnzippedStudyDir.getName());
 
 		StudyModel currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
@@ -132,13 +152,53 @@ public class ImportExportService extends Controller {
 		return objectNode;
 	}
 
-	public void checkStudyImport(UserModel loggedInUser,
+	public void importStudyConfirmed(UserModel loggedInUser, JsonNode json)
+			throws IOException, ForbiddenException, BadRequestException {
+		if (json == null) {
+			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
+		}
+		Boolean studysPropertiesConfirm = json.findPath(
+				STUDYS_PROPERTIES_CONFIRM).asBoolean();
+		Boolean studysDirConfirm = json.findPath(STUDYS_DIR_CONFIRM)
+				.asBoolean();
+		if (studysPropertiesConfirm == null || studysDirConfirm == null) {
+			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
+		}
+
+		File tempUnzippedStudyDir = getUnzippedStudyDir();
+		if (tempUnzippedStudyDir == null) {
+			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
+		}
+		StudyModel importedStudy = unmarshalStudy(tempUnzippedStudyDir, true);
+		StudyModel currentStudy = studyDao.findByUuid(importedStudy.getUuid());
+
+		boolean studyExists = (currentStudy != null);
+		if (studyExists) {
+			overwriteExistingStudy(loggedInUser, studysPropertiesConfirm,
+					studysDirConfirm, tempUnzippedStudyDir, importedStudy,
+					currentStudy);
+		} else {
+			importNewStudy(loggedInUser, tempUnzippedStudyDir, importedStudy);
+		}
+	}
+
+	public void cleanupAfterStudyImport() {
+		File tempUnzippedStudyDir = getUnzippedStudyDir();
+		if (tempUnzippedStudyDir != null) {
+			tempUnzippedStudyDir.delete();
+		}
+		Controller.session().remove(
+				ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
+	}
+
+	private void checkStudyImport(UserModel loggedInUser,
 			StudyModel uploadedStudy, StudyModel currentStudy,
-			boolean studyExists, boolean dirExists) throws JatosGuiException {
+			boolean studyExists, boolean dirExists) throws IOException,
+			ForbiddenException {
 		if (studyExists && !currentStudy.hasMember(loggedInUser)) {
 			String errorMsg = MessagesStrings.studyImportNotMember(currentStudy
 					.getTitle());
-			jatosGuiExceptionThrower.throwHome(errorMsg, Http.Status.FORBIDDEN);
+			throw new ForbiddenException(errorMsg);
 		}
 		if (dirExists
 				&& (currentStudy == null || !currentStudy.getDirName().equals(
@@ -146,14 +206,15 @@ public class ImportExportService extends Controller {
 			String errorMsg = MessagesStrings
 					.studyAssetsDirExistsBelongsToDifferentStudy(uploadedStudy
 							.getDirName());
-			jatosGuiExceptionThrower.throwHome(errorMsg, Http.Status.FORBIDDEN);
+			throw new ForbiddenException(errorMsg);
 		}
 	}
 
-	public void overwriteExistingStudy(UserModel loggedInUser,
+	private void overwriteExistingStudy(UserModel loggedInUser,
 			Boolean studysPropertiesConfirm, Boolean studysDirConfirm,
 			File tempUnzippedStudyDir, StudyModel importedStudy,
-			StudyModel currentStudy) throws JatosGuiException {
+			StudyModel currentStudy) throws IOException, ForbiddenException,
+			BadRequestException {
 		studyService.checkStandardForStudy(currentStudy, currentStudy.getId(),
 				loggedInUser);
 		studyService.checkStudyLocked(currentStudy);
@@ -186,9 +247,9 @@ public class ImportExportService extends Controller {
 		}
 	}
 
-	public void importNewStudy(UserModel loggedInUser,
+	private void importNewStudy(UserModel loggedInUser,
 			File tempUnzippedStudyDir, StudyModel importedStudy)
-			throws JatosGuiException {
+			throws IOException {
 		moveStudyAssetsDir(tempUnzippedStudyDir, null,
 				importedStudy.getDirName(), loggedInUser);
 		studyDao.create(importedStudy, loggedInUser);
@@ -196,26 +257,19 @@ public class ImportExportService extends Controller {
 				importedStudy.getDirName(), importedStudy.getId()));
 	}
 
-	public File createStudyExportZipFile(Long studyId, StudyModel study)
-			throws JatosGuiException {
+	public File createStudyExportZipFile(StudyModel study) throws IOException {
 		File zipFile = null;
-		try {
-			String studyFileName = IOUtils.generateFileName(study.getTitle());
-			String studyFileSuffix = "." + IOUtils.STUDY_FILE_SUFFIX;
-			File studyAsJsonFile = File.createTempFile(studyFileName,
-					studyFileSuffix);
-			studyAsJsonFile.deleteOnExit();
-			jsonUtils.asJsonForIO(study, studyAsJsonFile);
-			String studyAssetsDirPath = IOUtils.generateStudyAssetsPath(study
-					.getDirName());
-			zipFile = ZipUtil.zipStudy(studyAssetsDirPath, study.getDirName(),
-					studyAsJsonFile.getAbsolutePath());
-			studyAsJsonFile.delete();
-		} catch (IOException e) {
-			String errorMsg = MessagesStrings.studyExportFailure(studyId);
-			jatosGuiExceptionThrower.throwAjax(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
-		}
+		String studyFileName = IOUtils.generateFileName(study.getTitle());
+		String studyFileSuffix = "." + IOUtils.STUDY_FILE_SUFFIX;
+		File studyAsJsonFile = File.createTempFile(studyFileName,
+				studyFileSuffix);
+		studyAsJsonFile.deleteOnExit();
+		jsonUtils.asJsonForIO(study, studyAsJsonFile);
+		String studyAssetsDirPath = IOUtils.generateStudyAssetsPath(study
+				.getDirName());
+		zipFile = ZipUtil.zipStudy(studyAssetsDirPath, study.getDirName(),
+				studyAsJsonFile.getAbsolutePath());
+		studyAsJsonFile.delete();
 		return zipFile;
 	}
 
@@ -223,7 +277,7 @@ public class ImportExportService extends Controller {
 	 * Update the components of the current study with the one of the imported
 	 * study.
 	 */
-	public void updateStudysComponents(StudyModel currentStudy,
+	private void updateStudysComponents(StudyModel currentStudy,
 			StudyModel updatedStudy) {
 		// Clear list and rebuild it from updated study
 		List<ComponentModel> currentComponentList = new ArrayList<ComponentModel>(
@@ -267,32 +321,24 @@ public class ImportExportService extends Controller {
 	 * Deletes current study assets' dir and moves imported study assets' dir
 	 * from Java's temp dir to study assets root dir
 	 */
-	public void moveStudyAssetsDir(File unzippedStudyDir,
+	private void moveStudyAssetsDir(File unzippedStudyDir,
 			StudyModel currentStudy, String studyAssetsDirName,
-			UserModel loggedInUser) throws JatosGuiException {
-		try {
-			if (currentStudy != null) {
-				IOUtils.removeStudyAssetsDir(currentStudy.getDirName());
-			}
+			UserModel loggedInUser) throws IOException {
+		if (currentStudy != null) {
+			IOUtils.removeStudyAssetsDir(currentStudy.getDirName());
+		}
 
-			File[] dirArray = IOUtils.findDirectories(unzippedStudyDir);
-			if (dirArray.length == 0) {
-				// If a study assets dir is missing, create a new one.
-				IOUtils.createStudyAssetsDir(studyAssetsDirName);
-				RequestScopeMessaging
-						.warning(MessagesStrings.NO_DIR_IN_ZIP_CREATED_NEW);
-			} else if (dirArray.length == 1) {
-				File studyAssetsDir = dirArray[0];
-				IOUtils.moveStudyAssetsDir(studyAssetsDir, studyAssetsDirName);
-			} else {
-				String errorMsg = MessagesStrings.MORE_THAN_ONE_DIR_IN_ZIP;
-				jatosGuiExceptionThrower.throwHome(errorMsg,
-						Http.Status.BAD_REQUEST);
-			}
-		} catch (IOException e) {
-			String errorMsg = "Study not imported: " + e.getMessage();
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
+		File[] dirArray = IOUtils.findDirectories(unzippedStudyDir);
+		if (dirArray.length == 0) {
+			// If a study assets dir is missing, create a new one.
+			IOUtils.createStudyAssetsDir(studyAssetsDirName);
+			RequestScopeMessaging
+					.warning(MessagesStrings.NO_DIR_IN_ZIP_CREATED_NEW);
+		} else if (dirArray.length == 1) {
+			File studyAssetsDir = dirArray[0];
+			IOUtils.moveStudyAssetsDir(studyAssetsDir, studyAssetsDirName);
+		} else {
+			throw new IOException(MessagesStrings.MORE_THAN_ONE_DIR_IN_ZIP);
 		}
 	}
 
@@ -302,10 +348,11 @@ public class ImportExportService extends Controller {
 	 * 
 	 * @throws IOException
 	 */
-	public File getTempComponentFile(StudyModel study,
-			String tempComponentFileName) throws IOException {
-		if (tempComponentFileName == null || tempComponentFileName.isEmpty()) {
-			throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
+	private File getTempComponentFile(StudyModel study,
+			String tempComponentFileName) {
+		if (tempComponentFileName == null
+				|| tempComponentFileName.trim().isEmpty()) {
+			return null;
 		}
 		File tempComponentFile = new File(System.getProperty("java.io.tmpdir"),
 				tempComponentFileName);
@@ -316,44 +363,30 @@ public class ImportExportService extends Controller {
 	 * Get unzipped study dir File object stored in Java's temp directory. Name
 	 * is stored in session. Discard session variable afterwards.
 	 */
-	public File getUnzippedStudyDir() throws JatosGuiException {
-		String unzippedStudyDirName = session(SESSION_UNZIPPED_STUDY_DIR);
-		session().remove(SESSION_UNZIPPED_STUDY_DIR);
-		if (unzippedStudyDirName == null || unzippedStudyDirName.isEmpty()) {
-			String errorMsg = MessagesStrings.IMPORT_OF_STUDY_FAILED;
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+	private File getUnzippedStudyDir() {
+		String unzippedStudyDirName = Controller
+				.session(SESSION_UNZIPPED_STUDY_DIR);
+		if (unzippedStudyDirName == null
+				|| unzippedStudyDirName.trim().isEmpty()) {
+			return null;
 		}
 		File unzippedStudyDir = new File(System.getProperty("java.io.tmpdir"),
 				unzippedStudyDirName);
 		return unzippedStudyDir;
 	}
 
-	public File unzipUploadedFile(FilePart filePart) throws JatosGuiException {
-		if (filePart == null) {
-			String errorMsg = MessagesStrings.FILE_MISSING;
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
-		}
-		if (!filePart.getKey().equals(StudyModel.STUDY)) {
-			// If wrong key the upload comes from wrong form
-			String errorMsg = MessagesStrings.NO_STUDY_UPLOAD;
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
-		}
+	private File unzipUploadedFile(File file) throws IOException {
 
 		File tempDir = null;
 		try {
-			tempDir = ZipUtil.unzip(filePart.getFile());
-		} catch (IOException e1) {
-			String errorMsg = MessagesStrings.IMPORT_OF_STUDY_FAILED;
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
+			tempDir = ZipUtil.unzip(file);
+		} catch (IOException e) {
+			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
 		return tempDir;
 	}
 
-	public ComponentModel unmarshalComponent(File file, StudyModel study)
+	private ComponentModel unmarshalComponent(File file, StudyModel study)
 			throws IOException {
 		ComponentModel component = new JsonUtils.UploadUnmarshaller()
 				.unmarshalling(file, ComponentModel.class);
@@ -366,27 +399,22 @@ public class ImportExportService extends Controller {
 		return component;
 	}
 
-	public StudyModel unmarshalStudy(File tempDir, boolean deleteAfterwards)
-			throws JatosGuiException {
+	private StudyModel unmarshalStudy(File tempDir, boolean deleteAfterwards)
+			throws IOException {
 		File[] studyFileList = IOUtils.findFiles(tempDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		if (studyFileList.length != 1) {
-			String errorMsg = MessagesStrings.STUDY_INVALID;
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throw new IOException(MessagesStrings.STUDY_INVALID);
 		}
 		File studyFile = studyFileList[0];
 		UploadUnmarshaller uploadUnmarshaller = new JsonUtils.UploadUnmarshaller();
 		StudyModel study = uploadUnmarshaller.unmarshalling(studyFile,
 				StudyModel.class);
 		if (study == null) {
-			jatosGuiExceptionThrower.throwHome(
-					uploadUnmarshaller.getErrorMsg(), Http.Status.BAD_REQUEST);
+			throw new IOException(uploadUnmarshaller.getErrorMsg());
 		}
 		if (study.validate() != null) {
-			String errorMsg = MessagesStrings.STUDY_INVALID;
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throw new IOException(MessagesStrings.STUDY_INVALID);
 		}
 		if (deleteAfterwards) {
 			studyFile.delete();

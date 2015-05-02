@@ -3,13 +3,12 @@ package controllers.gui;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
-import persistance.IUserDao;
+import persistance.UserDao;
 import play.Logger;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
-import play.mvc.With;
 import services.FlashScopeMessaging;
 import services.gui.MessagesStrings;
 import services.gui.UserService;
@@ -17,23 +16,27 @@ import services.gui.UserService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+
 /**
  * Controller that deals with login/logout.
  * 
  * @author Kristian Lange
  */
-@With(JatosGuiAction.class)
+@JatosGui
 @Singleton
 public class Authentication extends Controller {
 
 	private static final String CLASS_NAME = Authentication.class
 			.getSimpleName();
 
+	public static final String LOGGED_IN_USER = "loggedInUser";
+
 	private final UserService userService;
-	private final IUserDao userDao;
+	private final UserDao userDao;
 
 	@Inject
-	Authentication(IUserDao userDao, UserService userService) {
+	Authentication(UserDao userDao, UserService userService) {
 		this.userDao = userDao;
 		this.userService = userService;
 	}

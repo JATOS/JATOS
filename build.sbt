@@ -6,6 +6,8 @@ version := conf.getString("application.version")
 
 name := "JATOS"
 
+organization := "org.jatos"
+
 scalaVersion := "2.11.1"
 
 libraryDependencies ++= Seq(
@@ -20,7 +22,7 @@ libraryDependencies ++= Seq(
 	"commons-io" % "commons-io" % "2.4",
 	"org.mockito" % "mockito-core" % "1.9.5" % "test",
 	"org.webjars" %% "webjars-play" % "2.3.0-2",
-	"org.webjars" % "bootstrap" % "3.3.0"
+	"org.webjars" % "bootstrap" % "3.3.4"
 )
 
 lazy val root = (project in file(".")).enablePlugins(PlayJava, SbtWeb)
@@ -33,8 +35,20 @@ mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh
 
 mappings in Universal += file(baseDirectory.value + "/loader.bat") -> ("loader.bat")
 
-mappings in Universal := (mappings in Universal).value filter { case (file, path) => 
-	! path.endsWith(".development.conf")
+mappings in Universal := (mappings in Universal).value filter { 
+	case (file, path) => ! path.endsWith(".development.conf")
+}
+
+mappings in Universal := (mappings in Universal).value filter { 
+	case (file, path) => ! path.endsWith(".testing.conf")
+}
+
+mappings in Universal := (mappings in Universal).value filter { 
+	case (file, path) => ! path.endsWith("jatos.bat")
+}
+
+mappings in Universal := (mappings in Universal).value filter { 
+	case (file, path) => ! path.contains("share/doc")
 }
 
 Keys.fork in Test := false

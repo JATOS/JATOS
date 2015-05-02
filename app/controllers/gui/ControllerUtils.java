@@ -6,7 +6,7 @@ import java.net.URL;
 import play.mvc.Controller;
 
 /**
- * Utility class for all JATOS Controllers (not Publix).
+ * Utility class for all JATOS GUI Controllers (not Publix).
  * 
  * @author Kristian Lange
  */

@@ -9,9 +9,11 @@ import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.status;
 import gui.AbstractGuiTest;
+import models.UserModel;
 
 import org.junit.Test;
 
+import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.Breadcrumbs;
 import controllers.gui.Users;
@@ -42,6 +44,23 @@ public class HomeControllerTest extends AbstractGuiTest {
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
 		assertThat(contentAsString(result)).contains(Breadcrumbs.HOME);
+	}
+	
+	@Test
+	public void callLog() throws Exception {
+		Result result = callAction(controllers.gui.routes.ref.Home.log(1000),
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(OK);
+		assertThat(charset(result)).isEqualTo("utf-8");
+		assertThat(contentType(result)).isEqualTo("text/plain");
+		assertThat(contentAsString(result)).contains(".log: lineLimit ");
+		
+		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
+		result = callAction(controllers.gui.routes.ref.Home.log(1000),
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, testUser.getEmail()));
+		assertThat(status(result)).isEqualTo(Http.Status.FORBIDDEN);
 	}
 
 }

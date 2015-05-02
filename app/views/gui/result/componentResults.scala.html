@@ -1,42 +1,52 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel, 
+@(loggedInUser: UserModel, 
 breadcrumbs: String, study: StudyModel, component: ComponentModel)
 
-@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs){
 
 <!-- Toolbar -->
 <div id="resultsToolbar" class="btn-toolbar pull-right" role="toolbar">
 	<div class="btn-group" aria-hidden="true">
-		<button type="button" class="exportData btn btn-primary btn-sm">Export Data</button>
-		<button type="button" class="remove btn btn-primary btn-sm">Delete</button>
+		<button type="button" class="exportData btn btn-primary btn-sm"
+			data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_EXPORT_DATA">
+			Export Data
+		</button>
+		<button type="button" class="remove btn btn-primary btn-sm"
+			data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_DELETE">
+			Delete
+		</button>
 	</div>
 </div>
 
 <table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
 		<tr>
-			<th></th>
+			<!-- If you change something in the head, change it in the footer too! -->
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_DATA">Data</th>
 			<th>Result ID</th>
-			<th>Start Time (Server)</th>
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
 			<th>Duration</th>
-			<th>Worker ID</th>
-			<th>State</th>
-			<th>Error Message</th>
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
 		</tr>
 	</thead>
 	<tfoot>
 		<tr>
-			<th></th>
+			<!-- If you change something in the footer, change it in the head too! -->
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_DATA">Data</th>
 			<th>Result ID</th>
-			<th>Start Time (Server)</th>
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
 			<th>Duration</th>
-			<th>Worker ID</th>
-			<th>State</th>
-			<th>Error Message</th>
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
+			<th data-toggle="tooltip" data-placement="top" title="@services.gui.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
 		</tr>
 	</tfoot>
 </table>
 
 <script type="text/javascript">
+
+showInfo("@services.gui.MessagesStrings.RESULTS_INFO");
 
 var resultsTable;
 $(document).ready(function() {

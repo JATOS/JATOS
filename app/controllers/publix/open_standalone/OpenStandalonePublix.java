@@ -3,8 +3,8 @@ package controllers.publix.open_standalone;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.OpenStandaloneWorker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.Logger;
 import play.mvc.Result;
@@ -38,9 +38,11 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 
 	@Inject
 	OpenStandalonePublix(OpenStandalonePublixUtils publixUtils,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao, WorkerDao workerDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+			OpenStandaloneErrorMessages errorMessages,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, WorkerDao workerDao) {
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 		this.workerDao = workerDao;
 	}
@@ -56,6 +58,8 @@ public class OpenStandalonePublix extends Publix<OpenStandaloneWorker>
 		workerDao.create(worker);
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, worker.getId().toString());
+		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
+				+ "assigned to worker with ID " + worker.getId());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);

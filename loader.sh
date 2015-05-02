@@ -14,7 +14,9 @@ export PATH="$dir:$dir/bin:$PATH"
 
 function start() {
 	[ -f $dir/RUNNING_PID ] && return
-
+	
+	checkJava
+	
 	echo -n "Starting JATOS"
 
 	# Generate application secret for the Play framework
@@ -40,6 +42,7 @@ function start() {
 	jatos -Dconfig.file="$dir/conf/production.conf" -Dapplication.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
 	
 	echo "...started"
+	echo "To use JATOS type $address:$port in your browser's address bar"
 }
 
 function stop() {
@@ -52,6 +55,26 @@ function stop() {
 	done
 
 	echo "...stopped"
+}
+
+function checkJava() {
+	if type -p java
+	then
+		JAVA_VER=$(java -version 2>&1 | sed 's/java version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
+	fi
+	if [[ -z "$JAVA_VER" ]] || [[ "$JAVA_VER" -lt 18 ]]
+	then
+		if [[ -n $dir/jre/linux_x64_jre ]] && [[ -x "$dir/jre/linux_x64_jre/bin/java" ]]
+		then
+			echo "Jatos uses local JRE"
+			export JAVA_HOME="$dir/jre/linux_x64_jre"
+		fi
+		if [[ -n $dir/jre/mac_x64_jre ]] && [[ -x "$dir/jre/mac_x64_jre/bin/java" ]]
+		then
+			echo "Jatos uses local JRE"
+			export JAVA_HOME="$dir/jre/mac_x64_jre"
+		fi
+	fi
 }
 
 case "$1" in

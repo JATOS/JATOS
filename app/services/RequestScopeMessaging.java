@@ -8,8 +8,9 @@ import common.RequestScope;
 /**
  * Passes on messages (info/warning/error/success) to the view. Uses
  * RequestScope. JATOS has two similar messaging services, this and
- * FlashScopeMessaging. Difference to FlashScopeMessaging: several messages of
- * each kind and more reliable.
+ * FlashScopeMessaging. Difference to RequestScopeMessaging: only one of each
+ * kind, but it survives a redirect (according to Play's documentation, flash
+ * scope isn't reliable).
  * 
  * @author Kristian Lange
  */

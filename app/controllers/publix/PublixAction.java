@@ -20,9 +20,14 @@ public class PublixAction extends play.mvc.Action.Simple {
 		try {
 			call = delegate.call(ctx);
 		} catch (PublixException e) {
-		    Result result = e.getSimpleResult();
+			Result result = e.getSimpleResult();
 			Logger.info("PublixException: " + e.getMessage());
 			call = Promise.<Result> pure(result);
+		} catch (Exception e) {
+			Logger.error(e.getMessage(), e);
+			call = Promise
+					.<Result> pure(internalServerError(views.html.publix.error
+							.render("Internal JATOS error: " + e.getMessage())));
 		}
 		return call;
 	}

@@ -1,7 +1,7 @@
 /**
  * jatos.js (JATOS JavaScript Library)
  * http://jatos.org
- * Author Kristian Lange 2014
+ * Author Kristian Lange 2014 - 2015
  * Licensed under Apache License 2.0
  * 
  * Plugin: jquery.ajax-retry
@@ -10,45 +10,87 @@
  * Licensed under the MIT license.
  */
 
-var httpTimeout = 5000;
-var httpRetry = 5;
-var httpRetryWait = 500;
-
 var jatos = {};
-var onErrorCallback;
+
+// Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
+// or functions or variables)
+(function() {
+	
+/**
+ * How long should JATOS wait until to retry the HTTP call. Warning: There is a
+ * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
+ * second call of the same function as a reload of the component. A reload of a
+ * component is often forbidden and leads to failed finish of the study.
+ * Therefore I put the HTTP timeout time to 60 secs. If there is now answer
+ * within this time I assume the call never reached the server and it's our last
+ * hope to continue the study is to retry the call.
+ */
+jatos.httpTimeout = 60000;
+/**
+ * How many times should jatos.js retry to send a failed HTTP call.
+ */
+jatos.httpRetry = 5;
+/**
+ * How long should jatos.js wait between a failed HTTP call and a retry.
+ */
+jatos.httpRetryWait = 1000;
+
+/**
+ * State booleans. If true jatos.js is in this state.
+ */
+var initialized = false;
+var onLoadCallbackCalled = false;
+var startingComponent = false;
+var endingComponent = false;
+var submittingResultData = false;
+var abortingComponent = false;
+
+/**
+ * Callback function defined via jatos.onLoad.
+ */
 var onLoadCallback;
+/**
+ * Callback function defined via jatos.onError.
+ */
+var onErrorCallback;
 
-window.addEventListener('load', loadScripts(initJatos));
+// Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
+// a component's jQuery version. Afterwards initialise (jatos.js will always be
+// initialised - even if jatos.onLoad() is never called).
+jatos.jQuery;
+getScript('/assets/javascripts/jquery-1.11.1.min.js', function() {
+	jatos.jQuery = jQuery.noConflict(true);
+	loadScripts(initJatos);
+});
 
 /**
- * Defines callback function that is to be called when jatos.js is finished its
- * initialisation.
+ * Adds a <script> element into HTML's head and call success function when loaded
  */
-jatos.onLoad = function(callback) {
-	onLoadCallback = callback;
-}
-
-/**
- * Defines callback function that is to be called in case jatos.js produces an
- * error.
- */
-jatos.onError = function(callback) {
-	onErrorCallback = callback;
-	$(document).ajaxError(function(event, jqxhr, settings, thrownError) {
-		if (jqxhr.statusText == 'timeout') {
-			onErrorCallback("JATOS server not responding while trying to get URL " + settings.url);
-		} else {
-			onErrorCallback(jqxhr.responseText);
+function getScript(url, success) {
+	var script = document.createElement('script');
+	script.src = url;
+	var head = document.getElementsByTagName('head')[0], done = false;
+	script.onload = script.onreadystatechange = function() {
+		if (!done && (!this.readyState || this.readyState == 'loaded'
+				|| this.readyState == 'complete')) {
+			done = true;
+			success();
+			script.onload = script.onreadystatechange = null;
+			head.removeChild(script);
 		}
-	});
-};
+	}
+	head.appendChild(script);
+}
 
 /**
  * Load and run additional JS.
  */
 function loadScripts(successCallback) {
+	if (!jQueryExists()) {
+		return;
+	}
 	// Plugin to retry ajax calls 
-	$.ajax({
+	jatos.jQuery.ajax({
 		url: "/assets/javascripts/jquery.ajax-retry.min.js",
 		dataType: "script",
 		cache: true
@@ -56,19 +98,26 @@ function loadScripts(successCallback) {
 }
 
 /**
- * Initialising jatos.js.
+ * Initialising jatos.js
  */
 function initJatos() {
+	
 	var studyPropertiesReady = false;
 	var studySessionDataReady = false;
 	var componentPropertiesReady = false;
+	
+	if (!jQueryExists()) {
+		return;
+	}
+	readIdCookie();
+	getInitData();
 
 	/**
 	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope.
 	 * This function is automatically called after the page is loaded, so it's
 	 * not necessary to call it again.
 	 */
-	readIdCookie = function() {
+	function readIdCookie() {
 		var nameEQ = escape("JATOS_IDS") + "=";
 		var ca = document.cookie.split(';');
 		for (var i = 0; i < ca.length; i++) {
@@ -89,103 +138,122 @@ function initJatos() {
 	}
 
 	/**
-	 * Checks whether study's properties, study session data, and component's
-	 * properties are finished loading
+	 * Gets the study's session data, the study's properties, and the
+	 * component's properties from the JATOS server and stores them in
+	 * jatos.studySessionData, jatos.studyProperties, and
+	 * jatos.componentProperties. Additionally it stores study's JsonInput
+	 * into jatos.studyJsonInput and component's JsonInput into
+	 * jatos.componentJsonInput.
 	 */
-	ready = function() {
-		if (studyPropertiesReady && studySessionDataReady
-				&& componentPropertiesReady) {
-			if (onLoadCallback) {
-				onLoadCallback();
+	function getInitData() {
+		jatos.jQuery.ajax({
+			url : "/publix/" + jatos.studyId + "/" + jatos.componentId
+					+ "/initData",
+			type : "GET",
+			dataType : 'json',
+			timeout : jatos.httpTimeout,
+			success : setInitData
+		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
+	}
+
+	/**
+	 * Puts the ajax response into the different jatos variables.
+	 */
+	function setInitData(initData) {
+		// Session data
+		try {
+			jatos.studySessionData = jatos.jQuery.parseJSON(initData.studySession);
+		} catch (e) {
+			jatos.studySessionData = "Error parsing JSON";
+			if (onErrorCallback) {
+				onErrorCallback(e);
 			}
 		}
+		jatos.studySessionDataFrozen = Object.freeze({
+			"sessionDataStr" : initData.studySession
+		});
+		// Study properties
+		jatos.studyProperties = initData.studyProperties;
+		jatos.studyJsonInput = jatos.jQuery
+				.parseJSON(jatos.studyProperties.jsonData);
+		delete jatos.studyProperties.jsonData;
+		// Component properties
+		jatos.componentProperties = initData.componentProperties;
+		jatos.componentJsonInput = jatos.jQuery
+				.parseJSON(jatos.componentProperties.jsonData);
+		delete jatos.componentProperties.jsonData;
+		// Conveniently set document's title
+		document.title = jatos.componentProperties.title;
+		// Depreacated variables - will be removed in future
+		jatos.studyData = jatos.studyProperties;
+		jatos.studyJsonData = jatos.studyJsonInput;
+		jatos.componentData = jatos.componentProperties;
+		jatos.componentJsonData = jatos.componentJsonInput;
+		// Initialising finished
+		initialized = true;
+		ready();
 	}
+}
 
-	/**
-	 * Gets the study's properties from the JATOS server and stores them in
-	 * jatos.studyProperties and jatos.studyJsonInput (just the JSON input data
-	 * of the properties).
-	 */
-	getStudyProperties = function() {
-		$.ajax({
-			url : "/publix/" + jatos.studyId + "/getProperties",
-			type : "GET",
-			dataType : 'json',
-			timeout : httpTimeout,
-			success : function(response) {
-				// Legacy names TODO remove
-				jatos.studyData = response;
-				jatos.studyJsonData = $.parseJSON(jatos.studyData.jsonData);
-				delete jatos.studyData.jsonData;
-				// New names
-				jatos.studyProperties = jatos.studyData;
-				jatos.studyJsonInput = jatos.studyJsonData;
-				studyPropertiesReady = true;
-				ready();
-			}
-		}).retry({times : httpRetry, timeout : httpRetryWait});
-	};
-
-	/**
-	 * Gets the study's session data from the JATOS server and stores them in
-	 * jatos.studySessionData.
-	 */
-	getStudySessionData = function() {
-		$.ajax({
-			url : "/publix/" + jatos.studyId + "/getSessionData",
-			type : "GET",
-			dataType : 'text',
-			timeout : httpTimeout,
-			success : function(response) {
-				try {
-					jatos.studySessionData = $.parseJSON(response);
-				} catch (e) {
-					jatos.studySessionData = "Error parsing JSON";
-					if (onErrorCallback) {
-						onErrorCallback(e);
-					}
-				}
-				jatos.studySessionDataFrozen = Object.freeze({
-					"sessionDataStr" : response
-				});
-				studySessionDataReady = true;
-				ready();
-			}
-		}).retry({times : httpRetry, timeout : httpRetryWait});
+function jQueryExists() {
+	if (!jatos.jQuery) {
+		if (onErrorCallback) {
+			onErrorCallback("jatos.js' jQuery not (yet?) loaded");
+		}
+		return false;
 	}
+	return true;
+}
 
-	/**
-	 * Gets the component's properties from the JATOS server and stores them in
-	 * jatos.componentProperties and jatos.componentJsonInput (just the JSON
-	 * input data of the properties).
-	 */
-	getComponentProperties = function() {
-		$.ajax({
-			url : "/publix/" + jatos.studyId + "/" + jatos.componentId
-					+ "/getProperties",
-			type : "GET",
-			dataType : 'json',
-			timeout : httpTimeout,
-			success : function(response) {
-				// Legacy names
-				jatos.componentData = response;
-				jatos.componentJsonData = $
-						.parseJSON(jatos.componentData.jsonData);
-				delete jatos.componentData.jsonData;
-				// New names
-				jatos.componentProperties = jatos.componentData;
-				jatos.componentJsonInput = jatos.componentJsonData;
-				document.title = jatos.componentData.title;
-				componentPropertiesReady = true;
-				ready();
-			}
-		}).retry({times : httpRetry, timeout : httpRetryWait});
+/**
+ * Call onLoadCallback() if it already exists and jatos.js is initialised
+ */
+function ready() {
+	if (onErrorCallback) {
+		// If we have an error callback also set the jQuery ajax error callback
+		setJQueryAjaxError(onErrorCallback);
 	}
+	if (onLoadCallback && !onLoadCallbackCalled && initialized) {
+		onLoadCallbackCalled = true;
+		onLoadCallback();
+	}
+}
 
-	readIdCookie();
-	getStudyProperties();
-	getStudySessionData();
-	getComponentProperties();
+/**
+ * Defines callback function that is to be called when jatos.js finished its
+ * initialisation.
+ */
+jatos.onLoad = function(callback) {
+	onLoadCallback = callback;
+	ready();
+}
+
+/**
+ * Defines callback function that is to be called in case jatos.js produces an
+ * error.
+ */
+jatos.onError = function(callback) {
+	onErrorCallback = callback;
+	// If we have an error callback also set the jQuery ajax error callback
+	setJQueryAjaxError(onErrorCallback);
+};
+
+/**
+ * Define what jQuery should do if an ajax error happens. This way we can
+ * define it once without writing it on every ajax call.
+ */
+function setJQueryAjaxError(callback) {
+	if (!jatos.jQuery || !callback) {
+		return;
+	}
+	jatos.jQuery(document).ajaxError(function(event, jqxhr, settings, thrownError) {
+		if (jqxhr.statusText == 'timeout') {
+			callback("JATOS server not responding while trying to get URL "
+					+ settings.url);
+		} else {
+			callback(jqxhr.responseText);
+		}
+	});
 }
 
 /**
@@ -200,25 +268,31 @@ function initJatos() {
  *            Function} error - Function to be called in case of error
  */
 jatos.submitResultData = function(resultData, success, error) {
-	$.ajax({
+	if (!jQueryExists() || submittingResultData) {
+		return;
+	}
+	submittingResultData = true;
+	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/" + jatos.componentId
 				+ "/submitResultData",
 		data : resultData,
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
-		timeout : httpTimeout,
+		timeout : jatos.httpTimeout,
 		success : function(response) {
+			submittingResultData = false;
 			if (success) {
 				success(response)
 			}
 		},
 		error : function(err) {
+			submittingResultData = false;
 			if (error) {
 				error(err)
 			}
 		}
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -233,6 +307,9 @@ jatos.submitResultData = function(resultData, success, error) {
  *            finished
  */
 jatos.setStudySessionData = function(sessionData, complete) {
+	if (!jQueryExists()) {
+		return;
+	}
 	var sessionDataStr;
 	try {
 		sessionDataStr = JSON.stringify(sessionData);
@@ -252,19 +329,19 @@ jatos.setStudySessionData = function(sessionData, complete) {
 		}
 		return;
 	}
-	$.ajax({
+	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/setSessionData",
 		data : sessionDataStr,
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
-		timeout : httpTimeout,
+		timeout : jatos.httpTimeout,
 		complete : function() {
 			if (complete) {
 				complete()
 			}
 		}
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -278,6 +355,10 @@ jatos.setStudySessionData = function(sessionData, complete) {
  *            should be added to the URL
  */
 jatos.startComponent = function(componentId, queryString) {
+	if (startingComponent) {
+		return;
+	}
+	startingComponent = true;
 	var callbackWhenComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/" + componentId + "/start";
 		if (queryString) {
@@ -299,6 +380,10 @@ jatos.startComponent = function(componentId, queryString) {
  *            should be added to the URL
  */
 jatos.startComponentByPos = function(componentPos, queryString) {
+	if (startingComponent) {
+		return;
+	}
+	startingComponent = true;
 	var callbackWhenComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/startComponent?position="
 				+ componentPos;
@@ -320,6 +405,10 @@ jatos.startComponentByPos = function(componentPos, queryString) {
  *            should be added to the URL
  */
 jatos.startNextComponent = function(queryString) {
+	if (startingComponent) {
+		return;
+	}
+	startingComponent = true;
 	var callbackWhenComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/startNextComponent";
 		if (queryString) {
@@ -349,6 +438,10 @@ jatos.startNextComponent = function(queryString) {
  *            Function} error - Function to be called in case of error
  */
 jatos.endComponent = function(successful, errorMsg, success, error) {
+	if (!jQueryExists() || endingComponent) {
+		return;
+	}
+	endingComponent = true;
 	var callbackWhenComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end";
 		var fullUrl;
@@ -362,22 +455,24 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 			fullUrl = url + "?successful=" + successful + "&errorMsg="
 					+ errorMsg;
 		}
-		$.ajax({
+		jatos.jQuery.ajax({
 			url : fullUrl,
 			processData : false,
 			type : "GET",
-			timeout : httpTimeout,
+			timeout : jatos.httpTimeout,
 			success : function(response) {
+				endingComponent = false;
 				if (success) {
 					success(response)
 				}
 			},
 			error : function(err) {
+				endingComponent = false;
 				if (error) {
 					error(err)
 				}
 			}
-		}).retry({times : httpRetry, timeout : httpRetryWait});
+		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	}
 	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 }
@@ -394,6 +489,10 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
  *            Function} error - Function to be called in case of error
  */
 jatos.abortStudyAjax = function(message, success, error) {
+	if (!jQueryExists() || abortingComponent) {
+		return;
+	}
+	abortingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/abort";
 	var fullUrl;
 	if (undefined == message) {
@@ -401,22 +500,24 @@ jatos.abortStudyAjax = function(message, success, error) {
 	} else {
 		fullUrl = url + "?message=" + message;
 	}
-	$.ajax({
+	jatos.jQuery.ajax({
 		url : fullUrl,
 		processData : false,
 		type : "GET",
-		timeout : httpTimeout,
+		timeout : jatos.httpTimeout,
 		success : function(response) {
+			abortingComponent = false;
 			if (success) {
 				success(response)
 			}
 		},
 		error : function(err) {
+			abortingComponent = false;
 			if (error) {
 				error(err)
 			}
 		}
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -426,6 +527,10 @@ jatos.abortStudyAjax = function(message, success, error) {
  *            String} message - Message that should be logged
  */
 jatos.abortStudy = function(message) {
+	if (abortingComponent) {
+		return;
+	}
+	abortingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/abort";
 	if (undefined == message) {
 		window.location.href = url;
@@ -450,6 +555,10 @@ jatos.abortStudy = function(message) {
  *            Function} error - Function to be called in case of error
  */
 jatos.endStudyAjax = function(successful, errorMsg, success, error) {
+	if (!jQueryExists() || endingComponent) {
+		return;
+	}
+	endingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/end";
 	var fullUrl;
 	if (undefined == successful || undefined == errorMsg) {
@@ -461,22 +570,24 @@ jatos.endStudyAjax = function(successful, errorMsg, success, error) {
 	} else {
 		fullUrl = url + "?successful=" + successful + "&errorMsg=" + errorMsg;
 	}
-	$.ajax({
+	jatos.jQuery.ajax({
 		url : fullUrl,
 		processData : false,
 		type : "GET",
-		timeout : httpTimeout,
+		timeout : jatos.httpTimeout,
 		success : function(response) {
+			endingComponent = false;
 			if (success) {
 				success(response)
 			}
 		},
 		error : function(err) {
+			endingComponent = false;
 			if (error) {
 				error(err)
 			}
 		}
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -490,6 +601,10 @@ jatos.endStudyAjax = function(successful, errorMsg, success, error) {
  *            String} errorMsg - Error message that should be logged.
  */
 jatos.endStudy = function(successful, errorMsg) {
+	if (endingComponent) {
+		return;
+	}
+	endingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/end";
 	if (undefined == successful || undefined == errorMsg) {
 		window.location.href = url;
@@ -507,15 +622,18 @@ jatos.endStudy = function(successful, errorMsg) {
  * Logs an error within the JATOS.
  */
 jatos.logError = function(logErrorMsg) {
-	$.ajax({
+	if (!jQueryExists()) {
+		return;
+	}
+	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/" + jatos.componentId
 				+ "/logError",
 		data : logErrorMsg,
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
-		timeout : httpTimeout
-	}).retry({times : httpRetry, timeout : httpRetryWait});
+		timeout : jatos.httpTimeout
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**
@@ -532,4 +650,6 @@ jatos.addJatosIds = function(obj) {
 	obj.studyResultId = jatos.studyResultId;
 	obj.componentResultId = jatos.componentResultId;
 }
+
+})();
 

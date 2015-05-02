@@ -54,7 +54,7 @@ public class StudyAssets extends Controller {
 		String tempStudyAssetsRootPath = Play.application().configuration()
 				.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
 		if (tempStudyAssetsRootPath != null
-				&& !tempStudyAssetsRootPath.isEmpty()) {
+				&& !tempStudyAssetsRootPath.trim().isEmpty()) {
 			// Replace ~ with actual home directory
 			tempStudyAssetsRootPath = tempStudyAssetsRootPath.replace("~",
 					System.getProperty("user.home"));
@@ -90,7 +90,7 @@ public class StudyAssets extends Controller {
 		} catch (IOException e) {
 			Logger.info(CLASS_NAME + ".at: failed loading from path "
 					+ STUDY_ASSETS_ROOT_PATH + File.separator + filePath);
-			return notFound(views.html.publix.error.render("Resource \""
+			return notFound(views.html.error.render("Resource \""
 					+ filePath + "\" couldn't be found."));
 		}
 		return ok(file, true);

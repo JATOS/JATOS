@@ -7,11 +7,16 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.inject.Singleton;
-
+import play.mvc.Results.Chunks;
+import play.mvc.Results.StringChunks;
 import services.gui.MessagesStrings;
+
+import com.google.inject.Singleton;
+import common.Common;
+
 import controllers.publix.StudyAssets;
 
 /**
@@ -37,17 +42,17 @@ public class IOUtils {
 	private static final int MAX_FILENAME_LENGTH = 35;
 
 	/**
-	 * Reads file line by line and returns as String.
+	 * Reads the given file and returns the content as String.
 	 */
 	public static String readFile(File file) throws IOException {
-		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
 			StringBuilder sb = new StringBuilder();
-			String line = br.readLine();
+			String content = reader.readLine();
 
-			while (line != null) {
-				sb.append(line);
+			while (content != null) {
+				sb.append(content);
 				sb.append(System.lineSeparator());
-				line = br.readLine();
+				content = reader.readLine();
 			}
 			return sb.toString();
 		}
@@ -55,11 +60,12 @@ public class IOUtils {
 
 	/**
 	 * Gets the File object (can be an directory) while preventing a path
-	 * traversal attack.
+	 * traversal attack. path and filePath together build the full path (like
+	 * path/filePath). path must be a directory.
 	 */
 	public static File getFileSecurely(String path, String filePath)
 			throws IOException {
-		path = getExistingStudyAssetsDirSecurely(path).getAbsolutePath();
+		path = getExistingDirSecurely(path).getAbsolutePath();
 		String fullPath = path + File.separator + filePath;
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
@@ -73,10 +79,10 @@ public class IOUtils {
 	}
 
 	/**
-	 * Gets the File object of the study assets' directory while preventing a
-	 * path traversal attack and checks if the directory actually exists.
+	 * Gets the File object of the directory while preventing a path traversal
+	 * attack and checks if the directory actually exists.
 	 */
-	public static File getExistingStudyAssetsDirSecurely(String fullPath)
+	public static File getExistingDirSecurely(String fullPath)
 			throws IOException {
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
@@ -87,8 +93,7 @@ public class IOUtils {
 					MessagesStrings.couldntGeneratePathToFileOrDir(fullPath));
 		}
 		if (file == null || !file.exists() || !file.isDirectory()) {
-			throw new IOException(
-					MessagesStrings.studyAssetsDirPathIsntDir(fullPath));
+			throw new IOException(MessagesStrings.dirPathIsntDir(fullPath));
 		}
 		return file;
 	}
@@ -117,9 +122,16 @@ public class IOUtils {
 	 */
 	public static File getFileInStudyAssetsDir(String dirName, String filePath)
 			throws IOException {
-		String studyPath = generateStudyAssetsPath(dirName);
-		File file = getFileSecurely(studyPath, filePath);
-		return file;
+		String studyAssetsPath = generateStudyAssetsPath(dirName);
+		return getFileSecurely(studyAssetsPath, filePath);
+	}
+
+	/**
+	 * Gets the study assets with the given directory name.
+	 */
+	public static File getStudyAssetsDir(String dirName) throws IOException {
+		String studyAssetsPath = generateStudyAssetsPath(dirName);
+		return getExistingDirSecurely(studyAssetsPath);
 	}
 
 	/**
@@ -171,8 +183,7 @@ public class IOUtils {
 			return;
 		}
 		if (!dir.isDirectory()) {
-			throw new IOException(MessagesStrings.studyAssetsDirPathIsntDir(dir
-					.getName()));
+			throw new IOException(MessagesStrings.dirPathIsntDir(dir.getName()));
 		}
 		FileUtils.deleteDirectory(dir);
 	}
@@ -187,8 +198,8 @@ public class IOUtils {
 		File srcDir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH,
 				srcDirName);
 		if (!srcDir.isDirectory()) {
-			throw new IOException(
-					MessagesStrings.studyAssetsDirPathIsntDir(srcDir.getName()));
+			throw new IOException(MessagesStrings.dirPathIsntDir(srcDir
+					.getName()));
 		}
 
 		String destDirName = srcDirName + "_clone";
@@ -286,8 +297,9 @@ public class IOUtils {
 		}
 		if (newDir.exists()) {
 			throw new IOException(
-					MessagesStrings.studyAssetsDirNotCreatedBecauseExists(newDir
-							.getName()));
+					MessagesStrings
+							.studyAssetsDirNotCreatedBecauseExists(newDir
+									.getName()));
 		}
 		if (!oldDir.exists()) {
 			createStudyAssetsDir(newDirName);
@@ -298,6 +310,36 @@ public class IOUtils {
 			throw new IOException(MessagesStrings.studyAssetsDirNotRenamed(
 					oldDir.getName(), newDir.getName()));
 		}
+	}
+
+	/**
+	 * Reads logs/application.log file in reverse order and returns it as
+	 * Chunks<String>. It reads maximal to line lineLimit.
+	 */
+	public static Chunks<String> readApplicationLog(final int lineLimit) {
+		Chunks<String> chunks = new StringChunks() {
+			@Override
+			public void onReady(play.mvc.Results.Chunks.Out<String> out) {
+				File logFile = new File(Common.BASEPATH
+						+ "/logs/application.log");
+				try (ReversedLinesFileReader reader = new ReversedLinesFileReader(
+						logFile)) {
+					String content = reader.readLine();
+					int lineNumber = 1;
+					while (content != null && lineNumber <= lineLimit) {
+						out.write(content);
+						out.write(System.lineSeparator());
+						content = reader.readLine();
+						lineNumber++;
+					}
+				} catch (IOException e) {
+					out.write(MessagesStrings.COULDNT_OPEN_LOG);
+				} finally {
+					out.close();
+				}
+			}
+		};
+		return chunks;
 	}
 
 }

@@ -1,7 +1,7 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel, 
+@(loggedInUser: UserModel,
 breadcrumbs: String, study: StudyModel, userList: List[UserModel])
 
-@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs){
 
 @helper.form(action = controllers.gui.routes.Studies.submitChangedMembers(study.getId()), 'class -> "form-horizontal") {
 @for(user <- userList) {

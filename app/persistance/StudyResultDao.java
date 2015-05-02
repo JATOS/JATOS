@@ -19,10 +19,11 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class StudyResultDao extends AbstractDao<StudyResult> implements
-		IStudyResultDao {
+public class StudyResultDao extends AbstractDao {
 
-	@Override
+	/**
+	 * Creates StudyResult and adds it to the given Worker.
+	 */
 	public StudyResult create(StudyModel study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);
 		persist(studyResult);
@@ -31,12 +32,14 @@ public class StudyResultDao extends AbstractDao<StudyResult> implements
 		return studyResult;
 	}
 
-	@Override
 	public void update(StudyResult studyResult) {
 		merge(studyResult);
 	}
 
-	@Override
+	/**
+	 * Remove all ComponentResults of the given StudyResult, remove StudyResult
+	 * from the given worker, and remove StudyResult itself.
+	 */
 	public void remove(StudyResult studyResult) {
 		// Remove all component results of this study result
 		for (ComponentResult componentResult : studyResult
@@ -53,7 +56,10 @@ public class StudyResultDao extends AbstractDao<StudyResult> implements
 		super.remove(studyResult);
 	}
 
-	@Override
+	/**
+	 * Removes ALL StudyResults including their ComponentResult of the specified
+	 * study.
+	 */
 	public void removeAllOfStudy(StudyModel study) {
 		List<StudyResult> studyResultList = findAllByStudy(study);
 		for (StudyResult studyResult : studyResultList) {
@@ -61,12 +67,10 @@ public class StudyResultDao extends AbstractDao<StudyResult> implements
 		}
 	}
 
-	@Override
 	public StudyResult findById(Long id) {
 		return JPA.em().find(StudyResult.class, id);
 	}
 
-	@Override
 	public List<StudyResult> findAll() {
 		String queryStr = "SELECT e FROM StudyResult e";
 		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
@@ -74,7 +78,9 @@ public class StudyResultDao extends AbstractDao<StudyResult> implements
 		return query.getResultList();
 	}
 
-	@Override
+	/**
+	 * Returns the number of StudyResults belonging to the given study.
+	 */
 	public int countByStudy(StudyModel study) {
 		String queryStr = "SELECT COUNT(e) FROM StudyResult e WHERE e.study=:studyId";
 		Query query = JPA.em().createQuery(queryStr);
@@ -83,7 +89,6 @@ public class StudyResultDao extends AbstractDao<StudyResult> implements
 		return result.intValue();
 	}
 
-	@Override
 	public List<StudyResult> findAllByStudy(StudyModel study) {
 		String queryStr = "SELECT e FROM StudyResult e "
 				+ "WHERE e.study=:studyId";

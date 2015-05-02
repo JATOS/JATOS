@@ -1,5 +1,7 @@
 package controllers.publix;
 
+import java.io.IOException;
+
 import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
@@ -7,8 +9,8 @@ import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.Worker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import play.Logger;
 import play.libs.F.Function;
 import play.libs.F.Promise;
@@ -17,11 +19,9 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import utils.JsonUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Singleton;
 
 import controllers.gui.ControllerUtils;
-import controllers.gui.Users;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
 
@@ -47,13 +47,16 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	private static final String CLASS_NAME = Publix.class.getSimpleName();
 
 	protected final PublixUtils<T> publixUtils;
+	protected final PublixErrorMessages<T> errorMessages;
 	protected final JsonUtils jsonUtils;
-	protected final IComponentResultDao componentResultDao;
-	protected final IStudyResultDao studyResultDao;
+	protected final ComponentResultDao componentResultDao;
+	protected final StudyResultDao studyResultDao;
 
-	public Publix(PublixUtils<T> utils, IComponentResultDao componentResultDao,
-			JsonUtils jsonUtils, IStudyResultDao studyResultDao) {
+	public Publix(PublixUtils<T> utils, PublixErrorMessages<T> errorMessages,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao) {
 		this.publixUtils = utils;
+		this.errorMessages = errorMessages;
 		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
@@ -96,8 +99,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public Promise<Result> startComponentByPosition(Long studyId,
 			Integer position) throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponentByPosition: studyId "
-				+ studyId + ", " + "position " + position + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+				+ studyId + ", " + "position " + position + ", " + ", "
+				+ "workerId " + session(WORKER_ID));
 		ComponentModel component = publixUtils.retrieveComponentByPosition(
 				studyId, position);
 		return startComponent(studyId, component.getId());
@@ -127,34 +130,39 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public Result getStudyProperties(Long studyId) throws PublixException,
-			JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getStudyProperties: studyId " + studyId);
+	public Result getInitData(Long studyId, Long componentId)
+			throws PublixException, IOException {
+		Logger.info(CLASS_NAME + ".getInitData: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
+		ComponentModel component = publixUtils.retrieveComponent(study,
+				componentId);
 		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		publixUtils.checkComponentBelongsToStudy(study, component);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
+		ComponentResult componentResult;
+		try {
+			componentResult = publixUtils.retrieveStartedComponentResult(
+					component, studyResult);
+		} catch (ForbiddenReloadException e) {
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, e.getMessage()));
+		}
 		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
 		studyResultDao.update(studyResult);
-		return ok(jsonUtils.asJsonForPublix(study));
-	}
+		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
+		componentResultDao.update(componentResult);
 
-	@Override
-	public Result getStudySessionData(Long studyId) throws PublixException {
-		Logger.info(CLASS_NAME + ".getStudySessionData: studyId " + studyId);
-		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
-		String studySessionData = studyResult.getStudySessionData();
-		return ok(studySessionData);
+		return ok(jsonUtils.initData(studyResult, study, component));
 	}
 
 	@Override
 	public Result setStudySessionData(Long studyId) throws PublixException {
-		Logger.info(CLASS_NAME + ".setStudySessionData: studyId " + studyId);
+		Logger.info(CLASS_NAME + ".setStudySessionData: studyId " + studyId
+				+ ", " + "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
@@ -164,77 +172,15 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				.body());
 		studyResult.setStudySessionData(studySessionData);
 		studyResultDao.update(studyResult);
-		return ok();
-	}
-
-	@Override
-	public Result getComponentProperties(Long studyId, Long componentId)
-			throws PublixException, JsonProcessingException {
-		Logger.info(CLASS_NAME + ".getComponentProperties: studyId " + studyId
-				+ ", " + "componentId " + componentId);
-		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		ComponentModel component = publixUtils.retrieveComponent(study,
-				componentId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
-		publixUtils.checkComponentBelongsToStudy(study, component);
-
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
-		ComponentState maxAllowedComponentState = ComponentState.STARTED;
-		ComponentResult componentResult;
-		try {
-			componentResult = publixUtils.retrieveStartedComponentResult(
-					component, studyResult, maxAllowedComponentState);
-		} catch (ForbiddenReloadException e) {
-			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, e.getMessage()));
-		}
-
-		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
-		componentResultDao.update(componentResult);
-		return ok(jsonUtils.asJsonForPublix(component));
+		return ok().as("text/html");
 	}
 
 	@Override
 	public Result submitResultData(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
-				+ "componentId " + componentId);
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		ComponentModel component = publixUtils.retrieveComponent(study,
-				componentId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
-		publixUtils.checkComponentBelongsToStudy(study, component);
-
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
-		ComponentState maxAllowedComponentState = ComponentState.DATA_RETRIEVED;
-		ComponentResult componentResult;
-		try {
-			componentResult = publixUtils.retrieveStartedComponentResult(
-					component, studyResult, maxAllowedComponentState);
-		} catch (ForbiddenReloadException e) {
-			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, e.getMessage()));
-		}
-
-		String resultData = publixUtils
-				.getDataFromRequestBody(request().body());
-		componentResult.setData(resultData);
-		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
-		componentResultDao.update(componentResult);
-		return ok();
-	}
-
-	@Override
-	public Result finishComponent(Long studyId, Long componentId,
-			Boolean successful, String errorMsg) throws PublixException {
-		Logger.info(CLASS_NAME + ".finishComponent: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "logged-in user email "
-				+ session(Users.SESSION_EMAIL) + ", " + "successful "
-				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = publixUtils.retrieveComponent(study,
@@ -246,7 +192,46 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				worker, study);
 		ComponentResult componentResult = publixUtils
 				.retrieveCurrentComponentResult(studyResult);
+		if (componentResult == null) {
+			String error = errorMessages.componentNeverStarted(studyId,
+					componentId, "submitResultData");
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, error));
+		}
 
+		String resultData = publixUtils
+				.getDataFromRequestBody(request().body());
+		componentResult.setData(resultData);
+		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
+		componentResultDao.update(componentResult);
+		return ok().as("text/html");
+	}
+
+	@Override
+	public Result finishComponent(Long studyId, Long componentId,
+			Boolean successful, String errorMsg) throws PublixException {
+		Logger.info(CLASS_NAME + ".finishComponent: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", " + "workerId "
+				+ session(WORKER_ID) + ", " + "successful " + successful + ", "
+				+ "errorMsg \"" + errorMsg + "\"");
+		StudyModel study = publixUtils.retrieveStudy(studyId);
+		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
+		ComponentModel component = publixUtils.retrieveComponent(study,
+				componentId);
+		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		publixUtils.checkComponentBelongsToStudy(study, component);
+
+		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
+				worker, study);
+		ComponentResult componentResult = publixUtils
+				.retrieveCurrentComponentResult(studyResult);
+		if (componentResult == null) {
+			String error = errorMessages.componentNeverStarted(studyId,
+					componentId, "submitResultData");
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, error));
+		}
+		
 		if (successful) {
 			componentResult.setComponentState(ComponentState.FINISHED);
 			componentResult.setErrorMsg(errorMsg);
@@ -255,15 +240,15 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			componentResult.setErrorMsg(errorMsg);
 		}
 		componentResultDao.update(componentResult);
-		return ok();
+		return ok().as("text/html");
 	}
 
 	@Override
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
-				+ "logged-in user email " + session(Users.SESSION_EMAIL) + ", "
-				+ "message \"" + message + "\"");
+				+ ", " + "workerId " + session(WORKER_ID) + ", " + "message \""
+				+ message + "\"");
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
@@ -276,7 +261,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
-			return ok();
+			return ok().as("text/html");
 		} else {
 			return ok(views.html.publix.abort.render());
 		}
@@ -300,7 +285,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 		publixUtils.discardIdCookie();
 		if (ControllerUtils.isAjax()) {
-			return ok();
+			return ok().as("text/html");
 		} else {
 			if (!successful) {
 				return ok(views.html.publix.error.render(errorMsg));
@@ -316,7 +301,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.error(CLASS_NAME + " - logging component script error: studyId "
 				+ studyId + ", " + "componentId " + componentId + ", "
 				+ "error message \"" + msg + "\".");
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**

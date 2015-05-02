@@ -1,19 +1,5 @@
 package common;
 
-import persistance.ComponentDao;
-import persistance.ComponentResultDao;
-import persistance.IComponentDao;
-import persistance.IComponentResultDao;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.IUserDao;
-import persistance.StudyDao;
-import persistance.StudyResultDao;
-import persistance.UserDao;
-import persistance.workers.IMTWorkerDao;
-import persistance.workers.IWorkerDao;
-import persistance.workers.MTWorkerDao;
-import persistance.workers.WorkerDao;
 import play.Application;
 import play.GlobalSettings;
 import play.Logger;
@@ -47,13 +33,6 @@ public class Global extends GlobalSettings {
 
 			@Override
 			protected void configure() {
-				bind(IUserDao.class).to(UserDao.class);
-				bind(IStudyResultDao.class).to(StudyResultDao.class);
-				bind(IStudyDao.class).to(StudyDao.class);
-				bind(IComponentResultDao.class).to(ComponentResultDao.class);
-				bind(IComponentDao.class).to(ComponentDao.class);
-				bind(IMTWorkerDao.class).to(MTWorkerDao.class);
-				bind(IWorkerDao.class).to(WorkerDao.class);
 			}
 		});
 	}
@@ -68,8 +47,8 @@ public class Global extends GlobalSettings {
 	@Override
 	public Promise<Result> onError(RequestHeader request, Throwable t) {
 		return Promise.<Result> pure(Results
-				.internalServerError(views.html.publix.error
-						.render("Internal server error")));
+				.internalServerError(views.html.error
+						.render("Internal JATOS error")));
 	}
 
 	@Override
@@ -81,7 +60,8 @@ public class Global extends GlobalSettings {
 	@Override
 	public Promise<Result> onBadRequest(RequestHeader request,
 			String error) {
-		return Promise.<Result> pure(Results.badRequest("bad request"));
+		return Promise.<Result> pure(Results.badRequest(views.html.error
+						.render("bad request")));
 	}
 
 }

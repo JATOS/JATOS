@@ -1,13 +1,13 @@
 package controllers.publix.closed_standalone;
 
-import persistance.IComponentDao;
-import persistance.IComponentResultDao;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.workers.IWorkerDao;
 import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;
 import models.workers.Worker;
+import persistance.ComponentDao;
+import persistance.ComponentResultDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.workers.WorkerDao;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -29,10 +29,10 @@ public class ClosedStandalonePublixUtils extends
 	private ClosedStandaloneErrorMessages errorMessages;
 
 	@Inject
-	ClosedStandalonePublixUtils(
-			ClosedStandaloneErrorMessages errorMessages, IStudyDao studyDao,
-			IStudyResultDao studyResultDao, IComponentDao componentDao,
-			IComponentResultDao componentResultDao, IWorkerDao workerDao) {
+	ClosedStandalonePublixUtils(ClosedStandaloneErrorMessages errorMessages,
+			StudyDao studyDao, StudyResultDao studyResultDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			WorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
 				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;

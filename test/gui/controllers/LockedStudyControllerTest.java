@@ -1,23 +1,32 @@
 package gui.controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.status;
+
+import java.io.IOException;
+
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.ForbiddenReloadException;
 import gui.AbstractGuiTest;
 import models.StudyModel;
+import models.StudyResult;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import controllers.gui.Studies;
-import controllers.gui.Users;
+import common.Global;
+import persistance.StudyResultDao;
 import play.mvc.HandlerRef;
+import play.mvc.Http;
 import play.mvc.Result;
+import services.gui.StudyService;
 import utils.IOUtils;
+import controllers.gui.Users;
+import controllers.publix.jatos.JatosPublixUtils;
 
 /**
  * Testing actions if study is locked
@@ -27,12 +36,16 @@ import utils.IOUtils;
 public class LockedStudyControllerTest extends AbstractGuiTest {
 
 	private static StudyModel studyTemplate;
+	private JatosPublixUtils jatosPublixUtils;
+	private StudyResultDao studyResultDao;
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 
 	@Override
 	public void before() throws Exception {
+		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
+		jatosPublixUtils = Global.INJECTOR.getInstance(JatosPublixUtils.class);
 		studyTemplate = importExampleStudy();
 	}
 
@@ -41,12 +54,15 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
 	}
 
-	private void checkDenyLocked(HandlerRef ref) {
+	private void checkDenyLocked(HandlerRef ref, int statusCode,
+			String redirectPath) {
 		Result result = callAction(ref,
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
-		assertThat(status(result)).isEqualTo(SEE_OTHER);
-		assertThat(redirectLocation(result)).contains("/jatos/");
+		assertThat(status(result)).isEqualTo(statusCode);
+		if (statusCode == Http.Status.SEE_OTHER) {
+			assertThat(redirectLocation(result)).isEqualTo(redirectPath);
+		}
 	}
 
 	@Test
@@ -55,7 +71,8 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 		lockStudy(studyClone);
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.submitEdited(studyClone.getId());
-		checkDenyLocked(ref);
+		checkDenyLocked(ref, Http.Status.SEE_OTHER,
+				"/jatos/" + studyClone.getId());
 		removeStudy(studyClone);
 	}
 
@@ -65,7 +82,7 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 		lockStudy(studyClone);
 		HandlerRef ref = controllers.gui.routes.ref.Studies.remove(studyClone
 				.getId());
-		checkDenyLocked(ref);
+		checkDenyLocked(ref, Http.Status.FORBIDDEN, null);
 		removeStudy(studyClone);
 	}
 
@@ -76,8 +93,37 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.changeComponentOrder(studyClone.getId(), studyClone
 						.getComponent(1).getId(),
-						Studies.COMPONENT_POSITION_DOWN);
-		checkDenyLocked(ref);
+						StudyService.COMPONENT_POSITION_DOWN);
+		checkDenyLocked(ref, Http.Status.FORBIDDEN, null);
+		removeStudy(studyClone);
+	}
+	
+	@Test
+	public void callExportComponentResults() throws IOException,
+			ForbiddenPublixException, ForbiddenReloadException {
+		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		
+		// Create some results
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(studyClone,
+				admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		// Have to set study manually in test - don't know why
+		studyClone.getFirstComponent().setStudy(studyClone);
+		jatosPublixUtils.startComponent(studyClone.getFirstComponent(), studyResult);
+		jatosPublixUtils.startComponent(studyClone.getFirstComponent(), studyResult);
+		entityManager.getTransaction().commit();
+		
+		HandlerRef ref = controllers.gui.routes.ref.ComponentResults
+				.exportData("1");
+		Result result = callAction(ref,
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(Http.Status.OK);
+		
+		// Clean up
 		removeStudy(studyClone);
 	}
 

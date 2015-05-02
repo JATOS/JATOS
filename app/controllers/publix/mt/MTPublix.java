@@ -5,9 +5,9 @@ import models.StudyModel;
 import models.StudyResult;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
-import persistance.workers.IMTWorkerDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
+import persistance.workers.MTWorkerDao;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -18,7 +18,6 @@ import com.google.inject.Singleton;
 import controllers.gui.ControllerUtils;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixInterceptor;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
@@ -48,13 +47,14 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	private final MTPublixUtils publixUtils;
 	private final MTErrorMessages errorMessages;
-	private final IMTWorkerDao mtWorkerDao;
+	private final MTWorkerDao mtWorkerDao;
 
 	@Inject
 	MTPublix(MTPublixUtils publixUtils, MTErrorMessages errorMessages,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao, IMTWorkerDao mtWorkerDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
 		this.mtWorkerDao = mtWorkerDao;
@@ -65,10 +65,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		// Get MTurk query parameters
 		String mtWorkerId = getQueryString(MT_WORKER_ID);
 		String mtAssignmentId = getQueryString(ASSIGNMENT_ID);
-		String mtHitId = getQueryString(HIT_ID);
-		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "Parameters from MTurk: workerId " + mtWorkerId + ", "
-				+ "assignmentId " + mtAssignmentId + ", " + "hitId " + mtHitId);
+		// String mtHitId = getQueryString(HIT_ID);
+		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId);
 
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 
@@ -84,18 +82,19 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		// Check worker and create if doesn't exists
 		if (mtWorkerId == null) {
 			throw new BadRequestPublixException(
-					PublixErrorMessages.NO_MTURK_WORKERID);
+					MTErrorMessages.NO_MTURK_WORKERID);
 		}
 		MTWorker worker = mtWorkerDao.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
 			String workerType = session(PublixInterceptor.WORKER_TYPE);
 			boolean isRequestFromMTurkSandbox = workerType
 					.equals(MTSandboxWorker.WORKER_TYPE);
-			worker = mtWorkerDao.create(mtWorkerId,
-					isRequestFromMTurkSandbox);
+			worker = mtWorkerDao.create(mtWorkerId, isRequestFromMTurkSandbox);
 		}
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));
+		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
+				+ "assigned to worker with ID " + worker.getId());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);

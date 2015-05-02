@@ -12,7 +12,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public abstract class AbstractDao<T> implements IAbstractDao<T> {
+public abstract class AbstractDao {
 
 	protected void persist(Object entity) {
 		JPA.em().persist(entity);
@@ -26,8 +26,7 @@ public abstract class AbstractDao<T> implements IAbstractDao<T> {
 		JPA.em().remove(entity);
 	}
 
-	@Override
-	public void refresh(T entity) {
+	public void refresh(Object entity) {
 		JPA.em().refresh(entity);
 	}
 

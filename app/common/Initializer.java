@@ -1,15 +1,16 @@
 package common;
 
 import java.io.File;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
-import persistance.IUserDao;
+import persistance.ComponentDao;
+import persistance.StudyDao;
+import persistance.UserDao;
 import play.Logger;
 import play.db.jpa.JPA;
 import services.gui.UserService;
@@ -29,13 +30,13 @@ public class Initializer {
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
 
 	private final UserService userService;
-	private final IUserDao userDao;
-	private final IStudyDao studyDao;
-	private final IComponentDao componentDao;
+	private final UserDao userDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
 
 	@Inject
-	Initializer(IUserDao userDao, UserService userService,
-			IStudyDao studyDao, IComponentDao componentDao) {
+	Initializer(UserDao userDao, UserService userService, StudyDao studyDao,
+			ComponentDao componentDao) {
 		this.userDao = userDao;
 		this.userService = userService;
 		this.studyDao = studyDao;
@@ -73,17 +74,23 @@ public class Initializer {
 			public void invoke() throws Throwable {
 				List<StudyModel> studyModelList = studyDao.findAll();
 				for (StudyModel study : studyModelList) {
-					if (study.getUuid() == null || study.getUuid().isEmpty()) {
+					if (study.getUuid() == null
+							|| study.getUuid().trim().isEmpty()) {
 						study.setUuid(UUID.randomUUID().toString());
-						studyDao.update(study);
 					}
-					for (ComponentModel component : study.getComponentList()) {
-						if (component.getUuid() == null
-								|| component.getUuid().isEmpty()) {
+					Iterator<ComponentModel> iterator = study
+							.getComponentList().iterator();
+					while (iterator.hasNext()) {
+						ComponentModel component = iterator.next();
+						if (component == null) {
+							iterator.remove();
+						} else if (component.getUuid() == null
+								|| component.getUuid().trim().isEmpty()) {
 							component.setUuid(UUID.randomUUID().toString());
 							componentDao.update(component);
 						}
 					}
+					studyDao.update(study);
 				}
 			}
 		});

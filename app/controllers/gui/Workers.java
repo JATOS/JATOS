@@ -1,20 +1,18 @@
 package controllers.gui;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 
 import models.StudyModel;
 import models.UserModel;
 import models.workers.Worker;
-import persistance.IStudyDao;
-import persistance.workers.IWorkerDao;
+import persistance.StudyDao;
+import persistance.workers.WorkerDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.With;
 import services.gui.Breadcrumbs;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.MessagesStrings;
@@ -26,6 +24,10 @@ import utils.JsonUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -33,7 +35,8 @@ import exceptions.gui.JatosGuiException;
  * 
  * @author Kristian Lange
  */
-@With(JatosGuiAction.class)
+@JatosGui
+@Authenticated
 @Singleton
 public class Workers extends Controller {
 
@@ -44,14 +47,14 @@ public class Workers extends Controller {
 	private final UserService userService;
 	private final WorkerService workerService;
 	private final JsonUtils jsonUtils;
-	private final IStudyDao studyDao;
-	private final IWorkerDao workerDao;
+	private final StudyDao studyDao;
+	private final WorkerDao workerDao;
 
 	@Inject
 	Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
-			WorkerService workerService, IStudyDao studyDao,
-			JsonUtils jsonUtils, IWorkerDao workerDao) {
+			WorkerService workerService, StudyDao studyDao,
+			JsonUtils jsonUtils, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
@@ -69,16 +72,19 @@ public class Workers extends Controller {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		Worker worker = workerDao.findById(workerId);
-		workerService.checkWorker(worker, workerId);
+		try {
+			workerService.checkWorker(worker, workerId);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwRedirect(e,
+					controllers.gui.routes.Home.home());
+		}
 
 		String breadcrumbs = Breadcrumbs.generateForWorker(worker,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
-				views.html.gui.result.workersStudyResults.render(studyList,
-						loggedInUser, breadcrumbs, worker));
+				views.html.gui.result.workersStudyResults.render(loggedInUser,
+						breadcrumbs, worker));
 	}
 
 	@Transactional
@@ -97,11 +103,20 @@ public class Workers extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Worker worker = workerDao.findById(workerId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		workerService.checkWorker(worker, workerId);
+		try {
+			workerService.checkWorker(worker, workerId);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwRedirect(e,
+					controllers.gui.routes.Home.home());
+		}
 
-		workerService.checkRemovalAllowed(worker, loggedInUser);
+		try {
+			workerService.checkRemovalAllowed(worker, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 		workerDao.remove(worker);
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**
@@ -115,16 +130,19 @@ public class Workers extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 
 		String dataAsJson = null;
 		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+
 			Set<Worker> workerSet = workerService.retrieveWorkers(study);
 			dataAsJson = jsonUtils.allWorkersForUI(workerSet);
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		return ok(dataAsJson);
 	}

@@ -1,6 +1,11 @@
 package services.gui;
 
+import models.ComponentResult.ComponentState;
+import models.StudyResult.StudyState;
 import models.UserModel;
+import models.workers.ClosedStandaloneWorker;
+import models.workers.MTWorker;
+import models.workers.PMWorker;
 
 import com.google.inject.Singleton;
 
@@ -39,6 +44,8 @@ public abstract class MessagesStrings {
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";
 	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email address is already registered.";
 	public static final String YOUVE_BEEN_LOGGED_OUT = "You've been logged out";
+	public static final String ONLY_ADMIN_CAN_SEE_LOGS = "Only an admin can see the logs";
+	public static final String COULDNT_OPEN_LOG = "Couldn't open log file";
 	
 	// Export / import
 	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
@@ -54,9 +61,28 @@ public abstract class MessagesStrings {
 	public static final String NO_RESULTS_SELECTED = "No results selected";
 	public static final String PROBLEM_GENERATING_JSON_DATA = "Problem generate JSON data";
 
+	// Results
+	public static final String RESULTS_EXPORT_DATA = "Select results and export them as a text file to your local file system";
+	public static final String RESULTS_DELETE = "Select results and delete them";
+	public static final String RESULTS_INFO = "Select a result for export or deletion by clicking anywhere on its row.";
+	public static final String RESULTS_DATA = "Click on the + icon to open the result's data";
+	public static final String RESULTS_START_TIME = "Time according to the JATOS server";
+	public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. " + MTWorker.UI_WORKER_TYPE + ", " + PMWorker.UI_WORKER_TYPE + ", " +  ClosedStandaloneWorker.UI_WORKER_TYPE;
+	public static final String RESULTS_WORKER_ID = "Click on the ID to go to this worker's results";
+	public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
+	public static final String RESULTS_MT_WORKER_ID = "Mechanical Turk's worker ID";
+	public static final String RESULTS_CONFIRMATION_CODE = "Confirmation code for Mechanical Turk";
+	public static final String RESULTS_STUDY_STATE = "Current state of this study's run, like "
+			+ StudyState.allStatesAsString();
+	public static final String RESULTS_STUDY_MESSAGES = "Messages that occured during the run of this study";
+	public static final String RESULTS_COMPONENT_STATE = "Current state of this component's run, like "
+			+ ComponentState.allStatesAsString();
+	public static final String RESULTS_COMPONENT_MESSAGES = "Messages that occured during the run of this component";
+
 	// Other
 	public static final String MTWORKER_ALLOWANCE_MISSING = "Right now workers from Mechnical Turk are not allowed to run this study. You should change this in this study's properties before you run it from Mechanical Turk.";
 	public static final String COULDNT_GENERATE_JATOS_URL = "Couldn't generate JATOS' URL. Try to reload this page.";
+	public static final String COULDNT_CHANGE_POSITION_OF_COMPONENT = "Couldn't change position of componet.";
 
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
@@ -79,9 +105,9 @@ public abstract class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String studyReorderUnknownDirection(String direction,
+	public static String studyReorderUnknownPosition(String position,
 			Long studyId) {
-		String errorMsg = "Unknown direction command. Couldn't reorder "
+		String errorMsg = "Unknown position "+ position +". Couldn't reorder "
 				+ "components in study with ID " + studyId + ".";
 		return errorMsg;
 	}
@@ -95,13 +121,13 @@ public abstract class MessagesStrings {
 	public static String studyAssetsOverwritten(String studyAssetsName,
 			Long studyId) {
 		String errorMsg = "Assets \"" + studyAssetsName
-				+ "\" of study with ID " + studyId + " overwritten.";
+				+ "\" of study with ID " + studyId + " were overwritten.";
 		return errorMsg;
 	}
 
 	public static String studysPropertiesOverwritten(Long studyId) {
 		String errorMsg = "Properties of study with ID " + studyId
-				+ " overwritten.";
+				+ " were overwritten.";
 		return errorMsg;
 	}
 
@@ -117,14 +143,16 @@ public abstract class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String componentsPropertiesOverwritten(Long componentId) {
-		String errorMsg = "Properties of component with ID " + componentId
-				+ " overwritten.";
+	public static String componentsPropertiesOverwritten(Long componentId,
+			String title) {
+		String errorMsg = "Properties of component \"" + title + "\"  with ID "
+				+ componentId + " were overwritten.";
 		return errorMsg;
 	}
 
-	public static String importedNewComponent(Long componentId) {
-		String errorMsg = "New component with ID " + componentId + " imported.";
+	public static String importedNewComponent(Long componentId, String title) {
+		String errorMsg = "New component \"" + title + "\" with ID "
+				+ componentId + " imported.";
 		return errorMsg;
 	}
 
@@ -135,11 +163,22 @@ public abstract class MessagesStrings {
 		return errorMsg;
 	}
 
+	public static String componentHasNoStudy(Long componentId) {
+		String errorMsg = "The component with ID " + componentId
+				+ " doesn't belong to any study.";
+		return errorMsg;
+	}
+
 	public static String userNotExist(String email) {
 		String errorMsg = "An user with email " + email + " doesn't exist.";
 		return errorMsg;
 	}
-
+	
+	public static String userMustBeLoggedInToSeeProfile(UserModel user) {
+		return "You must be logged in as " + user.toString()
+				+ " to see the profile of this user.";
+	}
+	
 	public static String componentNotExist(Long componentId) {
 		String errorMsg = "An component with ID " + componentId
 				+ " doesn't exist.";
@@ -167,6 +206,11 @@ public abstract class MessagesStrings {
 	public static String resultNotExist(String resultIdStr) {
 		String errorMsg = "An result with ID \"" + resultIdStr
 				+ "\" doesn't exist.";
+		return errorMsg;
+	}
+
+	public static String resultIdMalformed(String resultIdStr) {
+		String errorMsg = "The result ID \"" + resultIdStr + "\" is malformed.";
 		return errorMsg;
 	}
 
@@ -208,11 +252,6 @@ public abstract class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String mustBeLoggedInAsUser(UserModel user) {
-		return "You must be logged in as " + user.toString()
-				+ " to see the profile of this user.";
-	}
-
 	public static String studyLocked(Long studyId) {
 		return "Study " + studyId
 				+ " is locked. Unlock it if you want to make changes.";
@@ -223,8 +262,8 @@ public abstract class MessagesStrings {
 				+ " failed.";
 	}
 
-	public static String studyCreationOfTesterRunFailed(Long studyId) {
-		return "The creation of a tester run for study " + studyId + " failed.";
+	public static String studyCreationOfPersonalMultipleRunFailed(Long studyId) {
+		return "The creation of a personal multiple run for study " + studyId + " failed.";
 	}
 
 	public static String couldntGeneratePathToFileOrDir(String fileStr) {
@@ -237,9 +276,9 @@ public abstract class MessagesStrings {
 				+ ").";
 	}
 
-	public static String studyAssetsDirPathIsntDir(String dirName) {
-		return "Study assets' directory path \"" + dirName
-				+ "\"doesn't lead to a directory.";
+	public static String dirPathIsntDir(String dirName) {
+		return "Directory path \"" + dirName
+				+ "\" doesn't lead to a directory.";
 	}
 
 	public static String clonedStudyAssetsDirNotCreatedBecauseExists(

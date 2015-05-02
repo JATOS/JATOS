@@ -17,7 +17,7 @@ import play.data.validation.ValidationError;
 public class OpenStandaloneWorker extends Worker {
 
 	public static final String WORKER_TYPE = "OpenStandalone";
-	public static final String UI_WORKER_TYPE = "Open standalone";
+	public static final String UI_WORKER_TYPE = "General Single";
 
 	public OpenStandaloneWorker() {
 	}

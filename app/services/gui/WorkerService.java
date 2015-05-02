@@ -7,62 +7,67 @@ import java.util.Set;
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
+import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
+import models.workers.PMWorker;
 import models.workers.Worker;
-import persistance.IStudyResultDao;
-import play.mvc.Controller;
-import play.mvc.Http;
+import persistance.StudyResultDao;
+import persistance.workers.WorkerDao;
+import play.data.validation.ValidationError;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import exceptions.gui.JatosGuiException;
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 
 /**
- * Utility class for all JATOS Controllers (not Publix).
+ * Service class for JATOS Controllers (not Publix)..
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class WorkerService extends Controller {
+public class WorkerService {
 
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
-	private final IStudyResultDao studyResultDao;
+	private final StudyResultDao studyResultDao;
+	private final WorkerDao workerDao;
 
 	@Inject
-	WorkerService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService, IStudyResultDao studyResultDao) {
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+	WorkerService(StudyService studyService, StudyResultDao studyResultDao,
+			WorkerDao workerDao) {
 		this.studyService = studyService;
 		this.studyResultDao = studyResultDao;
+		this.workerDao = workerDao;
 	}
 
 	/**
-	 * Throws a JatosGuiException in case the worker doesn't exist.
-	 * Distinguishes between normal and Ajax request.
+	 * Throws a Exception in case the worker doesn't exist. Distinguishes
+	 * between normal and Ajax request.
 	 */
 	public void checkWorker(Worker worker, Long workerId)
-			throws JatosGuiException {
+			throws BadRequestException {
 		if (worker == null) {
-			String errorMsg = MessagesStrings.workerNotExist(workerId);
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throw new BadRequestException(
+					MessagesStrings.workerNotExist(workerId));
 		}
 	}
 
 	/**
 	 * Check whether the removal of this worker is allowed.
+	 * 
+	 * @throws BadRequestException
+	 * @throws ForbiddenException
 	 */
 	public void checkRemovalAllowed(Worker worker, UserModel loggedInUser)
-			throws JatosGuiException {
+			throws ForbiddenException, BadRequestException {
 		// JatosWorker associated to a JATOS user must not be removed
 		if (worker instanceof JatosWorker) {
 			JatosWorker maWorker = (JatosWorker) worker;
 			String errorMsg = MessagesStrings.removeJatosWorkerNotAllowed(
 					worker.getId(), maWorker.getUser().getName(), maWorker
 							.getUser().getEmail());
-			jatosGuiExceptionThrower.throwAjax(errorMsg, Http.Status.FORBIDDEN);
+			throw new ForbiddenException(errorMsg);
 		}
 
 		// Check for every study if removal is allowed
@@ -85,6 +90,37 @@ public class WorkerService extends Controller {
 			workerSet.add(studyResult.getWorker());
 		}
 		return workerSet;
+	}
+
+	/**
+	 * Creates, validates and persists a ClosedStandaloneWorker.
+	 */
+	public ClosedStandaloneWorker createClosedStandaloneWorker(String comment,
+			Long studyId) throws BadRequestException {
+		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
+		validateWorker(studyId, worker);
+		workerDao.create(worker);
+		return worker;
+	}
+
+	/**
+	 * Creates, validates and persists a PMWorker (worker for a personal multiple run).
+	 */
+	public PMWorker createPMWorker(String comment, Long studyId)
+			throws BadRequestException {
+		PMWorker worker = new PMWorker(comment);
+		validateWorker(studyId, worker);
+		workerDao.create(worker);
+		return worker;
+	}
+
+	private void validateWorker(Long studyId, Worker worker)
+			throws BadRequestException {
+		List<ValidationError> errorList = worker.validate();
+		if (errorList != null && !errorList.isEmpty()) {
+			String errorMsg = errorList.get(0).message();
+			throw new BadRequestException(errorMsg);
+		}
 	}
 
 }

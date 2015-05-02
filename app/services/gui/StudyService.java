@@ -1,108 +1,177 @@
 package services.gui;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.workers.Worker;
-import persistance.IComponentDao;
-import play.data.validation.ValidationError;
-import play.mvc.Controller;
-import play.mvc.Http;
+import persistance.StudyDao;
+import persistance.UserDao;
+import services.RequestScopeMessaging;
+import utils.IOUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import exceptions.gui.JatosGuiException;
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 
 /**
- * Utility class for all JATOS Controllers (not Publix).
+ * Service class for JATOS Controllers (not Publix).
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class StudyService extends Controller {
+public class StudyService {
 
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final IComponentDao componentDao;
+	public static final String COMPONENT_POSITION_DOWN = "down";
+	public static final String COMPONENT_POSITION_UP = "up";
+
+	private final ComponentService componentService;
+	private final StudyDao studyDao;
+	private final UserDao userDao;
 
 	@Inject
-	StudyService(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			IComponentDao componentDao) {
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-		this.componentDao = componentDao;
+	StudyService(ComponentService componentService, StudyDao studyDao,
+			UserDao userDao) {
+		this.componentService = componentService;
+		this.studyDao = studyDao;
+		this.userDao = userDao;
 	}
 
 	/**
-	 * Throws a JatosGuiException if a study is locked. Distinguishes between
-	 * normal and Ajax request.
+	 * Clones the given StudyModel and persists it. Copies the corresponding
+	 * study assets.
 	 */
-	public void checkStudyLocked(StudyModel study) throws JatosGuiException {
+	public StudyModel cloneStudy(StudyModel study, UserModel loggedInUser)
+			throws IOException {
+		StudyModel clone = cloneStudyProperties(study);
+		String destDirName = IOUtils.cloneStudyAssetsDirectory(study
+				.getDirName());
+		clone.setDirName(destDirName);
+		studyDao.create(clone, loggedInUser);
+		return clone;
+	}
+
+	/**
+	 * Deletes all current members of the given study and adds the new users. A
+	 * user is identified by its email. In case of an empty list an Exception is
+	 * thrown.
+	 */
+	public void exchangeMembers(StudyModel study, String[] userEmailArray)
+			throws BadRequestException {
+		if (userEmailArray == null) {
+			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
+			throw new BadRequestException(errorMsg);
+		}
+		List<UserModel> userList = new ArrayList<>();
+		for (String email : userEmailArray) {
+			UserModel user = userDao.findByEmail(email);
+			if (user == null) {
+				String errorMsg = MessagesStrings.userNotExist(email);
+				RequestScopeMessaging.error(errorMsg);
+				throw new BadRequestException(errorMsg);
+			}
+			userList.add(userDao.findByEmail(email));
+		}
+		if (userList.isEmpty()) {
+			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
+			RequestScopeMessaging.error(errorMsg);
+			throw new BadRequestException(errorMsg);
+		}
+		study.getMemberList().clear();
+		for (UserModel user : userList) {
+			studyDao.addMember(study, user);
+		}
+	}
+
+	/**
+	 * Clones a StudyModel. It does not copy the memberList, id, uuid, date or
+	 * locked (set to false).
+	 */
+	private StudyModel cloneStudyProperties(StudyModel study) {
+		StudyModel clone = new StudyModel();
+		clone.setDescription(study.getDescription());
+		clone.setDirName(study.getDirName());
+		clone.setJsonData(study.getJsonData());
+		clone.setTitle(study.getTitle());
+		clone.setLocked(false);
+		for (String workerType : study.getAllowedWorkerList()) {
+			clone.addAllowedWorker(workerType);
+		}
+		for (ComponentModel component : study.getComponentList()) {
+			ComponentModel componentClone = componentService.clone(component);
+			componentClone.setStudy(clone);
+			clone.addComponent(componentClone);
+		}
+		return clone;
+	}
+
+	/**
+	 * Update a couple of study's properties (but not all) and persist it.
+	 */
+	public void updateStudy(StudyModel study, StudyModel updatedStudy) {
+		study.setTitle(updatedStudy.getTitle());
+		study.setDescription(updatedStudy.getDescription());
+		study.setJsonData(updatedStudy.getJsonData());
+		study.getAllowedWorkerList().clear();
+		for (String workerType : updatedStudy.getAllowedWorkerList()) {
+			study.addAllowedWorker(workerType);
+		}
+		studyDao.update(study);
+	}
+
+	/**
+	 * Throws an Exception if a study is locked.
+	 */
+	public void checkStudyLocked(StudyModel study) throws ForbiddenException {
 		if (study.isLocked()) {
 			String errorMsg = MessagesStrings.studyLocked(study.getId());
-			jatosGuiExceptionThrower.throwRedirectOrForbidden(
-					controllers.gui.routes.Studies.index(study.getId()),
-					errorMsg);
-		}
-	}
-
-	public void checkWorker(Long studyId, Worker worker)
-			throws JatosGuiException {
-		List<ValidationError> errorList = worker.validate();
-		if (errorList != null && !errorList.isEmpty()) {
-			String errorMsg = errorList.get(0).message();
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
+			throw new ForbiddenException(errorMsg);
 		}
 	}
 
 	/**
-	 * Checks the study and throws a JatosGuiException in case of a problem.
-	 * Distinguishes between normal and Ajax request.
+	 * Checks the study and throws an Exception in case of a problem.
 	 */
 	public void checkStandardForStudy(StudyModel study, Long studyId,
-			UserModel user) throws JatosGuiException {
+			UserModel user) throws ForbiddenException, BadRequestException {
 		if (study == null) {
 			String errorMsg = MessagesStrings.studyNotExist(studyId);
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throw new BadRequestException(errorMsg);
 		}
 		// Check that the user is a member of the study
 		if (!study.hasMember(user)) {
 			String errorMsg = MessagesStrings.studyNotMember(user.getName(),
 					user.getEmail(), studyId, study.getTitle());
-			jatosGuiExceptionThrower.throwHome(errorMsg, Http.Status.FORBIDDEN);
+			throw new ForbiddenException(errorMsg);
 		}
 	}
 
-	public void componentPositionMinusOne(StudyModel study,
-			ComponentModel component) {
-		int index = study.getComponentList().indexOf(component);
-		if (index > 0) {
-			ComponentModel prevComponent = study.getComponentList().get(
-					index - 1);
-			componentPositionSwap(study, component, prevComponent);
+	/**
+	 * Changes the position of the given component within the given study to the
+	 * new position given in newPosition. Remember the first position is 1 (and
+	 * not 0).
+	 */
+	public void changeComponentPosition(String newPosition, StudyModel study,
+			ComponentModel component) throws BadRequestException {
+		try {
+			int currentIndex = study.getComponentList().indexOf(component);
+			int newIndex = Integer.valueOf(newPosition) - 1;
+			study.getComponentList().remove(currentIndex);
+			study.getComponentList().add(newIndex, component);
+			studyDao.update(study);
+		} catch (NumberFormatException e) {
+			throw new BadRequestException(
+					MessagesStrings.COULDNT_CHANGE_POSITION_OF_COMPONENT);
+		} catch (IndexOutOfBoundsException e) {
+			throw new BadRequestException(
+					MessagesStrings.studyReorderUnknownPosition(newPosition,
+							study.getId()));
 		}
-	}
-
-	public void componentPositionPlusOne(StudyModel study,
-			ComponentModel component) {
-		int index = study.getComponentList().indexOf(component);
-		if (index < (study.getComponentList().size() - 1)) {
-			ComponentModel nextComponent = study.getComponentList().get(
-					index + 1);
-			componentPositionSwap(study, component, nextComponent);
-		}
-	}
-
-	public void componentPositionSwap(StudyModel study,
-			ComponentModel component1, ComponentModel component2) {
-		int position1 = study.getComponentList().indexOf(component1) + 1;
-		int position2 = study.getComponentList().indexOf(component2) + 1;
-		componentDao.changePosition(component1, position2);
-		componentDao.changePosition(component2, position1);
 	}
 
 	/**
@@ -126,6 +195,17 @@ public class StudyService extends Controller {
 			study.getAllowedWorkerList().clear();
 		}
 		return study;
+	}
+
+	/**
+	 * Renames the directory in the file system and persists the study's
+	 * property.
+	 */
+	public void renameStudyAssetsDir(StudyModel study, String newDirName)
+			throws IOException {
+		IOUtils.renameStudyAssetsDir(study.getDirName(), newDirName);
+		study.setDirName(newDirName);
+		studyDao.update(study);
 	}
 
 }

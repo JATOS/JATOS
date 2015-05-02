@@ -8,15 +8,13 @@ import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
 import models.workers.Worker;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.workers.IWorkerDao;
+import persistance.StudyDao;
+import persistance.workers.WorkerDao;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.With;
 import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.ImportExportService;
@@ -33,6 +31,11 @@ import utils.JsonUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
+import exceptions.NotFoundException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -40,7 +43,8 @@ import exceptions.gui.JatosGuiException;
  * 
  * @author Kristian Lange
  */
-@With(JatosGuiAction.class)
+@JatosGui
+@Authenticated
 @Singleton
 public class StudyResults extends Controller {
 
@@ -52,16 +56,14 @@ public class StudyResults extends Controller {
 	private final UserService userService;
 	private final WorkerService workerService;
 	private final ResultService resultService;
-	private final IStudyDao studyDao;
-	private final IStudyResultDao studyResultDao;
-	private final IWorkerDao workerDao;
+	private final StudyDao studyDao;
+	private final WorkerDao workerDao;
 
 	@Inject
 	StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
 			WorkerService workerService, ResultService resultService,
-			IStudyDao studyDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao, IWorkerDao workerDao) {
+			StudyDao studyDao, JsonUtils jsonUtils, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
@@ -69,7 +71,6 @@ public class StudyResults extends Controller {
 		this.resultService = resultService;
 		this.studyDao = studyDao;
 		this.jsonUtils = jsonUtils;
-		this.studyResultDao = studyResultDao;
 		this.workerDao = workerDao;
 	}
 
@@ -83,16 +84,18 @@ public class StudyResults extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+		}
 
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.RESULTS);
 		return status(httpStatus,
-				views.html.gui.result.studysStudyResults.render(studyList,
-						loggedInUser, breadcrumbs, study));
+				views.html.gui.result.studysStudyResults.render(loggedInUser,
+						breadcrumbs, study));
 	}
 
 	@Transactional
@@ -116,17 +119,12 @@ public class StudyResults extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-
-		List<Long> studyResultIdList = resultService
-				.extractResultIds(studyResultIds);
-		List<StudyResult> studyResultList = resultService
-				.getAllStudyResults(studyResultIdList);
-		resultService.checkAllStudyResults(studyResultList, loggedInUser, true);
-
-		for (StudyResult studyResult : studyResultList) {
-			studyResultDao.remove(studyResult);
+		try {
+			resultService.removeAllStudyResults(studyResultIds, loggedInUser);
+		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		return ok();
+		return ok().as("text/html");
 	}
 
 	/**
@@ -140,14 +138,16 @@ public class StudyResults extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		String dataAsJson = null;
 		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			dataAsJson = jsonUtils.allStudyResultsForUI(study);
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		return ok(dataAsJson);
 	}
@@ -164,7 +164,11 @@ public class StudyResults extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		Worker worker = workerDao.findById(workerId);
-		workerService.checkWorker(worker, workerId);
+		try {
+			workerService.checkWorker(worker, workerId);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 
 		List<StudyResult> allowedStudyResultList = resultService
 				.getAllowedStudyResultList(loggedInUser, worker);
@@ -194,14 +198,13 @@ public class StudyResults extends Controller {
 		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
-		List<Long> studyResultIdList = resultService
-				.extractResultIds(studyResultIds);
-		List<StudyResult> studyResultList = resultService
-				.getAllStudyResults(studyResultIdList);
-		resultService
-				.checkAllStudyResults(studyResultList, loggedInUser, false);
-		String studyResultDataAsStr = resultService
-				.getStudyResultData(studyResultList);
+		String studyResultDataAsStr = null;
+		try {
+			studyResultDataAsStr = resultService.generateStudyResultStr(
+					studyResultIds, loggedInUser);
+		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 
 		response().setContentType("application/x-download");
 		String filename = "results_" + DateUtils.getDateForFile(new Date())

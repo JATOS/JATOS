@@ -27,7 +27,6 @@ import utils.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 
-import controllers.gui.Studies;
 import controllers.gui.Users;
 
 /**
@@ -279,22 +278,21 @@ public class StudiesControllerTest extends AbstractGuiTest {
 	public void callChangeComponentOrder() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
-		// Move first component one down
+		// Move first component to second position
 		Result result = callAction(
 				controllers.gui.routes.ref.Studies.changeComponentOrder(
 						studyClone.getId(), studyClone.getComponentList()
-								.get(0).getId(),
-						Studies.COMPONENT_POSITION_DOWN),
+								.get(0).getId(), "2"),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
-		// Move second component one up
+		// Move second component to first position
 		result = callAction(
 				controllers.gui.routes.ref.Studies.changeComponentOrder(
 						studyClone.getId(), studyClone.getComponentList()
-								.get(1).getId(), Studies.COMPONENT_POSITION_UP),
+								.get(1).getId(), "1"),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -336,13 +334,13 @@ public class StudiesControllerTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void callCreateTesterRun() throws Exception {
+	public void callCreatePersonalMultipleRun() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.createTesterRun(studyClone
+				controllers.gui.routes.ref.Studies.createPersonalMultipleRun(studyClone
 						.getId()), fakeRequest().withJsonBody(jsonNode)
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);

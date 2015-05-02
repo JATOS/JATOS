@@ -1,12 +1,12 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel,
+@(loggedInUser: UserModel,
 breadcrumbs: String, user: UserModel, form: Form[UserModel])
 
-@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs){
 
 @helper.form(action = controllers.gui.routes.Users.submitEditedProfile(user.getEmail()), 'class -> "form-horizontal", 'role -> "form") {
 
 <div class="form-group">
-	<label class="control-label col-xs-2" for="name">Name:</label>
+	<label class="control-label col-xs-2" for="name">Name</label>
 	<div class="col-xs-10">
 		<input type="text" class="form-control" id="name" name="@UserModel.NAME" value="@form(UserModel.NAME).value" placeholder="Your name">
 	</div>

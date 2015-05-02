@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -23,9 +24,8 @@ import javax.persistence.OrderColumn;
 
 import models.workers.ClosedStandaloneWorker;
 import models.workers.JatosWorker;
-import models.workers.TesterWorker;
+import models.workers.PMWorker;
 
-import org.hibernate.annotations.GenericGenerator;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
@@ -45,6 +45,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 @Entity
 public class StudyModel {
 
+	public static final String ID = "id";
+	public static final String UUID = "uuid";
 	public static final String MEMBERS = "user";
 	public static final String TITLE = "title";
 	public static final String JSON_DATA = "jsonData";
@@ -63,9 +65,8 @@ public class StudyModel {
 	 * different JATOS instances. On one JATOS instance it is only allowed to
 	 * have one study with the same UUID.
 	 */
+	@Column(unique = true, nullable = false)
 	@JsonView(JsonUtils.JsonForIO.class)
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "uuid2")
 	private String uuid;
 
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
@@ -128,7 +129,7 @@ public class StudyModel {
 	public StudyModel() {
 		// Add default allowed workers
 		addAllowedWorker(JatosWorker.WORKER_TYPE);
-		addAllowedWorker(TesterWorker.WORKER_TYPE);
+		addAllowedWorker(PMWorker.WORKER_TYPE);
 		addAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
 	}
 
@@ -341,7 +342,7 @@ public class StudyModel {
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
-		if (title == null || title.isEmpty()) {
+		if (title == null || title.trim().isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.MISSING_TITLE));
 		}
@@ -354,7 +355,7 @@ public class StudyModel {
 			errorList.add(new ValidationError(DESCRIPTION,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (dirName == null || dirName.isEmpty()) {
+		if (dirName == null || dirName.trim().isEmpty()) {
 			errorList.add(new ValidationError(DIRNAME,
 					MessagesStrings.MISSING_DIRNAME));
 		}

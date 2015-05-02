@@ -1,12 +1,12 @@
-@(studyList: List[StudyModel], loggedInUser: UserModel,
+@(loggedInUser: UserModel,
 breadcrumbs: String, form: Form[UserModel])
 
-@views.html.gui.main(studyList, loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs){
 
 @helper.form(action = controllers.gui.routes.Users.submit(), 'class -> "form-horizontal", 'role -> "form") {
 
 <div class="form-group">
-	<label class="control-label col-xs-2" for="email">Email address:</label>
+	<label class="control-label col-xs-2" for="email">Email address</label>
 	<div class="col-xs-10">
 		<input type="email" class="form-control" id="email" name="@UserModel.EMAIL" value="@form(UserModel.EMAIL).value" placeholder="Your email">
 		<span class="help-block">This will be your username.</span>
@@ -14,14 +14,14 @@ breadcrumbs: String, form: Form[UserModel])
 </div>
 
 <div class="form-group">
-	<label class="control-label col-xs-2" for="name">Name:</label>
+	<label class="control-label col-xs-2" for="name">Name</label>
 	<div class="col-xs-10">
 		<input type="text" class="form-control" id="name" name="@UserModel.NAME" value="@form(UserModel.NAME).value" placeholder="Your name">
 	</div>
 </div>
 
 <div class="form-group">
-	<label class="control-label col-xs-2" for="password">Password:</label>
+	<label class="control-label col-xs-2" for="password">Password</label>
 	<div class="col-xs-10">
 		<input type="password" class="form-control" id="password" name="@UserModel.PASSWORD" placeholder="Your password">
 		<input type="password" class="form-control" id="repeatPassword" name="@UserModel.PASSWORD_REPEAT" placeholder="Repeat your password">

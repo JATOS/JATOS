@@ -25,11 +25,11 @@ import models.workers.Worker;
 
 import org.w3c.dom.Document;
 
-import persistance.IComponentDao;
-import persistance.IComponentResultDao;
-import persistance.IStudyDao;
-import persistance.IStudyResultDao;
-import persistance.workers.IWorkerDao;
+import persistance.ComponentDao;
+import persistance.ComponentResultDao;
+import persistance.StudyDao;
+import persistance.StudyResultDao;
+import persistance.workers.WorkerDao;
 import play.Logger;
 import play.mvc.Http.RequestBody;
 
@@ -54,17 +54,16 @@ public abstract class PublixUtils<T extends Worker> {
 
 	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
 
-	private final PublixErrorMessages<T> errorMessages;
-	private final IStudyDao studyDao;
-	private final IStudyResultDao studyResultDao;
-	private final IComponentDao componentDao;
-	private final IComponentResultDao componentResultDao;
-	private final IWorkerDao workerDao;
+	protected final PublixErrorMessages<T> errorMessages;
+	private final StudyDao studyDao;
+	private final StudyResultDao studyResultDao;
+	private final ComponentDao componentDao;
+	private final ComponentResultDao componentResultDao;
+	private final WorkerDao workerDao;
 
-	public PublixUtils(PublixErrorMessages<T> errorMessages,
-			IStudyDao studyDao, IStudyResultDao studyResultDao,
-			IComponentDao componentDao, IComponentResultDao componentResultDao,
-			IWorkerDao workerDao) {
+	public PublixUtils(PublixErrorMessages<T> errorMessages, StudyDao studyDao,
+			StudyResultDao studyResultDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, WorkerDao workerDao) {
 		this.errorMessages = errorMessages;
 		this.studyDao = studyDao;
 		this.studyResultDao = studyResultDao;
@@ -104,11 +103,11 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Start or restart a component
+	 * Start or restart a component. It either returns a newly started component
+	 * or an exception but never null.
 	 */
 	public ComponentResult startComponent(ComponentModel component,
-			StudyResult studyResult) throws ForbiddenPublixException,
-			ForbiddenReloadException {
+			StudyResult studyResult) throws ForbiddenReloadException {
 		// Deal with the last component
 		ComponentResult lastComponentResult = retrieveLastComponentResult(studyResult);
 		if (lastComponentResult != null) {
@@ -291,14 +290,16 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Get the last StudyResult of this worker of this study.
+	 * Gets the last StudyResult of this worker of this study. Throws an
+	 * ForbiddenPublixException if the StudyResult is already 'done' or this
+	 * worker never started a StudyResult of this study. It either returns a
+	 * StudyResult or throws an exception but never returns null.
 	 */
 	public StudyResult retrieveWorkersLastStudyResult(T worker, StudyModel study)
 			throws ForbiddenPublixException {
-		StudyResult studyResult;
 		int studyResultListSize = worker.getStudyResultList().size();
 		for (int i = (studyResultListSize - 1); i >= 0; i--) {
-			studyResult = worker.getStudyResultList().get(i);
+			StudyResult studyResult = worker.getStudyResultList().get(i);
 			if (studyResult.getStudy().getId() == study.getId()) {
 				if (studyDone(studyResult)) {
 					throw new ForbiddenPublixException(
@@ -309,6 +310,7 @@ public abstract class PublixUtils<T extends Worker> {
 				}
 			}
 		}
+		// This worker never started a StudyResult of this study
 		throw new ForbiddenPublixException(errorMessages.workerNeverDidStudy(
 				worker, study.getId()));
 	}
@@ -324,7 +326,7 @@ public abstract class PublixUtils<T extends Worker> {
 
 	/**
 	 * Returns the last ComponentResult of this studyResult if it's not
-	 * FINISHED, FAILED, ABORTED or RELOADED. Returns null it it doesn't exists.
+	 * FINISHED, FAILED, ABORTED or RELOADED. Returns null if it doesn't exists.
 	 */
 	public ComponentResult retrieveCurrentComponentResult(
 			StudyResult studyResult) {
@@ -335,18 +337,17 @@ public abstract class PublixUtils<T extends Worker> {
 		return null;
 	}
 
+	/**
+	 * Gets the ComponentResult from the storage or if it doesn't exist yet
+	 * starts one.
+	 */
 	public ComponentResult retrieveStartedComponentResult(
-			ComponentModel component, StudyResult studyResult,
-			ComponentState maxAllowedComponentState)
-			throws ForbiddenPublixException, ForbiddenReloadException {
+			ComponentModel component, StudyResult studyResult)
+			throws ForbiddenReloadException {
 		ComponentResult componentResult = retrieveCurrentComponentResult(studyResult);
 		// Start the component if it was never started (== null) or if it's
-		// a restart of the component (The states of a componentResult are
-		// ordered, e.g. it's forbidden to put DATA_RETRIEVED after
-		// RESULTDATA_POSTED.)
-		if (componentResult == null
-				|| componentResult.getComponentState().ordinal() > maxAllowedComponentState
-						.ordinal()) {
+		// a reload of the component
+		if (componentResult == null) {
 			componentResult = startComponent(component, studyResult);
 		}
 		return componentResult;

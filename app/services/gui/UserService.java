@@ -7,19 +7,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import models.UserModel;
-import persistance.IUserDao;
+import persistance.UserDao;
 import play.data.validation.ValidationError;
-import play.mvc.Controller;
-import play.mvc.Http;
-import play.mvc.Results;
-import play.mvc.Result;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import common.RequestScope;
 
-import controllers.gui.ControllerUtils;
-import controllers.gui.Users;
-import exceptions.gui.JatosGuiException;
+import controllers.gui.Authentication;
+import exceptions.ForbiddenException;
+import exceptions.NotFoundException;
 
 /**
  * Service class mostly for Users controller. Handles everything around
@@ -34,64 +31,42 @@ public class UserService {
 	public static final String ADMIN_PASSWORD = "admin";
 	public static final String ADMIN_NAME = "Admin";
 
-	private final IUserDao userDao;
-	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final UserDao userDao;
 
 	@Inject
-	UserService(IUserDao userDao,
-			JatosGuiExceptionThrower jatosGuiExceptionThrower) {
+	UserService(UserDao userDao) {
 		this.userDao = userDao;
-		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 	}
 
 	/**
-	 * Retrieves the user with the given email form the DB. Throws a
-	 * JatosGuiException if it doesn't exist.
+	 * Retrieves the user with the given email form the DB. Throws an Exception
+	 * if it doesn't exist.
 	 */
-	public UserModel retrieveUser(String email) throws JatosGuiException {
+	public UserModel retrieveUser(String email) throws NotFoundException {
 		UserModel user = userDao.findByEmail(email);
 		if (user == null) {
-			String errorMsg = MessagesStrings.userNotExist(email);
-			jatosGuiExceptionThrower.throwHome(errorMsg,
-					Http.Status.BAD_REQUEST);
+			throw new NotFoundException(MessagesStrings.userNotExist(email));
 		}
 		return user;
 	}
 
 	/**
-	 * Retrieves the user with the given email form the DB. Throws a
-	 * JatosGuiException if it doesn't exist. The JatosGuiException will
-	 * redirect to the login screen.
+	 * Retrieves the user with the given email form the RequestScope. It was put
+	 * into the RequestScope by the AuthenticationAction.
 	 */
-	public UserModel retrieveLoggedInUser() throws JatosGuiException {
-		String email = Controller.session(Users.SESSION_EMAIL);
-		UserModel loggedInUser = null;
-		if (email != null) {
-			loggedInUser = userDao.findByEmail(email);
-		}
-		if (loggedInUser == null) {
-			String errorMsg = MessagesStrings.NO_USER_LOGGED_IN;
-			Result result = null;
-			if (ControllerUtils.isAjax()) {
-				result = Results.badRequest(errorMsg);
-			} else {
-				result = (Result) Results
-						.redirect(controllers.gui.routes.Authentication.login());
-			}
-			throw new JatosGuiException(result, errorMsg);
-		}
-		return loggedInUser;
+	public UserModel retrieveLoggedInUser() {
+		return (UserModel) RequestScope.get(Authentication.LOGGED_IN_USER);
 	}
 
 	/**
-	 * Throws a JatosGuiException in case the user's email isn't equal to the
-	 * loggedInUser' email. Distinguishes between normal and Ajax request.
+	 * Throws an Exception in case the user isn't equal to the
+	 * loggedInUser.
 	 */
 	public void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
-			throws JatosGuiException {
-		if (!user.getEmail().equals(loggedInUser.getEmail())) {
-			String errorMsg = MessagesStrings.mustBeLoggedInAsUser(user);
-			jatosGuiExceptionThrower.throwHome(errorMsg, Http.Status.FORBIDDEN);
+			throws ForbiddenException {
+		if (!user.equals(loggedInUser)) {
+			throw new ForbiddenException(
+					MessagesStrings.userMustBeLoggedInToSeeProfile(user));
 		}
 	}
 
@@ -139,7 +114,6 @@ public class UserService {
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
 
-		// Authenticate
 		if (userDao.authenticate(user.getEmail(), oldPasswordHash) == null) {
 			errorList.add(new ValidationError(UserModel.OLD_PASSWORD,
 					MessagesStrings.WRONG_OLD_PASSWORD));
@@ -166,6 +140,31 @@ public class UserService {
 			errorList.add(new ValidationError(UserModel.PASSWORD,
 					MessagesStrings.PASSWORDS_DONT_MATCH));
 		}
+	}
+
+	/**
+	 * Creates a user, sets password hash and persists it.
+	 */
+	public void createUser(UserModel newUser, String password)
+			throws UnsupportedEncodingException, NoSuchAlgorithmException {
+		String passwordHash = getHashMDFive(password);
+		newUser.setPasswordHash(passwordHash);
+		userDao.create(newUser);
+	}
+
+	/**
+	 * Change password hash and persist user.
+	 */
+	public void changePasswordHash(UserModel user, String newPasswordHash) {
+		user.setPasswordHash(newPasswordHash);
+		userDao.update(user);
+	}
+
+	/**
+	 * Changes name and persists user.
+	 */
+	public void updateName(UserModel user, String name) {
+		userDao.updateName(user, name);
 	}
 
 }

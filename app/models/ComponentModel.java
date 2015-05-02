@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -13,7 +14,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 
-import org.hibernate.annotations.GenericGenerator;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
@@ -32,10 +32,13 @@ import com.fasterxml.jackson.annotation.JsonView;
 @Entity
 public class ComponentModel {
 
+	public static final String ID = "id";
+	public static final String UUID = "uuid";
 	public static final String TITLE = "title";
 	public static final String HTML_FILE_PATH = "htmlFilePath";
 	public static final String JSON_DATA = "jsonData";
 	public static final String RESULT = "result";
+	public static final String POSITION = "position";
 	public static final String RELOADABLE = "reloadable";
 	public static final String COMMENTS = "comments";
 	public static final String COMPONENT = "component";
@@ -51,9 +54,8 @@ public class ComponentModel {
 	 * same UUID, although it is allowed to have other studies that have this
 	 * component with this UUID.
 	 */
+	@Column(unique = true, nullable = false)
 	@JsonView(JsonUtils.JsonForIO.class)
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "uuid2")
 	private String uuid;
 
 	@JsonIgnore
@@ -217,7 +219,7 @@ public class ComponentModel {
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
-		if (title == null || title.isEmpty()) {
+		if (title == null || title.trim().isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.MISSING_TITLE));
 		}
@@ -225,9 +227,10 @@ public class ComponentModel {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (htmlFilePath != null && !htmlFilePath.isEmpty()) {
+		if (htmlFilePath != null && !htmlFilePath.trim().isEmpty()) {
 			String pathRegEx = "^(\\w+)(\\/\\w+)?\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
-			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.isEmpty())) {
+			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.trim()
+					.isEmpty())) {
 				errorList
 						.add(new ValidationError(
 								HTML_FILE_PATH,

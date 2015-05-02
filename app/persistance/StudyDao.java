@@ -2,6 +2,7 @@ package persistance;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.TypedQuery;
 
@@ -20,33 +21,46 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class StudyDao extends AbstractDao<StudyModel> implements IStudyDao {
+public class StudyDao extends AbstractDao {
 
-	private final IStudyResultDao studyResultDao;
+	private final StudyResultDao studyResultDao;
+	private final ComponentDao componentDao;
 
 	@Inject
-	StudyDao(IStudyResultDao studyResultDao) {
+	StudyDao(StudyResultDao studyResultDao, ComponentDao componentDao) {
 		this.studyResultDao = studyResultDao;
+		this.componentDao = componentDao;
 	}
 
-	@Override
+	/**
+	 * Persist study and it's components and add member.
+	 */
 	public void create(StudyModel study, UserModel user) {
+		if (study.getUuid() == null) {
+			study.setUuid(UUID.randomUUID().toString());
+		}
+		for (ComponentModel component : study.getComponentList()) {
+			componentDao.create(component);
+		}
 		persist(study);
 		addMember(study, user);
 	}
 
-	@Override
+	/**
+	 * Add member to study.
+	 */
 	public void addMember(StudyModel study, UserModel member) {
 		study.addMember(member);
 		merge(study);
 	}
-	
-	@Override
+
 	public void update(StudyModel study) {
 		merge(study);
 	}
 
-	@Override
+	/**
+	 * Update properties of study with properties of updatedStudy.
+	 */
 	public void updateProperties(StudyModel study, StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
@@ -56,7 +70,10 @@ public class StudyDao extends AbstractDao<StudyModel> implements IStudyDao {
 		merge(study);
 	}
 
-	@Override
+	/**
+	 * Update properties of study with properties of updatedStudy (excluding
+	 * study's dir name).
+	 */
 	public void updatePropertiesWODirName(StudyModel study,
 			StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
@@ -66,7 +83,9 @@ public class StudyDao extends AbstractDao<StudyModel> implements IStudyDao {
 		merge(study);
 	}
 
-	@Override
+	/**
+	 * Remove study and its components
+	 */
 	public void remove(StudyModel study) {
 		// Remove all study's components
 		for (ComponentModel component : study.getComponentList()) {
@@ -79,12 +98,10 @@ public class StudyDao extends AbstractDao<StudyModel> implements IStudyDao {
 		super.remove(study);
 	}
 
-	@Override
 	public StudyModel findById(Long id) {
 		return JPA.em().find(StudyModel.class, id);
 	}
 
-	@Override
 	public StudyModel findByUuid(String uuid) {
 		String queryStr = "SELECT e FROM StudyModel e WHERE " + "e.uuid=:uuid";
 		TypedQuery<StudyModel> query = JPA.em().createQuery(queryStr,
@@ -96,14 +113,12 @@ public class StudyDao extends AbstractDao<StudyModel> implements IStudyDao {
 		return study;
 	}
 
-	@Override
 	public List<StudyModel> findAll() {
 		TypedQuery<StudyModel> query = JPA.em().createQuery(
 				"SELECT e FROM StudyModel e", StudyModel.class);
 		return query.getResultList();
 	}
 
-	@Override
 	public List<StudyModel> findAllByUser(String memberEmail) {
 		TypedQuery<StudyModel> query = JPA.em().createQuery(
 				"SELECT DISTINCT g FROM UserModel u LEFT JOIN u.studyList g "

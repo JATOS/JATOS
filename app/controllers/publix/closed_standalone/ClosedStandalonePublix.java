@@ -3,8 +3,8 @@ package controllers.publix.closed_standalone;
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.ClosedStandaloneWorker;
-import persistance.IComponentResultDao;
-import persistance.IStudyResultDao;
+import persistance.ComponentResultDao;
+import persistance.StudyResultDao;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -34,11 +34,12 @@ public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
 	private final ClosedStandalonePublixUtils publixUtils;
 
 	@Inject
-	ClosedStandalonePublix(ClosedStandaloneErrorMessages errorMessages,
-			ClosedStandalonePublixUtils publixUtils,
-			IComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IStudyResultDao studyResultDao) {
-		super(publixUtils, componentResultDao, jsonUtils, studyResultDao);
+	ClosedStandalonePublix(ClosedStandalonePublixUtils publixUtils,
+			ClosedStandaloneErrorMessages errorMessages,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao) {
+		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
+				studyResultDao);
 		this.publixUtils = publixUtils;
 	}
 

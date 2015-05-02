@@ -35,7 +35,6 @@ public class UserModel {
 	public static final String PASSWORD = "password";
 	public static final String PASSWORD_REPEAT = "passwordRepeat";
 	public static final String OLD_PASSWORD = "oldPassword";
-	public static final String NEW_PASSWORD = "newPassword";
 
 	@Id
 	private String email;
@@ -103,7 +102,7 @@ public class UserModel {
 
 	@Override
 	public String toString() {
-		if (name != null && !name.isEmpty()) {
+		if (name != null && !name.trim().isEmpty()) {
 			return name + " (" + email + ")";
 		} else {
 			return email;
@@ -142,7 +141,7 @@ public class UserModel {
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();
-		if (email == null || email.isEmpty()) {
+		if (email == null || email.trim().isEmpty()) {
 			errorList.add(new ValidationError(EMAIL,
 					MessagesStrings.MISSING_EMAIL));
 		}
@@ -150,7 +149,7 @@ public class UserModel {
 			errorList.add(new ValidationError(EMAIL,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (name == null || name.isEmpty()) {
+		if (name == null || name.trim().isEmpty()) {
 			errorList
 					.add(new ValidationError(NAME, MessagesStrings.MISSING_NAME));
 		}

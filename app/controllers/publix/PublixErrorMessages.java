@@ -1,8 +1,8 @@
 package controllers.publix;
 
-import com.google.inject.Singleton;
-
 import models.workers.Worker;
+
+import com.google.inject.Singleton;
 
 /**
  * Helper class with methods that generate error strings.
@@ -10,30 +10,40 @@ import models.workers.Worker;
  * @author Kristian Lange
  */
 @Singleton
-public abstract class PublixErrorMessages<T extends Worker> {
-
-	public abstract String workerNeverStartedStudy(T worker, Long studyId);
-
-	public abstract String workerFinishedStudyAlready(T worker, Long studyId);
-
-	public abstract String workerNeverDidStudy(T worker, Long studyId);
-
-	public abstract String workerNotAllowedStudy(T worker, Long studyId);
-
-	public abstract String workerNotCorrectType(Long workerId);
+public class PublixErrorMessages<T extends Worker> {
 
 	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
-	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS = "This study or component was never started from within JATOS.";
-	public static final String STUDY_NEVER_STARTED_FROM_JATOS = "This study was never started from within JATOS.";
 	public static final String STUDY_NEVER_FINSHED = "Study never finished, but new study started by the same worker";
-	public static final String NO_ASSIGNMENT_ID = "No assignment ID specified in query parameters";
-	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
-	public static final String NO_TESTER_WORKERID = "Tester's workerId is missing in the query parameters.";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
 	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
 	public static final String SUBMITTED_DATA_UNKNOWN_FORMAT = "Submitted data have an unknown format.";
+	public static final String NO_WORKER_IN_SESSION = "Sorry this study is not available to you (any more). Most likely the reason for this error is a forbidden reload of a component.";
+
+	public String workerNeverStartedStudy(T worker, Long studyId) {
+		String errorMsg = "Worker " + worker.getId() + " never started study "
+				+ studyId + ".";
+		return errorMsg;
+	}
+
+	public String workerNeverDidStudy(T worker, Long studyId) {
+		String errorMsg = "Worker " + worker.getId() + " never did study "
+				+ studyId + ".";
+		return errorMsg;
+	}
+
+	public String workerNotAllowedStudy(T worker, Long studyId) {
+		String errorMsg = "Worker " + worker.getId() + " is not allowed to do "
+				+ "study " + studyId + ".";
+		return errorMsg;
+	}
+
+	public String workerFinishedStudyAlready(T worker, Long studyId) {
+		String errorMsg = "Worker " + worker.getId() + " finished study "
+				+ studyId + " already.";
+		return errorMsg;
+	}
 
 	public String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
@@ -93,11 +103,19 @@ public abstract class PublixErrorMessages<T extends Worker> {
 		return errorMsg;
 	}
 
+	public String componentNeverStarted(Long studyId, Long componentId,
+			String methodName) {
+		String errorMsg = "Illegal function call " + methodName
+				+ ": component (ID " + componentId + ") of study (ID "
+				+ studyId + ") was never started.";
+		return errorMsg;
+	}
+
 	public String studyNotExist(Long studyId) {
 		String errorMsg = "An study with ID " + studyId + " doesn't exist.";
 		return errorMsg;
 	}
-	
+
 	public String studyFinishedWithMessage(String message) {
 		String msg = "Study finished with message: " + message;
 		return msg;

@@ -1,9 +1,13 @@
 package gui;
 
+import static org.mockito.Mockito.mock;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Map;
 
 import javax.persistence.EntityManager;
 
@@ -18,18 +22,18 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import persistance.ComponentDao;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
-import persistance.IUserDao;
 import persistance.StudyDao;
 import persistance.UserDao;
 import play.GlobalSettings;
 import play.Logger;
+import play.api.mvc.RequestHeader;
 import play.db.jpa.JPA;
 import play.db.jpa.JPAPlugin;
+import play.mvc.Http;
 import play.test.FakeApplication;
 import play.test.Helpers;
 import scala.Option;
+import services.gui.StudyService;
 import services.gui.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
@@ -52,25 +56,20 @@ public abstract class AbstractGuiTest {
 	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
 
+	private static Server server;
 	protected FakeApplication application;
 	protected EntityManager entityManager;
 	protected JsonUtils jsonUtils;
 	protected UserService userService;
-	protected IUserDao userDao;
-	protected IStudyDao studyDao;
-	protected IComponentDao componentDao;
+	protected StudyService studyService;
+	protected UserDao userDao;
+	protected StudyDao studyDao;
+	protected ComponentDao componentDao;
 	protected UserModel admin;
-
-	private static Server server;
 
 	public abstract void before() throws Exception;
 
 	public abstract void after() throws Exception;
-
-	@BeforeClass
-	public static void startDB() throws Exception {
-//		server = Server.createTcpServer().start();
-	}
 
 	@Before
 	public void startApp() throws Exception {
@@ -83,6 +82,7 @@ public abstract class AbstractGuiTest {
 		// Use Guice dependency injection
 		jsonUtils = Global.INJECTOR.getInstance(JsonUtils.class);
 		userService = Global.INJECTOR.getInstance(UserService.class);
+		studyService = Global.INJECTOR.getInstance(StudyService.class);
 		userDao = Global.INJECTOR.getInstance(UserDao.class);
 		studyDao = Global.INJECTOR.getInstance(StudyDao.class);
 		componentDao = Global.INJECTOR.getInstance(ComponentDao.class);
@@ -101,9 +101,6 @@ public abstract class AbstractGuiTest {
 	@After
 	public void stopApp() throws Exception {
 		after();
-		// entityManager.getTransaction().begin();
-		// entityManager.createQuery("DROP ALL OBJECTS DELETE FILES");
-		// entityManager.getTransaction().commit();
 
 		if (entityManager.isOpen()) {
 			entityManager.close();
@@ -112,10 +109,27 @@ public abstract class AbstractGuiTest {
 		removeStudyAssetsRootDir();
 		Helpers.stop(application);
 	}
-
+	
+	@BeforeClass
+	public static void startDB() throws SQLException {
+		server = Server.createTcpServer().start();
+		System.out.println("URL: jdbc:h2:" + server.getURL() + "/mem:test/jatos");
+	}
+	
 	@AfterClass
-	public static void stopDB() throws Exception {
+	public static void stopDB() {
 		server.stop();
+	}
+	
+	protected void mockContext() {
+		Map<String, String> flashData = Collections.emptyMap();
+		Map<String, Object> argData = Collections.emptyMap();
+		Long id = 2L;
+		RequestHeader header = mock(RequestHeader.class);
+		Http.Request request = mock(Http.Request.class);
+		Http.Context context = new Http.Context(id, header, request, flashData,
+				flashData, argData);
+		Http.Context.current.set(context);
 	}
 
 	protected static void removeStudyAssetsRootDir() throws IOException {
@@ -169,13 +183,7 @@ public abstract class AbstractGuiTest {
 	protected synchronized StudyModel cloneAndPersistStudy(
 			StudyModel studyToBeCloned) throws IOException {
 		entityManager.getTransaction().begin();
-		StudyModel studyClone = new StudyModel(studyToBeCloned);
-		String destDirName;
-		destDirName = IOUtils
-				.cloneStudyAssetsDirectory(studyClone.getDirName());
-		studyClone.setDirName(destDirName);
-//		addStudy(studyClone);
-		studyDao.create(studyClone, admin);
+		StudyModel studyClone = studyService.cloneStudy(studyToBeCloned, admin);
 		entityManager.getTransaction().commit();
 		return studyClone;
 	}
@@ -187,7 +195,6 @@ public abstract class AbstractGuiTest {
 		UserModel user = new UserModel(email, name, passwordHash);
 		entityManager.getTransaction().begin();
 		userDao.create(user);
-		userDao.refresh(user);
 		entityManager.getTransaction().commit();
 		return user;
 	}

@@ -5,8 +5,8 @@ import java.util.List;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import persistance.IComponentDao;
-import persistance.IStudyDao;
+import persistance.ComponentDao;
+import persistance.StudyDao;
 import play.Logger;
 import play.api.mvc.Call;
 import play.data.Form;
@@ -14,7 +14,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.With;
 import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.ComponentService;
@@ -26,7 +25,11 @@ import services.gui.UserService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import controllers.publix.jatos.JatosPublix;
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 
 /**
@@ -35,7 +38,8 @@ import exceptions.gui.JatosGuiException;
  * 
  * @author Kristian Lange
  */
-@With(JatosGuiAction.class)
+@JatosGui
+@Authenticated
 @Singleton
 public class Components extends Controller {
 
@@ -48,14 +52,14 @@ public class Components extends Controller {
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
-	private final IStudyDao studyDao;
-	private final IComponentDao componentDao;
+	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
 
 	@Inject
 	Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
-			UserService userService, IStudyDao studyDao,
-			IComponentDao componentDao) {
+			UserService userService, StudyDao studyDao,
+			ComponentDao componentDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
@@ -77,13 +81,22 @@ public class Components extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		StudyModel study = studyDao.findById(studyId);
 		ComponentModel component = componentDao.findById(componentId);
-		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		}
+		try {
+			componentService.checkStandardForComponents(studyId, componentId,
+					loggedInUser, component);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+		}
 
 		if (component.getHtmlFilePath() == null
-				|| component.getHtmlFilePath().isEmpty()) {
+				|| component.getHtmlFilePath().trim().isEmpty()) {
 			String errorMsg = MessagesStrings.htmlFilePathEmpty(componentId);
-			jatosGuiExceptionThrower.throwStudies(errorMsg,
+			jatosGuiExceptionThrower.throwStudyIndex(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_COMPONENT_START);
@@ -104,16 +117,13 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		studyService.checkStudyLocked(study);
+		checkStudyAndLocked(studyId, study, loggedInUser);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class);
 		Call submitAction = controllers.gui.routes.Components.submit(studyId);
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.NEW_COMPONENT);
-		return ok(views.html.gui.component.edit.render(studyList, loggedInUser,
+		return ok(views.html.gui.component.edit.render(loggedInUser,
 				breadcrumbs, submitAction, form, study));
 	}
 
@@ -128,8 +138,7 @@ public class Components extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		studyService.checkStudyLocked(study);
+		checkStudyAndLocked(studyId, study, loggedInUser);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
 				.bindFromRequest();
@@ -138,14 +147,24 @@ public class Components extends Controller {
 					.submit(studyId);
 			String breadcrumbs = Breadcrumbs.generateForStudy(study,
 					Breadcrumbs.NEW_COMPONENT);
-			jatosGuiExceptionThrower.throwEditComponent(studyList,
-					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction, study);
+			return showEditAfterError(studyList, loggedInUser, form,
+					Http.Status.BAD_REQUEST, breadcrumbs, submitAction, study);
 		}
 
 		ComponentModel component = form.get();
 		componentDao.create(study, component);
 		return redirectAfterEdit(studyId, component.getId(), study);
+	}
+
+	private Result showEditAfterError(List<StudyModel> studyList,
+			UserModel loggedInUser, Form<ComponentModel> form, int httpStatus,
+			String breadcrumbs, Call submitAction, StudyModel study) {
+		if (ControllerUtils.isAjax()) {
+			return status(httpStatus);
+		} else {
+			return status(httpStatus, views.html.gui.component.edit.render(
+					loggedInUser, breadcrumbs, submitAction, form, study));
+		}
 	}
 
 	/**
@@ -158,11 +177,14 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		ComponentModel component = componentDao.findById(componentId);
-		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			componentService.checkStandardForComponents(studyId, componentId,
+					loggedInUser, component);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+		}
 
 		if (study.isLocked()) {
 			RequestScopeMessaging.warning(MessagesStrings.STUDY_IS_LOCKED);
@@ -171,9 +193,9 @@ public class Components extends Controller {
 				component);
 		Call submitAction = controllers.gui.routes.Components.submitEdited(
 				studyId, componentId);
-		String breadcrumbs = Breadcrumbs.generateForComponent(study,
-				component, Breadcrumbs.EDIT_PROPERTIES);
-		return ok(views.html.gui.component.edit.render(studyList, loggedInUser,
+		String breadcrumbs = Breadcrumbs.generateForComponent(study, component,
+				Breadcrumbs.EDIT_PROPERTIES);
+		return ok(views.html.gui.component.edit.render(loggedInUser,
 				breadcrumbs, submitAction, form, study));
 	}
 
@@ -191,9 +213,8 @@ public class Components extends Controller {
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 		ComponentModel component = componentDao.findById(componentId);
-		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
-		studyService.checkStudyLocked(study);
+		checkStudyAndLockedAndComponent(studyId, componentId, study,
+				loggedInUser, component);
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class)
 				.bindFromRequest();
@@ -202,14 +223,12 @@ public class Components extends Controller {
 					studyId, componentId);
 			String breadcrumbs = Breadcrumbs.generateForComponent(study,
 					component, Breadcrumbs.EDIT_PROPERTIES);
-			jatosGuiExceptionThrower.throwEditComponent(studyList,
-					loggedInUser, form, Http.Status.BAD_REQUEST, breadcrumbs,
-					submitAction, study);
+			return showEditAfterError(studyList, loggedInUser, form,
+					Http.Status.BAD_REQUEST, breadcrumbs, submitAction, study);
 		}
 
-		// Update component in DB
-		ComponentModel updatedComponent = form.get();
-		componentDao.updateProperties(component, updatedComponent);
+		ComponentModel editedComponent = form.get();
+		componentService.updateComponentAfterEdit(component, editedComponent);
 		return redirectAfterEdit(studyId, componentId, study);
 	}
 
@@ -229,7 +248,8 @@ public class Components extends Controller {
 	/**
 	 * Ajax POST
 	 * 
-	 * Request to change the property 'active' of a component.
+	 * Request to change the property 'active' of a component. In future this
+	 * action is intended for other properties too.
 	 */
 	@Transactional
 	public Result changeProperty(Long studyId, Long componentId, Boolean active)
@@ -241,14 +261,13 @@ public class Components extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
-		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
-		studyService.checkStudyLocked(study);
+		checkStudyAndLockedAndComponent(studyId, componentId, study,
+				loggedInUser, component);
 
 		if (active != null) {
 			componentDao.changeActive(component, active);
 		}
-		return ok();
+		return ok(String.valueOf(component.isActive()));
 	}
 
 	/**
@@ -265,11 +284,10 @@ public class Components extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
-		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
-		studyService.checkStudyLocked(study);
+		checkStudyAndLockedAndComponent(studyId, componentId, study,
+				loggedInUser, component);
 
-		ComponentModel clone = new ComponentModel(component);
+		ComponentModel clone = componentService.clone(component);
 		componentDao.create(study, clone);
 		return ok(RequestScopeMessaging.getAsJson());
 	}
@@ -288,12 +306,33 @@ public class Components extends Controller {
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
-		componentService.checkStandardForComponents(studyId, componentId,
-				study, loggedInUser, component);
-		studyService.checkStudyLocked(study);
+		checkStudyAndLockedAndComponent(studyId, componentId, study,
+				loggedInUser, component);
 
 		componentDao.remove(study, component);
-		return ok();
+		return ok().as("text/html");
 	}
 
+	private void checkStudyAndLocked(Long studyId, StudyModel study,
+			UserModel loggedInUser) throws JatosGuiException {
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			studyService.checkStudyLocked(study);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+		}
+	}
+
+	private void checkStudyAndLockedAndComponent(Long studyId,
+			Long componentId, StudyModel study, UserModel loggedInUser,
+			ComponentModel component) throws JatosGuiException {
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			studyService.checkStudyLocked(study);
+			componentService.checkStandardForComponents(studyId, componentId,
+					loggedInUser, component);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+		}
+	}
 }

@@ -6,6 +6,7 @@ import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.fakeRequest;
+import static play.test.Helpers.flash;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.status;
 import gui.AbstractGuiTest;
@@ -17,11 +18,12 @@ import models.UserModel;
 
 import org.junit.Test;
 
-import controllers.gui.Studies;
-import controllers.gui.Users;
 import play.mvc.HandlerRef;
 import play.mvc.Result;
+import services.FlashScopeMessaging;
+import services.gui.StudyService;
 import utils.IOUtils;
+import controllers.gui.Users;
 
 /**
  * Testing whether actions do proper access control
@@ -60,13 +62,13 @@ public class AccessControllerTest extends AbstractGuiTest {
 		assertThat(contentAsString(result)).contains("isn't member of study");
 	}
 
-	private void checkRightUser(HandlerRef ref) {
+	private void checkRightUserWithRedirect(HandlerRef ref) {
 		Result result = callAction(ref,
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
-		assertThat(status(result)).isEqualTo(FORBIDDEN);
-		assertThat(contentAsString(result))
-				.contains("You must be logged in as");
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(flash(result).get(FlashScopeMessaging.ERROR)).contains(
+				"You must be logged in as");
 	}
 
 	private void checkRemoveJatosWorker(HandlerRef ref) {
@@ -115,7 +117,13 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.submitEdited(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		removeMember(studyClone, admin);
+		Result result = callAction(ref,
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(flash(result).get(FlashScopeMessaging.ERROR)).contains(
+				"isn't member of study");
 		removeStudy(studyClone);
 	}
 
@@ -165,7 +173,14 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.submitChangedMembers(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		// Check not member
+		removeMember(studyClone, admin);
+		Result result = callAction(ref,
+				fakeRequest()
+						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+		assertThat(flash(result).get(FlashScopeMessaging.ERROR)).contains(
+				"isn't member of study");
 		removeStudy(studyClone);
 	}
 
@@ -175,7 +190,7 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Studies
 				.changeComponentOrder(studyClone.getId(), studyClone
 						.getComponentList().get(0).getId(),
-						Studies.COMPONENT_POSITION_DOWN);
+						StudyService.COMPONENT_POSITION_DOWN);
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
 		removeStudy(studyClone);
@@ -202,10 +217,10 @@ public class AccessControllerTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void callStudiesCreateTesterRun() throws Exception {
+	public void callStudiesCreatePersonalMultipleRun() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.gui.routes.ref.Studies
-				.createTesterRun(studyClone.getId());
+				.createPersonalMultipleRun(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
 		removeStudy(studyClone);
@@ -426,7 +441,7 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Users.profile(testUser
 				.getEmail());
 		checkDeniedAccess(ref);
-		checkRightUser(ref);
+		checkRightUserWithRedirect(ref);
 	}
 
 	@Test
@@ -446,7 +461,7 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Users.editProfile(testUser
 				.getEmail());
 		checkDeniedAccess(ref);
-		checkRightUser(ref);
+		checkRightUserWithRedirect(ref);
 	}
 
 	@Test
@@ -454,7 +469,7 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Users
 				.submitEditedProfile(testUser.getEmail());
 		checkDeniedAccess(ref);
-		checkRightUser(ref);
+		checkRightUserWithRedirect(ref);
 	}
 
 	@Test
@@ -462,7 +477,7 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Users
 				.changePassword(testUser.getEmail());
 		checkDeniedAccess(ref);
-		checkRightUser(ref);
+		checkRightUserWithRedirect(ref);
 	}
 
 	@Test
@@ -470,7 +485,7 @@ public class AccessControllerTest extends AbstractGuiTest {
 		HandlerRef ref = controllers.gui.routes.ref.Users
 				.submitChangedPassword(testUser.getEmail());
 		checkDeniedAccess(ref);
-		checkRightUser(ref);
+		checkRightUserWithRedirect(ref);
 	}
 
 	@Test
