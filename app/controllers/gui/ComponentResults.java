@@ -174,7 +174,8 @@ public class ComponentResults extends Controller {
 		Logger.info(CLASS_NAME + ".exportData: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		// Remove cookie of johnculviner's jQuery.fileDownload plugin
+		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
+		// be sure, in case it's still there)
 		response().discardCookie(StudyResults.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
@@ -193,6 +194,9 @@ public class ComponentResults extends Controller {
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
 		// Set cookie for johnculviner's jQuery.fileDownload plugin
+		// This plugin is merely used to detect a failed download. If the
+		// response isn't OK and it doesn't have this cookie then the plugin
+		// regards it as a fail.
 		response().setCookie(StudyResults.JQDOWNLOAD_COOKIE_NAME,
 				StudyResults.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(componentResultDataAsStr);

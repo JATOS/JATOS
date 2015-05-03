@@ -48,8 +48,8 @@ import exceptions.gui.JatosGuiException;
 public class StudyResults extends Controller {
 
 	private static final String CLASS_NAME = StudyResults.class.getSimpleName();
-	public static final String JQDOWNLOAD_COOKIE_NAME = "Set-Cookie";
-	public static final String JQDOWNLOAD_COOKIE_CONTENT = "fileDownload=true";
+	public static final String JQDOWNLOAD_COOKIE_NAME = "fileDownload";
+	public static final String JQDOWNLOAD_COOKIE_CONTENT = "true";
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final JsonUtils jsonUtils;
@@ -195,7 +195,8 @@ public class StudyResults extends Controller {
 		Logger.info(CLASS_NAME + ".exportData: studyResultIds "
 				+ studyResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		// Remove cookie of johnculviner's jQuery.fileDownload plugin
+		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
+		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
@@ -213,6 +214,9 @@ public class StudyResults extends Controller {
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
 		// Set cookie for johnculviner's jQuery.fileDownload plugin
+		// This plugin is merely used to detect a failed download. If the
+		// response isn't OK and it doesn't have this cookie then the plugin
+		// regards it as a fail.
 		response().setCookie(JQDOWNLOAD_COOKIE_NAME, JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(studyResultDataAsStr);
 	}
