@@ -126,6 +126,7 @@ $('#resultsToolbar').on('click', '.exportData', function() {
 	}
 	var url = '/jatos/componentresult/'
 		+ 'exportData?componentResultIds=' + ids.join(", ");
+	// Using johnculviner's jQuery.fileDownload plugin
 	$.fileDownload(url)
 		.fail(function () { showError("Export of results failed"); });
 	return false; //this is critical to stop the click event which will trigger a normal file download

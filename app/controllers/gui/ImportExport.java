@@ -143,8 +143,6 @@ public class ImportExport extends Controller {
 	public Result exportStudy(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -167,9 +165,6 @@ public class ImportExport extends Controller {
 		response().setContentType("application/x-download");
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + zipFileName);
-		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME,
-				ImportExportService.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(zipFile);
 	}
 
@@ -184,8 +179,6 @@ public class ImportExport extends Controller {
 		Logger.info(CLASS_NAME + ".exportComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		ComponentModel component = componentDao.findById(componentId);
@@ -212,9 +205,6 @@ public class ImportExport extends Controller {
 				IOUtils.COMPONENT_FILE_SUFFIX);
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
-		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME,
-				ImportExportService.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(componentAsJson);
 	}
 

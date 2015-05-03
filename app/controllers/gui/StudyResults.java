@@ -17,7 +17,6 @@ import play.mvc.Http;
 import play.mvc.Result;
 import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
-import services.gui.ImportExportService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.MessagesStrings;
 import services.gui.ResultService;
@@ -49,6 +48,8 @@ import exceptions.gui.JatosGuiException;
 public class StudyResults extends Controller {
 
 	private static final String CLASS_NAME = StudyResults.class.getSimpleName();
+	public static final String JQDOWNLOAD_COOKIE_NAME = "Set-Cookie";
+	public static final String JQDOWNLOAD_COOKIE_CONTENT = "fileDownload=true";
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final JsonUtils jsonUtils;
@@ -194,8 +195,8 @@ public class StudyResults extends Controller {
 		Logger.info(CLASS_NAME + ".exportData: studyResultIds "
 				+ studyResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
+		// Remove cookie of johnculviner's jQuery.fileDownload plugin
+		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
 		String studyResultDataAsStr = null;
@@ -211,10 +212,10 @@ public class StudyResults extends Controller {
 				+ "." + IOUtils.TXT_FILE_SUFFIX;
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
-		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME,
-				ImportExportService.JQDOWNLOAD_COOKIE_CONTENT);
-		return ok(studyResultDataAsStr);
+		// Set cookie for johnculviner's jQuery.fileDownload plugin
+		response().setCookie(JQDOWNLOAD_COOKIE_NAME, JQDOWNLOAD_COOKIE_CONTENT);
+		return badRequest();
+//		return ok(studyResultDataAsStr);
 	}
 
 }
