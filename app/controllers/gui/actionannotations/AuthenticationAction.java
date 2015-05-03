@@ -10,14 +10,13 @@ import persistance.UserDao;
 import play.libs.F;
 import play.libs.F.Promise;
 import play.mvc.Action;
-import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 
 import com.google.inject.Inject;
-
 import common.RequestScope;
+
 import controllers.gui.Authentication;
 import controllers.gui.Users;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
@@ -47,7 +46,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 
 	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
 		Promise<Result> call;
-		String email = Controller.session(Users.SESSION_EMAIL);
+		String email = ctx.session().get(Users.SESSION_EMAIL);
 		UserModel loggedInUser = null;
 		if (email != null) {
 			loggedInUser = userDao.findByEmail(email);
