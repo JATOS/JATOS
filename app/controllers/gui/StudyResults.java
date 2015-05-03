@@ -214,8 +214,7 @@ public class StudyResults extends Controller {
 				"attachment; filename=" + filename);
 		// Set cookie for johnculviner's jQuery.fileDownload plugin
 		response().setCookie(JQDOWNLOAD_COOKIE_NAME, JQDOWNLOAD_COOKIE_CONTENT);
-		return badRequest();
-//		return ok(studyResultDataAsStr);
+		return ok(studyResultDataAsStr);
 	}
 
 }
