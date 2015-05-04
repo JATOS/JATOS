@@ -106,6 +106,19 @@ public class ComponentModel {
 	public ComponentModel() {
 	}
 
+	/**
+	 * Constructor for cloning (doesn't clone field id, date, and uuid)
+	 */
+	public ComponentModel(ComponentModel component) {
+		this.study = component.study;
+		this.title = component.title;
+		this.htmlFilePath = component.htmlFilePath;
+		this.reloadable = component.reloadable;
+		this.active = component.active;
+		this.jsonData = component.jsonData;
+		this.comments = component.comments;
+	}
+
 	public void setId(Long id) {
 		this.id = id;
 	}

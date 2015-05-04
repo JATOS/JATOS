@@ -133,6 +133,27 @@ public class StudyModel {
 		addAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
 	}
 
+	/**
+	 * Constructor for cloning (without fields id, date, memberList, uuid, and
+	 * locked)
+	 */
+	public StudyModel(StudyModel study) {
+		// Don't clone fields 'memberList' and 'locked'
+		this.description = study.description;
+		this.dirName = study.dirName;
+		this.jsonData = study.jsonData;
+		this.title = study.title;
+		this.locked = false;
+		for (String worker : study.allowedWorkerList) {
+			this.allowedWorkerList.add(worker);
+		}
+		for (ComponentModel component : study.componentList) {
+			ComponentModel clone = new ComponentModel(component);
+			clone.setStudy(this);
+			this.componentList.add(clone);
+		}
+	}
+
 	public void setId(Long id) {
 		this.id = id;
 	}

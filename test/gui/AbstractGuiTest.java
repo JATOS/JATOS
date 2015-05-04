@@ -1,7 +1,6 @@
 package gui;
 
 import static org.mockito.Mockito.mock;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -57,7 +56,7 @@ public abstract class AbstractGuiTest {
 	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
 
-	protected static Server server;
+	private static Server server;
 	protected FakeApplication application;
 	protected EntityManager entityManager;
 	protected JsonUtils jsonUtils;
@@ -103,7 +102,9 @@ public abstract class AbstractGuiTest {
 	public void stopApp() throws Exception {
 		after();
 
-		entityManager.close();
+		if (entityManager.isOpen()) {
+			entityManager.close();
+		}
 		JPA.bindForCurrentThread(null);
 		removeStudyAssetsRootDir();
 		Helpers.stop(application);

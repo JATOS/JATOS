@@ -6,7 +6,7 @@ import com.google.common.net.MediaType;
 
 import controllers.gui.ControllerUtils;
 import play.mvc.Results;
-import play.mvc.SimpleResult;
+import play.mvc.Result;
 
 @SuppressWarnings("serial")
 public class PublixException extends Exception {
@@ -23,7 +23,7 @@ public class PublixException extends Exception {
 		this.httpStatus = httpStatus;
 	}
 
-	public SimpleResult getSimpleResult() {
+	public Result getSimpleResult() {
 		if (!ControllerUtils.isAjax()) {
 			switch (httpStatus) {
 			case HttpStatus.SC_BAD_REQUEST:

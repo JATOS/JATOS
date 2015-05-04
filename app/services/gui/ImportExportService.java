@@ -44,8 +44,6 @@ public class ImportExportService {
 	public static final String STUDYS_PROPERTIES_CONFIRM = "studysPropertiesConfirm";
 	public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
 	public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
-	public static final String JQDOWNLOAD_COOKIE_NAME = "Set-Cookie";
-	public static final String JQDOWNLOAD_COOKIE_CONTENT = "fileDownload=true; path=/";
 
 	private final StudyService studyService;
 	private final JsonUtils jsonUtils;

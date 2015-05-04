@@ -5,7 +5,7 @@ import java.io.IOException;
 import play.api.mvc.Call;
 import play.mvc.Http;
 import play.mvc.Results;
-import play.mvc.SimpleResult;
+import play.mvc.Result;
 import services.FlashScopeMessaging;
 import services.RequestScopeMessaging;
 
@@ -47,7 +47,7 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwAjax(String errorMsg, int httpStatus)
 			throws JatosGuiException {
-		SimpleResult result = Results.status(httpStatus, errorMsg);
+		Result result = Results.status(httpStatus, errorMsg);
 		throw new JatosGuiException(result, errorMsg);
 	}
 
@@ -67,7 +67,7 @@ public class JatosGuiExceptionThrower {
 	 * taken from the parameter.
 	 */
 	public void throwAjax(Exception e, int httpStatus) throws JatosGuiException {
-		SimpleResult result = Results.status(httpStatus, e.getMessage());
+		Result result = Results.status(httpStatus, e.getMessage());
 		throw new JatosGuiException(result, e.getMessage());
 	}
 
@@ -78,7 +78,7 @@ public class JatosGuiExceptionThrower {
 	 * code.
 	 */
 	public void throwRedirect(Exception e, Call call) throws JatosGuiException {
-		SimpleResult result;
+		Result result;
 		if (ControllerUtils.isAjax()) {
 			int statusCode = getHttpStatusFromException(e);
 			result = Results.status(statusCode, e.getMessage());
@@ -96,12 +96,12 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwHome(String errorMsg, int httpStatus)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = (SimpleResult) homeProvider.get().home(httpStatus);
+			result = (Result) homeProvider.get().home(httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
 	}
@@ -113,23 +113,23 @@ public class JatosGuiExceptionThrower {
 	 * status code is determined by the exception type.
 	 */
 	public void throwHome(Exception e) throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		int httpStatus = getHttpStatusFromException(e);
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
-			result = (SimpleResult) homeProvider.get().home(httpStatus);
+			result = (Result) homeProvider.get().home(httpStatus);
 		}
 		throw new JatosGuiException(result, e.getMessage());
 	}
 
 	/**
-	 * Throws a JatosGuiException with the given SimpleResult and a HTTP status
+	 * Throws a JatosGuiException with the given Result and a HTTP status
 	 * according to the exception. Distinguishes between normal and Ajax
 	 * request.
 	 */
-	public void throwResult(Exception e, SimpleResult result)
+	public void throwResult(Exception e, Result result)
 			throws JatosGuiException {
 		if (ControllerUtils.isAjax()) {
 			int httpStatus = getHttpStatusFromException(e);
@@ -147,12 +147,12 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwStudyIndex(String errorMsg, int httpStatus, Long studyId)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = (SimpleResult) studiesProvider.get().index(studyId,
+			result = (Result) studiesProvider.get().index(studyId,
 					httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
@@ -166,13 +166,13 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwStudyIndex(Exception e, Long studyId)
 			throws JatosGuiException {
-		SimpleResult result = null;
+		Result result = null;
 		int httpStatus = getHttpStatusFromException(e);
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
-			result = (SimpleResult) studiesProvider.get().index(studyId,
+			result = (Result) studiesProvider.get().index(studyId,
 					httpStatus);
 		}
 		throw new JatosGuiException(result, e.getMessage());

@@ -35,7 +35,7 @@ public class StudyDao extends AbstractDao {
 	/**
 	 * Persist study and it's components and add member.
 	 */
-	public void create(StudyModel study, UserModel loggedInUser) {
+	public void create(StudyModel study, UserModel user) {
 		if (study.getUuid() == null) {
 			study.setUuid(UUID.randomUUID().toString());
 		}
@@ -43,7 +43,7 @@ public class StudyDao extends AbstractDao {
 			componentDao.create(component);
 		}
 		persist(study);
-		addMember(study, loggedInUser);
+		addMember(study, user);
 	}
 
 	/**

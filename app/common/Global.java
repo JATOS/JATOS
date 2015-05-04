@@ -5,8 +5,8 @@ import play.GlobalSettings;
 import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Http.RequestHeader;
+import play.mvc.Result;
 import play.mvc.Results;
-import play.mvc.SimpleResult;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -45,25 +45,23 @@ public class Global extends GlobalSettings {
 	}
 
 	@Override
-	public Promise<SimpleResult> onError(RequestHeader request, Throwable t) {
-		// Make sure no internal error msg is ever shown
-		return Promise.<SimpleResult> pure(Results
+	public Promise<Result> onError(RequestHeader request, Throwable t) {
+		return Promise.<Result> pure(Results
 				.internalServerError(views.html.error
 						.render("Internal JATOS error")));
 	}
 
 	@Override
-	public Promise<SimpleResult> onHandlerNotFound(RequestHeader request) {
-		return Promise.<SimpleResult> pure(Results.notFound(views.html.error
-				.render("Requested page \"" + request.uri()
-						+ "\" doesn't exist.")));
+	public Promise<Result> onHandlerNotFound(RequestHeader request) {
+		return Promise.<Result> pure(Results.notFound(views.html.publix.error.render("Requested page \""
+						+ request.uri() + "\" doesn't exist.")));
 	}
 
 	@Override
-	public Promise<SimpleResult> onBadRequest(RequestHeader request,
+	public Promise<Result> onBadRequest(RequestHeader request,
 			String error) {
-		return Promise.<SimpleResult> pure(Results.badRequest(views.html.error
-				.render("bad request")));
+		return Promise.<Result> pure(Results.badRequest(views.html.error
+						.render("bad request")));
 	}
 
 }

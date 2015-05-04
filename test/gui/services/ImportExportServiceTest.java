@@ -58,6 +58,12 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 		assertThat(a).isEqualTo(2);
 	}
 
+	/**
+	 * Import a component that already exists in a study. It should be
+	 * overwritten.
+	 * 
+	 * @throws Exception
+	 */
 	@Test
 	public void importExistingComponent() throws Exception {
 		StudyModel study = importExampleStudy();
@@ -439,4 +445,5 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 		// Clean up
 		removeStudy(study);
 	}
+
 }

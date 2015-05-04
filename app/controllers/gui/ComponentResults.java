@@ -16,7 +16,6 @@ import play.mvc.Result;
 import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.ComponentService;
-import services.gui.ImportExportService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.ResultService;
 import services.gui.StudyService;
@@ -175,8 +174,9 @@ public class ComponentResults extends Controller {
 		Logger.info(CLASS_NAME + ".exportData: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		// Remove cookie of jQuery.fileDownload plugin
-		response().discardCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME);
+		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
+		// be sure, in case it's still there)
+		response().discardCookie(StudyResults.JQDOWNLOAD_COOKIE_NAME);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 
 		String componentResultDataAsStr = null;
@@ -193,9 +193,12 @@ public class ComponentResults extends Controller {
 				+ "." + IOUtils.TXT_FILE_SUFFIX;
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
-		// Set cookie for jQuery.fileDownload plugin
-		response().setCookie(ImportExportService.JQDOWNLOAD_COOKIE_NAME,
-				ImportExportService.JQDOWNLOAD_COOKIE_CONTENT);
+		// Set cookie for johnculviner's jQuery.fileDownload plugin
+		// This plugin is merely used to detect a failed download. If the
+		// response isn't OK and it doesn't have this cookie then the plugin
+		// regards it as a fail.
+		response().setCookie(StudyResults.JQDOWNLOAD_COOKIE_NAME,
+				StudyResults.JQDOWNLOAD_COOKIE_CONTENT);
 		return ok(componentResultDataAsStr);
 	}
 

@@ -26,7 +26,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.SimpleResult;
 import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.ComponentService;
@@ -395,7 +394,7 @@ public class Studies extends Controller {
 			studyService.exchangeMembers(study, checkedUsers);
 		} catch (BadRequestException e) {
 			RequestScopeMessaging.error(e.getMessage());
-			SimpleResult result = (SimpleResult) changeMembers(study.getId(),
+			Result result = (Result) changeMembers(study.getId(),
 					Http.Status.BAD_REQUEST);
 			throw new JatosGuiException(result, e.getMessage());
 		}

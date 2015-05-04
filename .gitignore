@@ -2,8 +2,8 @@ logs
 project/project
 project/target
 target
-bin
 /.target
+bin
 tmp
 .history
 dist

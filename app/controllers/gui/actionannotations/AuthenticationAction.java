@@ -10,9 +10,8 @@ import persistance.UserDao;
 import play.libs.F;
 import play.libs.F.Promise;
 import play.mvc.Action;
-import play.mvc.Controller;
 import play.mvc.Http;
-import play.mvc.SimpleResult;
+import play.mvc.Result;
 import play.mvc.With;
 
 import com.google.inject.Inject;
@@ -45,16 +44,16 @@ public class AuthenticationAction extends Action<Authenticated> {
 		this.userDao = userService;
 	}
 
-	public F.Promise<SimpleResult> call(Http.Context ctx) throws Throwable {
-		Promise<SimpleResult> call;
-		String email = Controller.session(Users.SESSION_EMAIL);
+	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
+		Promise<Result> call;
+		String email = ctx.session().get(Users.SESSION_EMAIL);
 		UserModel loggedInUser = null;
 		if (email != null) {
 			loggedInUser = userDao.findByEmail(email);
 		}
 		if (loggedInUser == null) {
 			call = Promise
-					.<SimpleResult> pure(redirect(controllers.gui.routes.Authentication
+					.<Result> pure(redirect(controllers.gui.routes.Authentication
 							.login()));
 		} else {
 			RequestScope.put(Authentication.LOGGED_IN_USER, loggedInUser);
