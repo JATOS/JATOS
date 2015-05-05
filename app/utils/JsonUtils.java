@@ -129,7 +129,6 @@ public class JsonUtils {
 			}
 			valid = true;
 		} catch (Exception e) {
-			Logger.info(CLASS_NAME + ".isValidJSON: ", e);
 			valid = false;
 		}
 		return valid;
