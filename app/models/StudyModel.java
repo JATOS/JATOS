@@ -211,27 +211,11 @@ public class StudyModel {
 	}
 
 	public String getJsonData() {
-		if (jsonData == null) {
-			return null;
-		}
-		if (!JsonUtils.isValidJSON(jsonData)) {
-			return jsonData;
-		}
-		return JsonUtils.makePretty(jsonData);
+		return jsonData;
 	}
 
-	public void setJsonData(String jsonDataStr) {
-		if (jsonDataStr == null) {
-			this.jsonData = null;
-			return;
-		}
-		if (!JsonUtils.isValidJSON(jsonDataStr)) {
-			// Set the invalid string anyway. It will cause an error during
-			// validate().
-			this.jsonData = jsonDataStr;
-			return;
-		}
-		this.jsonData = JsonUtils.asStringForDB(jsonDataStr);
+	public void setJsonData(String jsonData) {
+		this.jsonData = jsonData;
 	}
 
 	public void setAllowedWorkerList(Set<String> allowedWorkerList) {

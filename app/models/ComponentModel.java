@@ -180,25 +180,11 @@ public class ComponentModel {
 	}
 
 	public String getJsonData() {
-		if (this.jsonData == null) {
-			return null;
-		}
-		return JsonUtils.makePretty(jsonData);
+		return jsonData;
 	}
 
-	public void setJsonData(String jsonDataStr) {
-		if (jsonDataStr == null) {
-			this.jsonData = null;
-			return;
-		}
-		if (!JsonUtils.isValidJSON(jsonDataStr)) {
-			// Set the invalid string anyway, but don't standardise it. It will
-			// cause an error during next validate() if one tries to edit this
-			// component.
-			this.jsonData = jsonDataStr;
-			return;
-		}
-		this.jsonData = JsonUtils.asStringForDB(jsonDataStr);
+	public void setJsonData(String jsonData) {
+		this.jsonData = jsonData;
 	}
 
 	public boolean isReloadable() {

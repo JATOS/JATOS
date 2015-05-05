@@ -345,7 +345,7 @@ public class StudyServiceTest extends AbstractGuiTest {
 		assertThat(study.getTitle()).isEqualTo("This is a title");
 		assertThat(study.getDescription()).isEqualTo("This is a description");
 		assertThat(study.getDirName()).isEqualTo("dir_name");
-		assertThat(study.getJsonData()).isEqualTo("{ }");
+		assertThat(study.getJsonData()).isEqualTo("{}");
 		assertThat(study.getAllowedWorkerList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
 	}

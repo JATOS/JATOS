@@ -77,7 +77,7 @@ public class ComponentServiceTest extends AbstractGuiTest {
 				clone.getComments());
 		assertThat(updatedComponent.getHtmlFilePath()).isEqualTo(
 				clone.getHtmlFilePath());
-		assertThat(updatedComponent.getJsonData()).isEqualTo("{ }");
+		assertThat(updatedComponent.getJsonData()).isEqualTo("{}");
 		assertThat(updatedComponent.getTitle()).isEqualTo(clone.getTitle());
 		assertThat(updatedComponent.isReloadable() == clone.isReloadable())
 				.isTrue();

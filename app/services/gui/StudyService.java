@@ -12,6 +12,7 @@ import persistance.StudyDao;
 import persistance.UserDao;
 import services.RequestScopeMessaging;
 import utils.IOUtils;
+import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -183,7 +184,8 @@ public class StudyService {
 		study.setTitle(formMap.get(StudyModel.TITLE)[0]);
 		study.setDescription(formMap.get(StudyModel.DESCRIPTION)[0]);
 		study.setDirName(formMap.get(StudyModel.DIRNAME)[0]);
-		study.setJsonData(formMap.get(StudyModel.JSON_DATA)[0]);
+		study.setJsonData(JsonUtils.asStringForDB(formMap
+				.get(StudyModel.JSON_DATA)[0]));
 		String[] allowedWorkerArray = formMap
 				.get(StudyModel.ALLOWED_WORKER_LIST);
 		if (allowedWorkerArray != null) {

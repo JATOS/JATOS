@@ -398,7 +398,7 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 		assertThat(study.getDate()).isNull();
 		assertThat(study.getDescription()).isEqualTo("Changed description");
 		assertThat(study.getId()).isPositive();
-		assertThat(study.getJsonData()).isEqualTo("{ }");
+		assertThat(study.getJsonData()).isEqualTo("{}");
 		assertThat(study.getMemberList().contains(admin)).isTrue();
 		assertThat(study.getTitle()).isEqualTo("Changed Title");
 		assertThat(study.getUuid()).isEqualTo(

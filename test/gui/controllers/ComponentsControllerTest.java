@@ -182,6 +182,8 @@ public class ComponentsControllerTest extends AbstractGuiTest {
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentModel.TITLE, "");
 		form.put(ComponentModel.RELOADABLE, "true");
+		form.put(ComponentModel.HTML_FILE_PATH, "");
+		form.put(ComponentModel.COMMENTS, "");
 		form.put(ComponentModel.JSON_DATA, "{");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,

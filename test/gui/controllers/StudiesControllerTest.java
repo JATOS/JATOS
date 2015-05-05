@@ -98,7 +98,7 @@ public class StudiesControllerTest extends AbstractGuiTest {
 		assertEquals("Title Test", study.getTitle());
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
-		assertEquals("{ }", study.getJsonData());
+		assertEquals("{}", study.getJsonData());
 		assertThat((study.getComponentList().isEmpty()));
 		assertThat((study.getMemberList().contains(admin)));
 		assertThat((!study.isLocked()));

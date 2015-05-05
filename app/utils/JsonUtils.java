@@ -90,13 +90,21 @@ public class JsonUtils {
 	 * the JSON string isn't valid it returns null.
 	 */
 	public static String makePretty(String jsonData) {
+		if (jsonData == null) {
+			return null;
+		}
+		// Don't make pretty if JSON is invalid. It screws everything.
+		if (!JsonUtils.isValidJSON(jsonData)) {
+			return jsonData;
+		}
 		String jsonDataPretty = null;
 		try {
 			Object json = OBJECTMAPPER.readValue(jsonData, Object.class);
 			jsonDataPretty = OBJECTMAPPER.writerWithDefaultPrettyPrinter()
 					.writeValueAsString(json);
 		} catch (Exception e) {
-			Logger.info(CLASS_NAME + ".makePretty: ", e);
+			Logger.info(CLASS_NAME
+					+ ".makePretty: error probably due to invalid JSON");
 		}
 		return jsonDataPretty;
 	}
@@ -105,14 +113,24 @@ public class JsonUtils {
 	 * Formats a JSON string into a standardised form suitable for storing into
 	 * a DB. If the JSON string isn't valid it returns null.
 	 */
-	public static String asStringForDB(String jsonDataStr) {
-		try {
-			String jsonData = OBJECTMAPPER.readTree(jsonDataStr).toString();
-			return jsonData;
-		} catch (Exception e) {
-			Logger.info(CLASS_NAME + ".asStringForDB: ", e);
+	public static String asStringForDB(String jsonData) {
+		if (jsonData == null) {
+			return null;
 		}
-		return null;
+		if (!JsonUtils.isValidJSON(jsonData)) {
+			// Set the invalid string anyway, but don't standardise it. It will
+			// cause an error during next validate() if one tries to edit this
+			// component.
+			return jsonData;
+		}
+		String jsonDataForDB = null;
+		try {
+			jsonDataForDB = OBJECTMAPPER.readTree(jsonData).toString();
+		} catch (Exception e) {
+			Logger.info(CLASS_NAME
+					+ ".asStringForDB: error probably due to invalid JSON");
+		}
+		return jsonDataForDB;
 	}
 
 	/**
@@ -129,6 +147,8 @@ public class JsonUtils {
 			}
 			valid = true;
 		} catch (Exception e) {
+			Logger.info(CLASS_NAME
+					+ ".isValidJSON: error probably due to invalid JSON");
 			valid = false;
 		}
 		return valid;

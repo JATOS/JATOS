@@ -246,6 +246,7 @@ public class Studies extends Controller {
 		List<ValidationError> errorList = updatedStudy.validate();
 		if (errorList != null) {
 			updatedStudy.setId(studyId);
+			updatedStudy.setUuid(study.getUuid());
 			return failStudyEdit(loggedInUser, studyList, updatedStudy,
 					errorList);
 		}

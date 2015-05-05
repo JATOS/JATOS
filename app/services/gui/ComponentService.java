@@ -1,8 +1,11 @@
 package services.gui;
 
+import java.util.Map;
+
 import models.ComponentModel;
 import models.UserModel;
 import persistance.ComponentDao;
+import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -38,6 +41,23 @@ public class ComponentService {
 		clone.setJsonData(component.getJsonData());
 		clone.setComments(component.getComments());
 		return clone;
+	}
+
+	/**
+	 * Binds component data from a edit/create component request onto a
+	 * ComponentModel. Play's default form binder doesn't work here.
+	 */
+	public ComponentModel bindComponentFromRequest(Map<String, String[]> formMap) {
+		ComponentModel component = new ComponentModel();
+		component.setTitle(formMap.get(ComponentModel.TITLE)[0]);
+		component
+				.setHtmlFilePath(formMap.get(ComponentModel.HTML_FILE_PATH)[0]);
+		component.setReloadable(Boolean.parseBoolean(formMap
+				.get(ComponentModel.RELOADABLE)[0]));
+		component.setComments(formMap.get(ComponentModel.COMMENTS)[0]);
+		component.setJsonData(JsonUtils.asStringForDB(formMap
+				.get(ComponentModel.JSON_DATA)[0]));
+		return component;
 	}
 
 	/**
