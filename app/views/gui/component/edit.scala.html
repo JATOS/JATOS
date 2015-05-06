@@ -11,6 +11,9 @@ study: StudyModel)
 	<div class="col-xs-10">
 		<p>@if(form(ComponentModel.ID).value != null) {@form(ComponentModel.ID).value} else {-}</p>
 	</div>
+</div>
+
+<div class="form-group">
 	<div class="col-xs-2"><p class="text-right"><strong>UUID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of components between different JATOS instances" aria-hidden="true"></span></p></div>
 	<div class="col-xs-10">
 		<p>@if(form(ComponentModel.UUID).value != null) {@form(ComponentModel.UUID).value} else {-}</p>
