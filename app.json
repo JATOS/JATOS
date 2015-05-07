@@ -18,7 +18,6 @@
        "JATOS_APPLICATION_SECRET": {
           "description": "A secret key for verifying the integrity of signed cookies.",
           "generator": "secret"
-       },
-       "BUILDPACK_URL": "https://github.com/heroku/heroku-buildpack-scala.git"
+       }
     }
 }
