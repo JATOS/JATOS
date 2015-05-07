@@ -13,5 +13,11 @@
     ],
     "addons": [
         "cleardb"
-    ]
+    ],
+    "env": {
+       "JATOS_APPLICATION_SECRET": {
+          "description": "A secret key for verifying the integrity of signed cookies.",
+          "generator": "secret"
+       }
+    }
 }
