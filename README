@@ -3,3 +3,5 @@ This is JATOS - Just Another Tool for Online Studies.
 More information is available under http://www.jatos.org and https://github.com/JATOS/JATOS/wiki.
 
 This software is licensed under the Apache 2 license.
+
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/JATOS/JATOS)
