@@ -1,0 +1,23 @@
+{
+  "name": "JATOS",
+  "description": "Simply setup your own online studies",
+  "keywords": [
+    "study",
+    "experiment",
+    "AMT",
+    "Mechanical Turk"
+  ],
+  "website": "http://www.jatos.org/",
+  "repository": "https://github.com/JATOS/JATOS",
+  "logo": "https://avatars0.githubusercontent.com/u/9865815?v=3&s=200",
+  "success_url": "/jatos",
+  "env": {
+    "JATOS_APPLICATION_SECRET": {
+      "description": "A secret key for verifying the integrity of signed cookies.",
+      "generator": "secret"
+    }
+  },
+  "addons": [
+    "cleardb"
+  ]
+}
