@@ -363,7 +363,7 @@ $(document).ready(function() {
 				type : 'DELETE',
 				success : function(result) {
 					var tr = $(element).closest('tr');
-					componentsTable.row(tr).remove().draw();
+					componentsTable.ajax.reload();
 					fillSidebar();
 				},
 				error : function(err) {
