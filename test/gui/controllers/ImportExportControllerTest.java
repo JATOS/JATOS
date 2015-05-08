@@ -44,8 +44,8 @@ import controllers.gui.Users;
  */
 public class ImportExportControllerTest extends AbstractGuiTest {
 
-	private static final String TEST_STUDY_ZIP_PATH = "test/assets/basic_example_study.zip";
-	private static final String TEST_STUDY_BKP_ZIP_PATH = "test/assets/basic_example_study_bkp.zip";
+	private static final String TEST_STUDY_ZIP_PATH = "test/resources/basic_example_study.zip";
+	private static final String TEST_STUDY_BKP_ZIP_PATH = "test/resources/basic_example_study_bkp.zip";
 
 	@Override
 	public void before() throws Exception {

@@ -48,12 +48,12 @@ import controllers.publix.StudyAssets;
  */
 public abstract class AbstractGuiTest {
 
-	private static final String BASIC_EXAMPLE_STUDY_ZIP = "test/assets/basic_example_study.zip";
+	private static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
 
 	private static final String CLASS_NAME = AbstractGuiTest.class
 			.getSimpleName();
 
-	private static final String TEST_COMPONENT_JAC_PATH = "test/assets/hello_world.jac";
+	private static final String TEST_COMPONENT_JAC_PATH = "test/resources/hello_world.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
 
 	private static Server server;
