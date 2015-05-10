@@ -14,8 +14,8 @@ public class Common {
 	/**
 	 * JATOS version
 	 */
-	public static final String VERSION = Play.application().configuration()
-			.getString("application.version");
+	public static final String VERSION = Common.class.getPackage()
+			.getImplementationVersion();
 
 	/**
 	 * Is true if an in-memory database is used.

@@ -1,8 +1,6 @@
 import com.typesafe.config._
 
-val conf = ConfigFactory.parseFile(new File("conf/application.conf")).resolve()
-
-version := conf.getString("application.version")
+version := "1.1.10-beta"
 
 name := "JATOS"
 
