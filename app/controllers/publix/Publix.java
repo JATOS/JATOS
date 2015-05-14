@@ -21,7 +21,7 @@ import utils.JsonUtils;
 
 import com.google.inject.Singleton;
 
-import controllers.gui.ControllerUtils;
+import controllers.ControllerUtils;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
 

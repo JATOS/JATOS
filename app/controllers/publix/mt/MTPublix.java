@@ -15,7 +15,7 @@ import utils.JsonUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import controllers.gui.ControllerUtils;
+import controllers.ControllerUtils;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.PublixInterceptor;

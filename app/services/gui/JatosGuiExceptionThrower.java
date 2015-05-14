@@ -13,7 +13,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 
-import controllers.gui.ControllerUtils;
+import controllers.ControllerUtils;
 import controllers.gui.Home;
 import controllers.gui.Studies;
 import exceptions.BadRequestException;

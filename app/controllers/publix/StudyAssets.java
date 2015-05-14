@@ -12,6 +12,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import utils.IOUtils;
 import common.Common;
+import controllers.ControllerUtils;
 
 /**
  * Manages web-access to files in the external study assets directory (outside
@@ -76,8 +77,8 @@ public class StudyAssets extends Controller {
 	}
 
 	/**
-	 * Action called while routing. Translates the given file path from the URL into a
-	 * file path of the OS's file system and returns the file.
+	 * Action called while routing. Translates the given file path from the URL
+	 * into a file path of the OS's file system and returns the file.
 	 */
 	public Result at(String filePath) {
 		File file;
@@ -90,8 +91,13 @@ public class StudyAssets extends Controller {
 		} catch (IOException e) {
 			Logger.info(CLASS_NAME + ".at: failed loading from path "
 					+ STUDY_ASSETS_ROOT_PATH + File.separator + filePath);
-			return notFound(views.html.error.render("Resource \""
-					+ filePath + "\" couldn't be found."));
+			String errorMsg = "Resource \"" + filePath
+					+ "\" couldn't be found.";
+			if (ControllerUtils.isAjax()) {
+				return notFound(errorMsg);
+			} else {
+				return notFound(views.html.error.render(errorMsg));
+			}
 		}
 		return ok(file, true);
 	}
@@ -104,8 +110,8 @@ public class StudyAssets extends Controller {
 
 	/**
 	 * Generates an URL with protocol HTTP. Takes the hostname from the request,
-	 * the url's path from the given urlPath, and the query string
-	 * again from the request.
+	 * the url's path from the given urlPath, and the query string again from
+	 * the request.
 	 */
 	public static String getUrlWithQueryString(String oldUri,
 			String requestHost, String newUrlPath) {

@@ -1,4 +1,4 @@
-package controllers.gui;
+package controllers;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -6,7 +6,7 @@ import java.net.URL;
 import play.mvc.Controller;
 
 /**
- * Utility class for all JATOS GUI Controllers (not Publix).
+ * Utility class for all JATOS Controllers.
  * 
  * @author Kristian Lange
  */

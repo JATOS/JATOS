@@ -4,7 +4,7 @@ import org.apache.http.HttpStatus;
 
 import com.google.common.net.MediaType;
 
-import controllers.gui.ControllerUtils;
+import controllers.ControllerUtils;
 import play.mvc.Results;
 import play.mvc.Result;
 
