@@ -40,6 +40,7 @@ public class ComponentModel {
 	public static final String RESULT = "result";
 	public static final String POSITION = "position";
 	public static final String RELOADABLE = "reloadable";
+	public static final String ACTIVE = "active";
 	public static final String COMMENTS = "comments";
 	public static final String COMPONENT = "component";
 

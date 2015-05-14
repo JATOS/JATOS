@@ -166,23 +166,45 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Returns init data: Marshals the study properties and the component
-	 * properties and puts them together with the session data (stored in
-	 * StudyResult) into a new JSON object.
+	 * Returns init data that are requested during initialisation of each
+	 * component run: Marshals the study properties and the component properties
+	 * and puts them together with the session data (stored in StudyResult) into
+	 * a new JSON object.
 	 */
 	public ObjectNode initData(StudyResult studyResult, StudyModel study,
 			ComponentModel component) throws IOException,
 			JsonProcessingException {
 		String studyProperties = asJsonForPublix(study);
+		ArrayNode componentList = getComponentListForInitData(study);
 		String componentProperties = asJsonForPublix(component);
 		String studySession = studyResult.getStudySessionData();
 		ObjectNode initData = OBJECTMAPPER.createObjectNode();
 		initData.put("studySession", studySession);
 		// This is ugly: first marshaling, now unmarshaling again
 		initData.put("studyProperties", OBJECTMAPPER.readTree(studyProperties));
+		initData.put("componentList", componentList);
 		initData.put("componentProperties",
 				OBJECTMAPPER.readTree(componentProperties));
 		return initData;
+	}
+
+	/**
+	 * Returns an JSON ArrayNode with with a component list intended for use in
+	 * jatos.js initData. For each component it adds only the bare minimum of
+	 * data.
+	 */
+	private ArrayNode getComponentListForInitData(StudyModel study) {
+		ArrayNode componentList = OBJECTMAPPER.createArrayNode();
+		for (ComponentModel tempComponent : study.getComponentList()) {
+			ObjectNode componentNode = OBJECTMAPPER.createObjectNode();
+			componentNode.put(ComponentModel.ID, tempComponent.getId());
+			componentNode.put(ComponentModel.TITLE, tempComponent.getTitle());
+			componentNode.put(ComponentModel.ACTIVE, tempComponent.isActive());
+			componentNode.put(ComponentModel.RELOADABLE,
+					tempComponent.isReloadable());
+			componentList.add(componentNode);
+		}
+		return componentList;
 	}
 
 	/**

@@ -114,8 +114,6 @@ function initJatos() {
 
 	/**
 	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope.
-	 * This function is automatically called after the page is loaded, so it's
-	 * not necessary to call it again.
 	 */
 	function readIdCookie() {
 		var nameEQ = escape("JATOS_IDS") + "=";
@@ -135,6 +133,8 @@ function initJatos() {
 				});
 			}
 		}
+		// Convert component's position to int
+		jatos.componentPos = parseInt(jatos.componentPos);
 	}
 
 	/**
@@ -172,23 +172,31 @@ function initJatos() {
 		jatos.studySessionDataFrozen = Object.freeze({
 			"sessionDataStr" : initData.studySession
 		});
+		
 		// Study properties
 		jatos.studyProperties = initData.studyProperties;
 		jatos.studyJsonInput = jatos.jQuery
 				.parseJSON(jatos.studyProperties.jsonData);
 		delete jatos.studyProperties.jsonData;
+		
+		// Study's component list
+		jatos.componentList = initData.componentList;
+		
 		// Component properties
 		jatos.componentProperties = initData.componentProperties;
 		jatos.componentJsonInput = jatos.jQuery
 				.parseJSON(jatos.componentProperties.jsonData);
 		delete jatos.componentProperties.jsonData;
+		
 		// Conveniently set document's title
 		document.title = jatos.componentProperties.title;
+		
 		// Depreacated variables - will be removed in future
 		jatos.studyData = jatos.studyProperties;
 		jatos.studyJsonData = jatos.studyJsonInput;
 		jatos.componentData = jatos.componentProperties;
 		jatos.componentJsonData = jatos.componentJsonInput;
+		
 		// Initialising finished
 		initialized = true;
 		ready();
