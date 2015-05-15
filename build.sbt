@@ -1,6 +1,6 @@
 import com.typesafe.config._
 
-version := "1.1.10-beta"
+version := "1.1.11-beta"
 
 name := "JATOS"
 
