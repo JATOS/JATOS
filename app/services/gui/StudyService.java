@@ -104,7 +104,7 @@ public class StudyService {
 			clone.addAllowedWorker(workerType);
 		}
 		for (ComponentModel component : study.getComponentList()) {
-			ComponentModel componentClone = componentService.clone(component);
+			ComponentModel componentClone = componentService.cloneComponentModel(component);
 			componentClone.setStudy(clone);
 			clone.addComponent(componentClone);
 		}

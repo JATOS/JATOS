@@ -3,6 +3,7 @@ package gui.controllers;
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.NOT_FOUND;
 import static play.mvc.Http.Status.OK;
+import static play.test.Helpers.callAction;
 import static play.test.Helpers.status;
 import gui.AbstractGuiTest;
 
@@ -15,7 +16,6 @@ import org.junit.Test;
 
 import play.mvc.Result;
 import utils.IOUtils;
-import common.Global;
 import controllers.publix.StudyAssets;
 
 /**
@@ -25,7 +25,6 @@ import controllers.publix.StudyAssets;
  */
 public class StudyAssetsTest extends AbstractGuiTest {
 
-	private static StudyAssets studyAssets;
 	private static StudyModel studyExample;
 
 	@Override
@@ -36,7 +35,6 @@ public class StudyAssetsTest extends AbstractGuiTest {
 	@Override
 	public void after() throws Exception {
 		IOUtils.removeStudyAssetsDir(studyExample.getDirName());
-		studyAssets = Global.INJECTOR.getInstance(StudyAssets.class);
 	}
 
 	@Test
@@ -57,7 +55,8 @@ public class StudyAssetsTest extends AbstractGuiTest {
 	public void testAt() throws IOException {
 		StudyModel studyClone = cloneAndPersistStudy(studyExample);
 
-		Result result = studyAssets.at("basic_example_study/hello_world.html");
+		Result result = callAction(controllers.publix.routes.ref.StudyAssets
+				.at("basic_example_study/hello_world.html"));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
@@ -66,10 +65,12 @@ public class StudyAssetsTest extends AbstractGuiTest {
 
 	@Test
 	public void testAtNotFound() {
-		Result result = studyAssets.at("non/existend/filepath");
+		Result result = callAction(controllers.publix.routes.ref.StudyAssets
+				.at("non/existend/filepath"));
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 
-		result = studyAssets.at("non/&?/filepath");
+		result = callAction(controllers.publix.routes.ref.StudyAssets
+				.at("non/&?/filepath"));
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 	}
 
@@ -78,7 +79,8 @@ public class StudyAssetsTest extends AbstractGuiTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyExample);
 
 		// Although this file exists, it shouldn't be found
-		Result result = studyAssets.at("../../conf/application.conf");
+		Result result = callAction(controllers.publix.routes.ref.StudyAssets
+				.at("../../conf/application.conf"));
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 
 		// Clean up

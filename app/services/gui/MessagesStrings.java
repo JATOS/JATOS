@@ -46,7 +46,7 @@ public abstract class MessagesStrings {
 	public static final String YOUVE_BEEN_LOGGED_OUT = "You've been logged out";
 	public static final String ONLY_ADMIN_CAN_SEE_LOGS = "Only an admin can see the logs";
 	public static final String COULDNT_OPEN_LOG = "Couldn't open log file";
-	
+
 	// Export / import
 	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
 	public static final String NO_STUDY_UPLOAD = "Uploaded file isn't intended for studies";
@@ -67,7 +67,9 @@ public abstract class MessagesStrings {
 	public static final String RESULTS_INFO = "Select a result for export or deletion by clicking anywhere on its row.";
 	public static final String RESULTS_DATA = "Click on the + icon to open the result's data";
 	public static final String RESULTS_START_TIME = "Time according to the JATOS server";
-	public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. " + MTWorker.UI_WORKER_TYPE + ", " + PMWorker.UI_WORKER_TYPE + ", " +  ClosedStandaloneWorker.UI_WORKER_TYPE;
+	public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. "
+			+ MTWorker.UI_WORKER_TYPE + ", " + PMWorker.UI_WORKER_TYPE + ", "
+			+ ClosedStandaloneWorker.UI_WORKER_TYPE;
 	public static final String RESULTS_WORKER_ID = "Click on the ID to go to this worker's results";
 	public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
 	public static final String RESULTS_MT_WORKER_ID = "Mechanical Turk's worker ID";
@@ -83,7 +85,9 @@ public abstract class MessagesStrings {
 	public static final String MTWORKER_ALLOWANCE_MISSING = "Right now workers from Mechnical Turk are not allowed to run this study. You should change this in this study's properties before you run it from Mechanical Turk.";
 	public static final String COULDNT_GENERATE_JATOS_URL = "Couldn't generate JATOS' URL. Try to reload this page.";
 	public static final String COULDNT_CHANGE_POSITION_OF_COMPONENT = "Couldn't change position of componet.";
-
+	public static final String COMPONENT_DELETED_BUT_FILES_NOT = "Component deleted, but all files (e.g. its HTML file) in study assets remain untouched.";
+	
+	
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
 	}
@@ -107,8 +111,9 @@ public abstract class MessagesStrings {
 
 	public static String studyReorderUnknownPosition(String position,
 			Long studyId) {
-		String errorMsg = "Unknown position "+ position +". Couldn't reorder "
-				+ "components in study with ID " + studyId + ".";
+		String errorMsg = "Unknown position " + position
+				+ ". Couldn't reorder " + "components in study with ID "
+				+ studyId + ".";
 		return errorMsg;
 	}
 
@@ -173,12 +178,12 @@ public abstract class MessagesStrings {
 		String errorMsg = "An user with email " + email + " doesn't exist.";
 		return errorMsg;
 	}
-	
+
 	public static String userMustBeLoggedInToSeeProfile(UserModel user) {
 		return "You must be logged in as " + user.toString()
 				+ " to see the profile of this user.";
 	}
-	
+
 	public static String componentNotExist(Long componentId) {
 		String errorMsg = "An component with ID " + componentId
 				+ " doesn't exist.";
@@ -189,6 +194,10 @@ public abstract class MessagesStrings {
 		String errorMsg = "An component with ID " + componentId + " of study "
 				+ studyId + " doesn't exist.";
 		return errorMsg;
+	}
+
+	public static String componentCloneHtmlNotCloned(String htmlFilePath) {
+		return "Couldn't find HTML file " + htmlFilePath + " to clone.";
 	}
 
 	public static String componentResultNotExist(Long componentResultId) {
@@ -263,7 +272,8 @@ public abstract class MessagesStrings {
 	}
 
 	public static String studyCreationOfPersonalMultipleRunFailed(Long studyId) {
-		return "The creation of a personal multiple run for study " + studyId + " failed.";
+		return "The creation of a personal multiple run for study " + studyId
+				+ " failed.";
 	}
 
 	public static String couldntGeneratePathToFileOrDir(String fileStr) {
@@ -276,15 +286,13 @@ public abstract class MessagesStrings {
 				+ ").";
 	}
 
+	public static String filePathIsntFile(String fileName) {
+		return "File path \"" + fileName + "\" doesn't lead to a file.";
+	}
+
 	public static String dirPathIsntDir(String dirName) {
 		return "Directory path \"" + dirName
 				+ "\" doesn't lead to a directory.";
-	}
-
-	public static String clonedStudyAssetsDirNotCreatedBecauseExists(
-			String dirName) {
-		return "Cloned study assets' directory (" + dirName
-				+ ") couldn't be created because it already exists.";
 	}
 
 	public static String studyAssetsDirNotCreatedBecauseExists(String dirName) {

@@ -338,7 +338,7 @@ $(document).ready(function() {
 			type: 'GET',
 			url: "/jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
 			success: function(result) {
-				showMessages(result);
+				showMessages(JSON.parse(result));
 				componentsTable.ajax.reload();
 				fillSidebar();
 			},
@@ -362,7 +362,7 @@ $(document).ready(function() {
 				url : "/jatos/" + @study.getId() +"/" + componentId + "/remove",
 				type : 'DELETE',
 				success : function(result) {
-					var tr = $(element).closest('tr');
+					showMessages(JSON.parse(result));
 					componentsTable.ajax.reload();
 					fillSidebar();
 				},

@@ -1,9 +1,10 @@
 package gui.services;
 
-import static org.fest.assertions.Assertions.*;
+import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
 import gui.AbstractGuiTest;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
@@ -15,6 +16,8 @@ import org.junit.Test;
 
 import services.gui.ComponentService;
 import services.gui.MessagesStrings;
+import utils.IOUtils;
+
 import common.Global;
 
 /**
@@ -48,7 +51,7 @@ public class ComponentServiceTest extends AbstractGuiTest {
 		addStudy(study);
 
 		ComponentModel component = study.getFirstComponent();
-		ComponentModel clone = componentService.clone(component);
+		ComponentModel clone = componentService.cloneComponentModel(component);
 		clone.setActive(false);
 		clone.setComments("Changed comments");
 		clone.setHtmlFilePath("changed path");
@@ -92,7 +95,7 @@ public class ComponentServiceTest extends AbstractGuiTest {
 		addStudy(study);
 
 		ComponentModel original = study.getFirstComponent();
-		ComponentModel clone = componentService.clone(original);
+		ComponentModel clone = componentService.cloneComponentModel(original);
 
 		// Equal
 		assertThat(clone.getComments()).isEqualTo(original.getComments());
@@ -106,6 +109,11 @@ public class ComponentServiceTest extends AbstractGuiTest {
 		// Not equal
 		assertThat(clone.getId()).isNotEqualTo(original.getId());
 		assertThat(clone.getUuid()).isNotEqualTo(original.getUuid());
+
+		// Check that cloned HTML file exists
+		File clonedHtmlFile = IOUtils.getFileInStudyAssetsDir(
+				study.getDirName(), clone.getHtmlFilePath());
+		assertThat(clonedHtmlFile.isFile()).isTrue();
 
 		// Clean-up
 		removeStudy(study);
@@ -135,8 +143,8 @@ public class ComponentServiceTest extends AbstractGuiTest {
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.componentNotBelongToStudy(nonExistentStudyId,
-							component.getId()));
+					MessagesStrings.componentNotBelongToStudy(
+							nonExistentStudyId, component.getId()));
 		}
 
 		component.setStudy(null);

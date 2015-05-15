@@ -1,10 +1,14 @@
 package services.gui;
 
+import java.io.IOException;
 import java.util.Map;
 
 import models.ComponentModel;
 import models.UserModel;
 import persistance.ComponentDao;
+import play.Logger;
+import services.RequestScopeMessaging;
+import utils.IOUtils;
 import utils.JsonUtils;
 
 import com.google.inject.Inject;
@@ -20,6 +24,9 @@ import exceptions.BadRequestException;
 @Singleton
 public class ComponentService {
 
+	private static final String CLASS_NAME = ComponentService.class
+			.getSimpleName();
+
 	private final ComponentDao componentDao;
 
 	@Inject
@@ -29,9 +36,9 @@ public class ComponentService {
 
 	/**
 	 * Clones a ComponentModel. Does not clone id, uuid, or date. Does not
-	 * persist the clone.
+	 * persist the clone. Does not clone the HTML file.
 	 */
-	public ComponentModel clone(ComponentModel component) {
+	public ComponentModel cloneComponentModel(ComponentModel component) {
 		ComponentModel clone = new ComponentModel();
 		clone.setStudy(component.getStudy());
 		clone.setTitle(component.getTitle());
@@ -40,6 +47,26 @@ public class ComponentService {
 		clone.setActive(component.isActive());
 		clone.setJsonData(component.getJsonData());
 		clone.setComments(component.getComments());
+		return clone;
+	}
+
+	/**
+	 * Does the same as {@link #cloneComponentModel(ComponentModel)
+	 * cloneComponentModel} and additionally clones the HTML file.
+	 */
+	public ComponentModel cloneComponent(ComponentModel component) {
+		ComponentModel clone = cloneComponentModel(component);
+		try {
+			String clonedHtmlFileName = IOUtils.cloneComponentHtmlFile(
+					component.getStudy().getDirName(),
+					component.getHtmlFilePath());
+			clone.setHtmlFilePath(clonedHtmlFileName);
+		} catch (IOException e) {
+			// Just log it - a component is allowed to have no HTML file
+			RequestScopeMessaging.warning(MessagesStrings
+					.componentCloneHtmlNotCloned(component.getHtmlFilePath()));
+			Logger.info(CLASS_NAME + ".cloneComponent: " + e.getMessage());
+		}
 		return clone;
 	}
 

@@ -7,6 +7,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.lang3.StringUtils;
 
@@ -15,8 +16,8 @@ import play.mvc.Results.StringChunks;
 import services.gui.MessagesStrings;
 
 import com.google.inject.Singleton;
-import common.Common;
 
+import common.Common;
 import controllers.publix.StudyAssets;
 
 /**
@@ -188,6 +189,20 @@ public class IOUtils {
 		FileUtils.deleteDirectory(dir);
 	}
 
+	public synchronized static String cloneComponentHtmlFile(
+			String studyAssetsDirName, String htmlFileName) throws IOException {
+		File htmlFile = getFileInStudyAssetsDir(studyAssetsDirName,
+				htmlFileName);
+		if (!htmlFile.isFile()) {
+			throw new IOException(MessagesStrings.filePathIsntFile(htmlFile
+					.getName()));
+		}
+
+		File clonedHtmlFile = generateCloneName(htmlFile);
+		FileUtils.copyFile(htmlFile, clonedHtmlFile);
+		return clonedHtmlFile.getName();
+	}
+
 	/**
 	 * Copies study assets' directory. Adds suffix '_clone' to the name of the
 	 * new assets dir. If a dir with suffix '_clone' already exists it adds '_'
@@ -202,18 +217,36 @@ public class IOUtils {
 					.getName()));
 		}
 
-		String destDirName = srcDirName + "_clone";
-		File destDir = null;
-		// Check if destination dir already exists and if yes add a number as
-		// suffix.
-		int i = 1;
-		while (destDir == null || destDir.exists()) {
-			destDir = getFileSecurely(StudyAssets.STUDY_ASSETS_ROOT_PATH,
-					destDirName);
-			destDirName = srcDirName + "_" + i++;
-		}
+		File destDir = generateCloneName(srcDir);
 		FileUtils.copyDirectory(srcDir, destDir);
 		return destDir.getName();
+	}
+
+	/**
+	 * Generates a filename for a clone of the given file. It tries to add the
+	 * suffix '_clone'. If the file already exists in the file system it tries
+	 * to add numbers starting with 1. It works with files or directories. It
+	 * keeps a file extension.
+	 */
+	private static File generateCloneName(File file) throws IOException {
+		String fileExtension = "";
+		if (!FilenameUtils.getExtension(file.getName()).isEmpty()) {
+			fileExtension = "." + FilenameUtils.getExtension(file.getName());
+		}
+		String cloneFileName = FilenameUtils.removeExtension(file.getName())
+				+ "_clone" + fileExtension;
+
+		File parentDir = file.getParentFile();
+		File clonedFile = null;
+		int i = 1;
+		while (clonedFile == null || clonedFile.exists()) {
+			clonedFile = getFileSecurely(parentDir.getAbsolutePath(),
+					cloneFileName);
+			cloneFileName = FilenameUtils.removeExtension(file.getName()) + "_"
+					+ i + fileExtension;
+			i++;
+		}
+		return clonedFile;
 	}
 
 	/**

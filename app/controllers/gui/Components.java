@@ -299,7 +299,7 @@ public class Components extends Controller {
 		checkStudyAndLockedAndComponent(studyId, componentId, study,
 				loggedInUser, component);
 
-		ComponentModel clone = componentService.clone(component);
+		ComponentModel clone = componentService.cloneComponent(component);
 		componentDao.create(study, clone);
 		return ok(RequestScopeMessaging.getAsJson());
 	}
@@ -322,7 +322,9 @@ public class Components extends Controller {
 				loggedInUser, component);
 
 		componentDao.remove(study, component);
-		return ok().as("text/html");
+		RequestScopeMessaging
+				.success(MessagesStrings.COMPONENT_DELETED_BUT_FILES_NOT);
+		return ok(RequestScopeMessaging.getAsJson());
 	}
 
 	private void checkStudyAndLocked(Long studyId, StudyModel study,
