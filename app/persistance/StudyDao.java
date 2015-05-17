@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.persistence.TypedQuery;
 
 import models.ComponentModel;
+import models.ComponentResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
@@ -24,11 +25,14 @@ import com.google.inject.Singleton;
 public class StudyDao extends AbstractDao {
 
 	private final StudyResultDao studyResultDao;
+	private final ComponentResultDao componentResultDao;
 	private final ComponentDao componentDao;
 
 	@Inject
-	StudyDao(StudyResultDao studyResultDao, ComponentDao componentDao) {
+	StudyDao(StudyResultDao studyResultDao,
+			ComponentResultDao componentResultDao, ComponentDao componentDao) {
 		this.studyResultDao = studyResultDao;
+		this.componentResultDao = componentResultDao;
 		this.componentDao = componentDao;
 	}
 
@@ -87,11 +91,16 @@ public class StudyDao extends AbstractDao {
 	 * Remove study and its components
 	 */
 	public void remove(StudyModel study) {
-		// Remove all study's components
+		// Remove all study's components and their ComponentResults
 		for (ComponentModel component : study.getComponentList()) {
+			List<ComponentResult> componentResultList = componentResultDao
+					.findAllByComponent(component);
+			for (ComponentResult componentResult : componentResultList) {
+				componentResultDao.remove(componentResult);
+			}
 			remove(component);
 		}
-		// Remove study's StudyResults and ComponentResults
+		// Remove study's StudyResults
 		for (StudyResult studyResult : studyResultDao.findAllByStudy(study)) {
 			studyResultDao.remove(studyResult);
 		}
