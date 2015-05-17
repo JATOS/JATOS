@@ -8,6 +8,7 @@ import javax.persistence.TypedQuery;
 import models.ComponentModel;
 import models.ComponentResult;
 import models.StudyResult;
+import play.Logger;
 import play.db.jpa.JPA;
 
 import com.google.inject.Singleton;
@@ -19,6 +20,9 @@ import com.google.inject.Singleton;
  */
 @Singleton
 public class ComponentResultDao extends AbstractDao {
+
+	private static final String CLASS_NAME = ComponentResultDao.class
+			.getSimpleName();
 
 	/**
 	 * Creates ComponentResult for the given Component and adds it to the given
@@ -44,8 +48,15 @@ public class ComponentResultDao extends AbstractDao {
 	 */
 	public void remove(ComponentResult componentResult) {
 		StudyResult studyResult = componentResult.getStudyResult();
-		studyResult.removeComponentResult(componentResult);
-		merge(studyResult);
+		if (studyResult != null) {
+			studyResult.removeComponentResult(componentResult);
+			merge(studyResult);
+		} else {
+			Logger.error(CLASS_NAME + ".remove: StudyResult is null - "
+					+ "but a ComponentResult always belongs to a StudyResult "
+					+ "(ComponentResult's ID is " + componentResult.getId()
+					+ ")");
+		}
 		super.remove(componentResult);
 	}
 
