@@ -13,6 +13,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import services.FlashScopeMessaging;
+import controllers.ControllerUtils;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.gui.JatosGuiException;
 
@@ -43,10 +44,16 @@ public class JatosGuiAction extends Action<JatosGui> {
 			call = Promise.<Result> pure(result);
 		} catch (Exception e) {
 			Logger.error(e.getMessage(), e);
-			FlashScopeMessaging
-					.error("Internal JATOS error: " + e.getMessage());
-			call = Promise.<Result> pure(redirect(controllers.gui.routes.Home
-					.home()));
+			if (ControllerUtils.isAjax()) {
+				call = Promise
+						.<Result> pure(internalServerError(e.getMessage()));
+			} else {
+				FlashScopeMessaging.error("Internal JATOS error: "
+						+ e.getMessage());
+				call = Promise
+						.<Result> pure(redirect(controllers.gui.routes.Home
+								.home()));
+			}
 		}
 		return call;
 	}

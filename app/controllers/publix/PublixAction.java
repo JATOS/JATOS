@@ -1,5 +1,6 @@
 package controllers.publix;
 
+import controllers.ControllerUtils;
 import play.Logger;
 import play.libs.F;
 import play.libs.F.Promise;
@@ -25,9 +26,15 @@ public class PublixAction extends play.mvc.Action.Simple {
 			call = Promise.<Result> pure(result);
 		} catch (Exception e) {
 			Logger.error(e.getMessage(), e);
-			call = Promise
-					.<Result> pure(internalServerError(views.html.publix.error
-							.render("Internal JATOS error: " + e.getMessage())));
+			if (ControllerUtils.isAjax()) {
+				call = Promise
+						.<Result> pure(internalServerError(e.getMessage()));
+			} else {
+				call = Promise
+						.<Result> pure(internalServerError(views.html.publix.error
+								.render("Internal JATOS error: "
+										+ e.getMessage())));
+			}
 		}
 		return call;
 	}
