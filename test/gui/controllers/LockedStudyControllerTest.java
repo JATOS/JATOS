@@ -116,8 +116,8 @@ public class LockedStudyControllerTest extends AbstractGuiTest {
 		jatosPublixUtils.startComponent(studyClone.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 		
-		HandlerRef ref = controllers.gui.routes.ref.ComponentResults
-				.exportData("1");
+		HandlerRef ref = controllers.gui.routes.ref.ImportExport
+				.exportDataOfComponentResults("1");
 		Result result = callAction(ref,
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));

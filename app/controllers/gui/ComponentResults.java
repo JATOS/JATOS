@@ -1,7 +1,6 @@
 package controllers.gui;
 
 import java.io.IOException;
-import java.util.Date;
 
 import models.ComponentModel;
 import models.StudyModel;
@@ -17,11 +16,9 @@ import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.ComponentService;
 import services.gui.JatosGuiExceptionThrower;
-import services.gui.ResultService;
+import services.gui.ResultRemover;
 import services.gui.StudyService;
 import services.gui.UserService;
-import utils.DateUtils;
-import utils.IOUtils;
 import utils.JsonUtils;
 
 import com.google.inject.Inject;
@@ -51,7 +48,7 @@ public class ComponentResults extends Controller {
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
-	private final ResultService resultService;
+	private final ResultRemover resultRemover;
 	private final JsonUtils jsonUtils;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
@@ -59,13 +56,13 @@ public class ComponentResults extends Controller {
 	@Inject
 	ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
-			UserService userService, ResultService resultService,
+			UserService userService, ResultRemover resultRemover,
 			StudyDao studyDao, ComponentDao componentDao, JsonUtils jsonUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
 		this.userService = userService;
-		this.resultService = resultService;
+		this.resultRemover = resultRemover;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.jsonUtils = jsonUtils;
@@ -114,7 +111,8 @@ public class ComponentResults extends Controller {
 	/**
 	 * Ajax request
 	 * 
-	 * Removes all ComponentResults specified in the parameter.
+	 * Removes all ComponentResults specified in the parameter. The parameter is
+	 * a comma separated list of of ComponentResult IDs as a String.
 	 */
 	@Transactional
 	public Result remove(String componentResultIds) throws JatosGuiException {
@@ -123,9 +121,39 @@ public class ComponentResults extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			resultService.removeAllComponentResults(componentResultIds,
+			resultRemover.removeComponentResults(componentResultIds,
 					loggedInUser);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+		return ok().as("text/html");
+	}
+
+	/**
+	 * Ajax request
+	 * 
+	 * Removes all ComponentResults of the given component and study.
+	 */
+	@Transactional
+	public Result removeAllOfComponent(Long studyId, Long componentId)
+			throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".removeAllOfComponent: studyId " + studyId
+				+ ", " + "componentId " + componentId + ", "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		ComponentModel component = componentDao.findById(componentId);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			componentService.checkStandardForComponents(studyId, componentId,
+					loggedInUser, component);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		}
+
+		try {
+			resultRemover.removeAllComponentResults(component, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		return ok().as("text/html");
@@ -160,46 +188,6 @@ public class ComponentResults extends Controller {
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
-	}
-
-	/**
-	 * Ajax request
-	 * 
-	 * Returns all result data of ComponentResults as text for a given
-	 * component.
-	 */
-	@Transactional
-	public Result exportData(String componentResultIds)
-			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".exportData: componentResultIds "
-				+ componentResultIds + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
-		// be sure, in case it's still there)
-		response().discardCookie(StudyResults.JQDOWNLOAD_COOKIE_NAME);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-
-		String componentResultDataAsStr = null;
-		try {
-			componentResultDataAsStr = resultService
-					.generateComponentResultDataStr(componentResultIds,
-							loggedInUser);
-		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
-			jatosGuiExceptionThrower.throwAjax(e);
-		}
-
-		response().setContentType("application/x-download");
-		String filename = "results_" + DateUtils.getDateForFile(new Date())
-				+ "." + IOUtils.TXT_FILE_SUFFIX;
-		response().setHeader("Content-disposition",
-				"attachment; filename=" + filename);
-		// Set cookie for johnculviner's jQuery.fileDownload plugin
-		// This plugin is merely used to detect a failed download. If the
-		// response isn't OK and it doesn't have this cookie then the plugin
-		// regards it as a fail.
-		response().setCookie(StudyResults.JQDOWNLOAD_COOKIE_NAME,
-				StudyResults.JQDOWNLOAD_COOKIE_CONTENT);
-		return ok(componentResultDataAsStr);
 	}
 
 }

@@ -21,7 +21,8 @@ import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
 
 /**
- * Service class for JATOS Controllers (not Publix).
+ * Service class around ComponentResults and StudyResults. It's used by
+ * controllers or other services.
  * 
  * @author Kristian Lange
  */
@@ -44,8 +45,8 @@ public class ResultService {
 
 	/**
 	 * Parses a String with result IDs and returns them in a List<Long>. Throws
-	 * an Exception if an ID is not a number or if the original String doesn't
-	 * contain any ID.
+	 * an BadRequestException if an ID is not a number or if the original String
+	 * doesn't contain any ID.
 	 */
 	public List<Long> extractResultIds(String resultIds)
 			throws BadRequestException {
@@ -70,20 +71,30 @@ public class ResultService {
 
 	/**
 	 * Checks a list of ComponentResult. Checks each ComponentResult whether the
-	 * belonging Study and Component are fine. It also checks whether the study
-	 * is locked. In case of any problem an Exception is thrown.
+	 * belonging Study and Component are fine (checkStandard). It also checks
+	 * whether the study is locked.
+	 * 
+	 * @param componentResultList
+	 *            A list of ComponentResults
+	 * @param user
+	 *            The study that corresponds to the results must have this user
+	 *            as a member otherwise ForbiddenException will be thrown.
+	 * @param studyMustNotBeLocked
+	 *            If true the study that corresponds to the results must not be
+	 *            locked and it will throw an ForbiddenException.
+	 * @throws ForbiddenException
+	 * @throws BadRequestException
 	 */
-	public void checkAllComponentResults(
-			List<ComponentResult> componentResultList, UserModel loggedInUser,
+	public void checkComponentResults(
+			List<ComponentResult> componentResultList, UserModel user,
 			boolean studyMustNotBeLocked) throws ForbiddenException,
 			BadRequestException {
 		for (ComponentResult componentResult : componentResultList) {
 			ComponentModel component = componentResult.getComponent();
 			StudyModel study = component.getStudy();
-			studyService.checkStandardForStudy(study, study.getId(),
-					loggedInUser);
+			studyService.checkStandardForStudy(study, study.getId(), user);
 			componentService.checkStandardForComponents(study.getId(),
-					component.getId(), loggedInUser, component);
+					component.getId(), user, component);
 			if (studyMustNotBeLocked) {
 				studyService.checkStudyLocked(study);
 			}
@@ -92,16 +103,26 @@ public class ResultService {
 
 	/**
 	 * Checks a list of StudyResult. Checks each StudyResult whether the
-	 * belonging Study is fine. It also checks whether the study is locked. In
-	 * case of any problem an Exception is thrown.
+	 * belonging Study is fine (checkStandard). It also checks whether the study
+	 * is locked.
+	 * 
+	 * @param studyResultList
+	 *            A list of StudyResults
+	 * @param user
+	 *            The study that corresponds to the results must have this user
+	 *            as a member otherwise ForbiddenException will be thrown.
+	 * @param studyMustNotBeLocked
+	 *            If true the study that corresponds to the results must not be
+	 *            locked and it will throw an ForbiddenException.
+	 * @throws ForbiddenException
+	 * @throws BadRequestException
 	 */
-	public void checkAllStudyResults(List<StudyResult> studyResultList,
-			UserModel loggedInUser, boolean studyMustNotBeLocked)
+	public void checkStudyResults(List<StudyResult> studyResultList,
+			UserModel user, boolean studyMustNotBeLocked)
 			throws ForbiddenException, BadRequestException {
 		for (StudyResult studyResult : studyResultList) {
 			StudyModel study = studyResult.getStudy();
-			studyService.checkStandardForStudy(study, study.getId(),
-					loggedInUser);
+			studyService.checkStandardForStudy(study, study.getId(), user);
 			if (studyMustNotBeLocked) {
 				studyService.checkStudyLocked(study);
 			}
@@ -109,37 +130,10 @@ public class ResultService {
 	}
 
 	/**
-	 * Retrieves the to the IDs corresponding StudyResults, checks them and
-	 * returns them all in one string.
+	 * Gets the corresponding ComponentResult for a list of IDs. Throws an
+	 * exception if the ComponentResult doesn't exist.
 	 */
-	public String generateStudyResultStr(String studyResultIds,
-			UserModel loggedInUser) throws BadRequestException,
-			NotFoundException, ForbiddenException {
-		List<Long> studyResultIdList = extractResultIds(studyResultIds);
-		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
-		checkAllStudyResults(studyResultList, loggedInUser, false);
-		String studyResultDataAsStr = getStudyResultData(studyResultList);
-		return studyResultDataAsStr;
-	}
-
-	/**
-	 * Retrieves the to the IDs corresponding ComponentResults, checks them and
-	 * returns them all in one string.
-	 */
-	public String generateComponentResultDataStr(String componentResultIds,
-			UserModel loggedInUser) throws BadRequestException,
-			NotFoundException, ForbiddenException {
-		List<Long> componentResultIdList = extractResultIds(componentResultIds);
-		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
-		checkAllComponentResults(componentResultList, loggedInUser, false);
-		String componentResultDataAsStr = getComponentResultData(componentResultList);
-		return componentResultDataAsStr;
-	}
-
-	/**
-	 * Gets the corresponding ComponentResult for a list of IDs.
-	 */
-	public List<ComponentResult> getAllComponentResults(
+	public List<ComponentResult> getComponentResults(
 			List<Long> componentResultIdList) throws NotFoundException {
 		List<ComponentResult> componentResultList = new ArrayList<>();
 		for (Long componentResultId : componentResultIdList) {
@@ -156,11 +150,10 @@ public class ResultService {
 	}
 
 	/**
-	 * Get all StudyResults or throw an Exception if one doesn't exist.
-	 * 
-	 * @throws NotFoundException
+	 * Get all StudyResults or throw an Exception if one doesn't exist. Throws an
+	 * exception if the StudyResult doesn't exist.
 	 */
-	public List<StudyResult> getAllStudyResults(List<Long> studyResultIdList)
+	public List<StudyResult> getStudyResults(List<Long> studyResultIdList)
 			throws NotFoundException {
 		List<StudyResult> studyResultList = new ArrayList<>();
 		for (Long studyResultId : studyResultIdList) {
@@ -176,13 +169,14 @@ public class ResultService {
 
 	/**
 	 * Generate the list of StudyResults that belong to the given Worker and
-	 * that the logged-in user is allowed to see.
+	 * that the given user is allowed to see. A user is allowed if the study
+	 * that the StudyResult belongs too has the user as a member.
 	 */
-	public List<StudyResult> getAllowedStudyResultList(UserModel loggedInUser,
+	public List<StudyResult> getAllowedStudyResultList(UserModel user,
 			Worker worker) {
 		List<StudyResult> allowedStudyResultList = new ArrayList<StudyResult>();
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().hasMember(loggedInUser)) {
+			if (studyResult.getStudy().hasMember(user)) {
 				allowedStudyResultList.add(studyResult);
 			}
 		}
@@ -190,14 +184,14 @@ public class ResultService {
 	}
 
 	/**
-	 * Put all StudyResult's data into a String each in a separate line.
+	 * Put all StudyResult's result data into a String each in a separate line.
 	 */
-	public String getStudyResultData(List<StudyResult> studyResultList) {
+	public String studyResultDataToString(List<StudyResult> studyResultList) {
 		StringBuilder sb = new StringBuilder();
 		Iterator<StudyResult> iterator = studyResultList.iterator();
 		while (iterator.hasNext()) {
 			StudyResult studyResult = iterator.next();
-			String componentResultData = getComponentResultData(studyResult
+			String componentResultData = componentResultDataToString(studyResult
 					.getComponentResultList());
 			sb.append(componentResultData);
 			if (iterator.hasNext()) {
@@ -210,7 +204,7 @@ public class ResultService {
 	/**
 	 * Put all ComponentResult's data into a String each in a separate line.
 	 */
-	public String getComponentResultData(
+	public String componentResultDataToString(
 			List<ComponentResult> componentResultList) {
 		StringBuilder sb = new StringBuilder();
 		Iterator<ComponentResult> iterator = componentResultList.iterator();
@@ -225,36 +219,6 @@ public class ResultService {
 			}
 		}
 		return sb.toString();
-	}
-
-	/**
-	 * Retrieves all ComponentResults that correspond to the IDs in the given
-	 * String, checks them and removes them.
-	 */
-	public void removeAllComponentResults(String componentResultIds,
-			UserModel loggedInUser) throws BadRequestException,
-			NotFoundException, ForbiddenException {
-		List<Long> componentResultIdList = extractResultIds(componentResultIds);
-		List<ComponentResult> componentResultList = getAllComponentResults(componentResultIdList);
-		checkAllComponentResults(componentResultList, loggedInUser, true);
-		for (ComponentResult componentResult : componentResultList) {
-			componentResultDao.remove(componentResult);
-		}
-	}
-
-	/**
-	 * Retrieves all StudyResults that correspond to the IDs in the given
-	 * String, checks if you are allowed to remove them and removes them.
-	 */
-	public void removeAllStudyResults(String studyResultIds,
-			UserModel loggedInUser) throws BadRequestException,
-			NotFoundException, ForbiddenException {
-		List<Long> studyResultIdList = extractResultIds(studyResultIds);
-		List<StudyResult> studyResultList = getAllStudyResults(studyResultIdList);
-		checkAllStudyResults(studyResultList, loggedInUser, true);
-		for (StudyResult studyResult : studyResultList) {
-			studyResultDao.remove(studyResult);
-		}
 	}
 
 }

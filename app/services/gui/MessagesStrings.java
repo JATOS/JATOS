@@ -63,7 +63,9 @@ public abstract class MessagesStrings {
 
 	// Results
 	public static final String RESULTS_EXPORT_DATA = "Select results and export them as a text file to your local file system";
+	public static final String RESULTS_EXPORT_ALL_DATA = "Export all results as a text file to your local file system";
 	public static final String RESULTS_DELETE = "Select results and delete them";
+	public static final String RESULTS_DELETE_ALL = "Delete all results";
 	public static final String RESULTS_INFO = "Select a result for export or deletion by clicking anywhere on its row.";
 	public static final String RESULTS_DATA = "Click on the + icon to open the result's data";
 	public static final String RESULTS_START_TIME = "Time according to the JATOS server";

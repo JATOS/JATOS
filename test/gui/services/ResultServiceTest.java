@@ -4,7 +4,6 @@ import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
-import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
 import gui.AbstractGuiTest;
 
@@ -57,6 +56,8 @@ public class ResultServiceTest extends AbstractGuiTest {
 	@Test
 	public void checkExtractResultIds() {
 		List<Long> resultIdList = null;
+
+		// Valid ID string
 		try {
 			resultIdList = resultService.extractResultIds("1,2,3");
 		} catch (BadRequestException e) {
@@ -64,6 +65,7 @@ public class ResultServiceTest extends AbstractGuiTest {
 		}
 		checkForProperResultIdList(resultIdList);
 
+		// Still valid, but with weird whitespaces and empty fields
 		try {
 			resultIdList = resultService
 					.extractResultIds(" , ,, 1 ,2    ,  3    , ");
@@ -72,6 +74,7 @@ public class ResultServiceTest extends AbstractGuiTest {
 		}
 		checkForProperResultIdList(resultIdList);
 
+		// Not valid due to letter instead of number
 		try {
 			resultIdList = resultService.extractResultIds("1,b,3");
 			Fail.fail();
@@ -80,6 +83,7 @@ public class ResultServiceTest extends AbstractGuiTest {
 					MessagesStrings.resultIdMalformed("b"));
 		}
 
+		// Not valid due to empty
 		try {
 			resultIdList = resultService.extractResultIds("");
 			Fail.fail();
@@ -97,22 +101,160 @@ public class ResultServiceTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void checkGetAllComponentResultsAndRemoveAllComponentResults()
-			throws BadRequestException, NoSuchAlgorithmException, IOException,
-			ForbiddenPublixException, ForbiddenReloadException,
+	public void checkCheckComponentResults() throws ForbiddenReloadException,
+			NoSuchAlgorithmException, IOException, BadRequestException,
 			NotFoundException, ForbiddenException {
-		List<Long> idList = resultService.extractResultIds("1, 2");
-		try {
-			resultService.getAllComponentResults(idList);
-			Fail.fail();
-		} catch (NotFoundException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.componentResultNotExist(1l));
-		}
-
 		StudyModel study = importExampleStudy();
 		addStudy(study);
+		createTwoComponentResults(study);
 
+		List<Long> idList = resultService.extractResultIds("1, 2");
+		List<ComponentResult> componentResultList = resultService
+				.getComponentResults(idList);
+
+		// Must not throw an exception
+		resultService.checkComponentResults(componentResultList, admin, true);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkCheckComponentResultsWrongUser()
+			throws ForbiddenReloadException, NoSuchAlgorithmException,
+			IOException, BadRequestException, NotFoundException,
+			ForbiddenException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+		createTwoComponentResults(study);
+
+		List<Long> idList = resultService.extractResultIds("1, 2");
+		List<ComponentResult> componentResultList = resultService
+				.getComponentResults(idList);
+
+		// Check results with wrong user
+		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
+		try {
+			resultService.checkComponentResults(componentResultList, testUser,
+					true);
+		} catch (ForbiddenException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.studyNotMember(testUser.getName(),
+							testUser.getEmail(), study.getId(),
+							study.getTitle()));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkCheckComponentResultsLocked()
+			throws ForbiddenReloadException, NoSuchAlgorithmException,
+			IOException, BadRequestException, NotFoundException,
+			ForbiddenException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+		createTwoComponentResults(study);
+
+		List<Long> idList = resultService.extractResultIds("1, 2");
+		List<ComponentResult> componentResultList = resultService
+				.getComponentResults(idList);
+
+		// Lock study
+		entityManager.getTransaction().begin();
+		componentResultList.get(0).getComponent().getStudy().setLocked(true);
+		entityManager.getTransaction().commit();
+
+		// Must not throw an exception since we tell it not to check for locked
+		// study
+		resultService.checkComponentResults(componentResultList, admin, false);
+
+		// Must throw an exception since we told it to check for locked study
+		try {
+			resultService.checkComponentResults(componentResultList, admin,
+					true);
+		} catch (ForbiddenException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.studyLocked(study.getId()));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkCheckStudyResults() throws ForbiddenReloadException,
+			NoSuchAlgorithmException, IOException, BadRequestException,
+			NotFoundException, ForbiddenException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+		createTwoStudyResults(study);
+
+		List<Long> idList = resultService.extractResultIds("1, 2");
+		List<StudyResult> studyResultList = resultService
+				.getStudyResults(idList);
+
+		// Must not throw an exception
+		resultService.checkStudyResults(studyResultList, admin, true);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkCheckStudyResultsLocked() throws ForbiddenReloadException,
+			NoSuchAlgorithmException, IOException, BadRequestException,
+			NotFoundException, ForbiddenException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+		createTwoStudyResults(study);
+
+		List<Long> idList = resultService.extractResultIds("1, 2");
+		List<StudyResult> studyResultList = resultService
+				.getStudyResults(idList);
+
+		// Lock study
+		entityManager.getTransaction().begin();
+		studyResultList.get(0).getStudy().setLocked(true);
+		entityManager.getTransaction().commit();
+
+		// Must not throw an exception since we tell it not to check for locked
+		// study
+		resultService.checkStudyResults(studyResultList, admin, false);
+
+		// Must throw an exception since we told it to check for locked study
+		try {
+			resultService.checkStudyResults(studyResultList, admin, true);
+		} catch (ForbiddenException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.studyLocked(study.getId()));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkGetComponentResults() throws IOException,
+			NoSuchAlgorithmException, ForbiddenReloadException,
+			BadRequestException, NotFoundException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+		createTwoComponentResults(study);
+
+		// Check that we can get ComponentResults
+		List<Long> idList = resultService.extractResultIds("1, 2");
+		List<ComponentResult> componentResultList = null;
+		componentResultList = resultService.getComponentResults(idList);
+		assertThat(componentResultList.size()).isEqualTo(2);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	private void createTwoComponentResults(StudyModel study)
+			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
 				admin.getWorker());
@@ -123,44 +265,40 @@ public class ResultServiceTest extends AbstractGuiTest {
 		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
 		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
+	}
 
-		List<ComponentResult> componentResultList = null;
-		try {
-			componentResultList = resultService.getAllComponentResults(idList);
-		} catch (NotFoundException e) {
-			Fail.fail();
-		}
-		assertThat(componentResultList.size()).isEqualTo(2);
+	@Test
+	public void checkGetComponentResultsWrongId() throws IOException,
+			BadRequestException, ForbiddenReloadException,
+			NoSuchAlgorithmException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+		createTwoComponentResults(study);
 
 		// If one of the IDs don't exist it throws an exception
-		idList = resultService.extractResultIds("1, 2, 9, 10");
+		List<Long> idList = resultService.extractResultIds("1, 2, 9, 10");
 		try {
-			resultService.getAllComponentResults(idList);
+			resultService.getComponentResults(idList);
 			Fail.fail();
 		} catch (NotFoundException e) {
 			assertThat(e.getMessage()).isEqualTo(
 					MessagesStrings.componentResultNotExist(9l));
 		}
 
-		// And try to remove them again - first with the wrong user
-		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
-		try {
-			resultService.removeAllComponentResults("1, 2", testUser);
-			Fail.fail();
-		} catch (ForbiddenException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyNotMember(testUser.getName(),
-							testUser.getEmail(), study.getId(),
-							study.getTitle()));
-		}
+		// Clean-up
+		removeStudy(study);
+	}
 
-		// Now remove them for real
-		entityManager.getTransaction().begin();
-		resultService.removeAllComponentResults("1, 2", admin);
-		entityManager.getTransaction().commit();
-		idList = resultService.extractResultIds("1, 2");
+	@Test
+	public void checkGetComponentResultsNotExist() throws BadRequestException,
+			NoSuchAlgorithmException, IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		// Check that ComponentResults with ID 1, 2 don't exist
+		List<Long> idList = resultService.extractResultIds("1, 2");
 		try {
-			resultService.getAllComponentResults(idList);
+			resultService.getComponentResults(idList);
 			Fail.fail();
 		} catch (NotFoundException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -172,77 +310,42 @@ public class ResultServiceTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void checkGetComponentResultData() throws NoSuchAlgorithmException,
-			IOException, ForbiddenPublixException, ForbiddenReloadException,
-			BadRequestException {
+	public void checkGetStudyResults() throws IOException,
+			NoSuchAlgorithmException, BadRequestException, NotFoundException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
-
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
-				admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		ComponentResult componentResult1 = jatosPublixUtils.startComponent(
-				study.getFirstComponent(), studyResult);
-		componentResult1.setData("Thats a first component result.");
-		ComponentResult componentResult2 = jatosPublixUtils.startComponent(
-				study.getFirstComponent(), studyResult);
-		componentResult2.setData("Thats a second component result.");
-		entityManager.getTransaction().commit();
+		createTwoStudyResults(study);
 
 		List<Long> idList = resultService.extractResultIds("1, 2");
-		String componentResultData = null;
-		try {
-			List<ComponentResult> componentResultList = resultService
-					.getAllComponentResults(idList);
-			componentResultData = resultService
-					.getComponentResultData(componentResultList);
-		} catch (NotFoundException e) {
-			Fail.fail();
-		}
-		assertThat(componentResultData)
-				.isEqualTo(
-						"Thats a first component result.\nThats a second component result.");
-
-		// Do the same but this time without data
-		entityManager.getTransaction().begin();
-		componentResult1.setData(null);
-		componentResult2.setData(null);
-		entityManager.getTransaction().commit();
-
-		idList = resultService.extractResultIds("1, 2");
-		componentResultData = null;
-		try {
-			List<ComponentResult> componentResultList = resultService
-					.getAllComponentResults(idList);
-			componentResultData = resultService
-					.getComponentResultData(componentResultList);
-		} catch (NotFoundException e) {
-			Fail.fail();
-		}
-		assertThat(componentResultData).isEmpty();
+		List<StudyResult> studyResultList = resultService
+				.getStudyResults(idList);
+		assertThat(studyResultList.size()).isEqualTo(2);
 
 		// Clean-up
 		removeStudy(study);
 	}
 
 	@Test
-	public void checkGetAllStudyResultsAndRemoveAllStudyResults()
-			throws NoSuchAlgorithmException, IOException, BadRequestException,
-			NotFoundException, ForbiddenException {
+	public void checkGetStudyResultsNotExist() throws NoSuchAlgorithmException,
+			IOException, BadRequestException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		// Don't add any results
 		List<Long> idList = resultService.extractResultIds("1, 2");
 		try {
-			resultService.getAllStudyResults(idList);
+			resultService.getStudyResults(idList);
 			Fail.fail();
 		} catch (NotFoundException e) {
 			assertThat(e.getMessage()).isEqualTo(
 					MessagesStrings.studyResultNotExist(1l));
 		}
 
-		StudyModel study = importExampleStudy();
-		addStudy(study);
+		// Clean-up
+		removeStudy(study);
+	}
 
+	private void createTwoStudyResults(StudyModel study) {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = studyResultDao.create(study,
 				admin.getWorker());
@@ -253,70 +356,44 @@ public class ResultServiceTest extends AbstractGuiTest {
 		// Have to set worker manually in test - don't know why
 		studyResult2.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
-
-		List<StudyResult> studyResultList = null;
-		try {
-			studyResultList = resultService.getAllStudyResults(idList);
-		} catch (NotFoundException e) {
-			Fail.fail();
-		}
-		assertThat(studyResultList.size()).isEqualTo(2);
-
-		// And now try to remove them again - first with the wrong user
-		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
-		try {
-			resultService.removeAllStudyResults("1,2", testUser);
-			Fail.fail();
-		} catch (ForbiddenException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyNotMember(testUser.getName(),
-							testUser.getEmail(), study.getId(),
-							study.getTitle()));
-		}
-		// Now remove them for real
-		entityManager.getTransaction().begin();
-		resultService.removeAllStudyResults("1,2", admin);
-		entityManager.getTransaction().commit();
-		try {
-			studyResultList = resultService.getAllStudyResults(idList);
-			Fail.fail();
-		} catch (NotFoundException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyResultNotExist(1l));
-		}
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
 	public void checkGetAllowedStudyResultList()
 			throws NoSuchAlgorithmException, IOException, BadRequestException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+		createTwoStudyResults(study);
+
+		// Must have 2 results
 		List<StudyResult> studyResultList = resultService
 				.getAllowedStudyResultList(admin, admin.getWorker());
-		assertThat(studyResultList).isEmpty();
+		assertThat(studyResultList.size()).isEqualTo(2);
 
+		// Leave the StudyResult but remove admin from the members of the
+		// corresponding study
+		entityManager.getTransaction().begin();
+		studyResultList.get(0).getStudy().removeMember(admin);
+		entityManager.getTransaction().commit();
+
+		// Must be empty
+		studyResultList = resultService.getAllowedStudyResultList(admin,
+				admin.getWorker());
+		assertThat(studyResultList.size()).isEqualTo(0);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkGetAllowedStudyResultListEmpty() throws IOException,
+			NoSuchAlgorithmException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
-		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = studyResultDao.create(study,
-				admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult1.setWorker(admin.getWorker());
-		StudyResult studyResult2 = studyResultDao.create(study,
-				admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult2.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
-
-		studyResultList = resultService.getAllowedStudyResultList(admin,
-				admin.getWorker());
-		assertThat(studyResultList.size()).isEqualTo(2);
-
-		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
-		studyResultList = resultService.getAllowedStudyResultList(admin,
-				testUser.getWorker());
+		// Don't add any results
+		List<StudyResult> studyResultList = resultService
+				.getAllowedStudyResultList(admin, admin.getWorker());
 		assertThat(studyResultList).isEmpty();
 
 		// Clean-up
@@ -324,53 +401,17 @@ public class ResultServiceTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void checkGetStudyResultData() throws NoSuchAlgorithmException,
-			IOException, ForbiddenPublixException, ForbiddenReloadException,
-			BadRequestException, NotFoundException {
+	public void checkGetAllowedStudyResultListWrongUser()
+			throws NoSuchAlgorithmException, IOException, BadRequestException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
+		createTwoStudyResults(study);
 
-		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = studyResultDao.create(study,
-				admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult1.setWorker(admin.getWorker());
-		ComponentResult componentResult11 = jatosPublixUtils.startComponent(
-				study.getFirstComponent(), studyResult1);
-		componentResult11
-				.setData("Thats a first component of the first study result.");
-		ComponentResult componentResult12 = jatosPublixUtils.startComponent(
-				study.getFirstComponent(), studyResult1);
-		componentResult12
-				.setData("Thats a second component of the first study result.");
-		StudyResult studyResult2 = studyResultDao.create(study,
-				admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult2.setWorker(admin.getWorker());
-		ComponentResult componentResult21 = jatosPublixUtils.startComponent(
-				study.getFirstComponent(), studyResult2);
-		componentResult21
-				.setData("Thats a first component of the second study result.");
-		ComponentResult componentResult22 = jatosPublixUtils.startComponent(
-				study.getFirstComponent(), studyResult2);
-		componentResult22
-				.setData("Thats a second component of the second study result.");
-		entityManager.getTransaction().commit();
-
-		List<Long> idList = resultService.extractResultIds("1, 2");
+		// Use wrong user to retrieve results
+		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 		List<StudyResult> studyResultList = resultService
-				.getAllStudyResults(idList);
-		String studyResultData = resultService
-				.getStudyResultData(studyResultList);
-		assertThat(studyResultData)
-				.isEqualTo(
-						"Thats a first component of the first study result."
-								+ "\n"
-								+ "Thats a second component of the first study result."
-								+ "\n"
-								+ "Thats a first component of the second study result."
-								+ "\n"
-								+ "Thats a second component of the second study result.");
+				.getAllowedStudyResultList(admin, testUser.getWorker());
+		assertThat(studyResultList).isEmpty();
 
 		// Clean-up
 		removeStudy(study);

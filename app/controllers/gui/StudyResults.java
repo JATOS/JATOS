@@ -1,7 +1,6 @@
 package controllers.gui;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 
 import models.StudyModel;
@@ -19,12 +18,11 @@ import services.RequestScopeMessaging;
 import services.gui.Breadcrumbs;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.MessagesStrings;
+import services.gui.ResultRemover;
 import services.gui.ResultService;
 import services.gui.StudyService;
 import services.gui.UserService;
 import services.gui.WorkerService;
-import utils.DateUtils;
-import utils.IOUtils;
 import utils.JsonUtils;
 
 import com.google.inject.Inject;
@@ -48,14 +46,13 @@ import exceptions.gui.JatosGuiException;
 public class StudyResults extends Controller {
 
 	private static final String CLASS_NAME = StudyResults.class.getSimpleName();
-	public static final String JQDOWNLOAD_COOKIE_NAME = "fileDownload";
-	public static final String JQDOWNLOAD_COOKIE_CONTENT = "true";
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final JsonUtils jsonUtils;
 	private final StudyService studyService;
 	private final UserService userService;
 	private final WorkerService workerService;
+	private final ResultRemover resultRemover;
 	private final ResultService resultService;
 	private final StudyDao studyDao;
 	private final WorkerDao workerDao;
@@ -63,12 +60,14 @@ public class StudyResults extends Controller {
 	@Inject
 	StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
-			WorkerService workerService, ResultService resultService,
-			StudyDao studyDao, JsonUtils jsonUtils, WorkerDao workerDao) {
+			WorkerService workerService, ResultRemover resultRemover,
+			ResultService resultService, StudyDao studyDao,
+			JsonUtils jsonUtils, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
 		this.workerService = workerService;
+		this.resultRemover = resultRemover;
 		this.resultService = resultService;
 		this.studyDao = studyDao;
 		this.jsonUtils = jsonUtils;
@@ -112,7 +111,9 @@ public class StudyResults extends Controller {
 	/**
 	 * Ajax request
 	 * 
-	 * Takes a string with a list of StudyResults and removes them all.
+	 * Removes all StudyResults specified in the parameter. The parameter is a
+	 * comma separated list of of StudyResults IDs as a String. Removing a
+	 * StudyResult always removes it's ComponentResults.
 	 */
 	@Transactional
 	public Result remove(String studyResultIds) throws JatosGuiException {
@@ -121,8 +122,61 @@ public class StudyResults extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			resultService.removeAllStudyResults(studyResultIds, loggedInUser);
+			resultRemover.removeStudyResults(studyResultIds, loggedInUser);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+		return ok().as("text/html");
+	}
+
+	/**
+	 * Ajax request
+	 * 
+	 * Removes all StudyResults of the given study.
+	 */
+	@Transactional
+	public Result removeAllOfStudy(Long studyId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".removeAllOfStudy: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		StudyModel study = studyDao.findById(studyId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+		}
+
+		try {
+			resultRemover.removeAllStudyResults(study, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+		return ok().as("text/html");
+	}
+
+	/**
+	 * Ajax request
+	 * 
+	 * Removes all StudyResults that belong to the given worker and the
+	 * logged-in user is allowed to delete (only if he's a member of the study).
+	 */
+	@Transactional
+	public Result removeAllOfWorker(Long workerId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".removeAllOfWorker: workerId " + workerId
+				+ ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
+		Worker worker = workerDao.findById(workerId);
+		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		try {
+			workerService.checkWorker(worker, workerId);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwRedirect(e,
+					controllers.gui.routes.Home.home());
+		}
+
+		try {
+			resultRemover.removeAllStudyResults(worker, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		return ok().as("text/html");
@@ -182,43 +236,6 @@ public class StudyResults extends Controller {
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 		return ok(dataAsJson);
-	}
-
-	/**
-	 * Ajax request
-	 * 
-	 * Returns all result data of ComponentResults belonging to StudyResults
-	 * specified in the given string as text.
-	 */
-	@Transactional
-	public Result exportData(String studyResultIds) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".exportData: studyResultIds "
-				+ studyResultIds + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
-		// be sure, in case it's still there)
-		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-
-		String studyResultDataAsStr = null;
-		try {
-			studyResultDataAsStr = resultService.generateStudyResultStr(
-					studyResultIds, loggedInUser);
-		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
-			jatosGuiExceptionThrower.throwAjax(e);
-		}
-
-		response().setContentType("application/x-download");
-		String filename = "results_" + DateUtils.getDateForFile(new Date())
-				+ "." + IOUtils.TXT_FILE_SUFFIX;
-		response().setHeader("Content-disposition",
-				"attachment; filename=" + filename);
-		// Set cookie for johnculviner's jQuery.fileDownload plugin
-		// This plugin is merely used to detect a failed download. If the
-		// response isn't OK and it doesn't have this cookie then the plugin
-		// regards it as a fail.
-		response().setCookie(JQDOWNLOAD_COOKIE_NAME, JQDOWNLOAD_COOKIE_CONTENT);
-		return ok(studyResultDataAsStr);
 	}
 
 }

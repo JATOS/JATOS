@@ -40,8 +40,8 @@ import exceptions.publix.PublixException;
  * MTSandboxWorker) will be forwarded to MTPublix.<br>
  * 2. Requests coming from Jatos' UI (if clicked on show study/component) run
  * (JatosWorker) will be forwarded to JatosPublix.<br>
- * 3. Requests coming from a personal multiple run (PMWorker) will be forwarded to
- * PMPublix.<br>
+ * 3. Requests coming from a personal multiple run (PMWorker) will be forwarded
+ * to PMPublix.<br>
  * 4. Requests coming from a closed standalone run (limited to pre-created
  * ClosedStandaloneWorker) will be forwarded to ClosedStandalonePublix.<br>
  * 5. Requests coming from an open standalone run (unlimited to everyone with
@@ -59,8 +59,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	public static final String WORKER_TYPE = "workerType";
 
-	private static Object lock = new Object();
-
 	private final JatosPublix jatosPublix;
 	private final MTPublix mtPublix;
 	private final PMPublix pmPublix;
@@ -69,8 +67,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Inject
 	PublixInterceptor(JatosPublix jatosPublix, MTPublix mtPublix,
-			PMPublix pmPublix,
-			ClosedStandalonePublix closedStandalonePublix,
+			PMPublix pmPublix, ClosedStandalonePublix closedStandalonePublix,
 			OpenStandalonePublix openStandalonePublix) {
 		this.jatosPublix = jatosPublix;
 		this.mtPublix = mtPublix;
@@ -82,68 +79,63 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public Result startStudy(Long studyId) throws PublixException {
-		synchronized (lock) {
-			Result result = null;
-			String workerType = getWorkerTypeFromQuery();
-			// Put worker type into session so later Pulix calls of this study
-			// run know it too
-			session(WORKER_TYPE, workerType);
-			switch (workerType) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.startStudy(studyId);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.startStudy(studyId);
-				break;
-			case PMWorker.WORKER_TYPE:
-				result = pmPublix.startStudy(studyId);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.startStudy(studyId);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.startStudy(studyId);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return result;
+		Result result = null;
+		String workerType = getWorkerTypeFromQuery();
+		// Put worker type into session so later Publix calls of this study
+		// run know it too
+		session(WORKER_TYPE, workerType);
+		switch (workerType) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.startStudy(studyId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.startStudy(studyId);
+			break;
+		case PMWorker.WORKER_TYPE:
+			result = pmPublix.startStudy(studyId);
+			break;
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			result = closedStandalonePublix.startStudy(studyId);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			result = openStandalonePublix.startStudy(studyId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
+		return result;
 	}
 
 	@Override
 	@Transactional
 	public Promise<Result> startComponent(Long studyId, Long componentId)
 			throws PublixException {
-		synchronized (lock) {
-			Promise<Result> promise = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				promise = mtPublix.startComponent(studyId, componentId);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				promise = jatosPublix.startComponent(studyId, componentId);
-				break;
-			case PMWorker.WORKER_TYPE:
-				promise = pmPublix.startComponent(studyId, componentId);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				promise = closedStandalonePublix.startComponent(studyId,
-						componentId);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				promise = openStandalonePublix.startComponent(studyId,
-						componentId);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return promise;
+		Promise<Result> promise = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			promise = mtPublix.startComponent(studyId, componentId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			promise = jatosPublix.startComponent(studyId, componentId);
+			break;
+		case PMWorker.WORKER_TYPE:
+			promise = pmPublix.startComponent(studyId, componentId);
+			break;
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			promise = closedStandalonePublix.startComponent(studyId,
+					componentId);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			promise = openStandalonePublix.startComponent(studyId, componentId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
+		return promise;
 	}
 
 	@Override
@@ -182,229 +174,213 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public Result startNextComponent(Long studyId) throws PublixException {
-		synchronized (lock) {
-			Result result = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.startNextComponent(studyId);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.startNextComponent(studyId);
-				break;
-			case PMWorker.WORKER_TYPE:
-				result = pmPublix.startNextComponent(studyId);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.startNextComponent(studyId);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.startNextComponent(studyId);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return result;
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.startNextComponent(studyId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.startNextComponent(studyId);
+			break;
+		case PMWorker.WORKER_TYPE:
+			result = pmPublix.startNextComponent(studyId);
+			break;
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			result = closedStandalonePublix.startNextComponent(studyId);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			result = openStandalonePublix.startNextComponent(studyId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
+		return result;
 	}
 
 	@Override
 	@Transactional
 	public Result getInitData(Long studyId, Long componentId)
 			throws PublixException, IOException {
-		synchronized (lock) {
-			Result result = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.getInitData(studyId, componentId);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.getInitData(studyId, componentId);
-				break;
-			case PMWorker.WORKER_TYPE:
-				result = pmPublix.getInitData(studyId, componentId);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.getInitData(studyId,
-						componentId);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.getInitData(studyId, componentId);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return result;
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.getInitData(studyId, componentId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.getInitData(studyId, componentId);
+			break;
+		case PMWorker.WORKER_TYPE:
+			result = pmPublix.getInitData(studyId, componentId);
+			break;
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			result = closedStandalonePublix.getInitData(studyId, componentId);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			result = openStandalonePublix.getInitData(studyId, componentId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
+		return result;
 	}
 
 	@Override
 	@Transactional
 	public Result setStudySessionData(Long studyId) throws PublixException,
 			JsonProcessingException {
-		synchronized (lock) {
-			Result result = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.setStudySessionData(studyId);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.setStudySessionData(studyId);
-				break;
-			case PMWorker.WORKER_TYPE:
-				result = pmPublix.setStudySessionData(studyId);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.setStudySessionData(studyId);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.setStudySessionData(studyId);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return result;
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.setStudySessionData(studyId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.setStudySessionData(studyId);
+			break;
+		case PMWorker.WORKER_TYPE:
+			result = pmPublix.setStudySessionData(studyId);
+			break;
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			result = closedStandalonePublix.setStudySessionData(studyId);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			result = openStandalonePublix.setStudySessionData(studyId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
+		return result;
 	}
 
 	@Override
 	@Transactional
 	public Result submitResultData(Long studyId, Long componentId)
 			throws PublixException {
-		synchronized (lock) {
-			Result result = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.submitResultData(studyId, componentId);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.submitResultData(studyId, componentId);
-				break;
-			case PMWorker.WORKER_TYPE:
-				result = pmPublix.submitResultData(studyId, componentId);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.submitResultData(studyId,
-						componentId);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.submitResultData(studyId,
-						componentId);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return result;
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.submitResultData(studyId, componentId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.submitResultData(studyId, componentId);
+			break;
+		case PMWorker.WORKER_TYPE:
+			result = pmPublix.submitResultData(studyId, componentId);
+			break;
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			result = closedStandalonePublix.submitResultData(studyId,
+					componentId);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			result = openStandalonePublix
+					.submitResultData(studyId, componentId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
+		return result;
 	}
 
 	@Override
 	@Transactional
 	public Result finishComponent(Long studyId, Long componentId,
 			Boolean successful, String errorMsg) throws PublixException {
-		synchronized (lock) {
-			Result result = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.finishComponent(studyId, componentId,
-						successful, errorMsg);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.finishComponent(studyId, componentId,
-						successful, errorMsg);
-				break;
-			case PMWorker.WORKER_TYPE:
-				result = pmPublix.finishComponent(studyId, componentId,
-						successful, errorMsg);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.finishComponent(studyId,
-						componentId, successful, errorMsg);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.finishComponent(studyId,
-						componentId, successful, errorMsg);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return result;
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.finishComponent(studyId, componentId, successful,
+					errorMsg);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.finishComponent(studyId, componentId,
+					successful, errorMsg);
+			break;
+		case PMWorker.WORKER_TYPE:
+			result = pmPublix.finishComponent(studyId, componentId, successful,
+					errorMsg);
+			break;
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			result = closedStandalonePublix.finishComponent(studyId,
+					componentId, successful, errorMsg);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			result = openStandalonePublix.finishComponent(studyId, componentId,
+					successful, errorMsg);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
+		return result;
 	}
 
 	@Override
 	@Transactional
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
-		synchronized (lock) {
-			Result result = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.abortStudy(studyId, message);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.abortStudy(studyId, message);
-				break;
-			case PMWorker.WORKER_TYPE:
-				result = pmPublix.abortStudy(studyId, message);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.abortStudy(studyId, message);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.abortStudy(studyId, message);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			return result;
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.abortStudy(studyId, message);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.abortStudy(studyId, message);
+			break;
+		case PMWorker.WORKER_TYPE:
+			result = pmPublix.abortStudy(studyId, message);
+			break;
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			result = closedStandalonePublix.abortStudy(studyId, message);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			result = openStandalonePublix.abortStudy(studyId, message);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
+		return result;
 	}
 
 	@Override
 	@Transactional
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
-		synchronized (lock) {
-			Result result = null;
-			switch (getWorkerTypeFromSession()) {
-			case MTWorker.WORKER_TYPE:
-			case MTSandboxWorker.WORKER_TYPE:
-				result = mtPublix.finishStudy(studyId, successful, errorMsg);
-				break;
-			case JatosWorker.WORKER_TYPE:
-				result = jatosPublix.finishStudy(studyId, successful, errorMsg);
-				break;
-			case PMWorker.WORKER_TYPE:
-				result = pmPublix
-						.finishStudy(studyId, successful, errorMsg);
-				break;
-			case ClosedStandaloneWorker.WORKER_TYPE:
-				result = closedStandalonePublix.finishStudy(studyId,
-						successful, errorMsg);
-				break;
-			case OpenStandaloneWorker.WORKER_TYPE:
-				result = openStandalonePublix.finishStudy(studyId, successful,
-						errorMsg);
-				break;
-			default:
-				throw new BadRequestPublixException(
-						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-			}
-			session().remove(WORKER_TYPE);
-			return result;
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.finishStudy(studyId, successful, errorMsg);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.finishStudy(studyId, successful, errorMsg);
+			break;
+		case PMWorker.WORKER_TYPE:
+			result = pmPublix.finishStudy(studyId, successful, errorMsg);
+			break;
+		case ClosedStandaloneWorker.WORKER_TYPE:
+			result = closedStandalonePublix.finishStudy(studyId, successful,
+					errorMsg);
+			break;
+		case OpenStandaloneWorker.WORKER_TYPE:
+			result = openStandalonePublix.finishStudy(studyId, successful,
+					errorMsg);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
+		session().remove(WORKER_TYPE);
+		return result;
 	}
 
 	@Override
@@ -467,7 +443,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			}
 		}
 		// Check for personal multiple worker
-		String pmWorkerId = Publix.getQueryString(PMPublix.PERSONAL_MULTIPLE_ID);
+		String pmWorkerId = Publix
+				.getQueryString(PMPublix.PERSONAL_MULTIPLE_ID);
 		if (pmWorkerId != null) {
 			return PMWorker.WORKER_TYPE;
 		}

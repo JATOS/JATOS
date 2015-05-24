@@ -386,9 +386,9 @@ public class AccessControllerTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void callComponentResultsExportData() throws Exception {
-		HandlerRef ref = controllers.gui.routes.ref.ComponentResults
-				.exportData("1");
+	public void callComponentResultsExportResultData() throws Exception {
+		HandlerRef ref = controllers.gui.routes.ref.ImportExport
+				.exportDataOfComponentResults("1");
 		checkDeniedAccess(ref);
 		// TODO check whether result's study has appropriate member
 	}
@@ -429,9 +429,9 @@ public class AccessControllerTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void callStudyResultsExportData() throws Exception {
-		HandlerRef ref = controllers.gui.routes.ref.StudyResults
-				.exportData("1");
+	public void callStudyResultsExportResultData() throws Exception {
+		HandlerRef ref = controllers.gui.routes.ref.ImportExport
+				.exportDataOfStudyResults("1");
 		checkDeniedAccess(ref);
 		// TODO check whether result's study has appropriate member
 	}
