@@ -10,9 +10,9 @@ import java.util.Set;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.workers.ClosedStandaloneWorker;
+import models.workers.PersonalSingleWorker;
 import models.workers.MTWorker;
-import models.workers.PMWorker;
+import models.workers.PersonalMultipleWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.StudyDao;
@@ -44,9 +44,9 @@ import com.google.inject.Singleton;
 import controllers.ControllerUtils;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import controllers.publix.closed_standalone.ClosedStandalonePublix;
 import controllers.publix.jatos.JatosPublix;
-import controllers.publix.personal_multiple.PMPublix;
+import controllers.publix.personal_multiple.PersonalMultiplePublix;
+import controllers.publix.personal_single.PersonalSinglePublix;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -452,14 +452,14 @@ public class Studies extends Controller {
 	/**
 	 * Ajax request
 	 * 
-	 * Creates a ClosedStandaloneWorker and the URL that can be used for this
-	 * kind of run.
+	 * Creates a PersonalSingleWorker and the URL that can be used for this kind
+	 * of run.
 	 */
 	@Transactional
-	public Result createClosedStandaloneRun(Long studyId)
+	public Result createPersonalSingleRun(Long studyId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".createClosedStandaloneRun: studyId "
-				+ studyId + ", " + "logged-in user's email "
+		Logger.info(CLASS_NAME + ".createPersonalSingleRun: studyId " + studyId
+				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
@@ -472,15 +472,14 @@ public class Studies extends Controller {
 		JsonNode json = request().body().asJson();
 		if (json == null) {
 			String errorMsg = MessagesStrings
-					.studyCreationOfStandaloneRunFailed(studyId);
+					.studyCreationOfPersonalSingleRunFailed(studyId);
 			return badRequest(errorMsg);
 		}
-		String comment = json.findPath(ClosedStandaloneWorker.COMMENT).asText()
+		String comment = json.findPath(PersonalSingleWorker.COMMENT).asText()
 				.trim();
-		ClosedStandaloneWorker worker;
+		PersonalSingleWorker worker;
 		try {
-			worker = workerService.createClosedStandaloneWorker(comment,
-					studyId);
+			worker = workerService.createPersonalSingleWorker(comment, studyId);
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}
@@ -488,7 +487,7 @@ public class Studies extends Controller {
 		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
 						study.getId()).url() + "?"
-				+ ClosedStandalonePublix.CLOSEDSTANDALONE_WORKER_ID + "="
+				+ PersonalSinglePublix.PERSONALSINGLE_WORKER_ID + "="
 				+ worker.getId();
 		return ok(url);
 	}
@@ -496,8 +495,8 @@ public class Studies extends Controller {
 	/**
 	 * Ajax request
 	 * 
-	 * Creates a PMWorker and returns the URL that can be used for a
-	 * personal multiple run.
+	 * Creates a PersonalMultipleWorker and returns the URL that can be used for a personal
+	 * multiple run.
 	 */
 	@Transactional
 	public Result createPersonalMultipleRun(Long studyId)
@@ -519,18 +518,18 @@ public class Studies extends Controller {
 					.studyCreationOfPersonalMultipleRunFailed(studyId);
 			return badRequest(errorMsg);
 		}
-		String comment = json.findPath(PMWorker.COMMENT).asText().trim();
-		PMWorker worker;
+		String comment = json.findPath(PersonalMultipleWorker.COMMENT).asText().trim();
+		PersonalMultipleWorker worker;
 		try {
-			worker = workerService.createPMWorker(comment, studyId);
+			worker = workerService.createPersonalMultipleWorker(comment, studyId);
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}
 
 		String url = ControllerUtils.getReferer()
 				+ controllers.publix.routes.PublixInterceptor.startStudy(
-						study.getId()).url() + "?" + PMPublix.PERSONAL_MULTIPLE_ID
-				+ "=" + worker.getId();
+						study.getId()).url() + "?"
+				+ PersonalMultiplePublix.PERSONAL_MULTIPLE_ID + "=" + worker.getId();
 		return ok(url);
 	}
 

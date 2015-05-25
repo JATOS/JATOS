@@ -1,10 +1,11 @@
-package controllers.publix.closed_standalone;
+package controllers.publix.general_single;
 
 import models.ComponentModel;
 import models.StudyModel;
-import models.workers.ClosedStandaloneWorker;
+import models.workers.GeneralSingleWorker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
+import persistance.workers.WorkerDao;
 import play.Logger;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -17,43 +18,48 @@ import controllers.publix.Publix;
 import exceptions.publix.PublixException;
 
 /**
- * Implementation of JATOS' public API for closed standalone study runs
- * (standalone runs with invitation and pre-created worker).
+ * Implementation of JATOS' public API for general single study runs (open to
+ * everyone).
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class ClosedStandalonePublix extends Publix<ClosedStandaloneWorker>
+public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 		implements IPublix {
 
-	public static final String CLOSEDSTANDALONE_WORKER_ID = "closedStandaloneWorkerId";
+	public static final String COOKIE = "JATOS_GENERALSINGLE";
+	public static final String GENERALSINGLE = "generalSingle";
 
-	private static final String CLASS_NAME = ClosedStandalonePublix.class
+	private static final String CLASS_NAME = GeneralSinglePublix.class
 			.getSimpleName();
 
-	private final ClosedStandalonePublixUtils publixUtils;
+	private final GeneralSinglePublixUtils publixUtils;
+	private final WorkerDao workerDao;
 
 	@Inject
-	ClosedStandalonePublix(ClosedStandalonePublixUtils publixUtils,
-			ClosedStandaloneErrorMessages errorMessages,
+	GeneralSinglePublix(GeneralSinglePublixUtils publixUtils,
+			GeneralSingleErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao) {
+			StudyResultDao studyResultDao, WorkerDao workerDao) {
 		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
 				studyResultDao);
 		this.publixUtils = publixUtils;
+		this.workerDao = workerDao;
 	}
 
 	@Override
 	public Result startStudy(Long studyId) throws PublixException {
-		String workerIdStr = getQueryString(CLOSEDSTANDALONE_WORKER_ID);
-		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ CLOSEDSTANDALONE_WORKER_ID + " " + workerIdStr);
+		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId);
 		StudyModel study = publixUtils.retrieveStudy(studyId);
+		publixUtils.checkAllowedToDoStudy(study);
+		publixUtils.addStudyToCookie(study);
 
-		ClosedStandaloneWorker worker = publixUtils
-				.retrieveTypedWorker(workerIdStr);
+		GeneralSingleWorker worker = new GeneralSingleWorker();
+		workerDao.create(worker);
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
-		session(WORKER_ID, workerIdStr);
+		session(WORKER_ID, worker.getId().toString());
+		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
+				+ "assigned to worker with ID " + worker.getId());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);

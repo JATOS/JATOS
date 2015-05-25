@@ -7,9 +7,9 @@ import java.util.Set;
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
-import models.workers.ClosedStandaloneWorker;
+import models.workers.PersonalSingleWorker;
 import models.workers.JatosWorker;
-import models.workers.PMWorker;
+import models.workers.PersonalMultipleWorker;
 import models.workers.Worker;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
@@ -93,22 +93,23 @@ public class WorkerService {
 	}
 
 	/**
-	 * Creates, validates and persists a ClosedStandaloneWorker.
+	 * Creates, validates and persists a PersonalSingleWorker.
 	 */
-	public ClosedStandaloneWorker createClosedStandaloneWorker(String comment,
+	public PersonalSingleWorker createPersonalSingleWorker(String comment,
 			Long studyId) throws BadRequestException {
-		ClosedStandaloneWorker worker = new ClosedStandaloneWorker(comment);
+		PersonalSingleWorker worker = new PersonalSingleWorker(comment);
 		validateWorker(studyId, worker);
 		workerDao.create(worker);
 		return worker;
 	}
 
 	/**
-	 * Creates, validates and persists a PMWorker (worker for a personal multiple run).
+	 * Creates, validates and persists a PersonalMultipleWorker (worker for a
+	 * personal multiple run).
 	 */
-	public PMWorker createPMWorker(String comment, Long studyId)
-			throws BadRequestException {
-		PMWorker worker = new PMWorker(comment);
+	public PersonalMultipleWorker createPersonalMultipleWorker(String comment,
+			Long studyId) throws BadRequestException {
+		PersonalMultipleWorker worker = new PersonalMultipleWorker(comment);
 		validateWorker(studyId, worker);
 		workerDao.create(worker);
 		return worker;

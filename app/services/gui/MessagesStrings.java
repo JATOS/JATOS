@@ -3,9 +3,9 @@ package services.gui;
 import models.ComponentResult.ComponentState;
 import models.StudyResult.StudyState;
 import models.UserModel;
-import models.workers.ClosedStandaloneWorker;
+import models.workers.PersonalSingleWorker;
 import models.workers.MTWorker;
-import models.workers.PMWorker;
+import models.workers.PersonalMultipleWorker;
 
 import com.google.inject.Singleton;
 
@@ -70,8 +70,8 @@ public abstract class MessagesStrings {
 	public static final String RESULTS_DATA = "Click on the + icon to open the result's data";
 	public static final String RESULTS_START_TIME = "Time according to the JATOS server";
 	public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. "
-			+ MTWorker.UI_WORKER_TYPE + ", " + PMWorker.UI_WORKER_TYPE + ", "
-			+ ClosedStandaloneWorker.UI_WORKER_TYPE;
+			+ MTWorker.UI_WORKER_TYPE + ", " + PersonalMultipleWorker.UI_WORKER_TYPE + ", "
+			+ PersonalSingleWorker.UI_WORKER_TYPE;
 	public static final String RESULTS_WORKER_ID = "Click on the ID to go to this worker's results";
 	public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
 	public static final String RESULTS_MT_WORKER_ID = "Mechanical Turk's worker ID";
@@ -268,8 +268,8 @@ public abstract class MessagesStrings {
 				+ " is locked. Unlock it if you want to make changes.";
 	}
 
-	public static String studyCreationOfStandaloneRunFailed(Long studyId) {
-		return "The creation of a standalone run for study " + studyId
+	public static String studyCreationOfPersonalSingleRunFailed(Long studyId) {
+		return "The creation of a personal single run for study " + studyId
 				+ " failed.";
 	}
 

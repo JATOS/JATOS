@@ -12,9 +12,9 @@ import java.util.List;
 
 import models.ComponentModel;
 import models.StudyModel;
-import models.workers.ClosedStandaloneWorker;
+import models.workers.PersonalSingleWorker;
 import models.workers.JatosWorker;
-import models.workers.PMWorker;
+import models.workers.PersonalMultipleWorker;
 
 import org.junit.Test;
 
@@ -221,8 +221,8 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 
 	private void checkPropertiesOfBasicExampleStudy(StudyModel study) {
 		assertThat(study.getAllowedWorkerList()).containsOnly(
-				JatosWorker.WORKER_TYPE, ClosedStandaloneWorker.WORKER_TYPE,
-				PMWorker.WORKER_TYPE);
+				JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE,
+				PersonalMultipleWorker.WORKER_TYPE);
 		assertThat(study.getComponentList().size() == 8).isTrue();
 		assertThat(study.getComponent(1).getTitle()).isEqualTo("Hello World");
 		assertThat(study.getLastComponent().getTitle())
@@ -411,8 +411,8 @@ public class ImportExportServiceTest extends AbstractGuiTest {
 	}
 
 	private void alterStudy(StudyModel study) {
-		study.removeAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
-		study.removeAllowedWorker(PMWorker.WORKER_TYPE);
+		study.removeAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+		study.removeAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
 		study.getComponentList().remove(0);
 		study.getLastComponent().setTitle("Changed title");
 		study.setDescription("Changed description");

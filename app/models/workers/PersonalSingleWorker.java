@@ -15,28 +15,30 @@ import services.gui.MessagesStrings;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
- * Worker if a study is run as standalone (not from MTurk)
+ * Worker if a study is run as personal single worker. This kind of worker is
+ * for an external run. The worker can run the study only once. The worker is
+ * created by a user before the study is started.
  * 
  * @author Kristian Lange
  */
 @Entity
-@DiscriminatorValue(ClosedStandaloneWorker.WORKER_TYPE)
-public class ClosedStandaloneWorker extends Worker {
+@DiscriminatorValue(PersonalSingleWorker.WORKER_TYPE)
+public class PersonalSingleWorker extends Worker {
 
 	public static final String WORKER_TYPE = "ClosedStandalone";
 	public static final String UI_WORKER_TYPE = "Personal Single";
 	public static final String COMMENT = "comment";
 
 	private String comment;
-	
-	public ClosedStandaloneWorker() {
+
+	public PersonalSingleWorker() {
 	}
-	
+
 	@JsonCreator
-	public ClosedStandaloneWorker(String comment) {
+	public PersonalSingleWorker(String comment) {
 		this.comment = comment;
 	}
-	
+
 	public void setComment(String comment) {
 		this.comment = comment;
 	}
@@ -44,15 +46,15 @@ public class ClosedStandaloneWorker extends Worker {
 	public String getComment() {
 		return this.comment;
 	}
-	
+
 	public String getWorkerType() {
 		return WORKER_TYPE;
 	}
-	
+
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}
-	
+
 	@Override
 	public String toString() {
 		return comment + ", " + super.toString();
@@ -62,7 +64,7 @@ public class ClosedStandaloneWorker extends Worker {
 	public String generateConfirmationCode() {
 		return null;
 	}
-	
+
 	@Override
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<ValidationError>();

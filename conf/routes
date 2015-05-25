@@ -54,7 +54,7 @@ DELETE  /jatos/:studyId/remove                       @controllers.gui.Studies.re
 POST    /jatos/:studyId/changeComponentOrder         @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, newPosition: String)
 GET     /jatos/:studyId/mturk                        @controllers.gui.Studies.showMTurkSourceCode(studyId: Long)
 GET     /jatos/:studyId/show                         @controllers.gui.Studies.showStudy(studyId: Long)
-POST    /jatos/:studyId/createClosedStandaloneRun    @controllers.gui.Studies.createClosedStandaloneRun(studyId: Long)
+POST    /jatos/:studyId/createPersonalSingleRun      @controllers.gui.Studies.createPersonalSingleRun(studyId: Long)
 POST    /jatos/:studyId/createPersonalMultipleRun    @controllers.gui.Studies.createPersonalMultipleRun(studyId: Long)
 GET     /jatos/:studyId/clone                        @controllers.gui.Studies.cloneStudy(studyId: Long)
 GET     /jatos/:studyId/export                       @controllers.gui.ImportExport.exportStudy(studyId: Long)

@@ -13,7 +13,7 @@ import static play.test.Helpers.headers;
 import static play.test.Helpers.status;
 import gui.AbstractGuiTest;
 import models.StudyModel;
-import models.workers.ClosedStandaloneWorker;
+import models.workers.PersonalSingleWorker;
 
 import org.apache.http.HttpHeaders;
 import org.junit.Test;
@@ -318,13 +318,13 @@ public class StudiesControllerTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void callCreateClosedStandaloneRun() throws Exception {
+	public void callCreatePersonalSingleRun() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
-				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
+				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.createClosedStandaloneRun(studyClone
+				controllers.gui.routes.ref.Studies.createPersonalSingleRun(studyClone
 						.getId()), fakeRequest().withJsonBody(jsonNode)
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -338,7 +338,7 @@ public class StudiesControllerTest extends AbstractGuiTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
-				+ ClosedStandaloneWorker.COMMENT + "\": \"testcomment\" }");
+				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
 		Result result = callAction(
 				controllers.gui.routes.ref.Studies.createPersonalMultipleRun(studyClone
 						.getId()), fakeRequest().withJsonBody(jsonNode)

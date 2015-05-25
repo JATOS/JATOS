@@ -52,10 +52,10 @@ studyResultsCount: Integer)
 					<a id="personalMultipleRun" href="#">Personal Multiple Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
 				</li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used only once and always assigns the results to the same worker.">
-					<a id="closedStandaloneRun" href="#">Personal Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
+					<a id="personalSingleRun" href="#">Personal Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
 				</li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used only once and creates a new worker with each run. Warning: If a worker deletes their browser’s cookies, or uses a different browser or computer, JATOS will not realise that the worker already ran the study. This way workers can potentially run the same study several times.">
-					<a id="openStandaloneRun" href="#">General Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
+					<a id="generalSingleRun" href="#">General Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
 				</li>
 			</ul>
 		</div>
@@ -203,7 +203,7 @@ studyResultsCount: Integer)
 	</div>
 </div>
 
-<!-- Confirmation Modal - Run Standalone or Personal Mutliple -->
+<!-- Confirmation Modal - Run Personal Single or General Single or Personal Mutliple -->
 <div class="modal fade" id="confirmModalRun" tabindex="-1" role="dialog"
 	aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
@@ -520,17 +520,17 @@ $('#studyToolbar').on('click', '#editStudy', function() {
 	window.location.href = "@controllers.gui.routes.Studies.edit(study.getId())";
 });
 
-$('#studyToolbar').on('click', '#closedStandaloneRun', function() {
+$('#studyToolbar').on('click', '#personalSingleRun', function() {
 	$('#confirmModalRun').find('.modal-title').html("Create Personal Single Run");
 	$('#confirmModalRun').find('.modalText').html("You're about to create a worker for a Personal Single Run.");
 	$('#confirmModalRun').modal('show');
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
 		var comment = $('#confirmModalRun').find('.comment').val();
-		var jsonData = JSON.stringify({ @workers.ClosedStandaloneWorker.COMMENT: comment });
+		var jsonData = JSON.stringify({ @workers.PersonalSingleWorker.COMMENT: comment });
 		$.ajax({
 			type: 'POST',
-			url: '@controllers.gui.routes.Studies.createClosedStandaloneRun(study.getId())',
+			url: '@controllers.gui.routes.Studies.createPersonalSingleRun(study.getId())',
 			contentType: "application/json; charset=utf-8",
 			dataType: 'text',
 			data: jsonData,
@@ -550,10 +550,10 @@ $('#studyToolbar').on('click', '#closedStandaloneRun', function() {
 	});
 });
 
-$('#studyToolbar').on('click', '#openStandaloneRun', function() {
+$('#studyToolbar').on('click', '#generalSingleRun', function() {
 	var title = "General Single Run";
 	var preText = "Use this link";
-	var url = "@baseUrl" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?openStandalone";
+	var url = "@baseUrl" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?generalSingle";
 	var html = "<p>" + url + "</p>"; 
 	var postText = "or press \"Run\" to start one right away. Remember to allow General Single Workers in your study's properties.";
 	askConfirmation(title, preText, html, postText, 'Run', function() {
@@ -568,7 +568,7 @@ $('#studyToolbar').on('click', '#personalMultipleRun', function() {
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
 		var comment = $('#confirmModalRun').find('.comment').val();
-		var jsonData = JSON.stringify({ @workers.PMWorker.COMMENT: comment });
+		var jsonData = JSON.stringify({ @workers.PersonalMultipleWorker.COMMENT: comment });
 		$.ajax({
 			type: 'POST',
 			url: '@controllers.gui.routes.Studies.createPersonalMultipleRun(study.getId())',

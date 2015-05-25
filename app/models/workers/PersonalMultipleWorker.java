@@ -15,14 +15,14 @@ import services.gui.MessagesStrings;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
- * Worker for a personal multiple run (worker for an external run that can be used multiple
- * times and always assigns the results to the same worker).
+ * Worker for a personal multiple run (worker for an external run that can be
+ * used multiple times and always assigns the results to the same worker).
  * 
  * @author Kristian Lange
  */
 @Entity
-@DiscriminatorValue(PMWorker.WORKER_TYPE)
-public class PMWorker extends Worker {
+@DiscriminatorValue(PersonalMultipleWorker.WORKER_TYPE)
+public class PersonalMultipleWorker extends Worker {
 
 	public static final String WORKER_TYPE = "Tester";
 	public static final String UI_WORKER_TYPE = "Personal Multiple";
@@ -30,11 +30,11 @@ public class PMWorker extends Worker {
 
 	private String comment;
 
-	public PMWorker() {
+	public PersonalMultipleWorker() {
 	}
 
 	@JsonCreator
-	public PMWorker(String comment) {
+	public PersonalMultipleWorker(String comment) {
 		this.comment = comment;
 	}
 

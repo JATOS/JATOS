@@ -207,10 +207,10 @@ public class AccessControllerTest extends AbstractGuiTest {
 	}
 
 	@Test
-	public void callStudiesCreateClosedStandaloneRun() throws Exception {
+	public void callStudiesCreatePersonalSingleRun() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.gui.routes.ref.Studies
-				.createClosedStandaloneRun(studyClone.getId());
+				.createPersonalSingleRun(studyClone.getId());
 		checkDeniedAccess(ref);
 		checkNotMember(ref, studyClone);
 		removeStudy(studyClone);

@@ -57,9 +57,9 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
 		</label>
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.PMWorker.WORKER_TYPE"
-					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.PMWorker.WORKER_TYPE)) {checked}
-					>@workers.PMWorker.UI_WORKER_TYPE
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.PersonalMultipleWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.PersonalMultipleWorker.WORKER_TYPE)) {checked}
+					>@workers.PersonalMultipleWorker.UI_WORKER_TYPE
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
 		</label>
 		<label class="checkbox-inline">
@@ -69,15 +69,15 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
 		</label>
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.ClosedStandaloneWorker.WORKER_TYPE"
-					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.ClosedStandaloneWorker.WORKER_TYPE)) {checked}
-					>@workers.ClosedStandaloneWorker.UI_WORKER_TYPE
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.PersonalSingleWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.PersonalSingleWorker.WORKER_TYPE)) {checked}
+					>@workers.PersonalSingleWorker.UI_WORKER_TYPE
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
 		</label>
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.OpenStandaloneWorker.WORKER_TYPE"
-					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.OpenStandaloneWorker.WORKER_TYPE)) {checked}
-					>@workers.OpenStandaloneWorker.UI_WORKER_TYPE
+			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.GeneralSingleWorker.WORKER_TYPE"
+					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.GeneralSingleWorker.WORKER_TYPE)) {checked}
+					>@workers.GeneralSingleWorker.UI_WORKER_TYPE
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
 		</label>
 	</div>

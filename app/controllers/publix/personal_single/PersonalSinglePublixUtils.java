@@ -1,7 +1,7 @@
-package controllers.publix.closed_standalone;
+package controllers.publix.personal_single;
 
 import models.StudyModel;
-import models.workers.ClosedStandaloneWorker;
+import models.workers.PersonalSingleWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.ComponentResultDao;
@@ -18,18 +18,18 @@ import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 
 /**
- * Special PublixUtils for ClosedStandalonePublix
+ * Special PublixUtils for PersonalSinglePublix
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class ClosedStandalonePublixUtils extends
-		PublixUtils<ClosedStandaloneWorker> {
+public class PersonalSinglePublixUtils extends
+		PublixUtils<PersonalSingleWorker> {
 
-	private ClosedStandaloneErrorMessages errorMessages;
+	private PersonalSingleErrorMessages errorMessages;
 
 	@Inject
-	ClosedStandalonePublixUtils(ClosedStandaloneErrorMessages errorMessages,
+	PersonalSinglePublixUtils(PersonalSingleErrorMessages errorMessages,
 			StudyDao studyDao, StudyResultDao studyResultDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
 			WorkerDao workerDao) {
@@ -39,20 +39,20 @@ public class ClosedStandalonePublixUtils extends
 	}
 
 	@Override
-	public ClosedStandaloneWorker retrieveTypedWorker(String workerIdStr)
+	public PersonalSingleWorker retrieveTypedWorker(String workerIdStr)
 			throws PublixException {
 		Worker worker = retrieveWorker(workerIdStr);
-		if (!(worker instanceof ClosedStandaloneWorker)) {
+		if (!(worker instanceof PersonalSingleWorker)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotCorrectType(worker.getId()));
 		}
-		return (ClosedStandaloneWorker) worker;
+		return (PersonalSingleWorker) worker;
 	}
 
 	@Override
-	public void checkWorkerAllowedToStartStudy(ClosedStandaloneWorker worker,
+	public void checkWorkerAllowedToStartStudy(PersonalSingleWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
-		// Standalone runs are used only once - don't start if worker has a
+		// Personal single runs are used only once - don't start if worker has a
 		// study result
 		if (!worker.getStudyResultList().isEmpty()) {
 			throw new ForbiddenPublixException(
@@ -62,13 +62,13 @@ public class ClosedStandalonePublixUtils extends
 	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(ClosedStandaloneWorker worker,
+	public void checkWorkerAllowedToDoStudy(PersonalSingleWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
 		if (!study.hasAllowedWorker(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
-		// Closed standalone workers can't repeat the same study
+		// Personal single workers can't repeat the same study
 		if (finishedStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);

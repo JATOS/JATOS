@@ -1,7 +1,7 @@
 package controllers.publix.personal_multiple;
 
 import models.StudyModel;
-import models.workers.PMWorker;
+import models.workers.PersonalMultipleWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.ComponentResultDao;
@@ -17,43 +17,45 @@ import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 
 /**
- * Special PublixUtils for PMPublix
+ * Special PublixUtils for PersonalMultiplePublix
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class PMPublixUtils extends PublixUtils<PMWorker> {
+public class PersonalMultiplePublixUtils extends
+		PublixUtils<PersonalMultipleWorker> {
 
-	private PMErrorMessages errorMessages;
+	private PersonalMultipleErrorMessages errorMessages;
 
 	@Inject
-	PMPublixUtils(PMErrorMessages errorMessages, StudyDao studyDao,
-			StudyResultDao studyResultDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, WorkerDao workerDao) {
+	PersonalMultiplePublixUtils(PersonalMultipleErrorMessages errorMessages,
+			StudyDao studyDao, StudyResultDao studyResultDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			WorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
 				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;
 	}
 
 	@Override
-	public PMWorker retrieveTypedWorker(String workerIdStr)
+	public PersonalMultipleWorker retrieveTypedWorker(String workerIdStr)
 			throws PublixException {
 		Worker worker = retrieveWorker(workerIdStr);
-		if (!(worker instanceof PMWorker)) {
+		if (!(worker instanceof PersonalMultipleWorker)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotCorrectType(worker.getId()));
 		}
-		return (PMWorker) worker;
+		return (PersonalMultipleWorker) worker;
 	}
 
 	@Override
-	public void checkWorkerAllowedToStartStudy(PMWorker worker,
+	public void checkWorkerAllowedToStartStudy(PersonalMultipleWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
 		checkWorkerAllowedToDoStudy(worker, study);
 	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(PMWorker worker,
+	public void checkWorkerAllowedToDoStudy(PersonalMultipleWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
 		if (!study.hasAllowedWorker(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(

@@ -22,9 +22,9 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 
-import models.workers.ClosedStandaloneWorker;
+import models.workers.PersonalSingleWorker;
 import models.workers.JatosWorker;
-import models.workers.PMWorker;
+import models.workers.PersonalMultipleWorker;
 
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
@@ -129,8 +129,8 @@ public class StudyModel {
 	public StudyModel() {
 		// Add default allowed workers
 		addAllowedWorker(JatosWorker.WORKER_TYPE);
-		addAllowedWorker(PMWorker.WORKER_TYPE);
-		addAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
+		addAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
+		addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
 	}
 
 	/**

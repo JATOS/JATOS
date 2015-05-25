@@ -13,9 +13,9 @@ import java.util.Map;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.workers.ClosedStandaloneWorker;
+import models.workers.PersonalSingleWorker;
 import models.workers.JatosWorker;
-import models.workers.PMWorker;
+import models.workers.PersonalMultipleWorker;
 
 import org.fest.assertions.Fail;
 import org.junit.Rule;
@@ -71,8 +71,8 @@ public class StudyServiceTest extends AbstractGuiTest {
 
 		// Equal
 		assertThat(cloneInDb.getAllowedWorkerList()).containsOnly(
-				JatosWorker.WORKER_TYPE, ClosedStandaloneWorker.WORKER_TYPE,
-				PMWorker.WORKER_TYPE);
+				JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE,
+				PersonalMultipleWorker.WORKER_TYPE);
 		assertThat(cloneInDb.getComponentList().size()).isEqualTo(
 				study.getComponentList().size());
 		assertThat(cloneInDb.getFirstComponent().getTitle()).isEqualTo(
@@ -154,8 +154,8 @@ public class StudyServiceTest extends AbstractGuiTest {
 		addStudy(study);
 
 		StudyModel updatedStudy = studyService.cloneStudy(study, admin);
-		updatedStudy.removeAllowedWorker(ClosedStandaloneWorker.WORKER_TYPE);
-		updatedStudy.removeAllowedWorker(PMWorker.WORKER_TYPE);
+		updatedStudy.removeAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+		updatedStudy.removeAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
 		updatedStudy.getComponentList().remove(0);
 		updatedStudy.getLastComponent().setTitle("Changed title");
 		updatedStudy.setDescription("Changed description");

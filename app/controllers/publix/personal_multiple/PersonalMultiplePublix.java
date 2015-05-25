@@ -2,7 +2,7 @@ package controllers.publix.personal_multiple;
 
 import models.ComponentModel;
 import models.StudyModel;
-import models.workers.PMWorker;
+import models.workers.PersonalMultipleWorker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
@@ -23,16 +23,19 @@ import exceptions.publix.PublixException;
  * @author Kristian Lange
  */
 @Singleton
-public class PMPublix extends Publix<PMWorker> implements IPublix {
+public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
+		implements IPublix {
 
 	public static final String PERSONAL_MULTIPLE_ID = "personalMultipleId";
 
-	private static final String CLASS_NAME = PMPublix.class.getSimpleName();
+	private static final String CLASS_NAME = PersonalMultiplePublix.class
+			.getSimpleName();
 
-	private final PMPublixUtils publixUtils;
+	private final PersonalMultiplePublixUtils publixUtils;
 
 	@Inject
-	PMPublix(PMPublixUtils publixUtils, PMErrorMessages errorMessages,
+	PersonalMultiplePublix(PersonalMultiplePublixUtils publixUtils,
+			PersonalMultipleErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
 		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
@@ -47,7 +50,8 @@ public class PMPublix extends Publix<PMWorker> implements IPublix {
 				+ "workerId " + workerId);
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 
-		PMWorker worker = publixUtils.retrieveTypedWorker(workerId);
+		PersonalMultipleWorker worker = publixUtils
+				.retrieveTypedWorker(workerId);
 		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, workerId);
 
