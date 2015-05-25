@@ -18,7 +18,7 @@ import play.data.validation.ValidationError;
 @DiscriminatorValue(GeneralSingleWorker.WORKER_TYPE)
 public class GeneralSingleWorker extends Worker {
 
-	public static final String WORKER_TYPE = "OpenStandalone";
+	public static final String WORKER_TYPE = "GeneralSingle";
 	public static final String UI_WORKER_TYPE = "General Single";
 
 	public GeneralSingleWorker() {

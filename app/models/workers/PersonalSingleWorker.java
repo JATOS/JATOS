@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 @DiscriminatorValue(PersonalSingleWorker.WORKER_TYPE)
 public class PersonalSingleWorker extends Worker {
 
-	public static final String WORKER_TYPE = "ClosedStandalone";
+	public static final String WORKER_TYPE = "PersonalSingle";
 	public static final String UI_WORKER_TYPE = "Personal Single";
 	public static final String COMMENT = "comment";
 

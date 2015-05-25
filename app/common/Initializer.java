@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import javax.persistence.Query;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -51,6 +53,7 @@ public class Initializer {
 		checkAdmin();
 		checkUuid();
 		checkStudyAssetsRootDir();
+		checkWorkerTypes();
 	}
 
 	/**
@@ -63,6 +66,51 @@ public class Initializer {
 					+ ".checkStudyAssetsRootDir: Created study assets root directory "
 					+ StudyAssets.STUDY_ASSETS_ROOT_PATH);
 		}
+	}
+
+	/**
+	 * Migration from older to DB schema of JATOS version 1.1.11: Change names
+	 * of worker types<br>
+	 * OpenStandalone -> GeneralSingle,<br>
+	 * Tester -> PersonalMultiple<br>
+	 * ClosedStandalone -> PersonalSingle
+	 */
+	private void checkWorkerTypes() {
+		JPA.withTransaction(new play.libs.F.Callback0() {
+			@Override
+			public void invoke() throws Throwable {
+				// OpenStandalone -> GeneralSingle
+				String queryStr = "UPDATE Worker SET WorkerType='GeneralSingle' WHERE WorkerType='OpenStandalone'";
+				Query query = JPA.em().createQuery(queryStr);
+				int count = query.executeUpdate();
+				if (count > 0) {
+					Logger.info(CLASS_NAME
+							+ ".checkWorkerTypes: Updated "
+							+ count
+							+ " worker of type OpenStandalone to type GeneralSingle.");
+				}
+				// Tester -> PersonalMultiple
+				queryStr = "UPDATE Worker SET WorkerType='PersonalMultiple' WHERE WorkerType='Tester'";
+				query = JPA.em().createQuery(queryStr);
+				count = query.executeUpdate();
+				if (count > 0) {
+					Logger.info(CLASS_NAME
+							+ ".checkWorkerTypes: Updated "
+							+ count
+							+ " worker of type Tester to type PersonalMultiple.");
+				}
+				// ClosedStandalone -> PersonalSingle
+				queryStr = "UPDATE Worker SET WorkerType='PersonalSingle' WHERE WorkerType='ClosedStandalone'";
+				query = JPA.em().createQuery(queryStr);
+				count = query.executeUpdate();
+				if (count > 0) {
+					Logger.info(CLASS_NAME
+							+ ".checkWorkerTypes: Updated "
+							+ count
+							+ " worker of type ClosedStandalone to type PersonalSingle.");
+				}
+			}
+		});
 	}
 
 	/**
