@@ -30,7 +30,7 @@ import exceptions.publix.PublixException;
  * Interceptor for Publix: it intercepts requests for JATOS' public API and
  * forwards them to one of the implementations of the API (all extend Publix).
  * Each implementation deals with different workers (e.g. workers from MechTurk,
- * personal multiple workers).
+ * Personal Multiple workers).
  * 
  * When a study is started the implementation to use is determined by parameters
  * in the request's query string. Then the worker type is put into the session
@@ -40,11 +40,11 @@ import exceptions.publix.PublixException;
  * MTSandboxWorker) will be forwarded to MTPublix.<br>
  * 2. Requests coming from Jatos' UI (if clicked on show study/component) run
  * (JatosWorker) will be forwarded to JatosPublix.<br>
- * 3. Requests coming from a personal multiple run (PersonalMultipleWorker) will
+ * 3. Requests coming from a Personal Multiple run (PersonalMultipleWorker) will
  * be forwarded to PersonalMultiplePublix.<br>
- * 4. Requests coming from a personal single run (limited to pre-created
+ * 4. Requests coming from a Personal Single run (limited to pre-created
  * PersonalSingleWorker) will be forwarded to PersonalSinglePublix.<br>
- * 5. Requests coming from an general single run (unlimited to everyone with the
+ * 5. Requests coming from an General Single run (unlimited to everyone with the
  * link) will be forwarded to GeneralSinglePublix.<br>
  * 
  * TODO: Move @Transactional out of controller and get rid of synchronisation.
@@ -441,19 +441,19 @@ public class PublixInterceptor extends Controller implements IPublix {
 				return MTWorker.WORKER_TYPE;
 			}
 		}
-		// Check for personal multiple worker
+		// Check for Personal Multiple Worker
 		String pmWorkerId = Publix
 				.getQueryString(PersonalMultiplePublix.PERSONAL_MULTIPLE_ID);
 		if (pmWorkerId != null) {
 			return PersonalMultipleWorker.WORKER_TYPE;
 		}
-		// Check for personal single worker
+		// Check for Personal Single Worker
 		String personalSingleWorkerId = Publix
 				.getQueryString(PersonalSinglePublix.PERSONALSINGLE_WORKER_ID);
 		if (personalSingleWorkerId != null) {
 			return PersonalSingleWorker.WORKER_TYPE;
 		}
-		// Check for general single worker
+		// Check for General Single Worker
 		String generalSingle = Publix
 				.getQueryString(GeneralSinglePublix.GENERALSINGLE);
 		if (generalSingle != null) {

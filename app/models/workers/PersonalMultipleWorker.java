@@ -15,7 +15,7 @@ import services.gui.MessagesStrings;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
- * Worker for a personal multiple run (worker for an external run that can be
+ * Worker for a Personal Multiple Run (worker for an external run that can be
  * used multiple times and always assigns the results to the same worker).
  * 
  * @author Kristian Lange

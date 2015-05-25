@@ -17,7 +17,7 @@ import controllers.publix.Publix;
 import exceptions.publix.PublixException;
 
 /**
- * Implementation of JATOS' public API for personal single study runs
+ * Implementation of JATOS' public API for Personal Single study runs
  * (runs with invitation and pre-created worker).
  * 
  * @author Kristian Lange

@@ -269,12 +269,12 @@ public abstract class MessagesStrings {
 	}
 
 	public static String studyCreationOfPersonalSingleRunFailed(Long studyId) {
-		return "The creation of a personal single run for study " + studyId
+		return "The creation of a Personal Single Run for study " + studyId
 				+ " failed.";
 	}
 
 	public static String studyCreationOfPersonalMultipleRunFailed(Long studyId) {
-		return "The creation of a personal multiple run for study " + studyId
+		return "The creation of a Personal Multiple Run for study " + studyId
 				+ " failed.";
 	}
 

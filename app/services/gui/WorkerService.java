@@ -105,7 +105,7 @@ public class WorkerService {
 
 	/**
 	 * Creates, validates and persists a PersonalMultipleWorker (worker for a
-	 * personal multiple run).
+	 * Personal Multiple Run).
 	 */
 	public PersonalMultipleWorker createPersonalMultipleWorker(String comment,
 			Long studyId) throws BadRequestException {

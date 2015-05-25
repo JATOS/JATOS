@@ -52,7 +52,7 @@ public class PersonalSinglePublixUtils extends
 	@Override
 	public void checkWorkerAllowedToStartStudy(PersonalSingleWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
-		// Personal single runs are used only once - don't start if worker has a
+		// Personal Single Runs are used only once - don't start if worker has a
 		// study result
 		if (!worker.getStudyResultList().isEmpty()) {
 			throw new ForbiddenPublixException(
