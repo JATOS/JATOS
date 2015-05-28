@@ -8,6 +8,7 @@ import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.GeneralSingleWorker;
 import models.workers.PersonalMultipleWorker;
+import play.Logger;
 import play.db.jpa.Transactional;
 import play.libs.F.Promise;
 import play.mvc.Controller;
@@ -56,6 +57,9 @@ import exceptions.publix.PublixException;
 @Singleton
 @With(PublixAction.class)
 public class PublixInterceptor extends Controller implements IPublix {
+
+	private static final String CLASS_NAME = PublixInterceptor.class
+			.getSimpleName();
 
 	public static final String WORKER_TYPE = "workerType";
 
@@ -413,6 +417,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 		if (workerType != null) {
 			return workerType;
 		}
+		Logger.warn(CLASS_NAME + ".getWorkerTypeFromSession: Could not find "
+				+ "a worker type in session for URI " + request().uri());
 		throw new BadRequestPublixException(
 				PublixErrorMessages.NO_WORKER_IN_SESSION);
 	}
