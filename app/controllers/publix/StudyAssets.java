@@ -15,7 +15,7 @@ import common.Common;
 import controllers.ControllerUtils;
 
 /**
- * Manages web-access to files in the external study assets directory (outside
+ * Manages web-access to files in the external study assets directories (outside
  * of JATOS' packed Jar).
  * 
  * @author Kristian Lange
@@ -33,7 +33,7 @@ public class StudyAssets extends Controller {
 
 	/**
 	 * Property name in application config for the path in the file system to
-	 * study assets root directory, the directory where all study assets are
+	 * the study assets root directory, the directory where all study assets are
 	 * located
 	 */
 	private static final String PROPERTY_STUDY_ASSETS_ROOT_PATH = "jatos.studyAssetsRootPath";

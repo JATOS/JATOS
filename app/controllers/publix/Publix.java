@@ -26,7 +26,7 @@ import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
 
 /**
- * Abstract controller class for all controller that implement the IPublix
+ * Abstract controller class for all controllers that implement the IPublix
  * interface. It defines common methods and constants.
  * 
  * @author Kristian Lange
@@ -35,7 +35,11 @@ import exceptions.publix.PublixException;
 public abstract class Publix<T extends Worker> extends Controller implements
 		IPublix {
 
-	// ID cookie name and value names
+	/**
+	 * ID cookie name and value names. The ID cookie is set by JATOS to let the
+	 * study running in the browser know about the current IDs. The ID cookie is
+	 * set during component start.
+	 */
 	public static final String ID_COOKIE_NAME = "JATOS_IDS";
 	public static final String WORKER_ID = "workerId";
 	public static final String STUDY_ID = "studyId";
@@ -231,7 +235,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, error));
 		}
-		
+
 		if (successful) {
 			componentResult.setComponentState(ComponentState.FINISHED);
 			componentResult.setErrorMsg(errorMsg);

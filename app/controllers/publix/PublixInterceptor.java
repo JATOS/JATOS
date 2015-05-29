@@ -28,29 +28,27 @@ import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
 
 /**
- * Interceptor for Publix: it intercepts requests for JATOS' public API and
- * forwards them to one of the implementations of the API (all extend Publix).
- * Each implementation deals with different workers (e.g. workers from MechTurk,
- * Personal Multiple workers).
+ * Interceptor for Publix: it intercepts requests for JATOS' public API (Publix)
+ * and forwards them to one of the implementations of the API (all extend
+ * Publix). Each implementation deals with different workers (e.g. workers from
+ * MechTurk, Personal Multiple workers).
  * 
  * When a study is started the implementation to use is determined by parameters
  * in the request's query string. Then the worker type is put into the session
  * and used in subsequent requests of the same study run.
  * 
- * 1. Requests coming from MechTurk or MechTurk Sandbox (MTWorker and
- * MTSandboxWorker) will be forwarded to MTPublix.<br>
- * 2. Requests coming from Jatos' UI (if clicked on show study/component) run
- * (JatosWorker) will be forwarded to JatosPublix.<br>
- * 3. Requests coming from a Personal Multiple run (PersonalMultipleWorker) will
- * be forwarded to PersonalMultiplePublix.<br>
- * 4. Requests coming from a Personal Single run (limited to pre-created
- * PersonalSingleWorker) will be forwarded to PersonalSinglePublix.<br>
- * 5. Requests coming from an General Single run (unlimited to everyone with the
- * link) will be forwarded to GeneralSinglePublix.<br>
+ * 1. Requests coming from MechTurk or MechTurk Sandbox will be forwarded to
+ * MTPublix. They use MTWorker and MTSandboxWorker.<br>
+ * 2. Requests coming from Jatos' UI run (if clicked on show study/component
+ * button) run will be forwarded to JatosPublix. They use JatosWorker.<br>
+ * 3. Requests coming from a Personal Multiple run will be forwarded to
+ * PersonalMultiplePublix. They use PersonalMultipleWorker.<br>
+ * 4. Requests coming from a Personal Single run will be forwarded to
+ * PersonalSinglePublix. They use PersonalSingleWorker.<br>
+ * 5. Requests coming from an General Single run will be forwarded to
+ * GeneralSinglePublix. They use the GeneralSingleWorker.<br>
  * 
- * TODO: Move @Transactional out of controller and get rid of synchronisation.
- * We need a lock for a worker to prevent the same worker doing the same study
- * in parallel.
+ * TODO: Move @Transactional out of controller.
  * 
  * @author Kristian Lange
  */
