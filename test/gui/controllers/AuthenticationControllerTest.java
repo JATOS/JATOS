@@ -13,7 +13,7 @@ import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 import models.UserModel;
 
 import org.junit.Test;
@@ -30,7 +30,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class AuthenticationControllerTest extends AbstractGuiTest {
+public class AuthenticationControllerTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {

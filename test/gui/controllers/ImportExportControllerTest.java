@@ -8,7 +8,7 @@ import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +42,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class ImportExportControllerTest extends AbstractGuiTest {
+public class ImportExportControllerTest extends AbstractTest {
 
 	private static final String TEST_STUDY_ZIP_PATH = "test/resources/basic_example_study.zip";
 	private static final String TEST_STUDY_BKP_ZIP_PATH = "test/resources/basic_example_study_bkp.zip";

@@ -5,7 +5,7 @@ import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
 import exceptions.publix.ForbiddenReloadException;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -28,7 +28,7 @@ import controllers.publix.jatos.JatosPublixUtils;
  * 
  * @author Kristian Lange
  */
-public class ResultDataStringGeneratorTests extends AbstractGuiTest {
+public class ResultDataStringGeneratorTests extends AbstractTest {
 
 	private ResultDataStringGenerator resultDataStringGenerator;
 	private JatosPublixUtils jatosPublixUtils;

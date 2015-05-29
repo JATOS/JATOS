@@ -3,7 +3,7 @@ package gui.services;
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +34,7 @@ import common.Global;
  * 
  * @author Kristian Lange
  */
-public class ImportExportServiceTest extends AbstractGuiTest {
+public class ImportExportServiceTest extends AbstractTest {
 
 	private ImportExportService importExportService;
 

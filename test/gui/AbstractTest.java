@@ -42,15 +42,15 @@ import common.Global;
 import controllers.publix.StudyAssets;
 
 /**
- * Abstract class for a controller test. Starts fake application.
+ * Abstract class for tests. Starts fake application and an in-memory DB.
  * 
  * @author Kristian Lange
  */
-public abstract class AbstractGuiTest {
+public abstract class AbstractTest {
 
 	private static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
 
-	private static final String CLASS_NAME = AbstractGuiTest.class
+	private static final String CLASS_NAME = AbstractTest.class
 			.getSimpleName();
 
 	private static final String TEST_COMPONENT_JAC_PATH = "test/resources/hello_world.jac";
@@ -109,18 +109,22 @@ public abstract class AbstractGuiTest {
 		removeStudyAssetsRootDir();
 		Helpers.stop(application);
 	}
-	
+
 	@BeforeClass
 	public static void startDB() throws SQLException {
 		server = Server.createTcpServer().start();
-		System.out.println("URL: jdbc:h2:" + server.getURL() + "/mem:test/jatos");
+		System.out.println("URL: jdbc:h2:" + server.getURL()
+				+ "/mem:test/jatos");
 	}
-	
+
 	@AfterClass
 	public static void stopDB() {
 		server.stop();
 	}
-	
+
+	/**
+	 * Mocks Play's Http.Context
+	 */
 	protected void mockContext() {
 		Map<String, String> flashData = Collections.emptyMap();
 		Map<String, Object> argData = Collections.emptyMap();

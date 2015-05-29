@@ -2,7 +2,7 @@ package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +25,7 @@ import common.Global;
  * 
  * @author Kristian Lange
  */
-public class ComponentServiceTest extends AbstractGuiTest {
+public class ComponentServiceTest extends AbstractTest {
 
 	private ComponentService componentService;
 

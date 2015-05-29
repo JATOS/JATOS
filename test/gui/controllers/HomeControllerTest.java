@@ -8,7 +8,7 @@ import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.status;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 import models.UserModel;
 
 import org.junit.Test;
@@ -23,7 +23,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class HomeControllerTest extends AbstractGuiTest {
+public class HomeControllerTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {

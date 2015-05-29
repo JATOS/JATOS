@@ -3,7 +3,7 @@ package gui.services;
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -33,7 +33,7 @@ import common.Global;
  * 
  * @author Kristian Lange
  */
-public class StudyServiceTest extends AbstractGuiTest {
+public class StudyServiceTest extends AbstractTest {
 
 	@Rule
 	public ExpectedException exception = ExpectedException.none();

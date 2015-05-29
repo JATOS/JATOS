@@ -10,7 +10,7 @@ import java.io.IOException;
 
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 import models.StudyModel;
 import models.StudyResult;
 
@@ -33,7 +33,7 @@ import controllers.publix.jatos.JatosPublixUtils;
  * 
  * @author Kristian Lange
  */
-public class LockedStudyControllerTest extends AbstractGuiTest {
+public class LockedStudyControllerTest extends AbstractTest {
 
 	private static StudyModel studyTemplate;
 	private JatosPublixUtils jatosPublixUtils;

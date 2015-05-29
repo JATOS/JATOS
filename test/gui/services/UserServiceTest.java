@@ -3,7 +3,7 @@ package gui.services;
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
@@ -25,7 +25,7 @@ import common.Global;
  * 
  * @author Kristian Lange
  */
-public class UserServiceTest extends AbstractGuiTest {
+public class UserServiceTest extends AbstractTest {
 
 	private UserService userService;
 

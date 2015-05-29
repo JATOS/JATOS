@@ -1,7 +1,7 @@
 package gui.controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import org.junit.Test;
 
@@ -12,7 +12,7 @@ import common.Common;
 /**
  * @author Kristian Lange
  */
-public class GeneralTest extends AbstractGuiTest {
+public class GeneralTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {

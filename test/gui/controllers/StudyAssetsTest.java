@@ -5,7 +5,7 @@ import static play.mvc.Http.Status.NOT_FOUND;
 import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.status;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +23,7 @@ import controllers.publix.StudyAssets;
  * 
  * @author Kristian Lange
  */
-public class StudyAssetsTest extends AbstractGuiTest {
+public class StudyAssetsTest extends AbstractTest {
 
 	private static StudyModel studyExample;
 

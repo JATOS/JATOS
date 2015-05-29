@@ -5,7 +5,7 @@ import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
 import exceptions.publix.ForbiddenReloadException;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -30,7 +30,7 @@ import controllers.publix.jatos.JatosPublixUtils;
  * 
  * @author Kristian Lange
  */
-public class ResultServiceTest extends AbstractGuiTest {
+public class ResultServiceTest extends AbstractTest {
 
 	private ResultService resultService;
 	private JatosPublixUtils jatosPublixUtils;

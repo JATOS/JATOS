@@ -10,7 +10,7 @@ import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.headers;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import controllers.publix.jatos.JatosPublix;
  * 
  * @author Kristian Lange
  */
-public class ComponentsControllerTest extends AbstractGuiTest {
+public class ComponentsControllerTest extends AbstractTest {
 
 	private static StudyModel studyTemplate;
 

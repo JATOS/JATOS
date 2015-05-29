@@ -9,7 +9,7 @@ import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.flash;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.status;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 
 import java.io.IOException;
 
@@ -30,7 +30,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class AccessControllerTest extends AbstractGuiTest {
+public class AccessControllerTest extends AbstractTest {
 
 	private static StudyModel studyTemplate;
 	private static UserModel testUser;

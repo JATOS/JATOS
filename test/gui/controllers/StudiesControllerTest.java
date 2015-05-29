@@ -11,7 +11,7 @@ import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.headers;
 import static play.test.Helpers.status;
-import gui.AbstractGuiTest;
+import gui.AbstractTest;
 import models.StudyModel;
 import models.workers.PersonalSingleWorker;
 
@@ -34,7 +34,7 @@ import controllers.gui.Users;
  * 
  * @author Kristian Lange
  */
-public class StudiesControllerTest extends AbstractGuiTest {
+public class StudiesControllerTest extends AbstractTest {
 
 	private static StudyModel studyTemplate;
 
