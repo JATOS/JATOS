@@ -12,9 +12,8 @@ import models.workers.Worker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
-import play.libs.F.Function;
 import play.libs.F.Promise;
-import play.libs.ws.*;
+import play.libs.ws.WS;
 import play.mvc.Controller;
 import play.mvc.Result;
 import utils.JsonUtils;
@@ -325,15 +324,12 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	 * change.
 	 */
 	public Promise<Result> forwardTo(String url) {
-		Promise<WSResponse> response = WS.url(url).get();
-		return response.map(new Function<WSResponse, Result>() {
-			public Result apply(WSResponse response) {
-				// Prevent browser from caching pages - this would be an
-				// security issue and additionally confuse the study flow
+		return WS.url(url).get().map(response -> {
+			// Prevent browser from caching pages - this would be an
+			// security issue and additionally confuse the study flow
 				response().setHeader("Cache-control", "no-cache, no-store");
 				return ok(response.getBody()).as("text/html");
-			}
-		});
+			});
 	}
 
 }
