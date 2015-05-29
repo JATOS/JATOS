@@ -15,9 +15,9 @@ import play.mvc.Result;
  * communicate (start, finish components/studies, retrieve/persist data) with
  * the JATOS server (running on the server side).
  * 
- * The whole Publix package can be seen as a state machine. State is stored in
- * the StudyResults and ComponentResults. The methods of Publix react
- * differently based on the state.
+ * The Publix can be seen as a state machine. State is stored in the
+ * StudyResults and ComponentResults. The methods of Publix react differently
+ * based on the state.
  * 
  * @author Kristian Lange
  */
