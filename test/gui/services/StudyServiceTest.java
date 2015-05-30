@@ -178,12 +178,12 @@ public class StudyServiceTest extends AbstractTest {
 				JatosWorker.WORKER_TYPE);
 
 		// Unchanged
-		assertThat(study.getComponentList().size() == 8).isTrue();
-		assertThat(study.getComponent(1).getTitle()).isEqualTo("Hello World");
+		assertThat(study.getComponentList().size()).isEqualTo(7);
+		assertThat(study.getComponent(1).getTitle()).isEqualTo("Show JSON input ");
 		assertThat(study.getLastComponent().getTitle())
 				.isEqualTo("Quit button");
 		assertThat(study.getId()).isEqualTo(studyId);
-		assertThat(study.getMemberList().contains(admin)).isTrue();
+		assertThat(study.getMemberList()).contains(admin);
 		assertThat(study.getUuid()).isEqualTo(
 				"5c85bd82-0258-45c6-934a-97ecc1ad6617");
 
@@ -297,7 +297,7 @@ public class StudyServiceTest extends AbstractTest {
 		component = study.getLastComponent();
 		try {
 			entityManager.getTransaction().begin();
-			studyService.changeComponentPosition("8", study, component);
+			studyService.changeComponentPosition("7", study, component);
 			entityManager.getTransaction().commit();
 		} catch (BadRequestException e) {
 			Fail.fail();

@@ -53,8 +53,8 @@ public abstract class AbstractTest {
 	private static final String CLASS_NAME = AbstractTest.class
 			.getSimpleName();
 
-	private static final String TEST_COMPONENT_JAC_PATH = "test/resources/hello_world.jac";
-	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "hello_world_bkp.jac";
+	private static final String TEST_COMPONENT_JAC_PATH = "test/resources/quit_button.jac";
+	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "quit_button_bkp.jac";
 
 	private static Server server;
 	protected FakeApplication application;

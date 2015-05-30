@@ -56,7 +56,7 @@ public class StudyAssetsTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyExample);
 
 		Result result = callAction(controllers.publix.routes.ref.StudyAssets
-				.at("basic_example_study/hello_world.html"));
+				.at("basic_example_study/quit_button.html"));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up

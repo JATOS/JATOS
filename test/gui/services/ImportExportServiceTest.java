@@ -81,7 +81,7 @@ public class ImportExportServiceTest extends AbstractTest {
 				jsonNode.get(ImportExportService.COMPONENT_EXISTS).asBoolean())
 				.isTrue();
 		assertThat(jsonNode.get(ImportExportService.COMPONENT_TITLE).asText())
-				.isEqualTo("Hello World");
+				.isEqualTo("Quit button");
 
 		// Change properties of first component, so we have something to check
 		// later on
@@ -108,32 +108,28 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Check that everything in the first component was updated
 		ComponentModel updatedComponent = study.getFirstComponent();
-		checkHelloWorldComponent(study, updatedComponent);
 
-		// IDs are unchanged
+		// Check that IDs are unchanged
 		assertThat(updatedComponent.getId()).isEqualTo(firstComponent.getId());
 		assertThat(updatedComponent.getUuid()).isEqualTo(
 				firstComponent.getUuid());
+
+		// Check changed component properties
+		assertThat(updatedComponent.getTitle()).isEqualTo("Changed Title");
+		assertThat(updatedComponent.getComments())
+				.isEqualTo("Changed comments");
+		assertThat(updatedComponent.getHtmlFilePath()).isEqualTo(
+				"changedHtmlFilePath");
+		assertThat(updatedComponent.getJsonData()).isEqualTo("{}");
+		assertThat(updatedComponent.getStudy()).isEqualTo(study);
+		assertThat(updatedComponent.isActive()).isFalse();
+		assertThat(updatedComponent.isReloadable()).isFalse();
 
 		// Clean-up
 		if (componentFile.exists()) {
 			componentFile.delete();
 		}
 		removeStudy(study);
-	}
-
-	private void checkHelloWorldComponent(StudyModel study,
-			ComponentModel updatedComponent) {
-		assertThat(updatedComponent.getTitle()).isEqualTo("Hello World");
-		assertThat(updatedComponent.getComments()).isEqualTo(
-				"This is the most basic component.");
-		assertThat(updatedComponent.getHtmlFilePath()).isEqualTo(
-				"hello_world.html");
-		assertThat(updatedComponent.getJsonData()).isEqualTo(null);
-		assertThat(updatedComponent.getStudy()).isEqualTo(study);
-		assertThat(updatedComponent.getTitle()).isEqualTo("Hello World");
-		assertThat(updatedComponent.isActive()).isTrue();
-		assertThat(updatedComponent.isReloadable()).isTrue();
 	}
 
 	@Test
@@ -145,34 +141,49 @@ public class ImportExportServiceTest extends AbstractTest {
 		FilePart filePart = new FilePart(ComponentModel.COMPONENT,
 				componentFile.getName(), "multipart/form-data", componentFile);
 
-		// Since the first component of the study is the one in the component
-		// file, remove it
+		// Remove the last component (so we can import it again later on)
 		entityManager.getTransaction().begin();
-		componentDao.remove(study, study.getFirstComponent());
+		componentDao.remove(study, study.getLastComponent());
 		entityManager.getTransaction().commit();
 
-		// Call importComponent()
+		// Check that the last component is removed
+		assertThat(study.getLastComponent().getTitle()).isNotEqualTo(
+				"Quit button");
+
+		// Import 1. part: Call importComponent()
 		ObjectNode jsonNode = importExportService.importComponent(study,
 				filePart);
+
+		// Check returned JSON object
 		assertThat(
 				jsonNode.get(ImportExportService.COMPONENT_EXISTS).asBoolean())
 				.isFalse();
 		assertThat(jsonNode.get(ImportExportService.COMPONENT_TITLE).asText())
-				.isEqualTo("Hello World");
+				.isEqualTo("Quit button");
 
-		// Call importComponentConfirmed(): The new component will be put on the
-		// end of study's component list
+		// Import 2. part: Call importComponentConfirmed(): The new component
+		// will be
+		// put on the end of study's component list
 		entityManager.getTransaction().begin();
 		importExportService.importComponentConfirmed(study,
 				componentFile.getName());
 		entityManager.getTransaction().commit();
 
-		// Check all properties of the last component
-		ComponentModel newComponent = study.getLastComponent();
-		checkHelloWorldComponent(study, newComponent);
-		assertThat(newComponent.getId()).isNotNull();
-		assertThat(newComponent.getUuid()).isEqualTo(
-				"ae05b118-7d9a-4e5b-bd6c-8109d42e371e");
+		// Check all properties of the imported component
+		ComponentModel importedComponent = study.getLastComponent();
+		assertThat(study.getLastComponent().getTitle())
+				.isEqualTo("Quit button");
+		assertThat(importedComponent.getId()).isNotNull();
+		assertThat(importedComponent.getUuid()).isEqualTo(
+				"503941c3-a0d5-43dc-ae56-083ab08df4b2");
+		assertThat(importedComponent.getComments()).isEqualTo("");
+		assertThat(importedComponent.getHtmlFilePath()).isEqualTo(
+				"quit_button.html");
+		assertThat(importedComponent.getJsonData()).contains(
+				"This component is about what you can do in the client side");
+		assertThat(importedComponent.getStudy()).isEqualTo(study);
+		assertThat(importedComponent.isActive()).isTrue();
+		assertThat(importedComponent.isReloadable()).isFalse();
 
 		// Clean-up
 		if (componentFile.exists()) {
@@ -184,11 +195,15 @@ public class ImportExportServiceTest extends AbstractTest {
 	@Test
 	public void importNewStudy() throws IOException, ForbiddenException,
 			BadRequestException {
+
+		// Import 1. part: Call importStudy()
 		File studyFile = getExampleStudyFile();
 		FilePart filePart = new FilePart(StudyModel.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
+
+		// Check returned JSON object
 		assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
 				.isFalse();
 		assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
@@ -200,8 +215,8 @@ public class ImportExportServiceTest extends AbstractTest {
 						+ IOUtils.ZIP_FILE_SUFFIX).isEqualTo(
 				studyFile.getName());
 
-		// Call importStudyConfirmed(): Since this study is new, the overwrite
-		// parameters don't matter
+		// Import 2. part: Call importStudyConfirmed(): Since this study is new,
+		// the overwrite parameters don't matter
 		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
 		node.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM, true);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
@@ -209,6 +224,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		importExportService.importStudyConfirmed(admin, node);
 		entityManager.getTransaction().commit();
 
+		// Check properties and assets of imported study
 		List<StudyModel> studyList = studyDao.findAll();
 		assertThat(studyList.size() == 1).isTrue();
 		StudyModel study = studyList.get(0);
@@ -223,15 +239,16 @@ public class ImportExportServiceTest extends AbstractTest {
 		assertThat(study.getAllowedWorkerList()).containsOnly(
 				JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE,
 				PersonalMultipleWorker.WORKER_TYPE);
-		assertThat(study.getComponentList().size() == 8).isTrue();
-		assertThat(study.getComponent(1).getTitle()).isEqualTo("Hello World");
+		assertThat(study.getComponentList().size()).isEqualTo(7);
+		assertThat(study.getComponent(1).getTitle()).isEqualTo(
+				"Show JSON input ");
 		assertThat(study.getLastComponent().getTitle())
 				.isEqualTo("Quit button");
 		assertThat(study.getDate()).isNull();
 		assertThat(study.getDescription()).isEqualTo(
 				"A couple of sample components.");
 		assertThat(study.getId()).isPositive();
-		assertThat(study.getJsonData().contains("\"totalStudySlides\" : 17"))
+		assertThat(study.getJsonData().contains("\"totalStudySlides\":17"))
 				.isTrue();
 		assertThat(study.getMemberList().contains(admin)).isTrue();
 		assertThat(study.getTitle()).isEqualTo("Basic Example Study");
@@ -248,14 +265,14 @@ public class ImportExportServiceTest extends AbstractTest {
 		// Check the number of files and directories in the study assets
 		String[] fileList = IOUtils.getStudyAssetsDir(study.getDirName())
 				.list();
-		assertThat(fileList.length == 10);
+		assertThat(fileList.length).isEqualTo(11);
 	}
 
 	@Test
 	public void importStudyOverwritePropertiesAndAssets()
 			throws NoSuchAlgorithmException, IOException, ForbiddenException,
 			BadRequestException {
-		// Import study, so we have something to overwrite
+		// Import study and alter it, so we have something to overwrite later on
 		StudyModel study = importExampleStudy();
 		alterStudy(study);
 		addStudy(study);
@@ -264,12 +281,14 @@ public class ImportExportServiceTest extends AbstractTest {
 		studyService.renameStudyAssetsDir(study, "changed_dirname");
 		entityManager.getTransaction().commit();
 
+		// Import 1. call: importStudy()
 		File studyFile = getExampleStudyFile();
-
 		FilePart filePart = new FilePart(StudyModel.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
+
+		// Check returned JSON object
 		assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
 				.isTrue();
 		assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
@@ -281,8 +300,8 @@ public class ImportExportServiceTest extends AbstractTest {
 						+ IOUtils.ZIP_FILE_SUFFIX).isEqualTo(
 				studyFile.getName());
 
-		// Call importStudyConfirmed(): Allow properties and assets to be
-		// overwritten
+		// Import 2. call: importStudyConfirmed(): Allow properties and assets
+		// to be overwritten
 		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
 		node.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM, true);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
@@ -290,6 +309,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		importExportService.importStudyConfirmed(admin, node);
 		entityManager.getTransaction().commit();
 
+		// Check properties and assets of imported study
 		List<StudyModel> studyList = studyDao.findAll();
 		assertThat(studyList.size() == 1).isTrue();
 		StudyModel importedStudy = studyList.get(0);
@@ -309,16 +329,19 @@ public class ImportExportServiceTest extends AbstractTest {
 		alterStudy(study);
 		addStudy(study);
 
+		// Change study assets dir name, so we can check it later on
 		entityManager.getTransaction().begin();
-		studyService.renameStudyAssetsDir(study, "changed_dirname");
+		studyService.renameStudyAssetsDir(study, "original_dirname");
 		entityManager.getTransaction().commit();
 
+		// Import 1. call: importStudy()
 		File studyFile = getExampleStudyFile();
-
 		FilePart filePart = new FilePart(StudyModel.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
+
+		// Check returned JSON object
 		assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
 				.isTrue();
 		assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
@@ -339,11 +362,12 @@ public class ImportExportServiceTest extends AbstractTest {
 		importExportService.importStudyConfirmed(admin, node);
 		entityManager.getTransaction().commit();
 
+		// Check properties (overwritten) and assets (not overwritten)
 		List<StudyModel> studyList = studyDao.findAll();
 		assertThat(studyList.size() == 1).isTrue();
 		StudyModel importedStudy = studyList.get(0);
 		checkPropertiesOfBasicExampleStudy(importedStudy);
-		checkAssetsOfBasicExampleStudy(study, "changed_dirname");
+		checkAssetsOfBasicExampleStudy(study, "original_dirname");
 
 		// Clean up
 		removeStudy(study);
@@ -353,21 +377,24 @@ public class ImportExportServiceTest extends AbstractTest {
 	public void importStudyOverwriteAssetsNotProperties()
 			throws NoSuchAlgorithmException, IOException, ForbiddenException,
 			BadRequestException {
-		// Import study, so we have something to overwrite
+		// Import study and alter it, so we have something to overwrite
 		StudyModel study = importExampleStudy();
 		alterStudy(study);
 		addStudy(study);
 
+		// Change study assets dir name so we have something to overwrite
 		entityManager.getTransaction().begin();
-		studyService.renameStudyAssetsDir(study, "changed_dirname");
+		studyService.renameStudyAssetsDir(study, "original_dirname");
 		entityManager.getTransaction().commit();
 
+		// Import 1. call
 		File studyFile = getExampleStudyFile();
-
 		FilePart filePart = new FilePart(StudyModel.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
+
+		// Check returned JSON object
 		assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
 				.isTrue();
 		assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
@@ -379,8 +406,8 @@ public class ImportExportServiceTest extends AbstractTest {
 						+ IOUtils.ZIP_FILE_SUFFIX).isEqualTo(
 				studyFile.getName());
 
-		// Call importStudyConfirmed(): Allow properties but not assets to be
-		// overwritten
+		// Import 2. call: importStudyConfirmed(): Allow properties but not
+		// assets to be overwritten
 		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
 		node.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM, false);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
@@ -388,11 +415,12 @@ public class ImportExportServiceTest extends AbstractTest {
 		importExportService.importStudyConfirmed(admin, node);
 		entityManager.getTransaction().commit();
 
+		// Check Properties (should not have changed) 
 		assertThat(study.getAllowedWorkerList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
-		assertThat(study.getComponentList().size() == 7).isTrue();
+		assertThat(study.getComponentList().size()).isEqualTo(6);
 		assertThat(study.getComponent(1).getTitle()).isEqualTo(
-				"Show JSON data ");
+				"Task instructions ");
 		assertThat(study.getLastComponent().getTitle()).isEqualTo(
 				"Changed title");
 		assertThat(study.getDate()).isNull();
@@ -404,7 +432,8 @@ public class ImportExportServiceTest extends AbstractTest {
 		assertThat(study.getUuid()).isEqualTo(
 				"5c85bd82-0258-45c6-934a-97ecc1ad6617");
 
-		checkAssetsOfBasicExampleStudy(study, "changed_dirname");
+		// Asset dir name should not have changed
+		checkAssetsOfBasicExampleStudy(study, "original_dirname");
 
 		// Clean up
 		removeStudy(study);
@@ -426,9 +455,13 @@ public class ImportExportServiceTest extends AbstractTest {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
+		// Export study into a file
 		File studyFile = importExportService.createStudyExportZipFile(study);
 
+		// Import the exported study again
 		JsonNode jsonNode = importExportService.importStudy(admin, studyFile);
+		
+		// Check returned JSON object
 		assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
 				.isTrue();
 		assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
@@ -438,6 +471,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText())
 				.isNotEmpty();
 
+		// importStudy() should remember the study file name in the Play session
 		String studyFileName = Http.Context.current.get().session()
 				.get(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
 		assertThat(studyFileName).isNotEmpty();

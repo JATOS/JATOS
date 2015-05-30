@@ -120,9 +120,9 @@ public class ImportExportControllerTest extends AbstractTest {
 		study.setTitle("Different Title");
 		// Change a file name
 		File file_orig = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
-				"hello_world.html");
+				"quit_button.html");
 		File file_renamed = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
-				"hello_world_renamed.html");
+				"quit_button_renamed.html");
 		file_orig.renameTo(file_renamed);
 		addStudy(study);
 
@@ -193,14 +193,14 @@ public class ImportExportControllerTest extends AbstractTest {
 	 */
 	@Test
 	public synchronized void checkCallImportComponent() throws Exception {
-		// Import study manually and remove first component (Hello World)
+		// Import study manually and remove first component
 		StudyModel study = importExampleStudy();
 		study.removeComponent(study.getFirstComponent());
 		addStudy(study);
 
 		File componentFile = getExampleComponentFile();
 		assertThat(study.getFirstComponent().getTitle()).doesNotContain(
-				"Hello World");
+				"Show JSON input ");
 
 		// First call: ImportExport.importComponent()
 		Result result = callAction(
