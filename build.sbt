@@ -8,6 +8,8 @@ organization := "org.jatos"
 
 scalaVersion := "2.11.6"
 
+javaHome := Some(file("/usr/lib/jvm/jdk1.8.0_40"))
+
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
 libraryDependencies ++= Seq(
@@ -52,8 +54,5 @@ mappings in Universal := (mappings in Universal).value filter {
 }
 
 Keys.fork in Test := false
-
-
-
 
 fork in run := true
