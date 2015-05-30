@@ -154,18 +154,18 @@ public class GeneralSinglePublixUtilsTest extends
 		Cookie cookie = mock(Cookie.class);
 		// Done studies but not this one
 		when(cookie.value()).thenReturn("3,4,5");
-		generalSinglePublixUtils.checkAllowedToDoStudy(study, cookie);
+		generalSinglePublixUtils.checkStudyInCookie(study, cookie);
 
 		// Null cookie is allowed
-		generalSinglePublixUtils.checkAllowedToDoStudy(study, null);
+		generalSinglePublixUtils.checkStudyInCookie(study, null);
 
 		// Empty cookie value is allowed
 		when(cookie.value()).thenReturn("");
-		generalSinglePublixUtils.checkAllowedToDoStudy(study, cookie);
+		generalSinglePublixUtils.checkStudyInCookie(study, cookie);
 
 		// Weired cookie value is allowed
 		when(cookie.value()).thenReturn("foo");
-		generalSinglePublixUtils.checkAllowedToDoStudy(study, cookie);
+		generalSinglePublixUtils.checkStudyInCookie(study, cookie);
 
 		// Clean-up
 		removeStudy(study);
@@ -180,10 +180,10 @@ public class GeneralSinglePublixUtilsTest extends
 
 		Cookie cookie = mock(Cookie.class);
 		// Put this study ID into the cookie
-		when(cookie.value()).thenReturn(study.getId().toString());
+		when(cookie.value()).thenReturn(study.getUuid());
 
 		try {
-			generalSinglePublixUtils.checkAllowedToDoStudy(study, cookie);
+			generalSinglePublixUtils.checkStudyInCookie(study, cookie);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -205,11 +205,11 @@ public class GeneralSinglePublixUtilsTest extends
 		when(cookie.value()).thenReturn("10,20");
 		String cookieValue = generalSinglePublixUtils.addStudyToCookie(study,
 				cookie);
-		assertThat(cookieValue).endsWith("," + study.getId());
+		assertThat(cookieValue).endsWith("," + study.getUuid());
 
 		// No cookie
 		cookieValue = generalSinglePublixUtils.addStudyToCookie(study, null);
-		assertThat(cookieValue).isEqualTo(study.getId().toString());
+		assertThat(cookieValue).isEqualTo(study.getUuid());
 
 		// Clean-up
 		removeStudy(study);

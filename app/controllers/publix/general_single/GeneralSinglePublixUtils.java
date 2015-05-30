@@ -69,13 +69,16 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 		}
 	}
 
-	public void checkAllowedToDoStudy(StudyModel study, Cookie cookie)
+	/**
+	 * Check if study was done before. Throws an ForbiddenPublixException if
+	 * this study's UUID is in the cookie. 
+	 */
+	public void checkStudyInCookie(StudyModel study, Cookie cookie)
 			throws ForbiddenPublixException {
-		// Check if study was done before - cookie has the study id stored
 		if (cookie != null) {
-			String[] studyIdArray = cookie.value().split(",");
-			for (String idStr : studyIdArray) {
-				if (study.getId().toString().equals(idStr)) {
+			String[] studyUuidArray = cookie.value().split(",");
+			for (String uuidStr : studyUuidArray) {
+				if (study.getUuid().equals(uuidStr)) {
 					throw new ForbiddenPublixException(
 							PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 				}
@@ -83,12 +86,15 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 		}
 	}
 
+	/**
+	 * Adds this study's UUID to this cookie's value and returns the value.
+	 */
 	public String addStudyToCookie(StudyModel study, Cookie cookie) {
 		String value;
 		if (cookie != null) {
-			value = cookie.value() + "," + study.getId();
+			value = cookie.value() + "," + study.getUuid();
 		} else {
-			value = study.getId().toString();
+			value = study.getUuid();
 		}
 		return value;
 	}

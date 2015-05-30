@@ -25,10 +25,14 @@ import exceptions.publix.PublixException;
  * @author Kristian Lange
  */
 @Singleton
-public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
-		implements IPublix {
+public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
+		IPublix {
 
-	public static final String COOKIE = "JATOS_GENERALSINGLE";
+	/**
+	 * Cookie name where all study's UUIDs are stored.
+	 */
+	public static final String COOKIE = "JATOS_GENERALSINGLE_UUIDS";
+
 	public static final String GENERALSINGLE = "generalSingle";
 
 	private static final String CLASS_NAME = GeneralSinglePublix.class
@@ -53,10 +57,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId);
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		Cookie cookie = Publix.request().cookie(GeneralSinglePublix.COOKIE);
-		publixUtils.checkAllowedToDoStudy(study, cookie);
-		String cookieValue = publixUtils.addStudyToCookie(study, cookie);
-		// TODO do I have to set the cookie again?
-		Publix.response().setCookie(GeneralSinglePublix.COOKIE, cookieValue);
+		publixUtils.checkStudyInCookie(study, cookie);
 
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		workerDao.create(worker);
@@ -67,6 +68,9 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);
+
+		String cookieValue = publixUtils.addStudyToCookie(study, cookie);
+		Publix.response().setCookie(GeneralSinglePublix.COOKIE, cookieValue);
 
 		ComponentModel firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
