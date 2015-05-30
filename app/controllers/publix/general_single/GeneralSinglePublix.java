@@ -8,6 +8,7 @@ import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.Logger;
 import play.mvc.Result;
+import play.mvc.Http.Cookie;
 import utils.JsonUtils;
 
 import com.google.inject.Inject;
@@ -51,8 +52,11 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 	public Result startStudy(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId);
 		StudyModel study = publixUtils.retrieveStudy(studyId);
-		publixUtils.checkAllowedToDoStudy(study);
-		publixUtils.addStudyToCookie(study);
+		Cookie cookie = Publix.request().cookie(GeneralSinglePublix.COOKIE);
+		publixUtils.checkAllowedToDoStudy(study, cookie);
+		String cookieValue = publixUtils.addStudyToCookie(study, cookie);
+		// TODO do I have to set the cookie again?
+		Publix.response().setCookie(GeneralSinglePublix.COOKIE, cookieValue);
 
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		workerDao.create(worker);

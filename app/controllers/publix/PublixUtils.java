@@ -81,6 +81,9 @@ public abstract class PublixUtils<T extends Worker> {
 	public abstract T retrieveTypedWorker(String workerIdStr)
 			throws PublixException;
 
+	/**
+	 * Retrieves the worker with the given worker ID from the DB. 
+	 */
 	public Worker retrieveWorker(String workerIdStr) throws PublixException {
 		if (workerIdStr == null) {
 			throw new ForbiddenPublixException(

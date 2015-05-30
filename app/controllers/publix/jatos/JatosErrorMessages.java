@@ -7,8 +7,8 @@ import com.google.inject.Singleton;
 import controllers.publix.PublixErrorMessages;
 
 /**
- * Special PublixErrorMessages for JatosPublix (studies or components started via
- * JATOS' UI).
+ * Special PublixErrorMessages for JatosPublix (studies or components started
+ * via JATOS' UI).
  * 
  * @author Kristian Lange
  */
@@ -20,14 +20,14 @@ public class JatosErrorMessages extends PublixErrorMessages<JatosWorker> {
 	public static final String STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS = "This study or component was never started from within JATOS.";
 
 	public String workerNotCorrectType(Long workerId) {
-		String errorMsg = "The worker with ID " + workerId
-				+ " isn't a JATOS worker.";
+		String errorMsg = "The worker with ID " + workerId + " isn't a "
+				+ JatosWorker.UI_WORKER_TYPE + " worker.";
 		return errorMsg;
 	}
-	
+
 	public String userNotExist(String email) {
 		String errorMsg = "An user with email " + email + " doesn't exist.";
 		return errorMsg;
 	}
-	
+
 }

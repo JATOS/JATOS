@@ -13,7 +13,6 @@ import play.mvc.Http.Cookie;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import controllers.publix.Publix;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
 import exceptions.publix.ForbiddenPublixException;
@@ -70,10 +69,9 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 		}
 	}
 
-	public void checkAllowedToDoStudy(StudyModel study)
+	public void checkAllowedToDoStudy(StudyModel study, Cookie cookie)
 			throws ForbiddenPublixException {
 		// Check if study was done before - cookie has the study id stored
-		Cookie cookie = Publix.request().cookie(GeneralSinglePublix.COOKIE);
 		if (cookie != null) {
 			String[] studyIdArray = cookie.value().split(",");
 			for (String idStr : studyIdArray) {
@@ -85,15 +83,14 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 		}
 	}
 
-	public void addStudyToCookie(StudyModel study) {
-		Cookie cookie = Publix.request().cookie(GeneralSinglePublix.COOKIE);
+	public String addStudyToCookie(StudyModel study, Cookie cookie) {
 		String value;
 		if (cookie != null) {
 			value = cookie.value() + "," + study.getId();
 		} else {
 			value = study.getId().toString();
 		}
-		Publix.response().setCookie(GeneralSinglePublix.COOKIE, value);
+		return value;
 	}
 
 }
