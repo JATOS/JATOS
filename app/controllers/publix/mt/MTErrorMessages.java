@@ -13,15 +13,15 @@ import controllers.publix.PublixErrorMessages;
  */
 @Singleton
 public class MTErrorMessages extends PublixErrorMessages<MTWorker> {
-	
+
 	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
-	
+
 	public String workerNotCorrectType(Long workerId) {
-		String errorMsg = "The worker with ID " + workerId
-				+ " isn't a MTurk worker.";
+		String errorMsg = "The worker with ID " + workerId + " isn't a "
+				+ MTWorker.UI_WORKER_TYPE + " worker.";
 		return errorMsg;
 	}
-	
+
 	public String noPreviewAvailable(Long studyId) {
 		String errorMsg = "No preview available for study " + studyId + ".";
 		return errorMsg;

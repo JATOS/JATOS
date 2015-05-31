@@ -44,8 +44,6 @@ public class StudyServiceTest extends AbstractTest {
 	public void before() throws Exception {
 		studyService = Global.INJECTOR.getInstance(StudyService.class);
 		mockContext();
-		// Don't know why, but we have to bind entityManager again
-		JPA.bindForCurrentThread(entityManager);
 	}
 
 	@Override

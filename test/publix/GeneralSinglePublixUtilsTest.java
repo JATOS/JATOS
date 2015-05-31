@@ -55,7 +55,9 @@ public class GeneralSinglePublixUtilsTest extends
 		workerDao.create(worker);
 		entityManager.getTransaction().commit();
 
-		publixUtils.retrieveTypedWorker(worker.getId().toString());
+		GeneralSingleWorker retrievedWorker = publixUtils
+				.retrieveTypedWorker(worker.getId().toString());
+		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
 	}
 
 	@Test
@@ -81,7 +83,8 @@ public class GeneralSinglePublixUtilsTest extends
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);
 
-		// Create StudyResult for this study and worker
+		// Create StudyResult for this study and worker. Study's StudyResult is
+		// not in state FINISHED.
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study, worker);
 		// Have to set worker manually in test - don't know why

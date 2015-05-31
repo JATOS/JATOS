@@ -43,8 +43,6 @@ public class ImportExportServiceTest extends AbstractTest {
 		importExportService = Global.INJECTOR
 				.getInstance(ImportExportService.class);
 		mockContext();
-		// Don't know why, but we have to bind entityManager again
-		JPA.bindForCurrentThread(entityManager);
 	}
 
 	@Override

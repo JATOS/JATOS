@@ -50,8 +50,7 @@ public abstract class AbstractTest {
 
 	private static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
 
-	private static final String CLASS_NAME = AbstractTest.class
-			.getSimpleName();
+	private static final String CLASS_NAME = AbstractTest.class.getSimpleName();
 
 	private static final String TEST_COMPONENT_JAC_PATH = "test/resources/quit_button.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "quit_button_bkp.jac";
@@ -134,6 +133,9 @@ public abstract class AbstractTest {
 		Http.Context context = new Http.Context(id, header, request, flashData,
 				flashData, argData);
 		Http.Context.current.set(context);
+		// Don't know why, but we have to bind entityManager again after mocking
+		// the context
+		JPA.bindForCurrentThread(entityManager);
 	}
 
 	protected static void removeStudyAssetsRootDir() throws IOException {

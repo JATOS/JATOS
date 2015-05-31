@@ -81,15 +81,15 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 			throw new ForbiddenPublixException(
 					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
-		UserModel loggedInUser = worker.getUser();
+		UserModel user = worker.getUser();
 		// User has to be a member of this study
-		if (!study.hasMember(loggedInUser)) {
+		if (!study.hasMember(user)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotAllowedStudy(worker, study.getId()));
 		}
 		// User has to be logged in
 		String email = Publix.session(Users.SESSION_EMAIL);
-		if (!loggedInUser.getEmail().equals(email)) {
+		if (!user.getEmail().equals(email)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotAllowedStudy(worker, study.getId()));
 		}

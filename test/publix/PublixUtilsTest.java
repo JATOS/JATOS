@@ -47,7 +47,7 @@ public class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		assertThat(a).isEqualTo(2);
 	}
 
-	public void addWorker(T worker) {
+	public void addWorker(Worker worker) {
 		entityManager.getTransaction().begin();
 		workerDao.create(worker);
 		entityManager.getTransaction().commit();
