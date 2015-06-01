@@ -160,11 +160,11 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 			throws ForbiddenPublixException {
 		mockContext();
 		Http.Context.current().session()
-				.put(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_STUDY);
+				.put(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 
 		String jatosShow = jatosPublixUtils.retrieveJatosShowFromSession();
 
-		assertThat(jatosShow).isEqualTo(JatosPublix.SHOW_STUDY);
+		assertThat(jatosShow).isEqualTo(JatosPublix.RUN_STUDY);
 	}
 
 	@Test

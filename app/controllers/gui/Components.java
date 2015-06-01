@@ -101,8 +101,8 @@ public class Components extends Controller {
 			jatosGuiExceptionThrower.throwStudyIndex(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_COMPONENT_START);
-		session(JatosPublix.SHOW_COMPONENT_ID, componentId.toString());
+		session(JatosPublix.JATOS_RUN, JatosPublix.RUN_COMPONENT_START);
+		session(JatosPublix.RUN_COMPONENT_ID, componentId.toString());
 		String queryStr = "?" + JatosPublix.JATOS_WORKER_ID + "="
 				+ loggedInUser.getWorker().getId();
 		return redirect(controllers.publix.routes.PublixInterceptor.startStudy(

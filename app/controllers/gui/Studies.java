@@ -441,7 +441,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
-		session(JatosPublix.JATOS_SHOW, JatosPublix.SHOW_STUDY);
+		session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		String queryStr = "?" + JatosPublix.JATOS_WORKER_ID + "="
 				+ loggedInUser.getWorker().getId();
 		return redirect(controllers.publix.routes.PublixInterceptor.startStudy(

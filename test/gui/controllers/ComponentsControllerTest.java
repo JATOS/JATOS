@@ -62,10 +62,10 @@ public class ComponentsControllerTest extends AbstractTest {
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
-		assertThat(session(result).containsKey(JatosPublix.JATOS_SHOW));
+		assertThat(session(result).containsKey(JatosPublix.JATOS_RUN));
 		assertThat(session(result).containsValue(
-				JatosPublix.SHOW_COMPONENT_START));
-		assertThat(session(result).containsKey(JatosPublix.SHOW_COMPONENT_ID));
+				JatosPublix.RUN_COMPONENT_START));
+		assertThat(session(result).containsKey(JatosPublix.RUN_COMPONENT_ID));
 		assertThat(session(result).containsValue(studyClone.getId().toString()));
 		assertThat(headers(result).get(HttpHeaders.LOCATION).contains(
 				JatosPublix.JATOS_WORKER_ID));

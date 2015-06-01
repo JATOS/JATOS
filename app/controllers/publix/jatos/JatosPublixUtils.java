@@ -54,20 +54,6 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 		return (JatosWorker) worker;
 	}
 
-	public UserModel retrieveUser() throws ForbiddenPublixException {
-		String email = Publix.session(Users.SESSION_EMAIL);
-		if (email == null) {
-			throw new ForbiddenPublixException(
-					JatosErrorMessages.NO_USER_LOGGED_IN);
-		}
-		UserModel loggedInUser = userDao.findByEmail(email);
-		if (loggedInUser == null) {
-			throw new ForbiddenPublixException(
-					errorMessages.userNotExist(email));
-		}
-		return loggedInUser;
-	}
-
 	@Override
 	public void checkWorkerAllowedToStartStudy(JatosWorker worker,
 			StudyModel study) throws ForbiddenPublixException {
@@ -95,9 +81,31 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 		}
 	}
 
+	/**
+	 * Retrieves the currently logged-in user or throws an
+	 * ForbiddenPublixException if none is logged-in.
+	 */
+	public UserModel retrieveLoggedInUser() throws ForbiddenPublixException {
+		String email = Publix.session(Users.SESSION_EMAIL);
+		if (email == null) {
+			throw new ForbiddenPublixException(
+					JatosErrorMessages.NO_USER_LOGGED_IN);
+		}
+		UserModel loggedInUser = userDao.findByEmail(email);
+		if (loggedInUser == null) {
+			throw new ForbiddenPublixException(
+					errorMessages.userNotExist(email));
+		}
+		return loggedInUser;
+	}
+
+	/**
+	 * Retrieves the kind of jatos run, whole study or single component, this
+	 * is. This information was stored in the session in the prior action.
+	 */
 	public String retrieveJatosShowFromSession()
 			throws ForbiddenPublixException {
-		String jatosShow = Publix.session(JatosPublix.JATOS_SHOW);
+		String jatosShow = Publix.session(JatosPublix.JATOS_RUN);
 		if (jatosShow == null) {
 			throw new ForbiddenPublixException(
 					JatosErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS);
