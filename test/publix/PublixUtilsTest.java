@@ -7,6 +7,9 @@ import gui.AbstractTest;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
+import models.StudyModel;
+import models.StudyResult;
+import models.StudyResult.StudyState;
 import models.workers.Worker;
 
 import org.fest.assertions.Fail;
@@ -47,9 +50,19 @@ public class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		assertThat(a).isEqualTo(2);
 	}
 
-	public void addWorker(Worker worker) {
+	protected void addWorker(Worker worker) {
 		entityManager.getTransaction().begin();
 		workerDao.create(worker);
+		entityManager.getTransaction().commit();
+	}
+	
+	protected void addStudyResult(StudyModel study, Worker worker,
+			StudyState state) {
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study, worker);
+		studyResult.setStudyState(state);
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(worker);
 		entityManager.getTransaction().commit();
 	}
 

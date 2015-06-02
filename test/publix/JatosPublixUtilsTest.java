@@ -57,9 +57,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 	public void checkRetrieveTypedWorkerWrongType()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		GeneralSingleWorker generalSingleWorker = new GeneralSingleWorker();
-		entityManager.getTransaction().begin();
-		workerDao.create(generalSingleWorker);
-		entityManager.getTransaction().commit();
+		addWorker(generalSingleWorker);
 
 		try {
 			publixUtils.retrieveTypedWorker(generalSingleWorker.getId()

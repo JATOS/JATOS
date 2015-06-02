@@ -1,13 +1,13 @@
 package publix;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 import models.StudyModel;
-import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.GeneralSingleWorker;
 
@@ -15,7 +15,9 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import play.mvc.Http.Cookie;
+
 import common.Global;
+
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.general_single.GeneralSingleErrorMessages;
 import controllers.publix.general_single.GeneralSinglePublixUtils;
@@ -51,9 +53,7 @@ public class GeneralSinglePublixUtilsTest extends
 	public void checkRetrieveTypedWorker() throws NoSuchAlgorithmException,
 			IOException, PublixException {
 		GeneralSingleWorker worker = new GeneralSingleWorker();
-		entityManager.getTransaction().begin();
-		workerDao.create(worker);
-		entityManager.getTransaction().commit();
+		addWorker(worker);
 
 		GeneralSingleWorker retrievedWorker = publixUtils
 				.retrieveTypedWorker(worker.getId().toString());
@@ -83,13 +83,7 @@ public class GeneralSinglePublixUtilsTest extends
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);
 
-		// Create StudyResult for this study and worker. Study's StudyResult is
-		// not in state FINISHED.
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study, worker);
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(worker);
-		entityManager.getTransaction().commit();
+		addStudyResult(study, worker, StudyState.STARTED);
 
 		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
 
@@ -127,13 +121,7 @@ public class GeneralSinglePublixUtilsTest extends
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);
 
-		// Create StudyResult with state FINISHED for this study and worker
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study, worker);
-		studyResult.setStudyState(StudyState.FINISHED);
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(worker);
-		entityManager.getTransaction().commit();
+		addStudyResult(study, worker, StudyState.FINISHED);
 
 		// General single workers can't repeat the same study
 		try {
