@@ -20,7 +20,7 @@ import exceptions.publix.PublixException;
 
 /**
  * Implementation of JATOS' public API for general single study runs (open to
- * everyone).
+ * everyone). A general single run is done by a GeneralSingleWorker.
  * 
  * @author Kristian Lange
  */

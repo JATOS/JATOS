@@ -17,8 +17,8 @@ import controllers.publix.Publix;
 import exceptions.publix.PublixException;
 
 /**
- * Implementation of JATOS' public API for studies run by personal multiple
- * worker.
+ * Implementation of JATOS' public API for studies run by
+ * PersonalMultipleWorker.
  * 
  * @author Kristian Lange
  */

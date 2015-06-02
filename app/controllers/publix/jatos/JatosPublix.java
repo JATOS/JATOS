@@ -27,7 +27,8 @@ import exceptions.publix.PublixException;
 
 /**
  * Implementation of JATOS' public API for studies and components that are
- * started via JATOS' UI (show study or show component).
+ * started via JATOS' UI (show study or show component). A JATOS run is done by
+ * a JatosWorker.
  * 
  * @author Kristian Lange
  */
@@ -35,7 +36,7 @@ import exceptions.publix.PublixException;
 public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	/**
-	 * Parameter name that is used in a URL query string for an JATOS run. 
+	 * Parameter name that is used in a URL query string for an JATOS run.
 	 */
 	public static final String JATOS_WORKER_ID = "jatosWorkerId";
 

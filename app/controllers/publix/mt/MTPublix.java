@@ -23,7 +23,8 @@ import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
 
 /**
- * Implementation of JATOS' public API for studies that are started via MTurk.
+ * Implementation of JATOS' public API for studies that are started via MTurk. A
+ * MTurk run is done by a MTWorker or a MTSandboxWorker.
  * 
  * @author Kristian Lange
  */
