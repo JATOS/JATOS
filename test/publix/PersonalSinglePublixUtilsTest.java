@@ -17,6 +17,7 @@ import common.Global;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.personal_single.PersonalSingleErrorMessages;
 import controllers.publix.personal_single.PersonalSinglePublixUtils;
+import controllers.publix.personal_single.PersonalSingleStudyAuthorisation;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 
@@ -28,6 +29,7 @@ public class PersonalSinglePublixUtilsTest extends
 
 	private PersonalSingleErrorMessages personalSingleErrorMessages;
 	private PersonalSinglePublixUtils personalSinglePublixUtils;
+	private PersonalSingleStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
@@ -38,6 +40,8 @@ public class PersonalSinglePublixUtilsTest extends
 		personalSingleErrorMessages = Global.INJECTOR
 				.getInstance(PersonalSingleErrorMessages.class);
 		errorMessages = personalSingleErrorMessages;
+		studyAuthorisation = Global.INJECTOR
+				.getInstance(PersonalSingleStudyAuthorisation.class);
 	}
 
 	@Override
@@ -80,7 +84,7 @@ public class PersonalSinglePublixUtilsTest extends
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
 
-		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
 
 		// Clean-up
 		removeStudy(study);
@@ -100,7 +104,7 @@ public class PersonalSinglePublixUtilsTest extends
 		addStudyResult(study, worker, StudyState.FINISHED);
 
 		try {
-			publixUtils.checkWorkerAllowedToStartStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -120,7 +124,7 @@ public class PersonalSinglePublixUtilsTest extends
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
 
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		// Clean-up
 		removeStudy(study);
@@ -137,7 +141,7 @@ public class PersonalSinglePublixUtilsTest extends
 		addWorker(worker);
 
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage())
@@ -164,7 +168,7 @@ public class PersonalSinglePublixUtilsTest extends
 		// FINISHED, FAIL, ABORTED
 		addStudyResult(study, worker, StudyState.FINISHED);
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -172,7 +176,7 @@ public class PersonalSinglePublixUtilsTest extends
 		}
 		addStudyResult(study, worker, StudyState.FAIL);
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -180,7 +184,7 @@ public class PersonalSinglePublixUtilsTest extends
 		}
 		addStudyResult(study, worker, StudyState.ABORTED);
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(

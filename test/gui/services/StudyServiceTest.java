@@ -82,7 +82,8 @@ public class StudyServiceTest extends AbstractTest {
 				.isEqualTo(study.getDescription());
 		assertThat(cloneInDb.getJsonData()).isEqualTo(study.getJsonData());
 		assertThat(cloneInDb.getMemberList()).containsOnly(admin);
-		assertThat(cloneInDb.getTitle()).isEqualTo(study.getTitle());
+		assertThat(cloneInDb.getTitle()).isEqualTo(
+				study.getTitle() + " (clone)");
 
 		// Not equal
 		assertThat(cloneInDb.isLocked()).isFalse();
@@ -177,7 +178,8 @@ public class StudyServiceTest extends AbstractTest {
 
 		// Unchanged
 		assertThat(study.getComponentList().size()).isEqualTo(7);
-		assertThat(study.getComponent(1).getTitle()).isEqualTo("Show JSON input ");
+		assertThat(study.getComponent(1).getTitle()).isEqualTo(
+				"Show JSON input ");
 		assertThat(study.getLastComponent().getTitle())
 				.isEqualTo("Quit button");
 		assertThat(study.getId()).isEqualTo(studyId);

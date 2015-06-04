@@ -50,11 +50,25 @@ public class StudyService {
 	public StudyModel cloneStudy(StudyModel study, UserModel loggedInUser)
 			throws IOException {
 		StudyModel clone = cloneStudyProperties(study);
+		clone.setTitle(cloneTitle(clone.getTitle()));
 		String destDirName = IOUtils.cloneStudyAssetsDirectory(study
 				.getDirName());
 		clone.setDirName(destDirName);
 		studyDao.create(clone, loggedInUser);
 		return clone;
+	}
+	
+	/**
+	 * Generates an title for the cloned study that doesn't exist so far
+	 */
+	private String cloneTitle(String origTitle) {
+		String cloneTitle = origTitle + " (clone)";
+		int i = 2;
+		while (!studyDao.findByTitle(cloneTitle).isEmpty()) {
+			cloneTitle = origTitle + " (clone " + i + ")";
+			i++;
+		}
+		return cloneTitle;
 	}
 
 	/**

@@ -16,17 +16,14 @@ import com.google.inject.Singleton;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.PublixUtils;
 import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
 
 /**
- * Special PublixUtils for GeneralSinglePublix
+ * GeneralSinglePublix' implementation of PublixUtils
  * 
  * @author Kristian Lange
  */
 @Singleton
 public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
-
-	private GeneralSingleErrorMessages errorMessages;
 
 	@Inject
 	GeneralSinglePublixUtils(GeneralSingleErrorMessages errorMessages,
@@ -35,12 +32,11 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 			WorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
 				componentResultDao, workerDao);
-		this.errorMessages = errorMessages;
 	}
-
+	
 	@Override
 	public GeneralSingleWorker retrieveTypedWorker(String workerIdStr)
-			throws PublixException {
+			throws ForbiddenPublixException {
 		Worker worker = retrieveWorker(workerIdStr);
 		if (!(worker instanceof GeneralSingleWorker)) {
 			throw new ForbiddenPublixException(
@@ -49,29 +45,9 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 		return (GeneralSingleWorker) worker;
 	}
 
-	@Override
-	public void checkWorkerAllowedToStartStudy(GeneralSingleWorker worker,
-			StudyModel study) throws ForbiddenPublixException {
-		checkWorkerAllowedToDoStudy(worker, study);
-	}
-
-	@Override
-	public void checkWorkerAllowedToDoStudy(GeneralSingleWorker worker,
-			StudyModel study) throws ForbiddenPublixException {
-		if (!study.hasAllowedWorker(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
-		}
-		// General single workers can't repeat the same study
-		if (finishedStudyAlready(worker, study)) {
-			throw new ForbiddenPublixException(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
-		}
-	}
-
 	/**
 	 * Check if study was done before. Throws an ForbiddenPublixException if
-	 * this study's UUID is in the cookie. 
+	 * this study's UUID is in the cookie.
 	 */
 	public void checkStudyInCookie(StudyModel study, Cookie cookie)
 			throws ForbiddenPublixException {

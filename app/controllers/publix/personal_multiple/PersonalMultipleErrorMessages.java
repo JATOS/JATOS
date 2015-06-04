@@ -6,14 +6,14 @@ import controllers.publix.PublixErrorMessages;
 import models.workers.PersonalMultipleWorker;
 
 /**
- * Special PublixErrorMessages for PersonalMultiplePublix
+ * PersonalMultiplePublix' implementation of PublixErrorMessages
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalMultipleErrorMessages extends
-		PublixErrorMessages<PersonalMultipleWorker> {
+public class PersonalMultipleErrorMessages extends PublixErrorMessages {
 
+	@Override
 	public String workerNotCorrectType(Long workerId) {
 		String errorMsg = "The worker with ID " + workerId + " isn't a "
 				+ PersonalMultipleWorker.UI_WORKER_TYPE + " worker.";

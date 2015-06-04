@@ -18,6 +18,7 @@ import controllers.gui.Users;
 import controllers.publix.jatos.JatosErrorMessages;
 import controllers.publix.jatos.JatosPublix;
 import controllers.publix.jatos.JatosPublixUtils;
+import controllers.publix.jatos.JatosStudyAuthorisation;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 
@@ -28,6 +29,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 
 	private JatosErrorMessages jatosErrorMessages;
 	private JatosPublixUtils jatosPublixUtils;
+	private JatosStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
@@ -37,11 +39,20 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 		jatosErrorMessages = Global.INJECTOR
 				.getInstance(JatosErrorMessages.class);
 		errorMessages = jatosErrorMessages;
+		studyAuthorisation = Global.INJECTOR
+				.getInstance(JatosStudyAuthorisation.class);
 	}
 
 	@Override
 	public void after() throws Exception {
 		super.before();
+	}
+	
+	@Test
+	@Override
+	public void checkRetrieveWorker() throws NoSuchAlgorithmException,
+			IOException, PublixException {
+		super.checkRetrieveWorker();
 	}
 
 	@Test
@@ -80,7 +91,8 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
-		publixUtils.checkWorkerAllowedToDoStudy(admin.getWorker(), study);
+		studyAuthorisation
+				.checkWorkerAllowedToDoStudy(admin.getWorker(), study);
 
 		// Clean-up
 		removeStudy(study);
@@ -95,7 +107,8 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 
 		// Study doesn't allow this worker type
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(admin.getWorker(), study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
+					study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -119,7 +132,8 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 
 		// User has to be a member of this study
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(admin.getWorker(), study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
+					study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -141,7 +155,8 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 
 		// User has to be logged in
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(admin.getWorker(), study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
+					study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(

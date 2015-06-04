@@ -19,6 +19,7 @@ import common.Global;
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.mt.MTErrorMessages;
 import controllers.publix.mt.MTPublixUtils;
+import controllers.publix.mt.MTStudyAuthorisation;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 
@@ -29,6 +30,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 
 	private MTErrorMessages mtErrorMessages;
 	private MTPublixUtils mtPublixUtils;
+	private MTStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
@@ -37,6 +39,8 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 		publixUtils = mtPublixUtils;
 		mtErrorMessages = Global.INJECTOR.getInstance(MTErrorMessages.class);
 		errorMessages = mtErrorMessages;
+		studyAuthorisation = Global.INJECTOR
+				.getInstance(MTStudyAuthorisation.class);
 	}
 
 	@Override
@@ -94,8 +98,9 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 		study.addAllowedWorker(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
-		publixUtils.checkWorkerAllowedToStartStudy(mtWorker, study);
-		publixUtils.checkWorkerAllowedToStartStudy(mtSandboxWorker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker,
+				study);
 
 		// Clean-up
 		removeStudy(study);
@@ -121,7 +126,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 		// of the StudyState
 		addStudyResult(study, mtWorker, StudyState.STARTED);
 		try {
-			publixUtils.checkWorkerAllowedToStartStudy(mtWorker, study);
+			studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -129,7 +134,8 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 		}
 
 		// MTSandboxWorker is allowed to start again
-		publixUtils.checkWorkerAllowedToStartStudy(mtSandboxWorker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker,
+				study);
 
 		// Clean-up
 		removeStudy(study);
@@ -152,8 +158,8 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 
 		addStudyResult(study, mtWorker, StudyState.STARTED);
 
-		publixUtils.checkWorkerAllowedToDoStudy(mtWorker, study);
-		publixUtils.checkWorkerAllowedToDoStudy(mtSandboxWorker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study);
 
 		// Clean-up
 		removeStudy(study);
@@ -174,7 +180,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 
 		// Study doesn't allow this worker type
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(mtWorker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -184,7 +190,8 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 
 		// Study doesn't allow this worker type
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(mtSandboxWorker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker,
+					study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -212,7 +219,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 		// ABORTED
 		addStudyResult(study, mtWorker, StudyState.FINISHED);
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(mtWorker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -220,7 +227,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 		}
 		addStudyResult(study, mtWorker, StudyState.FAIL);
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(mtWorker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -228,7 +235,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 		}
 		addStudyResult(study, mtWorker, StudyState.ABORTED);
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(mtWorker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -236,7 +243,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 		}
 
 		// MTSandboxWorkers can repeat the same study
-		publixUtils.checkWorkerAllowedToDoStudy(mtSandboxWorker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study);
 
 		// Clean-up
 		removeStudy(study);

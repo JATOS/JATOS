@@ -117,9 +117,22 @@ public class StudyDao extends AbstractDao {
 				StudyModel.class);
 		List<StudyModel> studyList = query.setParameter("uuid", uuid)
 				.getResultList();
+		// There can be only one study with this UUID
 		StudyModel study = studyList.isEmpty() ? null : (StudyModel) studyList
 				.get(0);
 		return study;
+	}
+
+	/**
+	 * Finds all studies with the given title and returns them in a list. If
+	 * there is none it returns null.
+	 */
+	public List<StudyModel> findByTitle(String title) {
+		String queryStr = "SELECT e FROM StudyModel e WHERE "
+				+ "e.title=:title";
+		TypedQuery<StudyModel> query = JPA.em().createQuery(queryStr,
+				StudyModel.class);
+		return query.setParameter("title", title).getResultList();
 	}
 
 	public List<StudyModel> findAll() {

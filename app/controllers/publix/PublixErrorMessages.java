@@ -10,7 +10,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class PublixErrorMessages<T extends Worker> {
+public class PublixErrorMessages {
 
 	public static final String NO_MORE_COMPONENTS_IN_STUDY = "There aren't any more components in this study.";
 	public static final String STUDY_NEVER_FINSHED = "Study never finished, but new study started by the same worker";
@@ -21,25 +21,31 @@ public class PublixErrorMessages<T extends Worker> {
 	public static final String SUBMITTED_DATA_UNKNOWN_FORMAT = "Submitted data have an unknown format.";
 	public static final String NO_WORKER_IN_SESSION = "Sorry this study is not available to you (any more). Maybe you tried to reload a component that wasn't allowed to be reloaded?";
 
-	public String workerNeverStartedStudy(T worker, Long studyId) {
+	public String workerNotCorrectType(Long workerId) {
+		String errorMsg = "The worker with ID " + workerId
+				+ " isn't the right worker type.";
+		return errorMsg;
+	}
+
+	public String workerNeverStartedStudy(Worker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " never started study "
 				+ studyId + ".";
 		return errorMsg;
 	}
 
-	public String workerNeverDidStudy(T worker, Long studyId) {
+	public String workerNeverDidStudy(Worker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " never did study "
 				+ studyId + ".";
 		return errorMsg;
 	}
 
-	public String workerNotAllowedStudy(T worker, Long studyId) {
+	public String workerNotAllowedStudy(Worker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " is not allowed to do "
 				+ "study " + studyId + ".";
 		return errorMsg;
 	}
 
-	public String workerFinishedStudyAlready(T worker, Long studyId) {
+	public String workerFinishedStudyAlready(Worker worker, Long studyId) {
 		String errorMsg = "Worker " + worker.getId() + " finished study "
 				+ studyId + " already.";
 		return errorMsg;

@@ -7,8 +7,8 @@ import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.Logger;
-import play.mvc.Result;
 import play.mvc.Http.Cookie;
+import play.mvc.Result;
 import utils.JsonUtils;
 
 import com.google.inject.Inject;
@@ -39,16 +39,19 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 			.getSimpleName();
 
 	private final GeneralSinglePublixUtils publixUtils;
+	private final GeneralSingleStudyAuthorisation studyAuthorisation;
 	private final WorkerDao workerDao;
 
 	@Inject
 	GeneralSinglePublix(GeneralSinglePublixUtils publixUtils,
+			GeneralSingleStudyAuthorisation studyAuthorisation,
 			GeneralSingleErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, WorkerDao workerDao) {
-		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
-				studyResultDao);
+		super(publixUtils, studyAuthorisation, errorMessages,
+				componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
+		this.studyAuthorisation = studyAuthorisation;
 		this.workerDao = workerDao;
 	}
 
@@ -61,7 +64,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		workerDao.create(worker);
-		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, worker.getId().toString());
 		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
 				+ "assigned to worker with ID " + worker.getId());

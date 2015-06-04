@@ -50,15 +50,19 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	private static final String CLASS_NAME = Publix.class.getSimpleName();
 
 	protected final PublixUtils<T> publixUtils;
-	protected final PublixErrorMessages<T> errorMessages;
+	protected final IStudyAuthorisation<T> studyAuthorisation;
+	protected final PublixErrorMessages errorMessages;
 	protected final JsonUtils jsonUtils;
 	protected final ComponentResultDao componentResultDao;
 	protected final StudyResultDao studyResultDao;
 
-	public Publix(PublixUtils<T> utils, PublixErrorMessages<T> errorMessages,
+	public Publix(PublixUtils<T> utils,
+			IStudyAuthorisation<T> studyAuthorisation,
+			PublixErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
 		this.publixUtils = utils;
+		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
 		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
@@ -142,7 +146,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		ComponentModel component = publixUtils.retrieveComponent(study,
 				componentId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
@@ -168,7 +172,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ ", " + "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		String studySessionData = publixUtils.getDataFromRequestBody(request()
@@ -188,7 +192,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = publixUtils.retrieveComponent(study,
 				componentId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
@@ -221,7 +225,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = publixUtils.retrieveComponent(study,
 				componentId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
@@ -254,7 +258,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ message + "\"");
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
@@ -278,7 +282,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);

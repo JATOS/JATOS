@@ -47,16 +47,20 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	private static final String CLASS_NAME = MTPublix.class.getSimpleName();
 
 	private final MTPublixUtils publixUtils;
+	private final MTStudyAuthorisation studyAuthorisation;
 	private final MTErrorMessages errorMessages;
 	private final MTWorkerDao mtWorkerDao;
 
 	@Inject
-	MTPublix(MTPublixUtils publixUtils, MTErrorMessages errorMessages,
+	MTPublix(MTPublixUtils publixUtils,
+			MTStudyAuthorisation studyAuthorisation,
+			MTErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
-		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
-				studyResultDao);
+		super(publixUtils, studyAuthorisation, errorMessages,
+				componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
+		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
 		this.mtWorkerDao = mtWorkerDao;
 	}
@@ -92,7 +96,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 					.equals(MTSandboxWorker.WORKER_TYPE);
 			worker = mtWorkerDao.create(mtWorkerId, isRequestFromMTurkSandbox);
 		}
-		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, String.valueOf(worker.getId()));
 		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
 				+ "assigned to worker with ID " + worker.getId());
@@ -114,7 +118,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		MTWorker worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);

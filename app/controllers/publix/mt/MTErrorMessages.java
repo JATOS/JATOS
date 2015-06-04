@@ -7,15 +7,16 @@ import com.google.inject.Singleton;
 import controllers.publix.PublixErrorMessages;
 
 /**
- * Special PublixErrorMessages for MTPublix (studies started via MTurk).
+ * MTPublix' implementation of PublixErrorMessages (studies started via MTurk).
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class MTErrorMessages extends PublixErrorMessages<MTWorker> {
+public class MTErrorMessages extends PublixErrorMessages {
 
 	public static final String NO_MTURK_WORKERID = "MTurk's workerId is missing in the query parameters.";
 
+	@Override
 	public String workerNotCorrectType(Long workerId) {
 		String errorMsg = "The worker with ID " + workerId + " isn't a "
 				+ MTWorker.UI_WORKER_TYPE + " worker.";

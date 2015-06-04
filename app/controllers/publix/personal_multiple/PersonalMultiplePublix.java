@@ -32,15 +32,18 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 			.getSimpleName();
 
 	private final PersonalMultiplePublixUtils publixUtils;
+	private final PersonalMultipleStudyAuthorisation studyAuthorisation;
 
 	@Inject
 	PersonalMultiplePublix(PersonalMultiplePublixUtils publixUtils,
+			PersonalMultipleStudyAuthorisation studyAuthorisation,
 			PersonalMultipleErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
-		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
-				studyResultDao);
+		super(publixUtils, studyAuthorisation, errorMessages,
+				componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
+		this.studyAuthorisation = studyAuthorisation;
 	}
 
 	@Override
@@ -52,7 +55,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 
 		PersonalMultipleWorker worker = publixUtils
 				.retrieveTypedWorker(workerId);
-		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, workerId);
 
 		publixUtils.finishAllPriorStudyResults(worker, study);

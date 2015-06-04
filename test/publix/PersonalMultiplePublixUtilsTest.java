@@ -16,6 +16,7 @@ import common.Global;
 
 import controllers.publix.personal_multiple.PersonalMultipleErrorMessages;
 import controllers.publix.personal_multiple.PersonalMultiplePublixUtils;
+import controllers.publix.personal_multiple.PersonalMultipleStudyAuthorisation;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 
@@ -27,6 +28,7 @@ public class PersonalMultiplePublixUtilsTest extends
 
 	private PersonalMultipleErrorMessages personalMultipleErrorMessages;
 	private PersonalMultiplePublixUtils personalMultiplePublixUtils;
+	private PersonalMultipleStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
@@ -37,6 +39,8 @@ public class PersonalMultiplePublixUtilsTest extends
 		personalMultipleErrorMessages = Global.INJECTOR
 				.getInstance(PersonalMultipleErrorMessages.class);
 		errorMessages = personalMultipleErrorMessages;
+		studyAuthorisation = Global.INJECTOR
+				.getInstance(PersonalMultipleStudyAuthorisation.class);
 	}
 
 	@Override
@@ -78,7 +82,7 @@ public class PersonalMultiplePublixUtilsTest extends
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
 		addWorker(worker);
 
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		// Clean-up
 		removeStudy(study);
@@ -97,7 +101,7 @@ public class PersonalMultiplePublixUtilsTest extends
 		// State of study has no influence. Personal multiple workers can do
 		// studies multiple times
 		addStudyResult(study, worker, StudyState.FINISHED);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		addStudyResult(study, worker, StudyState.FINISHED);
 

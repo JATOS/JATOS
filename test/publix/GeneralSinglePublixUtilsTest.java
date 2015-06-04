@@ -15,12 +15,11 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import play.mvc.Http.Cookie;
-
 import common.Global;
-
 import controllers.publix.PublixErrorMessages;
 import controllers.publix.general_single.GeneralSingleErrorMessages;
 import controllers.publix.general_single.GeneralSinglePublixUtils;
+import controllers.publix.general_single.GeneralSingleStudyAuthorisation;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 
@@ -32,6 +31,7 @@ public class GeneralSinglePublixUtilsTest extends
 
 	private GeneralSingleErrorMessages generalSingleErrorMessages;
 	private GeneralSinglePublixUtils generalSinglePublixUtils;
+	private GeneralSingleStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
@@ -42,6 +42,8 @@ public class GeneralSinglePublixUtilsTest extends
 		generalSingleErrorMessages = Global.INJECTOR
 				.getInstance(GeneralSingleErrorMessages.class);
 		errorMessages = generalSingleErrorMessages;
+		studyAuthorisation = Global.INJECTOR
+				.getInstance(GeneralSingleStudyAuthorisation.class);
 	}
 
 	@Override
@@ -64,10 +66,10 @@ public class GeneralSinglePublixUtilsTest extends
 	public void checkRetrieveTypedWorkerWrongType()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		try {
-			publixUtils.retrieveTypedWorker(admin.getWorker().getId()
-					.toString());
+			generalSinglePublixUtils.retrieveTypedWorker(admin.getWorker()
+					.getId().toString());
 			Fail.fail();
-		} catch (PublixException e) {
+		} catch (ForbiddenPublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
 					generalSingleErrorMessages.workerNotCorrectType(admin
 							.getWorker().getId()));
@@ -85,7 +87,7 @@ public class GeneralSinglePublixUtilsTest extends
 
 		addStudyResult(study, worker, StudyState.STARTED);
 
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		// Clean-up
 		removeStudy(study);
@@ -100,7 +102,7 @@ public class GeneralSinglePublixUtilsTest extends
 
 		// Study doesn't allow this worker type
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -125,7 +127,7 @@ public class GeneralSinglePublixUtilsTest extends
 
 		// General single workers can't repeat the same study
 		try {
-			publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(

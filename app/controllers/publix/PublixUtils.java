@@ -54,14 +54,14 @@ public abstract class PublixUtils<T extends Worker> {
 
 	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
 
-	protected final PublixErrorMessages<T> errorMessages;
+	protected final PublixErrorMessages errorMessages;
 	private final StudyDao studyDao;
 	private final StudyResultDao studyResultDao;
 	private final ComponentDao componentDao;
 	private final ComponentResultDao componentResultDao;
 	private final WorkerDao workerDao;
 
-	public PublixUtils(PublixErrorMessages<T> errorMessages, StudyDao studyDao,
+	public PublixUtils(PublixErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
 			ComponentResultDao componentResultDao, WorkerDao workerDao) {
 		this.errorMessages = errorMessages;
@@ -71,20 +71,15 @@ public abstract class PublixUtils<T extends Worker> {
 		this.componentResultDao = componentResultDao;
 		this.workerDao = workerDao;
 	}
-
-	public abstract void checkWorkerAllowedToStartStudy(T worker,
-			StudyModel study) throws ForbiddenPublixException;
-
-	public abstract void checkWorkerAllowedToDoStudy(T worker, StudyModel study)
+	
+	public abstract T retrieveTypedWorker(String workerIdStr)
 			throws ForbiddenPublixException;
 
-	public abstract T retrieveTypedWorker(String workerIdStr)
-			throws PublixException;
-
 	/**
-	 * Retrieves the worker with the given worker ID from the DB. 
+	 * Retrieves the worker with the given worker ID from the DB.
 	 */
-	public Worker retrieveWorker(String workerIdStr) throws PublixException {
+	public Worker retrieveWorker(String workerIdStr)
+			throws ForbiddenPublixException {
 		if (workerIdStr == null) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.NO_WORKERID_IN_SESSION);
@@ -281,7 +276,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * state FINISHED. Each worker can do only one study with the same ID and
 	 * the same time.
 	 */
-	public void finishAllPriorStudyResults(T worker, StudyModel study) {
+	public void finishAllPriorStudyResults(Worker worker, StudyModel study) {
 		List<StudyResult> studyResultList = worker.getStudyResultList();
 		for (StudyResult studyResult : studyResultList) {
 			if (studyResult.getStudy().getId() == study.getId()
@@ -298,8 +293,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 * worker never started a StudyResult of this study. It either returns a
 	 * StudyResult or throws an exception but never returns null.
 	 */
-	public StudyResult retrieveWorkersLastStudyResult(T worker, StudyModel study)
-			throws ForbiddenPublixException {
+	public StudyResult retrieveWorkersLastStudyResult(Worker worker,
+			StudyModel study) throws ForbiddenPublixException {
 		int studyResultListSize = worker.getStudyResultList().size();
 		for (int i = (studyResultListSize - 1); i >= 0; i--) {
 			StudyResult studyResult = worker.getStudyResultList().get(i);
@@ -462,7 +457,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Checks if the worker finished this study already. 'Finished' includes
 	 * failed and aborted.
 	 */
-	public boolean finishedStudyAlready(T worker, StudyModel study) {
+	public boolean finishedStudyAlready(Worker worker, StudyModel study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
 			if (studyResult.getStudy().equals(study) && studyDone(studyResult)) {
 				return true;
@@ -475,7 +470,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Checks if the worker ever did this study independent of the study
 	 * result's state.
 	 */
-	public boolean didStudyAlready(T worker, StudyModel study) {
+	public boolean didStudyAlready(Worker worker, StudyModel study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
 			if (studyResult.getStudy().getId() == study.getId()) {
 				return true;

@@ -71,15 +71,19 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	private static final String CLASS_NAME = JatosPublix.class.getSimpleName();
 
 	private final JatosPublixUtils publixUtils;
+	private final JatosStudyAuthorisation studyAuthorisation;
 	private final JatosErrorMessages errorMessages;
 
 	@Inject
-	JatosPublix(JatosPublixUtils publixUtils, JatosErrorMessages errorMessages,
+	JatosPublix(JatosPublixUtils publixUtils,
+			JatosStudyAuthorisation studyAuthorisation,
+			JatosErrorMessages errorMessages,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
-		super(publixUtils, errorMessages, componentResultDao, jsonUtils,
-				studyResultDao);
+		super(publixUtils, studyAuthorisation, errorMessages,
+				componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
+		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
 	}
 
@@ -90,7 +94,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 
 		JatosWorker worker = publixUtils.retrieveLoggedInUser().getWorker();
-		publixUtils.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
 		session(WORKER_ID, worker.getId().toString());
 		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
 				+ "assigned to worker with ID " + worker.getId());
@@ -128,7 +132,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				.retrieveTypedWorker(session(WORKER_ID));
 		ComponentModel component = publixUtils.retrieveComponent(study,
 				componentId);
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
 		// Check if it's a single component show or a whole study show
@@ -183,7 +187,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
@@ -231,7 +235,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
@@ -263,7 +267,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		StudyModel study = publixUtils.retrieveStudy(studyId);
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
-		publixUtils.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);

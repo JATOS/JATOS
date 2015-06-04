@@ -26,18 +26,17 @@ import controllers.publix.PublixUtils;
 /**
  * @author Kristian Lange
  */
-public class PublixUtilsTest<T extends Worker> extends AbstractTest {
+public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	protected WorkerDao workerDao;
 	protected StudyResultDao studyResultDao;
 	protected PublixUtils<T> publixUtils;
-	protected PublixErrorMessages<T> errorMessages;
+	protected PublixErrorMessages errorMessages;
 
 	@Override
 	public void before() throws Exception {
 		workerDao = Global.INJECTOR.getInstance(WorkerDao.class);
 		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
-
 	}
 
 	@Override
@@ -50,26 +49,10 @@ public class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		assertThat(a).isEqualTo(2);
 	}
 
-	protected void addWorker(Worker worker) {
-		entityManager.getTransaction().begin();
-		workerDao.create(worker);
-		entityManager.getTransaction().commit();
-	}
-	
-	protected void addStudyResult(StudyModel study, Worker worker,
-			StudyState state) {
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study, worker);
-		studyResult.setStudyState(state);
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(worker);
-		entityManager.getTransaction().commit();
-	}
-
 	@Test
 	public void checkRetrieveWorker() throws NoSuchAlgorithmException,
 			IOException, PublixException {
-		// Worker is null
+		// Worker ID is null
 		try {
 			publixUtils.retrieveWorker(null);
 			Fail.fail();
@@ -97,9 +80,20 @@ public class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		}
 	}
 	
-	@Test
-	public void checkStartComponent() {
-		
+	protected void addWorker(Worker worker) {
+		entityManager.getTransaction().begin();
+		workerDao.create(worker);
+		entityManager.getTransaction().commit();
 	}
-
+	
+	protected void addStudyResult(StudyModel study, Worker worker,
+			StudyState state) {
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study, worker);
+		studyResult.setStudyState(state);
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(worker);
+		entityManager.getTransaction().commit();
+	}
+	
 }
