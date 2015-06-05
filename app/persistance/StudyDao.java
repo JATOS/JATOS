@@ -125,7 +125,7 @@ public class StudyDao extends AbstractDao {
 
 	/**
 	 * Finds all studies with the given title and returns them in a list. If
-	 * there is none it returns null.
+	 * there is none it returns an empty list.
 	 */
 	public List<StudyModel> findByTitle(String title) {
 		String queryStr = "SELECT e FROM StudyModel e WHERE "

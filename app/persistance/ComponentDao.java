@@ -118,6 +118,18 @@ public class ComponentDao extends AbstractDao {
 				: (ComponentModel) studyList.get(0);
 		return component;
 	}
+	
+	/**
+	 * Finds all components with the given title and returns them in a list. If
+	 * there is none it returns an empty list.
+	 */
+	public List<ComponentModel> findByTitle(String title) {
+		String queryStr = "SELECT e FROM ComponentModel e WHERE "
+				+ "e.title=:title";
+		TypedQuery<ComponentModel> query = JPA.em().createQuery(queryStr,
+				ComponentModel.class);
+		return query.setParameter("title", title).getResultList();
+	}
 
 	public List<ComponentModel> findAll() {
 		TypedQuery<ComponentModel> query = JPA.em().createQuery(
