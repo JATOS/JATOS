@@ -52,7 +52,8 @@ public class ComponentService {
 
 	/**
 	 * Does the same as {@link #cloneComponentModel(ComponentModel)
-	 * cloneComponentModel} and additionally clones the HTML file.
+	 * cloneComponentModel} and additionally clones the HTML file and changes
+	 * the title.
 	 */
 	public ComponentModel cloneComponent(ComponentModel component) {
 		ComponentModel clone = cloneComponentModel(component);
@@ -70,7 +71,7 @@ public class ComponentService {
 		}
 		return clone;
 	}
-	
+
 	/**
 	 * Generates an title for the cloned study that doesn't exist so far
 	 */
