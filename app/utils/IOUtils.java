@@ -40,7 +40,7 @@ public class IOUtils {
 	 */
 	public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&]";
 
-	private static final int MAX_FILENAME_LENGTH = 35;
+	private static final int MAX_FILENAME_LENGTH = 100;
 
 	/**
 	 * Reads the given file and returns the content as String.
