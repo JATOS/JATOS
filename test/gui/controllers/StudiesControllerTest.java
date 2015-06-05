@@ -11,6 +11,10 @@ import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.headers;
 import static play.test.Helpers.status;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import gui.AbstractTest;
 import models.StudyModel;
 import models.workers.PersonalSingleWorker;
@@ -78,13 +82,15 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callSubmit() throws Exception {
+		Map<String, String> formMap = new HashMap<String, String>();
+		formMap.put(StudyModel.TITLE, "Title Test");
+		formMap.put(StudyModel.DESCRIPTION, "Description test.");
+		formMap.put(StudyModel.COMMENTS, "Comments test.");
+		formMap.put(StudyModel.DIRNAME, "dirName_submit");
+		formMap.put(StudyModel.JSON_DATA, "{}");
+		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail()).withFormUrlEncodedBody(
-				ImmutableMap.of(StudyModel.TITLE, "Title Test",
-						StudyModel.DESCRIPTION, "Description test.",
-						StudyModel.DIRNAME, "dirName_submit",
-						StudyModel.JSON_DATA, "{}",
-						StudyModel.ALLOWED_WORKER_LIST, ""));
+				admin.getEmail()).withFormUrlEncodedBody(formMap);
 		Result result = callAction(controllers.gui.routes.ref.Studies.submit(),
 				request);
 		assertEquals(SEE_OTHER, status(result));
@@ -110,13 +116,16 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callSubmitValidationError() {
-		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail()).withFormUrlEncodedBody(
 		// Fill with non-valid values
-				ImmutableMap.of(StudyModel.TITLE, " ", StudyModel.DESCRIPTION,
-						"Description test.", StudyModel.DIRNAME, "%.test",
-						StudyModel.JSON_DATA, "{",
-						StudyModel.ALLOWED_WORKER_LIST, "WrongWorker"));
+		Map<String, String> formMap = new HashMap<String, String>();
+		formMap.put(StudyModel.TITLE, " ");
+		formMap.put(StudyModel.DESCRIPTION, "Description test <b>.");
+		formMap.put(StudyModel.COMMENTS, "Comments test <i>.");
+		formMap.put(StudyModel.DIRNAME, "%.test");
+		formMap.put(StudyModel.JSON_DATA, "{");
+		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "WrongWorker");
+		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
+				admin.getEmail()).withFormUrlEncodedBody(formMap);
 
 		Result result = callAction(controllers.gui.routes.ref.Studies.submit(),
 				request);
@@ -128,14 +137,15 @@ public class StudiesControllerTest extends AbstractTest {
 	@Test
 	public void callSubmitStudyAssetsDirExists() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
-
+		Map<String, String> formMap = new HashMap<String, String>();
+		formMap.put(StudyModel.TITLE, "Title Test");
+		formMap.put(StudyModel.DESCRIPTION, "Description test.");
+		formMap.put(StudyModel.COMMENTS, "Comments test.");
+		formMap.put(StudyModel.DIRNAME, studyClone.getDirName());
+		formMap.put(StudyModel.JSON_DATA, "{}");
+		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail()).withFormUrlEncodedBody(
-				ImmutableMap.of(StudyModel.TITLE, "Title Test",
-						StudyModel.DESCRIPTION, "Description test.",
-						StudyModel.DIRNAME, studyClone.getDirName(),
-						StudyModel.JSON_DATA, "{}",
-						StudyModel.ALLOWED_WORKER_LIST, ""));
+				admin.getEmail()).withFormUrlEncodedBody(formMap);
 
 		Result result = callAction(controllers.gui.routes.ref.Studies.submit(),
 				request);
@@ -167,13 +177,15 @@ public class StudiesControllerTest extends AbstractTest {
 	public void callSubmitEdited() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
+		Map<String, String> formMap = new HashMap<String, String>();
+		formMap.put(StudyModel.TITLE, "Title Test");
+		formMap.put(StudyModel.DESCRIPTION, "Description test.");
+		formMap.put(StudyModel.COMMENTS, "Comments test.");
+		formMap.put(StudyModel.DIRNAME, "dirName_submitEdited");
+		formMap.put(StudyModel.JSON_DATA, "{}");
+		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail()).withFormUrlEncodedBody(
-				ImmutableMap.of(StudyModel.TITLE, "Title Test",
-						StudyModel.DESCRIPTION, "Description test.",
-						StudyModel.DIRNAME, "dirName_submitEdited",
-						StudyModel.JSON_DATA, "{}",
-						StudyModel.ALLOWED_WORKER_LIST, ""));
+				admin.getEmail()).withFormUrlEncodedBody(formMap);
 		Result result = callAction(
 				controllers.gui.routes.ref.Studies.submitEdited(studyClone
 						.getId()), request);

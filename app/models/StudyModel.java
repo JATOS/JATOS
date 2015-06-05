@@ -52,6 +52,7 @@ public class StudyModel {
 	public static final String JSON_DATA = "jsonData";
 	public static final String DESCRIPTION = "description";
 	public static final String DIRNAME = "dirName";
+	public static final String COMMENTS = "comments";
 	public static final String STUDY = "study";
 	public static final String ALLOWED_WORKER_LIST = "allowedWorkerList";
 
@@ -101,6 +102,14 @@ public class StudyModel {
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	private String dirName;
+	
+	/**
+	 * User comments, reminders, something to share with others. They have no
+	 * further meaning.
+	 */
+	@Lob
+	@JsonView({ JsonUtils.JsonForIO.class })
+	private String comments;
 
 	/**
 	 * Data in JSON format that are responded after public APIs 'getData' call.
@@ -143,6 +152,7 @@ public class StudyModel {
 		this.dirName = study.dirName;
 		this.jsonData = study.jsonData;
 		this.title = study.title;
+		this.comments = study.comments;
 		this.locked = false;
 		for (String worker : study.allowedWorkerList) {
 			this.allowedWorkerList.add(worker);
@@ -192,6 +202,14 @@ public class StudyModel {
 
 	public String getDirName() {
 		return this.dirName;
+	}
+	
+	public void setComments(String comments) {
+		this.comments = comments;
+	}
+
+	public String getComments() {
+		return this.comments;
 	}
 
 	public void setDate(Timestamp timestamp) {
@@ -348,6 +366,10 @@ public class StudyModel {
 		if (dirName != null && matcher.find()) {
 			errorList.add(new ValidationError(DIRNAME,
 					MessagesStrings.INVALID_DIR_NAME));
+		}
+		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
+			errorList.add(new ValidationError(COMMENTS,
+					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,

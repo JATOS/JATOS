@@ -41,6 +41,13 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 </div>
 
 <div class="form-group">
+	<label class="control-label col-xs-2" for="comments">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?" aria-hidden="true"></span></label>
+	<div class="col-xs-10">
+		<textarea rows="3" class="form-control" id="comments" name="@StudyModel.COMMENTS" placeholder="Your comments">@form(StudyModel.COMMENTS).value</textarea>
+	</div>
+</div>
+
+<div class="form-group">
 	<label class="control-label col-xs-2" for="jsonData">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed." aria-hidden="true"></span></label>
 	<div class="col-xs-10">
 		<textarea rows="6" class="form-control" id="jsonData" name="@StudyModel.JSON_DATA" placeholder="Put your JSON string here">@utils.JsonUtils.makePretty(form(StudyModel.JSON_DATA).value)</textarea>
@@ -109,6 +116,10 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 @for(error <- form(StudyModel.DIRNAME).errors) {
 	$('#dirName').closest(".form-group").addClass("has-error");
 	$('#dirName').after('<span class="help-block">@error.message</span>');
+}
+@for(error <- form(StudyModel.COMMENTS).errors) {
+	$('#comments').closest(".form-group").addClass("has-error");
+	$('#comments').after('<span class="help-block">@error.message</span>');
 }
 @for(error <- form(StudyModel.JSON_DATA).errors) {
 	$('#jsonData').closest(".form-group").addClass("has-error");

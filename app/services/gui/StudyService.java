@@ -57,7 +57,31 @@ public class StudyService {
 		studyDao.create(clone, loggedInUser);
 		return clone;
 	}
-	
+
+	/**
+	 * Clones a StudyModel. It does not copy the memberList, id, uuid, date or
+	 * locked (set to false).
+	 */
+	private StudyModel cloneStudyProperties(StudyModel study) {
+		StudyModel clone = new StudyModel();
+		clone.setDescription(study.getDescription());
+		clone.setDirName(study.getDirName());
+		clone.setComments(study.getComments());
+		clone.setJsonData(study.getJsonData());
+		clone.setTitle(study.getTitle());
+		clone.setLocked(false);
+		for (String workerType : study.getAllowedWorkerList()) {
+			clone.addAllowedWorker(workerType);
+		}
+		for (ComponentModel component : study.getComponentList()) {
+			ComponentModel componentClone = componentService
+					.cloneComponentModel(component);
+			componentClone.setStudy(clone);
+			clone.addComponent(componentClone);
+		}
+		return clone;
+	}
+
 	/**
 	 * Generates an title for the cloned study that doesn't exist so far
 	 */
@@ -73,8 +97,8 @@ public class StudyService {
 
 	/**
 	 * Deletes all current members of the given study and adds the new users. A
-	 * user is identified by its email. In case of an empty list an Exception is
-	 * thrown.
+	 * user is identified by its email. In case of an empty list an
+	 * BadRequestException is thrown.
 	 */
 	public void exchangeMembers(StudyModel study, String[] userEmailArray)
 			throws BadRequestException {
@@ -104,33 +128,12 @@ public class StudyService {
 	}
 
 	/**
-	 * Clones a StudyModel. It does not copy the memberList, id, uuid, date or
-	 * locked (set to false).
-	 */
-	private StudyModel cloneStudyProperties(StudyModel study) {
-		StudyModel clone = new StudyModel();
-		clone.setDescription(study.getDescription());
-		clone.setDirName(study.getDirName());
-		clone.setJsonData(study.getJsonData());
-		clone.setTitle(study.getTitle());
-		clone.setLocked(false);
-		for (String workerType : study.getAllowedWorkerList()) {
-			clone.addAllowedWorker(workerType);
-		}
-		for (ComponentModel component : study.getComponentList()) {
-			ComponentModel componentClone = componentService.cloneComponentModel(component);
-			componentClone.setStudy(clone);
-			clone.addComponent(componentClone);
-		}
-		return clone;
-	}
-
-	/**
 	 * Update a couple of study's properties (but not all) and persist it.
 	 */
 	public void updateStudy(StudyModel study, StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
+		study.setComments(updatedStudy.getComments());
 		study.setJsonData(updatedStudy.getJsonData());
 		study.getAllowedWorkerList().clear();
 		for (String workerType : updatedStudy.getAllowedWorkerList()) {
@@ -140,7 +143,7 @@ public class StudyService {
 	}
 
 	/**
-	 * Throws an Exception if a study is locked.
+	 * Throws an ForbiddenException if a study is locked.
 	 */
 	public void checkStudyLocked(StudyModel study) throws ForbiddenException {
 		if (study.isLocked()) {
@@ -169,7 +172,8 @@ public class StudyService {
 	/**
 	 * Changes the position of the given component within the given study to the
 	 * new position given in newPosition. Remember the first position is 1 (and
-	 * not 0).
+	 * not 0). Throws BadRequestException if number has wrong format or number
+	 * isn't within the studies positions.
 	 */
 	public void changeComponentPosition(String newPosition, StudyModel study,
 			ComponentModel component) throws BadRequestException {
@@ -197,6 +201,7 @@ public class StudyService {
 		StudyModel study = new StudyModel();
 		study.setTitle(formMap.get(StudyModel.TITLE)[0]);
 		study.setDescription(formMap.get(StudyModel.DESCRIPTION)[0]);
+		study.setComments(formMap.get(StudyModel.COMMENTS)[0]);
 		study.setDirName(formMap.get(StudyModel.DIRNAME)[0]);
 		study.setJsonData(JsonUtils.asStringForDB(formMap
 				.get(StudyModel.JSON_DATA)[0]));

@@ -80,6 +80,8 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(cloneInDb.getDate()).isEqualTo(study.getDate());
 		assertThat(cloneInDb.getDescription())
 				.isEqualTo(study.getDescription());
+		assertThat(cloneInDb.getComments())
+				.isEqualTo(study.getComments());
 		assertThat(cloneInDb.getJsonData()).isEqualTo(study.getJsonData());
 		assertThat(cloneInDb.getMemberList()).containsOnly(admin);
 		assertThat(cloneInDb.getTitle()).isEqualTo(
@@ -158,6 +160,7 @@ public class StudyServiceTest extends AbstractTest {
 		updatedStudy.getComponentList().remove(0);
 		updatedStudy.getLastComponent().setTitle("Changed title");
 		updatedStudy.setDescription("Changed description");
+		updatedStudy.setComments("Changed comments");
 		updatedStudy.setJsonData("{}");
 		updatedStudy.setTitle("Changed Title");
 		updatedStudy.setUuid("changed uuid");
@@ -172,6 +175,8 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(study.getTitle()).isEqualTo(updatedStudy.getTitle());
 		assertThat(study.getDescription()).isEqualTo(
 				updatedStudy.getDescription());
+		assertThat(study.getComments()).isEqualTo(
+				updatedStudy.getComments());
 		assertThat(study.getJsonData()).isEqualTo(updatedStudy.getJsonData());
 		assertThat(study.getAllowedWorkerList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
@@ -334,6 +339,8 @@ public class StudyServiceTest extends AbstractTest {
 		formMap.put(StudyModel.TITLE, titleArray);
 		String[] descArray = { "This is a description" };
 		formMap.put(StudyModel.DESCRIPTION, descArray);
+		String[] commentsArray = { "This is a comment" };
+		formMap.put(StudyModel.COMMENTS, commentsArray);
 		String[] dirNameArray = { "dir_name" };
 		formMap.put(StudyModel.DIRNAME, dirNameArray);
 		String[] jsonArray = { "{}" };
@@ -344,6 +351,7 @@ public class StudyServiceTest extends AbstractTest {
 		StudyModel study = studyService.bindStudyFromRequest(formMap);
 		assertThat(study.getTitle()).isEqualTo("This is a title");
 		assertThat(study.getDescription()).isEqualTo("This is a description");
+		assertThat(study.getComments()).isEqualTo("This is a comment");
 		assertThat(study.getDirName()).isEqualTo("dir_name");
 		assertThat(study.getJsonData()).isEqualTo("{}");
 		assertThat(study.getAllowedWorkerList()).containsOnly(
