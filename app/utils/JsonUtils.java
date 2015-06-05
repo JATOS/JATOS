@@ -361,6 +361,9 @@ public class JsonUtils {
 		return asJsonNode(sidebarStudyList);
 	}
 
+	/**
+	 * Comparator that compares to study's titles.
+	 */
 	private class SidebarStudyComparator implements Comparator<SidebarStudy> {
 		@Override
 		public int compare(SidebarStudy ss1, SidebarStudy ss2) {
@@ -368,6 +371,9 @@ public class JsonUtils {
 		}
 	}
 
+	/**
+	 * Little model class to store some study data for the UI's sidebar.
+	 */
 	static class SidebarStudy {
 		public Long id;
 		public String uuid;
@@ -375,6 +381,9 @@ public class JsonUtils {
 		public boolean locked;
 		public List<SidebarComponent> componentList = new ArrayList<>();
 
+		/**
+		 * Little model class to store some component data for the UI's sidebar.
+		 */
 		static class SidebarComponent {
 			public Long id;
 			public String uuid;
