@@ -56,6 +56,7 @@ public class ComponentService {
 	 */
 	public ComponentModel cloneComponent(ComponentModel component) {
 		ComponentModel clone = cloneComponentModel(component);
+		clone.setTitle(cloneTitle(component.getTitle()));
 		try {
 			String clonedHtmlFileName = IOUtils.cloneComponentHtmlFile(
 					component.getStudy().getDirName(),
@@ -68,6 +69,19 @@ public class ComponentService {
 			Logger.info(CLASS_NAME + ".cloneComponent: " + e.getMessage());
 		}
 		return clone;
+	}
+	
+	/**
+	 * Generates an title for the cloned study that doesn't exist so far
+	 */
+	private String cloneTitle(String origTitle) {
+		String cloneTitle = origTitle + " (clone)";
+		int i = 2;
+		while (!componentDao.findByTitle(cloneTitle).isEmpty()) {
+			cloneTitle = origTitle + " (clone " + i + ")";
+			i++;
+		}
+		return cloneTitle;
 	}
 
 	/**

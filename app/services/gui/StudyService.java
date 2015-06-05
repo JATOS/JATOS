@@ -50,7 +50,7 @@ public class StudyService {
 	public StudyModel cloneStudy(StudyModel study, UserModel loggedInUser)
 			throws IOException {
 		StudyModel clone = cloneStudyProperties(study);
-		clone.setTitle(cloneTitle(clone.getTitle()));
+		clone.setTitle(cloneTitle(study.getTitle()));
 		String destDirName = IOUtils.cloneStudyAssetsDirectory(study
 				.getDirName());
 		clone.setDirName(destDirName);
