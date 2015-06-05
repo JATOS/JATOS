@@ -139,7 +139,7 @@ public class GeneralSinglePublixUtilsTest extends
 	}
 
 	@Test
-	public void checkAllowedToDoStudy() throws NoSuchAlgorithmException,
+	public void checkStudyInCookie() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
@@ -165,7 +165,7 @@ public class GeneralSinglePublixUtilsTest extends
 	}
 
 	@Test
-	public void checkAllowedToDoStudyAlreadyDone()
+	public void checkStudyInCookieAlreadyDone()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		StudyModel study = importExampleStudy();
