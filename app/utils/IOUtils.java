@@ -13,12 +13,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import play.mvc.Results.Chunks;
 import play.mvc.Results.StringChunks;
-import services.gui.MessagesStrings;
+import publix.controllers.StudyAssets;
+import services.MessagesStrings;
 
 import com.google.inject.Singleton;
 
 import common.Common;
-import controllers.publix.StudyAssets;
 
 /**
  * Utility class that handles access to the system's file system.

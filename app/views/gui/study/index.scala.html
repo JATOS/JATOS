@@ -34,11 +34,11 @@ studyResultsCount: Integer)
 			</button>
 			<ul class="dropdown-menu" role="menu">
 				@for(member <- study.getMemberList()) {
-				<li><a href="@controllers.gui.routes.Users.profile(member.getEmail())">@member.getName()
+				<li><a href="@controllers.routes.Users.profile(member.getEmail())">@member.getName()
 						(@member.getEmail())</a></li> }
 				<li class="divider"></li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Change members of this study">
-					<a href="@controllers.gui.routes.Studies.changeMembers(study.getId())">Change</a>
+					<a href="@controllers.routes.Studies.changeMembers(study.getId())">Change</a>
 				</li>
 			</ul>
 		</div>
@@ -66,7 +66,7 @@ studyResultsCount: Integer)
 			</button>
 			<ul class="dropdown-menu" role="menu">
 				<li data-toggle="tooltip" data-placement="bottom" title="Export this study to your local file system (including its components and study assets but without its results)">
-					<a href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">
+					<a href="@controllers.routes.ImportExport.exportStudy(study.getId())">
 						<span class="glyphicon glyphicon-export" aria-hidden="true"></span>
 						Export
 					</a>
@@ -78,7 +78,7 @@ studyResultsCount: Integer)
 					</a>
 				</li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Source code to copy-paste into Mechanical Turk">
-					<a href="@controllers.gui.routes.Studies.showMTurkSourceCode(study.getId())">
+					<a href="@controllers.routes.Studies.showMTurkSourceCode(study.getId())">
 						MT Source Code
 					</a>
 				</li>
@@ -107,7 +107,7 @@ studyResultsCount: Integer)
 		</button>
 		<ul class="dropdown-menu" role="menu">
 			<li data-toggle="tooltip" data-placement="bottom" title="Create a new component">
-				<a href="@controllers.gui.routes.Components.create(study.getId())">
+				<a href="@controllers.routes.Components.create(study.getId())">
 					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
 					New
 				</a>
@@ -237,7 +237,7 @@ $(document).ready(function() {
 	componentsTable = $('#componentsTable').DataTable({
 		"ajax": {
 			"type": "GET",
-			"url" : '@controllers.gui.routes.Studies.tableDataByStudy(study.getId())',
+			"url" : '@controllers.routes.Studies.tableDataByStudy(study.getId())',
 			"error": function(reason) {
 					showError("Couldn't read components data.")
 			}
@@ -505,19 +505,19 @@ function setLockButton(locked) {
 }
 
 $('#studyToolbar').on('click', '#showStudy', function() {
-	window.location.href = "@controllers.gui.routes.Studies.showStudy(study.getId())";
+	window.location.href = "@controllers.routes.Studies.showStudy(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#studyResults', function() {
-	window.location.href = "@controllers.gui.routes.StudyResults.index(study.getId())";
+	window.location.href = "@controllers.routes.StudyResults.index(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#workers', function() {
-	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
+	window.location.href = "@controllers.routes.Studies.workers(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#editStudy', function() {
-	window.location.href = "@controllers.gui.routes.Studies.edit(study.getId())";
+	window.location.href = "@controllers.routes.Studies.edit(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#personalSingleRun', function() {
@@ -530,7 +530,7 @@ $('#studyToolbar').on('click', '#personalSingleRun', function() {
 		var jsonData = JSON.stringify({ @workers.PersonalSingleWorker.COMMENT: comment });
 		$.ajax({
 			type: 'POST',
-			url: '@controllers.gui.routes.Studies.createPersonalSingleRun(study.getId())',
+			url: '@controllers.routes.Studies.createPersonalSingleRun(study.getId())',
 			contentType: "application/json; charset=utf-8",
 			dataType: 'text',
 			data: jsonData,
@@ -553,7 +553,7 @@ $('#studyToolbar').on('click', '#personalSingleRun', function() {
 $('#studyToolbar').on('click', '#generalSingleRun', function() {
 	var title = "General Single Run";
 	var preText = "Use this link";
-	var url = "@baseUrl" + "@controllers.publix.routes.PublixInterceptor.startStudy(study.getId())?generalSingle";
+	var url = "@baseUrl" + "/publix/@study.getId()/start?generalSingle";
 	var html = "<p>" + url + "</p>"; 
 	var postText = "or press \"Run\" to start one right away. Remember to allow General Single Workers in your study's properties.";
 	askConfirmation(title, preText, html, postText, 'Run', function() {
@@ -571,7 +571,7 @@ $('#studyToolbar').on('click', '#personalMultipleRun', function() {
 		var jsonData = JSON.stringify({ @workers.PersonalMultipleWorker.COMMENT: comment });
 		$.ajax({
 			type: 'POST',
-			url: '@controllers.gui.routes.Studies.createPersonalMultipleRun(study.getId())',
+			url: '@controllers.routes.Studies.createPersonalMultipleRun(study.getId())',
 			contentType: "application/json; charset=utf-8",
 			dataType: 'text',
 			data: jsonData,
@@ -600,10 +600,10 @@ $('#studyToolbar').on('click', '#removeStudy', function() {
 	var postText = "Do you want to proceed?";
 	askConfirmation(title, preText, null, postText, 'Delete', function() {
 		$.ajax({
-			url : '@controllers.gui.routes.Studies.remove(study.getId())',
+			url : '@controllers.routes.Studies.remove(study.getId())',
 			type : 'DELETE',
 			success : function(result) {
-				window.location.replace('@controllers.gui.routes.Home.home()');
+				window.location.replace('@controllers.routes.Home.home()');
 			},
 			error : function(err) {
 				showError(err.responseText);
@@ -614,7 +614,7 @@ $('#studyToolbar').on('click', '#removeStudy', function() {
 
 $('#studyToolbar').on('click', '#cloneStudy', function() {
 	$.ajax({
-		url : '@controllers.gui.routes.Studies.cloneStudy(study.getId())',
+		url : '@controllers.routes.Studies.cloneStudy(study.getId())',
 		type : 'GET',
 		success : function(result) {
 			fillSidebar();
@@ -636,7 +636,7 @@ $('#studyToolbar').on('change', '#importComponentBrowser', function() {
 		data.append('@ComponentModel.COMPONENT', value);
 	});
 	$.ajax({
-		url: '@controllers.gui.routes.ImportExport.importComponent(study.getId())',
+		url: '@controllers.routes.ImportExport.importComponent(study.getId())',
 		data: data,
 		cache: false,
 		contentType: false,
@@ -672,7 +672,7 @@ function importComponentConfirm(response) {
 function postComponentImportConfirm() {
 	$.ajax({
 		type: 'POST',
-		url: '@controllers.gui.routes.ImportExport.importComponentConfirmed(study.getId())',
+		url: '@controllers.routes.ImportExport.importComponentConfirmed(study.getId())',
 		success: function(result) {
 			componentsTable.ajax.reload();
 			showMessages(JSON.parse(result));

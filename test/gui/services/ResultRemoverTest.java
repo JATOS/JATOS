@@ -4,7 +4,6 @@ import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
-import exceptions.publix.ForbiddenReloadException;
 import gui.AbstractTest;
 
 import java.io.IOException;
@@ -20,13 +19,12 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import persistance.StudyResultDao;
-import services.gui.MessagesStrings;
-import services.gui.ResultRemover;
-import services.gui.ResultService;
-
+import publix.controllers.jatos.JatosPublixUtils;
+import publix.exceptions.ForbiddenReloadException;
+import services.MessagesStrings;
+import services.ResultRemover;
+import services.ResultService;
 import common.Global;
-
-import controllers.publix.jatos.JatosPublixUtils;
 
 /**
  * Tests ResultRemover

@@ -88,12 +88,12 @@ function showError(msg) {
 					class="icon-bar"></span> <span class="icon-bar"></span> <span
 					class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="@controllers.gui.routes.Home.home">JATOS</a>
+			<a class="navbar-brand" href="@controllers.routes.Home.home">JATOS</a>
 		</div>
 		<div class="navbar-collapse collapse" id="jatos-navbar-collapse">
 			<ul class="nav navbar-nav navbar-left">
 				<li data-toggle="tooltip" data-placement="bottom" title="Create a new study">
-					<a href="@controllers.gui.routes.Studies.create()">
+					<a href="@controllers.routes.Studies.create()">
 						<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
 						New Study
 					</a>
@@ -107,18 +107,18 @@ function showError(msg) {
 					</a>
 				</li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Create a new user">
-					<a href="@controllers.gui.routes.Users.create()">
+					<a href="@controllers.routes.Users.create()">
 						<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
 						New User
 					</a>
 				</li>
 			</ul>
 			<ul class="nav navbar-nav navbar-right">
-				<li><a href="@controllers.gui.routes.Users.profile(user.getEmail())">
+				<li><a href="@controllers.routes.Users.profile(user.getEmail())">
 					<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
 					@user.getName() (@user.getEmail())
 				</a></li>
-				<li><a href="@controllers.gui.routes.Authentication.logout()">
+				<li><a href="@controllers.routes.Authentication.logout()">
 					<span class="glyphicon glyphicon-off" aria-hidden="true"></span>
 					Logout
 				</a></li>
@@ -193,9 +193,9 @@ function showError(msg) {
 </div>
 
 <script>
-var messagesRequestScope = @Html(services.RequestScopeMessaging.getAsJson());
+var messagesRequestScope = @Html(common.RequestScopeMessaging.getAsJson());
 showMessages(messagesRequestScope);
-var messagesFlashScope = @Html(services.FlashScopeMessaging.getAsJson());
+var messagesFlashScope = @Html(common.FlashScopeMessaging.getAsJson());
 showMessages(messagesFlashScope);
 var breadcrumbs = @Html(breadcrumbs)['breadcrumbs'];
 showBreadcrumbs(breadcrumbs);
@@ -276,7 +276,7 @@ $('#jatosHeader').on('change', '#importStudyBrowser', function() {
 		data.append('@StudyModel.STUDY', value);
 	});
 	$.ajax({
-		url: '@controllers.gui.routes.ImportExport.importStudy()',
+		url: '@controllers.routes.ImportExport.importStudy()',
 		data: data,
 		cache: false,
 		contentType: false,
@@ -318,8 +318,8 @@ function askConfirmationForStudyExists(response) {
 		$('#confirmModalStudyImport').modal('hide');
 		var studysPropertiesConfirm = $('#studysPropertiesConfirm').is(':checked');
 		var studysDirConfirm = $('#studysDirConfirm').is(':checked');
-		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_PROPERTIES_CONFIRM": studysPropertiesConfirm,
-			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : studysDirConfirm });
+		var jsonData = JSON.stringify({ "@services.ImportExportService.STUDYS_PROPERTIES_CONFIRM": studysPropertiesConfirm,
+			"@services.ImportExportService.STUDYS_DIR_CONFIRM" : studysDirConfirm });
 		postStudyImportConfirm(jsonData);
 	});
 }
@@ -332,8 +332,8 @@ function askConfirmationForStudyNotExistsDirExists(response) {
 		+ "If you proceed the <b>current directory will be overridden</b>.";
 	var postText = "Do you want to proceed?";
 	askConfirmation(title, preText, null, postText, 'Import', function() {
-		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_PROPERTIES_CONFIRM": true,
-			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
+		var jsonData = JSON.stringify({ "@services.ImportExportService.STUDYS_PROPERTIES_CONFIRM": true,
+			"@services.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);
 	});
 }
@@ -345,8 +345,8 @@ function askConfirmationForStudyNotExistsDirNotExists(response) {
 		+ "\".";
 	var postText = "Do you want to proceed?"
 	askConfirmation(title, preText, null, postText, 'Import', function() {
-		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_PROPERTIES_CONFIRM": true,
-			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
+		var jsonData = JSON.stringify({ "@services.ImportExportService.STUDYS_PROPERTIES_CONFIRM": true,
+			"@services.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);
 	});
 }
@@ -354,7 +354,7 @@ function askConfirmationForStudyNotExistsDirNotExists(response) {
 function postStudyImportConfirm(jsonData) {
 	$.ajax({
 		type: 'POST',
-		url: '@controllers.gui.routes.ImportExport.importStudyConfirmed()',
+		url: '@controllers.routes.ImportExport.importStudyConfirmed()',
 		contentType: "application/json; charset=utf-8",
 		dataType: 'text',
 		data: jsonData,
@@ -371,7 +371,7 @@ function postStudyImportConfirm(jsonData) {
 function fillSidebar() {
 	$.ajax({
 		type: 'GET',
-		url: '@controllers.gui.routes.Home.sidebarStudyList()',
+		url: '@controllers.routes.Home.sidebarStudyList()',
 		success: function(result) {
 			fillSidebarStudyList(result);
 		},

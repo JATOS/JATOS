@@ -28,14 +28,14 @@ import play.api.mvc.MultipartFormData;
 import play.api.mvc.MultipartFormData.FilePart;
 import play.libs.Scala;
 import play.mvc.Result;
-import services.gui.ImportExportService;
+import services.ImportExportService;
 import utils.IOUtils;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import controllers.gui.Users;
+import controllers.Users;
 
 /**
  * Testing actions of controller.ImportExport
@@ -102,7 +102,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		StudyModel importedStudy = studyDao
 				.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617");
 		result = callAction(
-				controllers.gui.routes.ref.Studies
+				controllers.routes.ref.Studies
 						.remove(importedStudy.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -204,7 +204,7 @@ public class ImportExportControllerTest extends AbstractTest {
 
 		// First call: ImportExport.importComponent()
 		Result result = callAction(
-				controllers.gui.routes.ref.ImportExport.importComponent(study
+				controllers.routes.ref.ImportExport.importComponent(study
 						.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail())
@@ -236,7 +236,7 @@ public class ImportExportControllerTest extends AbstractTest {
 
 		// Second call: ImportExport.importComponentConfirmed()
 		result = callAction(
-				controllers.gui.routes.ref.ImportExport.importComponentConfirmed(study
+				controllers.routes.ref.ImportExport.importComponentConfirmed(study
 						.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail())
@@ -263,7 +263,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		addStudy(study);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.ImportExport.exportStudy(study
+				controllers.routes.ref.ImportExport.exportStudy(study
 						.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -280,7 +280,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		addStudy(study);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.ImportExport.exportComponent(
+				controllers.routes.ref.ImportExport.exportComponent(
 						study.getId(), study.getComponent(1).getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -298,7 +298,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		FileUtils.copyFile(studyZip, studyZipBkp);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.ImportExport.importStudy(),
+				controllers.routes.ref.ImportExport.importStudy(),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail())
 						.withAnyContent(
@@ -335,7 +335,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		jsonObj.put(ImportExportService.STUDYS_DIR_CONFIRM, overrideDir);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.ImportExport.importStudyConfirmed(),
+				controllers.routes.ref.ImportExport.importStudyConfirmed(),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail())
 						.withSession(

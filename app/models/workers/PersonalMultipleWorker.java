@@ -10,7 +10,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import services.gui.MessagesStrings;
+import services.MessagesStrings;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 

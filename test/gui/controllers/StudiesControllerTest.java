@@ -24,14 +24,14 @@ import org.junit.Test;
 
 import play.mvc.Result;
 import play.test.FakeRequest;
-import services.gui.Breadcrumbs;
+import services.Breadcrumbs;
 import utils.IOUtils;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 
-import controllers.gui.Users;
+import controllers.Users;
 
 /**
  * Testing actions of controller.Studies.
@@ -57,7 +57,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.index(studyClone.getId()),
+				controllers.routes.ref.Studies.index(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -71,7 +71,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callCreate() {
-		Result result = callAction(controllers.gui.routes.ref.Studies.create(),
+		Result result = callAction(controllers.routes.ref.Studies.create(),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -91,7 +91,7 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
-		Result result = callAction(controllers.gui.routes.ref.Studies.submit(),
+		Result result = callAction(controllers.routes.ref.Studies.submit(),
 				request);
 		assertEquals(SEE_OTHER, status(result));
 
@@ -127,7 +127,7 @@ public class StudiesControllerTest extends AbstractTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 
-		Result result = callAction(controllers.gui.routes.ref.Studies.submit(),
+		Result result = callAction(controllers.routes.ref.Studies.submit(),
 				request);
 		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_STUDY);
 		assertThat(contentAsString(result)).contains(
@@ -147,7 +147,7 @@ public class StudiesControllerTest extends AbstractTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 
-		Result result = callAction(controllers.gui.routes.ref.Studies.submit(),
+		Result result = callAction(controllers.routes.ref.Studies.submit(),
 				request);
 		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_STUDY);
 		assertThat(contentAsString(result)).contains(
@@ -160,7 +160,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.edit(studyClone.getId()),
+				controllers.routes.ref.Studies.edit(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -187,7 +187,7 @@ public class StudiesControllerTest extends AbstractTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.submitEdited(studyClone
+				controllers.routes.ref.Studies.submitEdited(studyClone
 						.getId()), request);
 		assertEquals(SEE_OTHER, status(result));
 
@@ -201,7 +201,7 @@ public class StudiesControllerTest extends AbstractTest {
 	public void callSwapLock() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
-		Result result = callAction(controllers.gui.routes.ref.Studies
+		Result result = callAction(controllers.routes.ref.Studies
 				.swapLock(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -217,7 +217,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.remove(studyClone.getId()),
+				controllers.routes.ref.Studies.remove(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -228,7 +228,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel study = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.cloneStudy(study.getId()),
+				controllers.routes.ref.Studies.cloneStudy(study.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -243,7 +243,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.changeMembers(studyClone
+				controllers.routes.ref.Studies.changeMembers(studyClone
 						.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -258,7 +258,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.submitChangedMembers(studyClone
+				controllers.routes.ref.Studies.submitChangedMembers(studyClone
 						.getId()),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
@@ -274,7 +274,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.submitChangedMembers(studyClone
+				controllers.routes.ref.Studies.submitChangedMembers(studyClone
 						.getId()),
 				fakeRequest().withFormUrlEncodedBody(
 				// Just put some gibberish in the map
@@ -292,7 +292,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 		// Move first component to second position
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.changeComponentOrder(
+				controllers.routes.ref.Studies.changeComponentOrder(
 						studyClone.getId(), studyClone.getComponentList()
 								.get(0).getId(), "2"),
 				fakeRequest().withFormUrlEncodedBody(
@@ -302,7 +302,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 		// Move second component to first position
 		result = callAction(
-				controllers.gui.routes.ref.Studies.changeComponentOrder(
+				controllers.routes.ref.Studies.changeComponentOrder(
 						studyClone.getId(), studyClone.getComponentList()
 								.get(1).getId(), "1"),
 				fakeRequest().withFormUrlEncodedBody(
@@ -319,7 +319,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies
+				controllers.routes.ref.Studies
 						.showStudy(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -336,7 +336,7 @@ public class StudiesControllerTest extends AbstractTest {
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.createPersonalSingleRun(studyClone
+				controllers.routes.ref.Studies.createPersonalSingleRun(studyClone
 						.getId()), fakeRequest().withJsonBody(jsonNode)
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -352,7 +352,7 @@ public class StudiesControllerTest extends AbstractTest {
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.createPersonalMultipleRun(studyClone
+				controllers.routes.ref.Studies.createPersonalMultipleRun(studyClone
 						.getId()), fakeRequest().withJsonBody(jsonNode)
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -366,7 +366,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.showMTurkSourceCode(studyClone
+				controllers.routes.ref.Studies.showMTurkSourceCode(studyClone
 						.getId()),
 				fakeRequest().withHeader("Referer",
 						"http://www.example.com:9000").withSession(
@@ -384,7 +384,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Studies.workers(studyClone.getId()),
+				controllers.routes.ref.Studies.workers(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);

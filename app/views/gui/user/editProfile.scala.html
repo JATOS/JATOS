@@ -3,7 +3,7 @@ breadcrumbs: String, user: UserModel, form: Form[UserModel])
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-@helper.form(action = controllers.gui.routes.Users.submitEditedProfile(user.getEmail()), 'class -> "form-horizontal", 'role -> "form") {
+@helper.form(action = controllers.routes.Users.submitEditedProfile(user.getEmail()), 'class -> "form-horizontal", 'role -> "form") {
 
 <div class="form-group">
 	<label class="control-label col-xs-2" for="name">Name</label>

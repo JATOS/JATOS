@@ -15,8 +15,8 @@ import org.junit.Test;
 
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.Breadcrumbs;
-import controllers.gui.Users;
+import services.Breadcrumbs;
+import controllers.Users;
 
 /**
  * Testing actions of controller.gui.Home.
@@ -37,7 +37,7 @@ public class HomeControllerTest extends AbstractTest {
 	
 	@Test
 	public void callHome() throws Exception {
-		Result result = callAction(controllers.gui.routes.ref.Home.home(),
+		Result result = callAction(controllers.routes.ref.Home.home(),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -48,7 +48,7 @@ public class HomeControllerTest extends AbstractTest {
 	
 	@Test
 	public void callLog() throws Exception {
-		Result result = callAction(controllers.gui.routes.ref.Home.log(1000),
+		Result result = callAction(controllers.routes.ref.Home.log(1000),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -57,7 +57,7 @@ public class HomeControllerTest extends AbstractTest {
 		assertThat(contentAsString(result)).contains(".log: lineLimit ");
 		
 		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
-		result = callAction(controllers.gui.routes.ref.Home.log(1000),
+		result = callAction(controllers.routes.ref.Home.log(1000),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, testUser.getEmail()));
 		assertThat(status(result)).isEqualTo(Http.Status.FORBIDDEN);

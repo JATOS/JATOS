@@ -21,7 +21,7 @@ $(document).ready(function() {
 	workersTable = $('#workersTable').DataTable({
 		"ajax": {
 			"type": "GET",
-			"url" : '@controllers.gui.routes.Workers.tableDataByStudy(study.getId())',
+			"url" : '@controllers.routes.Workers.tableDataByStudy(study.getId())',
 			"error": function(reason) {
 					showError("Couldn't read components data.")
 			}

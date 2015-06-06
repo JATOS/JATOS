@@ -12,13 +12,12 @@ import models.workers.PersonalMultipleWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import publix.controllers.personal_multiple.PersonalMultipleErrorMessages;
+import publix.controllers.personal_multiple.PersonalMultiplePublixUtils;
+import publix.controllers.personal_multiple.PersonalMultipleStudyAuthorisation;
+import publix.exceptions.ForbiddenPublixException;
+import publix.exceptions.PublixException;
 import common.Global;
-
-import controllers.publix.personal_multiple.PersonalMultipleErrorMessages;
-import controllers.publix.personal_multiple.PersonalMultiplePublixUtils;
-import controllers.publix.personal_multiple.PersonalMultipleStudyAuthorisation;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange

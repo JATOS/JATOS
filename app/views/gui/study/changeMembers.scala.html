@@ -3,7 +3,7 @@ breadcrumbs: String, study: StudyModel, userList: List[UserModel])
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-@helper.form(action = controllers.gui.routes.Studies.submitChangedMembers(study.getId()), 'class -> "form-horizontal") {
+@helper.form(action = controllers.routes.Studies.submitChangedMembers(study.getId()), 'class -> "form-horizontal") {
 @for(user <- userList) {
 <div class="form-group">
 	<div class="col-lg-offset-2 col-lg-10">

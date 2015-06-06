@@ -1,4 +1,4 @@
-@(form: Form[controllers.gui.Authentication.Login])
+@(form: Form[controllers.Authentication.Login])
 
 <!DOCTYPE html>
 
@@ -33,14 +33,14 @@
 					class="icon-bar"></span> <span class="icon-bar"></span> <span
 					class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="@controllers.gui.routes.Home.home">JATOS</a>
+			<a class="navbar-brand" href="@controllers.routes.Home.home">JATOS</a>
 		</div>
 	</div>
 </nav>
 
 <div class="container">
 
-	@helper.form(action = controllers.gui.routes.Authentication.authenticate, 'class -> "form-login", 'role -> "form") {
+	@helper.form(action = controllers.routes.Authentication.authenticate, 'class -> "form-login", 'role -> "form") {
 	<h2 class="form-login-heading">Please login</h2>
 	<!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
 	<input type="text" name="email" id="email" class="form-control" placeholder="Email address" value="@form("email").value" required autofocus>
@@ -55,8 +55,8 @@
 @for(error <- form.globalErrors) {
 	$('#password').after('<p class="text-danger">@error.message</p>');
 }
-@if(flash.contains(services.FlashScopeMessaging.SUCCESS)) {
-	$('#password').after('<p class="text-success">@flash.get(services.FlashScopeMessaging.SUCCESS)</p>');
+@if(flash.contains(common.FlashScopeMessaging.SUCCESS)) {
+	$('#password').after('<p class="text-success">@flash.get(common.FlashScopeMessaging.SUCCESS)</p>');
 }
 </script>
 

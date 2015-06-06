@@ -14,14 +14,13 @@ import models.workers.MTWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import publix.controllers.mt.MTErrorMessages;
+import publix.controllers.mt.MTPublixUtils;
+import publix.controllers.mt.MTStudyAuthorisation;
+import publix.exceptions.ForbiddenPublixException;
+import publix.exceptions.PublixException;
+import publix.services.PublixErrorMessages;
 import common.Global;
-
-import controllers.publix.PublixErrorMessages;
-import controllers.publix.mt.MTErrorMessages;
-import controllers.publix.mt.MTPublixUtils;
-import controllers.publix.mt.MTStudyAuthorisation;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange

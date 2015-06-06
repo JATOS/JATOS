@@ -12,7 +12,7 @@ breadcrumbs: String, user: UserModel)
 <ul class="list-group">
 	@for(study <- user.getStudyList()) {
 	<li class="list-group-item">
-		<a href="@controllers.gui.routes.Studies.index(study.getId())">
+		<a href="@controllers.routes.Studies.index(study.getId())">
 			@study.getTitle() (ID: @study.getId())
 		</a>
 	</li>
@@ -25,11 +25,11 @@ breadcrumbs: String, user: UserModel)
 <script type="text/javascript">
 
 $('#toolbar').on('click', '#editProfile', function() {
-	window.location.href = "@controllers.gui.routes.Users.editProfile(user.getEmail())";
+	window.location.href = "@controllers.routes.Users.editProfile(user.getEmail())";
 });
 
 $('#toolbar').on('click', '#changePassword', function() {
-	window.location.href = "@controllers.gui.routes.Users.changePassword(user.getEmail())";
+	window.location.href = "@controllers.routes.Users.changePassword(user.getEmail())";
 });
 
 </script>

@@ -1,6 +1,7 @@
 package gui;
 
 import static org.mockito.Mockito.mock;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -32,14 +33,14 @@ import play.db.jpa.JPAPlugin;
 import play.mvc.Http;
 import play.test.FakeApplication;
 import play.test.Helpers;
+import publix.controllers.StudyAssets;
 import scala.Option;
-import services.gui.StudyService;
-import services.gui.UserService;
+import services.StudyService;
+import services.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
 import utils.ZipUtil;
 import common.Global;
-import controllers.publix.StudyAssets;
 
 /**
  * Abstract class for tests. Starts fake application and an in-memory DB.

@@ -15,11 +15,10 @@ import persistance.StudyDao;
 import persistance.UserDao;
 import play.Logger;
 import play.db.jpa.JPA;
-import services.gui.UserService;
+import publix.controllers.StudyAssets;
+import services.UserService;
 
 import com.google.inject.Inject;
-
-import controllers.publix.StudyAssets;
 
 /**
  * This Initializer is called once with every start and does some JATOS specific

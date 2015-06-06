@@ -8,8 +8,6 @@ import static play.test.Helpers.status;
 
 import java.io.IOException;
 
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.ForbiddenReloadException;
 import gui.AbstractTest;
 import models.StudyModel;
 import models.StudyResult;
@@ -23,10 +21,12 @@ import persistance.StudyResultDao;
 import play.mvc.HandlerRef;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.StudyService;
+import publix.controllers.jatos.JatosPublixUtils;
+import publix.exceptions.ForbiddenPublixException;
+import publix.exceptions.ForbiddenReloadException;
+import services.StudyService;
 import utils.IOUtils;
-import controllers.gui.Users;
-import controllers.publix.jatos.JatosPublixUtils;
+import controllers.Users;
 
 /**
  * Testing actions if study is locked
@@ -69,7 +69,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 	public void callStudiesSubmitEdited() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
-		HandlerRef ref = controllers.gui.routes.ref.Studies
+		HandlerRef ref = controllers.routes.ref.Studies
 				.submitEdited(studyClone.getId());
 		checkDenyLocked(ref, Http.Status.SEE_OTHER,
 				"/jatos/" + studyClone.getId());
@@ -80,7 +80,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 	public void callStudiesRemove() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
-		HandlerRef ref = controllers.gui.routes.ref.Studies.remove(studyClone
+		HandlerRef ref = controllers.routes.ref.Studies.remove(studyClone
 				.getId());
 		checkDenyLocked(ref, Http.Status.FORBIDDEN, null);
 		removeStudy(studyClone);
@@ -90,7 +90,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 	public void callStudiesChangeComponentOrder() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
-		HandlerRef ref = controllers.gui.routes.ref.Studies
+		HandlerRef ref = controllers.routes.ref.Studies
 				.changeComponentOrder(studyClone.getId(), studyClone
 						.getComponent(1).getId(),
 						StudyService.COMPONENT_POSITION_DOWN);
@@ -116,7 +116,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 		jatosPublixUtils.startComponent(studyClone.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 		
-		HandlerRef ref = controllers.gui.routes.ref.ImportExport
+		HandlerRef ref = controllers.routes.ref.ImportExport
 				.exportDataOfComponentResults("1");
 		Result result = callAction(ref,
 				fakeRequest()

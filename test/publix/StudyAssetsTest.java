@@ -15,8 +15,8 @@ import models.StudyModel;
 import org.junit.Test;
 
 import play.mvc.Result;
+import publix.controllers.StudyAssets;
 import utils.IOUtils;
-import controllers.publix.StudyAssets;
 
 /**
  * Testing controller.publix.StudyAssets
@@ -55,7 +55,7 @@ public class StudyAssetsTest extends AbstractTest {
 	public void testAt() throws IOException {
 		StudyModel studyClone = cloneAndPersistStudy(studyExample);
 
-		Result result = callAction(controllers.publix.routes.ref.StudyAssets
+		Result result = callAction(publix.controllers.routes.ref.StudyAssets
 				.at("basic_example_study/quit_button.html"));
 		assertThat(status(result)).isEqualTo(OK);
 
@@ -65,11 +65,11 @@ public class StudyAssetsTest extends AbstractTest {
 
 	@Test
 	public void testAtNotFound() {
-		Result result = callAction(controllers.publix.routes.ref.StudyAssets
+		Result result = callAction(publix.controllers.routes.ref.StudyAssets
 				.at("non/existend/filepath"));
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 
-		result = callAction(controllers.publix.routes.ref.StudyAssets
+		result = callAction(publix.controllers.routes.ref.StudyAssets
 				.at("non/&?/filepath"));
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 	}
@@ -79,7 +79,7 @@ public class StudyAssetsTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyExample);
 
 		// Although this file exists, it shouldn't be found
-		Result result = callAction(controllers.publix.routes.ref.StudyAssets
+		Result result = callAction(publix.controllers.routes.ref.StudyAssets
 				.at("../../conf/application.conf"));
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 

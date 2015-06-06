@@ -12,14 +12,13 @@ import models.workers.PersonalSingleWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import publix.controllers.personal_single.PersonalSingleErrorMessages;
+import publix.controllers.personal_single.PersonalSinglePublixUtils;
+import publix.controllers.personal_single.PersonalSingleStudyAuthorisation;
+import publix.exceptions.ForbiddenPublixException;
+import publix.exceptions.PublixException;
+import publix.services.PublixErrorMessages;
 import common.Global;
-
-import controllers.publix.PublixErrorMessages;
-import controllers.publix.personal_single.PersonalSingleErrorMessages;
-import controllers.publix.personal_single.PersonalSinglePublixUtils;
-import controllers.publix.personal_single.PersonalSingleStudyAuthorisation;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange

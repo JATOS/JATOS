@@ -19,11 +19,11 @@ import models.UserModel;
 import org.junit.Test;
 
 import play.mvc.Result;
-import services.gui.UserService;
+import services.UserService;
 
 import com.google.common.collect.ImmutableMap;
 
-import controllers.gui.Users;
+import controllers.Users;
 
 /**
  * Testing controller.Authentication
@@ -44,7 +44,7 @@ public class AuthenticationControllerTest extends AbstractTest {
 
 	@Test
 	public void callLogin() throws Exception {
-		Result result = callAction(controllers.gui.routes.ref.Authentication
+		Result result = callAction(controllers.routes.ref.Authentication
 				.login());
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(charset(result)).isEqualTo("utf-8");
@@ -54,7 +54,7 @@ public class AuthenticationControllerTest extends AbstractTest {
 
 	@Test
 	public void callLogout() throws Exception {
-		Result result = callAction(controllers.gui.routes.ref.Authentication
+		Result result = callAction(controllers.routes.ref.Authentication
 				.logout());
 		assertThat(status(result)).isEqualTo(SEE_OTHER);
 		assertThat(redirectLocation(result)).contains("login");
@@ -64,7 +64,7 @@ public class AuthenticationControllerTest extends AbstractTest {
 	@Test
 	public void authenticateSuccess() {
 		Result result = callAction(
-				controllers.gui.routes.ref.Authentication.authenticate(),
+				controllers.routes.ref.Authentication.authenticate(),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(UserModel.EMAIL,
 								UserService.ADMIN_EMAIL, UserModel.PASSWORD,
@@ -77,7 +77,7 @@ public class AuthenticationControllerTest extends AbstractTest {
 	@Test
 	public void authenticateFailure() {
 		Result result = callAction(
-				controllers.gui.routes.ref.Authentication.authenticate(),
+				controllers.routes.ref.Authentication.authenticate(),
 				fakeRequest().withFormUrlEncodedBody(
 						ImmutableMap.of(UserModel.EMAIL,
 								UserService.ADMIN_EMAIL, UserModel.PASSWORD,

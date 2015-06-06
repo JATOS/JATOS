@@ -24,11 +24,11 @@ import org.junit.Test;
 
 import play.mvc.Result;
 import play.test.FakeRequest;
-import services.gui.Breadcrumbs;
+import publix.controllers.jatos.JatosPublix;
+import services.Breadcrumbs;
 import utils.IOUtils;
-import controllers.gui.Components;
-import controllers.gui.Users;
-import controllers.publix.jatos.JatosPublix;
+import controllers.Components;
+import controllers.Users;
 
 /**
  * Testing actions of controller.Components.
@@ -56,7 +56,7 @@ public class ComponentsControllerTest extends AbstractTest {
 	public void callShowComponent() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
-		Result result = callAction(controllers.gui.routes.ref.Components
+		Result result = callAction(controllers.routes.ref.Components
 				.showComponent(studyClone.getId(), studyClone.getComponent(1)
 						.getId()),
 				fakeRequest()
@@ -86,7 +86,7 @@ public class ComponentsControllerTest extends AbstractTest {
 		studyClone.getComponent(1).setHtmlFilePath(null);
 		entityManager.getTransaction().commit();
 
-		Result result = callAction(controllers.gui.routes.ref.Components
+		Result result = callAction(controllers.routes.ref.Components
 				.showComponent(studyClone.getId(), studyClone.getComponent(1)
 						.getId()),
 				fakeRequest()
@@ -105,7 +105,7 @@ public class ComponentsControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Components
+				controllers.routes.ref.Components
 						.create(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
@@ -135,7 +135,7 @@ public class ComponentsControllerTest extends AbstractTest {
 				admin.getEmail()).withFormUrlEncodedBody(form);
 
 		Result result = callAction(
-				controllers.gui.routes.ref.Components
+				controllers.routes.ref.Components
 						.submit(studyClone.getId()),
 				request);
 		assertEquals(SEE_OTHER, status(result));
@@ -162,7 +162,7 @@ public class ComponentsControllerTest extends AbstractTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(form);
 		Result result = callAction(
-				controllers.gui.routes.ref.Components
+				controllers.routes.ref.Components
 						.submit(studyClone.getId()),
 				request);
 		assertEquals(SEE_OTHER, status(result));
@@ -189,7 +189,7 @@ public class ComponentsControllerTest extends AbstractTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(form);
 		Result result = callAction(
-				controllers.gui.routes.ref.Components
+				controllers.routes.ref.Components
 						.submit(studyClone.getId()),
 				request);
 		assertThat(contentAsString(result)).contains(
@@ -205,7 +205,7 @@ public class ComponentsControllerTest extends AbstractTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail());
 		Result result = callAction(
-				controllers.gui.routes.ref.Components.changeProperty(
+				controllers.routes.ref.Components.changeProperty(
 						studyClone.getId(), studyClone.getComponent(1).getId(),
 						true), request);
 		assertThat(status(result)).isEqualTo(OK);
@@ -221,7 +221,7 @@ public class ComponentsControllerTest extends AbstractTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail());
 		Result result = callAction(
-				controllers.gui.routes.ref.Components.cloneComponent(
+				controllers.routes.ref.Components.cloneComponent(
 						studyClone.getId(), studyClone.getComponent(1).getId()),
 				request);
 		assertThat(status(result)).isEqualTo(OK);
@@ -237,7 +237,7 @@ public class ComponentsControllerTest extends AbstractTest {
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail());
 		Result result = callAction(
-				controllers.gui.routes.ref.Components.remove(
+				controllers.routes.ref.Components.remove(
 						studyClone.getId(), studyClone.getComponent(1).getId()),
 				request);
 		assertThat(status(result)).isEqualTo(OK);

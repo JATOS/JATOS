@@ -1,7 +1,6 @@
 package publix;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.publix.PublixException;
 import gui.AbstractTest;
 
 import java.io.IOException;
@@ -17,11 +16,10 @@ import org.junit.Test;
 
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
-
+import publix.exceptions.PublixException;
+import publix.services.PublixErrorMessages;
+import publix.services.PublixUtils;
 import common.Global;
-
-import controllers.publix.PublixErrorMessages;
-import controllers.publix.PublixUtils;
 
 /**
  * @author Kristian Lange

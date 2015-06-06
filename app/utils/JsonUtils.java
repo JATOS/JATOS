@@ -23,7 +23,7 @@ import org.jsoup.safety.Whitelist;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
-import services.gui.MessagesStrings;
+import services.MessagesStrings;
 import utils.JsonUtils.SidebarStudy.SidebarComponent;
 
 import com.fasterxml.jackson.core.JsonParser;

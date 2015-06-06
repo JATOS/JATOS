@@ -14,10 +14,9 @@ import models.StudyModel;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
-import services.gui.ComponentService;
-import services.gui.MessagesStrings;
+import services.ComponentService;
+import services.MessagesStrings;
 import utils.IOUtils;
-
 import common.Global;
 
 /**

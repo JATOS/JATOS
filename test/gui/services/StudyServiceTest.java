@@ -23,8 +23,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import play.db.jpa.JPA;
-import services.gui.MessagesStrings;
-import services.gui.StudyService;
+import services.MessagesStrings;
+import services.StudyService;
 import utils.IOUtils;
 import common.Global;
 
