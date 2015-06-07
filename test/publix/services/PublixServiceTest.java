@@ -1,4 +1,4 @@
-package publix;
+package publix.services;
 
 import static org.fest.assertions.Assertions.assertThat;
 import gui.AbstractTest;
@@ -24,7 +24,7 @@ import common.Global;
 /**
  * @author Kristian Lange
  */
-public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
+public abstract class PublixServiceTest<T extends Worker> extends AbstractTest {
 
 	protected WorkerDao workerDao;
 	protected StudyResultDao studyResultDao;

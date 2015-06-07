@@ -1,4 +1,4 @@
-package publix;
+package publix.controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.NOT_FOUND;

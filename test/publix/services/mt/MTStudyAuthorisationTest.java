@@ -1,4 +1,4 @@
-package publix;
+package publix.services.mt;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -7,7 +7,6 @@ import java.security.NoSuchAlgorithmException;
 
 import models.StudyModel;
 import models.StudyResult.StudyState;
-import models.workers.GeneralSingleWorker;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 
@@ -17,15 +16,14 @@ import org.junit.Test;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
-import publix.services.mt.MTErrorMessages;
-import publix.services.mt.MTPublixUtils;
-import publix.services.mt.MTStudyAuthorisation;
+import publix.services.PublixServiceTest;
+
 import common.Global;
 
 /**
  * @author Kristian Lange
  */
-public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
+public class MTStudyAuthorisationTest extends PublixServiceTest<MTWorker> {
 
 	private MTErrorMessages mtErrorMessages;
 	private MTPublixUtils mtPublixUtils;
@@ -45,40 +43,6 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 	@Override
 	public void after() throws Exception {
 		super.before();
-	}
-
-	@Test
-	public void checkRetrieveTypedWorker() throws NoSuchAlgorithmException,
-			IOException, PublixException {
-		MTWorker mtWorker = new MTWorker();
-		addWorker(mtWorker);
-		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		addWorker(mtSandboxWorker);
-
-		MTWorker retrievedWorker = publixUtils.retrieveTypedWorker(mtWorker
-				.getId().toString());
-		assertThat(retrievedWorker.getId()).isEqualTo(mtWorker.getId());
-		retrievedWorker = publixUtils.retrieveTypedWorker(mtSandboxWorker
-				.getId().toString());
-		assertThat(retrievedWorker.getId()).isEqualTo(mtSandboxWorker.getId());
-
-	}
-
-	@Test
-	public void checkRetrieveTypedWorkerWrongType()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		GeneralSingleWorker generalSingleWorker = new GeneralSingleWorker();
-		addWorker(generalSingleWorker);
-
-		try {
-			publixUtils.retrieveTypedWorker(generalSingleWorker.getId()
-					.toString());
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					mtErrorMessages.workerNotCorrectType(generalSingleWorker
-							.getId()));
-		}
 	}
 
 	@Test

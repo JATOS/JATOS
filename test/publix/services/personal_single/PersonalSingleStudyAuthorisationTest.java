@@ -1,4 +1,4 @@
-package publix;
+package publix.services.personal_single;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -15,16 +15,15 @@ import org.junit.Test;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
-import publix.services.personal_single.PersonalSingleErrorMessages;
-import publix.services.personal_single.PersonalSinglePublixUtils;
-import publix.services.personal_single.PersonalSingleStudyAuthorisation;
+import publix.services.PublixServiceTest;
+
 import common.Global;
 
 /**
  * @author Kristian Lange
  */
-public class PersonalSinglePublixUtilsTest extends
-		PublixUtilsTest<PersonalSingleWorker> {
+public class PersonalSingleStudyAuthorisationTest extends
+		PublixServiceTest<PersonalSingleWorker> {
 
 	private PersonalSingleErrorMessages personalSingleErrorMessages;
 	private PersonalSinglePublixUtils personalSinglePublixUtils;
@@ -46,31 +45,6 @@ public class PersonalSinglePublixUtilsTest extends
 	@Override
 	public void after() throws Exception {
 		super.before();
-	}
-
-	@Test
-	public void checkRetrieveTypedWorker() throws NoSuchAlgorithmException,
-			IOException, PublixException {
-		PersonalSingleWorker worker = new PersonalSingleWorker();
-		addWorker(worker);
-
-		PersonalSingleWorker retrievedWorker = publixUtils
-				.retrieveTypedWorker(worker.getId().toString());
-		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
-	}
-
-	@Test
-	public void checkRetrieveTypedWorkerWrongType()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		try {
-			publixUtils.retrieveTypedWorker(admin.getWorker().getId()
-					.toString());
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					personalSingleErrorMessages.workerNotCorrectType(admin
-							.getWorker().getId()));
-		}
 	}
 
 	@Test
