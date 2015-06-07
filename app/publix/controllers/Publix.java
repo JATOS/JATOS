@@ -21,10 +21,10 @@ import publix.exceptions.PublixException;
 import publix.services.IStudyAuthorisation;
 import publix.services.PublixErrorMessages;
 import publix.services.PublixUtils;
+import utils.ControllerUtils;
 import utils.JsonUtils;
 
 import com.google.inject.Singleton;
-import common.ControllerUtils;
 
 /**
  * Abstract controller class for all controllers that implement the IPublix

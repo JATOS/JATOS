@@ -16,12 +16,12 @@ import publix.controllers.StudyAssets;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.PublixException;
+import utils.ControllerUtils;
 import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import common.ControllerUtils;
 import common.FlashScopeMessaging;
 import controllers.Users;
 

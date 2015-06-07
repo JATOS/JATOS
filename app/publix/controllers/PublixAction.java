@@ -1,6 +1,5 @@
 package publix.controllers;
 
-import common.ControllerUtils;
 import play.Logger;
 import play.libs.F;
 import play.libs.F.Promise;
@@ -8,6 +7,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import publix.exceptions.PublixException;
+import utils.ControllerUtils;
 
 /**
  * For all actions in a controller that is annotated with PublixAction catch

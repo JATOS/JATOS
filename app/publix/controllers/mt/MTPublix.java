@@ -15,11 +15,11 @@ import publix.controllers.Publix;
 import publix.controllers.PublixInterceptor;
 import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.PublixException;
+import utils.ControllerUtils;
 import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.ControllerUtils;
 
 /**
  * Implementation of JATOS' public API for studies that are started via MTurk. A

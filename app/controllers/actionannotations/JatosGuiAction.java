@@ -5,7 +5,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import common.ControllerUtils;
 import common.FlashScopeMessaging;
 import play.Logger;
 import play.libs.F;
@@ -15,6 +14,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
+import utils.ControllerUtils;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.JatosGuiException;
 

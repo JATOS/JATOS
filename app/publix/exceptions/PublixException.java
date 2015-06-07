@@ -3,10 +3,10 @@ package publix.exceptions;
 import org.apache.http.HttpStatus;
 
 import com.google.common.net.MediaType;
-import common.ControllerUtils;
 
 import play.mvc.Results;
 import play.mvc.Result;
+import utils.ControllerUtils;
 
 @SuppressWarnings("serial")
 public class PublixException extends Exception {

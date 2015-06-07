@@ -36,6 +36,7 @@ import services.MessagesStrings;
 import services.StudyService;
 import services.UserService;
 import services.WorkerService;
+import utils.ControllerUtils;
 import utils.IOUtils;
 import utils.JsonUtils;
 
@@ -43,7 +44,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import common.ControllerUtils;
 import common.RequestScopeMessaging;
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;

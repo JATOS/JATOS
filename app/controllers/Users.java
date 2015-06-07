@@ -18,11 +18,11 @@ import play.mvc.Result;
 import services.Breadcrumbs;
 import services.JatosGuiExceptionThrower;
 import services.UserService;
+import utils.ControllerUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import common.ControllerUtils;
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.ForbiddenException;
