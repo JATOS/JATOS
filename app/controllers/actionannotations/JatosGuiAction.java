@@ -11,6 +11,7 @@ import play.Logger;
 import play.libs.F;
 import play.libs.F.Promise;
 import play.mvc.Action;
+import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
@@ -39,20 +40,21 @@ public class JatosGuiAction extends Action<JatosGui> {
 		try {
 			call = delegate.call(ctx);
 		} catch (JatosGuiException e) {
-			Logger.info("JatosGuiException: " + e.getMessage());
+			Logger.info("JatosGuiException during call "
+					+ Controller.request().uri() + ": " + e.getMessage());
 			Result result = e.getSimpleResult();
 			call = Promise.<Result> pure(result);
 		} catch (Exception e) {
-			Logger.error(e.getMessage(), e);
+			Logger.error("Exception during call " + Controller.request().uri()
+					+ ": " + e.getMessage(), e);
 			if (ControllerUtils.isAjax()) {
 				call = Promise
 						.<Result> pure(internalServerError(e.getMessage()));
 			} else {
-				FlashScopeMessaging.error("Internal JATOS error: "
-						+ e.getMessage());
-				call = Promise
-						.<Result> pure(redirect(controllers.routes.Home
-								.home()));
+				FlashScopeMessaging.error("Internal JATOS error during "
+						+ Controller.request().uri() + ": " + e.getMessage());
+				call = Promise.<Result> pure(redirect(controllers.routes.Home
+						.home()));
 			}
 		}
 		return call;

@@ -1,10 +1,10 @@
 package publix.controllers;
 
 import common.ControllerUtils;
-
 import play.Logger;
 import play.libs.F;
 import play.libs.F.Promise;
+import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import publix.exceptions.PublixException;
@@ -23,17 +23,20 @@ public class PublixAction extends play.mvc.Action.Simple {
 			call = delegate.call(ctx);
 		} catch (PublixException e) {
 			Result result = e.getSimpleResult();
-			Logger.info("PublixException: " + e.getMessage());
+			Logger.info("PublixException during call "
+					+ Controller.request().uri() + ": " + e.getMessage());
 			call = Promise.<Result> pure(result);
 		} catch (Exception e) {
-			Logger.error(e.getMessage(), e);
+			Logger.error("Exception during call " + Controller.request().uri()
+					+ ": " + e.getMessage(), e);
 			if (ControllerUtils.isAjax()) {
 				call = Promise
 						.<Result> pure(internalServerError(e.getMessage()));
 			} else {
 				call = Promise
 						.<Result> pure(internalServerError(views.html.publix.error
-								.render("Internal JATOS error: "
+								.render("Internal JATOS error during "
+										+ Controller.request().uri() + ": "
 										+ e.getMessage())));
 			}
 		}
