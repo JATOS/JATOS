@@ -13,12 +13,12 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import play.mvc.Http;
-import publix.controllers.jatos.JatosErrorMessages;
 import publix.controllers.jatos.JatosPublix;
-import publix.controllers.jatos.JatosPublixUtils;
-import publix.controllers.jatos.JatosStudyAuthorisation;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
+import publix.services.jatos.JatosErrorMessages;
+import publix.services.jatos.JatosPublixUtils;
+import publix.services.jatos.JatosStudyAuthorisation;
 import common.Global;
 import controllers.Users;
 

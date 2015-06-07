@@ -1,4 +1,4 @@
-package publix.controllers.jatos;
+package publix.services.jatos;
 
 import publix.controllers.Publix;
 import publix.exceptions.ForbiddenPublixException;

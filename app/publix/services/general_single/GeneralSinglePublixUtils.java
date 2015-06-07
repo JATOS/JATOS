@@ -1,4 +1,4 @@
-package publix.controllers.general_single;
+package publix.services.general_single;
 
 import models.StudyModel;
 import models.workers.GeneralSingleWorker;

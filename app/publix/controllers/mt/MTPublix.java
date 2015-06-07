@@ -15,6 +15,9 @@ import publix.controllers.Publix;
 import publix.controllers.PublixInterceptor;
 import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.PublixException;
+import publix.services.mt.MTErrorMessages;
+import publix.services.mt.MTPublixUtils;
+import publix.services.mt.MTStudyAuthorisation;
 import utils.ControllerUtils;
 import utils.JsonUtils;
 

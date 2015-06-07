@@ -1,4 +1,4 @@
-package publix.controllers.general_single;
+package publix.services.general_single;
 
 import publix.services.PublixErrorMessages;
 import models.workers.GeneralSingleWorker;

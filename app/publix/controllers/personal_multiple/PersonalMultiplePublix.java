@@ -10,6 +10,9 @@ import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
 import publix.exceptions.PublixException;
+import publix.services.personal_multiple.PersonalMultipleErrorMessages;
+import publix.services.personal_multiple.PersonalMultiplePublixUtils;
+import publix.services.personal_multiple.PersonalMultipleStudyAuthorisation;
 import utils.JsonUtils;
 
 import com.google.inject.Inject;

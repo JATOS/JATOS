@@ -1,4 +1,4 @@
-package publix.controllers.mt;
+package publix.services.mt;
 
 import models.workers.MTWorker;
 import models.workers.Worker;

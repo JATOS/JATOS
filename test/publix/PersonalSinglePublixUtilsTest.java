@@ -12,12 +12,12 @@ import models.workers.PersonalSingleWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
-import publix.controllers.personal_single.PersonalSingleErrorMessages;
-import publix.controllers.personal_single.PersonalSinglePublixUtils;
-import publix.controllers.personal_single.PersonalSingleStudyAuthorisation;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
+import publix.services.personal_single.PersonalSingleErrorMessages;
+import publix.services.personal_single.PersonalSinglePublixUtils;
+import publix.services.personal_single.PersonalSingleStudyAuthorisation;
 import common.Global;
 
 /**

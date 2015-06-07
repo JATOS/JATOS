@@ -14,12 +14,12 @@ import models.workers.MTWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
-import publix.controllers.mt.MTErrorMessages;
-import publix.controllers.mt.MTPublixUtils;
-import publix.controllers.mt.MTStudyAuthorisation;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
+import publix.services.mt.MTErrorMessages;
+import publix.services.mt.MTPublixUtils;
+import publix.services.mt.MTStudyAuthorisation;
 import common.Global;
 
 /**

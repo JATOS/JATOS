@@ -1,4 +1,4 @@
-package publix.controllers.mt;
+package publix.services.mt;
 
 import publix.services.PublixErrorMessages;
 import models.workers.MTWorker;

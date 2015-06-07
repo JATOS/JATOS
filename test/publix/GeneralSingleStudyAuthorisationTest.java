@@ -15,12 +15,12 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import play.mvc.Http.Cookie;
-import publix.controllers.general_single.GeneralSingleErrorMessages;
-import publix.controllers.general_single.GeneralSinglePublixUtils;
-import publix.controllers.general_single.GeneralSingleStudyAuthorisation;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
+import publix.services.general_single.GeneralSingleErrorMessages;
+import publix.services.general_single.GeneralSinglePublixUtils;
+import publix.services.general_single.GeneralSingleStudyAuthorisation;
 import common.Global;
 
 /**

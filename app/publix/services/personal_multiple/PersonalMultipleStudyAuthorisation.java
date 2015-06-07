@@ -1,4 +1,4 @@
-package publix.controllers.personal_multiple;
+package publix.services.personal_multiple;
 
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.IStudyAuthorisation;

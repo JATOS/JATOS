@@ -1,23 +1,23 @@
-package publix.controllers.personal_multiple;
+package publix.services.personal_single;
 
 import publix.services.PublixErrorMessages;
+import models.workers.PersonalSingleWorker;
 
 import com.google.inject.Singleton;
 
-import models.workers.PersonalMultipleWorker;
-
 /**
- * PersonalMultiplePublix' implementation of PublixErrorMessages
+ * PersonalSinglePublix' implementation of PublixErrorMessages
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalMultipleErrorMessages extends PublixErrorMessages {
+public class PersonalSingleErrorMessages extends
+		PublixErrorMessages {
 
 	@Override
 	public String workerNotCorrectType(Long workerId) {
 		String errorMsg = "The worker with ID " + workerId + " isn't a "
-				+ PersonalMultipleWorker.UI_WORKER_TYPE + " worker.";
+				+ PersonalSingleWorker.UI_WORKER_TYPE + " Worker.";
 		return errorMsg;
 	}
 

@@ -1,4 +1,4 @@
-package publix.controllers.personal_multiple;
+package publix.services.personal_multiple;
 
 import models.workers.PersonalMultipleWorker;
 import models.workers.Worker;

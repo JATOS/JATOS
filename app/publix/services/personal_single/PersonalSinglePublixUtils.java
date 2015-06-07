@@ -1,4 +1,4 @@
-package publix.controllers.personal_single;
+package publix.services.personal_single;
 
 import models.workers.PersonalSingleWorker;
 import models.workers.Worker;

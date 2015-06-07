@@ -1,4 +1,4 @@
-package publix.controllers.mt;
+package publix.services.mt;
 
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.IStudyAuthorisation;

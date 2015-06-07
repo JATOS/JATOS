@@ -12,11 +12,11 @@ import models.workers.PersonalMultipleWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
-import publix.controllers.personal_multiple.PersonalMultipleErrorMessages;
-import publix.controllers.personal_multiple.PersonalMultiplePublixUtils;
-import publix.controllers.personal_multiple.PersonalMultipleStudyAuthorisation;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
+import publix.services.personal_multiple.PersonalMultipleErrorMessages;
+import publix.services.personal_multiple.PersonalMultiplePublixUtils;
+import publix.services.personal_multiple.PersonalMultipleStudyAuthorisation;
 import common.Global;
 
 /**

@@ -19,8 +19,8 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import persistance.StudyResultDao;
-import publix.controllers.jatos.JatosPublixUtils;
 import publix.exceptions.ForbiddenReloadException;
+import publix.services.jatos.JatosPublixUtils;
 import services.MessagesStrings;
 import services.ResultService;
 import common.Global;

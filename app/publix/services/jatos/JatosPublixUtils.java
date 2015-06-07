@@ -1,4 +1,4 @@
-package publix.controllers.jatos;
+package publix.services.jatos;
 
 import models.UserModel;
 import models.workers.JatosWorker;
@@ -10,6 +10,7 @@ import persistance.StudyResultDao;
 import persistance.UserDao;
 import persistance.workers.WorkerDao;
 import publix.controllers.Publix;
+import publix.controllers.jatos.JatosPublix;
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.PublixUtils;
 

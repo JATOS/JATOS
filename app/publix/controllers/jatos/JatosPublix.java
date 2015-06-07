@@ -16,6 +16,9 @@ import publix.controllers.StudyAssets;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.PublixException;
+import publix.services.jatos.JatosErrorMessages;
+import publix.services.jatos.JatosPublixUtils;
+import publix.services.jatos.JatosStudyAuthorisation;
 import utils.ControllerUtils;
 import utils.JsonUtils;
 
