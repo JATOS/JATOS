@@ -93,10 +93,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 					.pure((Result) redirect(publix.controllers.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		response().setCookie(
-				Publix.ID_COOKIE_NAME,
-				publixUtils.getIdCookieValue(studyResult, componentResult,
-						worker));
+		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
+				componentResult, worker);
+		response().setCookie(Publix.ID_COOKIE_NAME, cookieValue);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
 		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(request()
@@ -268,7 +267,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			publixUtils.abortStudy(message, studyResult);
 		}
 
-		publixUtils.discardIdCookie();
+		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");
 		} else {
@@ -289,10 +288,10 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		if (!publixUtils.studyDone(studyResult)) {
-			publixUtils.finishStudy(successful, errorMsg, studyResult);
+			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
 
-		publixUtils.discardIdCookie();
+		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");
 		} else {

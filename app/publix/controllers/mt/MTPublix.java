@@ -126,13 +126,13 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				worker, study);
 		String confirmationCode;
 		if (!publixUtils.studyDone(studyResult)) {
-			confirmationCode = publixUtils.finishStudy(successful, errorMsg,
+			confirmationCode = publixUtils.finishStudyResult(successful, errorMsg,
 					studyResult);
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
 
-		publixUtils.discardIdCookie();
+		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok(confirmationCode);
 		} else {

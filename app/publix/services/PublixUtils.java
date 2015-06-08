@@ -1,6 +1,5 @@
 package publix.services;
 
-import java.io.StringWriter;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
@@ -8,12 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import models.ComponentModel;
 import models.ComponentResult;
@@ -30,7 +23,6 @@ import persistance.ComponentResultDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
-import play.Logger;
 import play.mvc.Http.RequestBody;
 import publix.controllers.Publix;
 import publix.exceptions.BadRequestPublixException;
@@ -39,6 +31,7 @@ import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.NotFoundPublixException;
 import publix.exceptions.PublixException;
 import publix.exceptions.UnsupportedMediaTypePublixException;
+import utils.XMLUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Singleton;
@@ -51,8 +44,6 @@ import com.google.inject.Singleton;
  */
 @Singleton
 public abstract class PublixUtils<T extends Worker> {
-
-	private static final String CLASS_NAME = PublixUtils.class.getSimpleName();
 
 	protected final PublixErrorMessages errorMessages;
 	private final StudyDao studyDao;
@@ -71,7 +62,11 @@ public abstract class PublixUtils<T extends Worker> {
 		this.componentResultDao = componentResultDao;
 		this.workerDao = workerDao;
 	}
-	
+
+	/**
+	 * Like {@link #retrieveWorker(String)} but returns a concrete
+	 * implementation of the abstract Worker class
+	 */
 	public abstract T retrieveTypedWorker(String workerIdStr)
 			throws ForbiddenPublixException;
 
@@ -142,10 +137,9 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Sets cookie with studyId and componentId so the component script has them
-	 * too.
+	 * Generates the value that will be put in the ID cookie
 	 */
-	public String getIdCookieValue(StudyResult studyResult,
+	public String generateIdCookieValue(StudyResult studyResult,
 			ComponentResult componentResult, Worker worker) {
 		StudyModel study = studyResult.getStudy();
 		ComponentModel component = componentResult.getComponent();
@@ -175,12 +169,11 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Discard cookie with studyId and componentId.
+	 * Does everything to abort a study: ends the current component with state
+	 * ABORTED, finishes all other Components that might still be open, deletes
+	 * all result data and ends the study with state ABORTED and sets the given
+	 * message as an abort message.
 	 */
-	public void discardIdCookie() {
-		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
-	}
-
 	public void abortStudy(String message, StudyResult studyResult) {
 		// Put current ComponentResult into state ABORTED
 		ComponentResult currentComponentResult = retrieveCurrentComponentResult(studyResult);
@@ -203,7 +196,22 @@ public abstract class PublixUtils<T extends Worker> {
 		studyResultDao.update(studyResult);
 	}
 
-	public String finishStudy(Boolean successful, String errorMsg,
+	/**
+	 * Finishes a StudyResult (includes ComponentResults) and returns a
+	 * confirmation code.
+	 * 
+	 * @param successful
+	 *            If true finishes all ComponentResults, generates a
+	 *            confirmation code and set the StudyResult's state to FINISHED.
+	 *            If false it only sets the state to FAIL.
+	 * @param errorMsg
+	 *            Will be set in the StudyResult. Can be null if no error
+	 *            happened.
+	 * @param studyResult
+	 *            A StudyResult
+	 * @return The confirmation code
+	 */
+	public String finishStudyResult(Boolean successful, String errorMsg,
 			StudyResult studyResult) {
 		String confirmationCode;
 		if (successful) {
@@ -212,7 +220,7 @@ public abstract class PublixUtils<T extends Worker> {
 					.generateConfirmationCode();
 			studyResult.setStudyState(StudyState.FINISHED);
 		} else {
-			// Don't finish components and leave them as it
+			// Don't finish ComponentResults and leave them as it
 			confirmationCode = null;
 			studyResult.setStudyState(StudyState.FAIL);
 		}
@@ -225,7 +233,7 @@ public abstract class PublixUtils<T extends Worker> {
 		return confirmationCode;
 	}
 
-	public void finishAllComponentResults(StudyResult studyResult) {
+	private void finishAllComponentResults(StudyResult studyResult) {
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
 			if (!componentDone(componentResult)) {
@@ -234,41 +242,35 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 	}
 
-	public String getRequestBodyAsString(RequestBody requestBody) {
+	/**
+	 * Retrieves the text from the request body and returns it as a String. If
+	 * the content is in JSON or XML format it's parsed to bring the String into
+	 * a nice format. If the content is neither text nor JSON or XML an
+	 * UnsupportedMediaTypePublixException is thrown.
+	 */
+	public String getDataFromRequestBody(RequestBody requestBody)
+			throws UnsupportedMediaTypePublixException {
+		// Text
 		String text = requestBody.asText();
 		if (text != null) {
 			return text;
 		}
 
+		// JSON
 		JsonNode json = requestBody.asJson();
 		if (json != null) {
 			return json.toString();
 		}
 
+		// XML
 		Document xml = requestBody.asXml();
 		if (xml != null) {
-			return asString(xml);
+			return XMLUtils.asString(xml);
 		}
 
-		return null;
-	}
-
-	/**
-	 * Convert XML-Document to String
-	 */
-	public String asString(Document doc) {
-		try {
-			DOMSource domSource = new DOMSource(doc);
-			StringWriter writer = new StringWriter();
-			StreamResult result = new StreamResult(writer);
-			TransformerFactory tf = TransformerFactory.newInstance();
-			Transformer transformer = tf.newTransformer();
-			transformer.transform(domSource, result);
-			return writer.toString();
-		} catch (TransformerException e) {
-			Logger.info(CLASS_NAME + ".asString: XML to String conversion: ", e);
-			return null;
-		}
+		// No supported format
+		throw new UnsupportedMediaTypePublixException(
+				PublixErrorMessages.SUBMITTED_DATA_UNKNOWN_FORMAT);
 	}
 
 	/**
@@ -281,8 +283,8 @@ public abstract class PublixUtils<T extends Worker> {
 		for (StudyResult studyResult : studyResultList) {
 			if (studyResult.getStudy().getId() == study.getId()
 					&& !studyDone(studyResult)) {
-				finishStudy(false, PublixErrorMessages.STUDY_NEVER_FINSHED,
-						studyResult);
+				finishStudyResult(false,
+						PublixErrorMessages.STUDY_NEVER_FINSHED, studyResult);
 			}
 		}
 	}
@@ -313,6 +315,10 @@ public abstract class PublixUtils<T extends Worker> {
 				worker, study.getId()));
 	}
 
+	/**
+	 * Returns the last ComponentResult in the given StudyResult or null if it
+	 * doesn't exist.
+	 */
 	public ComponentResult retrieveLastComponentResult(StudyResult studyResult) {
 		List<ComponentResult> componentResultList = studyResult
 				.getComponentResultList();
@@ -323,8 +329,19 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
+	 * Retrieves the last ComponentResult's component or null if it doesn't
+	 * exist.
+	 */
+	public ComponentModel retrieveLastComponent(StudyResult studyResult) {
+		ComponentResult componentResult = retrieveLastComponentResult(studyResult);
+		return (componentResult != null) ? componentResult.getComponent()
+				: null;
+	}
+
+	/**
 	 * Returns the last ComponentResult of this studyResult if it's not
-	 * FINISHED, FAILED, ABORTED or RELOADED. Returns null if it doesn't exists.
+	 * FINISHED, FAILED, ABORTED or RELOADED. Returns null if such
+	 * ComponentResult doesn't exists.
 	 */
 	public ComponentResult retrieveCurrentComponentResult(
 			StudyResult studyResult) {
@@ -351,16 +368,10 @@ public abstract class PublixUtils<T extends Worker> {
 		return componentResult;
 	}
 
-	public ComponentModel retrieveLastComponent(StudyResult studyResult) {
-		List<ComponentResult> componentResultList = studyResult
-				.getComponentResultList();
-		if (componentResultList.size() > 0) {
-			return componentResultList.get(componentResultList.size() - 1)
-					.getComponent();
-		}
-		return null;
-	}
-
+	/**
+	 * Returns the first component in the given study that is active. If there
+	 * is no such component it throws a NotFoundPublixException.
+	 */
 	public ComponentModel retrieveFirstActiveComponent(StudyModel study)
 			throws NotFoundPublixException {
 		ComponentModel component = study.getFirstComponent();
@@ -375,6 +386,11 @@ public abstract class PublixUtils<T extends Worker> {
 		return component;
 	}
 
+	/**
+	 * Returns the next active component in the list of components that
+	 * correspond to the ComponentResults of the given StudyResult. Returns null
+	 * if such component doesn't exist.
+	 */
 	public ComponentModel retrieveNextActiveComponent(StudyResult studyResult) {
 		ComponentModel currentComponent = retrieveLastComponent(studyResult);
 		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
@@ -387,6 +403,20 @@ public abstract class PublixUtils<T extends Worker> {
 		return nextComponent;
 	}
 
+	/**
+	 * Returns the component with the given component ID that belongs to the
+	 * given study.
+	 * 
+	 * @param study A StudyModel
+	 * @param componentId The component's ID
+	 * @return The ComponentModel
+	 * @throws NotFoundPublixException
+	 *             Thrown if such component doesn't exist.
+	 * @throws BadRequestPublixException
+	 *             Thrown if the component doesn't belong to the given study.
+	 * @throws ForbiddenPublixException
+	 *             Thrown if the component isn't active.
+	 */
 	public ComponentModel retrieveComponent(StudyModel study, Long componentId)
 			throws NotFoundPublixException, BadRequestPublixException,
 			ForbiddenPublixException {
@@ -432,16 +462,6 @@ public abstract class PublixUtils<T extends Worker> {
 					errorMessages.studyNotExist(studyId));
 		}
 		return study;
-	}
-
-	public String getDataFromRequestBody(RequestBody requestBody)
-			throws UnsupportedMediaTypePublixException {
-		String data = getRequestBodyAsString(requestBody);
-		if (data == null) {
-			throw new UnsupportedMediaTypePublixException(
-					PublixErrorMessages.SUBMITTED_DATA_UNKNOWN_FORMAT);
-		}
-		return data;
 	}
 
 	public void checkComponentBelongsToStudy(StudyModel study,
