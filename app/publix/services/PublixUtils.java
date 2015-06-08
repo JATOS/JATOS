@@ -407,8 +407,10 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Returns the component with the given component ID that belongs to the
 	 * given study.
 	 * 
-	 * @param study A StudyModel
-	 * @param componentId The component's ID
+	 * @param study
+	 *            A StudyModel
+	 * @param componentId
+	 *            The component's ID
 	 * @return The ComponentModel
 	 * @throws NotFoundPublixException
 	 *             Thrown if such component doesn't exist.
@@ -454,6 +456,10 @@ public abstract class PublixUtils<T extends Worker> {
 		return component;
 	}
 
+	/**
+	 * Returns the study corresponding to the given study ID. It throws an
+	 * NotFoundPublixException if there is no such study.
+	 */
 	public StudyModel retrieveStudy(Long studyId)
 			throws NotFoundPublixException {
 		StudyModel study = studyDao.findById(studyId);
@@ -464,6 +470,10 @@ public abstract class PublixUtils<T extends Worker> {
 		return study;
 	}
 
+	/**
+	 * Checks if this component belongs to this study and throws an
+	 * BadRequestPublixException if it doesn't.
+	 */
 	public void checkComponentBelongsToStudy(StudyModel study,
 			ComponentModel component) throws PublixException {
 		if (!component.getStudy().equals(study)) {
@@ -499,12 +509,20 @@ public abstract class PublixUtils<T extends Worker> {
 		return false;
 	}
 
+	/**
+	 * True if StudyResult's state is in FINISHED or ABORTED or FAIL. False
+	 * otherwise.
+	 */
 	public boolean studyDone(StudyResult studyResult) {
 		StudyState state = studyResult.getStudyState();
 		return state == StudyState.FINISHED || state == StudyState.ABORTED
 				|| state == StudyState.FAIL;
 	}
 
+	/**
+	 * True if ComponentResult's state is in FINISHED or ABORTED or FAIL or
+	 * RELOADED. False otherwise.
+	 */
 	public boolean componentDone(ComponentResult componentResult) {
 		ComponentState state = componentResult.getComponentState();
 		return state == ComponentState.FINISHED
