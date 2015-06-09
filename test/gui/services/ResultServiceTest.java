@@ -4,7 +4,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
-import gui.AbstractTest;
+import common.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

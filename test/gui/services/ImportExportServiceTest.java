@@ -3,7 +3,7 @@ package gui.services;
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
-import gui.AbstractTest;
+import common.AbstractTest;
 
 import java.io.File;
 import java.io.IOException;

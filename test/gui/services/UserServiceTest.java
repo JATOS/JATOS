@@ -3,7 +3,7 @@ package gui.services;
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
-import gui.AbstractTest;
+import common.AbstractTest;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;

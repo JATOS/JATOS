@@ -10,7 +10,7 @@ import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.headers;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
-import gui.AbstractTest;
+import common.AbstractTest;
 
 import java.io.IOException;
 import java.util.HashMap;

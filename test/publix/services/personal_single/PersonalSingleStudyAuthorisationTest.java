@@ -15,7 +15,7 @@ import org.junit.Test;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
-import publix.services.PublixServiceTest;
+import publix.services.PublixUtilsTest;
 
 import common.Global;
 
@@ -23,7 +23,7 @@ import common.Global;
  * @author Kristian Lange
  */
 public class PersonalSingleStudyAuthorisationTest extends
-		PublixServiceTest<PersonalSingleWorker> {
+		PublixUtilsTest<PersonalSingleWorker> {
 
 	private PersonalSingleErrorMessages personalSingleErrorMessages;
 	private PersonalSinglePublixUtils personalSinglePublixUtils;

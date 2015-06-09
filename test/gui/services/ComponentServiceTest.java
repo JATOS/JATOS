@@ -2,7 +2,7 @@ package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.BadRequestException;
-import gui.AbstractTest;
+import common.AbstractTest;
 
 import java.io.File;
 import java.io.IOException;

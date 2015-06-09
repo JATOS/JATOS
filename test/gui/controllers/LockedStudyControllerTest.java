@@ -8,7 +8,7 @@ import static play.test.Helpers.status;
 
 import java.io.IOException;
 
-import gui.AbstractTest;
+import common.AbstractTest;
 import models.StudyModel;
 import models.StudyResult;
 

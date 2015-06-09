@@ -8,7 +8,7 @@ import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.status;
-import gui.AbstractTest;
+import common.AbstractTest;
 import models.UserModel;
 
 import org.junit.Test;

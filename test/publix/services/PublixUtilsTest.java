@@ -1,7 +1,7 @@
 package publix.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import gui.AbstractTest;
+import common.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -24,7 +24,7 @@ import common.Global;
 /**
  * @author Kristian Lange
  */
-public abstract class PublixServiceTest<T extends Worker> extends AbstractTest {
+public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	protected WorkerDao workerDao;
 	protected StudyResultDao studyResultDao;
@@ -39,6 +39,22 @@ public abstract class PublixServiceTest<T extends Worker> extends AbstractTest {
 
 	@Override
 	public void after() throws Exception {
+	}
+
+	protected void addWorker(Worker worker) {
+		entityManager.getTransaction().begin();
+		workerDao.create(worker);
+		entityManager.getTransaction().commit();
+	}
+
+	protected void addStudyResult(StudyModel study, Worker worker,
+			StudyState state) {
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study, worker);
+		studyResult.setStudyState(state);
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(worker);
+		entityManager.getTransaction().commit();
 	}
 
 	@Test
@@ -77,21 +93,15 @@ public abstract class PublixServiceTest<T extends Worker> extends AbstractTest {
 					errorMessages.workerNotExist("2"));
 		}
 	}
-	
-	protected void addWorker(Worker worker) {
-		entityManager.getTransaction().begin();
-		workerDao.create(worker);
-		entityManager.getTransaction().commit();
+
+	@Test
+	public void checkStartComponent() throws NoSuchAlgorithmException,
+			IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		// Clean-up
+		removeStudy(study);
 	}
-	
-	protected void addStudyResult(StudyModel study, Worker worker,
-			StudyState state) {
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study, worker);
-		studyResult.setStudyState(state);
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(worker);
-		entityManager.getTransaction().commit();
-	}
-	
+
 }

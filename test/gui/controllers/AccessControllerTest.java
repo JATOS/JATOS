@@ -9,7 +9,7 @@ import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.flash;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.status;
-import gui.AbstractTest;
+import common.AbstractTest;
 
 import java.io.IOException;
 

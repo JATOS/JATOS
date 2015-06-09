@@ -15,14 +15,14 @@ import play.mvc.Http;
 import publix.controllers.jatos.JatosPublix;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
-import publix.services.PublixServiceTest;
+import publix.services.PublixUtilsTest;
 
 import common.Global;
 
 /**
  * @author Kristian Lange
  */
-public class JatosPublixUtilsTest extends PublixServiceTest<JatosWorker> {
+public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 
 	private JatosErrorMessages jatosErrorMessages;
 	private JatosPublixUtils jatosPublixUtils;

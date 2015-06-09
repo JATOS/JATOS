@@ -5,7 +5,7 @@ import static play.mvc.Http.Status.NOT_FOUND;
 import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.status;
-import gui.AbstractTest;
+import common.AbstractTest;
 
 import java.io.File;
 import java.io.IOException;

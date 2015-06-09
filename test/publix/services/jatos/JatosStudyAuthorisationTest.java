@@ -14,7 +14,7 @@ import org.junit.Test;
 import play.mvc.Http;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
-import publix.services.PublixServiceTest;
+import publix.services.PublixUtilsTest;
 
 import common.Global;
 
@@ -23,7 +23,7 @@ import controllers.Users;
 /**
  * @author Kristian Lange
  */
-public class JatosStudyAuthorisationTest extends PublixServiceTest<JatosWorker> {
+public class JatosStudyAuthorisationTest extends PublixUtilsTest<JatosWorker> {
 
 	private JatosErrorMessages jatosErrorMessages;
 	private JatosPublixUtils jatosPublixUtils;

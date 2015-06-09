@@ -15,7 +15,7 @@ import static play.test.Helpers.status;
 import java.util.HashMap;
 import java.util.Map;
 
-import gui.AbstractTest;
+import common.AbstractTest;
 import models.StudyModel;
 import models.workers.PersonalSingleWorker;
 

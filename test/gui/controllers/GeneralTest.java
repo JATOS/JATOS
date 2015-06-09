@@ -1,7 +1,7 @@
 package gui.controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
-import gui.AbstractTest;
+import common.AbstractTest;
 
 import org.junit.Test;
 

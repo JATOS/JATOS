@@ -13,14 +13,14 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import publix.exceptions.PublixException;
-import publix.services.PublixServiceTest;
+import publix.services.PublixUtilsTest;
 
 import common.Global;
 
 /**
  * @author Kristian Lange
  */
-public class MTPublixUtilsTest extends PublixServiceTest<MTWorker> {
+public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 
 	private MTErrorMessages mtErrorMessages;
 	private MTPublixUtils mtPublixUtils;

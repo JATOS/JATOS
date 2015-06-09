@@ -16,14 +16,14 @@ import org.junit.Test;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
-import publix.services.PublixServiceTest;
+import publix.services.PublixUtilsTest;
 
 import common.Global;
 
 /**
  * @author Kristian Lange
  */
-public class MTStudyAuthorisationTest extends PublixServiceTest<MTWorker> {
+public class MTStudyAuthorisationTest extends PublixUtilsTest<MTWorker> {
 
 	private MTErrorMessages mtErrorMessages;
 	private MTPublixUtils mtPublixUtils;

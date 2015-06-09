@@ -11,7 +11,7 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import publix.exceptions.PublixException;
-import publix.services.PublixServiceTest;
+import publix.services.PublixUtilsTest;
 
 import common.Global;
 
@@ -19,7 +19,7 @@ import common.Global;
  * @author Kristian Lange
  */
 public class PersonalMultiplePublixUtilsTest extends
-		PublixServiceTest<PersonalMultipleWorker> {
+		PublixUtilsTest<PersonalMultipleWorker> {
 
 	private PersonalMultipleErrorMessages personalMultipleErrorMessages;
 	private PersonalMultiplePublixUtils personalMultiplePublixUtils;

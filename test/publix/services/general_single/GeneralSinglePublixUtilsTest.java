@@ -17,7 +17,7 @@ import play.mvc.Http.Cookie;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
-import publix.services.PublixServiceTest;
+import publix.services.PublixUtilsTest;
 
 import common.Global;
 
@@ -25,7 +25,7 @@ import common.Global;
  * @author Kristian Lange
  */
 public class GeneralSinglePublixUtilsTest extends
-		PublixServiceTest<GeneralSingleWorker> {
+		PublixUtilsTest<GeneralSingleWorker> {
 
 	private GeneralSingleErrorMessages generalSingleErrorMessages;
 	private GeneralSinglePublixUtils generalSinglePublixUtils;
