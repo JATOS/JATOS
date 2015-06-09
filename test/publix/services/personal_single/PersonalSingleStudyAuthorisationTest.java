@@ -15,36 +15,28 @@ import org.junit.Test;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
-import publix.services.PublixUtilsTest;
 
+import common.AbstractTest;
 import common.Global;
 
 /**
  * @author Kristian Lange
  */
-public class PersonalSingleStudyAuthorisationTest extends
-		PublixUtilsTest<PersonalSingleWorker> {
+public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 
 	private PersonalSingleErrorMessages personalSingleErrorMessages;
-	private PersonalSinglePublixUtils personalSinglePublixUtils;
 	private PersonalSingleStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
-		super.before();
-		personalSinglePublixUtils = Global.INJECTOR
-				.getInstance(PersonalSinglePublixUtils.class);
-		publixUtils = personalSinglePublixUtils;
 		personalSingleErrorMessages = Global.INJECTOR
 				.getInstance(PersonalSingleErrorMessages.class);
-		errorMessages = personalSingleErrorMessages;
 		studyAuthorisation = Global.INJECTOR
 				.getInstance(PersonalSingleStudyAuthorisation.class);
 	}
 
 	@Override
 	public void after() throws Exception {
-		super.before();
 	}
 
 	@Test
@@ -117,10 +109,9 @@ public class PersonalSingleStudyAuthorisationTest extends
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(
-							errorMessages.workerTypeNotAllowed(worker
-									.getUIWorkerType()));
+			assertThat(e.getMessage()).isEqualTo(
+					personalSingleErrorMessages.workerTypeNotAllowed(worker
+							.getUIWorkerType()));
 		}
 
 		// Clean-up

@@ -15,36 +15,28 @@ import org.junit.Test;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
-import publix.services.PublixUtilsTest;
 
+import common.AbstractTest;
 import common.Global;
 
 /**
  * @author Kristian Lange
  */
-public class GeneralSingleStudyAuthorisationTest extends
-		PublixUtilsTest<GeneralSingleWorker> {
+public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 
 	private GeneralSingleErrorMessages generalSingleErrorMessages;
-	private GeneralSinglePublixUtils generalSinglePublixUtils;
 	private GeneralSingleStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
-		super.before();
-		generalSinglePublixUtils = Global.INJECTOR
-				.getInstance(GeneralSinglePublixUtils.class);
-		publixUtils = generalSinglePublixUtils;
 		generalSingleErrorMessages = Global.INJECTOR
 				.getInstance(GeneralSingleErrorMessages.class);
-		errorMessages = generalSingleErrorMessages;
 		studyAuthorisation = Global.INJECTOR
 				.getInstance(GeneralSingleStudyAuthorisation.class);
 	}
 
 	@Override
 	public void after() throws Exception {
-		super.before();
 	}
 
 	@Test

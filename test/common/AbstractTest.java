@@ -14,7 +14,10 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 
 import models.StudyModel;
+import models.StudyResult;
 import models.UserModel;
+import models.StudyResult.StudyState;
+import models.workers.Worker;
 
 import org.apache.commons.io.FileUtils;
 import org.h2.tools.Server;
@@ -25,7 +28,9 @@ import org.junit.BeforeClass;
 
 import persistance.ComponentDao;
 import persistance.StudyDao;
+import persistance.StudyResultDao;
 import persistance.UserDao;
+import persistance.workers.WorkerDao;
 import play.GlobalSettings;
 import play.Logger;
 import play.api.mvc.RequestHeader;
@@ -66,6 +71,8 @@ public abstract class AbstractTest {
 	protected UserDao userDao;
 	protected StudyDao studyDao;
 	protected ComponentDao componentDao;
+	protected WorkerDao workerDao;
+	protected StudyResultDao studyResultDao;
 	protected UserModel admin;
 
 	public abstract void before() throws Exception;
@@ -87,6 +94,8 @@ public abstract class AbstractTest {
 		userDao = Global.INJECTOR.getInstance(UserDao.class);
 		studyDao = Global.INJECTOR.getInstance(StudyDao.class);
 		componentDao = Global.INJECTOR.getInstance(ComponentDao.class);
+		workerDao = Global.INJECTOR.getInstance(WorkerDao.class);
+		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
 
 		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
 				.plugin(JPAPlugin.class);
@@ -231,6 +240,22 @@ public abstract class AbstractTest {
 			UserModel member) {
 		entityManager.getTransaction().begin();
 		studyDao.findById(studyClone.getId()).removeMember(member);
+		entityManager.getTransaction().commit();
+	}
+	
+	protected void addWorker(Worker worker) {
+		entityManager.getTransaction().begin();
+		workerDao.create(worker);
+		entityManager.getTransaction().commit();
+	}
+
+	protected void addStudyResult(StudyModel study, Worker worker,
+			StudyState state) {
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study, worker);
+		studyResult.setStudyState(state);
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(worker);
 		entityManager.getTransaction().commit();
 	}
 

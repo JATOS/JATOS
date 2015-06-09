@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 import models.StudyModel;
-import models.workers.JatosWorker;
 
 import org.fest.assertions.Fail;
 import org.junit.Test;
@@ -14,8 +13,8 @@ import org.junit.Test;
 import play.mvc.Http;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
-import publix.services.PublixUtilsTest;
 
+import common.AbstractTest;
 import common.Global;
 
 import controllers.Users;
@@ -23,27 +22,21 @@ import controllers.Users;
 /**
  * @author Kristian Lange
  */
-public class JatosStudyAuthorisationTest extends PublixUtilsTest<JatosWorker> {
+public class JatosStudyAuthorisationTest extends AbstractTest {
 
 	private JatosErrorMessages jatosErrorMessages;
-	private JatosPublixUtils jatosPublixUtils;
 	private JatosStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
-		super.before();
-		jatosPublixUtils = Global.INJECTOR.getInstance(JatosPublixUtils.class);
-		publixUtils = jatosPublixUtils;
 		jatosErrorMessages = Global.INJECTOR
 				.getInstance(JatosErrorMessages.class);
-		errorMessages = jatosErrorMessages;
 		studyAuthorisation = Global.INJECTOR
 				.getInstance(JatosStudyAuthorisation.class);
 	}
 
 	@Override
 	public void after() throws Exception {
-		super.before();
 	}
 
 	@Test
@@ -102,7 +95,7 @@ public class JatosStudyAuthorisationTest extends PublixUtilsTest<JatosWorker> {
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.workerNotAllowedStudy(admin.getWorker(),
+					jatosErrorMessages.workerNotAllowedStudy(admin.getWorker(),
 							study.getId()));
 		}
 
@@ -125,7 +118,7 @@ public class JatosStudyAuthorisationTest extends PublixUtilsTest<JatosWorker> {
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.workerNotAllowedStudy(admin.getWorker(),
+					jatosErrorMessages.workerNotAllowedStudy(admin.getWorker(),
 							study.getId()));
 		}
 

@@ -122,6 +122,8 @@ public abstract class PublixUtils<T extends Worker> {
 					throw new ForbiddenReloadException(errorMsg);
 				}
 			} else {
+				// The prior component is a different one than the one to be
+				// started: just finish it
 				finishComponentResult(lastComponentResult,
 						ComponentState.FINISHED);
 			}

@@ -16,33 +16,27 @@ import org.junit.Test;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
-import publix.services.PublixUtilsTest;
 
+import common.AbstractTest;
 import common.Global;
 
 /**
  * @author Kristian Lange
  */
-public class MTStudyAuthorisationTest extends PublixUtilsTest<MTWorker> {
+public class MTStudyAuthorisationTest extends AbstractTest {
 
 	private MTErrorMessages mtErrorMessages;
-	private MTPublixUtils mtPublixUtils;
 	private MTStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
-		super.before();
-		mtPublixUtils = Global.INJECTOR.getInstance(MTPublixUtils.class);
-		publixUtils = mtPublixUtils;
 		mtErrorMessages = Global.INJECTOR.getInstance(MTErrorMessages.class);
-		errorMessages = mtErrorMessages;
 		studyAuthorisation = Global.INJECTOR
 				.getInstance(MTStudyAuthorisation.class);
 	}
 
 	@Override
 	public void after() throws Exception {
-		super.before();
 	}
 
 	@Test

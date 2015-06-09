@@ -10,36 +10,25 @@ import models.workers.PersonalMultipleWorker;
 import org.junit.Test;
 
 import publix.exceptions.ForbiddenPublixException;
-import publix.services.PublixUtilsTest;
 
+import common.AbstractTest;
 import common.Global;
 
 /**
  * @author Kristian Lange
  */
-public class PersonalMultipleStudyAuthorisationTest extends
-		PublixUtilsTest<PersonalMultipleWorker> {
+public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 
-	private PersonalMultipleErrorMessages personalMultipleErrorMessages;
-	private PersonalMultiplePublixUtils personalMultiplePublixUtils;
 	private PersonalMultipleStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
-		super.before();
-		personalMultiplePublixUtils = Global.INJECTOR
-				.getInstance(PersonalMultiplePublixUtils.class);
-		publixUtils = personalMultiplePublixUtils;
-		personalMultipleErrorMessages = Global.INJECTOR
-				.getInstance(PersonalMultipleErrorMessages.class);
-		errorMessages = personalMultipleErrorMessages;
 		studyAuthorisation = Global.INJECTOR
 				.getInstance(PersonalMultipleStudyAuthorisation.class);
 	}
 
 	@Override
 	public void after() throws Exception {
-		super.before();
 	}
 
 	@Test
