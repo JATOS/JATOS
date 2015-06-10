@@ -4,6 +4,8 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
@@ -16,8 +18,10 @@ import org.junit.Test;
 
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
+import publix.controllers.Publix;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.PublixException;
+
 import common.AbstractTest;
 import common.Global;
 
@@ -197,7 +201,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 				study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
-		// Start the same component a second time
+		// Start the same component a second times, but first is not reloadable
 		entityManager.getTransaction().begin();
 		try {
 			publixUtils.startComponent(study.getFirstComponent(), studyResult);
@@ -214,6 +218,42 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 				ComponentState.FAIL);
 		assertThat(studyResult.getComponentResultList().get(0).getEndDate())
 				.isNotNull();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkGenerateIdCookieValue() throws NoSuchAlgorithmException,
+			IOException, ForbiddenReloadException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study,
+				admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		ComponentResult componentResult = publixUtils.startComponent(
+				study.getFirstComponent(), studyResult);
+		entityManager.getTransaction().commit();
+
+		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
+				componentResult, admin.getWorker());
+
+		// Check IDs in cookie value String
+		Map<String, String> cookieMap = new HashMap<String, String>();
+		String[] idMappings = cookieValue.split("&");
+		for (String idMappingStr : idMappings) {
+			String[] idMapping = idMappingStr.split("=");
+			cookieMap.put(idMapping[0], idMapping[1]);
+		}
+		assertThat(cookieMap.get(Publix.WORKER_ID)).isEqualTo("1");
+		assertThat(cookieMap.get(Publix.STUDY_ID)).isEqualTo("1");
+		assertThat(cookieMap.get(Publix.STUDY_RESULT_ID)).isEqualTo("1");
+		assertThat(cookieMap.get(Publix.COMPONENT_ID)).isEqualTo("1");
+		assertThat(cookieMap.get(Publix.COMPONENT_RESULT_ID)).isEqualTo("1");
+		assertThat(cookieMap.get(Publix.COMPONENT_POSITION)).isEqualTo("1");
 
 		// Clean-up
 		removeStudy(study);
