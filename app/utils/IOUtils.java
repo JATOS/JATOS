@@ -67,7 +67,8 @@ public class IOUtils {
 	public static File getFileSecurely(String path, String filePath)
 			throws IOException {
 		path = getExistingDirSecurely(path).getAbsolutePath();
-		String fullPath = path + File.separator + filePath;
+		String fullPath = filePath.trim().isEmpty() ? path : path
+				+ File.separator + filePath;
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
 				.getCanonicalPath();
@@ -123,6 +124,9 @@ public class IOUtils {
 	 */
 	public static File getFileInStudyAssetsDir(String dirName, String filePath)
 			throws IOException {
+		if (filePath == null || filePath.trim().isEmpty()) {
+			throw new IOException(MessagesStrings.FILE_MISSING);
+		}
 		String studyAssetsPath = generateStudyAssetsPath(dirName);
 		return getFileSecurely(studyAssetsPath, filePath);
 	}
@@ -189,18 +193,41 @@ public class IOUtils {
 		FileUtils.deleteDirectory(dir);
 	}
 
+	/**
+	 * Copies a component's HTML file.
+	 * 
+	 * @param studyAssetsDirName
+	 *            Name of the study assets
+	 * @param htmlFilePath
+	 *            Local file path to the HTML file. The file can be in a
+	 *            sub-directory of the study assets directory.
+	 * @return Name of the new file.
+	 */
 	public synchronized static String cloneComponentHtmlFile(
-			String studyAssetsDirName, String htmlFileName) throws IOException {
+			String studyAssetsDirName, String htmlFilePath) throws IOException {
 		File htmlFile = getFileInStudyAssetsDir(studyAssetsDirName,
-				htmlFileName);
+				htmlFilePath);
 		if (!htmlFile.isFile()) {
 			throw new IOException(MessagesStrings.filePathIsntFile(htmlFile
 					.getName()));
 		}
 
-		File clonedHtmlFile = generateCloneName(htmlFile);
+		File clonedHtmlFile = generateCloneFile(htmlFile);
 		FileUtils.copyFile(htmlFile, clonedHtmlFile);
-		return clonedHtmlFile.getName();
+		return generateLocalFilePathInStudyAssets(clonedHtmlFile,
+				studyAssetsDirName);
+	}
+
+	/**
+	 * Removes the part from the file's path that is the study assets path. The
+	 * remaining string is only the local path within the study assets
+	 * directory.
+	 */
+	private static String generateLocalFilePathInStudyAssets(File localFile,
+			String studyAssetsDirName) {
+		String studyAssetsPath = generateStudyAssetsPath(studyAssetsDirName)
+				+ File.separator;
+		return localFile.getAbsolutePath().replace(studyAssetsPath, "");
 	}
 
 	/**
@@ -217,7 +244,7 @@ public class IOUtils {
 					.getName()));
 		}
 
-		File destDir = generateCloneName(srcDir);
+		File destDir = generateCloneFile(srcDir);
 		FileUtils.copyDirectory(srcDir, destDir);
 		return destDir.getName();
 	}
@@ -228,7 +255,7 @@ public class IOUtils {
 	 * to add numbers starting with 1. It works with files or directories. It
 	 * keeps a file extension.
 	 */
-	private static File generateCloneName(File file) throws IOException {
+	private static File generateCloneFile(File file) throws IOException {
 		String fileExtension = "";
 		if (!FilenameUtils.getExtension(file.getName()).isEmpty()) {
 			fileExtension = "." + FilenameUtils.getExtension(file.getName());
@@ -330,9 +357,8 @@ public class IOUtils {
 		}
 		if (newDir.exists()) {
 			throw new IOException(
-					MessagesStrings
-							.studyAssetsDirNotCreatedBecauseExists(newDir
-									.getName()));
+					MessagesStrings.studyAssetsNotRenamedBecauseExists(
+							oldDir.getName(), newDir.getName()));
 		}
 		if (!oldDir.exists()) {
 			createStudyAssetsDir(newDirName);
@@ -342,6 +368,43 @@ public class IOUtils {
 		if (!result) {
 			throw new IOException(MessagesStrings.studyAssetsDirNotRenamed(
 					oldDir.getName(), newDir.getName()));
+		}
+	}
+
+	/**
+	 * Renames a component's HTML file. This file can be in a sub-directory of
+	 * the study assets directory.
+	 * 
+	 * @param oldHtmlFilePath
+	 *            The current local file path within the study assets
+	 * @param newHtmlFilePath
+	 *            The new local file path within the study assets
+	 * @param studyAssetName
+	 *            The name (not the path) of the study assets
+	 */
+	public static void renameHtmlFile(String oldHtmlFilePath,
+			String newHtmlFilePath, String studyAssetName) throws IOException {
+		File oldHtmlFile = getFileInStudyAssetsDir(studyAssetName,
+				oldHtmlFilePath);
+		File newHtmlFile = getFileInStudyAssetsDir(studyAssetName,
+				newHtmlFilePath);
+
+		// If the current HTML file doesn't exist or old and new are equal do
+		// nothing
+		if (!oldHtmlFile.exists() || oldHtmlFile.equals(newHtmlFile)) {
+			return;
+		}
+
+		if (newHtmlFile.exists()) {
+			throw new IOException(
+					MessagesStrings.htmlFileNotRenamedBecauseExists(
+							oldHtmlFilePath, newHtmlFilePath));
+		}
+
+		boolean result = oldHtmlFile.renameTo(newHtmlFile);
+		if (!result) {
+			throw new IOException(MessagesStrings.htmlFileNotRenamed(
+					oldHtmlFilePath, newHtmlFilePath));
 		}
 	}
 

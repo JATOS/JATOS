@@ -1,5 +1,6 @@
 package services;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
@@ -12,8 +13,8 @@ import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.RequestScopeMessaging;
 
+import common.RequestScopeMessaging;
 import exceptions.BadRequestException;
 
 /**
@@ -64,7 +65,8 @@ public class ComponentService {
 					component.getHtmlFilePath());
 			clone.setHtmlFilePath(clonedHtmlFileName);
 		} catch (IOException e) {
-			// Just log it - a component is allowed to have no HTML file
+			// Just log it and give a warning - a component is allowed to have
+			// no HTML file
 			RequestScopeMessaging.warning(MessagesStrings
 					.componentCloneHtmlNotCloned(component.getHtmlFilePath()));
 			Logger.info(CLASS_NAME + ".cloneComponent: " + e.getMessage());
@@ -109,9 +111,41 @@ public class ComponentService {
 			ComponentModel updatedComponent) {
 		component.setTitle(updatedComponent.getTitle());
 		component.setReloadable(updatedComponent.isReloadable());
-		component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
 		component.setComments(updatedComponent.getComments());
 		component.setJsonData(updatedComponent.getJsonData());
+		componentDao.update(component);
+	}
+
+	/**
+	 * Renames the path to the HTML file in the file system and persists the
+	 * component's property.
+	 */
+	public void renameHtmlFilePath(ComponentModel component,
+			String newHtmlFilePath) throws IOException {
+
+		// If the new HTML file name is empty persist an empty string
+		if (newHtmlFilePath == null || newHtmlFilePath.trim().isEmpty()) {
+			component.setHtmlFilePath("");
+			componentDao.update(component);
+			return;
+		}
+
+		// What if current HTML file doesn't exist
+		File currentFile = null;
+		if (!component.getHtmlFilePath().trim().isEmpty()) {
+			currentFile = IOUtils.getFileInStudyAssetsDir(component.getStudy()
+					.getDirName(), component.getHtmlFilePath());
+		}
+		if (currentFile == null || !currentFile.exists()) {
+			component.setHtmlFilePath(newHtmlFilePath);
+			componentDao.update(component);
+			return;
+		}
+
+		// Rename HTML file
+		IOUtils.renameHtmlFile(component.getHtmlFilePath(), newHtmlFilePath,
+				component.getStudy().getDirName());
+		component.setHtmlFilePath(newHtmlFilePath);
 		componentDao.update(component);
 	}
 

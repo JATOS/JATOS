@@ -36,8 +36,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import common.Common;
-
 /**
  * Utility class the handles everything around JSON, like marshaling and
  * unmarshaling.
@@ -467,8 +465,9 @@ public class JsonUtils {
 	 * Marshals the given object into JSON, adds the application's version, and
 	 * returns it as String. It uses the view JsonForIO.
 	 */
-	public String asJsonForIO(Object obj) throws IOException {
-		ObjectNode node = generateNodeWithVersionForIO(obj);
+	public String componentAsJsonForIO(Object obj) throws IOException {
+		ObjectNode node = generateNodeWithVersionForIO(obj,
+				ComponentModel.SERIAL_VERSION);
 		return OBJECTMAPPER.writer().writeValueAsString(node);
 	}
 
@@ -476,8 +475,9 @@ public class JsonUtils {
 	 * Marshals the given object into JSON, adds the application's version, and
 	 * saves it into the given File. It uses the view JsonForIO.
 	 */
-	public void asJsonForIO(Object obj, File file) throws IOException {
-		ObjectNode node = generateNodeWithVersionForIO(obj);
+	public void studyAsJsonForIO(Object obj, File file) throws IOException {
+		ObjectNode node = generateNodeWithVersionForIO(obj,
+				StudyModel.SERIAL_VERSION);
 		OBJECTMAPPER.writer().writeValue(file, node);
 	}
 
@@ -485,10 +485,10 @@ public class JsonUtils {
 	 * Generic JSON marshaler that adds the JATOS version to the JSON string.
 	 * Intended for file IO.
 	 */
-	private ObjectNode generateNodeWithVersionForIO(Object obj)
+	private ObjectNode generateNodeWithVersionForIO(Object obj, String version)
 			throws IOException {
 		ObjectNode node = OBJECTMAPPER.createObjectNode();
-		node.put(VERSION, Common.VERSION);
+		node.put(VERSION, version);
 		// Unnecessary conversion into a temporary string - better solution?
 		String objAsJson = OBJECTMAPPER.writerWithView(JsonForIO.class)
 				.writeValueAsString(obj);
@@ -501,7 +501,7 @@ public class JsonUtils {
 	 * into an object of the given type.
 	 */
 	public static <T> T unmarshallingIO(String jsonStr, Class<T> modelClass)
-			throws JsonProcessingException, IOException {
+			throws IOException {
 		JsonNode node = OBJECTMAPPER.readTree(jsonStr).findValue(DATA);
 		T object = OBJECTMAPPER.treeToValue(node, modelClass);
 		return object;

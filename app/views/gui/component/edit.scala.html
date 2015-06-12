@@ -41,9 +41,9 @@ study: StudyModel)
 </div>
 
 <div class="form-group">
-	<label class="control-label col-xs-2" for="filePath">HTML file path&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the name of your HTML file that displays your component. You can also enter a path to you file. This path must be within the directory of this study's assets. Use '/' as a directory separator - even on MS Windows." aria-hidden="true"></span></label>
+	<label class="control-label col-xs-2" for="htmlFilePath">HTML file path&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the name of your HTML file that displays your component. You can also enter a path to you file. This path must be within the directory of this study's assets. Use '/' as a directory separator - even on MS Windows." aria-hidden="true"></span></label>
 	<div class="col-xs-10">
-		<div class="input-group" id="filePath">
+		<div class="input-group" id="htmlFilePath">
 			<span class="input-group-addon">/@study.getDirName()/</span></span>
 			<input type="text" class="form-control" name="@ComponentModel.HTML_FILE_PATH" value="@form(ComponentModel.HTML_FILE_PATH).value" placeholder="Path to the actual HTML file">
 		</div>
@@ -85,8 +85,8 @@ study: StudyModel)
 	$('#title').after('<span class="help-block">@error.message</span>');
 }
 @for(error <- form(ComponentModel.HTML_FILE_PATH).errors) {
-	$('#filePath').closest(".form-group").addClass("has-error");
-	$('#filePath').after('<span class="help-block">@error.message</span>');
+	$('#htmlFilePath').closest(".form-group").addClass("has-error");
+	$('#htmlFilePath').after('<span class="help-block">@error.message</span>');
 }
 @for(error <- form(ComponentModel.COMMENTS).errors) {
 	$('#comments').closest(".form-group").addClass("has-error");

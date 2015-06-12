@@ -52,7 +52,7 @@ public abstract class MessagesStrings {
 	public static final String NO_STUDY_UPLOAD = "Uploaded file isn't intended for studies";
 	public static final String MORE_THAN_ONE_DIR_IN_ZIP = "There are more than one directory in the ZIP file.";
 	public static final String NO_DIR_IN_ZIP_CREATED_NEW = "There is no directory in the ZIP file - new study assets created.";
-	public static final String COULDNT_READ_JSON = "Couldn't read JSON string";
+	public static final String COULDNT_READ_JSON = "Couldn't read JSON string. Try updating JATOS to the newest version.";
 	public static final String COULDNT_READ_FILE = "Couldn't read file";
 	public static final String FILE_MISSING = "File missing";
 	public static final String FILE_NOT_EXIST_OR_DIR = "File doesn't exists or is a directory";
@@ -70,7 +70,8 @@ public abstract class MessagesStrings {
 	public static final String RESULTS_DATA = "Click on the + icon to open the result's data";
 	public static final String RESULTS_START_TIME = "Time according to the JATOS server";
 	public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. "
-			+ MTWorker.UI_WORKER_TYPE + ", " + PersonalMultipleWorker.UI_WORKER_TYPE + ", "
+			+ MTWorker.UI_WORKER_TYPE + ", "
+			+ PersonalMultipleWorker.UI_WORKER_TYPE + ", "
 			+ PersonalSingleWorker.UI_WORKER_TYPE;
 	public static final String RESULTS_WORKER_ID = "Click on the ID to go to this worker's results";
 	public static final String RESULTS_STUDY_ID = "Click on the ID to go to this study";
@@ -88,8 +89,7 @@ public abstract class MessagesStrings {
 	public static final String COULDNT_GENERATE_JATOS_URL = "Couldn't generate JATOS' URL. Try to reload this page.";
 	public static final String COULDNT_CHANGE_POSITION_OF_COMPONENT = "Couldn't change position of componet.";
 	public static final String COMPONENT_DELETED_BUT_FILES_NOT = "Component deleted, but all files (e.g. its HTML file) in study assets remain untouched.";
-	
-	
+
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
 	}
@@ -199,7 +199,8 @@ public abstract class MessagesStrings {
 	}
 
 	public static String componentCloneHtmlNotCloned(String htmlFilePath) {
-		return "Couldn't find HTML file " + htmlFilePath + " to clone.";
+		return "Successfully cloned component but couldn't copy HTML file \""
+				+ htmlFilePath + "\".";
 	}
 
 	public static String componentResultNotExist(Long componentResultId) {
@@ -314,17 +315,31 @@ public abstract class MessagesStrings {
 				+ "\" to \"" + newDirName + "\".";
 	}
 
-	public static String fileNotRenamed(String oldFileName, String newFileName) {
-		return "Couldn't rename file from \"" + oldFileName + "\" to \""
-				+ newFileName + "\".";
-	}
-
 	public static String studyAssetsDirNotCreated(String dirName) {
 		return "Couldn't create new study assets' directory (" + dirName + ").";
 	}
 
+	public static String studyAssetsNotRenamedBecauseExists(String oldDirName,
+			String newDirName) {
+		return "Study assets directory \"" + oldDirName
+				+ "\" couldn't be renamed to \"" + newDirName
+				+ "\" because it already exists.";
+	}
+
+	public static String htmlFileNotRenamedBecauseExists(String oldFilePath,
+			String newFilePath) {
+		return "HTML file \"" + oldFilePath + "\" couldn't be renamed to \""
+				+ newFilePath + "\" because it already exists.";
+	}
+
+	public static String htmlFileNotRenamed(String oldFilePath,
+			String newFilePath) {
+		return "Couldn't rename HTML file from \"" + oldFilePath + "\" to \""
+				+ newFilePath + "\".";
+	}
+
 	public static String fileNotUploaded(String fileName) {
-		return "Couldn't upload file " + fileName + ".";
+		return "Couldn't upload file \"" + fileName + "\".";
 	}
 
 }

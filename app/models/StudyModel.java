@@ -22,9 +22,9 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 
-import models.workers.PersonalSingleWorker;
 import models.workers.JatosWorker;
 import models.workers.PersonalMultipleWorker;
+import models.workers.PersonalSingleWorker;
 
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
@@ -44,6 +44,11 @@ import com.fasterxml.jackson.annotation.JsonView;
  */
 @Entity
 public class StudyModel {
+
+	/**
+	 * Version of this model used for serialisation (e.g. JSON marshaling)
+	 */
+	public static final String SERIAL_VERSION = "2";
 
 	public static final String ID = "id";
 	public static final String UUID = "uuid";
@@ -102,7 +107,7 @@ public class StudyModel {
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	private String dirName;
-	
+
 	/**
 	 * User comments, reminders, something to share with others. They have no
 	 * further meaning.
@@ -203,7 +208,7 @@ public class StudyModel {
 	public String getDirName() {
 		return this.dirName;
 	}
-	
+
 	public void setComments(String comments) {
 		this.comments = comments;
 	}

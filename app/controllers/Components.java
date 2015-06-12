@@ -1,5 +1,7 @@
 package controllers;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import models.ComponentModel;
@@ -26,8 +28,8 @@ import utils.ControllerUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
+
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.BadRequestException;
@@ -138,41 +140,27 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		checkStudyAndLocked(studyId, study, loggedInUser);
 
 		ComponentModel component = componentService
 				.bindComponentFromRequest(request().body().asFormUrlEncoded());
 		List<ValidationError> errorList = component.validate();
 		if (errorList != null) {
-			Call submitAction = controllers.routes.Components
-					.submit(studyId);
+			Call submitAction = controllers.routes.Components.submit(studyId);
 			String breadcrumbs = Breadcrumbs.generateForStudy(study,
 					Breadcrumbs.NEW_COMPONENT);
 			Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 					component);
-			return showEditAfterError(studyList, loggedInUser, form, errorList,
-					Http.Status.BAD_REQUEST, breadcrumbs, submitAction, study);
+			for (ValidationError error : errorList) {
+				form.reject(error);
+			}
+			return status(Http.Status.BAD_REQUEST,
+					views.html.gui.component.edit.render(loggedInUser,
+							breadcrumbs, submitAction, form, study));
 		}
 
 		componentDao.create(study, component);
 		return redirectAfterEdit(studyId, component.getId(), study);
-	}
-
-	private Result showEditAfterError(List<StudyModel> studyList,
-			UserModel loggedInUser, Form<ComponentModel> form,
-			List<ValidationError> errorList, int httpStatus,
-			String breadcrumbs, Call submitAction, StudyModel study) {
-		if (ControllerUtils.isAjax()) {
-			return status(httpStatus);
-		} else {
-			for (ValidationError error : errorList) {
-				form.reject(error);
-			}
-			return status(httpStatus, views.html.gui.component.edit.render(
-					loggedInUser, breadcrumbs, submitAction, form, study));
-		}
 	}
 
 	/**
@@ -199,8 +187,8 @@ public class Components extends Controller {
 		}
 		Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 				component);
-		Call submitAction = controllers.routes.Components.submitEdited(
-				studyId, componentId);
+		Call submitAction = controllers.routes.Components.submitEdited(studyId,
+				componentId);
 		String breadcrumbs = Breadcrumbs.generateForComponent(study, component,
 				Breadcrumbs.EDIT_PROPERTIES);
 		return ok(views.html.gui.component.edit.render(loggedInUser,
@@ -218,8 +206,6 @@ public class Components extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
 		ComponentModel component = componentDao.findById(componentId);
 		checkStudyAndLockedAndComponent(studyId, componentId, study,
 				loggedInUser, component);
@@ -228,20 +214,46 @@ public class Components extends Controller {
 				.bindComponentFromRequest(request().body().asFormUrlEncoded());
 		List<ValidationError> errorList = editedComponent.validate();
 		if (errorList != null) {
-			editedComponent.setId(component.getId());
-			editedComponent.setUuid(component.getUuid());
-			Call submitAction = controllers.routes.Components.submitEdited(
-					studyId, componentId);
-			String breadcrumbs = Breadcrumbs.generateForComponent(study,
-					editedComponent, Breadcrumbs.EDIT_PROPERTIES);
-			Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
-					editedComponent);
-			return showEditAfterError(studyList, loggedInUser, form, errorList,
-					Http.Status.BAD_REQUEST, breadcrumbs, submitAction, study);
+			return showEditAfterError(component, editedComponent, loggedInUser,
+					errorList, Http.Status.BAD_REQUEST, study);
 		}
 
 		componentService.updateComponentAfterEdit(component, editedComponent);
+		try {
+			componentService.renameHtmlFilePath(component,
+					editedComponent.getHtmlFilePath());
+		} catch (IOException e) {
+			errorList = new ArrayList<>();
+			errorList.add(new ValidationError(ComponentModel.HTML_FILE_PATH, e
+					.getMessage()));
+			return showEditAfterError(component, editedComponent, loggedInUser,
+					errorList, Http.Status.BAD_REQUEST, study);
+		}
+
 		return redirectAfterEdit(studyId, componentId, study);
+	}
+
+	private Result showEditAfterError(ComponentModel component,
+			ComponentModel editedComponent, UserModel loggedInUser,
+			List<ValidationError> errorList, int httpStatus, StudyModel study) {
+		editedComponent.setId(component.getId());
+		editedComponent.setUuid(component.getUuid());
+		Call submitAction = controllers.routes.Components.submitEdited(
+				study.getId(), editedComponent.getId());
+		String breadcrumbs = Breadcrumbs.generateForComponent(study,
+				editedComponent, Breadcrumbs.EDIT_PROPERTIES);
+		Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
+				editedComponent);
+
+		if (ControllerUtils.isAjax()) {
+			return status(httpStatus);
+		} else {
+			for (ValidationError error : errorList) {
+				form.reject(error);
+			}
+			return status(httpStatus, views.html.gui.component.edit.render(
+					loggedInUser, breadcrumbs, submitAction, form, study));
+		}
 	}
 
 	private Result redirectAfterEdit(Long studyId, Long componentId,

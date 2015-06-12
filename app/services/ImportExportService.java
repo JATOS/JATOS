@@ -262,7 +262,7 @@ public class ImportExportService {
 		File studyAsJsonFile = File.createTempFile(studyFileName,
 				studyFileSuffix);
 		studyAsJsonFile.deleteOnExit();
-		jsonUtils.asJsonForIO(study, studyAsJsonFile);
+		jsonUtils.studyAsJsonForIO(study, studyAsJsonFile);
 		String studyAssetsDirPath = IOUtils.generateStudyAssetsPath(study
 				.getDirName());
 		zipFile = ZipUtil.zipStudy(studyAssetsDirPath, study.getDirName(),

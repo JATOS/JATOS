@@ -73,12 +73,12 @@ public class ComponentServiceTest extends AbstractTest {
 		// assertThat(updatedComponent.getStudy().equals(study)).isTrue();
 		assertThat(updatedComponent.getUuid().equals(component.getUuid()))
 				.isTrue();
+		assertThat(updatedComponent.getHtmlFilePath()).isEqualTo(
+				component.getHtmlFilePath());
 
 		// Changed stuff
 		assertThat(updatedComponent.getComments()).isEqualTo(
 				clone.getComments());
-		assertThat(updatedComponent.getHtmlFilePath()).isEqualTo(
-				clone.getHtmlFilePath());
 		assertThat(updatedComponent.getJsonData()).isEqualTo("{}");
 		assertThat(updatedComponent.getTitle()).isEqualTo(clone.getTitle());
 		assertThat(updatedComponent.isReloadable() == clone.isReloadable())
@@ -89,7 +89,192 @@ public class ComponentServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkClone() throws NoSuchAlgorithmException, IOException {
+	public void checkRenameHtmlFilePath() throws NoSuchAlgorithmException,
+			IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		ComponentModel component = study.getFirstComponent();
+		// Study not set automatically, weird!
+		component.setStudy(study);
+
+		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				component.getHtmlFilePath());
+		assertThat(htmlFile.exists());
+
+		// Check standard renaming
+		componentService.renameHtmlFilePath(component, "foo.html");
+		htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				"foo.html");
+		assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
+		assertThat(htmlFile.exists());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRenameHtmlFilePathNewFileExists()
+			throws NoSuchAlgorithmException, IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		ComponentModel component = study.getFirstComponent();
+		// Study not set automatically, weird!
+		component.setStudy(study);
+
+		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				component.getHtmlFilePath());
+		assertThat(htmlFile.exists());
+
+		// Try renaming to existing file
+		try {
+			componentService.renameHtmlFilePath(component, study
+					.getLastComponent().getHtmlFilePath());
+			Fail.fail();
+		} catch (IOException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.htmlFileNotRenamedBecauseExists(component
+							.getHtmlFilePath(), study.getLastComponent()
+							.getHtmlFilePath()));
+		}
+
+		// Everything is unchanged
+		assertThat(component.getHtmlFilePath()).isEqualTo(htmlFile.getName());
+		assertThat(htmlFile.exists());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRenameHtmlFilePathWithSubFolder()
+			throws NoSuchAlgorithmException, IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		ComponentModel component = study.getFirstComponent();
+		// Study not set automatically, weird!
+		component.setStudy(study);
+
+		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				component.getHtmlFilePath());
+		assertThat(htmlFile.exists());
+
+		// Create subfolder
+		File subfolder = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				"subfolder");
+		subfolder.mkdir();
+		assertThat(subfolder.exists());
+
+		// Check renaming into a subfolder
+		componentService.renameHtmlFilePath(component, "subfolder/foo.html");
+		htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				"subfolder/foo.html");
+		assertThat(component.getHtmlFilePath()).isEqualTo("subfolder/foo.html");
+		assertThat(htmlFile.exists());
+		assertThat(htmlFile.getParentFile().getName()).isEqualTo("subfolder");
+
+		// Check renaming back into study assets
+		componentService.renameHtmlFilePath(component, "foo.html");
+		htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				"foo.html");
+		assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
+		assertThat(htmlFile.exists());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRenameHtmlFilePathEmptyNewFile()
+			throws NoSuchAlgorithmException, IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		ComponentModel component = study.getFirstComponent();
+		// Study not set automatically, weird!
+		component.setStudy(study);
+
+		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				component.getHtmlFilePath());
+		assertThat(htmlFile.exists());
+
+		// If new filename is empty leave the file alone and put "" into the db
+		componentService.renameHtmlFilePath(component, "");
+		assertThat(component.getHtmlFilePath()).isEqualTo("");
+		assertThat(htmlFile.exists());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRenameHtmlFilePathCurrentFileNotExistNewFileNotExist()
+			throws NoSuchAlgorithmException, IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		ComponentModel component = study.getFirstComponent();
+		// Study not set automatically, weird!
+		component.setStudy(study);
+
+		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				component.getHtmlFilePath());
+		assertThat(htmlFile.exists());
+
+		// Remove current HTML file
+		htmlFile.delete();
+		assertThat(!htmlFile.exists());
+
+		// Rename to non-existing file - Current file doesn't exist - new file
+		// name must be set and file still not existing
+		componentService.renameHtmlFilePath(component, "foo.html");
+		htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				"foo.html");
+		assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
+		assertThat(!htmlFile.exists());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRenameHtmlFilePathCurrentFileNotExistNewFileExist()
+			throws NoSuchAlgorithmException, IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		ComponentModel component = study.getFirstComponent();
+		// Study not set automatically, weird!
+		component.setStudy(study);
+
+		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+				component.getHtmlFilePath());
+		assertThat(htmlFile.exists());
+		File differentHtmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(), study
+				.getLastComponent().getHtmlFilePath());
+		assertThat(differentHtmlFile.exists());
+
+		// Remove current HTML file
+		htmlFile.delete();
+		assertThat(!htmlFile.exists());
+
+		// Rename to existing file - Current file doesn't exist - new file name
+		// must be set and file still existing
+		componentService.renameHtmlFilePath(component, study.getLastComponent()
+				.getHtmlFilePath());
+		assertThat(component.getHtmlFilePath()).isEqualTo(
+				study.getLastComponent().getHtmlFilePath());
+		assertThat(differentHtmlFile.exists());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkCloneComponentModel() throws NoSuchAlgorithmException,
+			IOException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
@@ -126,7 +311,6 @@ public class ComponentServiceTest extends AbstractTest {
 		ComponentModel component = study.getFirstComponent();
 		// Study not set automatically, weird!
 		component.setStudy(study);
-		;
 
 		try {
 			componentService.checkStandardForComponents(study.getId(),

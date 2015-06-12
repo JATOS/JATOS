@@ -32,6 +32,11 @@ import com.fasterxml.jackson.annotation.JsonView;
 @Entity
 public class ComponentModel {
 
+	/**
+	 * Version of this model used for serialisation (e.g. JSON marshaling)
+	 */
+	public static final String SERIAL_VERSION = "1";
+	
 	public static final String ID = "id";
 	public static final String UUID = "uuid";
 	public static final String TITLE = "title";
@@ -215,6 +220,7 @@ public class ComponentModel {
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (htmlFilePath != null && !htmlFilePath.trim().isEmpty()) {
+			// This regular expression defines how a proper HTML file path should look like
 			String pathRegEx = "^(\\w+)(\\/\\w+)?\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
 			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.trim()
 					.isEmpty())) {

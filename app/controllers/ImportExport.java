@@ -210,7 +210,7 @@ public class ImportExport extends Controller {
 
 		String componentAsJson = null;
 		try {
-			componentAsJson = jsonUtils.asJsonForIO(component);
+			componentAsJson = jsonUtils.componentAsJsonForIO(component);
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings
 					.componentExportFailure(componentId);
