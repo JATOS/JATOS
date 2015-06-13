@@ -89,7 +89,9 @@ public abstract class MessagesStrings {
 	public static final String COULDNT_GENERATE_JATOS_URL = "Couldn't generate JATOS' URL. Try to reload this page.";
 	public static final String COULDNT_CHANGE_POSITION_OF_COMPONENT = "Couldn't change position of componet.";
 	public static final String COMPONENT_DELETED_BUT_FILES_NOT = "Component deleted, but all files (e.g. its HTML file) in study assets remain untouched.";
+	public static final String PROBLEM_GENERATING_BREADCRUMBS = "Problem generating breadcrumbs";
 
+	
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
 	}

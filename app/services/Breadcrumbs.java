@@ -3,10 +3,14 @@ package services;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import common.RequestScopeMessaging;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.Worker;
+import play.Logger;
 import play.mvc.Call;
 import utils.JsonUtils;
 
@@ -17,6 +21,8 @@ import utils.JsonUtils;
  */
 public class Breadcrumbs {
 
+	private static final String CLASS_NAME = Breadcrumbs.class.getSimpleName();
+	
 	public static final String HOME = "Home";
 	public static final String EDIT_PROPERTIES = "Edit Properties";
 	public static final String WORKERS = "Workers";
@@ -57,7 +63,15 @@ public class Breadcrumbs {
 		} else {
 			breadcrumbs.put(HOME, "");
 		}
-		return JsonUtils.asJson(breadcrumbs);
+		String breadcrumbsStr = "";
+		try {
+			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+		} catch (JsonProcessingException e) {
+			Logger.error(CLASS_NAME + ".generateForHome", e);
+			RequestScopeMessaging
+					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
+		}
+		return breadcrumbsStr;
 	}
 
 	public static String generateForUser(UserModel user) {
@@ -74,7 +88,15 @@ public class Breadcrumbs {
 		} else {
 			breadcrumbs.put(user.toString(), "");
 		}
-		return JsonUtils.asJson(breadcrumbs);
+		String breadcrumbsStr = "";
+		try {
+			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+		} catch (JsonProcessingException e) {
+			Logger.error(CLASS_NAME + ".generateForUser", e);
+			RequestScopeMessaging
+					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
+		}
+		return breadcrumbsStr;
 	}
 
 	public static String generateForStudy(StudyModel study) {
@@ -86,12 +108,20 @@ public class Breadcrumbs {
 				controllers.routes.Home.home());
 		if (last != null) {
 			breadcrumbs.put(study.getTitle(),
-					controllers.routes.Studies.index(study.getId())).put(
-					last, "");
+					controllers.routes.Studies.index(study.getId())).put(last,
+					"");
 		} else {
 			breadcrumbs.put(study.getTitle(), "");
 		}
-		return JsonUtils.asJson(breadcrumbs);
+		String breadcrumbsStr = "";
+		try {
+			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+		} catch (JsonProcessingException e) {
+			Logger.error(CLASS_NAME + ".generateForStudy", e);
+			RequestScopeMessaging
+					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
+		}
+		return breadcrumbsStr;
 	}
 
 	public static String generateForWorker(Worker worker) {
@@ -102,7 +132,15 @@ public class Breadcrumbs {
 		Breadcrumbs breadcrumbs = new Breadcrumbs()
 				.put(HOME, controllers.routes.Home.home())
 				.put("Worker " + worker.getId(), "").put(last, "");
-		return JsonUtils.asJson(breadcrumbs);
+		String breadcrumbsStr = "";
+		try {
+			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+		} catch (JsonProcessingException e) {
+			Logger.error(CLASS_NAME + ".generateForWorker", e);
+			RequestScopeMessaging
+					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
+		}
+		return breadcrumbsStr;
 	}
 
 	public static String generateForComponent(StudyModel study,
@@ -112,7 +150,15 @@ public class Breadcrumbs {
 				.put(study.getTitle(),
 						controllers.routes.Studies.index(study.getId()))
 				.put(component.getTitle(), "").put(last, "");
-		return JsonUtils.asJson(breadcrumbs);
+		String breadcrumbsStr = "";
+		try {
+			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+		} catch (JsonProcessingException e) {
+			Logger.error(CLASS_NAME + ".generateForComponent", e);
+			RequestScopeMessaging
+					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
+		}
+		return breadcrumbsStr;
 	}
 
 }

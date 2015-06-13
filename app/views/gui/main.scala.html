@@ -197,7 +197,7 @@ var messagesRequestScope = @Html(common.RequestScopeMessaging.getAsJson());
 showMessages(messagesRequestScope);
 var messagesFlashScope = @Html(common.FlashScopeMessaging.getAsJson());
 showMessages(messagesFlashScope);
-var breadcrumbs = @Html(breadcrumbs)['breadcrumbs'];
+var breadcrumbs = @Html(breadcrumbs);
 showBreadcrumbs(breadcrumbs);
 fillSidebar();
 
@@ -231,15 +231,15 @@ function showMessages(messages) {
 }
 
 function showBreadcrumbs (breadcrumbs) {
-	for (var key in breadcrumbs) {
-		var breadcrumb;
-		if (breadcrumbs[key] === null || breadcrumbs[key] === "") {
-			breadcrumb = '<li class="active">' + key + '</li>';
+	$.each(breadcrumbs, function(index, breadcrumb) {
+		var breadcrumbHtml;
+		if (breadcrumb.url === null || breadcrumb.url === "") {
+			breadcrumbHtml = '<li class="active">' + breadcrumb.name + '</li>';
 		} else {
-			breadcrumb = '<li><a href="' + breadcrumbs[key] + '">' + key + '</a></li>';
+			breadcrumbHtml = '<li><a href="' + breadcrumb.url + '">' + breadcrumb.name + '</a></li>';
 		}
-		$("#breadcrumbs").append(breadcrumb);
-	}
+		$("#breadcrumbs").append(breadcrumbHtml);
+	});
 }
 
 function askConfirmation(title, preText, html, postText, buttonText, action) {
