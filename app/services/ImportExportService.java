@@ -4,12 +4,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import persistance.ComponentDao;
 import persistance.StudyDao;
+import play.Logger;
+import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData.FilePart;
 import utils.IOUtils;
@@ -21,8 +24,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.RequestScopeMessaging;
 
+import common.RequestScopeMessaging;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 
@@ -33,6 +36,9 @@ import exceptions.ForbiddenException;
  */
 @Singleton
 public class ImportExportService {
+
+	private static final String CLASS_NAME = ImportExportService.class
+			.getSimpleName();
 
 	public static final String COMPONENT_TITLE = "componentTitle";
 	public static final String COMPONENT_EXISTS = "componentExists";
@@ -90,6 +96,9 @@ public class ImportExportService {
 			String tempComponentFileName) throws IOException {
 		File componentFile = getTempComponentFile(study, tempComponentFileName);
 		if (componentFile == null) {
+			Logger.warn(CLASS_NAME
+					+ ".importComponentConfirmed: unzipping failed, "
+					+ "couldn't find component file in temp directory");
 			throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
 		}
 		ComponentModel uploadedComponent = unmarshalComponent(componentFile,
@@ -153,6 +162,7 @@ public class ImportExportService {
 	public void importStudyConfirmed(UserModel loggedInUser, JsonNode json)
 			throws IOException, ForbiddenException, BadRequestException {
 		if (json == null) {
+			Logger.error(CLASS_NAME + ".importStudyConfirmed: JSON is null");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
 		Boolean studysPropertiesConfirm = json.findPath(
@@ -160,11 +170,16 @@ public class ImportExportService {
 		Boolean studysDirConfirm = json.findPath(STUDYS_DIR_CONFIRM)
 				.asBoolean();
 		if (studysPropertiesConfirm == null || studysDirConfirm == null) {
+			Logger.error(CLASS_NAME + ".importStudyConfirmed: "
+					+ "JSON is malformed: " + STUDYS_PROPERTIES_CONFIRM
+					+ " or " + STUDYS_DIR_CONFIRM + " missing");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
 
 		File tempUnzippedStudyDir = getUnzippedStudyDir();
 		if (tempUnzippedStudyDir == null) {
+			Logger.error(CLASS_NAME + ".importStudyConfirmed: "
+					+ "missing unzipped study directory in temp directory");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
 		StudyModel importedStudy = unmarshalStudy(tempUnzippedStudyDir, true);
@@ -374,11 +389,11 @@ public class ImportExportService {
 	}
 
 	private File unzipUploadedFile(File file) throws IOException {
-
 		File tempDir = null;
 		try {
 			tempDir = ZipUtil.unzip(file);
 		} catch (IOException e) {
+			Logger.warn(CLASS_NAME + ".unzipUploadedFile: unzipping failed", e);
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
 		return tempDir;
@@ -386,12 +401,18 @@ public class ImportExportService {
 
 	private ComponentModel unmarshalComponent(File file, StudyModel study)
 			throws IOException {
-		ComponentModel component = new JsonUtils.UploadUnmarshaller()
+		UploadUnmarshaller uploadUnmarshaller = new JsonUtils.UploadUnmarshaller();
+		ComponentModel component = uploadUnmarshaller
 				.unmarshalling(file, ComponentModel.class);
 		if (component == null) {
-			throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
+			throw new IOException(uploadUnmarshaller.getErrorMsg());
 		}
 		if (component.validate() != null) {
+			Logger.warn(CLASS_NAME
+					+ ".unmarshalComponent: "
+					+ component.validate().stream()
+							.map(ValidationError::message)
+							.collect(Collectors.joining(", ")));
 			throw new IOException(MessagesStrings.COMPONENT_INVALID);
 		}
 		return component;
@@ -412,6 +433,11 @@ public class ImportExportService {
 			throw new IOException(uploadUnmarshaller.getErrorMsg());
 		}
 		if (study.validate() != null) {
+			Logger.warn(CLASS_NAME
+					+ ".unmarshalStudy: "
+					+ study.validate().stream()
+							.map(ValidationError::message)
+							.collect(Collectors.joining(", ")));
 			throw new IOException(MessagesStrings.STUDY_INVALID);
 		}
 		if (deleteAfterwards) {
