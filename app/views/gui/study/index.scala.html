@@ -230,6 +230,7 @@ studyResultsCount: Integer)
 
 <script type="text/javascript">
 $(document).ready(setLockButton(@study.isLocked()));
+var studyId = @study.getId();
 
 var componentsTable;
 $(document).ready(function() {

@@ -12,23 +12,56 @@ body {
  */
 
 .gray-light{
-	color: #bbb;
+	color: #aaa;
 }
 
-.active span.study-collapsed{
-	display:inline-block; 
+.sidebar-nav {
+    position: absolute;
+    top: 0;
+    margin: 0;
+    margin-top: 20px;
+    margin-right: 2px;
+    padding: 0;
+    list-style: none;
 }
 
-.active span.study-expanded{
+.sidebar-nav li.studyListItem {
+	padding: 10px;
+}
+
+.sidebar-nav li.currentStudy {
+	background-color: #fff;
+}
+
+.sidebar-nav li.studyListItem:hover,
+.sidebar-nav li.studyListItem:focus {
+	background-color: #fff;
+    cursor: pointer;
+}
+
+a:hover,
+a:focus {
+    text-decoration: none;
+}
+
+.glyphicon-plus.study-collapsed {
+	display:inline; 
+}
+
+.glyphicon-plus.study-expanded {
 	display:none;
 }
 
-.inactive span.study-expanded {
-	display:inline-block;
+.glyphicon-minus.study-expanded {
+	display:inline;
 }
 
-.inactive span.study-collapsed {
+.glyphicon-minus.study-collapsed {
 	display:none;
+}
+
+.dragButton {
+	cursor: move;
 }
 
 /*

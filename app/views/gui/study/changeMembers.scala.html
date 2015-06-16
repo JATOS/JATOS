@@ -3,6 +3,10 @@ breadcrumbs: String, study: StudyModel, userList: List[UserModel])
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
+<script type="text/javascript">
+var studyId = @study.getId();
+</script>
+
 @helper.form(action = controllers.routes.Studies.submitChangedMembers(study.getId()), 'class -> "form-horizontal") {
 @for(user <- userList) {
 <div class="form-group">

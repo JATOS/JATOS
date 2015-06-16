@@ -74,6 +74,8 @@ study: StudyModel)
 }
 
 <script>
+var studyId = @study.getId();
+
 @if(form.hasErrors) {
 	showWarning("@services.MessagesStrings.COMPONENT_WASNT_SAVED");
 }
