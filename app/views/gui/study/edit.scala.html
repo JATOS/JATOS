@@ -99,7 +99,9 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 }
 
 <script>
-var studyId = @form(StudyModel.ID).value;
+@if(form(StudyModel.ID).value != null) {
+	var studyId = @form(StudyModel.ID).value;
+}
 
 @if(form.hasErrors) {
 	showWarning("@services.MessagesStrings.STUDY_WASNT_SAVED");
