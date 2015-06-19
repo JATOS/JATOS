@@ -70,9 +70,7 @@ public class StudyService {
 		clone.setJsonData(study.getJsonData());
 		clone.setTitle(study.getTitle());
 		clone.setLocked(false);
-		for (String workerType : study.getAllowedWorkerList()) {
-			clone.addAllowedWorker(workerType);
-		}
+		study.getAllowedWorkerList().forEach(clone::addAllowedWorker);
 		for (ComponentModel component : study.getComponentList()) {
 			ComponentModel componentClone = componentService
 					.cloneComponentModel(component);
@@ -136,9 +134,7 @@ public class StudyService {
 		study.setComments(updatedStudy.getComments());
 		study.setJsonData(updatedStudy.getJsonData());
 		study.getAllowedWorkerList().clear();
-		for (String workerType : updatedStudy.getAllowedWorkerList()) {
-			study.addAllowedWorker(workerType);
-		}
+		updatedStudy.getAllowedWorkerList().forEach(study::addAllowedWorker);
 		studyDao.update(study);
 	}
 

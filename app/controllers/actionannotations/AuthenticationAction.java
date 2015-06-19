@@ -26,7 +26,7 @@ import controllers.actionannotations.AuthenticationAction.Authenticated;
  * authentication. An action is authenticated if there is an email in the
  * session that correspondents to a valid user. If successful the UserModel is
  * stored in the RequestScope.
- * 
+ *
  * @author Kristian Lange
  */
 public class AuthenticationAction extends Action<Authenticated> {
@@ -53,8 +53,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 		}
 		if (loggedInUser == null) {
 			call = Promise
-					.<Result> pure(redirect(controllers.routes.Authentication
-							.login()));
+					.pure(redirect(controllers.routes.Authentication.login()));
 		} else {
 			RequestScope.put(Authentication.LOGGED_IN_USER, loggedInUser);
 			call = delegate.call(ctx);

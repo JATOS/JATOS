@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import models.ComponentModel;
-import models.UserModel;
 import persistance.ComponentDao;
 import play.Logger;
 import utils.IOUtils;
@@ -154,7 +153,7 @@ public class ComponentService {
 	 * problem.
 	 */
 	public void checkStandardForComponents(Long studyId, Long componentId,
-			UserModel loggedInUser, ComponentModel component)
+			ComponentModel component)
 			throws BadRequestException {
 		if (component == null) {
 			throw new BadRequestException(

@@ -156,7 +156,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				// isn't a reload of the same one). Finish study after first
 				// component.
 				return Promise
-						.pure((Result) redirect(publix.controllers.routes.PublixInterceptor
+						.pure(redirect(publix.controllers.routes.PublixInterceptor
 								.finishStudy(studyId, true, null)));
 			}
 			break;
@@ -168,7 +168,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					.startComponent(component, studyResult);
 		} catch (ForbiddenReloadException e) {
 			return Promise
-					.pure((Result) redirect(publix.controllers.routes.PublixInterceptor
+					.pure(redirect(publix.controllers.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
 		response().setCookie(

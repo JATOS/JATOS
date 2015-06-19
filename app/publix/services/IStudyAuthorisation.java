@@ -11,7 +11,7 @@ public interface IStudyAuthorisation<T extends Worker> {
 	 * worker has no permission an ForbiddenPublixException is thrown. This
 	 * method should only be used during the start of a study.
 	 */
-	public void checkWorkerAllowedToStartStudy(T worker, StudyModel study)
+	void checkWorkerAllowedToStartStudy(T worker, StudyModel study)
 			throws ForbiddenPublixException;
 
 	/**
@@ -19,7 +19,7 @@ public interface IStudyAuthorisation<T extends Worker> {
 	 * worker has no permission an ForbiddenPublixException is thrown. This
 	 * method can be used during all states of a StudyResult.
 	 */
-	public void checkWorkerAllowedToDoStudy(T worker, StudyModel study)
+	void checkWorkerAllowedToDoStudy(T worker, StudyModel study)
 			throws ForbiddenPublixException;
 
 }

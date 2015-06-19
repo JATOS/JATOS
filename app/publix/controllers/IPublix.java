@@ -2,8 +2,6 @@ package publix.controllers;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import play.libs.F.Promise;
 import play.mvc.Result;
 import publix.exceptions.BadRequestPublixException;
@@ -28,7 +26,7 @@ public interface IPublix {
 	 * Starts the study with the given ID, then automatically starts it's first
 	 * component.
 	 */
-	public Result startStudy(Long studyId) throws PublixException;
+	Result startStudy(Long studyId) throws PublixException;
 
 	/**
 	 * HTTP type: Normal GET request
@@ -36,7 +34,7 @@ public interface IPublix {
 	 * Starts the component with the given componentId that belongs to the study
 	 * with the studyId.
 	 */
-	public Promise<Result> startComponent(Long studyId, Long componentId)
+	Promise<Result> startComponent(Long studyId, Long componentId)
 			throws PublixException;
 
 	/**
@@ -45,7 +43,7 @@ public interface IPublix {
 	 * Starts the component in the given position that belongs to the study with
 	 * the studyId.
 	 */
-	public Promise<Result> startComponentByPosition(Long studyId,
+	Promise<Result> startComponentByPosition(Long studyId,
 			Integer position) throws PublixException;
 
 	/**
@@ -56,7 +54,7 @@ public interface IPublix {
 	 * current one. If there are no more components in the study, the study will
 	 * be finished successfully.
 	 */
-	public Result startNextComponent(Long studyId) throws PublixException;
+	Result startNextComponent(Long studyId) throws PublixException;
 
 	/**
 	 * HTTP type: Ajax GET request
@@ -68,8 +66,8 @@ public interface IPublix {
 	 * by the study running in the browser. The study session data are different
 	 * from Play's session and stored within the study results.
 	 */
-	public Result getInitData(Long studyId, Long componentId)
-			throws PublixException, JsonProcessingException, IOException;
+	Result getInitData(Long studyId, Long componentId)
+			throws PublixException, IOException;
 
 	/**
 	 * HTTP type: Ajax POST request
@@ -80,8 +78,7 @@ public interface IPublix {
 	 * browser. The study session data are different from Play's session and
 	 * stored within the study results.
 	 */
-	public Result setStudySessionData(Long studyId) throws PublixException,
-			JsonProcessingException;
+	Result setStudySessionData(Long studyId) throws PublixException;
 
 	/**
 	 * HTTP type: Ajax POST request
@@ -89,7 +86,7 @@ public interface IPublix {
 	 * Persists the submitted data in the ComponentResult specified by the given
 	 * study and component ID.
 	 */
-	public Result submitResultData(Long studyId, Long componentId)
+	Result submitResultData(Long studyId, Long componentId)
 			throws PublixException;
 
 	/**
@@ -99,7 +96,7 @@ public interface IPublix {
 	 * Optionally it can be specified whether the component was successful and
 	 * and error message.
 	 */
-	public Result finishComponent(Long studyId, Long componentId,
+	Result finishComponent(Long studyId, Long componentId,
 			Boolean successful, String errorMsg) throws PublixException;
 
 	/**
@@ -109,7 +106,7 @@ public interface IPublix {
 	 * Optionally a message can be given describing the reasons for the
 	 * abortion.
 	 */
-	public Result abortStudy(Long studyId, String message)
+	Result abortStudy(Long studyId, String message)
 			throws PublixException;
 
 	/**
@@ -119,7 +116,7 @@ public interface IPublix {
 	 * or FAIL). Optionally it can be specified whether the study was successful
 	 * and an error message.
 	 */
-	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
+	Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException;
 
 	/**
@@ -127,7 +124,7 @@ public interface IPublix {
 	 * 
 	 * In case the client side wants to log an error.
 	 */
-	public Result logError(Long studyId, Long componentId)
+	Result logError(Long studyId, Long componentId)
 			throws BadRequestPublixException;
 
 }

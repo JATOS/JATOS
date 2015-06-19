@@ -86,9 +86,9 @@ public class UserService {
 		byte[] hashByte = md.digest(strBytes);
 
 		// Convert the byte to hex format
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < hashByte.length; i++) {
-			sb.append(Integer.toString((hashByte[i] & 0xff) + 0x100, 16)
+		StringBuilder sb = new StringBuilder();
+		for (byte aHashByte : hashByte) {
+			sb.append(Integer.toString((aHashByte & 0xff) + 0x100, 16)
 					.substring(1));
 		}
 		return sb.toString();
@@ -97,7 +97,7 @@ public class UserService {
 	public List<ValidationError> validateNewUser(UserModel newUser,
 			String password, String passwordRepeat)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
-		List<ValidationError> errorList = new ArrayList<ValidationError>();
+		List<ValidationError> errorList = new ArrayList<>();
 
 		// Check if user with this email already exists.
 		if (userDao.findByEmail(newUser.getEmail()) != null) {
@@ -112,7 +112,7 @@ public class UserService {
 	public List<ValidationError> validateChangePassword(UserModel user,
 			String password, String passwordRepeat, String oldPasswordHash)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
-		List<ValidationError> errorList = new ArrayList<ValidationError>();
+		List<ValidationError> errorList = new ArrayList<>();
 
 		if (userDao.authenticate(user.getEmail(), oldPasswordHash) == null) {
 			errorList.add(new ValidationError(UserModel.OLD_PASSWORD,

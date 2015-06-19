@@ -80,7 +80,7 @@ public class ImportExportService {
 		}
 
 		ComponentModel uploadedComponent = unmarshalComponent(
-				filePart.getFile(), study);
+				filePart.getFile());
 
 		boolean componentExists = componentDao.findByUuid(
 				uploadedComponent.getUuid(), study) != null;
@@ -94,15 +94,14 @@ public class ImportExportService {
 
 	public void importComponentConfirmed(StudyModel study,
 			String tempComponentFileName) throws IOException {
-		File componentFile = getTempComponentFile(study, tempComponentFileName);
+		File componentFile = getTempComponentFile(tempComponentFileName);
 		if (componentFile == null) {
 			Logger.warn(CLASS_NAME
 					+ ".importComponentConfirmed: unzipping failed, "
 					+ "couldn't find component file in temp directory");
 			throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
 		}
-		ComponentModel uploadedComponent = unmarshalComponent(componentFile,
-				study);
+		ComponentModel uploadedComponent = unmarshalComponent(componentFile);
 		ComponentModel currentComponent = componentDao.findByUuid(
 				uploadedComponent.getUuid(), study);
 		boolean componentExists = (currentComponent != null);
@@ -118,12 +117,11 @@ public class ImportExportService {
 		}
 	}
 
-	public void cleanupAfterComponentImport(StudyModel study) {
+	public void cleanupAfterComponentImport() {
 		String tempComponentFileName = Controller
 				.session(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
 		if (tempComponentFileName != null) {
-			File componentFile = getTempComponentFile(study,
-					tempComponentFileName);
+			File componentFile = getTempComponentFile(tempComponentFileName);
 			if (componentFile != null) {
 				componentFile.delete();
 			}
@@ -165,16 +163,17 @@ public class ImportExportService {
 			Logger.error(CLASS_NAME + ".importStudyConfirmed: JSON is null");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
-		Boolean studysPropertiesConfirm = json.findPath(
-				STUDYS_PROPERTIES_CONFIRM).asBoolean();
-		Boolean studysDirConfirm = json.findPath(STUDYS_DIR_CONFIRM)
-				.asBoolean();
-		if (studysPropertiesConfirm == null || studysDirConfirm == null) {
+		if (json.findPath(STUDYS_PROPERTIES_CONFIRM) == null
+				|| json.findPath(STUDYS_DIR_CONFIRM) == null) {
 			Logger.error(CLASS_NAME + ".importStudyConfirmed: "
 					+ "JSON is malformed: " + STUDYS_PROPERTIES_CONFIRM
 					+ " or " + STUDYS_DIR_CONFIRM + " missing");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
+		Boolean studysPropertiesConfirm = json.findPath(
+				STUDYS_PROPERTIES_CONFIRM).asBoolean();
+		Boolean studysDirConfirm = json.findPath(STUDYS_DIR_CONFIRM)
+				.asBoolean();
 
 		File tempUnzippedStudyDir = getUnzippedStudyDir();
 		if (tempUnzippedStudyDir == null) {
@@ -206,8 +205,7 @@ public class ImportExportService {
 
 	private void checkStudyImport(UserModel loggedInUser,
 			StudyModel uploadedStudy, StudyModel currentStudy,
-			boolean studyExists, boolean dirExists) throws IOException,
-			ForbiddenException {
+			boolean studyExists, boolean dirExists) throws ForbiddenException {
 		if (studyExists && !currentStudy.hasMember(loggedInUser)) {
 			String errorMsg = MessagesStrings.studyImportNotMember(currentStudy
 					.getTitle());
@@ -234,12 +232,12 @@ public class ImportExportService {
 		if (studysDirConfirm) {
 			if (studysPropertiesConfirm) {
 				moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy,
-						importedStudy.getDirName(), loggedInUser);
+						importedStudy.getDirName());
 			} else {
 				// If we don't overwrite the properties, don't use the
 				// updated study assets' dir name
 				moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy,
-						currentStudy.getDirName(), loggedInUser);
+						currentStudy.getDirName());
 			}
 			RequestScopeMessaging.success(MessagesStrings
 					.studyAssetsOverwritten(importedStudy.getDirName(),
@@ -264,14 +262,13 @@ public class ImportExportService {
 			File tempUnzippedStudyDir, StudyModel importedStudy)
 			throws IOException {
 		moveStudyAssetsDir(tempUnzippedStudyDir, null,
-				importedStudy.getDirName(), loggedInUser);
+				importedStudy.getDirName());
 		studyDao.create(importedStudy, loggedInUser);
 		RequestScopeMessaging.success(MessagesStrings.importedNewStudy(
 				importedStudy.getDirName(), importedStudy.getId()));
 	}
 
 	public File createStudyExportZipFile(StudyModel study) throws IOException {
-		File zipFile = null;
 		String studyFileName = IOUtils.generateFileName(study.getTitle());
 		String studyFileSuffix = "." + IOUtils.STUDY_FILE_SUFFIX;
 		File studyAsJsonFile = File.createTempFile(studyFileName,
@@ -280,7 +277,7 @@ public class ImportExportService {
 		jsonUtils.studyAsJsonForIO(study, studyAsJsonFile);
 		String studyAssetsDirPath = IOUtils.generateStudyAssetsPath(study
 				.getDirName());
-		zipFile = ZipUtil.zipStudy(studyAssetsDirPath, study.getDirName(),
+		File zipFile = ZipUtil.zipStudy(studyAssetsDirPath, study.getDirName(),
 				studyAsJsonFile.getAbsolutePath());
 		studyAsJsonFile.delete();
 		return zipFile;
@@ -293,7 +290,7 @@ public class ImportExportService {
 	private void updateStudysComponents(StudyModel currentStudy,
 			StudyModel updatedStudy) {
 		// Clear list and rebuild it from updated study
-		List<ComponentModel> currentComponentList = new ArrayList<ComponentModel>(
+		List<ComponentModel> currentComponentList = new ArrayList<>(
 				currentStudy.getComponentList());
 		currentStudy.getComponentList().clear();
 
@@ -335,8 +332,7 @@ public class ImportExportService {
 	 * from Java's temp dir to study assets root dir
 	 */
 	private void moveStudyAssetsDir(File unzippedStudyDir,
-			StudyModel currentStudy, String studyAssetsDirName,
-			UserModel loggedInUser) throws IOException {
+			StudyModel currentStudy, String studyAssetsDirName) throws IOException {
 		if (currentStudy != null) {
 			IOUtils.removeStudyAssetsDir(currentStudy.getDirName());
 		}
@@ -358,18 +354,14 @@ public class ImportExportService {
 	/**
 	 * Get component's File object. Name is stored in session. Discard session
 	 * variable afterwards.
-	 * 
-	 * @throws IOException
 	 */
-	private File getTempComponentFile(StudyModel study,
-			String tempComponentFileName) {
+	private File getTempComponentFile(String tempComponentFileName) {
 		if (tempComponentFileName == null
 				|| tempComponentFileName.trim().isEmpty()) {
 			return null;
 		}
-		File tempComponentFile = new File(System.getProperty("java.io.tmpdir"),
+		return new File(System.getProperty("java.io.tmpdir"),
 				tempComponentFileName);
-		return tempComponentFile;
 	}
 
 	/**
@@ -399,7 +391,7 @@ public class ImportExportService {
 		return tempDir;
 	}
 
-	private ComponentModel unmarshalComponent(File file, StudyModel study)
+	private ComponentModel unmarshalComponent(File file)
 			throws IOException {
 		UploadUnmarshaller uploadUnmarshaller = new JsonUtils.UploadUnmarshaller();
 		ComponentModel component = uploadUnmarshaller

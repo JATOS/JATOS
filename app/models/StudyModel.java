@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -100,7 +101,7 @@ public class StudyModel {
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	@ElementCollection
-	private Set<String> allowedWorkerList = new HashSet<String>();
+	private Set<String> allowedWorkerList = new HashSet<>();
 
 	/**
 	 * Study assets directory name
@@ -129,7 +130,7 @@ public class StudyModel {
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "email") })
-	private Set<UserModel> memberList = new HashSet<UserModel>();
+	private Set<UserModel> memberList = new HashSet<>();
 
 	/**
 	 * Ordered list of component of this study
@@ -138,7 +139,7 @@ public class StudyModel {
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
-	private List<ComponentModel> componentList = new ArrayList<ComponentModel>();
+	private List<ComponentModel> componentList = new ArrayList<>();
 
 	public StudyModel() {
 		// Add default allowed workers
@@ -159,9 +160,8 @@ public class StudyModel {
 		this.title = study.title;
 		this.comments = study.comments;
 		this.locked = false;
-		for (String worker : study.allowedWorkerList) {
-			this.allowedWorkerList.add(worker);
-		}
+		this.allowedWorkerList.addAll(study.allowedWorkerList.stream()
+				.collect(Collectors.toList()));
 		for (ComponentModel component : study.componentList) {
 			ComponentModel clone = new ComponentModel(component);
 			clone.setStudy(this);
@@ -348,7 +348,7 @@ public class StudyModel {
 	}
 
 	public List<ValidationError> validate() {
-		List<ValidationError> errorList = new ArrayList<ValidationError>();
+		List<ValidationError> errorList = new ArrayList<>();
 		if (title == null || title.trim().isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.MISSING_TITLE));

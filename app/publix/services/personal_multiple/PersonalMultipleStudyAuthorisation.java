@@ -14,14 +14,13 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalMultipleStudyAuthorisation implements
-		IStudyAuthorisation<PersonalMultipleWorker> {
+public class PersonalMultipleStudyAuthorisation
+		implements IStudyAuthorisation<PersonalMultipleWorker> {
 
 	private final PersonalMultipleErrorMessages errorMessages;
 
 	@Inject
-	PersonalMultipleStudyAuthorisation(PersonalMultiplePublixUtils publixUtils,
-			PersonalMultipleErrorMessages errorMessages) {
+	PersonalMultipleStudyAuthorisation(PersonalMultipleErrorMessages errorMessages) {
 		this.errorMessages = errorMessages;
 	}
 

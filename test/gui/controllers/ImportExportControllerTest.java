@@ -313,7 +313,7 @@ public class ImportExportControllerTest extends AbstractTest {
 	}
 
 	private AnyContent getMultiPartFormDataForFileUpload(File file,
-			String filePartKey, String contentType) throws IOException {
+			String filePartKey, String contentType) {
 		FilePart<TemporaryFile> part = new MultipartFormData.FilePart<>(
 				filePartKey, file.getName(), Scala.Option(contentType),
 				new TemporaryFile(file));
@@ -323,8 +323,7 @@ public class ImportExportControllerTest extends AbstractTest {
 				.asScalaBuffer(fileParts).toList();
 		MultipartFormData<TemporaryFile> formData = new MultipartFormData<TemporaryFile>(
 				null, files, null, null);
-		AnyContent anyContent = new AnyContentAsMultipartFormData(formData);
-		return anyContent;
+		return new AnyContentAsMultipartFormData(formData);
 	}
 
 	private Result callImportStudyConfirmed(String unzippedStudyDirName,

@@ -145,7 +145,7 @@ public abstract class PublixUtils<T extends Worker> {
 			ComponentResult componentResult, Worker worker) {
 		StudyModel study = studyResult.getStudy();
 		ComponentModel component = componentResult.getComponent();
-		Map<String, String> cookieMap = new HashMap<String, String>();
+		Map<String, String> cookieMap = new HashMap<>();
 		cookieMap.put(Publix.WORKER_ID, String.valueOf(worker.getId()));
 		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
 		cookieMap.put(Publix.STUDY_RESULT_ID,
@@ -197,6 +197,7 @@ public abstract class PublixUtils<T extends Worker> {
 		studyResult.setStudyState(StudyState.ABORTED);
 		studyResult.setAbortMsg(message);
 		studyResult.setEndDate(new Timestamp(new Date().getTime()));
+		studyResult.setStudySessionData(null);
 		studyResultDao.update(studyResult);
 	}
 
@@ -238,12 +239,10 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	private void finishAllComponentResults(StudyResult studyResult) {
-		for (ComponentResult componentResult : studyResult
-				.getComponentResultList()) {
-			if (!componentDone(componentResult)) {
-				finishComponentResult(componentResult, ComponentState.FINISHED);
-			}
-		}
+		studyResult.getComponentResultList().stream()
+				.filter(componentResult -> !componentDone(componentResult))
+				.forEach(componentResult -> finishComponentResult(componentResult,
+						ComponentState.FINISHED));
 	}
 
 	/**
@@ -285,7 +284,7 @@ public abstract class PublixUtils<T extends Worker> {
 	public void finishAllPriorStudyResults(Worker worker, StudyModel study) {
 		List<StudyResult> studyResultList = worker.getStudyResultList();
 		for (StudyResult studyResult : studyResultList) {
-			if (studyResult.getStudy().getId() == study.getId()
+			if (study.getId().equals(studyResult.getStudy().getId())
 					&& !studyDone(studyResult)) {
 				finishStudyResult(false,
 						PublixErrorMessages.STUDY_NEVER_FINSHED, studyResult);
@@ -304,7 +303,7 @@ public abstract class PublixUtils<T extends Worker> {
 		int studyResultListSize = worker.getStudyResultList().size();
 		for (int i = (studyResultListSize - 1); i >= 0; i--) {
 			StudyResult studyResult = worker.getStudyResultList().get(i);
-			if (studyResult.getStudy().getId() == study.getId()) {
+			if (studyResult.getStudy().getId().equals(study.getId())) {
 				if (studyDone(studyResult)) {
 					throw new ForbiddenPublixException(
 							errorMessages.workerFinishedStudyAlready(worker,
@@ -506,7 +505,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public boolean didStudyAlready(Worker worker, StudyModel study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().getId() == study.getId()) {
+			if (studyResult.getStudy().getId().equals(study.getId())) {
 				return true;
 			}
 		}
@@ -529,10 +528,10 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public boolean componentDone(ComponentResult componentResult) {
 		ComponentState state = componentResult.getComponentState();
-		return state == ComponentState.FINISHED
-				|| state == ComponentState.ABORTED
-				|| state == ComponentState.FAIL
-				|| state == ComponentState.RELOADED;
+		return ComponentState.FINISHED == state
+				|| ComponentState.ABORTED == state
+				|| ComponentState.FAIL == state
+				|| ComponentState.RELOADED == state;
 	}
 
 }

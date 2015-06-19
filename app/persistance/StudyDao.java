@@ -9,7 +9,6 @@ import javax.persistence.TypedQuery;
 import models.ComponentModel;
 import models.ComponentResult;
 import models.StudyModel;
-import models.StudyResult;
 import models.UserModel;
 import play.db.jpa.JPA;
 
@@ -43,9 +42,7 @@ public class StudyDao extends AbstractDao {
 		if (study.getUuid() == null) {
 			study.setUuid(UUID.randomUUID().toString());
 		}
-		for (ComponentModel component : study.getComponentList()) {
-			componentDao.create(component);
-		}
+		study.getComponentList().forEach(componentDao::create);
 		persist(study);
 		addMember(study, user);
 	}
@@ -95,15 +92,11 @@ public class StudyDao extends AbstractDao {
 		for (ComponentModel component : study.getComponentList()) {
 			List<ComponentResult> componentResultList = componentResultDao
 					.findAllByComponent(component);
-			for (ComponentResult componentResult : componentResultList) {
-				componentResultDao.remove(componentResult);
-			}
+			componentResultList.forEach(componentResultDao::remove);
 			remove(component);
 		}
 		// Remove study's StudyResults
-		for (StudyResult studyResult : studyResultDao.findAllByStudy(study)) {
-			studyResultDao.remove(studyResult);
-		}
+		studyResultDao.findAllByStudy(study).forEach(studyResultDao::remove);
 		super.remove(study);
 	}
 
@@ -118,9 +111,7 @@ public class StudyDao extends AbstractDao {
 		List<StudyModel> studyList = query.setParameter("uuid", uuid)
 				.getResultList();
 		// There can be only one study with this UUID
-		StudyModel study = studyList.isEmpty() ? null : (StudyModel) studyList
-				.get(0);
-		return study;
+		return studyList.isEmpty() ? null : studyList.get(0);
 	}
 
 	/**

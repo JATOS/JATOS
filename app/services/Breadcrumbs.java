@@ -35,18 +35,18 @@ public class Breadcrumbs {
 	public static final String EDIT_PROFILE = "Edit Profile";
 	public static final String NEW_USER = "New User";
 
-	private Map<String, String> breadcrumbs = new LinkedHashMap<>();
+	private final Map<String, String> breadcrumbs = new LinkedHashMap<>();
 
 	public Map<String, String> getBreadcrumbs() {
 		return breadcrumbs;
 	}
 
-	public Breadcrumbs put(String name, String url) {
+	private Breadcrumbs put(String name, String url) {
 		this.breadcrumbs.put(name, url);
 		return this;
 	}
 
-	public Breadcrumbs put(String name, Call call) {
+	private Breadcrumbs put(String name, Call call) {
 		this.breadcrumbs.put(name, call.url());
 		return this;
 	}

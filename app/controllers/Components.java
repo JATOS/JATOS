@@ -92,7 +92,7 @@ public class Components extends Controller {
 		}
 		try {
 			componentService.checkStandardForComponents(studyId, componentId,
-					loggedInUser, component);
+					component);
 		} catch (BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
@@ -151,9 +151,7 @@ public class Components extends Controller {
 					Breadcrumbs.NEW_COMPONENT);
 			Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 					component);
-			for (ValidationError error : errorList) {
-				form.reject(error);
-			}
+			errorList.forEach(form::reject);
 			return status(Http.Status.BAD_REQUEST,
 					views.html.gui.component.edit.render(loggedInUser,
 							breadcrumbs, submitAction, form, study));
@@ -177,7 +175,7 @@ public class Components extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
-					loggedInUser, component);
+					component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
@@ -248,9 +246,7 @@ public class Components extends Controller {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
 		} else {
-			for (ValidationError error : errorList) {
-				form.reject(error);
-			}
+			errorList.forEach(form::reject);
 			return status(httpStatus, views.html.gui.component.edit.render(
 					loggedInUser, breadcrumbs, submitAction, form, study));
 		}
@@ -356,7 +352,7 @@ public class Components extends Controller {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			studyService.checkStudyLocked(study);
 			componentService.checkStandardForComponents(studyId, componentId,
-					loggedInUser, component);
+					component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}

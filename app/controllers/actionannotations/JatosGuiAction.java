@@ -43,7 +43,7 @@ public class JatosGuiAction extends Action<JatosGui> {
 			Logger.info("JatosGuiException during call "
 					+ Controller.request().uri() + ": " + e.getMessage());
 			Result result = e.getSimpleResult();
-			call = Promise.<Result> pure(result);
+			call = Promise.pure(result);
 		} catch (Exception e) {
 			Logger.error("Exception during call " + Controller.request().uri()
 					+ ": " + e.getMessage(), e);
@@ -53,8 +53,7 @@ public class JatosGuiAction extends Action<JatosGui> {
 			} else {
 				FlashScopeMessaging.error("Internal JATOS error during "
 						+ Controller.request().uri() + ": " + e.getMessage());
-				call = Promise.<Result> pure(redirect(controllers.routes.Home
-						.home()));
+				call = Promise.pure(redirect(controllers.routes.Home.home()));
 			}
 		}
 		return call;

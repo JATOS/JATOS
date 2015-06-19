@@ -67,7 +67,7 @@ public class PersonalSingleWorker extends Worker {
 
 	@Override
 	public List<ValidationError> validate() {
-		List<ValidationError> errorList = new ArrayList<ValidationError>();
+		List<ValidationError> errorList = new ArrayList<>();
 		if (comment != null && !Jsoup.isValid(comment, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENT,
 					MessagesStrings.NO_HTML_ALLOWED));

@@ -23,7 +23,6 @@ import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -232,8 +231,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result setStudySessionData(Long studyId) throws PublixException,
-			JsonProcessingException {
+	public Result setStudySessionData(Long studyId) throws PublixException {
 		Result result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:

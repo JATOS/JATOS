@@ -90,7 +90,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 					.startComponent(component, studyResult);
 		} catch (ForbiddenReloadException e) {
 			return Promise
-					.pure((Result) redirect(publix.controllers.routes.PublixInterceptor
+					.pure(redirect(publix.controllers.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
 		String cookieValue = publixUtils.generateIdCookieValue(studyResult,

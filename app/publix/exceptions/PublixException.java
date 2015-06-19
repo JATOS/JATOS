@@ -12,7 +12,7 @@ import utils.ControllerUtils;
 public class PublixException extends Exception {
 
 	protected MediaType mediaType = MediaType.HTML_UTF_8;
-	protected int httpStatus = HttpStatus.SC_BAD_REQUEST;;
+	protected int httpStatus = HttpStatus.SC_BAD_REQUEST;
 
 	public PublixException(String message) {
 		super(message);

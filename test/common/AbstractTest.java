@@ -65,7 +65,6 @@ public abstract class AbstractTest {
 	private static Server server;
 	protected FakeApplication application;
 	protected EntityManager entityManager;
-	protected JsonUtils jsonUtils;
 	protected UserService userService;
 	protected StudyService studyService;
 	protected UserDao userDao;
@@ -88,7 +87,6 @@ public abstract class AbstractTest {
 		Helpers.start(application);
 
 		// Use Guice dependency injection
-		jsonUtils = Global.INJECTOR.getInstance(JsonUtils.class);
 		userService = Global.INJECTOR.getInstance(UserService.class);
 		studyService = Global.INJECTOR.getInstance(StudyService.class);
 		userDao = Global.INJECTOR.getInstance(UserDao.class);
@@ -160,8 +158,7 @@ public abstract class AbstractTest {
 		FileUtils.deleteDirectory(assetsRoot);
 	}
 
-	protected StudyModel importExampleStudy() throws NoSuchAlgorithmException,
-			IOException {
+	protected StudyModel importExampleStudy() throws IOException {
 		File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
 		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",

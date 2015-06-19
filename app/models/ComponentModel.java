@@ -210,7 +210,7 @@ public class ComponentModel {
 	}
 
 	public List<ValidationError> validate() {
-		List<ValidationError> errorList = new ArrayList<ValidationError>();
+		List<ValidationError> errorList = new ArrayList<>();
 		if (title == null || title.trim().isEmpty()) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.MISSING_TITLE));

@@ -33,32 +33,28 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	protected PublixUtils<T> publixUtils;
 	protected PublixErrorMessages errorMessages;
 
-	@Override
-	public void before() throws Exception {
+	@Override public void before() throws Exception {
 		workerDao = Global.INJECTOR.getInstance(WorkerDao.class);
 		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
 	}
 
-	@Override
-	public void after() throws Exception {
+	@Override public void after() throws Exception {
 	}
 
-	@Test
-	public void simpleCheck() {
+	@Test public void simpleCheck() {
 		int a = 1 + 1;
 		assertThat(a).isEqualTo(2);
 	}
 
-	@Test
-	public void checkRetrieveWorker() throws NoSuchAlgorithmException,
-			IOException, PublixException {
+	@Test public void checkRetrieveWorker()
+			throws NoSuchAlgorithmException, IOException, PublixException {
 		// Worker ID is null
 		try {
 			publixUtils.retrieveWorker(null);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.NO_WORKERID_IN_SESSION);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.NO_WORKERID_IN_SESSION);
 		}
 
 		// Worker ID malformed
@@ -66,8 +62,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			publixUtils.retrieveWorker("foo");
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.workerNotExist("foo"));
+			assertThat(e.getMessage())
+					.isEqualTo(errorMessages.workerNotExist("foo"));
 		}
 
 		// Worker doesn't exist
@@ -75,32 +71,32 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			publixUtils.retrieveWorker("2");
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.workerNotExist("2"));
+			assertThat(e.getMessage())
+					.isEqualTo(errorMessages.workerNotExist("2"));
 		}
 	}
 
-	@Test
-	public void checkStartComponent() throws NoSuchAlgorithmException,
-			IOException, ForbiddenReloadException {
+	@Test public void checkStartComponent()
+			throws NoSuchAlgorithmException, IOException,
+			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
-				admin.getWorker());
+		StudyResult studyResult = studyResultDao
+				.create(study, admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
 
 		entityManager.getTransaction().begin();
-		ComponentResult componentResult2 = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult);
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
 		// Check that everything went normal
-		assertThat(componentResult2.getComponentState()).isEqualTo(
-				ComponentState.STARTED);
+		assertThat(componentResult2.getComponentState())
+				.isEqualTo(ComponentState.STARTED);
 		assertThat(studyResult.getComponentResultList().size()).isEqualTo(1);
 		assertThat(
 				studyResult.getComponentResultList().get(0).getComponentState())
@@ -112,35 +108,34 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test
-	public void checkStartComponentFinishPriorComponentResult()
+	@Test public void checkStartComponentFinishPriorComponentResult()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
-				admin.getWorker());
+		StudyResult studyResult = studyResultDao
+				.create(study, admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
-		ComponentResult componentResult1 = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult);
+		ComponentResult componentResult1 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
 		// Start a different component than the prior one
 		entityManager.getTransaction().begin();
-		ComponentResult componentResult2 = publixUtils.startComponent(
-				study.getComponent(2), studyResult);
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getComponent(2), studyResult);
 		entityManager.getTransaction().commit();
 
 		// Check new ComponentResult
-		assertThat(componentResult2.getComponentState()).isEqualTo(
-				ComponentState.STARTED);
+		assertThat(componentResult2.getComponentState())
+				.isEqualTo(ComponentState.STARTED);
 
 		// Check that prior ComponentResult was finished properly
-		assertThat(componentResult1.getComponentState()).isEqualTo(
-				ComponentState.FINISHED);
+		assertThat(componentResult1.getComponentState())
+				.isEqualTo(ComponentState.FINISHED);
 		assertThat(studyResult.getComponentResultList().get(0).getEndDate())
 				.isNotNull();
 
@@ -148,35 +143,34 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test
-	public void checkStartComponentFinishReloadableComponentResult()
+	@Test public void checkStartComponentFinishReloadableComponentResult()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
-				admin.getWorker());
+		StudyResult studyResult = studyResultDao
+				.create(study, admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
-		ComponentResult componentResult1 = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult);
+		ComponentResult componentResult1 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
 		// Start the same component a second time
 		entityManager.getTransaction().begin();
-		ComponentResult componentResult2 = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult);
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
 		// Check new ComponentResult
-		assertThat(componentResult2.getComponentState()).isEqualTo(
-				ComponentState.STARTED);
+		assertThat(componentResult2.getComponentState())
+				.isEqualTo(ComponentState.STARTED);
 
 		// Check that prior ComponentResult was finished properly
-		assertThat(componentResult1.getComponentState()).isEqualTo(
-				ComponentState.RELOADED);
+		assertThat(componentResult1.getComponentState())
+				.isEqualTo(ComponentState.RELOADED);
 		assertThat(studyResult.getComponentResultList().get(0).getEndDate())
 				.isNotNull();
 
@@ -184,21 +178,20 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test
-	public void checkStartComponentNotReloadable()
+	@Test public void checkStartComponentNotReloadable()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
-				admin.getWorker());
+		StudyResult studyResult = studyResultDao
+				.create(study, admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		study.getFirstComponent().setReloadable(false);
-		ComponentResult componentResult1 = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult);
+		ComponentResult componentResult1 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
 		// Start the same component a second times, but first is not reloadable
@@ -207,15 +200,15 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			publixUtils.startComponent(study.getFirstComponent(), studyResult);
 			Fail.fail();
 		} catch (ForbiddenReloadException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.componentNotAllowedToReload(study.getId(),
+			assertThat(e.getMessage()).isEqualTo(errorMessages
+					.componentNotAllowedToReload(study.getId(),
 							study.getFirstComponent().getId()));
 		}
 		entityManager.getTransaction().commit();
 
 		// Check that prior ComponentResult was finished properly
-		assertThat(componentResult1.getComponentState()).isEqualTo(
-				ComponentState.FAIL);
+		assertThat(componentResult1.getComponentState())
+				.isEqualTo(ComponentState.FAIL);
 		assertThat(studyResult.getComponentResultList().get(0).getEndDate())
 				.isNotNull();
 
@@ -223,23 +216,24 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test
-	public void checkGenerateIdCookieValue() throws NoSuchAlgorithmException,
-			IOException, ForbiddenReloadException {
+	@Test public void checkGenerateIdCookieValue()
+			throws NoSuchAlgorithmException, IOException,
+			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
-				admin.getWorker());
+		StudyResult studyResult = studyResultDao
+				.create(study, admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
-		ComponentResult componentResult = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult);
+		ComponentResult componentResult = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
-		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
-				componentResult, admin.getWorker());
+		String cookieValue = publixUtils
+				.generateIdCookieValue(studyResult, componentResult,
+						admin.getWorker());
 
 		// Check IDs in cookie value String
 		Map<String, String> cookieMap = new HashMap<String, String>();
@@ -259,40 +253,120 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	@Test public void checkAbortStudy()
+			throws IOException, NoSuchAlgorithmException,
+			ForbiddenReloadException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao
+				.create(study, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		studyResult.setStudySessionData("{\"test\":\"test\"}");
+		ComponentResult componentResult1 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		componentResult1.setData("test data 1");
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getComponent(2), studyResult);
+		componentResult2.setData("test data 2");
+		entityManager.getTransaction().commit();
+
+		entityManager.getTransaction().begin();
+		publixUtils.abortStudy("abort message", studyResult);
+		entityManager.getTransaction().commit();
+
+		assertThat(componentResult1.getComponentState())
+				.isEqualTo(ComponentState.FINISHED);
+		assertThat(componentResult1.getData()).isNullOrEmpty();
+		assertThat(componentResult2.getComponentState())
+				.isEqualTo(ComponentState.ABORTED);
+		assertThat(componentResult2.getData()).isNullOrEmpty();
+		assertThat(studyResult.getStudyState())
+				.isEqualTo(StudyResult.StudyState.ABORTED);
+		assertThat(studyResult.getAbortMsg()).isEqualTo("abort message");
+		assertThat(studyResult.getEndDate()).isNotNull();
+		assertThat(studyResult.getStudySessionData()).isNullOrEmpty();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test public void checkFinishStudyResultSuccessful()
+			throws IOException, NoSuchAlgorithmException,
+			ForbiddenReloadException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao
+				.create(study, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		ComponentResult componentResult1 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		componentResult1.setData("test data 1");
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getComponent(2), studyResult);
+		componentResult2.setData("test data 2");
+		entityManager.getTransaction().commit();
+
+		entityManager.getTransaction().begin();
+		String confirmationCode = publixUtils
+				.finishStudyResult(true, "error message", studyResult);
+		entityManager.getTransaction().commit();
+
+		assertThat(componentResult1.getComponentState())
+				.isEqualTo(ComponentState.FINISHED);
+		assertThat(componentResult1.getData()).isEqualTo("test data 1");
+		assertThat(componentResult2.getComponentState())
+				.isEqualTo(ComponentState.FINISHED);
+		assertThat(componentResult2.getData()).isEqualTo("test data 2");
+		assertThat(studyResult.getStudyState()).isEqualTo(
+				StudyResult.StudyState.FINISHED);
+		assertThat(studyResult.getErrorMsg()).isEqualTo("error message");
+		assertThat(studyResult.getEndDate()).isNotNull();
+		assertThat(studyResult.getStudySessionData()).isNullOrEmpty();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
 	private void createTwoStudyResults(StudyModel study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = studyResultDao.create(study,
-				admin.getWorker());
+		StudyResult studyResult1 = studyResultDao
+				.create(study, admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
-		ComponentResult componentResult11 = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult1);
+		ComponentResult componentResult11 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
 		componentResult11
 				.setData("1. StudyResult, 1. Component, 1. ComponentResult");
-		ComponentResult componentResult12 = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult1);
+		ComponentResult componentResult12 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
 		componentResult12
 				.setData("1. StudyResult, 1. Component, 2. ComponentResult");
 
-		StudyResult studyResult2 = studyResultDao.create(study,
-				admin.getWorker());
+		StudyResult studyResult2 = studyResultDao
+				.create(study, admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult2.setWorker(admin.getWorker());
-		ComponentResult componentResult211 = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult2);
+		ComponentResult componentResult211 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult2);
 		componentResult211
 				.setData("2. StudyResult, 1. Component, 1. ComponentResult");
-		ComponentResult componentResult212 = publixUtils.startComponent(
-				study.getFirstComponent(), studyResult2);
+		ComponentResult componentResult212 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult2);
 		componentResult212
 				.setData("2. StudyResult, 1. Component, 2. ComponentResult");
-		ComponentResult componentResult221 = publixUtils.startComponent(
-				study.getComponent(2), studyResult2);
+		ComponentResult componentResult221 = publixUtils
+				.startComponent(study.getComponent(2), studyResult2);
 		componentResult221
 				.setData("2. StudyResult, 2. Component, 1. ComponentResult");
-		ComponentResult componentResult222 = publixUtils.startComponent(
-				study.getComponent(2), studyResult2);
+		ComponentResult componentResult222 = publixUtils
+				.startComponent(study.getComponent(2), studyResult2);
 		componentResult222
 				.setData("2. StudyResult, 2. Component, 2. ComponentResult");
 

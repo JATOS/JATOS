@@ -42,10 +42,7 @@ public class StudyResultDao extends AbstractDao {
 	 */
 	public void remove(StudyResult studyResult) {
 		// Remove all component results of this study result
-		for (ComponentResult componentResult : studyResult
-				.getComponentResultList()) {
-			remove(componentResult);
-		}
+		studyResult.getComponentResultList().forEach(this::remove);
 
 		// Remove study result from worker
 		Worker worker = studyResult.getWorker();
@@ -62,9 +59,7 @@ public class StudyResultDao extends AbstractDao {
 	 */
 	public void removeAllOfStudy(StudyModel study) {
 		List<StudyResult> studyResultList = findAllByStudy(study);
-		for (StudyResult studyResult : studyResultList) {
-			remove(studyResult);
-		}
+		studyResultList.forEach(this::remove);
 	}
 
 	public StudyResult findById(Long id) {

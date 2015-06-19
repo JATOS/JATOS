@@ -314,7 +314,7 @@ public class ComponentServiceTest extends AbstractTest {
 
 		try {
 			componentService.checkStandardForComponents(study.getId(),
-					component.getId(), admin, component);
+					component.getId(), component);
 		} catch (BadRequestException e) {
 			Fail.fail();
 		}
@@ -322,7 +322,7 @@ public class ComponentServiceTest extends AbstractTest {
 		long nonExistentStudyId = 2l;
 		try {
 			componentService.checkStandardForComponents(nonExistentStudyId,
-					component.getId(), admin, component);
+					component.getId(), component);
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -333,7 +333,7 @@ public class ComponentServiceTest extends AbstractTest {
 		component.setStudy(null);
 		try {
 			componentService.checkStandardForComponents(study.getId(),
-					component.getId(), admin, component);
+					component.getId(), component);
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -343,7 +343,7 @@ public class ComponentServiceTest extends AbstractTest {
 		component = null;
 		try {
 			componentService.checkStandardForComponents(study.getId(), null,
-					admin, component);
+					component);
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(

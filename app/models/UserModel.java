@@ -49,7 +49,7 @@ public class UserModel {
 	private String passwordHash;
 
 	@ManyToMany(mappedBy = "memberList", fetch = FetchType.LAZY)
-	private Set<StudyModel> studyList = new HashSet<StudyModel>();
+	private Set<StudyModel> studyList = new HashSet<>();
 
 	public UserModel(String email, String name, String passwordHash) {
 		this.email = email;
@@ -140,7 +140,7 @@ public class UserModel {
 	}
 
 	public List<ValidationError> validate() {
-		List<ValidationError> errorList = new ArrayList<ValidationError>();
+		List<ValidationError> errorList = new ArrayList<>();
 		if (email == null || email.trim().isEmpty()) {
 			errorList.add(new ValidationError(EMAIL,
 					MessagesStrings.MISSING_EMAIL));

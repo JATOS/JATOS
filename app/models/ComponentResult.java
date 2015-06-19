@@ -60,7 +60,7 @@ public class ComponentResult {
 			String str = Arrays.toString(values());
 			return str.substring(1, str.length() - 1);
 		}
-	};
+	}
 
 	/**
 	 * State in the progress of a component.

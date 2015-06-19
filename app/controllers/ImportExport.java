@@ -203,7 +203,7 @@ public class ImportExport extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
-					loggedInUser, component);
+					component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -247,7 +247,7 @@ public class ImportExport extends Controller {
 					.getFile(ComponentModel.COMPONENT);
 			json = importExportService.importComponent(study, filePart);
 		} catch (ForbiddenException | BadRequestException | IOException e) {
-			importExportService.cleanupAfterComponentImport(study);
+			importExportService.cleanupAfterComponentImport();
 			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
 		}
 		return ok(json);
@@ -276,7 +276,7 @@ public class ImportExport extends Controller {
 		} catch (ForbiddenException | IOException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
 		} finally {
-			importExportService.cleanupAfterComponentImport(study);
+			importExportService.cleanupAfterComponentImport();
 		}
 		return ok(RequestScopeMessaging.getAsJson());
 	}
@@ -393,7 +393,7 @@ public class ImportExport extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
-					loggedInUser, component);
+					component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}

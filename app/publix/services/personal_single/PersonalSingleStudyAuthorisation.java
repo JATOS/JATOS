@@ -15,8 +15,8 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalSingleStudyAuthorisation implements
-		IStudyAuthorisation<PersonalSingleWorker> {
+public class PersonalSingleStudyAuthorisation
+		implements IStudyAuthorisation<PersonalSingleWorker> {
 
 	private final PersonalSinglePublixUtils publixUtils;
 	private final PersonalSingleErrorMessages errorMessages;

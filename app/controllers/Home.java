@@ -54,7 +54,7 @@ public class Home extends Controller {
 	 * Shows home view
 	 */
 	@Transactional
-	public Result home(int httpStatus) throws JatosGuiException {
+	public Result home(int httpStatus) {
 		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
@@ -66,7 +66,7 @@ public class Home extends Controller {
 	}
 
 	@Transactional
-	public Result home() throws JatosGuiException {
+	public Result home() {
 		return home(Http.Status.OK);
 	}
 
@@ -77,7 +77,7 @@ public class Home extends Controller {
 	 * logged-in user for use in the GUI's sidebar.
 	 */
 	@Transactional
-	public Result sidebarStudyList() throws JatosGuiException {
+	public Result sidebarStudyList() {
 		Logger.info(CLASS_NAME + ".sidebarStudyList: "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();

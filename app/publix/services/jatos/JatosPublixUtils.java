@@ -28,8 +28,8 @@ import controllers.Users;
 @Singleton
 public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 
-	private JatosErrorMessages errorMessages;
-	private UserDao userDao;
+	private final JatosErrorMessages errorMessages;
+	private final UserDao userDao;
 
 	@Inject
 	JatosPublixUtils(JatosErrorMessages errorMessages, UserDao userDao,

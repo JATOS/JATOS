@@ -16,9 +16,8 @@ public class PersonalSingleErrorMessages extends
 
 	@Override
 	public String workerNotCorrectType(Long workerId) {
-		String errorMsg = "The worker with ID " + workerId + " isn't a "
+		return "The worker with ID " + workerId + " isn't a "
 				+ PersonalSingleWorker.UI_WORKER_TYPE + " Worker.";
-		return errorMsg;
 	}
 
 }

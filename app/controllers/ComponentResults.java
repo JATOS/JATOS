@@ -83,7 +83,7 @@ public class ComponentResults extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
-					loggedInUser, component);
+					component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwHome(e);
 		}
@@ -146,7 +146,7 @@ public class ComponentResults extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
-					loggedInUser, component);
+					component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwHome(e);
 		}
@@ -176,7 +176,7 @@ public class ComponentResults extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
-					loggedInUser, component);
+					component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}

@@ -18,14 +18,12 @@ import controllers.Users;
  * @author Kristian Lange
  */
 @Singleton
-public class JatosStudyAuthorisation implements
-		IStudyAuthorisation<JatosWorker> {
+public class JatosStudyAuthorisation implements IStudyAuthorisation<JatosWorker> {
 
 	private final JatosErrorMessages errorMessages;
 
 	@Inject
-	JatosStudyAuthorisation(JatosPublixUtils publixUtils,
-			JatosErrorMessages errorMessages) {
+	JatosStudyAuthorisation(JatosErrorMessages errorMessages) {
 		this.errorMessages = errorMessages;
 	}
 

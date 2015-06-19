@@ -114,9 +114,7 @@ public class ComponentDao extends AbstractDao {
 		List<ComponentModel> studyList = query.setParameter("uuid", uuid)
 				.setParameter("study", study).getResultList();
 		// There can be only one component with this UUID
-		ComponentModel component = studyList.isEmpty() ? null
-				: (ComponentModel) studyList.get(0);
-		return component;
+		return studyList.isEmpty() ? null : studyList.get(0);
 	}
 	
 	/**

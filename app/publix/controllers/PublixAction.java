@@ -25,7 +25,7 @@ public class PublixAction extends play.mvc.Action.Simple {
 			Result result = e.getSimpleResult();
 			Logger.info("PublixException during call "
 					+ Controller.request().uri() + ": " + e.getMessage());
-			call = Promise.<Result> pure(result);
+			call = Promise.pure(result);
 		} catch (Exception e) {
 			Logger.error("Exception during call " + Controller.request().uri()
 					+ ": " + e.getMessage(), e);

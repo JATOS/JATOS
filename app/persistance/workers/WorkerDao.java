@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.persistence.TypedQuery;
 
-import models.ComponentResult;
 import models.StudyResult;
 import models.workers.JatosWorker;
 import models.workers.Worker;
@@ -37,10 +36,7 @@ public class WorkerDao extends AbstractDao {
 
 		// Remove all studyResults and their componentResults
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			for (ComponentResult componentResult : studyResult
-					.getComponentResultList()) {
-				remove(componentResult);
-			}
+			studyResult.getComponentResultList().forEach(this::remove);
 			remove(studyResult);
 		}
 

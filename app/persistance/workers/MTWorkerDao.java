@@ -44,9 +44,8 @@ public class MTWorkerDao extends WorkerDao {
 		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
 		List<Worker> workerList = query.setParameter("mtWorkerId", mtWorkerId)
 				.getResultList();
-		MTWorker worker = workerList.isEmpty() ? null : (MTWorker) workerList
+		return workerList.isEmpty() ? null : (MTWorker) workerList
 				.get(0);
-		return worker;
 	}
 
 }

@@ -31,7 +31,7 @@ import exceptions.NotFoundException;
 
 /**
  * Controller with actions concerning users
- * 
+ *
  * @author Kristian Lange
  */
 @JatosGui
@@ -65,83 +65,82 @@ public class Users extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		UserModel user = checkStandard(email, loggedInUser);
 		String breadcrumbs = Breadcrumbs.generateForUser(user);
-		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
-				user));
+		return ok(views.html.gui.user.profile
+				.render(loggedInUser, breadcrumbs, user));
 	}
 
 	/**
 	 * Shows a view with a form to create a new user.
 	 */
 	@Transactional
-	public Result create() throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+	public Result create() {
+		Logger.info(
+				CLASS_NAME + ".create: " + "logged-in user's email " + session(
+						Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_USER);
-		return ok(views.html.gui.user.create.render(loggedInUser, breadcrumbs,
-				Form.form(UserModel.class)));
+		return ok(views.html.gui.user.create
+				.render(loggedInUser, breadcrumbs, Form.form(UserModel.class)));
 	}
 
 	/**
 	 * Handles post request of user create form.
 	 */
 	@Transactional
-	public Result submit() throws UnsupportedEncodingException,
-			NoSuchAlgorithmException {
-		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+	public Result submit()
+			throws UnsupportedEncodingException, NoSuchAlgorithmException {
+		Logger.info(
+				CLASS_NAME + ".submit: " + "logged-in user's email " + session(
+						Users.SESSION_EMAIL));
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
+		List<StudyModel> studyList = studyDao
+				.findAllByUser(loggedInUser.getEmail());
 
 		if (form.hasErrors()) {
-			return showCreateUserAfterError(studyList, loggedInUser, form,
-					null, Http.Status.BAD_REQUEST);
+			return showCreateUserAfterError(loggedInUser, form, null,
+					Http.Status.BAD_REQUEST);
 		}
 
 		UserModel newUser = form.get();
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String password = requestData.get(UserModel.PASSWORD);
 		String passwordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
-		List<ValidationError> errorList = userService.validateNewUser(newUser,
-				password, passwordRepeat);
+		List<ValidationError> errorList = userService
+				.validateNewUser(newUser, password, passwordRepeat);
 		if (!errorList.isEmpty()) {
-			return showCreateUserAfterError(studyList, loggedInUser, form,
-					errorList, Http.Status.BAD_REQUEST);
+			return showCreateUserAfterError(loggedInUser, form, errorList,
+					Http.Status.BAD_REQUEST);
 		}
 
 		userService.createUser(newUser, password);
 		return redirect(controllers.routes.Home.home());
 	}
 
-	private Result showCreateUserAfterError(List<StudyModel> studyList,
-			UserModel loggedInUser, Form<UserModel> form,
-			List<ValidationError> errorList, int httpStatus) {
-		if (ControllerUtils.isAjax()) {
-			return status(httpStatus);
-		} else {
-			if (errorList != null) {
-				for (ValidationError error : errorList) {
-					form.reject(error);
-				}
-			}
-			String breadcrumbs = Breadcrumbs.generateForHome("New User");
-			return status(httpStatus, views.html.gui.user.create.render(
-					loggedInUser, breadcrumbs, form));
-		}
-	}
-
-	private Result showEditUserAfterError(List<StudyModel> studyList,
-			UserModel loggedInUser, Form<UserModel> form, UserModel user,
+	private Result showCreateUserAfterError(UserModel loggedInUser,
+			Form<UserModel> form, List<ValidationError> errorList,
 			int httpStatus) {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
 		} else {
-			String breadcrumbs = Breadcrumbs.generateForUser(user,
-					"Edit Profile");
-			return status(httpStatus, views.html.gui.user.editProfile.render(
-					loggedInUser, breadcrumbs, user, form));
+			if (errorList != null) {
+				errorList.forEach(form::reject);
+			}
+			String breadcrumbs = Breadcrumbs.generateForHome("New User");
+			return status(httpStatus, views.html.gui.user.create
+					.render(loggedInUser, breadcrumbs, form));
+		}
+	}
+
+	private Result showEditUserAfterError(UserModel loggedInUser,
+			Form<UserModel> form, UserModel user, int httpStatus) {
+		if (ControllerUtils.isAjax()) {
+			return status(httpStatus);
+		} else {
+			String breadcrumbs = Breadcrumbs
+					.generateForUser(user, "Edit Profile");
+			return status(httpStatus, views.html.gui.user.editProfile
+					.render(loggedInUser, breadcrumbs, user, form));
 		}
 	}
 
@@ -152,15 +151,12 @@ public class Users extends Controller {
 			return status(httpStatus);
 		} else {
 			if (errorList != null) {
-				for (ValidationError error : errorList) {
-					form.reject(error);
-				}
+				errorList.forEach(form::reject);
 			}
-			String breadcrumbs = Breadcrumbs.generateForUser(user,
-					"Change Password");
-			return status(httpStatus,
-					views.html.gui.user.changePassword.render(loggedInUser,
-							breadcrumbs, form));
+			String breadcrumbs = Breadcrumbs
+					.generateForUser(user, "Change Password");
+			return status(httpStatus, views.html.gui.user.changePassword
+					.render(loggedInUser, breadcrumbs, form));
 		}
 	}
 
@@ -174,10 +170,10 @@ public class Users extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		UserModel user = checkStandard(email, loggedInUser);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		String breadcrumbs = Breadcrumbs.generateForUser(user,
-				Breadcrumbs.EDIT_PROFILE);
-		return ok(views.html.gui.user.editProfile.render(loggedInUser,
-				breadcrumbs, user, form));
+		String breadcrumbs = Breadcrumbs
+				.generateForUser(user, Breadcrumbs.EDIT_PROFILE);
+		return ok(views.html.gui.user.editProfile
+				.render(loggedInUser, breadcrumbs, user, form));
 	}
 
 	/**
@@ -185,18 +181,19 @@ public class Users extends Controller {
 	 */
 	@Transactional
 	public Result submitEditedProfile(String email) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".submitEditedProfile: " + "email " + email
-				+ ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		Logger.info(
+				CLASS_NAME + ".submitEditedProfile: " + "email " + email + ", "
+						+ "logged-in user's email " + session(
+						Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		UserModel user = checkStandard(email, loggedInUser);
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
+		List<StudyModel> studyList = studyDao
+				.findAllByUser(loggedInUser.getEmail());
 
 		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
 		if (form.hasErrors()) {
-			return showEditUserAfterError(studyList, loggedInUser, form,
-					loggedInUser, Http.Status.BAD_REQUEST);
+			return showEditUserAfterError(loggedInUser, form, loggedInUser,
+					Http.Status.BAD_REQUEST);
 		}
 		// Update user in database
 		// Do not update 'email' since it's the ID and should stay
@@ -218,21 +215,22 @@ public class Users extends Controller {
 		UserModel user = checkStandard(email, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		String breadcrumbs = Breadcrumbs.generateForUser(user,
-				Breadcrumbs.CHANGE_PASSWORD);
-		return ok(views.html.gui.user.changePassword.render(loggedInUser,
-				breadcrumbs, form));
+		String breadcrumbs = Breadcrumbs
+				.generateForUser(user, Breadcrumbs.CHANGE_PASSWORD);
+		return ok(views.html.gui.user.changePassword
+				.render(loggedInUser, breadcrumbs, form));
 	}
 
 	/**
 	 * Handles post request of change password form.
 	 */
 	@Transactional
-	public Result submitChangedPassword(String email) throws JatosGuiException,
-			UnsupportedEncodingException, NoSuchAlgorithmException {
+	public Result submitChangedPassword(String email)
+			throws JatosGuiException, UnsupportedEncodingException,
+			NoSuchAlgorithmException {
 		Logger.info(CLASS_NAME + ".submitChangedPassword: " + "email " + email
-				+ ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+				+ ", " + "logged-in user's email " + session(
+				Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		UserModel user = checkStandard(email, loggedInUser);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
@@ -240,10 +238,11 @@ public class Users extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String newPassword = requestData.get(UserModel.PASSWORD);
 		String newPasswordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
-		String oldPasswordHash = userService.getHashMDFive(requestData
-				.get(UserModel.OLD_PASSWORD));
-		List<ValidationError> errorList = userService.validateChangePassword(
-				user, newPassword, newPasswordRepeat, oldPasswordHash);
+		String oldPasswordHash = userService
+				.getHashMDFive(requestData.get(UserModel.OLD_PASSWORD));
+		List<ValidationError> errorList = userService
+				.validateChangePassword(user, newPassword, newPasswordRepeat,
+						oldPasswordHash);
 		if (!errorList.isEmpty()) {
 			return showChangePasswordAfterError(loggedInUser, form, errorList,
 					Http.Status.BAD_REQUEST, loggedInUser);
@@ -261,8 +260,8 @@ public class Users extends Controller {
 			user = userService.retrieveUser(email);
 			userService.checkUserLoggedIn(user, loggedInUser);
 		} catch (ForbiddenException | NotFoundException e) {
-			jatosGuiExceptionThrower.throwRedirect(e,
-					controllers.routes.Home.home());
+			jatosGuiExceptionThrower
+					.throwRedirect(e, controllers.routes.Home.home());
 		}
 		return user;
 	}

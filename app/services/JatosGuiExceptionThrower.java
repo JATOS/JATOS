@@ -96,12 +96,12 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwHome(String errorMsg, int httpStatus)
 			throws JatosGuiException {
-		Result result = null;
+		Result result;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = (Result) homeProvider.get().home(httpStatus);
+			result = homeProvider.get().home(httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
 	}
@@ -113,13 +113,13 @@ public class JatosGuiExceptionThrower {
 	 * status code is determined by the exception type.
 	 */
 	public void throwHome(Exception e) throws JatosGuiException {
-		Result result = null;
+		Result result;
 		int httpStatus = getHttpStatusFromException(e);
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
-			result = (Result) homeProvider.get().home(httpStatus);
+			result = homeProvider.get().home(httpStatus);
 		}
 		throw new JatosGuiException(result, e.getMessage());
 	}
@@ -147,12 +147,12 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwStudyIndex(String errorMsg, int httpStatus, Long studyId)
 			throws JatosGuiException {
-		Result result = null;
+		Result result;
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = (Result) studiesProvider.get().index(studyId,
+			result = studiesProvider.get().index(studyId,
 					httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
@@ -166,13 +166,13 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwStudyIndex(Exception e, Long studyId)
 			throws JatosGuiException {
-		Result result = null;
+		Result result;
 		int httpStatus = getHttpStatusFromException(e);
 		if (ControllerUtils.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
-			result = (Result) studiesProvider.get().index(studyId,
+			result = studiesProvider.get().index(studyId,
 					httpStatus);
 		}
 		throw new JatosGuiException(result, e.getMessage());

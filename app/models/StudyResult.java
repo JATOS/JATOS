@@ -62,7 +62,7 @@ public class StudyResult {
 			String str = Arrays.toString(values());
 			return str.substring(1, str.length() - 1);
 		}
-	};
+	}
 
 	/**
 	 * State in the progress of a study.
@@ -87,7 +87,7 @@ public class StudyResult {
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentResultList_order")
 	@JoinColumn(name = "studyResult_id")
-	private List<ComponentResult> componentResultList = new ArrayList<ComponentResult>();
+	private List<ComponentResult> componentResultList = new ArrayList<>();
 
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)

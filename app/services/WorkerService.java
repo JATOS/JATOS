@@ -1,8 +1,8 @@
 package services;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import models.StudyModel;
 import models.StudyResult;
@@ -85,20 +85,16 @@ public class WorkerService {
 	public Set<Worker> retrieveWorkers(StudyModel study) {
 		List<StudyResult> studyResultList = studyResultDao
 				.findAllByStudy(study);
-		Set<Worker> workerSet = new HashSet<>();
-		for (StudyResult studyResult : studyResultList) {
-			workerSet.add(studyResult.getWorker());
-		}
-		return workerSet;
+		return studyResultList.stream()
+				.map(StudyResult::getWorker).collect(Collectors.toSet());
 	}
 
 	/**
 	 * Creates, validates and persists a PersonalSingleWorker.
 	 */
-	public PersonalSingleWorker createPersonalSingleWorker(String comment,
-			Long studyId) throws BadRequestException {
+	public PersonalSingleWorker createPersonalSingleWorker(String comment) throws BadRequestException {
 		PersonalSingleWorker worker = new PersonalSingleWorker(comment);
-		validateWorker(studyId, worker);
+		validateWorker(worker);
 		workerDao.create(worker);
 		return worker;
 	}
@@ -107,15 +103,14 @@ public class WorkerService {
 	 * Creates, validates and persists a PersonalMultipleWorker (worker for a
 	 * Personal Multiple Run).
 	 */
-	public PersonalMultipleWorker createPersonalMultipleWorker(String comment,
-			Long studyId) throws BadRequestException {
+	public PersonalMultipleWorker createPersonalMultipleWorker(String comment) throws BadRequestException {
 		PersonalMultipleWorker worker = new PersonalMultipleWorker(comment);
-		validateWorker(studyId, worker);
+		validateWorker(worker);
 		workerDao.create(worker);
 		return worker;
 	}
 
-	private void validateWorker(Long studyId, Worker worker)
+	private void validateWorker(Worker worker)
 			throws BadRequestException {
 		List<ValidationError> errorList = worker.validate();
 		if (errorList != null && !errorList.isEmpty()) {

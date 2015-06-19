@@ -3,6 +3,7 @@ package services;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import models.ComponentModel;
 import models.ComponentResult;
@@ -94,7 +95,7 @@ public class ResultService {
 			StudyModel study = component.getStudy();
 			studyService.checkStandardForStudy(study, study.getId(), user);
 			componentService.checkStandardForComponents(study.getId(),
-					component.getId(), user, component);
+					component.getId(), component);
 			if (studyMustNotBeLocked) {
 				studyService.checkStudyLocked(study);
 			}
@@ -174,13 +175,10 @@ public class ResultService {
 	 */
 	public List<StudyResult> getAllowedStudyResultList(UserModel user,
 			Worker worker) {
-		List<StudyResult> allowedStudyResultList = new ArrayList<StudyResult>();
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().hasMember(user)) {
-				allowedStudyResultList.add(studyResult);
-			}
-		}
-		return allowedStudyResultList;
+		return worker.getStudyResultList()
+				.stream()
+				.filter(studyResult -> studyResult.getStudy().hasMember(user))
+				.collect(Collectors.toList());
 	}
 
 	/**

@@ -20,14 +20,12 @@ public class JatosErrorMessages extends PublixErrorMessages {
 
 	@Override
 	public String workerNotCorrectType(Long workerId) {
-		String errorMsg = "The worker with ID " + workerId + " isn't a "
+		return "The worker with ID " + workerId + " isn't a "
 				+ JatosWorker.UI_WORKER_TYPE + " worker.";
-		return errorMsg;
 	}
 
 	public String userNotExist(String email) {
-		String errorMsg = "An user with email " + email + " doesn't exist.";
-		return errorMsg;
+		return "An user with email " + email + " doesn't exist.";
 	}
 
 }

@@ -49,7 +49,7 @@ public class StudyAssets extends Controller {
 	 * property is defined in the configuration file then use it as the base
 	 * path. If property isn't defined, try in default study path instead.
 	 */
-	public static String STUDY_ASSETS_ROOT_PATH = getStudyAssetsRootPath();
+	public static final String STUDY_ASSETS_ROOT_PATH = getStudyAssetsRootPath();
 
 	private static String getStudyAssetsRootPath() {
 		String tempStudyAssetsRootPath = Play.application().configuration()

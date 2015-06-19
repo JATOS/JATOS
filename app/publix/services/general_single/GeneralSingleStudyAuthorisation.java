@@ -15,8 +15,8 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class GeneralSingleStudyAuthorisation implements
-		IStudyAuthorisation<GeneralSingleWorker> {
+public class GeneralSingleStudyAuthorisation
+		implements IStudyAuthorisation<GeneralSingleWorker> {
 
 	private final GeneralSingleErrorMessages errorMessages;
 	private final GeneralSinglePublixUtils publixUtils;

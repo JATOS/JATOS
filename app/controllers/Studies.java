@@ -121,7 +121,7 @@ public class Studies extends Controller {
 	 * Shows a view with a form to create a new study.
 	 */
 	@Transactional
-	public Result create() throws JatosGuiException {
+	public Result create() {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
@@ -139,7 +139,7 @@ public class Studies extends Controller {
 	 * POST request of the form to create a new study.
 	 */
 	@Transactional
-	public Result submit() throws JatosGuiException {
+	public Result submit() {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
@@ -150,7 +150,7 @@ public class Studies extends Controller {
 				.asFormUrlEncoded());
 		List<ValidationError> errorList = study.validate();
 		if (errorList != null) {
-			return failStudyCreate(loggedInUser, studyList, study, errorList);
+			return failStudyCreate(loggedInUser, study, errorList);
 		}
 
 		studyDao.create(study, loggedInUser);
@@ -161,14 +161,13 @@ public class Studies extends Controller {
 			errorList = new ArrayList<>();
 			errorList.add(new ValidationError(StudyModel.DIRNAME, e
 					.getMessage()));
-			return failStudyCreate(loggedInUser, studyList, study, errorList);
+			return failStudyCreate(loggedInUser, study, errorList);
 		}
 
 		return redirect(controllers.routes.Studies.index(study.getId()));
 	}
 
-	private Result failStudyCreate(UserModel loggedInUser,
-			List<StudyModel> studyList, StudyModel study,
+	private Result failStudyCreate(UserModel loggedInUser, StudyModel study,
 			List<ValidationError> errorList) {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_STUDY);
@@ -185,9 +184,7 @@ public class Studies extends Controller {
 			return status(httpStatus);
 		} else {
 			if (errorList != null) {
-				for (ValidationError error : errorList) {
-					form.reject(error);
-				}
+				errorList.forEach(form::reject);
 			}
 			return status(httpStatus, views.html.gui.study.edit.render(
 					loggedInUser, breadcrumbs, submitAction, form,
@@ -248,7 +245,7 @@ public class Studies extends Controller {
 		if (errorList != null) {
 			updatedStudy.setId(studyId);
 			updatedStudy.setUuid(study.getUuid());
-			return failStudyEdit(loggedInUser, studyList, updatedStudy,
+			return failStudyEdit(loggedInUser, updatedStudy,
 					errorList);
 		}
 
@@ -259,14 +256,13 @@ public class Studies extends Controller {
 			errorList = new ArrayList<>();
 			errorList.add(new ValidationError(StudyModel.DIRNAME, e
 					.getMessage()));
-			return failStudyEdit(loggedInUser, studyList, study, errorList);
+			return failStudyEdit(loggedInUser, study, errorList);
 		}
 		return redirect(controllers.routes.Studies.index(studyId));
 	}
 
-	private Result failStudyEdit(UserModel loggedInUser,
-			List<StudyModel> studyList, StudyModel study,
-			List<ValidationError> errorList) throws JatosGuiException {
+	private Result failStudyEdit(UserModel loggedInUser, StudyModel study,
+			List<ValidationError> errorList) {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		String breadcrumbs = Breadcrumbs.generateForStudy(study,
 				Breadcrumbs.EDIT_PROPERTIES);
@@ -396,7 +392,7 @@ public class Studies extends Controller {
 			studyService.exchangeMembers(study, checkedUsers);
 		} catch (BadRequestException e) {
 			RequestScopeMessaging.error(e.getMessage());
-			Result result = (Result) changeMembers(study.getId(),
+			Result result = changeMembers(study.getId(),
 					Http.Status.BAD_REQUEST);
 			throw new JatosGuiException(result, e.getMessage());
 		}
@@ -421,7 +417,7 @@ public class Studies extends Controller {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			studyService.checkStudyLocked(study);
 			componentService.checkStandardForComponents(studyId, componentId,
-					loggedInUser, component);
+					component);
 			studyService.changeComponentPosition(newPosition, study, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
@@ -479,7 +475,7 @@ public class Studies extends Controller {
 				.trim();
 		PersonalSingleWorker worker;
 		try {
-			worker = workerService.createPersonalSingleWorker(comment, studyId);
+			worker = workerService.createPersonalSingleWorker(comment);
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}
@@ -521,7 +517,7 @@ public class Studies extends Controller {
 		String comment = json.findPath(PersonalMultipleWorker.COMMENT).asText().trim();
 		PersonalMultipleWorker worker;
 		try {
-			worker = workerService.createPersonalMultipleWorker(comment, studyId);
+			worker = workerService.createPersonalMultipleWorker(comment);
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}
@@ -577,14 +573,7 @@ public class Studies extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
-		JsonNode dataAsJson = null;
-		try {
-			dataAsJson = jsonUtils.allComponentsForUI(study.getComponentList());
-		} catch (IOException e) {
-			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
-			jatosGuiExceptionThrower.throwAjax(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
-		}
+		JsonNode dataAsJson = jsonUtils.allComponentsForUI(study.getComponentList());
 		return ok(dataAsJson);
 	}
 

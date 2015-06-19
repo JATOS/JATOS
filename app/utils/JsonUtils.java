@@ -161,8 +161,7 @@ public class JsonUtils {
 	public String asJsonForPublix(Object obj) throws JsonProcessingException {
 		ObjectWriter objectWriter = OBJECTMAPPER
 				.writerWithView(JsonForPublix.class);
-		String componentAsJson = objectWriter.writeValueAsString(obj);
-		return componentAsJson;
+		return objectWriter.writeValueAsString(obj);
 	}
 
 	/**
@@ -172,8 +171,7 @@ public class JsonUtils {
 	 * a new JSON object.
 	 */
 	public ObjectNode initData(StudyResult studyResult, StudyModel study,
-			ComponentModel component) throws IOException,
-			JsonProcessingException {
+			ComponentModel component) throws IOException {
 		String studyProperties = asJsonForPublix(study);
 		ArrayNode componentList = getComponentListForInitData(study);
 		String componentProperties = asJsonForPublix(component);
@@ -250,8 +248,7 @@ public class JsonUtils {
 			arrayNode.add(studyResultNode);
 		}
 		allStudyResultsNode.put(DATA, arrayNode);
-		String asJsonStr = OBJECTMAPPER.writeValueAsString(allStudyResultsNode);
-		return asJsonStr;
+		return OBJECTMAPPER.writeValueAsString(allStudyResultsNode);
 	}
 
 	/**
@@ -269,9 +266,8 @@ public class JsonUtils {
 			arrayNode.add(componentResultNode);
 		}
 		allComponentResultsNode.put(DATA, arrayNode);
-		String asJsonStr = OBJECTMAPPER
+		return OBJECTMAPPER
 				.writeValueAsString(allComponentResultsNode);
-		return asJsonStr;
 	}
 
 	/**
@@ -333,8 +329,7 @@ public class JsonUtils {
 	public String studyForUI(StudyModel study) throws JsonProcessingException {
 		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
 		studyNode.put("resultCount", studyResultDao.countByStudy(study));
-		String asJsonStr = OBJECTMAPPER.writeValueAsString(studyNode);
-		return asJsonStr;
+		return OBJECTMAPPER.writeValueAsString(studyNode);
 	}
 
 	/**
@@ -379,7 +374,7 @@ public class JsonUtils {
 		public String uuid;
 		public String title;
 		public boolean locked;
-		public List<SidebarComponent> componentList = new ArrayList<>();
+		public final List<SidebarComponent> componentList = new ArrayList<>();
 
 		/**
 		 * Little model class to store some component data for the UI's sidebar.
@@ -396,8 +391,7 @@ public class JsonUtils {
 	 * the 'resultCount', the number of ComponentResults of this component so
 	 * far. Intended for use in JATOS' GUI.
 	 */
-	public JsonNode allComponentsForUI(List<ComponentModel> componentList)
-			throws JsonProcessingException {
+	public JsonNode allComponentsForUI(List<ComponentModel> componentList) {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
 		int i = 1;
 		for (ComponentModel component : componentList) {
@@ -428,8 +422,7 @@ public class JsonUtils {
 		}
 		ObjectNode workersNode = OBJECTMAPPER.createObjectNode();
 		workersNode.put(DATA, arrayNode);
-		String asJsonStr = OBJECTMAPPER.writeValueAsString(workersNode);
-		return asJsonStr;
+		return OBJECTMAPPER.writeValueAsString(workersNode);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -520,8 +513,7 @@ public class JsonUtils {
 	public static <T> T unmarshallingIO(String jsonStr, Class<T> modelClass)
 			throws IOException {
 		JsonNode node = OBJECTMAPPER.readTree(jsonStr).findValue(DATA);
-		T object = OBJECTMAPPER.treeToValue(node, modelClass);
-		return object;
+		return OBJECTMAPPER.treeToValue(node, modelClass);
 	}
 
 	/**

@@ -3,7 +3,6 @@ package utils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
@@ -94,7 +93,7 @@ public class IOUtils {
 			throw new IOException(
 					MessagesStrings.couldntGeneratePathToFileOrDir(fullPath));
 		}
-		if (file == null || !file.exists() || !file.isDirectory()) {
+		if (!file.exists() || !file.isDirectory()) {
 			throw new IOException(MessagesStrings.dirPathIsntDir(fullPath));
 		}
 		return file;
@@ -325,24 +324,17 @@ public class IOUtils {
 	 */
 	public static File[] findFiles(File dir, final String prefix,
 			final String suffix) {
-		File[] matches = dir.listFiles(new FilenameFilter() {
-			public boolean accept(File file, String name) {
-				return name.startsWith(prefix) && name.endsWith(suffix);
-			}
-		});
-		return matches;
+		return dir.listFiles((file, name) ->
+				name.startsWith(prefix) && name.endsWith(suffix));
 	}
 
 	/**
 	 * Returns all directories within this directory.
 	 */
 	public static File[] findDirectories(File dir) {
-		File[] matches = dir.listFiles(new FilenameFilter() {
-			public boolean accept(File file, String name) {
-				return file.isDirectory();
-			}
+		return dir.listFiles((file, name) -> {
+			return file.isDirectory();
 		});
-		return matches;
 	}
 
 	/**

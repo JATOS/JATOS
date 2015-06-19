@@ -75,39 +75,36 @@ public class Initializer {
 	 * ClosedStandalone -> PersonalSingle
 	 */
 	private void checkWorkerTypes() {
-		JPA.withTransaction(new play.libs.F.Callback0() {
-			@Override
-			public void invoke() throws Throwable {
-				// OpenStandalone -> GeneralSingle
-				String queryStr = "UPDATE Worker SET WorkerType='GeneralSingle' WHERE WorkerType='OpenStandalone'";
-				Query query = JPA.em().createQuery(queryStr);
-				int count = query.executeUpdate();
-				if (count > 0) {
-					Logger.info(CLASS_NAME
-							+ ".checkWorkerTypes: Updated "
-							+ count
-							+ " worker of type OpenStandalone to type GeneralSingle.");
-				}
-				// Tester -> PersonalMultiple
-				queryStr = "UPDATE Worker SET WorkerType='PersonalMultiple' WHERE WorkerType='Tester'";
-				query = JPA.em().createQuery(queryStr);
-				count = query.executeUpdate();
-				if (count > 0) {
-					Logger.info(CLASS_NAME
-							+ ".checkWorkerTypes: Updated "
-							+ count
-							+ " worker of type Tester to type PersonalMultiple.");
-				}
-				// ClosedStandalone -> PersonalSingle
-				queryStr = "UPDATE Worker SET WorkerType='PersonalSingle' WHERE WorkerType='ClosedStandalone'";
-				query = JPA.em().createQuery(queryStr);
-				count = query.executeUpdate();
-				if (count > 0) {
-					Logger.info(CLASS_NAME
-							+ ".checkWorkerTypes: Updated "
-							+ count
-							+ " worker of type ClosedStandalone to type PersonalSingle.");
-				}
+		JPA.withTransaction(() -> {
+			// OpenStandalone -> GeneralSingle
+			String queryStr = "UPDATE Worker SET WorkerType='GeneralSingle' WHERE WorkerType='OpenStandalone'";
+			Query query = JPA.em().createQuery(queryStr);
+			int count = query.executeUpdate();
+			if (count > 0) {
+				Logger.info(CLASS_NAME
+						+ ".checkWorkerTypes: Updated "
+						+ count
+						+ " worker of type OpenStandalone to type GeneralSingle.");
+			}
+			// Tester -> PersonalMultiple
+			queryStr = "UPDATE Worker SET WorkerType='PersonalMultiple' WHERE WorkerType='Tester'";
+			query = JPA.em().createQuery(queryStr);
+			count = query.executeUpdate();
+			if (count > 0) {
+				Logger.info(CLASS_NAME
+						+ ".checkWorkerTypes: Updated "
+						+ count
+						+ " worker of type Tester to type PersonalMultiple.");
+			}
+			// ClosedStandalone -> PersonalSingle
+			queryStr = "UPDATE Worker SET WorkerType='PersonalSingle' WHERE WorkerType='ClosedStandalone'";
+			query = JPA.em().createQuery(queryStr);
+			count = query.executeUpdate();
+			if (count > 0) {
+				Logger.info(CLASS_NAME
+						+ ".checkWorkerTypes: Updated "
+						+ count
+						+ " worker of type ClosedStandalone to type PersonalSingle.");
 			}
 		});
 	}
@@ -116,29 +113,26 @@ public class Initializer {
 	 * Migration from older DB schema: generate UUID for all studies/components.
 	 */
 	private void checkUuid() {
-		JPA.withTransaction(new play.libs.F.Callback0() {
-			@Override
-			public void invoke() throws Throwable {
-				List<StudyModel> studyModelList = studyDao.findAll();
-				for (StudyModel study : studyModelList) {
-					if (study.getUuid() == null
-							|| study.getUuid().trim().isEmpty()) {
-						study.setUuid(UUID.randomUUID().toString());
-					}
-					Iterator<ComponentModel> iterator = study
-							.getComponentList().iterator();
-					while (iterator.hasNext()) {
-						ComponentModel component = iterator.next();
-						if (component == null) {
-							iterator.remove();
-						} else if (component.getUuid() == null
-								|| component.getUuid().trim().isEmpty()) {
-							component.setUuid(UUID.randomUUID().toString());
-							componentDao.update(component);
-						}
-					}
-					studyDao.update(study);
+		JPA.withTransaction(() -> {
+			List<StudyModel> studyModelList = studyDao.findAll();
+			for (StudyModel study : studyModelList) {
+				if (study.getUuid() == null
+						|| study.getUuid().trim().isEmpty()) {
+					study.setUuid(UUID.randomUUID().toString());
 				}
+				Iterator<ComponentModel> iterator = study
+						.getComponentList().iterator();
+				while (iterator.hasNext()) {
+					ComponentModel component = iterator.next();
+					if (component == null) {
+						iterator.remove();
+					} else if (component.getUuid() == null
+							|| component.getUuid().trim().isEmpty()) {
+						component.setUuid(UUID.randomUUID().toString());
+						componentDao.update(component);
+					}
+				}
+				studyDao.update(study);
 			}
 		});
 	}
@@ -148,13 +142,10 @@ public class Initializer {
 	 * we need an initial user: admin. If admin can't be found, create one.
 	 */
 	private void checkAdmin() {
-		JPA.withTransaction(new play.libs.F.Callback0() {
-			@Override
-			public void invoke() throws Throwable {
-				UserModel admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-				if (admin == null) {
-					userService.createAdmin();
-				}
+		JPA.withTransaction(() -> {
+			UserModel admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			if (admin == null) {
+				userService.createAdmin();
 			}
 		});
 	}

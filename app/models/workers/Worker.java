@@ -49,7 +49,7 @@ public abstract class Worker {
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "studyResultList_order")
 	@JoinColumn(name = "worker_id")
-	private List<StudyResult> studyResultList = new ArrayList<StudyResult>();
+	private List<StudyResult> studyResultList = new ArrayList<>();
 
 	public Worker() {
 	}

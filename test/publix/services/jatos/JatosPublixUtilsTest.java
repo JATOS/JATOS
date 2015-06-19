@@ -43,13 +43,6 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 	}
 
 	@Test
-	@Override
-	public void checkRetrieveWorker() throws NoSuchAlgorithmException,
-			IOException, PublixException {
-		super.checkRetrieveWorker();
-	}
-
-	@Test
 	public void checkRetrieveTypedWorker() throws NoSuchAlgorithmException,
 			IOException, PublixException {
 		JatosWorker retrievedWorker = publixUtils.retrieveTypedWorker(admin

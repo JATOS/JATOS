@@ -23,7 +23,7 @@ public class JatosGuiAction extends play.mvc.Action.Simple {
 		} catch (JatosGuiException e) {
 			Logger.info("JatosGuiException: " + e.getMessage());
 			Result result = e.getSimpleResult();
-			call = Promise.<Result> pure(result);
+			call = Promise.pure(result);
 		}
 		return call;
 	}

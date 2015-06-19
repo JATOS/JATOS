@@ -60,9 +60,7 @@ public class ResultRemover {
 		List<ComponentResult> componentResultList = resultService
 				.getComponentResults(componentResultIdList);
 		resultService.checkComponentResults(componentResultList, user, true);
-		for (ComponentResult componentResult : componentResultList) {
-			componentResultDao.remove(componentResult);
-		}
+		componentResultList.forEach(componentResultDao::remove);
 	}
 
 	/**
@@ -86,9 +84,7 @@ public class ResultRemover {
 		List<StudyResult> studyResultList = resultService
 				.getStudyResults(studyResultIdList);
 		resultService.checkStudyResults(studyResultList, user, true);
-		for (StudyResult studyResult : studyResultList) {
-			studyResultDao.remove(studyResult);
-		}
+		studyResultList.forEach(studyResultDao::remove);
 	}
 
 	/**
@@ -101,9 +97,7 @@ public class ResultRemover {
 		List<ComponentResult> componentResultList = componentResultDao
 				.findAllByComponent(component);
 		resultService.checkComponentResults(componentResultList, user, true);
-		for (ComponentResult componentResult : componentResultList) {
-			componentResultDao.remove(componentResult);
-		}
+		componentResultList.forEach(componentResultDao::remove);
 	}
 
 	/**
@@ -116,9 +110,7 @@ public class ResultRemover {
 		List<StudyResult> studyResultList = studyResultDao
 				.findAllByStudy(study);
 		resultService.checkStudyResults(studyResultList, user, true);
-		for (StudyResult studyResult : studyResultList) {
-			studyResultDao.remove(studyResult);
-		}
+		studyResultList.forEach(studyResultDao::remove);
 	}
 
 	/**
@@ -131,9 +123,7 @@ public class ResultRemover {
 		List<StudyResult> allowedStudyResultList = resultService
 				.getAllowedStudyResultList(user, worker);
 		resultService.checkStudyResults(allowedStudyResultList, user, true);
-		for (StudyResult studyResult : allowedStudyResultList) {
-			studyResultDao.remove(studyResult);
-		}
+		allowedStudyResultList.forEach(studyResultDao::remove);
 	}
 
 }
