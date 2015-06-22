@@ -19,6 +19,7 @@ import org.junit.Test;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import publix.controllers.Publix;
+import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.PublixException;
 
@@ -33,20 +34,24 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	protected PublixUtils<T> publixUtils;
 	protected PublixErrorMessages errorMessages;
 
-	@Override public void before() throws Exception {
+	@Override
+	public void before() throws Exception {
 		workerDao = Global.INJECTOR.getInstance(WorkerDao.class);
 		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
 	}
 
-	@Override public void after() throws Exception {
+	@Override
+	public void after() throws Exception {
 	}
 
-	@Test public void simpleCheck() {
+	@Test
+	public void simpleCheck() {
 		int a = 1 + 1;
 		assertThat(a).isEqualTo(2);
 	}
 
-	@Test public void checkRetrieveWorker()
+	@Test
+	public void checkRetrieveWorker()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		// Worker ID is null
 		try {
@@ -76,7 +81,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		}
 	}
 
-	@Test public void checkStartComponent()
+	@Test
+	public void checkStartComponent()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
@@ -108,7 +114,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test public void checkStartComponentFinishPriorComponentResult()
+	@Test
+	public void checkStartComponentFinishPriorComponentResult()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
@@ -143,7 +150,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test public void checkStartComponentFinishReloadableComponentResult()
+	@Test
+	public void checkStartComponentFinishReloadableComponentResult()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
@@ -178,7 +186,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test public void checkStartComponentNotReloadable()
+	@Test
+	public void checkStartComponentNotReloadable()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
@@ -216,7 +225,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test public void checkGenerateIdCookieValue()
+	@Test
+	public void checkGenerateIdCookieValue()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
@@ -236,7 +246,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 						admin.getWorker());
 
 		// Check IDs in cookie value String
-		Map<String, String> cookieMap = new HashMap<String, String>();
+		Map<String, String> cookieMap = new HashMap<>();
 		String[] idMappings = cookieValue.split("&");
 		for (String idMappingStr : idMappings) {
 			String[] idMapping = idMappingStr.split("=");
@@ -253,8 +263,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test public void checkAbortStudy()
-			throws IOException, NoSuchAlgorithmException,
+	@Test
+	public void checkAbortStudy() throws IOException, NoSuchAlgorithmException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
@@ -293,7 +303,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test public void checkFinishStudyResultSuccessful()
+	@Test
+	public void checkFinishStudyResultSuccessful()
 			throws IOException, NoSuchAlgorithmException,
 			ForbiddenReloadException {
 		StudyModel study = importExampleStudy();
@@ -313,8 +324,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		entityManager.getTransaction().begin();
-		String confirmationCode = publixUtils
-				.finishStudyResult(true, "error message", studyResult);
+		publixUtils.finishStudyResult(true, "error message", studyResult);
 		entityManager.getTransaction().commit();
 
 		assertThat(componentResult1.getComponentState())
@@ -323,11 +333,148 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		assertThat(componentResult2.getComponentState())
 				.isEqualTo(ComponentState.FINISHED);
 		assertThat(componentResult2.getData()).isEqualTo("test data 2");
-		assertThat(studyResult.getStudyState()).isEqualTo(
-				StudyResult.StudyState.FINISHED);
+		assertThat(studyResult.getStudyState())
+				.isEqualTo(StudyResult.StudyState.FINISHED);
 		assertThat(studyResult.getErrorMsg()).isEqualTo("error message");
 		assertThat(studyResult.getEndDate()).isNotNull();
 		assertThat(studyResult.getStudySessionData()).isNullOrEmpty();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkFinishAllPriorStudyResults()
+			throws IOException, NoSuchAlgorithmException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult1 = studyResultDao
+				.create(study, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult1.setWorker(admin.getWorker());
+		StudyResult studyResult2 = studyResultDao
+				.create(study, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult2.setWorker(admin.getWorker());
+		entityManager.getTransaction().commit();
+
+		publixUtils.finishAllPriorStudyResults(admin.getWorker(), study);
+
+		assertThat(studyResult1.getStudyState())
+				.isEqualTo(StudyResult.StudyState.FAIL);
+		assertThat(studyResult1.getErrorMsg())
+				.isEqualTo(PublixErrorMessages.STUDY_NEVER_FINSHED);
+		assertThat(studyResult2.getStudyState())
+				.isEqualTo(StudyResult.StudyState.FAIL);
+		assertThat(studyResult2.getErrorMsg())
+				.isEqualTo(PublixErrorMessages.STUDY_NEVER_FINSHED);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveWorkersLastStudyResult()
+			throws IOException, NoSuchAlgorithmException,
+			ForbiddenPublixException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyModel clone = studyService.cloneStudy(study, admin);
+		entityManager.getTransaction().commit();
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult1 = studyResultDao
+				.create(study, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult1.setWorker(admin.getWorker());
+		StudyResult studyResult2 = studyResultDao
+				.create(study, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult2.setWorker(admin.getWorker());
+		StudyResult studyResult3 = studyResultDao
+				.create(clone, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult3.setWorker(admin.getWorker());
+		entityManager.getTransaction().commit();
+
+		StudyResult lastStudyResult = publixUtils
+				.retrieveWorkersLastStudyResult(admin.getWorker(), study);
+
+		assertThat(lastStudyResult).isEqualTo(studyResult2);
+
+		// Clean-up
+		removeStudy(study);
+		removeStudy(clone);
+	}
+
+	@Test
+	public void checkRetrieveWorkersLastStudyResultNeverDidStudy()
+			throws IOException, NoSuchAlgorithmException,
+			ForbiddenPublixException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyModel clone = studyService.cloneStudy(study, admin);
+		entityManager.getTransaction().commit();
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult1 = studyResultDao
+				.create(clone, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult1.setWorker(admin.getWorker());
+		StudyResult studyResult2 = studyResultDao
+				.create(clone, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult2.setWorker(admin.getWorker());
+		entityManager.getTransaction().commit();
+
+		try {
+			publixUtils
+					.retrieveWorkersLastStudyResult(admin.getWorker(), study);
+			Fail.fail();
+		} catch (ForbiddenPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(errorMessages
+					.workerNeverDidStudy(admin.getWorker(), study.getId()));
+		}
+
+		// Clean-up
+		removeStudy(study);
+		removeStudy(clone);
+	}
+
+	@Test
+	public void checkRetrieveWorkersLastStudyResultAlreadyFinished()
+			throws IOException, NoSuchAlgorithmException,
+			ForbiddenPublixException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult1 = studyResultDao
+				.create(study, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult1.setWorker(admin.getWorker());
+		StudyResult studyResult2 = studyResultDao
+				.create(study, admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult2.setWorker(admin.getWorker());
+		publixUtils.finishStudyResult(true, null, studyResult2);
+		entityManager.getTransaction().commit();
+
+		try {
+			publixUtils
+					.retrieveWorkersLastStudyResult(admin.getWorker(), study);
+			Fail.fail();
+		} catch (ForbiddenPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(errorMessages
+					.workerFinishedStudyAlready(admin.getWorker(),
+							study.getId()));
+		}
 
 		// Clean-up
 		removeStudy(study);
