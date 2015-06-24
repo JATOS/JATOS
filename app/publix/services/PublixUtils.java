@@ -102,8 +102,7 @@ public abstract class PublixUtils<T extends Worker> {
 	public ComponentResult startComponent(ComponentModel component,
 			StudyResult studyResult) throws ForbiddenReloadException {
 		// Deal with the last component
-		ComponentResult lastComponentResult = retrieveLastComponentResult(
-				studyResult);
+		ComponentResult lastComponentResult = retrieveLastComponentResult(studyResult);
 		if (lastComponentResult != null) {
 			if (lastComponentResult.getComponent().equals(component)) {
 				// The component to be started is the same as the last one
@@ -116,8 +115,9 @@ public abstract class PublixUtils<T extends Worker> {
 					// component and study with FAIL
 					finishComponentResult(lastComponentResult,
 							ComponentState.FAIL);
-					String errorMsg = errorMessages.componentNotAllowedToReload(
-							studyResult.getStudy().getId(), component.getId());
+					String errorMsg = errorMessages
+							.componentNotAllowedToReload(studyResult.getStudy()
+									.getId(), component.getId());
 					// exceptionalFinishStudy(studyResult, errorMsg);
 					throw new ForbiddenReloadException(errorMsg);
 				}
@@ -180,8 +180,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public void abortStudy(String message, StudyResult studyResult) {
 		// Put current ComponentResult into state ABORTED
-		ComponentResult currentComponentResult = retrieveCurrentComponentResult(
-				studyResult);
+		ComponentResult currentComponentResult = retrieveCurrentComponentResult(studyResult);
 		finishComponentResult(currentComponentResult, ComponentState.ABORTED);
 
 		// Finish the other ComponentResults
@@ -206,12 +205,15 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Finishes a StudyResult (includes ComponentResults) and returns a
 	 * confirmation code.
 	 *
-	 * @param successful  If true finishes all ComponentResults, generates a
-	 *                    confirmation code and set the StudyResult's state to FINISHED.
-	 *                    If false it only sets the state to FAIL.
-	 * @param errorMsg    Will be set in the StudyResult. Can be null if no error
-	 *                    happened.
-	 * @param studyResult A StudyResult
+	 * @param successful
+	 *            If true finishes all ComponentResults, generates a
+	 *            confirmation code and set the StudyResult's state to FINISHED.
+	 *            If false it only sets the state to FAIL.
+	 * @param errorMsg
+	 *            Will be set in the StudyResult. Can be null if no error
+	 *            happened.
+	 * @param studyResult
+	 *            A StudyResult
 	 * @return The confirmation code
 	 */
 	public String finishStudyResult(Boolean successful, String errorMsg,
@@ -237,10 +239,13 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	private void finishAllComponentResults(StudyResult studyResult) {
-		studyResult.getComponentResultList().stream()
+		studyResult
+				.getComponentResultList()
+				.stream()
 				.filter(componentResult -> !componentDone(componentResult))
-				.forEach(componentResult -> finishComponentResult(
-						componentResult, ComponentState.FINISHED));
+				.forEach(
+						componentResult -> finishComponentResult(
+								componentResult, ComponentState.FINISHED));
 	}
 
 	/**
@@ -303,30 +308,31 @@ public abstract class PublixUtils<T extends Worker> {
 			StudyResult studyResult = worker.getStudyResultList().get(i);
 			if (studyResult.getStudy().getId().equals(study.getId())) {
 				if (studyDone(studyResult)) {
-					throw new ForbiddenPublixException(errorMessages
-							.workerFinishedStudyAlready(worker, study.getId()));
+					throw new ForbiddenPublixException(
+							errorMessages.workerFinishedStudyAlready(worker,
+									study.getId()));
 				} else {
 					return studyResult;
 				}
 			}
 		}
 		// This worker never started a StudyResult of this study
-		throw new ForbiddenPublixException(
-				errorMessages.workerNeverDidStudy(worker, study.getId()));
+		throw new ForbiddenPublixException(errorMessages.workerNeverDidStudy(
+				worker, study.getId()));
 	}
 
 	/**
 	 * Returns the last ComponentResult in the given StudyResult or null if it
 	 * doesn't exist.
 	 */
-	public ComponentResult retrieveLastComponentResult(
-			StudyResult studyResult) {
+	public ComponentResult retrieveLastComponentResult(StudyResult studyResult) {
 		List<ComponentResult> componentResultList = studyResult
 				.getComponentResultList();
 		if (!componentResultList.isEmpty()) {
 			return componentResultList.get(componentResultList.size() - 1);
+		} else {
+			return null;
 		}
-		return null;
 	}
 
 	/**
@@ -334,21 +340,18 @@ public abstract class PublixUtils<T extends Worker> {
 	 * exist.
 	 */
 	public ComponentModel retrieveLastComponent(StudyResult studyResult) {
-		ComponentResult componentResult = retrieveLastComponentResult(
-				studyResult);
-		return (componentResult != null) ?
-				componentResult.getComponent() :
-				null;
+		ComponentResult componentResult = retrieveLastComponentResult(studyResult);
+		return (componentResult != null) ? componentResult.getComponent()
+				: null;
 	}
 
 	/**
-	 * Returns the last ComponentResult of this studyResult if it's not
-	 * 'done'. Returns null if such ComponentResult doesn't exists.
+	 * Returns the last ComponentResult of this studyResult if it's not 'done'.
+	 * Returns null if such ComponentResult doesn't exists.
 	 */
 	public ComponentResult retrieveCurrentComponentResult(
 			StudyResult studyResult) {
-		ComponentResult componentResult = retrieveLastComponentResult(
-				studyResult);
+		ComponentResult componentResult = retrieveLastComponentResult(studyResult);
 		if (componentDone(componentResult)) {
 			return null;
 		}
@@ -362,8 +365,7 @@ public abstract class PublixUtils<T extends Worker> {
 	public ComponentResult retrieveStartedComponentResult(
 			ComponentModel component, StudyResult studyResult)
 			throws ForbiddenReloadException {
-		ComponentResult componentResult = retrieveCurrentComponentResult(
-				studyResult);
+		ComponentResult componentResult = retrieveCurrentComponentResult(studyResult);
 		// Start the component if it was never started (== null) or if it's
 		// a reload of the component
 		if (componentResult == null) {
@@ -397,12 +399,12 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public ComponentModel retrieveNextActiveComponent(StudyResult studyResult) {
 		ComponentModel currentComponent = retrieveLastComponent(studyResult);
-		ComponentModel nextComponent = studyResult.getStudy()
-				.getNextComponent(currentComponent);
+		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
+				currentComponent);
 		// Find next active component or null if study has no more components
 		while (nextComponent != null && !nextComponent.isActive()) {
-			nextComponent = studyResult.getStudy()
-					.getNextComponent(nextComponent);
+			nextComponent = studyResult.getStudy().getNextComponent(
+					nextComponent);
 		}
 		return nextComponent;
 	}
@@ -411,28 +413,34 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Returns the component with the given component ID that belongs to the
 	 * given study.
 	 *
-	 * @param study       A StudyModel
-	 * @param componentId The component's ID
+	 * @param study
+	 *            A StudyModel
+	 * @param componentId
+	 *            The component's ID
 	 * @return The ComponentModel
-	 * @throws NotFoundPublixException   Thrown if such component doesn't exist.
-	 * @throws BadRequestPublixException Thrown if the component doesn't belong to the given study.
-	 * @throws ForbiddenPublixException  Thrown if the component isn't active.
+	 * @throws NotFoundPublixException
+	 *             Thrown if such component doesn't exist.
+	 * @throws BadRequestPublixException
+	 *             Thrown if the component doesn't belong to the given study.
+	 * @throws ForbiddenPublixException
+	 *             Thrown if the component isn't active.
 	 */
 	public ComponentModel retrieveComponent(StudyModel study, Long componentId)
 			throws NotFoundPublixException, BadRequestPublixException,
 			ForbiddenPublixException {
 		ComponentModel component = componentDao.findById(componentId);
 		if (component == null) {
-			throw new NotFoundPublixException(errorMessages
-					.componentNotExist(study.getId(), componentId));
+			throw new NotFoundPublixException(errorMessages.componentNotExist(
+					study.getId(), componentId));
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
-			throw new BadRequestPublixException(errorMessages
-					.componentNotBelongToStudy(study.getId(), componentId));
+			throw new BadRequestPublixException(
+					errorMessages.componentNotBelongToStudy(study.getId(),
+							componentId));
 		}
 		if (!component.isActive()) {
-			throw new ForbiddenPublixException(errorMessages
-					.componentNotActive(study.getId(), componentId));
+			throw new ForbiddenPublixException(
+					errorMessages.componentNotActive(study.getId(), componentId));
 		}
 		return component;
 	}
@@ -448,8 +456,8 @@ public abstract class PublixUtils<T extends Worker> {
 		try {
 			component = study.getComponent(position);
 		} catch (IndexOutOfBoundsException e) {
-			throw new NotFoundPublixException(errorMessages
-					.noComponentAtPosition(study.getId(), position));
+			throw new NotFoundPublixException(
+					errorMessages.noComponentAtPosition(study.getId(), position));
 		}
 		return component;
 	}
@@ -475,8 +483,8 @@ public abstract class PublixUtils<T extends Worker> {
 	public void checkComponentBelongsToStudy(StudyModel study,
 			ComponentModel component) throws PublixException {
 		if (!component.getStudy().equals(study)) {
-			throw new BadRequestPublixException(errorMessages
-					.componentNotBelongToStudy(study.getId(),
+			throw new BadRequestPublixException(
+					errorMessages.componentNotBelongToStudy(study.getId(),
 							component.getId()));
 		}
 	}
@@ -487,8 +495,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public boolean finishedStudyAlready(Worker worker, StudyModel study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().equals(study) && studyDone(
-					studyResult)) {
+			if (studyResult.getStudy().equals(study) && studyDone(studyResult)) {
 				return true;
 			}
 		}
