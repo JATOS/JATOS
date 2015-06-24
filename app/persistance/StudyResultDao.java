@@ -5,7 +5,6 @@ import java.util.List;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
-import models.ComponentResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.Worker;
