@@ -322,8 +322,8 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Returns the last ComponentResult in the given StudyResult or null if it
-	 * doesn't exist.
+	 * Returns the last ComponentResult in the given StudyResult (not study!) or
+	 * null if it doesn't exist.
 	 */
 	public ComponentResult retrieveLastComponentResult(StudyResult studyResult) {
 		List<ComponentResult> componentResultList = studyResult
@@ -336,8 +336,8 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Retrieves the last ComponentResult's component or null if it doesn't
-	 * exist.
+	 * Retrieves the last ComponentResult's component (of the given StudyResult)
+	 * or null if it doesn't exist.
 	 */
 	public ComponentModel retrieveLastComponent(StudyResult studyResult) {
 		ComponentResult componentResult = retrieveLastComponentResult(studyResult);
