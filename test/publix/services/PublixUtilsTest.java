@@ -20,6 +20,7 @@ import org.junit.Test;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import publix.controllers.Publix;
+import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.NotFoundPublixException;
@@ -478,22 +479,24 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	}
 
 	@Test
-	public void checkRetrieveFirstActiveComponent()
-			throws IOException, NoSuchAlgorithmException, NotFoundPublixException {
+	public void checkRetrieveFirstActiveComponent() throws IOException,
+			NoSuchAlgorithmException, NotFoundPublixException {
 		StudyModel study = importExampleStudy();
 		study.getFirstComponent().setActive(false);
 		addStudy(study);
 
-		ComponentModel component = publixUtils.retrieveFirstActiveComponent(study);
+		ComponentModel component = publixUtils
+				.retrieveFirstActiveComponent(study);
 		assertThat(component).isEqualTo(study.getComponent(2));
-		
+
 		// Clean-up
 		removeStudy(study);
 	}
-	
+
 	@Test
 	public void checkRetrieveFirstActiveComponentNonActive()
-			throws IOException, NoSuchAlgorithmException, NotFoundPublixException {
+			throws IOException, NoSuchAlgorithmException,
+			NotFoundPublixException {
 		StudyModel study = importExampleStudy();
 		for (ComponentModel component : study.getComponentList()) {
 			component.setActive(false);
@@ -507,13 +510,123 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			assertThat(e.getMessage()).isEqualTo(
 					errorMessages.studyHasNoActiveComponents(study.getId()));
 		}
-		
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveNextActiveComponent() throws IOException,
+			NoSuchAlgorithmException, NotFoundPublixException,
+			ForbiddenReloadException {
+		StudyModel study = importExampleStudy();
+		for (ComponentModel component : study.getComponentList()) {
+			component.setActive(false);
+		}
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study,
+				admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		publixUtils.startComponent(study.getFirstComponent(), studyResult);
+		entityManager.getTransaction().commit();
+
+		ComponentModel component = publixUtils
+				.retrieveNextActiveComponent(studyResult);
+		// Since the 2. component is not active ...
+		assertThat(component).isNull();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveComponent() throws IOException,
+			NotFoundPublixException, BadRequestPublixException,
+			ForbiddenPublixException {
+		StudyModel study = importExampleStudy();
+		study.getLastComponent().setStudy(study);
+		addStudy(study);
+
+		ComponentModel component = publixUtils.retrieveComponent(study, study
+				.getLastComponent().getId());
+		assertThat(component).isEqualTo(study.getLastComponent());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveComponentWrongId() throws IOException,
+			NotFoundPublixException, BadRequestPublixException,
+			ForbiddenPublixException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		try {
+			publixUtils.retrieveComponent(study, 999l);
+			Fail.fail();
+		} catch (NotFoundPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					errorMessages.componentNotExist(study.getId(), 999l));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveComponentWrongComponent() throws IOException,
+			NotFoundPublixException, BadRequestPublixException,
+			ForbiddenPublixException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyModel clone = studyService.cloneStudy(study, admin);
+		entityManager.getTransaction().commit();
+
+		try {
+			publixUtils.retrieveComponent(study, clone.getFirstComponent()
+					.getId());
+			Fail.fail();
+		} catch (BadRequestPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					errorMessages.componentNotBelongToStudy(study.getId(),
+							clone.getFirstComponent().getId()));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveComponentNotActive() throws IOException,
+			NotFoundPublixException, BadRequestPublixException,
+			ForbiddenPublixException {
+		StudyModel study = importExampleStudy();
+		study.getFirstComponent().setActive(false);
+		study.getFirstComponent().setStudy(study);
+		addStudy(study);
+
+		try {
+			publixUtils.retrieveComponent(study, study.getFirstComponent()
+					.getId());
+			Fail.fail();
+		} catch (ForbiddenPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					errorMessages.componentNotActive(study.getId(), study
+							.getFirstComponent().getId()));
+		}
+
 		// Clean-up
 		removeStudy(study);
 	}
 
 	private void createTwoStudyResults(StudyModel study)
-			throws ForbiddenReloadException {
+			throws ForbiddenReloadException, IOException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = studyResultDao.create(study,
 				admin.getWorker());
@@ -557,6 +670,9 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		componentResult221.getComponent().setStudy(study);
 		componentResult222.getComponent().setStudy(study);
 		entityManager.getTransaction().commit();
+
+		// Clean-up
+		removeStudy(study);
 	}
 
 }
