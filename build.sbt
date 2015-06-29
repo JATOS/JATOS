@@ -8,9 +8,7 @@ organization := "org.jatos"
 
 scalaVersion := "2.11.6"
 
-javaHome := Some(file("/usr/lib/jvm/jdk1.8.0_40"))
-
-javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+lazy val root = (project in file(".")).enablePlugins(PlayJava, SbtWeb)
 
 libraryDependencies ++= Seq(
 	javaCore,
@@ -27,7 +25,13 @@ libraryDependencies ++= Seq(
 	"org.webjars" % "bootstrap" % "3.3.4"
 )
 
-lazy val root = (project in file(".")).enablePlugins(PlayJava, SbtWeb)
+javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
+
+initialize := {
+  val _ = initialize.value
+  if (sys.props("java.specification.version") != "1.8")
+    sys.error("Java 8 is required for this project.")
+}
 
 includeFilter in (Assets, LessKeys.less) := "*.less"
 
