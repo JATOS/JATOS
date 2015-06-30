@@ -508,7 +508,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public boolean didStudyAlready(Worker worker, StudyModel study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().getId().equals(study.getId())) {
+			if (studyResult.getStudy().equals(study)) {
 				return true;
 			}
 		}
