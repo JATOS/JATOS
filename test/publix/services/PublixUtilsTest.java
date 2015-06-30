@@ -12,6 +12,7 @@ import models.ComponentResult;
 import models.ComponentResult.ComponentState;
 import models.StudyModel;
 import models.StudyResult;
+import models.StudyResult.StudyState;
 import models.workers.Worker;
 
 import org.fest.assertions.Fail;
@@ -25,6 +26,7 @@ import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.NotFoundPublixException;
 import publix.exceptions.PublixException;
+
 import common.AbstractTest;
 import common.Global;
 
@@ -600,6 +602,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		// Clean-up
 		removeStudy(study);
+		removeStudy(clone);
 	}
 
 	@Test
@@ -621,6 +624,278 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 							.getFirstComponent().getId()));
 		}
 
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveComponentByPosition() throws IOException,
+			PublixException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		ComponentModel component = publixUtils.retrieveComponentByPosition(
+				study.getId(), 1);
+		assertThat(component).isEqualTo(study.getFirstComponent());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveComponentByPositionNull() throws IOException,
+			PublixException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		try {
+			publixUtils.retrieveComponentByPosition(study.getId(), null);
+			Fail.fail();
+		} catch (BadRequestPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					PublixErrorMessages.COMPONENTS_POSITION_NOT_NULL);
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveComponentByPositionWrong() throws IOException,
+			PublixException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		try {
+			publixUtils.retrieveComponentByPosition(study.getId(), 999);
+			Fail.fail();
+		} catch (NotFoundPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					errorMessages.noComponentAtPosition(study.getId(), 999));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveStudy() throws NotFoundPublixException,
+			IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		StudyModel retrievedStudy = publixUtils.retrieveStudy(study.getId());
+		assertThat(retrievedStudy).isEqualTo(study);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkRetrieveStudyNotFound() throws NotFoundPublixException,
+			IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		try {
+			publixUtils.retrieveStudy(999l);
+			Fail.fail();
+		} catch (NotFoundPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					errorMessages.studyNotExist(999l));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkComponentBelongsToStudy() throws IOException,
+			PublixException {
+		StudyModel study = importExampleStudy();
+		study.getFirstComponent().setStudy(study);
+		addStudy(study);
+
+		publixUtils.checkComponentBelongsToStudy(study,
+				study.getFirstComponent());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkComponentBelongsToStudyFail() throws IOException,
+			PublixException {
+		StudyModel study = importExampleStudy();
+		study.getFirstComponent().setStudy(study);
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyModel clone = studyService.cloneStudy(study, admin);
+		entityManager.getTransaction().commit();
+
+		try {
+			publixUtils.checkComponentBelongsToStudy(study,
+					clone.getFirstComponent());
+			Fail.fail();
+		} catch (BadRequestPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(
+					errorMessages.componentNotBelongToStudy(study.getId(),
+							clone.getFirstComponent().getId()));
+		}
+
+		// Clean-up
+		removeStudy(study);
+		removeStudy(clone);
+	}
+
+	@Test
+	public void checkFinishedStudyAlready() throws IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study,
+				admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		entityManager.getTransaction().commit();
+
+		// FINISHED, ABORTED, FAIL must return true
+		studyResult.setStudyState(StudyState.FINISHED);
+		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+				.isTrue();
+		studyResult.setStudyState(StudyState.ABORTED);
+		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+				.isTrue();
+		studyResult.setStudyState(StudyState.FAIL);
+		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+				.isTrue();
+
+		// DATA_RETRIEVED, STARTED must return false
+		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
+		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+				.isFalse();
+		studyResult.setStudyState(StudyState.STARTED);
+		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+				.isFalse();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkFinishedStudyAlreadyWrong() throws IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyModel clone = studyService.cloneStudy(study, admin);
+		entityManager.getTransaction().commit();
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(clone,
+				admin.getWorker());
+		studyResult.setStudyState(StudyState.FINISHED);
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		entityManager.getTransaction().commit();
+
+		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+				.isFalse();
+
+		// Clean-up
+		removeStudy(study);
+		removeStudy(clone);
+	}
+
+	@Test
+	public void checkDidStudyAlready() throws IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		assertThat(publixUtils.didStudyAlready(admin.getWorker(), study))
+				.isFalse();
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study,
+				admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		entityManager.getTransaction().commit();
+
+		assertThat(publixUtils.didStudyAlready(admin.getWorker(), study))
+				.isTrue();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkStudyDone() throws IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study,
+				admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		entityManager.getTransaction().commit();
+
+		// FINISHED, ABORTED, FAIL must return true
+		studyResult.setStudyState(StudyState.FINISHED);
+		assertThat(publixUtils.studyDone(studyResult)).isTrue();
+		studyResult.setStudyState(StudyState.ABORTED);
+		assertThat(publixUtils.studyDone(studyResult)).isTrue();
+		studyResult.setStudyState(StudyState.FAIL);
+		assertThat(publixUtils.studyDone(studyResult)).isTrue();
+
+		// DATA_RETRIEVED, STARTED must return false
+		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
+		assertThat(publixUtils.studyDone(studyResult)).isFalse();
+		studyResult.setStudyState(StudyState.STARTED);
+		assertThat(publixUtils.studyDone(studyResult)).isFalse();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	@Test
+	public void checkComponentDone() throws IOException,
+			ForbiddenReloadException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study,
+				admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		ComponentResult componentResult = publixUtils.startComponent(
+				study.getFirstComponent(), studyResult);
+		// Have to set study manually in test - don't know why
+		componentResult.getComponent().setStudy(study);
+		entityManager.getTransaction().commit();
+
+		// A component is done if state FINISHED, ABORTED, FAIL, or RELOADED
+		componentResult.setComponentState(ComponentState.FINISHED);
+		assertThat(publixUtils.componentDone(componentResult)).isTrue();
+		componentResult.setComponentState(ComponentState.ABORTED);
+		assertThat(publixUtils.componentDone(componentResult)).isTrue();
+		componentResult.setComponentState(ComponentState.FAIL);
+		assertThat(publixUtils.componentDone(componentResult)).isTrue();
+		componentResult.setComponentState(ComponentState.RELOADED);
+		assertThat(publixUtils.componentDone(componentResult)).isTrue();
+		
+		// Not done if 
+		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
+		assertThat(publixUtils.componentDone(componentResult)).isFalse();
+		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
+		assertThat(publixUtils.componentDone(componentResult)).isFalse();
+		componentResult.setComponentState(ComponentState.STARTED);
+		assertThat(publixUtils.componentDone(componentResult)).isFalse();
+		
 		// Clean-up
 		removeStudy(study);
 	}
