@@ -59,4 +59,3 @@ mappings in Universal := (mappings in Universal).value filter {
 
 Keys.fork in Test := false
 
-fork in run := true
