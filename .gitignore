@@ -15,6 +15,7 @@ dist
 /.project
 /RUNNING_PID
 /.settings
+/.sbtserver
 /application.secret
 /study_assets_root/
 /database/
