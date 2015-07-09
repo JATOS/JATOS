@@ -81,9 +81,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	JatosPublix(JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
 			JatosErrorMessages errorMessages,
+			StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
-		super(publixUtils, studyAuthorisation, errorMessages,
+		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
 				componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
@@ -179,7 +180,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				component);
 		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(request()
 				.uri(), request().host(), urlPath);
-		return forwardTo(urlWithQueryStr);
+		return studyAssets.forwardTo(urlWithQueryStr);
 	}
 
 	@Override

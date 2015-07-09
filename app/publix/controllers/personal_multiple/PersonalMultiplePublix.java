@@ -9,6 +9,7 @@ import play.Logger;
 import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
+import publix.controllers.StudyAssets;
 import publix.exceptions.PublixException;
 import publix.services.personal_multiple.PersonalMultipleErrorMessages;
 import publix.services.personal_multiple.PersonalMultiplePublixUtils;
@@ -40,9 +41,9 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	PersonalMultiplePublix(PersonalMultiplePublixUtils publixUtils,
 			PersonalMultipleStudyAuthorisation studyAuthorisation,
 			PersonalMultipleErrorMessages errorMessages,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao) {
-		super(publixUtils, studyAuthorisation, errorMessages,
+			StudyAssets studyAssets, ComponentResultDao componentResultDao,
+			JsonUtils jsonUtils, StudyResultDao studyResultDao) {
+		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
 				componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;

@@ -13,6 +13,7 @@ import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
 import publix.controllers.PublixInterceptor;
+import publix.controllers.StudyAssets;
 import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.PublixException;
 import publix.services.mt.MTErrorMessages;
@@ -57,9 +58,10 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	MTPublix(MTPublixUtils publixUtils,
 			MTStudyAuthorisation studyAuthorisation,
 			MTErrorMessages errorMessages,
+			StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
-		super(publixUtils, studyAuthorisation, errorMessages,
+		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
 				componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;

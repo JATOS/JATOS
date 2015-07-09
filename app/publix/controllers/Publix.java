@@ -13,7 +13,6 @@ import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
 import play.libs.F.Promise;
-import play.libs.ws.WS;
 import play.mvc.Controller;
 import play.mvc.Result;
 import publix.exceptions.ForbiddenReloadException;
@@ -54,18 +53,20 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	protected final PublixUtils<T> publixUtils;
 	protected final IStudyAuthorisation<T> studyAuthorisation;
 	protected final PublixErrorMessages errorMessages;
+	protected final StudyAssets studyAssets;
 	protected final JsonUtils jsonUtils;
 	protected final ComponentResultDao componentResultDao;
 	protected final StudyResultDao studyResultDao;
 
 	public Publix(PublixUtils<T> utils,
 			IStudyAuthorisation<T> studyAuthorisation,
-			PublixErrorMessages errorMessages,
+			PublixErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
+		this.studyAssets = studyAssets;
 		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
@@ -100,7 +101,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				component);
 		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(request()
 				.uri(), request().host(), urlPath);
-		return forwardTo(urlWithQueryStr);
+		return studyAssets.forwardTo(urlWithQueryStr);
 	}
 
 	@Override
@@ -322,19 +323,6 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			value = value.trim();
 		}
 		return value;
-	}
-
-	/**
-	 * Like an internal redirect or an proxy. The URL in the browser doesn't
-	 * change.
-	 */
-	public Promise<Result> forwardTo(String url) {
-		return WS.url(url).get().map(response -> {
-			// Prevent browser from caching pages - this would be an
-			// security issue and additionally confuse the study flow
-				response().setHeader("Cache-control", "no-cache, no-store");
-				return ok(response.getBody()).as("text/html");
-			});
 	}
 
 }

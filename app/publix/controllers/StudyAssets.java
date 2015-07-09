@@ -3,15 +3,17 @@ package publix.controllers;
 import java.io.File;
 import java.io.IOException;
 
-import com.google.inject.Singleton;
-
 import models.ComponentModel;
 import play.Logger;
 import play.Play;
+import play.libs.F.Promise;
+import play.libs.ws.WS;
 import play.mvc.Controller;
 import play.mvc.Result;
 import utils.ControllerUtils;
 import utils.IOUtils;
+
+import com.google.inject.Singleton;
 import common.Common;
 
 /**
@@ -127,4 +129,18 @@ public class StudyAssets extends Controller {
 		// encryption (at least when I checked with Play 2.2.3).
 		return "http://" + requestHost + newUrlPath;
 	}
+
+	/**
+	 * Like an internal redirect or an proxy. The URL in the browser doesn't
+	 * change.
+	 */
+	public Promise<Result> forwardTo(String url) {
+		return WS.url(url).get().map(response -> {
+			// Prevent browser from caching pages - this would be an
+			// security issue and additionally confuse the study flow
+				response().setHeader("Cache-control", "no-cache, no-store");
+				return ok(response.getBody()).as("text/html");
+			});
+	}
+
 }

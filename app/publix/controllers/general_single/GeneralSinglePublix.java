@@ -11,6 +11,7 @@ import play.mvc.Http.Cookie;
 import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
+import publix.controllers.StudyAssets;
 import publix.exceptions.PublixException;
 import publix.services.general_single.GeneralSingleErrorMessages;
 import publix.services.general_single.GeneralSinglePublixUtils;
@@ -47,10 +48,10 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 	@Inject
 	GeneralSinglePublix(GeneralSinglePublixUtils publixUtils,
 			GeneralSingleStudyAuthorisation studyAuthorisation,
-			GeneralSingleErrorMessages errorMessages,
+			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, WorkerDao workerDao) {
-		super(publixUtils, studyAuthorisation, errorMessages,
+		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
 				componentResultDao, jsonUtils, studyResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
