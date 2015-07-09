@@ -1,6 +1,5 @@
 package common;
 
-
 import static org.mockito.Mockito.mock;
 
 import java.io.File;
@@ -39,6 +38,7 @@ import play.db.jpa.JPAPlugin;
 import play.mvc.Http;
 import play.test.FakeApplication;
 import play.test.Helpers;
+import play.test.TestServer;
 import publix.controllers.StudyAssets;
 import scala.Option;
 import services.StudyService;
@@ -62,9 +62,11 @@ public abstract class AbstractTest {
 	private static final String TEST_COMPONENT_JAC_PATH = "test/resources/quit_button.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "quit_button_bkp.jac";
 
-	private static Server server;
+	private static Server dbH2Server;
 	protected FakeApplication application;
+	protected TestServer testServer;
 	protected EntityManager entityManager;
+	protected StudyAssets studyAssets;
 	protected UserService userService;
 	protected StudyService studyService;
 	protected UserDao userDao;
@@ -84,9 +86,15 @@ public abstract class AbstractTest {
 				.newInstance();
 
 		application = Helpers.fakeApplication(global);
-		Helpers.start(application);
+		if (testServer != null) {
+			testServer.stop();
+		}
+		testServer = Helpers.testServer(play.api.test.Helpers.testServerPort(),
+				application);
+		testServer.start();
 
 		// Use Guice dependency injection
+		studyAssets = Global.INJECTOR.getInstance(StudyAssets.class);
 		userService = Global.INJECTOR.getInstance(UserService.class);
 		studyService = Global.INJECTOR.getInstance(StudyService.class);
 		userDao = Global.INJECTOR.getInstance(UserDao.class);
@@ -115,19 +123,21 @@ public abstract class AbstractTest {
 		}
 		JPA.bindForCurrentThread(null);
 		removeStudyAssetsRootDir();
-		Helpers.stop(application);
+		if (testServer != null) {
+			testServer.stop();
+		}
 	}
 
 	@BeforeClass
 	public static void startDB() throws SQLException {
-		server = Server.createTcpServer().start();
-		System.out.println("URL: jdbc:h2:" + server.getURL()
+		dbH2Server = Server.createTcpServer().start();
+		System.out.println("URL: jdbc:h2:" + dbH2Server.getURL()
 				+ "/mem:test/jatos");
 	}
 
 	@AfterClass
 	public static void stopDB() {
-		server.stop();
+		dbH2Server.stop();
 	}
 
 	/**
@@ -239,7 +249,7 @@ public abstract class AbstractTest {
 		studyDao.findById(studyClone.getId()).removeMember(member);
 		entityManager.getTransaction().commit();
 	}
-	
+
 	protected void addWorker(Worker worker) {
 		entityManager.getTransaction().begin();
 		workerDao.create(worker);
