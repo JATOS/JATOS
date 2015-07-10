@@ -10,9 +10,12 @@ import play.libs.F.Promise;
 import play.libs.ws.WS;
 import play.mvc.Controller;
 import play.mvc.Result;
+import publix.exceptions.NotFoundPublixException;
+import services.MessagesStrings;
 import utils.ControllerUtils;
 import utils.IOUtils;
 
+import com.google.common.base.Strings;
 import com.google.inject.Singleton;
 import common.Common;
 
@@ -105,7 +108,12 @@ public class StudyAssets extends Controller {
 	}
 
 	public static String getComponentUrlPath(String studyAssetsDirName,
-			ComponentModel component) {
+			ComponentModel component) throws NotFoundPublixException {
+		if (Strings.isNullOrEmpty(studyAssetsDirName)
+				|| Strings.isNullOrEmpty(component.getHtmlFilePath())) {
+			throw new NotFoundPublixException(
+					MessagesStrings.htmlFilePathEmpty(component.getId()));
+		}
 		return "/" + URL_STUDY_ASSETS + "/" + studyAssetsDirName + "/"
 				+ component.getHtmlFilePath();
 	}
@@ -139,7 +147,7 @@ public class StudyAssets extends Controller {
 			// Prevent browser from caching pages - this would be an
 			// security issue and additionally confuse the study flow
 				response().setHeader("Cache-control", "no-cache, no-store");
-				return ok(response.getBody()).as("text/html");
+				return ok(response.getBody()).as("text/html; charset=utf-8");
 			});
 	}
 
