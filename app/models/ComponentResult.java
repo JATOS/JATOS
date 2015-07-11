@@ -13,8 +13,6 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
-import utils.DateUtils;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -132,10 +130,6 @@ public class ComponentResult {
 
 	public Timestamp getEndDate() {
 		return this.endDate;
-	}
-
-	public String getDuration() {
-		return DateUtils.getDurationPretty(startDate, endDate);
 	}
 
 	public void setComponentState(ComponentState state) {
