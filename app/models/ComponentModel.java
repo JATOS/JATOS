@@ -220,8 +220,8 @@ public class ComponentModel {
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (htmlFilePath != null && !htmlFilePath.trim().isEmpty()) {
-			// This regular expression defines how a proper HTML file path should look like
-			String pathRegEx = "^(\\w+)(\\/\\w+)?\\.\\w+(\\?(\\w+=[\\w\\d]+(&\\w+=[\\w\\d]+)+)+)*$";
+			// This regular expression defines how a file path should look like
+			String pathRegEx = "^[\\w\\d_-][\\w\\d\\/_-]*\\.[\\w\\d_-]+$";
 			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.trim()
 					.isEmpty())) {
 				errorList
