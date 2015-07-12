@@ -8,6 +8,7 @@ import models.StudyResult;
 import models.UserModel;
 import models.workers.Worker;
 import persistance.StudyDao;
+import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.Logger;
 import play.db.jpa.Transactional;
@@ -56,13 +57,15 @@ public class StudyResults extends Controller {
 	private final ResultService resultService;
 	private final StudyDao studyDao;
 	private final WorkerDao workerDao;
+	private final StudyResultDao studyResultDao;
 
 	@Inject
 	StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
 			WorkerService workerService, ResultRemover resultRemover,
 			ResultService resultService, StudyDao studyDao,
-			JsonUtils jsonUtils, WorkerDao workerDao) {
+			JsonUtils jsonUtils, WorkerDao workerDao,
+			StudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
@@ -72,6 +75,7 @@ public class StudyResults extends Controller {
 		this.studyDao = studyDao;
 		this.jsonUtils = jsonUtils;
 		this.workerDao = workerDao;
+		this.studyResultDao = studyResultDao;
 	}
 
 	/**
@@ -196,7 +200,8 @@ public class StudyResults extends Controller {
 		String dataAsJson = null;
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			dataAsJson = jsonUtils.allStudyResultsForUI(study);
+			dataAsJson = jsonUtils.allStudyResultsForUI(studyResultDao
+					.findAllByStudy(study));
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
