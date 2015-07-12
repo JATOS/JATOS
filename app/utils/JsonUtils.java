@@ -18,8 +18,6 @@ import models.workers.Worker;
 
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
 
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
@@ -213,10 +211,10 @@ public class JsonUtils {
 		final int MAX_CHAR_PER_RESULT = 1000;
 		String data = componentResult.getData();
 		if (data != null) {
-			if (!Jsoup.isValid(data, Whitelist.none())) {
-				return "Component data contains potentially harmful code won't"
-						+ " be displayed here. However you can still export the data.";
-			} else if (data.length() < MAX_CHAR_PER_RESULT) {
+			// Escape HTML tags and &
+			data = data.replace("&", "&amp").replace("<", "&lt;")
+					.replace(">", "&gt;");
+			if (data.length() < MAX_CHAR_PER_RESULT) {
 				return data;
 			} else {
 				return data.substring(0, MAX_CHAR_PER_RESULT) + " ...";
@@ -224,15 +222,6 @@ public class JsonUtils {
 		} else {
 			return "none";
 		}
-	}
-
-	/**
-	 * Returns all studyResults of a study as a JSON string. It's including the
-	 * studyResult's componentResults.
-	 */
-	public String allStudyResultsForUI(StudyModel study)
-			throws JsonProcessingException {
-		return allStudyResultsForUI(studyResultDao.findAllByStudy(study));
 	}
 
 	/**
@@ -266,8 +255,7 @@ public class JsonUtils {
 			arrayNode.add(componentResultNode);
 		}
 		allComponentResultsNode.put(DATA, arrayNode);
-		return OBJECTMAPPER
-				.writeValueAsString(allComponentResultsNode);
+		return OBJECTMAPPER.writeValueAsString(allComponentResultsNode);
 	}
 
 	/**
