@@ -270,9 +270,11 @@ public class JsonUtils {
 				.valueToTree(initializeAndUnproxy(studyResult.getWorker()));
 		studyResultNode.put("worker", workerNode);
 
-		// Add study's ID and title
+		// Add extra variables
 		studyResultNode.put("studyId", studyResult.getStudy().getId());
 		studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
+		studyResultNode.put("duration", DateUtils.getDurationPretty(
+				studyResult.getStartDate(), studyResult.getEndDate()));
 
 		// Add all componentResults
 		ArrayNode arrayNode = studyResultNode.arrayNode();
@@ -294,13 +296,15 @@ public class JsonUtils {
 		ObjectNode componentResultNode = OBJECTMAPPER
 				.valueToTree(componentResult);
 
-		// Add studyId and componentId
+		// Add extra variables
 		componentResultNode.put("studyId", componentResult.getComponent()
 				.getStudy().getId());
 		componentResultNode.put("componentId", componentResult.getComponent()
 				.getId());
 		componentResultNode.put("componentTitle", componentResult
 				.getComponent().getTitle());
+		componentResultNode.put("duration", DateUtils.getDurationPretty(
+				componentResult.getStartDate(), componentResult.getEndDate()));
 
 		// Add componentResult's data
 		componentResultNode
