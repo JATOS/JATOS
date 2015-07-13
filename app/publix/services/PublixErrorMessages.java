@@ -12,7 +12,7 @@ import com.google.inject.Singleton;
 @Singleton
 public class PublixErrorMessages {
 
-	public static final String STUDY_NEVER_FINSHED = "Study never finished, but new study started by the same worker";
+	public static final String STUDY_NEVER_FINSHED = "Study not completed, but new study started by the same worker";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
 	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
