@@ -10,9 +10,9 @@ import java.util.Set;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
-import models.workers.PersonalSingleWorker;
 import models.workers.MTWorker;
 import models.workers.PersonalMultipleWorker;
+import models.workers.PersonalSingleWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.StudyDao;
@@ -29,7 +29,7 @@ import play.mvc.Result;
 import publix.controllers.jatos.JatosPublix;
 import publix.controllers.personal_multiple.PersonalMultiplePublix;
 import publix.controllers.personal_single.PersonalSinglePublix;
-import services.Breadcrumbs;
+import services.BreadcrumbsService;
 import services.ComponentService;
 import services.JatosGuiExceptionThrower;
 import services.MessagesStrings;
@@ -43,8 +43,8 @@ import utils.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
+
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.BadRequestException;
@@ -69,6 +69,7 @@ public class Studies extends Controller {
 	private final ComponentService componentService;
 	private final UserService userService;
 	private final WorkerService workerService;
+	private final BreadcrumbsService breadcrumbsService;
 	private final UserDao userDao;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
@@ -78,7 +79,8 @@ public class Studies extends Controller {
 	Studies(UserDao userDao, JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
 			UserService userService, WorkerService workerService,
-			StudyDao studyDao, ComponentDao componentDao, JsonUtils jsonUtils,
+			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
+			ComponentDao componentDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao) {
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
@@ -86,6 +88,7 @@ public class Studies extends Controller {
 		this.componentService = componentService;
 		this.userService = userService;
 		this.workerService = workerService;
+		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.jsonUtils = jsonUtils;
@@ -104,7 +107,7 @@ public class Studies extends Controller {
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
-		String breadcrumbs = Breadcrumbs.generateForStudy(study);
+		String breadcrumbs = breadcrumbsService.generateForStudy(study);
 		String baseUrl = ControllerUtils.getReferer();
 		int studyResultCount = studyResultDao.countByStudy(study);
 		return status(httpStatus, views.html.gui.study.index.render(
@@ -130,7 +133,8 @@ public class Studies extends Controller {
 		// It's a generic template for editing a study. We have to tell it the
 		// submit action.
 		Call submitAction = controllers.routes.Studies.submit();
-		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_STUDY);
+		String breadcrumbs = breadcrumbsService
+				.generateForHome(BreadcrumbsService.NEW_STUDY);
 		return ok(views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
 				submitAction, form, false));
 	}
@@ -168,7 +172,8 @@ public class Studies extends Controller {
 	private Result failStudyCreate(UserModel loggedInUser, StudyModel study,
 			List<ValidationError> errorList) {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
-		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_STUDY);
+		String breadcrumbs = breadcrumbsService
+				.generateForHome(BreadcrumbsService.NEW_STUDY);
 		Call submitAction = controllers.routes.Studies.submit();
 		return showEditStudyAfterError(loggedInUser, form, errorList,
 				Http.Status.BAD_REQUEST, breadcrumbs, submitAction, false);
@@ -207,8 +212,8 @@ public class Studies extends Controller {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
 		Call submitAction = controllers.routes.Studies.submitEdited(study
 				.getId());
-		String breadcrumbs = Breadcrumbs.generateForStudy(study,
-				Breadcrumbs.EDIT_PROPERTIES);
+		String breadcrumbs = breadcrumbsService.generateForStudy(study,
+				BreadcrumbsService.EDIT_PROPERTIES);
 		return ok(views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
 				submitAction, form, study.isLocked()));
 	}
@@ -241,8 +246,7 @@ public class Studies extends Controller {
 		if (errorList != null) {
 			updatedStudy.setId(studyId);
 			updatedStudy.setUuid(study.getUuid());
-			return failStudyEdit(loggedInUser, updatedStudy,
-					errorList);
+			return failStudyEdit(loggedInUser, updatedStudy, errorList);
 		}
 
 		studyService.updateStudy(study, updatedStudy);
@@ -260,8 +264,8 @@ public class Studies extends Controller {
 	private Result failStudyEdit(UserModel loggedInUser, StudyModel study,
 			List<ValidationError> errorList) {
 		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
-		String breadcrumbs = Breadcrumbs.generateForStudy(study,
-				Breadcrumbs.EDIT_PROPERTIES);
+		String breadcrumbs = breadcrumbsService.generateForStudy(study,
+				BreadcrumbsService.EDIT_PROPERTIES);
 		Call submitAction = controllers.routes.Studies.submitEdited(study
 				.getId());
 		return showEditStudyAfterError(loggedInUser, form, errorList,
@@ -359,8 +363,8 @@ public class Studies extends Controller {
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		List<UserModel> userList = userDao.findAll();
-		String breadcrumbs = Breadcrumbs.generateForStudy(study,
-				Breadcrumbs.CHANGE_MEMBERS);
+		String breadcrumbs = breadcrumbsService.generateForStudy(study,
+				BreadcrumbsService.CHANGE_MEMBERS);
 		return status(httpStatus, views.html.gui.study.changeMembers.render(
 				loggedInUser, breadcrumbs, study, userList));
 	}
@@ -487,8 +491,8 @@ public class Studies extends Controller {
 	/**
 	 * Ajax request
 	 * 
-	 * Creates a PersonalMultipleWorker and returns the URL that can be used for a personal
-	 * multiple run.
+	 * Creates a PersonalMultipleWorker and returns the URL that can be used for
+	 * a personal multiple run.
 	 */
 	@Transactional
 	public Result createPersonalMultipleRun(Long studyId)
@@ -510,7 +514,8 @@ public class Studies extends Controller {
 					.studyCreationOfPersonalMultipleRunFailed(studyId);
 			return badRequest(errorMsg);
 		}
-		String comment = json.findPath(PersonalMultipleWorker.COMMENT).asText().trim();
+		String comment = json.findPath(PersonalMultipleWorker.COMMENT).asText()
+				.trim();
 		PersonalMultipleWorker worker;
 		try {
 			worker = workerService.createPersonalMultipleWorker(comment);
@@ -521,7 +526,8 @@ public class Studies extends Controller {
 		String url = ControllerUtils.getReferer()
 				+ publix.controllers.routes.PublixInterceptor.startStudy(
 						study.getId()).url() + "?"
-				+ PersonalMultiplePublix.PERSONAL_MULTIPLE_ID + "=" + worker.getId();
+				+ PersonalMultiplePublix.PERSONAL_MULTIPLE_ID + "="
+				+ worker.getId();
 		return ok(url);
 	}
 
@@ -550,8 +556,8 @@ public class Studies extends Controller {
 			RequestScopeMessaging
 					.warning(MessagesStrings.MTWORKER_ALLOWANCE_MISSING);
 		}
-		String breadcrumbs = Breadcrumbs.generateForStudy(study,
-				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
+		String breadcrumbs = breadcrumbsService.generateForStudy(study,
+				BreadcrumbsService.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 		return ok(views.html.gui.study.mTurkSourceCode.render(loggedInUser,
 				breadcrumbs, study, jatosURL));
 	}
@@ -569,7 +575,8 @@ public class Studies extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
-		JsonNode dataAsJson = jsonUtils.allComponentsForUI(study.getComponentList());
+		JsonNode dataAsJson = jsonUtils.allComponentsForUI(study
+				.getComponentList());
 		return ok(dataAsJson);
 	}
 
@@ -586,8 +593,8 @@ public class Studies extends Controller {
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		RequestScopeMessaging.error(errorMsg);
-		String breadcrumbs = Breadcrumbs.generateForStudy(study,
-				Breadcrumbs.WORKERS);
+		String breadcrumbs = breadcrumbsService.generateForStudy(study,
+				BreadcrumbsService.WORKERS);
 		return status(httpStatus, views.html.gui.study.studysWorkers.render(
 				loggedInUser, breadcrumbs, study));
 	}

@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import play.mvc.Result;
 import play.test.FakeRequest;
-import services.Breadcrumbs;
+import services.BreadcrumbsService;
 import utils.IOUtils;
 import utils.JsonUtils;
 
@@ -77,7 +77,7 @@ public class StudiesControllerTest extends AbstractTest {
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
-		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_STUDY);
+		assertThat(contentAsString(result)).contains(BreadcrumbsService.NEW_STUDY);
 	}
 
 	@Test
@@ -129,7 +129,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 		Result result = callAction(controllers.routes.ref.Studies.submit(),
 				request);
-		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_STUDY);
+		assertThat(contentAsString(result)).contains(BreadcrumbsService.NEW_STUDY);
 		assertThat(contentAsString(result)).contains(
 				"Problems deserializing JSON data string: invalid JSON format");
 	}
@@ -149,7 +149,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 		Result result = callAction(controllers.routes.ref.Studies.submit(),
 				request);
-		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_STUDY);
+		assertThat(contentAsString(result)).contains(BreadcrumbsService.NEW_STUDY);
 		assertThat(contentAsString(result)).contains(
 				"couldn&#x27;t be created because it already exists.");
 		removeStudy(studyClone);
@@ -167,7 +167,7 @@ public class StudiesControllerTest extends AbstractTest {
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
 		assertThat(contentAsString(result)).contains(
-				Breadcrumbs.EDIT_PROPERTIES);
+				BreadcrumbsService.EDIT_PROPERTIES);
 
 		// Clean up
 		removeStudy(studyClone);
@@ -373,7 +373,7 @@ public class StudiesControllerTest extends AbstractTest {
 						Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(
-				Breadcrumbs.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
+				BreadcrumbsService.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 
 		// Clean up
 		removeStudy(studyClone);
@@ -388,7 +388,7 @@ public class StudiesControllerTest extends AbstractTest {
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
-		assertThat(contentAsString(result)).contains(Breadcrumbs.WORKERS);
+		assertThat(contentAsString(result)).contains(BreadcrumbsService.WORKERS);
 
 		// Clean up
 		removeStudy(studyClone);

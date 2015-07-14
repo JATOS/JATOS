@@ -12,7 +12,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.Breadcrumbs;
+import services.BreadcrumbsService;
 import services.ComponentService;
 import services.JatosGuiExceptionThrower;
 import services.ResultRemover;
@@ -48,6 +48,7 @@ public class ComponentResults extends Controller {
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
+	private final BreadcrumbsService breadcrumbsService;
 	private final ResultRemover resultRemover;
 	private final JsonUtils jsonUtils;
 	private final StudyDao studyDao;
@@ -56,12 +57,14 @@ public class ComponentResults extends Controller {
 	@Inject
 	ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
-			UserService userService, ResultRemover resultRemover,
-			StudyDao studyDao, ComponentDao componentDao, JsonUtils jsonUtils) {
+			UserService userService, BreadcrumbsService breadcrumbsService,
+			ResultRemover resultRemover, StudyDao studyDao,
+			ComponentDao componentDao, JsonUtils jsonUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
 		this.userService = userService;
+		this.breadcrumbsService = breadcrumbsService;
 		this.resultRemover = resultRemover;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
@@ -89,8 +92,8 @@ public class ComponentResults extends Controller {
 		}
 
 		RequestScopeMessaging.error(errorMsg);
-		String breadcrumbs = Breadcrumbs.generateForComponent(study, component,
-				Breadcrumbs.RESULTS);
+		String breadcrumbs = breadcrumbsService.generateForComponent(study,
+				component, BreadcrumbsService.RESULTS);
 		return status(httpStatus,
 				views.html.gui.result.componentResults.render(loggedInUser,
 						breadcrumbs, study, component));

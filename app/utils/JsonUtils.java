@@ -6,10 +6,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 
+import models.Breadcrumbs;
+import models.Breadcrumbs.Breadcrumb;
 import models.ComponentModel;
 import models.ComponentResult;
 import models.StudyModel;
@@ -22,7 +23,6 @@ import org.hibernate.proxy.HibernateProxy;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
-import services.Breadcrumbs;
 import services.MessagesStrings;
 import utils.JsonUtils.SidebarStudy.SidebarComponent;
 
@@ -430,13 +430,10 @@ public class JsonUtils {
 	public static String asJson(Breadcrumbs breadcrumbs)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
-		for (Entry<String, String> entry : breadcrumbs.getBreadcrumbs()
-				.entrySet()) {
-			String name = entry.getKey();
-			String url = entry.getValue();
+		for (Breadcrumb breadcrumb : breadcrumbs.getBreadcrumbs()) {
 			ObjectNode node = OBJECTMAPPER.createObjectNode();
-			node.put("name", name);
-			node.put("url", url);
+			node.put("name", breadcrumb.name);
+			node.put("url", breadcrumb.url);
 			arrayNode.add(node);
 		}
 		return OBJECTMAPPER.writeValueAsString(arrayNode);

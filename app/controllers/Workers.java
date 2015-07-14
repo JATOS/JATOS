@@ -13,7 +13,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.Breadcrumbs;
+import services.BreadcrumbsService;
 import services.JatosGuiExceptionThrower;
 import services.MessagesStrings;
 import services.StudyService;
@@ -46,6 +46,7 @@ public class Workers extends Controller {
 	private final StudyService studyService;
 	private final UserService userService;
 	private final WorkerService workerService;
+	private final BreadcrumbsService breadcrumbsService;
 	private final JsonUtils jsonUtils;
 	private final StudyDao studyDao;
 	private final WorkerDao workerDao;
@@ -53,12 +54,13 @@ public class Workers extends Controller {
 	@Inject
 	Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
-			WorkerService workerService, StudyDao studyDao,
-			JsonUtils jsonUtils, WorkerDao workerDao) {
+			WorkerService workerService, BreadcrumbsService breadcrumbsService,
+			StudyDao studyDao, JsonUtils jsonUtils, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
 		this.workerService = workerService;
+		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 		this.jsonUtils = jsonUtils;
 		this.workerDao = workerDao;
@@ -80,8 +82,8 @@ public class Workers extends Controller {
 					controllers.routes.Home.home());
 		}
 
-		String breadcrumbs = Breadcrumbs.generateForWorker(worker,
-				Breadcrumbs.RESULTS);
+		String breadcrumbs = breadcrumbsService.generateForWorker(worker,
+				BreadcrumbsService.RESULTS);
 		return status(httpStatus,
 				views.html.gui.result.workersStudyResults.render(loggedInUser,
 						breadcrumbs, worker));

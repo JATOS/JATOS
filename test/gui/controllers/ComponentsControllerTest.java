@@ -25,7 +25,7 @@ import org.junit.Test;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import publix.controllers.jatos.JatosPublix;
-import services.Breadcrumbs;
+import services.BreadcrumbsService;
 import utils.IOUtils;
 import controllers.Components;
 import controllers.Users;
@@ -110,7 +110,7 @@ public class ComponentsControllerTest extends AbstractTest {
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
-		assertThat(contentAsString(result)).contains(Breadcrumbs.NEW_COMPONENT);
+		assertThat(contentAsString(result)).contains(BreadcrumbsService.NEW_COMPONENT);
 
 		// Clean up
 		removeStudy(studyClone);

@@ -10,7 +10,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.Breadcrumbs;
+import services.BreadcrumbsService;
 import services.JatosGuiExceptionThrower;
 import services.MessagesStrings;
 import services.UserService;
@@ -39,14 +39,16 @@ public class Home extends Controller {
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final JsonUtils jsonUtils;
 	private final UserService userService;
+	private final BreadcrumbsService breadcrumbsService;
 	private final StudyDao studyDao;
 
 	@Inject
 	Home(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			JsonUtils jsonUtils, UserService userService, StudyDao studyDao) {
+			JsonUtils jsonUtils, UserService userService, BreadcrumbsService breadcrumbsService, StudyDao studyDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.jsonUtils = jsonUtils;
 		this.userService = userService;
+		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 	}
 
@@ -60,7 +62,7 @@ public class Home extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
-		String breadcrumbs = Breadcrumbs.generateForHome();
+		String breadcrumbs = breadcrumbsService.generateForHome();
 		return status(httpStatus, views.html.gui.home.render(studyList,
 				loggedInUser, breadcrumbs));
 	}

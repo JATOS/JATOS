@@ -15,7 +15,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.Breadcrumbs;
+import services.BreadcrumbsService;
 import services.JatosGuiExceptionThrower;
 import services.MessagesStrings;
 import services.ResultRemover;
@@ -27,8 +27,8 @@ import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
+
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.BadRequestException;
@@ -53,6 +53,7 @@ public class StudyResults extends Controller {
 	private final StudyService studyService;
 	private final UserService userService;
 	private final WorkerService workerService;
+	private final BreadcrumbsService breadcrumbsService;
 	private final ResultRemover resultRemover;
 	private final ResultService resultService;
 	private final StudyDao studyDao;
@@ -62,14 +63,15 @@ public class StudyResults extends Controller {
 	@Inject
 	StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
-			WorkerService workerService, ResultRemover resultRemover,
-			ResultService resultService, StudyDao studyDao,
-			JsonUtils jsonUtils, WorkerDao workerDao,
+			WorkerService workerService, BreadcrumbsService breadcrumbsService,
+			ResultRemover resultRemover, ResultService resultService,
+			StudyDao studyDao, JsonUtils jsonUtils, WorkerDao workerDao,
 			StudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
 		this.workerService = workerService;
+		this.breadcrumbsService = breadcrumbsService;
 		this.resultRemover = resultRemover;
 		this.resultService = resultService;
 		this.studyDao = studyDao;
@@ -95,8 +97,8 @@ public class StudyResults extends Controller {
 		}
 
 		RequestScopeMessaging.error(errorMsg);
-		String breadcrumbs = Breadcrumbs.generateForStudy(study,
-				Breadcrumbs.RESULTS);
+		String breadcrumbs = breadcrumbsService.generateForStudy(study,
+				BreadcrumbsService.RESULTS);
 		return status(httpStatus,
 				views.html.gui.result.studysStudyResults.render(loggedInUser,
 						breadcrumbs, study));

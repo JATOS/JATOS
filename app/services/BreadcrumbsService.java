@@ -1,28 +1,29 @@
 package services;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-import common.RequestScopeMessaging;
+import models.Breadcrumbs;
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
 import models.workers.Worker;
 import play.Logger;
-import play.mvc.Call;
 import utils.JsonUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.inject.Singleton;
+
+import common.RequestScopeMessaging;
 
 /**
  * Provides breadcrumbs for different views of JATOS' GUI.
  * 
  * @author Kristian Lange
  */
-public class Breadcrumbs {
+@Singleton
+public class BreadcrumbsService {
 
-	private static final String CLASS_NAME = Breadcrumbs.class.getSimpleName();
-	
+	private static final String CLASS_NAME = BreadcrumbsService.class
+			.getSimpleName();
+
 	public static final String HOME = "Home";
 	public static final String EDIT_PROPERTIES = "Edit Properties";
 	public static final String WORKERS = "Workers";
@@ -35,33 +36,18 @@ public class Breadcrumbs {
 	public static final String EDIT_PROFILE = "Edit Profile";
 	public static final String NEW_USER = "New User";
 
-	private final Map<String, String> breadcrumbs = new LinkedHashMap<>();
-
-	public Map<String, String> getBreadcrumbs() {
-		return breadcrumbs;
-	}
-
-	private Breadcrumbs put(String name, String url) {
-		this.breadcrumbs.put(name, url);
-		return this;
-	}
-
-	private Breadcrumbs put(String name, Call call) {
-		this.breadcrumbs.put(name, call.url());
-		return this;
-	}
-
-	public static String generateForHome() {
+	public String generateForHome() {
 		return generateForHome(null);
 	}
 
-	public static String generateForHome(String last) {
+	public String generateForHome(String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		if (last != null) {
-			breadcrumbs = new Breadcrumbs().put(HOME,
-					controllers.routes.Home.home()).put(last, "");
+			breadcrumbs.addBreadcrumb(HOME, controllers.routes.Home.home()
+					.url());
+			breadcrumbs.addBreadcrumb(last, "");
 		} else {
-			breadcrumbs.put(HOME, "");
+			breadcrumbs.addBreadcrumb(HOME, "");
 		}
 		String breadcrumbsStr = "";
 		try {
@@ -74,19 +60,19 @@ public class Breadcrumbs {
 		return breadcrumbsStr;
 	}
 
-	public static String generateForUser(UserModel user) {
+	public String generateForUser(UserModel user) {
 		return generateForUser(user, null);
 	}
 
-	public static String generateForUser(UserModel user, String last) {
-		Breadcrumbs breadcrumbs = new Breadcrumbs().put(HOME,
-				controllers.routes.Home.home());
+	public String generateForUser(UserModel user, String last) {
+		Breadcrumbs breadcrumbs = new Breadcrumbs();
+		breadcrumbs.addBreadcrumb(HOME, controllers.routes.Home.home().url());
 		if (last != null) {
-			breadcrumbs.put(user.toString(),
-					controllers.routes.Users.profile(user.getEmail())).put(
-					last, "");
+			breadcrumbs.addBreadcrumb(user.toString(), controllers.routes.Users
+					.profile(user.getEmail()).url());
+			breadcrumbs.addBreadcrumb(last, "");
 		} else {
-			breadcrumbs.put(user.toString(), "");
+			breadcrumbs.addBreadcrumb(user.toString(), "");
 		}
 		String breadcrumbsStr = "";
 		try {
@@ -99,19 +85,19 @@ public class Breadcrumbs {
 		return breadcrumbsStr;
 	}
 
-	public static String generateForStudy(StudyModel study) {
+	public String generateForStudy(StudyModel study) {
 		return generateForStudy(study, null);
 	}
 
-	public static String generateForStudy(StudyModel study, String last) {
-		Breadcrumbs breadcrumbs = new Breadcrumbs().put(HOME,
-				controllers.routes.Home.home());
+	public String generateForStudy(StudyModel study, String last) {
+		Breadcrumbs breadcrumbs = new Breadcrumbs();
+		breadcrumbs.addBreadcrumb(HOME, controllers.routes.Home.home().url());
 		if (last != null) {
-			breadcrumbs.put(study.getTitle(),
-					controllers.routes.Studies.index(study.getId())).put(last,
-					"");
+			breadcrumbs.addBreadcrumb(study.getTitle(),
+					controllers.routes.Studies.index(study.getId()).url());
+			breadcrumbs.addBreadcrumb(last, "");
 		} else {
-			breadcrumbs.put(study.getTitle(), "");
+			breadcrumbs.addBreadcrumb(study.getTitle(), "");
 		}
 		String breadcrumbsStr = "";
 		try {
@@ -124,14 +110,15 @@ public class Breadcrumbs {
 		return breadcrumbsStr;
 	}
 
-	public static String generateForWorker(Worker worker) {
+	public String generateForWorker(Worker worker) {
 		return generateForWorker(worker, null);
 	}
 
-	public static String generateForWorker(Worker worker, String last) {
-		Breadcrumbs breadcrumbs = new Breadcrumbs()
-				.put(HOME, controllers.routes.Home.home())
-				.put("Worker " + worker.getId(), "").put(last, "");
+	public String generateForWorker(Worker worker, String last) {
+		Breadcrumbs breadcrumbs = new Breadcrumbs();
+		breadcrumbs.addBreadcrumb(HOME, controllers.routes.Home.home().url());
+		breadcrumbs.addBreadcrumb("Worker " + worker.getId(), "");
+		breadcrumbs.addBreadcrumb(last, "");
 		String breadcrumbsStr = "";
 		try {
 			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
@@ -143,13 +130,14 @@ public class Breadcrumbs {
 		return breadcrumbsStr;
 	}
 
-	public static String generateForComponent(StudyModel study,
+	public String generateForComponent(StudyModel study,
 			ComponentModel component, String last) {
-		Breadcrumbs breadcrumbs = new Breadcrumbs()
-				.put(HOME, controllers.routes.Home.home())
-				.put(study.getTitle(),
-						controllers.routes.Studies.index(study.getId()))
-				.put(component.getTitle(), "").put(last, "");
+		Breadcrumbs breadcrumbs = new Breadcrumbs();
+		breadcrumbs.addBreadcrumb(HOME, controllers.routes.Home.home().url());
+		breadcrumbs.addBreadcrumb(study.getTitle(),
+						controllers.routes.Studies.index(study.getId()).url());
+		breadcrumbs.addBreadcrumb(component.getTitle(), "");
+		breadcrumbs.addBreadcrumb(last, "");
 		String breadcrumbsStr = "";
 		try {
 			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);

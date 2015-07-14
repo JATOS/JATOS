@@ -18,7 +18,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import publix.controllers.jatos.JatosPublix;
-import services.Breadcrumbs;
+import services.BreadcrumbsService;
 import services.ComponentService;
 import services.JatosGuiExceptionThrower;
 import services.MessagesStrings;
@@ -56,18 +56,20 @@ public class Components extends Controller {
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final UserService userService;
+	private final BreadcrumbsService breadcrumbsService;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 
 	@Inject
 	Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, ComponentService componentService,
-			UserService userService, StudyDao studyDao,
-			ComponentDao componentDao) {
+			UserService userService, BreadcrumbsService breadcrumbsService,
+			StudyDao studyDao, ComponentDao componentDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.componentService = componentService;
 		this.userService = userService;
+		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 	}
@@ -125,8 +127,8 @@ public class Components extends Controller {
 
 		Form<ComponentModel> form = Form.form(ComponentModel.class);
 		Call submitAction = controllers.routes.Components.submit(studyId);
-		String breadcrumbs = Breadcrumbs.generateForStudy(study,
-				Breadcrumbs.NEW_COMPONENT);
+		String breadcrumbs = breadcrumbsService.generateForStudy(study,
+				BreadcrumbsService.NEW_COMPONENT);
 		return ok(views.html.gui.component.edit.render(loggedInUser,
 				breadcrumbs, submitAction, form, study));
 	}
@@ -147,8 +149,8 @@ public class Components extends Controller {
 		List<ValidationError> errorList = component.validate();
 		if (errorList != null) {
 			Call submitAction = controllers.routes.Components.submit(studyId);
-			String breadcrumbs = Breadcrumbs.generateForStudy(study,
-					Breadcrumbs.NEW_COMPONENT);
+			String breadcrumbs = breadcrumbsService.generateForStudy(study,
+					BreadcrumbsService.NEW_COMPONENT);
 			Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 					component);
 			errorList.forEach(form::reject);
@@ -187,8 +189,8 @@ public class Components extends Controller {
 				component);
 		Call submitAction = controllers.routes.Components.submitEdited(studyId,
 				componentId);
-		String breadcrumbs = Breadcrumbs.generateForComponent(study, component,
-				Breadcrumbs.EDIT_PROPERTIES);
+		String breadcrumbs = breadcrumbsService.generateForComponent(study,
+				component, BreadcrumbsService.EDIT_PROPERTIES);
 		return ok(views.html.gui.component.edit.render(loggedInUser,
 				breadcrumbs, submitAction, form, study));
 	}
@@ -238,8 +240,8 @@ public class Components extends Controller {
 		editedComponent.setUuid(component.getUuid());
 		Call submitAction = controllers.routes.Components.submitEdited(
 				study.getId(), editedComponent.getId());
-		String breadcrumbs = Breadcrumbs.generateForComponent(study,
-				editedComponent, Breadcrumbs.EDIT_PROPERTIES);
+		String breadcrumbs = breadcrumbsService.generateForComponent(study,
+				editedComponent, BreadcrumbsService.EDIT_PROPERTIES);
 		Form<ComponentModel> form = Form.form(ComponentModel.class).fill(
 				editedComponent);
 

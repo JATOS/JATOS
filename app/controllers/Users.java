@@ -13,7 +13,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.Breadcrumbs;
+import services.BreadcrumbsService;
 import services.JatosGuiExceptionThrower;
 import services.UserService;
 import utils.ControllerUtils;
@@ -43,12 +43,14 @@ public class Users extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final UserService userService;
+	private final BreadcrumbsService breadcrumbsService;
 
 	@Inject
 	Users(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			UserService userService) {
+			UserService userService, BreadcrumbsService breadcrumbsService) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.userService = userService;
+		this.breadcrumbsService = breadcrumbsService;
 	}
 
 	/**
@@ -60,7 +62,7 @@ public class Users extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		UserModel user = checkStandard(email, loggedInUser);
-		String breadcrumbs = Breadcrumbs.generateForUser(user);
+		String breadcrumbs = breadcrumbsService.generateForUser(user);
 		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
 				user));
 	}
@@ -73,7 +75,8 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		String breadcrumbs = Breadcrumbs.generateForHome(Breadcrumbs.NEW_USER);
+		String breadcrumbs = breadcrumbsService
+				.generateForHome(BreadcrumbsService.NEW_USER);
 		return ok(views.html.gui.user.create.render(loggedInUser, breadcrumbs,
 				Form.form(UserModel.class)));
 	}
@@ -118,7 +121,7 @@ public class Users extends Controller {
 			if (errorList != null) {
 				errorList.forEach(form::reject);
 			}
-			String breadcrumbs = Breadcrumbs.generateForHome("New User");
+			String breadcrumbs = breadcrumbsService.generateForHome("New User");
 			return status(httpStatus, views.html.gui.user.create.render(
 					loggedInUser, breadcrumbs, form));
 		}
@@ -129,7 +132,7 @@ public class Users extends Controller {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
 		} else {
-			String breadcrumbs = Breadcrumbs.generateForUser(user,
+			String breadcrumbs = breadcrumbsService.generateForUser(user,
 					"Edit Profile");
 			return status(httpStatus, views.html.gui.user.editProfile.render(
 					loggedInUser, breadcrumbs, user, form));
@@ -145,7 +148,7 @@ public class Users extends Controller {
 			if (errorList != null) {
 				errorList.forEach(form::reject);
 			}
-			String breadcrumbs = Breadcrumbs.generateForUser(user,
+			String breadcrumbs = breadcrumbsService.generateForUser(user,
 					"Change Password");
 			return status(httpStatus,
 					views.html.gui.user.changePassword.render(loggedInUser,
@@ -163,8 +166,8 @@ public class Users extends Controller {
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
 		UserModel user = checkStandard(email, loggedInUser);
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		String breadcrumbs = Breadcrumbs.generateForUser(user,
-				Breadcrumbs.EDIT_PROFILE);
+		String breadcrumbs = breadcrumbsService.generateForUser(user,
+				BreadcrumbsService.EDIT_PROFILE);
 		return ok(views.html.gui.user.editProfile.render(loggedInUser,
 				breadcrumbs, user, form));
 	}
@@ -205,8 +208,8 @@ public class Users extends Controller {
 		UserModel user = checkStandard(email, loggedInUser);
 
 		Form<UserModel> form = Form.form(UserModel.class).fill(user);
-		String breadcrumbs = Breadcrumbs.generateForUser(user,
-				Breadcrumbs.CHANGE_PASSWORD);
+		String breadcrumbs = breadcrumbsService.generateForUser(user,
+				BreadcrumbsService.CHANGE_PASSWORD);
 		return ok(views.html.gui.user.changePassword.render(loggedInUser,
 				breadcrumbs, form));
 	}
