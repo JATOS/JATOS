@@ -99,12 +99,33 @@ $(document).ready(function() {
 				"data": "errorMsg",
 				"width": "20%"
 			}
-		]
+		],
+		"language": {
+			"search": "Filter: "
+		}
 	});
 	var tableTools = new $.fn.dataTable.TableTools(resultsTable, {
 		"sRowSelect": "multi",
-		"aButtons": [ "select_all", "select_none" ],
-		"sRowSelector": "td:not(:first-child):not(:last-child)"
+		"sRowSelector": "td:not(:first-child):not(:last-child)",
+		"aButtons": [
+ 			{
+ 				"sExtends": "select_all",
+ 				"sButtonText": "Select All"
+ 			},
+ 			{
+ 				"sExtends": "select_all",
+             	"sButtonText": "Select Filtered",
+             	"fnClick": function (nButton, oConfig, oFlash) {
+             		var oTT = TableTools.fnGetInstance('resultsTable');
+             		var rows = $("#myTable").dataTable().$('tr', {"filter":"applied"});
+             		oTT.fnSelectAll(rows);
+ 				}
+         	},
+         	{
+ 				"sExtends": "select_none",
+ 				"sButtonText": "Deselect All",
+ 			}
+		]
 	});
 	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
 	
@@ -203,6 +224,11 @@ $('#resultsToolbar').on('click', '.removeAll', function() {
 			}
 		});
 	});
+});
+
+$('#resultsToolbar').on('click', '.selectAllFiltered', function() {
+	var rows = resultsTable.$('tr', {"filter":"applied"});
+	alert();
 });
 
 function childRowFormat(data) {
