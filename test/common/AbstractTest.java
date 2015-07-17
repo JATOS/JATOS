@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import persistance.ComponentDao;
+import persistance.ComponentResultDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.UserDao;
@@ -74,6 +75,7 @@ public abstract class AbstractTest {
 	protected ComponentDao componentDao;
 	protected WorkerDao workerDao;
 	protected StudyResultDao studyResultDao;
+	protected ComponentResultDao componentResultDao;
 	protected UserModel admin;
 
 	public abstract void before() throws Exception;
@@ -102,6 +104,7 @@ public abstract class AbstractTest {
 		componentDao = Global.INJECTOR.getInstance(ComponentDao.class);
 		workerDao = Global.INJECTOR.getInstance(WorkerDao.class);
 		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
+		componentResultDao = Global.INJECTOR.getInstance(ComponentResultDao.class);
 
 		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
 				.plugin(JPAPlugin.class);
