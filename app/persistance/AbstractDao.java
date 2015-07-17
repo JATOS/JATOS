@@ -25,5 +25,9 @@ public abstract class AbstractDao {
 	protected void remove(Object entity) {
 		JPA.em().remove(entity);
 	}
+	
+	protected void refresh(Object entity) {
+		JPA.em().refresh(entity);
+	}
 
 }

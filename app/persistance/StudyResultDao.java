@@ -51,6 +51,10 @@ public class StudyResultDao extends AbstractDao {
 		// Remove studyResult
 		super.remove(studyResult);
 	}
+	
+	public void refresh(StudyResult studyResult) {
+		super.refresh(studyResult);
+	}
 
 	/**
 	 * Removes ALL StudyResults including their ComponentResult of the specified

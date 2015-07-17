@@ -59,6 +59,10 @@ public class ComponentResultDao extends AbstractDao {
 		}
 		super.remove(componentResult);
 	}
+	
+	public void refresh(ComponentResult componentResult) {
+		super.refresh(componentResult);
+	}
 
 	public ComponentResult findById(Long id) {
 		return JPA.em().find(ComponentResult.class, id);
