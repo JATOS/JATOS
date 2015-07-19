@@ -33,21 +33,24 @@
 					class="icon-bar"></span> <span class="icon-bar"></span> <span
 					class="icon-bar"></span>
 			</button>
+			<a class="navbar-brand" href="@controllers.routes.Home.home">
+				<img src="@routes.Assets.at("images/jatos_logo_grey.svg")" alt="JATOS logo" height="25pt">
+			</a>
 			<a class="navbar-brand" href="@controllers.routes.Home.home">JATOS</a>
 		</div>
 	</div>
 </nav>
 
-<div class="container">
-
-	@helper.form(action = controllers.routes.Authentication.authenticate, 'class -> "form-login", 'role -> "form") {
-	<h2 class="form-login-heading">Please login</h2>
-	<!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
-	<input type="text" name="email" id="email" class="form-control" placeholder="Email address" value="@form("email").value" required autofocus>
-	<input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
-	<button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
-	}
-	
+<div class="container-fluid">
+	<div class="form-login-div">
+		@helper.form(action = controllers.routes.Authentication.authenticate, 'class -> "form-login", 'role -> "form") {
+		<h2 class="form-login-heading">Please login</h2>
+		<!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
+		<input type="text" name="email" id="email" class="form-control" placeholder="Email address" value="@form("email").value" required autofocus>
+		<input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
+		<button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
+		}
+	</div>
 </div>
 
 <script>
