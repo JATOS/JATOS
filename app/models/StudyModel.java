@@ -106,7 +106,7 @@ public class StudyModel {
 	/**
 	 * Study assets directory name
 	 */
-	@JsonView(JsonUtils.JsonForIO.class)
+	@JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
 	private String dirName;
 
 	/**
@@ -160,8 +160,8 @@ public class StudyModel {
 		this.title = study.title;
 		this.comments = study.comments;
 		this.locked = false;
-		this.allowedWorkerList.addAll(study.allowedWorkerList.stream()
-				.collect(Collectors.toList()));
+		this.allowedWorkerList.addAll(study.allowedWorkerList.stream().collect(
+				Collectors.toList()));
 		for (ComponentModel component : study.componentList) {
 			ComponentModel clone = new ComponentModel(component);
 			clone.setStudy(this);
