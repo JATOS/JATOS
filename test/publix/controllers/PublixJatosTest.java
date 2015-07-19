@@ -21,6 +21,7 @@ import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.JatosWorker;
+import models.workers.Worker;
 
 import org.junit.Test;
 
@@ -32,8 +33,8 @@ import publix.controllers.jatos.JatosPublix;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import common.AbstractTest;
 
+import common.AbstractTest;
 import controllers.Users;
 
 /**
@@ -114,18 +115,7 @@ public class PublixJatosTest extends AbstractTest {
 		studyResultDao.refresh(studyResult);
 
 		assertThat(status(result)).isEqualTo(OK);
-
-		// Check ID cookie
-		Cookie idCookie = cookie(Publix.ID_COOKIE_NAME, result);
-		assertThat(idCookie.value()).contains(
-				"workerId=" + admin.getWorker().getId());
-		assertThat(idCookie.value()).contains(
-				"componentId=" + study.getFirstComponent().getId());
-		assertThat(idCookie.value()).contains("componentPos=1");
-		assertThat(idCookie.value()).contains("studyId=" + study.getId());
-		assertThat(idCookie.value()).contains(
-				"studyResultId=" + studyResult.getId());
-		assertThat(idCookie.value()).contains("componentResultId");
+		checkIdCookie(result, admin.getWorker(), study, studyResult, 1);
 
 		// And check a random line of the JS code
 		assertThat(contentAsString(result)).contains(
@@ -133,19 +123,11 @@ public class PublixJatosTest extends AbstractTest {
 
 		// Check ComponentResult and StudyResult
 		assertThat(studyResult.getComponentResultList().size()).isEqualTo(1);
-		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
 		ComponentResult componentResult = studyResult.getComponentResultList()
 				.get(0);
-		assertThat(componentResult.getComponent()).isEqualTo(
-				study.getFirstComponent());
-		assertThat(componentResult.getStudyResult()).isEqualTo(studyResult);
-		assertThat(componentResult.getWorkerId()).isEqualTo(
-				admin.getWorker().getId());
-		assertThat(componentResult.getWorkerType()).isEqualTo(
-				admin.getWorker().getWorkerType());
-		assertThat(componentResult.getComponentState()).isEqualTo(
+		checkStates(studyResult, StudyState.STARTED, componentResult,
 				ComponentState.STARTED);
-		assertThat(componentResult.getStartDate()).isNotNull();
+		checkComponentResultAfterStart(study, studyResult, 1, 1);
 
 		// ***
 		// Send request to get InitData:
@@ -175,9 +157,7 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(json.get("componentProperties")).isNotNull();
 
 		// Check studyResult and componentResult
-		assertThat(studyResult.getStudyState()).isEqualTo(
-				StudyState.DATA_RETRIEVED);
-		assertThat(componentResult.getComponentState()).isEqualTo(
+		checkStates(studyResult, StudyState.DATA_RETRIEVED, componentResult,
 				ComponentState.DATA_RETRIEVED);
 
 		// ***
@@ -200,9 +180,7 @@ public class PublixJatosTest extends AbstractTest {
 
 		// Check response
 		assertThat(status(result)).isEqualTo(OK);
-		assertThat(studyResult.getStudyState()).isEqualTo(
-				StudyState.DATA_RETRIEVED);
-		assertThat(componentResult.getComponentState()).isEqualTo(
+		checkStates(studyResult, StudyState.DATA_RETRIEVED, componentResult,
 				ComponentState.RESULTDATA_POSTED);
 
 		// Check componentResult
@@ -229,9 +207,7 @@ public class PublixJatosTest extends AbstractTest {
 
 		// Check response
 		assertThat(status(result)).isEqualTo(OK);
-		assertThat(studyResult.getStudyState()).isEqualTo(
-				StudyState.DATA_RETRIEVED);
-		assertThat(componentResult.getComponentState()).isEqualTo(
+		checkStates(studyResult, StudyState.DATA_RETRIEVED, componentResult,
 				ComponentState.RESULTDATA_POSTED);
 
 		// Check componentResult
@@ -266,7 +242,7 @@ public class PublixJatosTest extends AbstractTest {
 						+ "/start");
 
 		// ***
-		// Start 2. component, studyResult -> STARTED
+		// Start 2. component by ID, studyResult -> DATA_RETRIEVED
 		// old componentResult -> FINISHED, new componentResult -> STARTED
 		fakeReq = new FakeRequest(GET, "/publix/" + study.getId() + "/"
 				+ study.getComponent(2).getId() + "/start");
@@ -278,37 +254,93 @@ public class PublixJatosTest extends AbstractTest {
 				JatosWorker.WORKER_TYPE);
 		fakeReq.withHeader(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = routeAndCall(fakeReq, 10000);
-		
+
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(componentResult);
 
 		assertThat(status(result)).isEqualTo(OK);
-
-		// Check ID cookie
-		idCookie = cookie(Publix.ID_COOKIE_NAME, result);
-		assertThat(idCookie.value()).contains(
-				"workerId=" + admin.getWorker().getId());
-		assertThat(idCookie.value()).contains(
-				"componentId=" + study.getComponent(2).getId());
-		assertThat(idCookie.value()).contains("componentPos=2");
-		assertThat(idCookie.value()).contains("studyId=" + study.getId());
-		assertThat(idCookie.value()).contains(
-				"studyResultId=" + studyResult.getId());
-		assertThat(idCookie.value()).contains("componentResultId");
+		checkIdCookie(result, admin.getWorker(), study, studyResult, 2);
 
 		// And check a random line of the JS code
 		assertThat(contentAsString(result)).contains(
 				"jatos.onLoad(function() {");
 
-		// Check ComponentResult and StudyResult
-		assertThat(studyResult.getComponentResultList().size()).isEqualTo(2);
-		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.DATA_RETRIEVED);
-		assertThat(componentResult.getComponentState()).isEqualTo(ComponentState.FINISHED);
-		
-		componentResult = studyResult.getComponentResultList()
-				.get(1);
+		// Check old and new ComponentResult and StudyResult
+		checkStates(studyResult, StudyState.DATA_RETRIEVED, componentResult,
+				ComponentState.FINISHED);
+		checkComponentResultAfterStart(study, studyResult, 2, 2);
+
+		// ***
+		// Start 3. component by position, studyResult -> DATA_RETRIEVED
+		// old componentResult -> FINISHED, new componentResult -> STARTED
+		fakeReq = new FakeRequest(GET, "/publix/" + study.getId()
+				+ "/startComponent?position=3");
+		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
+		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
+				.toString());
+		fakeReq.withSession(PublixInterceptor.WORKER_TYPE,
+				JatosWorker.WORKER_TYPE);
+		fakeReq.withHeader(HeaderNames.HOST, "localhost:" + testServerPort());
+		result = routeAndCall(fakeReq, 10000);
+
+		studyResultDao.refresh(studyResult);
+		componentResultDao.refresh(componentResult);
+
+		assertThat(status(result)).isEqualTo(OK);
+		checkIdCookie(result, admin.getWorker(), study, studyResult, 3);
+
+		// And check a random line of the JS code
+		assertThat(contentAsString(result)).contains(
+				"jatos.onLoad(function() {");
+
+		// Check old and new ComponentResult and StudyResult
+		assertThat(componentResult.getEndDate()).isNotNull();
+		checkStates(studyResult, StudyState.DATA_RETRIEVED, componentResult,
+				ComponentState.FINISHED);
+		checkComponentResultAfterStart(study, studyResult, 3, 3);
+
+		// TODO logError
+		// TODO session data after new component still there
+		// TODO end study
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	private void checkIdCookie(Result result, Worker worker, StudyModel study,
+			StudyResult studyResult, int componentPosition) {
+		Cookie idCookie = cookie(Publix.ID_COOKIE_NAME, result);
+		assertThat(idCookie.value()).contains("workerId=" + worker.getId());
+		assertThat(idCookie.value()).contains(
+				"componentId=" + study.getComponent(componentPosition).getId());
+		assertThat(idCookie.value()).contains(
+				"componentPos=" + componentPosition);
+		assertThat(idCookie.value()).contains("studyId=" + study.getId());
+		assertThat(idCookie.value()).contains(
+				"studyResultId=" + studyResult.getId());
+		assertThat(idCookie.value()).contains("componentResultId");
+	}
+
+	private void checkStates(StudyResult studyResult, StudyState studyState,
+			ComponentResult componentResult, ComponentState componentState) {
+		assertThat(studyResult.getStudyState()).isEqualTo(studyState);
+		assertThat(componentResult.getComponentState()).isEqualTo(
+				componentState);
+	}
+
+	private void checkComponentResultAfterStart(StudyModel study,
+			StudyResult studyResult, int componentPosition,
+			int componentResultListSize) {
+		assertThat(studyResult.getComponentResultList().size()).isEqualTo(
+				componentResultListSize);
+
+		// Get the last component result
+		ComponentResult componentResult = studyResult.getComponentResultList()
+				.get(componentResultListSize - 1);
+
 		assertThat(componentResult.getComponent()).isEqualTo(
-				study.getComponent(2));
+				study.getComponent(componentPosition));
 		assertThat(componentResult.getStudyResult()).isEqualTo(studyResult);
 		assertThat(componentResult.getWorkerId()).isEqualTo(
 				admin.getWorker().getId());
@@ -317,12 +349,5 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(componentResult.getComponentState()).isEqualTo(
 				ComponentState.STARTED);
 		assertThat(componentResult.getStartDate()).isNotNull();
-
-		// TODO start by Position
-		// TODO logError
-		// TODO end study
-
-		// Clean-up
-		removeStudy(study);
 	}
 }
