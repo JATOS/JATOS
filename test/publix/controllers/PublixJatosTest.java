@@ -199,7 +199,7 @@ public class PublixJatosTest extends AbstractTest {
 		fakeReq.withSession(PublixInterceptor.WORKER_TYPE,
 				JatosWorker.WORKER_TYPE);
 		fakeReq.withHeader(HeaderNames.HOST, "localhost:" + testServerPort());
-		fakeReq.withTextBody("That's session data.");
+		fakeReq.withTextBody("That's our session data.");
 		result = routeAndCall(fakeReq, 10000);
 
 		studyResultDao.refresh(studyResult);
@@ -212,7 +212,7 @@ public class PublixJatosTest extends AbstractTest {
 
 		// Check componentResult
 		assertThat(studyResult.getStudySessionData()).isEqualTo(
-				"That's session data.");
+				"That's our session data.");
 
 		// ***
 		// Send request startNextComponent: studyResult -> DATA_RETRIEVED,
@@ -300,8 +300,50 @@ public class PublixJatosTest extends AbstractTest {
 				ComponentState.FINISHED);
 		checkComponentResultAfterStart(study, studyResult, 3, 3);
 
-		// TODO logError
-		// TODO session data after new component still there
+		// ***
+		// Log error
+		fakeReq = new FakeRequest(POST, "/publix/" + study.getId() + "/"
+				+ study.getComponent(3).getId() + "/logError");
+		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
+		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
+				.toString());
+		fakeReq.withSession(PublixInterceptor.WORKER_TYPE,
+				JatosWorker.WORKER_TYPE);
+		fakeReq.withHeader(HeaderNames.HOST, "localhost:" + testServerPort());
+		fakeReq.withTextBody("This is an error message.");
+		result = routeAndCall(fakeReq, 10000);
+
+		assertThat(status(result)).isEqualTo(OK);
+		// TODO check that error msg appears in log
+
+		// ***
+		// Send request to get InitData: prior session data should be there
+		// studyResult -> DATA_RETRIEVED, componentResult -> DATA_RETRIEVED
+		fakeReq = new FakeRequest(GET, "/publix/" + study.getId() + "/"
+				+ study.getComponent(3).getId() + "/initData");
+		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
+		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
+				.toString());
+		fakeReq.withSession(PublixInterceptor.WORKER_TYPE,
+				JatosWorker.WORKER_TYPE);
+		fakeReq.withHeader(HeaderNames.HOST, "localhost:" + testServerPort());
+		result = routeAndCall(fakeReq, 10000);
+
+		studyResultDao.refresh(studyResult);
+		componentResultDao.refresh(componentResult);
+
+		// Check InitData in response: is session data still there?
+		assertThat(status(result)).isEqualTo(OK);
+		assertThat(JsonUtils.isValidJSON(contentAsString(result))).isTrue();
+		json = JsonUtils.OBJECTMAPPER.readTree(contentAsString(result));
+		assertThat(json.get("studySession").asText()).isEqualTo(
+				"That's our session data.");
+		assertThat(json.get("studyProperties")).isNotNull();
+		assertThat(json.get("componentList")).isNotNull();
+		assertThat(json.get("componentProperties")).isNotNull();
+
 		// TODO end study
 
 		// Clean-up
