@@ -56,8 +56,13 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(a).isEqualTo(2);
 	}
 
+	/**
+	 * Functional test: runs a whole study successfully. Includes start/end
+	 * study, start component, start next component by ID or position, log error
+	 * message, get init data, send session data, submit result data
+	 */
 	@Test
-	public void startStudy() throws IOException {
+	public void runWholeStudy() throws IOException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
@@ -381,7 +386,7 @@ public class PublixJatosTest extends AbstractTest {
 		// Clean-up
 		removeStudy(study);
 	}
-	
+
 	// TODO abort study
 
 	private void checkIdCookie(Result result, Worker worker, StudyModel study,
