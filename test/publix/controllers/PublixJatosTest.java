@@ -33,8 +33,8 @@ import publix.controllers.jatos.JatosPublix;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
 import common.AbstractTest;
+
 import controllers.Users;
 
 /**
@@ -344,11 +344,45 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(json.get("componentList")).isNotNull();
 		assertThat(json.get("componentProperties")).isNotNull();
 
-		// TODO end study
+		// ***
+		// Send request to end study
+		// studyResult -> FINISHED, componentResult -> FINISHED
+		fakeReq = new FakeRequest(GET, "/publix/" + study.getId() + "/end");
+		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
+		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
+				.toString());
+		fakeReq.withSession(PublixInterceptor.WORKER_TYPE,
+				JatosWorker.WORKER_TYPE);
+		fakeReq.withHeader(HeaderNames.HOST, "localhost:" + testServerPort());
+		result = routeAndCall(fakeReq, 10000);
+
+		studyResultDao.refresh(studyResult);
+		componentResultDao.refresh(componentResult);
+
+		// Check response: HTTP status is redirect
+		assertThat(status(result)).isEqualTo(SEE_OTHER);
+
+		// Check redirect URL
+		assertThat(header("Location", result)).isEqualTo(
+				"/jatos/" + study.getId());
+
+		// Check that 'jatos_run' is removed from Play's session
+		assertThat(session(result).get(JatosPublix.JATOS_RUN)).isNull();
+
+		// Check that ID cookie is removed
+		assertThat(cookie(Publix.ID_COOKIE_NAME, result).value()).isEmpty();
+
+		// Check results
+		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.FINISHED);
+		assertThat(componentResult.getComponentState()).isEqualTo(
+				ComponentState.FINISHED);
 
 		// Clean-up
 		removeStudy(study);
 	}
+	
+	// TODO abort study
 
 	private void checkIdCookie(Result result, Worker worker, StudyModel study,
 			StudyResult studyResult, int componentPosition) {
