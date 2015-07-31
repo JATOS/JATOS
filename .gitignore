@@ -20,3 +20,9 @@ dist
 /study_assets_root/
 /database/
 .DS_Store
+.sbtserver
+.sbtserver.lock
+play-fork-run.sbt
+play-fork-run.sbtold
+sbt-ui.sbt
+sbt-ui.sbtold
