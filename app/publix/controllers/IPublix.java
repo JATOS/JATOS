@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import play.libs.F.Promise;
 import play.mvc.Result;
+import play.mvc.WebSocket;
 import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.PublixException;
 
@@ -43,8 +44,8 @@ public interface IPublix {
 	 * Starts the component in the given position that belongs to the study with
 	 * the studyId.
 	 */
-	Promise<Result> startComponentByPosition(Long studyId,
-			Integer position) throws PublixException;
+	Promise<Result> startComponentByPosition(Long studyId, Integer position)
+			throws PublixException;
 
 	/**
 	 * HTTP type: Normal GET request
@@ -66,8 +67,11 @@ public interface IPublix {
 	 * by the study running in the browser. The study session data are different
 	 * from Play's session and stored within the study results.
 	 */
-	Result getInitData(Long studyId, Long componentId)
-			throws PublixException, IOException;
+	Result getInitData(Long studyId, Long componentId) throws PublixException,
+			IOException;
+
+	WebSocket<String> websocket(Long studyId, Long componentId)
+			throws BadRequestPublixException, PublixException, IOException;
 
 	/**
 	 * HTTP type: Ajax POST request
@@ -96,8 +100,8 @@ public interface IPublix {
 	 * Optionally it can be specified whether the component was successful and
 	 * and error message.
 	 */
-	Result finishComponent(Long studyId, Long componentId,
-			Boolean successful, String errorMsg) throws PublixException;
+	Result finishComponent(Long studyId, Long componentId, Boolean successful,
+			String errorMsg) throws PublixException;
 
 	/**
 	 * HTTP type: Normal or Ajax GET request
@@ -106,8 +110,7 @@ public interface IPublix {
 	 * Optionally a message can be given describing the reasons for the
 	 * abortion.
 	 */
-	Result abortStudy(Long studyId, String message)
-			throws PublixException;
+	Result abortStudy(Long studyId, String message) throws PublixException;
 
 	/**
 	 * HTTP type: Normal or Ajax GET request

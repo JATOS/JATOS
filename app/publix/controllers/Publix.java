@@ -15,6 +15,7 @@ import play.Logger;
 import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
+import play.mvc.WebSocket;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.PublixException;
 import publix.services.IStudyAuthorisation;
@@ -166,6 +167,20 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		componentResultDao.update(componentResult);
 
 		return ok(jsonUtils.initData(studyResult, study, component));
+	}
+
+	@Override
+	public WebSocket<String> websocket(Long studyId, Long componentId) {
+		return WebSocket.whenReady((in, out) -> {
+			// For each event received on the socket,
+				in.onMessage(out::write);
+
+				// When the socket is closed.
+				in.onClose(() -> System.out.println("Disconnected"));
+
+				// Send a single 'Hello!' message
+				out.write("Hello!");
+			});
 	}
 
 	@Override

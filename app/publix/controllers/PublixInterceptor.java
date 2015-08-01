@@ -13,6 +13,7 @@ import play.db.jpa.Transactional;
 import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
+import play.mvc.WebSocket;
 import play.mvc.With;
 import publix.controllers.general_single.GeneralSinglePublix;
 import publix.controllers.jatos.JatosPublix;
@@ -221,6 +222,35 @@ public class PublixInterceptor extends Controller implements IPublix {
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
 			result = generalSinglePublix.getInitData(studyId, componentId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		}
+		return result;
+	}
+
+	@Override
+	@Transactional
+	public WebSocket<String> websocket(Long studyId, Long componentId)
+			throws BadRequestPublixException, PublixException, IOException {
+		WebSocket<String> result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.websocket(studyId, componentId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.websocket(studyId, componentId);
+			break;
+		case PersonalMultipleWorker.WORKER_TYPE:
+			result = pmPublix.websocket(studyId, componentId);
+			break;
+		case PersonalSingleWorker.WORKER_TYPE:
+			result = personalSinglePublix.websocket(studyId, componentId);
+			break;
+		case GeneralSingleWorker.WORKER_TYPE:
+			result = generalSinglePublix.websocket(studyId, componentId);
 			break;
 		default:
 			throw new BadRequestPublixException(
