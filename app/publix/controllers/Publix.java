@@ -5,6 +5,7 @@ import java.io.IOException;
 import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
+import models.GroupResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
@@ -43,9 +44,11 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	 */
 	public static final String ID_COOKIE_NAME = "JATOS_IDS";
 	public static final String WORKER_ID = "workerId";
+	public static final String GROUP_ID = "groupId";
+	public static final String GROUP_RESULT_ID = "groupResultId";
 	public static final String STUDY_ID = "studyId";
-	public static final String COMPONENT_ID = "componentId";
 	public static final String STUDY_RESULT_ID = "studyResultId";
+	public static final String COMPONENT_ID = "componentId";
 	public static final String COMPONENT_RESULT_ID = "componentResultId";
 	public static final String COMPONENT_POSITION = "componentPos";
 
@@ -95,8 +98,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 					.pure(redirect(publix.controllers.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
+		GroupResult groupResult = studyResult.getGroupResult();
 		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
-				componentResult, worker);
+				componentResult, worker, groupResult);
 		response().setCookie(Publix.ID_COOKIE_NAME, cookieValue);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
@@ -171,16 +175,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 	@Override
 	public WebSocket<String> websocket(Long studyId, Long componentId) {
-		return WebSocket.whenReady((in, out) -> {
-			// For each event received on the socket,
-				in.onMessage(out::write);
-
-				// When the socket is closed.
-				in.onClose(() -> System.out.println("Disconnected"));
-
-				// Send a single 'Hello!' message
-				out.write("Hello!");
-			});
+		return WebSocket.withActor(GroupStudyWebSocketActor::props);
 	}
 
 	@Override

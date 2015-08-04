@@ -2,6 +2,7 @@ package publix.controllers.jatos;
 
 import models.ComponentModel;
 import models.ComponentResult;
+import models.GroupResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.JatosWorker;
@@ -172,10 +173,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					.pure(redirect(publix.controllers.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
+		GroupResult groupResult = studyResult.getGroupResult();
 		response().setCookie(
 				Publix.ID_COOKIE_NAME,
 				publixUtils.generateIdCookieValue(studyResult, componentResult,
-						worker));
+						worker, groupResult));
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
 		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(request()

@@ -5,11 +5,13 @@ import java.util.List;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
+import models.GroupResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.Worker;
 import play.db.jpa.JPA;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 /**
@@ -20,6 +22,13 @@ import com.google.inject.Singleton;
 @Singleton
 public class StudyResultDao extends AbstractDao {
 
+	private final GroupResultDao groupResultDao;
+
+	@Inject
+	StudyResultDao(GroupResultDao groupResultDao) {
+		this.groupResultDao = groupResultDao;
+	}
+	
 	/**
 	 * Creates StudyResult and adds it to the given Worker.
 	 */
@@ -48,6 +57,18 @@ public class StudyResultDao extends AbstractDao {
 		worker.removeStudyResult(studyResult);
 		merge(worker);
 
+		// Remove studyResult from groupResult
+		GroupResult groupResult = studyResult.getGroupResult();
+		if (groupResult != null) {
+			groupResult.removeStudyResult(studyResult);
+			if (groupResult.getStudyResultList().isEmpty()) {
+				// Remove groupResult if it has no StudyResults
+				groupResultDao.remove(groupResult);
+			} else {
+				merge(groupResult);
+			}
+		}
+		
 		// Remove studyResult
 		super.remove(studyResult);
 	}

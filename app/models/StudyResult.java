@@ -92,6 +92,11 @@ public class StudyResult {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "worker_id")
 	private Worker worker;
+	
+	@JsonIgnore
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "groupResult_id")
+	private GroupResult groupResult;
 
 	private String confirmationCode;
 
@@ -220,6 +225,14 @@ public class StudyResult {
 
 	public Worker getWorker() {
 		return this.worker;
+	}
+	
+	public GroupResult getGroupResult() {
+		return groupResult;
+	}
+
+	public void setGroupResult(GroupResult groupResult) {
+		this.groupResult = groupResult;
 	}
 
 	@Override
