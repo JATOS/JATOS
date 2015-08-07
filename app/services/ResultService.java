@@ -13,6 +13,7 @@ import models.UserModel;
 import models.workers.Worker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
+import utils.MessagesStrings;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

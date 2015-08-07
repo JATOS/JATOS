@@ -19,9 +19,8 @@ import org.junit.Test;
 
 import play.mvc.Result;
 import publix.exceptions.NotFoundPublixException;
-import services.MessagesStrings;
 import utils.IOUtils;
-
+import utils.MessagesStrings;
 import common.AbstractTest;
 
 /**

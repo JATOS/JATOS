@@ -12,10 +12,10 @@ import play.mvc.Http;
 import play.mvc.Result;
 import services.BreadcrumbsService;
 import services.JatosGuiExceptionThrower;
-import services.MessagesStrings;
 import services.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
+import utils.MessagesStrings;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

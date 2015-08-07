@@ -18,8 +18,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import play.data.validation.ValidationError;
-import services.MessagesStrings;
 import utils.JsonUtils;
+import utils.MessagesStrings;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;

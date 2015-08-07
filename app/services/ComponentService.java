@@ -9,6 +9,7 @@ import persistance.ComponentDao;
 import play.Logger;
 import utils.IOUtils;
 import utils.JsonUtils;
+import utils.MessagesStrings;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

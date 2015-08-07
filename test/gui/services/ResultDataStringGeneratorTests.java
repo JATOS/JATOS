@@ -19,8 +19,8 @@ import org.junit.Test;
 import persistance.StudyResultDao;
 import publix.exceptions.ForbiddenReloadException;
 import publix.services.jatos.JatosPublixUtils;
-import services.MessagesStrings;
 import services.ResultDataStringGenerator;
+import utils.MessagesStrings;
 import common.Global;
 
 /**

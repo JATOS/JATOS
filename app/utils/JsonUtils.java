@@ -23,7 +23,6 @@ import org.hibernate.proxy.HibernateProxy;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
-import services.MessagesStrings;
 import utils.JsonUtils.SidebarStudy.SidebarComponent;
 
 import com.fasterxml.jackson.core.JsonParser;
