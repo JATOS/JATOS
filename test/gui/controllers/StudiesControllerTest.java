@@ -15,7 +15,6 @@ import static play.test.Helpers.status;
 import java.util.HashMap;
 import java.util.Map;
 
-import common.AbstractTest;
 import models.StudyModel;
 import models.workers.PersonalSingleWorker;
 
@@ -30,6 +29,7 @@ import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
+import common.AbstractTest;
 
 import controllers.Users;
 
@@ -77,7 +77,8 @@ public class StudiesControllerTest extends AbstractTest {
 		assertThat(status(result)).isEqualTo(OK);
 		assertThat(charset(result)).isEqualTo("utf-8");
 		assertThat(contentType(result)).isEqualTo("text/html");
-		assertThat(contentAsString(result)).contains(BreadcrumbsService.NEW_STUDY);
+		assertThat(contentAsString(result)).contains(
+				BreadcrumbsService.NEW_STUDY);
 	}
 
 	@Test
@@ -87,6 +88,8 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.DESCRIPTION, "Description test.");
 		formMap.put(StudyModel.COMMENTS, "Comments test.");
 		formMap.put(StudyModel.DIRNAME, "dirName_submit");
+		formMap.put(StudyModel.GROUP_STUDY, "true");
+		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
 		formMap.put(StudyModel.JSON_DATA, "{}");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
@@ -104,6 +107,8 @@ public class StudiesControllerTest extends AbstractTest {
 		assertEquals("Title Test", study.getTitle());
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
+		assertThat(study.isGroupStudy()).isTrue();
+		assertThat(study.getMaxGroupSize()).isEqualTo(5);
 		assertEquals("{}", study.getJsonData());
 		assertThat((study.getComponentList().isEmpty()));
 		assertThat((study.getMemberList().contains(admin)));
@@ -122,6 +127,8 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.DESCRIPTION, "Description test <b>.");
 		formMap.put(StudyModel.COMMENTS, "Comments test <i>.");
 		formMap.put(StudyModel.DIRNAME, "%.test");
+		formMap.put(StudyModel.GROUP_STUDY, "true");
+		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
 		formMap.put(StudyModel.JSON_DATA, "{");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "WrongWorker");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
@@ -129,7 +136,8 @@ public class StudiesControllerTest extends AbstractTest {
 
 		Result result = callAction(controllers.routes.ref.Studies.submit(),
 				request);
-		assertThat(contentAsString(result)).contains(BreadcrumbsService.NEW_STUDY);
+		assertThat(contentAsString(result)).contains(
+				BreadcrumbsService.NEW_STUDY);
 		assertThat(contentAsString(result)).contains(
 				"Problems deserializing JSON data string: invalid JSON format");
 	}
@@ -141,6 +149,8 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.TITLE, "Title Test");
 		formMap.put(StudyModel.DESCRIPTION, "Description test.");
 		formMap.put(StudyModel.COMMENTS, "Comments test.");
+		formMap.put(StudyModel.GROUP_STUDY, "true");
+		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
 		formMap.put(StudyModel.DIRNAME, studyClone.getDirName());
 		formMap.put(StudyModel.JSON_DATA, "{}");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
@@ -149,9 +159,12 @@ public class StudiesControllerTest extends AbstractTest {
 
 		Result result = callAction(controllers.routes.ref.Studies.submit(),
 				request);
-		assertThat(contentAsString(result)).contains(BreadcrumbsService.NEW_STUDY);
+		assertThat(contentAsString(result)).contains(
+				BreadcrumbsService.NEW_STUDY);
 		assertThat(contentAsString(result)).contains(
 				"couldn&#x27;t be created because it already exists.");
+		
+		// Cleanup
 		removeStudy(studyClone);
 	}
 
@@ -182,18 +195,21 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.DESCRIPTION, "Description test.");
 		formMap.put(StudyModel.COMMENTS, "Comments test.");
 		formMap.put(StudyModel.DIRNAME, "dirName_submitEdited");
+		formMap.put(StudyModel.GROUP_STUDY, "true");
+		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
 		formMap.put(StudyModel.JSON_DATA, "{}");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 		Result result = callAction(
-				controllers.routes.ref.Studies.submitEdited(studyClone
-						.getId()), request);
+				controllers.routes.ref.Studies.submitEdited(studyClone.getId()),
+				request);
+
 		assertEquals(SEE_OTHER, status(result));
 
-		// It would be nice to test the edited study here
+		// TODO It would be nice to test the edited study here
+
 		// Clean up
-		studyClone.setDirName("dirName_submitEdited");
 		removeStudy(studyClone);
 	}
 
@@ -201,8 +217,8 @@ public class StudiesControllerTest extends AbstractTest {
 	public void callSwapLock() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
-		Result result = callAction(controllers.routes.ref.Studies
-				.swapLock(studyClone.getId()),
+		Result result = callAction(
+				controllers.routes.ref.Studies.swapLock(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -243,8 +259,8 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.routes.ref.Studies.changeMembers(studyClone
-						.getId()),
+				controllers.routes.ref.Studies
+						.changeMembers(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -319,8 +335,7 @@ public class StudiesControllerTest extends AbstractTest {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.routes.ref.Studies
-						.showStudy(studyClone.getId()),
+				controllers.routes.ref.Studies.showStudy(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
@@ -388,7 +403,8 @@ public class StudiesControllerTest extends AbstractTest {
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
-		assertThat(contentAsString(result)).contains(BreadcrumbsService.WORKERS);
+		assertThat(contentAsString(result))
+				.contains(BreadcrumbsService.WORKERS);
 
 		// Clean up
 		removeStudy(studyClone);

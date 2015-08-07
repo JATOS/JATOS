@@ -229,6 +229,34 @@ public class PublixInterceptor extends Controller implements IPublix {
 		}
 		return result;
 	}
+	
+	@Override
+	@Transactional
+	public Result joinGroup(Long studyId) throws BadRequestPublixException {
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.joinGroup(studyId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.joinGroup(studyId);
+			break;
+		case PersonalMultipleWorker.WORKER_TYPE:
+			result = pmPublix.joinGroup(studyId);
+			break;
+		case PersonalSingleWorker.WORKER_TYPE:
+			result = personalSinglePublix.joinGroup(studyId);
+			break;
+		case GeneralSingleWorker.WORKER_TYPE:
+			result = generalSinglePublix.joinGroup(studyId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		}
+		return result;
+	}
 
 	@Override
 	@Transactional

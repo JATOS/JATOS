@@ -44,8 +44,8 @@ public class GroupResult {
 	private GroupState groupState;
 
 	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "group_id")
-	private GroupModel group;
+	@JoinColumn(name = "study_id")
+	private StudyModel study;
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "groupResult_id")
@@ -70,12 +70,12 @@ public class GroupResult {
 		this.groupState = groupState;
 	}
 
-	public GroupModel getGroup() {
-		return group;
+	public StudyModel getGroup() {
+		return study;
 	}
 
-	public void setGroup(GroupModel group) {
-		this.group = group;
+	public void setGroup(StudyModel group) {
+		this.study = group;
 	}
 
 	public void setStudyResultList(List<StudyResult> studyResultList) {

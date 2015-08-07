@@ -55,8 +55,29 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 </div>
 
 <div class="form-group">
-	<label class="control-label col-xs-2" for="jsonData">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
+	<label class="control-label col-xs-2" for="allowedWorkerTypes">Group study&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Make this study a group study with several workers working together in a group." aria-hidden="true"></span></label>
 	<div class="col-xs-10">
+		<label class="checkbox-inline" for="groupStudy">
+			<input type="checkbox" name="@StudyModel.GROUP_STUDY" id="groupStudy" value="true"
+					@if("true".equals(form(StudyModel.GROUP_STUDY).value)) {checked="checked"}
+					>&nbsp;<!-- Don't remove this space! It's needed for checkbox-inline. -->
+			<!-- We need a hidden input field.
+			http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+			<input type="hidden" name="@StudyModel.GROUP_STUDY" value="false" />
+		</label>
+	</div>
+</div>
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="maxGroupSize">Maximal group size &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of members in this group." aria-hidden="true"></span></label>
+	<div class="col-xs-2">
+		<input type="number" class="form-control" id="maxGroupSize" name="@StudyModel.MAX_GROUP_SIZE" value="@form(StudyModel.MAX_GROUP_SIZE).value" min="2" placeholder="2" disabled>
+	</div>
+</div>
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
+	<div class="col-xs-10" id="allowedWorkerTypes">
 		<label class="checkbox-inline">
 			<input type="checkbox" name="@StudyModel.ALLOWED_WORKER_LIST" value="@workers.JatosWorker.WORKER_TYPE"
 					@if(form(StudyModel.ALLOWED_WORKER_LIST).value != null && form(StudyModel.ALLOWED_WORKER_LIST).value.contains(workers.JatosWorker.WORKER_TYPE)) {checked}
@@ -99,6 +120,14 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 }
 
 <script>
+$('#groupStudy').change(function() {
+	if ($(this).is(':checked')) {
+		$('#maxGroupSize').attr("disabled", false);
+	} else {
+		$('#maxGroupSize').attr("disabled", true);
+	}
+});
+
 @if(form(StudyModel.ID).value != null) {
 	var studyId = @form(StudyModel.ID).value;
 }
@@ -128,6 +157,10 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 @for(error <- form(StudyModel.JSON_DATA).errors) {
 	$('#jsonData').closest(".form-group").addClass("has-error");
 	$('#jsonData').after('<span class="help-block">@error.message</span>');
+}
+@for(error <- form(StudyModel.MAX_GROUP_SIZE).errors) {
+	$('#maxGroupSize').closest(".form-group").addClass("has-error");
+	$('#maxGroupSize').after('<span class="help-block">@error.message</span>');
 }
 @if(studyIsLocked) {
 	$(':input').attr("disabled", true);

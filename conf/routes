@@ -6,6 +6,7 @@
 GET     /publix/:studyId/start                           @publix.controllers.PublixInterceptor.startStudy(studyId: Long)
 GET     /publix/:studyId/end                             @publix.controllers.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
 GET     /publix/:studyId/abort                           @publix.controllers.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null)
+GET     /publix/:studyId/joinGroup                       @publix.controllers.PublixInterceptor.joinGroup(studyId: Long)
 POST    /publix/:studyId/setSessionData                  @publix.controllers.PublixInterceptor.setStudySessionData(studyId: Long)
 # Start component by ID
 GET     /publix/:studyId/:componentId/start              @publix.controllers.PublixInterceptor.startComponent(studyId: Long, componentId: Long)

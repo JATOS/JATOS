@@ -174,6 +174,12 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
+	public Result joinGroup(Long studyId) {
+		// TODO
+		return ok();
+	}
+
+	@Override
 	public WebSocket<String> websocket(Long studyId, Long componentId) {
 		return WebSocket.withActor(GroupStudyWebSocketActor::props);
 	}

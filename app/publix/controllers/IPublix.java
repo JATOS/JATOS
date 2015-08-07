@@ -74,6 +74,15 @@ public interface IPublix {
 			throws BadRequestPublixException, PublixException, IOException;
 
 	/**
+	 * HTTP type: Ajax GET request
+	 * 
+	 * Let the worker join a group. Actually this study run's studyResult is
+	 * added to a GroupResult. To join a group is only necessary for a group
+	 * study.
+	 */
+	Result joinGroup(Long studyId) throws BadRequestPublixException;
+
+	/**
 	 * HTTP type: Ajax POST request
 	 * 
 	 * Expects the study's session data in JSON format and sets them in the

@@ -60,6 +60,8 @@ public class StudyModel {
 	public static final String DIRNAME = "dirName";
 	public static final String COMMENTS = "comments";
 	public static final String STUDY = "study";
+	public static final String GROUP_STUDY = "groupStudy";
+	public static final String MAX_GROUP_SIZE = "maxGroupSize";
 	public static final String ALLOWED_WORKER_LIST = "allowedWorkerList";
 
 	@Id
@@ -141,6 +143,18 @@ public class StudyModel {
 	@JoinColumn(name = "study_id")
 	private List<ComponentModel> componentList = new ArrayList<>();
 
+	/**
+	 * Is this a group study with several workers running it at once.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+	private boolean groupStudy = false;
+
+	/**
+	 * Maximal number of workers in a group. Is at least 2.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+	private int maxGroupSize = 2;
+
 	public StudyModel() {
 		// Add default allowed workers
 		addAllowedWorker(JatosWorker.WORKER_TYPE);
@@ -160,6 +174,8 @@ public class StudyModel {
 		this.title = study.title;
 		this.comments = study.comments;
 		this.locked = false;
+		this.groupStudy = study.groupStudy;
+		this.maxGroupSize = study.maxGroupSize;
 		this.allowedWorkerList.addAll(study.allowedWorkerList.stream().collect(
 				Collectors.toList()));
 		for (ComponentModel component : study.componentList) {
@@ -239,6 +255,22 @@ public class StudyModel {
 
 	public void setJsonData(String jsonData) {
 		this.jsonData = jsonData;
+	}
+	
+	public boolean isGroupStudy() {
+		return groupStudy;
+	}
+
+	public void setGroupStudy(boolean groupStudy) {
+		this.groupStudy = groupStudy;
+	}
+
+	public int getMaxGroupSize() {
+		return maxGroupSize;
+	}
+
+	public void setMaxGroupSize(int maxGroupSize) {
+		this.maxGroupSize = maxGroupSize;
 	}
 
 	public void setAllowedWorkerList(Set<String> allowedWorkerList) {
@@ -371,6 +403,10 @@ public class StudyModel {
 		if (dirName != null && matcher.find()) {
 			errorList.add(new ValidationError(DIRNAME,
 					MessagesStrings.INVALID_DIR_NAME));
+		}
+		if (groupStudy && maxGroupSize < 2) {
+			errorList.add(new ValidationError(MAX_GROUP_SIZE,
+					MessagesStrings.STUDY_GROUP_SIZE));
 		}
 		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENTS,

@@ -343,6 +343,10 @@ public class StudyServiceTest extends AbstractTest {
 		formMap.put(StudyModel.COMMENTS, commentsArray);
 		String[] dirNameArray = { "dir_name" };
 		formMap.put(StudyModel.DIRNAME, dirNameArray);
+		String[] groupStudyArray = { "true" };
+		formMap.put(StudyModel.GROUP_STUDY, groupStudyArray);
+		String[] maxGroupSizeArray = { "5" };
+		formMap.put(StudyModel.MAX_GROUP_SIZE, maxGroupSizeArray);
 		String[] jsonArray = { "{}" };
 		formMap.put(StudyModel.JSON_DATA, jsonArray);
 		String[] allowedWorkerArray = { JatosWorker.WORKER_TYPE };
@@ -353,6 +357,8 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(study.getDescription()).isEqualTo("This is a description");
 		assertThat(study.getComments()).isEqualTo("This is a comment");
 		assertThat(study.getDirName()).isEqualTo("dir_name");
+		assertThat(study.isGroupStudy()).isTrue();
+		assertThat(study.getMaxGroupSize()).isEqualTo(5);
 		assertThat(study.getJsonData()).isEqualTo("{}");
 		assertThat(study.getAllowedWorkerList()).containsOnly(
 				JatosWorker.WORKER_TYPE);

@@ -15,8 +15,8 @@ import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.RequestScopeMessaging;
 
+import common.RequestScopeMessaging;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 
@@ -133,6 +133,8 @@ public class StudyService {
 		study.setDescription(updatedStudy.getDescription());
 		study.setComments(updatedStudy.getComments());
 		study.setJsonData(updatedStudy.getJsonData());
+		study.setGroupStudy(updatedStudy.isGroupStudy());
+		study.setMaxGroupSize(updatedStudy.getMaxGroupSize());
 		study.getAllowedWorkerList().clear();
 		updatedStudy.getAllowedWorkerList().forEach(study::addAllowedWorker);
 		studyDao.update(study);
@@ -199,6 +201,10 @@ public class StudyService {
 		study.setDescription(formMap.get(StudyModel.DESCRIPTION)[0]);
 		study.setComments(formMap.get(StudyModel.COMMENTS)[0]);
 		study.setDirName(formMap.get(StudyModel.DIRNAME)[0]);
+		study.setGroupStudy(Boolean.parseBoolean(formMap
+				.get(StudyModel.GROUP_STUDY)[0]));
+		study.setMaxGroupSize(Integer.parseInt(formMap
+				.get(StudyModel.MAX_GROUP_SIZE)[0]));
 		study.setJsonData(JsonUtils.asStringForDB(formMap
 				.get(StudyModel.JSON_DATA)[0]));
 		String[] allowedWorkerArray = formMap

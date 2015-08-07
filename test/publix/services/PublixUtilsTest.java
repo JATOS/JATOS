@@ -244,7 +244,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
-				componentResult, admin.getWorker());
+				componentResult, admin.getWorker(),
+				studyResult.getGroupResult());
 
 		// Check IDs in cookie value String
 		Map<String, String> cookieMap = new HashMap<>();
@@ -887,15 +888,15 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		assertThat(publixUtils.componentDone(componentResult)).isTrue();
 		componentResult.setComponentState(ComponentState.RELOADED);
 		assertThat(publixUtils.componentDone(componentResult)).isTrue();
-		
-		// Not done if 
+
+		// Not done if
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
 		assertThat(publixUtils.componentDone(componentResult)).isFalse();
 		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
 		assertThat(publixUtils.componentDone(componentResult)).isFalse();
 		componentResult.setComponentState(ComponentState.STARTED);
 		assertThat(publixUtils.componentDone(componentResult)).isFalse();
-		
+
 		// Clean-up
 		removeStudy(study);
 	}

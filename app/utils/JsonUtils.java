@@ -69,7 +69,7 @@ public class JsonUtils {
 	/**
 	 * Helper class for selectively marshaling an Object to JSON. Only fields of
 	 * that Object that are annotated with this class will be serialised. The
-	 * intended use is in the public API.
+	 * intended use is in the publix module (used for running a study).
 	 */
 	public static class JsonForPublix {
 	}
