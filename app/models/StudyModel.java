@@ -39,7 +39,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Domain model of a study.
+ * Domain model of a study. Default values, where necessary, are at the fields
+ * or the constructor.
  * 
  * @author Kristian Lange
  */
@@ -127,6 +128,18 @@ public class StudyModel {
 	private String jsonData;
 
 	/**
+	 * Is this a group study with several workers running it at once.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+	private boolean groupStudy = false;
+
+	/**
+	 * Maximal number of workers in a group. Is at least 2.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+	private int maxGroupSize = 2;
+
+	/**
 	 * List of users that are members of this study (have access rights).
 	 */
 	@JsonIgnore
@@ -142,18 +155,6 @@ public class StudyModel {
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
 	private List<ComponentModel> componentList = new ArrayList<>();
-
-	/**
-	 * Is this a group study with several workers running it at once.
-	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private boolean groupStudy = false;
-
-	/**
-	 * Maximal number of workers in a group. Is at least 2.
-	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private int maxGroupSize = 2;
 
 	public StudyModel() {
 		// Add default allowed workers
@@ -256,7 +257,7 @@ public class StudyModel {
 	public void setJsonData(String jsonData) {
 		this.jsonData = jsonData;
 	}
-	
+
 	public boolean isGroupStudy() {
 		return groupStudy;
 	}

@@ -59,7 +59,7 @@ public class StudyService {
 	}
 
 	/**
-	 * Clones a StudyModel. It does not copy the memberList, id, uuid, date or
+	 * Clones a StudyModel. It does NOT copy the memberList, id, uuid, date or
 	 * locked (set to false).
 	 */
 	private StudyModel cloneStudyProperties(StudyModel study) {
@@ -69,8 +69,11 @@ public class StudyService {
 		clone.setComments(study.getComments());
 		clone.setJsonData(study.getJsonData());
 		clone.setTitle(study.getTitle());
+		clone.setGroupStudy(study.isGroupStudy());
+		clone.setMaxGroupSize(study.getMaxGroupSize());
 		clone.setLocked(false);
 		study.getAllowedWorkerList().forEach(clone::addAllowedWorker);
+		// Clone each component
 		for (ComponentModel component : study.getComponentList()) {
 			ComponentModel componentClone = componentService
 					.cloneComponentModel(component);
@@ -81,7 +84,8 @@ public class StudyService {
 	}
 
 	/**
-	 * Generates an title for the cloned study that doesn't exist so far
+	 * Generates an title for the cloned study by adding '(clone)' and numbers
+	 * that doesn't exist so far.
 	 */
 	private String cloneTitle(String origTitle) {
 		String cloneTitle = origTitle + " (clone)";
@@ -203,8 +207,10 @@ public class StudyService {
 		study.setDirName(formMap.get(StudyModel.DIRNAME)[0]);
 		study.setGroupStudy(Boolean.parseBoolean(formMap
 				.get(StudyModel.GROUP_STUDY)[0]));
-		study.setMaxGroupSize(Integer.parseInt(formMap
-				.get(StudyModel.MAX_GROUP_SIZE)[0]));
+		if (study.isGroupStudy()) {
+			study.setMaxGroupSize(Integer.parseInt(formMap
+					.get(StudyModel.MAX_GROUP_SIZE)[0]));
+		}
 		study.setJsonData(JsonUtils.asStringForDB(formMap
 				.get(StudyModel.JSON_DATA)[0]));
 		String[] allowedWorkerArray = formMap
