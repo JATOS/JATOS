@@ -17,18 +17,18 @@ import play.mvc.Http;
 import play.mvc.Result;
 import services.BreadcrumbsService;
 import services.JatosGuiExceptionThrower;
-import services.MessagesStrings;
 import services.ResultRemover;
 import services.ResultService;
 import services.StudyService;
 import services.UserService;
 import services.WorkerService;
 import utils.JsonUtils;
+import utils.MessagesStrings;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.RequestScopeMessaging;
 
+import common.RequestScopeMessaging;
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.BadRequestException;

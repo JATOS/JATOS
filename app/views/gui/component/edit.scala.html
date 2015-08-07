@@ -77,7 +77,7 @@ study: StudyModel)
 var studyId = @study.getId();
 
 @if(form.hasErrors) {
-	showWarning("@services.MessagesStrings.COMPONENT_WASNT_SAVED");
+	showWarning("@utils.MessagesStrings.COMPONENT_WASNT_SAVED");
 }
 @for(error <- form.globalErrors) {
 	showError("@error.message");

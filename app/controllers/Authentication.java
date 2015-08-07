@@ -9,8 +9,8 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.MessagesStrings;
 import services.UserService;
+import utils.MessagesStrings;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

@@ -133,7 +133,7 @@ $('#groupStudy').change(function() {
 }
 
 @if(form.hasErrors) {
-	showWarning("@services.MessagesStrings.STUDY_WASNT_SAVED");
+	showWarning("@utils.MessagesStrings.STUDY_WASNT_SAVED");
 }
 @for(error <- form.globalErrors) {
 	showError("@error.message");

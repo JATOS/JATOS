@@ -11,12 +11,13 @@ import play.libs.ws.WS;
 import play.mvc.Controller;
 import play.mvc.Result;
 import publix.exceptions.NotFoundPublixException;
-import services.MessagesStrings;
 import utils.ControllerUtils;
 import utils.IOUtils;
+import utils.MessagesStrings;
 
 import com.google.common.base.Strings;
 import com.google.inject.Singleton;
+
 import common.Common;
 
 /**

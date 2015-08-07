@@ -14,6 +14,7 @@ import models.workers.Worker;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.data.validation.ValidationError;
+import utils.MessagesStrings;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

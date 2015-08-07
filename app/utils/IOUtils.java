@@ -13,7 +13,6 @@ import org.apache.commons.lang3.StringUtils;
 import play.mvc.Results.Chunks;
 import play.mvc.Results.StringChunks;
 import publix.controllers.StudyAssets;
-import services.MessagesStrings;
 
 import com.google.inject.Singleton;
 

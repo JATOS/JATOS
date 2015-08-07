@@ -15,8 +15,8 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import play.data.validation.ValidationError;
-import services.MessagesStrings;
 import services.UserService;
+import utils.MessagesStrings;
 import common.Global;
 
 /**

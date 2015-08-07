@@ -23,9 +23,9 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import play.db.jpa.JPA;
-import services.MessagesStrings;
 import services.StudyService;
 import utils.IOUtils;
+import utils.MessagesStrings;
 import common.Global;
 
 /**

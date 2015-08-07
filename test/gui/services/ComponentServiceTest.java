@@ -15,8 +15,8 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import services.ComponentService;
-import services.MessagesStrings;
 import utils.IOUtils;
+import utils.MessagesStrings;
 import common.Global;
 
 /**

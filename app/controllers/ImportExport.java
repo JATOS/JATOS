@@ -20,7 +20,6 @@ import play.mvc.Result;
 import services.ComponentService;
 import services.ImportExportService;
 import services.JatosGuiExceptionThrower;
-import services.MessagesStrings;
 import services.ResultDataStringGenerator;
 import services.StudyService;
 import services.UserService;
@@ -28,6 +27,7 @@ import services.WorkerService;
 import utils.DateUtils;
 import utils.IOUtils;
 import utils.JsonUtils;
+import utils.MessagesStrings;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;

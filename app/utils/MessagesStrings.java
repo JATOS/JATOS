@@ -1,4 +1,4 @@
-package services;
+package utils;
 
 import models.ComponentResult.ComponentState;
 import models.StudyResult.StudyState;
