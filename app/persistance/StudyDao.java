@@ -108,9 +108,10 @@ public class StudyDao extends AbstractDao {
 		String queryStr = "SELECT e FROM StudyModel e WHERE " + "e.uuid=:uuid";
 		TypedQuery<StudyModel> query = JPA.em().createQuery(queryStr,
 				StudyModel.class);
-		List<StudyModel> studyList = query.setParameter("uuid", uuid)
-				.getResultList();
+		query.setParameter("uuid", uuid);
 		// There can be only one study with this UUID
+		query.setMaxResults(1);
+		List<StudyModel> studyList = query.getResultList();
 		return studyList.isEmpty() ? null : studyList.get(0);
 	}
 

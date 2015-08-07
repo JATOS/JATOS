@@ -46,8 +46,11 @@ public class UserDao extends AbstractDao {
 				+ "e.email=:email and e.passwordHash=:passwordHash";
 		TypedQuery<UserModel> query = JPA.em().createQuery(queryStr,
 				UserModel.class);
-		List<UserModel> userList = query.setParameter("email", email)
-				.setParameter("passwordHash", passwordHash).getResultList();
+		// There can be only one user with this email
+		query.setMaxResults(1);
+		query.setParameter("email", email);
+		query.setParameter("passwordHash", passwordHash);
+		List<UserModel> userList = query.getResultList();
 		return userList.isEmpty() ? null : userList.get(0);
 	}
 

@@ -42,8 +42,9 @@ public class MTWorkerDao extends WorkerDao {
 		String queryStr = "SELECT e FROM Worker e WHERE "
 				+ "upper(e.mtWorkerId)=:mtWorkerId";
 		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
-		List<Worker> workerList = query.setParameter("mtWorkerId", mtWorkerId)
-				.getResultList();
+		query.setParameter("mtWorkerId", mtWorkerId);
+		query.setMaxResults(1);
+		List<Worker> workerList = query.getResultList();
 		return workerList.isEmpty() ? null : (MTWorker) workerList
 				.get(0);
 	}

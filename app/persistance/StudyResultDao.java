@@ -90,13 +90,6 @@ public class StudyResultDao extends AbstractDao {
 		return JPA.em().find(StudyResult.class, id);
 	}
 
-	public List<StudyResult> findAll() {
-		String queryStr = "SELECT e FROM StudyResult e";
-		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
-				StudyResult.class);
-		return query.getResultList();
-	}
-
 	/**
 	 * Returns the number of StudyResults belonging to the given study.
 	 */

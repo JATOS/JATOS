@@ -111,9 +111,11 @@ public class ComponentDao extends AbstractDao {
 				+ "e.uuid=:uuid and e.study=:study";
 		TypedQuery<ComponentModel> query = JPA.em().createQuery(queryStr,
 				ComponentModel.class);
-		List<ComponentModel> studyList = query.setParameter("uuid", uuid)
-				.setParameter("study", study).getResultList();
+		query.setParameter("uuid", uuid);
+		query.setParameter("study", study);
 		// There can be only one component with this UUID
+		query.setMaxResults(1);
+		List<ComponentModel> studyList = query.getResultList();
 		return studyList.isEmpty() ? null : studyList.get(0);
 	}
 	
@@ -127,12 +129,6 @@ public class ComponentDao extends AbstractDao {
 		TypedQuery<ComponentModel> query = JPA.em().createQuery(queryStr,
 				ComponentModel.class);
 		return query.setParameter("title", title).getResultList();
-	}
-
-	public List<ComponentModel> findAll() {
-		TypedQuery<ComponentModel> query = JPA.em().createQuery(
-				"SELECT e FROM ComponentModel e", ComponentModel.class);
-		return query.getResultList();
 	}
 
 	/**
