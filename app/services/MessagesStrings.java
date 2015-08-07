@@ -53,7 +53,7 @@ public abstract class MessagesStrings {
 	public static final String NO_STUDY_UPLOAD = "Uploaded file isn't intended for studies";
 	public static final String MORE_THAN_ONE_DIR_IN_ZIP = "There are more than one directory in the ZIP file.";
 	public static final String NO_DIR_IN_ZIP_CREATED_NEW = "There is no directory in the ZIP file - new study assets created.";
-	public static final String COULDNT_READ_JSON = "Couldn't read JSON string. Try updating JATOS to the newest version.";
+	public static final String COULDNT_READ_JSON = "Couldn't read JSON string.";
 	public static final String COULDNT_READ_FILE = "Couldn't read file";
 	public static final String FILE_MISSING = "File missing";
 	public static final String FILE_NOT_EXIST_OR_DIR = "File doesn't exists or is a directory";
@@ -61,7 +61,10 @@ public abstract class MessagesStrings {
 	public static final String IMPORT_OF_COMPONENT_FAILED = "Import of component failed";
 	public static final String NO_RESULTS_SELECTED = "No results selected";
 	public static final String PROBLEM_GENERATING_JSON_DATA = "Problem generate JSON data";
+	public static final String WRONG_STUDY_VERSION = "This study is from an newer version of JATOS. Try updating your JATOS.";
+	public static final String WRONG_COMPONENT_VERSION = "This component is from an newer version of JATOS. Try updating your JATOS.";
 
+	
 	// Results
 	public static final String RESULTS_EXPORT_DATA = "Select results and export them as a text file to your local file system";
 	public static final String RESULTS_EXPORT_ALL_DATA = "Export all results as a text file to your local file system";

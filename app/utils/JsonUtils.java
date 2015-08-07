@@ -466,7 +466,7 @@ public class JsonUtils {
 	 */
 	public String componentAsJsonForIO(Object obj) throws IOException {
 		ObjectNode node = generateNodeWithVersionForIO(obj,
-				ComponentModel.SERIAL_VERSION);
+				String.valueOf(ComponentModel.SERIAL_VERSION));
 		return OBJECTMAPPER.writer().writeValueAsString(node);
 	}
 
@@ -476,7 +476,7 @@ public class JsonUtils {
 	 */
 	public void studyAsJsonForIO(Object obj, File file) throws IOException {
 		ObjectNode node = generateNodeWithVersionForIO(obj,
-				StudyModel.SERIAL_VERSION);
+				String.valueOf(StudyModel.SERIAL_VERSION));
 		OBJECTMAPPER.writer().writeValue(file, node);
 	}
 
@@ -493,16 +493,6 @@ public class JsonUtils {
 				.writeValueAsString(obj);
 		node.put(DATA, OBJECTMAPPER.readTree(objAsJson));
 		return node;
-	}
-
-	/**
-	 * Accepts an JSON String and turns the data object within this JSON String
-	 * into an object of the given type.
-	 */
-	public static <T> T unmarshallingIO(String jsonStr, Class<T> modelClass)
-			throws IOException {
-		JsonNode node = OBJECTMAPPER.readTree(jsonStr).findValue(DATA);
-		return OBJECTMAPPER.treeToValue(node, modelClass);
 	}
 
 	/**
@@ -537,13 +527,36 @@ public class JsonUtils {
 				return null;
 			}
 			try {
-				object = unmarshallingIO(jsonStr, modelClass);
+				object = checkVersionAndUnmarshall(modelClass, jsonStr);
 			} catch (IOException e) {
 				errorMsg = MessagesStrings.COULDNT_READ_JSON;
 				exception = e;
 				return null;
 			}
 			return object;
+		}
+
+		/**
+		 * Accepts an JSON String and turns the data object within this JSON
+		 * String into an object of the given type. Prior it checks the version
+		 * of the JSON (if it belongs to a study or a component). The JSON
+		 * string must have two variables, 'version' and 'data'.
+		 */
+		private <T> T checkVersionAndUnmarshall(Class<T> modelClass,
+				String jsonStr) throws IOException, JsonProcessingException {
+			JsonNode node = OBJECTMAPPER.readTree(jsonStr).findValue(VERSION);
+			if (modelClass.equals(StudyModel.class)
+					&& node.asInt() > StudyModel.SERIAL_VERSION) {
+				errorMsg = MessagesStrings.WRONG_STUDY_VERSION;
+				return null;
+			} else if (modelClass.equals(ComponentModel.class)
+					&& node.asInt() > ComponentModel.SERIAL_VERSION) {
+				errorMsg = MessagesStrings.WRONG_COMPONENT_VERSION;
+				return null;
+			} else {
+				node = OBJECTMAPPER.readTree(jsonStr).findValue(DATA);
+				return OBJECTMAPPER.treeToValue(node, modelClass);
+			}
 		}
 	}
 
