@@ -49,7 +49,7 @@ public class StudyModel {
 	/**
 	 * Version of this model used for serialisation (e.g. JSON marshaling)
 	 */
-	public static final String SERIAL_VERSION = "2";
+	public static final String SERIAL_VERSION = "3";
 
 	public static final String ID = "id";
 	public static final String UUID = "uuid";
