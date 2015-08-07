@@ -6,6 +6,7 @@ import models.StudyResult;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import persistance.ComponentResultDao;
+import persistance.GroupResultDao;
 import persistance.StudyResultDao;
 import persistance.workers.MTWorkerDao;
 import play.Logger;
@@ -57,12 +58,12 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	@Inject
 	MTPublix(MTPublixUtils publixUtils,
 			MTStudyAuthorisation studyAuthorisation,
-			MTErrorMessages errorMessages,
-			StudyAssets studyAssets,
+			MTErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
+			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao,
+			GroupResultDao groupResultDao) {
 		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
-				componentResultDao, jsonUtils, studyResultDao);
+				componentResultDao, jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
@@ -128,8 +129,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				worker, study);
 		String confirmationCode;
 		if (!publixUtils.studyDone(studyResult)) {
-			confirmationCode = publixUtils.finishStudyResult(successful, errorMsg,
-					studyResult);
+			confirmationCode = publixUtils.finishStudyResult(successful,
+					errorMsg, studyResult);
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}

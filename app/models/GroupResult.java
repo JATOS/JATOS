@@ -1,7 +1,9 @@
 package models;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -12,6 +14,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
  * Domain model of a group result.
@@ -51,7 +55,25 @@ public class GroupResult {
 	@JoinColumn(name = "groupResult_id")
 	private List<StudyResult> studyResultList = new ArrayList<>();
 
+	/**
+	 * Time and date when the study was started on the server.
+	 */
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
+	private Timestamp startDate;
+
+	/**
+	 * Time and date when the study was finished on the server.
+	 */
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
+	private Timestamp endDate;
+
 	public GroupResult() {
+	}
+
+	public GroupResult(StudyModel study) {
+		this.startDate = new Timestamp(new Date().getTime());
+		this.study = study;
+		this.groupState = GroupState.STARTED;
 	}
 
 	public Long getId() {
@@ -78,6 +100,22 @@ public class GroupResult {
 		this.study = group;
 	}
 
+	public void setStartDate(Timestamp startDate) {
+		this.startDate = startDate;
+	}
+
+	public Timestamp getStartDate() {
+		return this.startDate;
+	}
+
+	public void setEndDate(Timestamp endDate) {
+		this.endDate = endDate;
+	}
+
+	public Timestamp getEndDate() {
+		return this.endDate;
+	}
+
 	public void setStudyResultList(List<StudyResult> studyResultList) {
 		this.studyResultList = studyResultList;
 	}
@@ -90,7 +128,7 @@ public class GroupResult {
 		studyResultList.remove(studyResult);
 	}
 
-	public void addComponentResult(StudyResult studyResult) {
+	public void addStudyResult(StudyResult studyResult) {
 		studyResultList.add(studyResult);
 	}
 

@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
+import models.GroupResult.GroupState;
 import models.GroupResult;
 import models.StudyModel;
 import models.StudyResult;
@@ -21,6 +22,7 @@ import org.w3c.dom.Document;
 
 import persistance.ComponentDao;
 import persistance.ComponentResultDao;
+import persistance.GroupResultDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
@@ -52,16 +54,19 @@ public abstract class PublixUtils<T extends Worker> {
 	private final ComponentDao componentDao;
 	private final ComponentResultDao componentResultDao;
 	private final WorkerDao workerDao;
+	private final GroupResultDao groupResultDao;
 
 	public PublixUtils(PublixErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, WorkerDao workerDao) {
+			ComponentResultDao componentResultDao, WorkerDao workerDao,
+			GroupResultDao groupResultDao) {
 		this.errorMessages = errorMessages;
 		this.studyDao = studyDao;
 		this.studyResultDao = studyResultDao;
 		this.componentDao = componentDao;
 		this.componentResultDao = componentResultDao;
 		this.workerDao = workerDao;
+		this.groupResultDao = groupResultDao;
 	}
 
 	/**
@@ -548,6 +553,52 @@ public abstract class PublixUtils<T extends Worker> {
 				|| ComponentState.ABORTED == state
 				|| ComponentState.FAIL == state
 				|| ComponentState.RELOADED == state;
+	}
+
+	/**
+	 * Throws ForbiddenPublixException if study is not a group study.
+	 */
+	public void checkStudyIsGroupStudy(StudyModel study)
+			throws ForbiddenPublixException {
+		if (!study.isGroupStudy()) {
+			throw new ForbiddenPublixException(
+					errorMessages.studyNotGroupStudy(study.getId()));
+		}
+	}
+
+	/**
+	 * Retrieves the first incomplete GroupResult from the DB. If such doesn't
+	 * exist it creates a new one and persists it.
+	 */
+	public GroupResult retrieveGroupResult(StudyResult studyResult) {
+		// if we already have a group just return it
+		if (studyResult.getGroupResult() != null) {
+			return studyResult.getGroupResult();
+		}
+		
+		// Look in the DB if we have an incomplete group. If not create new one.
+		StudyModel study = studyResult.getStudy();
+		GroupResult groupResult = groupResultDao.findFirstIncomplete(study);
+		if (groupResult == null) {
+			groupResult = new GroupResult(study);
+			groupResultDao.create(groupResult);
+		}
+
+		// Add StudyResult to GroupResult and vice versa
+		groupResult.addStudyResult(studyResult);
+		studyResult.setGroupResult(groupResult);
+
+		// Set group state
+		if (groupResult.getStudyResultList().size() < study.getMaxGroupSize()) {
+			groupResult.setGroupState(GroupState.INCOMPLETE);
+		} else {
+			groupResult.setGroupState(GroupState.COMPLETE);
+		}
+
+		// Persist
+		groupResultDao.update(groupResult);
+		studyResultDao.update(studyResult);
+		return groupResult;
 	}
 
 }

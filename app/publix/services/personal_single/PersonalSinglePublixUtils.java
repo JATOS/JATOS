@@ -4,6 +4,7 @@ import models.workers.PersonalSingleWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.ComponentResultDao;
+import persistance.GroupResultDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
@@ -26,9 +27,9 @@ public class PersonalSinglePublixUtils extends
 	PersonalSinglePublixUtils(PersonalSingleErrorMessages errorMessages,
 			StudyDao studyDao, StudyResultDao studyResultDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao) {
+			WorkerDao workerDao, GroupResultDao groupResultDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao);
+				componentResultDao, workerDao, groupResultDao);
 	}
 
 	@Override

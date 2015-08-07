@@ -7,6 +7,7 @@ import models.StudyModel;
 import models.StudyResult;
 import models.workers.JatosWorker;
 import persistance.ComponentResultDao;
+import persistance.GroupResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
 import play.libs.F.Promise;
@@ -84,9 +85,9 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			JatosErrorMessages errorMessages,
 			StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao) {
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
-				componentResultDao, jsonUtils, studyResultDao);
+				componentResultDao, jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;

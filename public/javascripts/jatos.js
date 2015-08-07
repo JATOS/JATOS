@@ -1,6 +1,7 @@
 /**
  * jatos.js (JATOS JavaScript Library)
- * http://jatos.org
+ * Version 1.2.1
+ * http://www.jatos.org
  * Author Kristian Lange 2014 - 2015
  * Licensed under Apache License 2.0
  * 
@@ -15,6 +16,8 @@ var jatos = {};
 // Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
 // or functions or variables)
 (function() {
+	
+jatos.version = "1.2.1";
 	
 /**
  * How long should JATOS wait until to retry the HTTP call. Warning: There is a
@@ -36,13 +39,15 @@ jatos.httpRetry = 5;
 jatos.httpRetryWait = 1000;
 
 /**
- * State booleans. If true jatos.js is in this state.
+ * State booleans. If true jatos.js is in this state. Several states can be true
+ * at the same time.
  */
 var initialized = false;
 var onLoadCallbackCalled = false;
 var startingComponent = false;
 var endingComponent = false;
 var submittingResultData = false;
+var joiningGroup = false;
 var abortingComponent = false;
 
 /**
@@ -203,6 +208,9 @@ function initJatos() {
 	}
 }
 
+/**
+ * Should be called in the beginning of each function that wants to use jQuery.
+ */
 function jQueryExists() {
 	if (!jatos.jQuery) {
 		if (onErrorCallback) {
@@ -483,6 +491,41 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	}
 	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
+}
+
+/**
+ * Tries to join a group. Sends a request to JATOS. If the request was 
+ * successful JATOS answers with the group's ID. 
+ * 
+ * @param {optional
+ *            Function} success - Function to be called if a group is joined.
+ *            Gets the group's ID as parameter.
+ * @param {optional
+ *            Function} error - Function to be called in case of error
+ */
+jatos.joinGroup = function(success, error) {
+	if (!jQueryExists() || joiningGroup) {
+		return;
+	}
+	joiningGroup = true;
+	jatos.jQuery.ajax({
+		url : "/publix/" + jatos.studyId + "/joinGroup",
+		processData : false,
+		type : "GET",
+		timeout : jatos.httpTimeout,
+		success : function(response) {
+			joiningGroup = false;
+			if (success) {
+				success(response)
+			}
+		},
+		error : function(err) {
+			joiningGroup = false;
+			if (error) {
+				error(err)
+			}
+		}
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
 /**

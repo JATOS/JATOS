@@ -21,6 +21,8 @@ import publix.controllers.mt.MTPublix;
 import publix.controllers.personal_multiple.PersonalMultiplePublix;
 import publix.controllers.personal_single.PersonalSinglePublix;
 import publix.exceptions.BadRequestPublixException;
+import publix.exceptions.ForbiddenPublixException;
+import publix.exceptions.NotFoundPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
 
@@ -229,10 +231,11 @@ public class PublixInterceptor extends Controller implements IPublix {
 		}
 		return result;
 	}
-	
+
 	@Override
 	@Transactional
-	public Result joinGroup(Long studyId) throws BadRequestPublixException {
+	public Result joinGroup(Long studyId) throws BadRequestPublixException,
+			NotFoundPublixException, ForbiddenPublixException {
 		Result result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
@@ -257,28 +260,86 @@ public class PublixInterceptor extends Controller implements IPublix {
 		}
 		return result;
 	}
+	
+	@Override
+	@Transactional
+	public Result dropGroup(Long studyId) throws BadRequestPublixException,
+			NotFoundPublixException, ForbiddenPublixException {
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.dropGroup(studyId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.dropGroup(studyId);
+			break;
+		case PersonalMultipleWorker.WORKER_TYPE:
+			result = pmPublix.dropGroup(studyId);
+			break;
+		case PersonalSingleWorker.WORKER_TYPE:
+			result = personalSinglePublix.dropGroup(studyId);
+			break;
+		case GeneralSingleWorker.WORKER_TYPE:
+			result = generalSinglePublix.dropGroup(studyId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		}
+		return result;
+	}
 
 	@Override
 	@Transactional
-	public WebSocket<String> websocket(Long studyId, Long componentId)
+	public WebSocket<String> systemChannel(Long studyId)
 			throws BadRequestPublixException, PublixException, IOException {
 		WebSocket<String> result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
-			result = mtPublix.websocket(studyId, componentId);
+			result = mtPublix.systemChannel(studyId);
 			break;
 		case JatosWorker.WORKER_TYPE:
-			result = jatosPublix.websocket(studyId, componentId);
+			result = jatosPublix.systemChannel(studyId);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
-			result = pmPublix.websocket(studyId, componentId);
+			result = pmPublix.systemChannel(studyId);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
-			result = personalSinglePublix.websocket(studyId, componentId);
+			result = personalSinglePublix.systemChannel(studyId);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
-			result = generalSinglePublix.websocket(studyId, componentId);
+			result = generalSinglePublix.systemChannel(studyId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		}
+		return result;
+	}
+
+	@Override
+	@Transactional
+	public WebSocket<String> groupChannel(Long studyId)
+			throws BadRequestPublixException, PublixException, IOException {
+		WebSocket<String> result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.groupChannel(studyId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.groupChannel(studyId);
+			break;
+		case PersonalMultipleWorker.WORKER_TYPE:
+			result = pmPublix.groupChannel(studyId);
+			break;
+		case PersonalSingleWorker.WORKER_TYPE:
+			result = personalSinglePublix.groupChannel(studyId);
+			break;
+		case GeneralSingleWorker.WORKER_TYPE:
+			result = generalSinglePublix.groupChannel(studyId);
 			break;
 		default:
 			throw new BadRequestPublixException(

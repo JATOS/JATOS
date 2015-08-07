@@ -19,7 +19,7 @@ public class PublixErrorMessages {
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
 	public static final String SUBMITTED_DATA_UNKNOWN_FORMAT = "Submitted data have an unknown format.";
 	public static final String NO_WORKER_IN_SESSION = "Sorry this study is not available to you (any more). Maybe you tried to reload a component that wasn't allowed to be reloaded?";
-
+	
 	public String workerNotCorrectType(Long workerId) {
 		return "The worker with ID " + workerId
 				+ " isn't the right worker type.";
@@ -60,6 +60,10 @@ public class PublixErrorMessages {
 
 	public String studyHasNoActiveComponents(Long studyId) {
 		return "The study with ID " + studyId + " has no active components.";
+	}
+	
+	public String studyNotGroupStudy(Long studyId) {
+		return "The study with ID " + studyId + " is not a group study.";
 	}
 
 	public String componentNotExist(Long studyId, Long componentId) {

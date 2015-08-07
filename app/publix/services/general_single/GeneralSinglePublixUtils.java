@@ -5,6 +5,7 @@ import models.workers.GeneralSingleWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.ComponentResultDao;
+import persistance.GroupResultDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
@@ -28,9 +29,9 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	GeneralSinglePublixUtils(GeneralSingleErrorMessages errorMessages,
 			StudyDao studyDao, StudyResultDao studyResultDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao) {
+			WorkerDao workerDao, GroupResultDao groupResultDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao);
+				componentResultDao, workerDao, groupResultDao);
 	}
 	
 	@Override

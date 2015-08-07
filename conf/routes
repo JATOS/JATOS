@@ -7,6 +7,9 @@ GET     /publix/:studyId/start                           @publix.controllers.Pub
 GET     /publix/:studyId/end                             @publix.controllers.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
 GET     /publix/:studyId/abort                           @publix.controllers.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null)
 GET     /publix/:studyId/joinGroup                       @publix.controllers.PublixInterceptor.joinGroup(studyId: Long)
+GET     /publix/:studyId/dropGroup                       @publix.controllers.PublixInterceptor.dropGroup(studyId: Long)
+GET     /publix/:studyId/systemChannel                   @publix.controllers.PublixInterceptor.systemChannel(studyId: Long)
+GET     /publix/:studyId/groupChannel                    @publix.controllers.PublixInterceptor.groupChannel(studyId: Long)
 POST    /publix/:studyId/setSessionData                  @publix.controllers.PublixInterceptor.setStudySessionData(studyId: Long)
 # Start component by ID
 GET     /publix/:studyId/:componentId/start              @publix.controllers.PublixInterceptor.startComponent(studyId: Long, componentId: Long)
@@ -17,7 +20,6 @@ GET     /publix/:studyId/startNextComponent              @publix.controllers.Pub
 GET     /publix/:studyId/:componentId/initData           @publix.controllers.PublixInterceptor.getInitData(studyId: Long, componentId: Long)
 POST    /publix/:studyId/:componentId/submitResultData   @publix.controllers.PublixInterceptor.submitResultData(studyId: Long, componentId: Long)
 POST    /publix/:studyId/:componentId/logError           @publix.controllers.PublixInterceptor.logError(studyId: Long, componentId: Long)
-GET     /publix/:studyId/:componentId/websocket          @publix.controllers.PublixInterceptor.websocket(studyId: Long, componentId: Long)
 
 # JATOS
 GET     /jatos/login                                 @controllers.Authentication.login()

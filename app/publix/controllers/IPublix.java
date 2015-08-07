@@ -70,17 +70,40 @@ public interface IPublix {
 	Result getInitData(Long studyId, Long componentId) throws PublixException,
 			IOException;
 
-	WebSocket<String> websocket(Long studyId, Long componentId)
-			throws BadRequestPublixException, PublixException, IOException;
+	/**
+	 * HTTP type: Ajax GET request
+	 * 
+	 * Let the worker join a group. Only works if this study is a group study.
+	 */
+	Result joinGroup(Long studyId) throws PublixException;
 
 	/**
 	 * HTTP type: Ajax GET request
 	 * 
-	 * Let the worker join a group. Actually this study run's studyResult is
-	 * added to a GroupResult. To join a group is only necessary for a group
-	 * study.
+	 * Let the worker drop out of the group he joined before. Only works if this
+	 * study is a group study.
 	 */
-	Result joinGroup(Long studyId) throws BadRequestPublixException;
+	Result dropGroup(Long studyId) throws PublixException;
+
+	/**
+	 * WebSocket
+	 * 
+	 * Opens a websocket between JATOS and the client to exchange system
+	 * messages (e.g. announce group is complete or new group member). Only
+	 * works if this study is a group study.
+	 */
+	WebSocket<String> systemChannel(Long studyId)
+			throws BadRequestPublixException, PublixException, IOException;
+
+	/**
+	 * WebSocket
+	 * 
+	 * Opens a websocket between JATOS and the client to exchange group
+	 * messages. JATOS just forwards messages coming from one group member to
+	 * all other members. Only works if this study is a group study.
+	 */
+	WebSocket<String> groupChannel(Long studyId)
+			throws BadRequestPublixException, PublixException, IOException;
 
 	/**
 	 * HTTP type: Ajax POST request
