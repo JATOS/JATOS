@@ -71,7 +71,8 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 <div class="form-group">
 	<label class="control-label col-xs-2" for="maxGroupSize">Maximal group size &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of members in this group." aria-hidden="true"></span></label>
 	<div class="col-xs-2">
-		<input type="number" class="form-control" id="maxGroupSize" name="@StudyModel.MAX_GROUP_SIZE" value="@form(StudyModel.MAX_GROUP_SIZE).value" min="2" placeholder="2" disabled>
+		<input type="number" class="form-control" id="maxGroupSize" name="@StudyModel.MAX_GROUP_SIZE" value="@form(StudyModel.MAX_GROUP_SIZE).value" min="2" placeholder="2"
+		@if("false".equals(form(StudyModel.GROUP_STUDY).value)) {disabled}>
 	</div>
 </div>
 
