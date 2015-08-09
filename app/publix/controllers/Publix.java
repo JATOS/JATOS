@@ -189,7 +189,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		publixUtils.checkStudyIsGroupStudy(study);
-		GroupResult groupResult = publixUtils.retrieveGroupResult(studyResult);
+		GroupResult groupResult = publixUtils.joinGroupResult(studyResult);
 		return ok(groupResult.getId().toString());
 	}
 
@@ -204,8 +204,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		publixUtils.checkStudyIsGroupStudy(study);
-
-		// TODO
+		publixUtils.dropGroupResult(studyResult);
 		return ok();
 	}
 

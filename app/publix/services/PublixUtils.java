@@ -567,15 +567,15 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Retrieves the first incomplete GroupResult from the DB. If such doesn't
-	 * exist it creates a new one and persists it.
+	 * Joins the first incomplete GroupResult from the DB and returns it. If
+	 * such doesn't exist it creates a new one and persists it.
 	 */
-	public GroupResult retrieveGroupResult(StudyResult studyResult) {
-		// if we already have a group just return it
+	public GroupResult joinGroupResult(StudyResult studyResult) {
+		// If we already have a group just return it
 		if (studyResult.getGroupResult() != null) {
 			return studyResult.getGroupResult();
 		}
-		
+
 		// Look in the DB if we have an incomplete group. If not create new one.
 		StudyModel study = studyResult.getStudy();
 		GroupResult groupResult = groupResultDao.findFirstIncomplete(study);
@@ -588,17 +588,43 @@ public abstract class PublixUtils<T extends Worker> {
 		groupResult.addStudyResult(studyResult);
 		studyResult.setGroupResult(groupResult);
 
-		// Set group state
+		setGroupStateInComplete(groupResult, studyResult.getStudy());
+		groupResultDao.update(groupResult);
+		studyResultDao.update(studyResult);
+		return groupResult;
+	}
+
+	/**
+	 * Sets GroupResult's state to COMPLETE or INCOMPLETE according to study's
+	 * maxGroupSize.
+	 */
+	private void setGroupStateInComplete(GroupResult groupResult,
+			StudyModel study) {
 		if (groupResult.getStudyResultList().size() < study.getMaxGroupSize()) {
 			groupResult.setGroupState(GroupState.INCOMPLETE);
 		} else {
 			groupResult.setGroupState(GroupState.COMPLETE);
 		}
+	}
 
-		// Persist
+	public void dropGroupResult(StudyResult studyResult) {
+		GroupResult groupResult = studyResult.getGroupResult();
+		if (groupResult == null) {
+			return;
+		}
+
+		// Remove StudyResult from GroupResult and vice versa
+		groupResult.removeStudyResult(studyResult);
+		studyResult.setGroupResult(null);
+
+		setGroupStateInComplete(groupResult, studyResult.getStudy());
 		groupResultDao.update(groupResult);
 		studyResultDao.update(studyResult);
-		return groupResult;
+
+		// If group empty remove it from DB
+		if (groupResult.getStudyResultList().isEmpty()) {
+			groupResultDao.remove(groupResult);
+		}
 	}
 
 }

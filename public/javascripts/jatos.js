@@ -48,6 +48,7 @@ var startingComponent = false;
 var endingComponent = false;
 var submittingResultData = false;
 var joiningGroup = false;
+var droppingGroup = false;
 var abortingComponent = false;
 
 /**
@@ -494,11 +495,11 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 }
 
 /**
- * Tries to join a group. Sends a request to JATOS. If the request was 
- * successful JATOS answers with the group's ID. 
+ * Tries to join a group. Sends a request to JATOS. If it was successful it
+ * answers with the group's ID. 
  * 
  * @param {optional
- *            Function} success - Function to be called if a group is joined.
+ *            Function} success - Function to be called after a group is joined.
  *            Gets the group's ID as parameter.
  * @param {optional
  *            Function} error - Function to be called in case of error
@@ -521,6 +522,39 @@ jatos.joinGroup = function(success, error) {
 		},
 		error : function(err) {
 			joiningGroup = false;
+			if (error) {
+				error(err)
+			}
+		}
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
+}
+
+/**
+ * Tries to drop out from the group it has previously joined.
+ * 
+ * @param {optional
+ *            Function} success - Function to be called after the group is dropped.
+ * @param {optional
+ *            Function} error - Function to be called in case of error.
+ */
+jatos.dropGroup = function(success, error) {
+	if (!jQueryExists() || droppingGroup) {
+		return;
+	}
+	droppingGroup = true;
+	jatos.jQuery.ajax({
+		url : "/publix/" + jatos.studyId + "/dropGroup",
+		processData : false,
+		type : "GET",
+		timeout : jatos.httpTimeout,
+		success : function(response) {
+			droppingGroup = false;
+			if (success) {
+				success()
+			}
+		},
+		error : function(err) {
+			droppingGroup = false;
 			if (error) {
 				error(err)
 			}
