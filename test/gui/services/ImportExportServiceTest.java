@@ -246,6 +246,8 @@ public class ImportExportServiceTest extends AbstractTest {
 		assertThat(study.getDate()).isNull();
 		assertThat(study.getDescription()).isEqualTo(
 				"A couple of sample components.");
+		assertThat(study.isGroupStudy()).isFalse();
+		assertThat(study.getMaxGroupSize()).isEqualTo(2);
 		assertThat(study.getId()).isPositive();
 		assertThat(study.getJsonData().contains("\"totalStudySlides\":17"))
 				.isTrue();
@@ -405,8 +407,8 @@ public class ImportExportServiceTest extends AbstractTest {
 						+ IOUtils.ZIP_FILE_SUFFIX).isEqualTo(
 				studyFile.getName());
 
-		// Import 2. call: importStudyConfirmed(): Allow properties but not
-		// assets to be overwritten
+		// Import 2. call: importStudyConfirmed(): Allow assets but not
+		// properties to be overwritten
 		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
 		node.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM, false);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
@@ -425,6 +427,8 @@ public class ImportExportServiceTest extends AbstractTest {
 		assertThat(study.getDate()).isNull();
 		assertThat(study.getDescription()).isEqualTo("Changed description");
 		assertThat(study.getId()).isPositive();
+		assertThat(study.isGroupStudy()).isTrue();
+		assertThat(study.getMaxGroupSize()).isEqualTo(5);
 		assertThat(study.getJsonData()).isEqualTo("{}");
 		assertThat(study.getMemberList().contains(admin)).isTrue();
 		assertThat(study.getTitle()).isEqualTo("Changed Title");
@@ -444,6 +448,8 @@ public class ImportExportServiceTest extends AbstractTest {
 		study.getComponentList().remove(0);
 		study.getLastComponent().setTitle("Changed title");
 		study.setDescription("Changed description");
+		study.setGroupStudy(true);
+		study.setMaxGroupSize(5);
 		study.setJsonData("{}");
 		study.setTitle("Changed Title");
 	}

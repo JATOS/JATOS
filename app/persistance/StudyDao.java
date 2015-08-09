@@ -60,31 +60,6 @@ public class StudyDao extends AbstractDao {
 	}
 
 	/**
-	 * Update properties of study with properties of updatedStudy.
-	 */
-	public void updateProperties(StudyModel study, StudyModel updatedStudy) {
-		study.setTitle(updatedStudy.getTitle());
-		study.setDescription(updatedStudy.getDescription());
-		study.setDirName(updatedStudy.getDirName());
-		study.setJsonData(updatedStudy.getJsonData());
-		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
-		merge(study);
-	}
-
-	/**
-	 * Update properties of study with properties of updatedStudy (excluding
-	 * study's dir name).
-	 */
-	public void updatePropertiesWODirName(StudyModel study,
-			StudyModel updatedStudy) {
-		study.setTitle(updatedStudy.getTitle());
-		study.setDescription(updatedStudy.getDescription());
-		study.setJsonData(updatedStudy.getJsonData());
-		study.setAllowedWorkerList(updatedStudy.getAllowedWorkerList());
-		merge(study);
-	}
-
-	/**
 	 * Remove study and its components
 	 */
 	public void remove(StudyModel study) {

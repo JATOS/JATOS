@@ -103,6 +103,58 @@ public class StudyServiceTest extends AbstractTest {
 		removeStudy(study);
 		removeStudy(clone);
 	}
+	
+	@Test
+	public void checkUpdateStudy() throws NoSuchAlgorithmException, IOException {
+		StudyModel study = importExampleStudy();
+		addStudy(study);
+
+		StudyModel updatedStudy = studyService.cloneStudy(study, admin);
+		updatedStudy.removeAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+		updatedStudy.removeAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
+		updatedStudy.getComponentList().remove(0);
+		updatedStudy.getLastComponent().setTitle("Changed title");
+		updatedStudy.setDescription("Changed description");
+		updatedStudy.setComments("Changed comments");
+		updatedStudy.setJsonData("{}");
+		updatedStudy.setGroupStudy(true);
+		updatedStudy.setMaxGroupSize(5);
+		updatedStudy.setTitle("Changed Title");
+		updatedStudy.setUuid("changed uuid");
+		updatedStudy.getMemberList().remove(admin);
+		long studyId = study.getId();
+
+		entityManager.getTransaction().begin();
+		studyService.updatePropertiesWODirName(study, updatedStudy);
+		entityManager.getTransaction().commit();
+
+		// Changed
+		assertThat(study.getTitle()).isEqualTo(updatedStudy.getTitle());
+		assertThat(study.getDescription()).isEqualTo(
+				updatedStudy.getDescription());
+		assertThat(study.getComments()).isEqualTo(updatedStudy.getComments());
+		assertThat(study.getJsonData()).isEqualTo(updatedStudy.getJsonData());
+		assertThat(study.getAllowedWorkerList()).containsOnly(
+				JatosWorker.WORKER_TYPE);
+		assertThat(study.isGroupStudy()).isEqualTo(updatedStudy.isGroupStudy());
+		assertThat(study.getMaxGroupSize()).isEqualTo(
+				updatedStudy.getMaxGroupSize());
+
+		// Unchanged
+		assertThat(study.getComponentList().size()).isEqualTo(7);
+		assertThat(study.getComponent(1).getTitle()).isEqualTo(
+				"Show JSON input ");
+		assertThat(study.getLastComponent().getTitle())
+				.isEqualTo("Quit button");
+		assertThat(study.getId()).isEqualTo(studyId);
+		assertThat(study.getMemberList()).contains(admin);
+		assertThat(study.getUuid()).isEqualTo(
+				"5c85bd82-0258-45c6-934a-97ecc1ad6617");
+
+		// Clean-up
+		removeStudy(study);
+		removeStudy(updatedStudy);
+	}
 
 	@Test
 	public void checkExchangeMembers() throws NoSuchAlgorithmException,
@@ -147,54 +199,6 @@ public class StudyServiceTest extends AbstractTest {
 
 		// Clean-up
 		removeStudy(study);
-	}
-
-	@Test
-	public void checkUpdateStudy() throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
-		addStudy(study);
-
-		StudyModel updatedStudy = studyService.cloneStudy(study, admin);
-		updatedStudy.removeAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
-		updatedStudy.removeAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
-		updatedStudy.getComponentList().remove(0);
-		updatedStudy.getLastComponent().setTitle("Changed title");
-		updatedStudy.setDescription("Changed description");
-		updatedStudy.setComments("Changed comments");
-		updatedStudy.setJsonData("{}");
-		updatedStudy.setTitle("Changed Title");
-		updatedStudy.setUuid("changed uuid");
-		updatedStudy.getMemberList().remove(admin);
-		long studyId = study.getId();
-
-		entityManager.getTransaction().begin();
-		studyService.updateStudy(study, updatedStudy);
-		entityManager.getTransaction().commit();
-
-		// Changed
-		assertThat(study.getTitle()).isEqualTo(updatedStudy.getTitle());
-		assertThat(study.getDescription()).isEqualTo(
-				updatedStudy.getDescription());
-		assertThat(study.getComments()).isEqualTo(
-				updatedStudy.getComments());
-		assertThat(study.getJsonData()).isEqualTo(updatedStudy.getJsonData());
-		assertThat(study.getAllowedWorkerList()).containsOnly(
-				JatosWorker.WORKER_TYPE);
-
-		// Unchanged
-		assertThat(study.getComponentList().size()).isEqualTo(7);
-		assertThat(study.getComponent(1).getTitle()).isEqualTo(
-				"Show JSON input ");
-		assertThat(study.getLastComponent().getTitle())
-				.isEqualTo("Quit button");
-		assertThat(study.getId()).isEqualTo(studyId);
-		assertThat(study.getMemberList()).contains(admin);
-		assertThat(study.getUuid()).isEqualTo(
-				"5c85bd82-0258-45c6-934a-97ecc1ad6617");
-
-		// Clean-up
-		removeStudy(study);
-		removeStudy(updatedStudy);
 	}
 
 	@Test

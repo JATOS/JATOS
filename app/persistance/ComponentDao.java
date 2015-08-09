@@ -42,7 +42,7 @@ public class ComponentDao extends AbstractDao {
 		persist(component);
 		merge(study);
 	}
-	
+
 	/**
 	 * Persist Component.
 	 */
@@ -54,20 +54,6 @@ public class ComponentDao extends AbstractDao {
 	}
 
 	public void update(ComponentModel component) {
-		merge(component);
-	}
-
-	/**
-	 * Update component's properties with the ones from updatedComponent.
-	 */
-	public void updateProperties(ComponentModel component,
-			ComponentModel updatedComponent) {
-		component.setTitle(updatedComponent.getTitle());
-		component.setReloadable(updatedComponent.isReloadable());
-		component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
-		component.setComments(updatedComponent.getComments());
-		component.setJsonData(updatedComponent.getJsonData());
-		component.setActive(updatedComponent.isActive());
 		merge(component);
 	}
 
@@ -118,7 +104,7 @@ public class ComponentDao extends AbstractDao {
 		List<ComponentModel> studyList = query.getResultList();
 		return studyList.isEmpty() ? null : studyList.get(0);
 	}
-	
+
 	/**
 	 * Finds all components with the given title and returns them in a list. If
 	 * there is none it returns an empty list.

@@ -34,6 +34,33 @@ public class ComponentService {
 	ComponentService(ComponentDao componentDao) {
 		this.componentDao = componentDao;
 	}
+	
+	/**
+	 * Update component's properties with the ones from updatedComponent.
+	 */
+	public void updateProperties(ComponentModel component,
+			ComponentModel updatedComponent) {
+		component.setTitle(updatedComponent.getTitle());
+		component.setReloadable(updatedComponent.isReloadable());
+		component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
+		component.setComments(updatedComponent.getComments());
+		component.setJsonData(updatedComponent.getJsonData());
+		component.setActive(updatedComponent.isActive());
+		componentDao.update(component);
+	}
+
+	/**
+	 * Update component's properties with the ones from updatedComponent, but
+	 * not htmlFilePath and not active.
+	 */
+	public void updateComponentAfterEdit(ComponentModel component,
+			ComponentModel updatedComponent) {
+		component.setTitle(updatedComponent.getTitle());
+		component.setReloadable(updatedComponent.isReloadable());
+		component.setComments(updatedComponent.getComments());
+		component.setJsonData(updatedComponent.getJsonData());
+		componentDao.update(component);
+	}
 
 	/**
 	 * Clones a ComponentModel. Does not clone id, uuid, or date. Does not
@@ -102,18 +129,6 @@ public class ComponentService {
 		component.setJsonData(JsonUtils.asStringForDB(formMap
 				.get(ComponentModel.JSON_DATA)[0]));
 		return component;
-	}
-
-	/**
-	 * Updates some but not all fields of a ComponentModel and persists it.
-	 */
-	public void updateComponentAfterEdit(ComponentModel component,
-			ComponentModel updatedComponent) {
-		component.setTitle(updatedComponent.getTitle());
-		component.setReloadable(updatedComponent.isReloadable());
-		component.setComments(updatedComponent.getComments());
-		component.setJsonData(updatedComponent.getJsonData());
-		componentDao.update(component);
 	}
 
 	/**

@@ -53,14 +53,16 @@ public class ImportExportService {
 	public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 
 	private final StudyService studyService;
+	private final ComponentService componentService;
 	private final JsonUtils jsonUtils;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 
 	@Inject
-	ImportExportService(StudyService studyService, JsonUtils jsonUtils,
+	ImportExportService(StudyService studyService, ComponentService componentService, JsonUtils jsonUtils,
 			StudyDao studyDao, ComponentDao componentDao) {
 		this.studyService = studyService;
+		this.componentService = componentService;
 		this.jsonUtils = jsonUtils;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
@@ -107,7 +109,7 @@ public class ImportExportService {
 				uploadedComponent.getUuid(), study);
 		boolean componentExists = (currentComponent != null);
 		if (componentExists) {
-			componentDao.updateProperties(currentComponent, uploadedComponent);
+			componentService.updateProperties(currentComponent, uploadedComponent);
 			RequestScopeMessaging.success(MessagesStrings
 					.componentsPropertiesOverwritten(currentComponent.getId(),
 							uploadedComponent.getTitle()));
@@ -246,12 +248,12 @@ public class ImportExportService {
 		}
 		if (studysPropertiesConfirm) {
 			if (studysDirConfirm) {
-				studyDao.updateProperties(currentStudy, importedStudy);
+				studyService.updateProperties(currentStudy, importedStudy);
 			} else {
 				// If we don't overwrite the current study dir with the
 				// uploaded one, don't change the study dir name in the
 				// properties
-				studyDao.updatePropertiesWODirName(currentStudy, importedStudy);
+				studyService.updatePropertiesWODirName(currentStudy, importedStudy);
 			}
 			updateStudysComponents(currentStudy, importedStudy);
 			RequestScopeMessaging.success(MessagesStrings
@@ -305,7 +307,7 @@ public class ImportExportService {
 				}
 			}
 			if (currentComponent != null) {
-				componentDao.updateProperties(currentComponent,
+				componentService.updateProperties(currentComponent,
 						updatedComponent);
 				currentStudy.addComponent(currentComponent);
 				currentComponentList.remove(currentComponent);

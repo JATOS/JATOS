@@ -249,7 +249,7 @@ public class Studies extends Controller {
 			return failStudyEdit(loggedInUser, updatedStudy, errorList);
 		}
 
-		studyService.updateStudy(study, updatedStudy);
+		studyService.updatePropertiesWODirName(study, updatedStudy);
 		try {
 			studyService.renameStudyAssetsDir(study, updatedStudy.getDirName());
 		} catch (IOException e) {

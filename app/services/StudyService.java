@@ -97,6 +97,37 @@ public class StudyService {
 		}
 		return cloneTitle;
 	}
+	
+	/**
+	 * Update properties of study with properties of updatedStudy.
+	 */
+	public void updateProperties(StudyModel study, StudyModel updatedStudy) {
+		updatePropertiesWODirNameWOMerge(study, updatedStudy);
+		study.setDirName(updatedStudy.getDirName());
+		studyDao.update(study);
+	}
+
+	/**
+	 * Update properties of study with properties of updatedStudy (excluding
+	 * study's dir name).
+	 */
+	public void updatePropertiesWODirName(StudyModel study,
+			StudyModel updatedStudy) {
+		updatePropertiesWODirNameWOMerge(study, updatedStudy);
+		studyDao.update(study);
+	}
+
+	private void updatePropertiesWODirNameWOMerge(StudyModel study,
+			StudyModel updatedStudy) {
+		study.setTitle(updatedStudy.getTitle());
+		study.setDescription(updatedStudy.getDescription());
+		study.setComments(updatedStudy.getComments());
+		study.setGroupStudy(updatedStudy.isGroupStudy());
+		study.setMaxGroupSize(updatedStudy.getMaxGroupSize());
+		study.setJsonData(updatedStudy.getJsonData());
+		study.getAllowedWorkerList().clear();
+		updatedStudy.getAllowedWorkerList().forEach(study::addAllowedWorker);
+	}
 
 	/**
 	 * Deletes all current members of the given study and adds the new users. A
@@ -128,21 +159,6 @@ public class StudyService {
 		for (UserModel user : userList) {
 			studyDao.addMember(study, user);
 		}
-	}
-
-	/**
-	 * Update a couple of study's properties (but not all) and persist it.
-	 */
-	public void updateStudy(StudyModel study, StudyModel updatedStudy) {
-		study.setTitle(updatedStudy.getTitle());
-		study.setDescription(updatedStudy.getDescription());
-		study.setComments(updatedStudy.getComments());
-		study.setJsonData(updatedStudy.getJsonData());
-		study.setGroupStudy(updatedStudy.isGroupStudy());
-		study.setMaxGroupSize(updatedStudy.getMaxGroupSize());
-		study.getAllowedWorkerList().clear();
-		updatedStudy.getAllowedWorkerList().forEach(study::addAllowedWorker);
-		studyDao.update(study);
 	}
 
 	/**
