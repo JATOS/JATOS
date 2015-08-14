@@ -31,5 +31,4 @@ public class GroupActor extends UntypedActor {
 			groupMemberSet.remove(((Terminated) msg).actor());
 		}
 	}
-
 }
