@@ -92,12 +92,12 @@ public class GroupResult {
 		this.groupState = groupState;
 	}
 
-	public StudyModel getGroup() {
+	public StudyModel getStudy() {
 		return study;
 	}
 
-	public void setGroup(StudyModel group) {
-		this.study = group;
+	public void setStudy(StudyModel study) {
+		this.study = study;
 	}
 
 	public void setStartDate(Timestamp startDate) {

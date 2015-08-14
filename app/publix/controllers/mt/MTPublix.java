@@ -15,6 +15,7 @@ import publix.controllers.IPublix;
 import publix.controllers.Publix;
 import publix.controllers.PublixInterceptor;
 import publix.controllers.StudyAssets;
+import publix.controllers.actors.GroupActorAllocator;
 import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.PublixException;
 import publix.services.mt.MTErrorMessages;
@@ -61,9 +62,10 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			MTErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao,
-			GroupResultDao groupResultDao) {
+			GroupResultDao groupResultDao, GroupActorAllocator groupAllocator) {
 		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
-				componentResultDao, jsonUtils, studyResultDao, groupResultDao);
+				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
+				groupAllocator);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;

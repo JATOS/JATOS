@@ -11,6 +11,7 @@ import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
 import publix.controllers.StudyAssets;
+import publix.controllers.actors.GroupActorAllocator;
 import publix.exceptions.PublixException;
 import publix.services.personal_single.PersonalSingleErrorMessages;
 import publix.services.personal_single.PersonalSinglePublixUtils;
@@ -44,9 +45,11 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 			PersonalSingleStudyAuthorisation studyAuthorisation,
 			PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
+			GroupActorAllocator groupAllocator) {
 		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
-				componentResultDao, jsonUtils, studyResultDao, groupResultDao);
+				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
+				groupAllocator);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 	}

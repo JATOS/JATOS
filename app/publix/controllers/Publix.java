@@ -14,10 +14,14 @@ import persistance.ComponentResultDao;
 import persistance.GroupResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
+import play.db.jpa.JPA;
+import play.db.jpa.Transactional;
 import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
+import publix.controllers.actors.GroupActorAllocator;
+import publix.controllers.actors.GroupChannelActor;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.NotFoundPublixException;
@@ -27,6 +31,8 @@ import publix.services.PublixErrorMessages;
 import publix.services.PublixUtils;
 import utils.ControllerUtils;
 import utils.JsonUtils;
+import akka.actor.ActorRef;
+import akka.actor.Props;
 
 import com.google.inject.Singleton;
 
@@ -65,12 +71,14 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	protected final ComponentResultDao componentResultDao;
 	protected final StudyResultDao studyResultDao;
 	protected final GroupResultDao groupResultDao;
+	protected final GroupActorAllocator groupAllocator;
 
 	public Publix(PublixUtils<T> utils,
 			IStudyAuthorisation<T> studyAuthorisation,
 			PublixErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
+			GroupActorAllocator groupAllocator) {
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
@@ -79,6 +87,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
 		this.groupResultDao = groupResultDao;
+		this.groupAllocator = groupAllocator;
 	}
 
 	@Override
@@ -209,13 +218,61 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public WebSocket<String> groupChannel(Long studyId) {
-		return WebSocket.withActor(GroupStudyWebSocketActor::props);
+	@Transactional
+	public WebSocket<String> groupChannel(Long studyId)
+			throws ForbiddenPublixException, NotFoundPublixException {
+		Logger.info(CLASS_NAME + ".groupChannel: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID));
+
+		ActorRef groupActor = null;
+		try {
+			groupActor = JPA.withTransaction(() -> {
+				T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
+			StudyModel study = publixUtils.retrieveStudy(studyId);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+			StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
+					worker, study);
+			GroupResult groupResult = studyResult.getGroupResult();
+			if (groupResult == null) {
+				throw new ForbiddenPublixException(
+					errorMessages.workerDidntJoinGroup(worker, study.getId()));
+			}
+			return groupAllocator.allocate(groupResult);
+			});
+		} catch (Throwable e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return withActor(studyId, groupActor);
+	}
+
+	public static <A> WebSocket<A> withActor(Long studyId, ActorRef groupActor) {
+		return new WebSocket<A>() {
+			public void onReady(In<A> in, Out<A> out) {
+			}
+
+			public boolean isActor() {
+				return true;
+			}
+
+			public Props actorProps(ActorRef out) {
+				try {
+					return Props.create(GroupChannelActor.class, out, studyId,
+							groupActor);
+				} catch (RuntimeException e) {
+					throw e;
+				} catch (Error e) {
+					throw e;
+				} catch (Throwable t) {
+					throw new RuntimeException(t);
+				}
+			}
+		};
 	}
 
 	@Override
 	public WebSocket<String> systemChannel(Long studyId) {
-		// TODO
 		return null;
 	}
 

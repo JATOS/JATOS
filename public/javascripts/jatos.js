@@ -59,6 +59,14 @@ var onLoadCallback;
  * Callback function defined via jatos.onError.
  */
 var onErrorCallback;
+/**
+ * System channel WebSocket to exchange messages between jatos.js and JATOS.
+ */
+var systemChannel;
+/**
+ * Group channel WebSocket to exchange messages between workers of a group.
+ */
+var groupChannel;
 
 // Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
 // a component's jQuery version. Afterwards initialise (jatos.js will always be
@@ -515,7 +523,7 @@ jatos.joinGroup = function(success, error) {
 		type : "GET",
 		timeout : jatos.httpTimeout,
 		success : function(response) {
-			joiningGroup = false;
+			openGroupChannel();
 			if (success) {
 				success(response)
 			}
@@ -529,11 +537,37 @@ jatos.joinGroup = function(success, error) {
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
+jatos.sendGroupMsg = function(msg) {
+	groupChannel.send(msg);
+}
+
+function openGroupChannel() {
+	if (!jatos.jQuery) {
+		return;
+	}
+	// TODO check that browser supports WebSockets
+	groupChannel = new WebSocket("ws://localhost:9000/publix/" + jatos.studyId + "/groupChannel");
+	groupChannel.onopen = function() {
+		joiningGroup = false;
+		alert("Group channel opened.");
+	};
+
+	groupChannel.onmessage = function(event) {
+		var receivedMsg = event.data;
+		alert("Message on group channel received: " + receivedMsg);
+	};
+
+	groupChannel.onclose = function() {
+		alert("Group channel closed.");
+	};
+}
+
 /**
  * Tries to drop out from the group it has previously joined.
  * 
  * @param {optional
- *            Function} success - Function to be called after the group is dropped.
+ *            Function} success - Function to be called after the group is
+ *            dropped.
  * @param {optional
  *            Function} error - Function to be called in case of error.
  */
