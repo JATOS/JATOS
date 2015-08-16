@@ -1,5 +1,10 @@
-package publix.controllers.actors;
+package publix.controllers.actors.messages;
 
+/**
+ * Message exchanged by GroupChannelActors.
+ * 
+ * @author madsen
+ */
 public class GroupMessage {
 	
 	public final String msg;

@@ -92,8 +92,9 @@ public interface IPublix {
 	 * messages (e.g. announce group is complete or new group member). Only
 	 * works if this study is a group study.
 	 */
-	WebSocket<String> systemChannel(Long studyId)
-			throws BadRequestPublixException, PublixException, IOException;
+	WebSocket<String> openSystemChannel(Long studyId)
+			throws BadRequestPublixException, PublixException, IOException,
+			Throwable;
 
 	/**
 	 * WebSocket
@@ -102,8 +103,9 @@ public interface IPublix {
 	 * messages. JATOS just forwards messages coming from one group member to
 	 * all other members. Only works if this study is a group study.
 	 */
-	WebSocket<String> groupChannel(Long studyId)
-			throws BadRequestPublixException, PublixException, IOException;
+	WebSocket<String> openGroupChannel(Long studyId)
+			throws BadRequestPublixException, PublixException, IOException,
+			Throwable;
 
 	/**
 	 * HTTP type: Ajax POST request

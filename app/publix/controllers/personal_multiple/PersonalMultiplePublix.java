@@ -11,7 +11,7 @@ import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
 import publix.controllers.StudyAssets;
-import publix.controllers.actors.GroupActorAllocator;
+import publix.controllers.actors.GroupDispatcherAllocator;
 import publix.exceptions.PublixException;
 import publix.services.personal_multiple.PersonalMultipleErrorMessages;
 import publix.services.personal_multiple.PersonalMultiplePublixUtils;
@@ -45,7 +45,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 			PersonalMultipleErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			GroupResultDao groupResultDao, GroupActorAllocator groupAllocator) {
+			GroupResultDao groupResultDao, GroupDispatcherAllocator groupAllocator) {
 		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
 				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
 				groupAllocator);

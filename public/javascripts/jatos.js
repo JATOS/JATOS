@@ -299,7 +299,7 @@ jatos.submitResultData = function(resultData, success, error) {
 	submittingResultData = true;
 	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/" + jatos.componentId
-				+ "/submitResultData",
+				+ "/resultData",
 		data : resultData,
 		processData : false,
 		type : "POST",
@@ -355,7 +355,7 @@ jatos.setStudySessionData = function(sessionData, complete) {
 		return;
 	}
 	jatos.jQuery.ajax({
-		url : "/publix/" + jatos.studyId + "/setSessionData",
+		url : "/publix/" + jatos.studyId + "/sessionData",
 		data : sessionDataStr,
 		processData : false,
 		type : "POST",
@@ -410,7 +410,7 @@ jatos.startComponentByPos = function(componentPos, queryString) {
 	}
 	startingComponent = true;
 	var callbackWhenComplete = function() {
-		var url = "/publix/" + jatos.studyId + "/startComponent?position="
+		var url = "/publix/" + jatos.studyId + "/component/start?position="
 				+ componentPos;
 		if (queryString) {
 			url += "&" + queryString;
@@ -435,7 +435,7 @@ jatos.startNextComponent = function(queryString) {
 	}
 	startingComponent = true;
 	var callbackWhenComplete = function() {
-		var url = "/publix/" + jatos.studyId + "/startNextComponent";
+		var url = "/publix/" + jatos.studyId + "/nextComponent/start";
 		if (queryString) {
 			url += "?" + queryString;
 		}
@@ -518,12 +518,12 @@ jatos.joinGroup = function(success, error) {
 	}
 	joiningGroup = true;
 	jatos.jQuery.ajax({
-		url : "/publix/" + jatos.studyId + "/joinGroup",
+		url : "/publix/" + jatos.studyId + "/group/join",
 		processData : false,
 		type : "GET",
 		timeout : jatos.httpTimeout,
 		success : function(response) {
-			openGroupChannel();
+			openSystemAndGroupChannels();
 			if (success) {
 				success(response)
 			}
@@ -537,29 +537,42 @@ jatos.joinGroup = function(success, error) {
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
-jatos.sendGroupMsg = function(msg) {
-	groupChannel.send(msg);
-}
-
-function openGroupChannel() {
+function openSystemAndGroupChannels() {
 	if (!jatos.jQuery) {
 		return;
 	}
 	// TODO check that browser supports WebSockets
-	groupChannel = new WebSocket("ws://localhost:9000/publix/" + jatos.studyId + "/groupChannel");
+	systemChannel = new WebSocket("ws://localhost:9000/publix/" + jatos.studyId + "/systemChannel/open");
+	systemChannel.onopen = function() {
+		joiningGroup = false;
+		alert("System channel opened.");
+	};
+	systemChannel.onmessage = function(event) {
+		var receivedMsg = event.data;
+		alert("Message on system channel received: " + receivedMsg);
+	};
+	systemChannel.onclose = function() {
+		alert("System channel closed.");
+	};
+
+	groupChannel = new WebSocket("ws://localhost:9000/publix/" + jatos.studyId + "/groupChannel/open");
 	groupChannel.onopen = function() {
 		joiningGroup = false;
 		alert("Group channel opened.");
 	};
-
 	groupChannel.onmessage = function(event) {
 		var receivedMsg = event.data;
 		alert("Message on group channel received: " + receivedMsg);
 	};
-
 	groupChannel.onclose = function() {
 		alert("Group channel closed.");
 	};
+}
+
+jatos.sendGroupMsg = function(msg) {
+	if (groupChannel) {
+		groupChannel.send(msg);
+	}
 }
 
 /**
@@ -577,12 +590,13 @@ jatos.dropGroup = function(success, error) {
 	}
 	droppingGroup = true;
 	jatos.jQuery.ajax({
-		url : "/publix/" + jatos.studyId + "/dropGroup",
+		url : "/publix/" + jatos.studyId + "/group/drop",
 		processData : false,
 		type : "GET",
 		timeout : jatos.httpTimeout,
 		success : function(response) {
 			droppingGroup = false;
+			systemChannel.close();
 			if (success) {
 				success()
 			}
@@ -746,7 +760,7 @@ jatos.logError = function(logErrorMsg) {
 	}
 	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/" + jatos.componentId
-				+ "/logError",
+				+ "/log",
 		data : logErrorMsg,
 		processData : false,
 		type : "POST",

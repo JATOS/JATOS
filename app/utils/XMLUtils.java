@@ -18,7 +18,7 @@ import com.google.inject.Singleton;
 /**
  * Utils around XML
  * 
- * @author madsen
+ * @author Kristian Lange
  */
 @Singleton
 public class XMLUtils {

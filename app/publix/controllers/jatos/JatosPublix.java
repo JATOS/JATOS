@@ -15,7 +15,7 @@ import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
 import publix.controllers.StudyAssets;
-import publix.controllers.actors.GroupActorAllocator;
+import publix.controllers.actors.GroupDispatcherAllocator;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.PublixException;
@@ -86,7 +86,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			JatosErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-			GroupActorAllocator groupAllocator) {
+			GroupDispatcherAllocator groupAllocator) {
 		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
 				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
 				groupAllocator);

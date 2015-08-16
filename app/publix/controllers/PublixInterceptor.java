@@ -260,7 +260,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		}
 		return result;
 	}
-	
+
 	@Override
 	@Transactional
 	public Result dropGroup(Long studyId) throws BadRequestPublixException,
@@ -292,25 +292,26 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public WebSocket<String> systemChannel(Long studyId)
-			throws BadRequestPublixException, PublixException, IOException {
+	public WebSocket<String> openSystemChannel(Long studyId)
+			throws BadRequestPublixException, PublixException, IOException,
+			Throwable {
 		WebSocket<String> result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
-			result = mtPublix.systemChannel(studyId);
+			result = mtPublix.openSystemChannel(studyId);
 			break;
 		case JatosWorker.WORKER_TYPE:
-			result = jatosPublix.systemChannel(studyId);
+			result = jatosPublix.openSystemChannel(studyId);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
-			result = pmPublix.systemChannel(studyId);
+			result = pmPublix.openSystemChannel(studyId);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
-			result = personalSinglePublix.systemChannel(studyId);
+			result = personalSinglePublix.openSystemChannel(studyId);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
-			result = generalSinglePublix.systemChannel(studyId);
+			result = generalSinglePublix.openSystemChannel(studyId);
 			break;
 		default:
 			throw new BadRequestPublixException(
@@ -321,25 +322,26 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public WebSocket<String> groupChannel(Long studyId)
-			throws BadRequestPublixException, PublixException, IOException {
+	public WebSocket<String> openGroupChannel(Long studyId)
+			throws BadRequestPublixException, PublixException, IOException,
+			Throwable {
 		WebSocket<String> result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
-			result = mtPublix.groupChannel(studyId);
+			result = mtPublix.openGroupChannel(studyId);
 			break;
 		case JatosWorker.WORKER_TYPE:
-			result = jatosPublix.groupChannel(studyId);
+			result = jatosPublix.openGroupChannel(studyId);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
-			result = pmPublix.groupChannel(studyId);
+			result = pmPublix.openGroupChannel(studyId);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
-			result = personalSinglePublix.groupChannel(studyId);
+			result = personalSinglePublix.openGroupChannel(studyId);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
-			result = generalSinglePublix.groupChannel(studyId);
+			result = generalSinglePublix.openGroupChannel(studyId);
 			break;
 		default:
 			throw new BadRequestPublixException(
