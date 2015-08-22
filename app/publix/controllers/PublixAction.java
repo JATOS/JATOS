@@ -6,6 +6,7 @@ import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import publix.exceptions.InternalServerErrorPublixException;
 import publix.exceptions.PublixException;
 import utils.ControllerUtils;
 
@@ -21,12 +22,20 @@ public class PublixAction extends play.mvc.Action.Simple {
 		Promise<Result> call;
 		try {
 			call = delegate.call(ctx);
+		} catch (InternalServerErrorPublixException e) {
+			Result result = e.getSimpleResult();
+			// Log exception with stack trace
+			Logger.info("PublixException during call "
+					+ Controller.request().uri() + ": " + e.getMessage(), e);
+			call = Promise.pure(result);
 		} catch (PublixException e) {
 			Result result = e.getSimpleResult();
+			// Log exception without stack trace
 			Logger.info("PublixException during call "
 					+ Controller.request().uri() + ": " + e.getMessage());
 			call = Promise.pure(result);
 		} catch (Exception e) {
+			// Log exception with stack trace
 			Logger.error("Exception during call " + Controller.request().uri()
 					+ ": " + e.getMessage(), e);
 			if (ControllerUtils.isAjax()) {

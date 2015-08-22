@@ -8,7 +8,6 @@ import play.mvc.Http.RequestHeader;
 import play.mvc.Result;
 import play.mvc.Results;
 
-import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -29,12 +28,7 @@ public class Global extends GlobalSettings {
 	}
 
 	private static Injector createInjector() {
-		return Guice.createInjector(new AbstractModule() {
-
-			@Override
-			protected void configure() {
-			}
-		});
+		return Guice.createInjector(new GuiceConfig());
 	}
 
 	@Override
@@ -53,15 +47,15 @@ public class Global extends GlobalSettings {
 
 	@Override
 	public Promise<Result> onHandlerNotFound(RequestHeader request) {
-		return Promise.<Result> pure(Results.notFound(views.html.publix.error.render("Requested page \""
-						+ request.uri() + "\" doesn't exist.")));
+		return Promise.<Result> pure(Results.notFound(views.html.publix.error
+				.render("Requested page \"" + request.uri()
+						+ "\" doesn't exist.")));
 	}
 
 	@Override
-	public Promise<Result> onBadRequest(RequestHeader request,
-			String error) {
+	public Promise<Result> onBadRequest(RequestHeader request, String error) {
 		return Promise.<Result> pure(Results.badRequest(views.html.error
-						.render("bad request")));
+				.render("bad request")));
 	}
 
 }

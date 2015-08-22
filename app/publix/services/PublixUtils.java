@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
-import models.GroupResult.GroupState;
 import models.GroupResult;
+import models.GroupResult.GroupState;
 import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
@@ -37,7 +37,6 @@ import publix.exceptions.UnsupportedMediaTypePublixException;
 import utils.XMLUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Singleton;
 
 /**
  * Service class with functions that are common for all classes that extend
@@ -45,7 +44,6 @@ import com.google.inject.Singleton;
  *
  * @author Kristian Lange
  */
-@Singleton
 public abstract class PublixUtils<T extends Worker> {
 
 	protected final PublixErrorMessages errorMessages;

@@ -93,8 +93,7 @@ public interface IPublix {
 	 * works if this study is a group study.
 	 */
 	WebSocket<String> openSystemChannel(Long studyId)
-			throws BadRequestPublixException, PublixException, IOException,
-			Throwable;
+			throws BadRequestPublixException;
 
 	/**
 	 * WebSocket
@@ -104,8 +103,7 @@ public interface IPublix {
 	 * all other members. Only works if this study is a group study.
 	 */
 	WebSocket<String> openGroupChannel(Long studyId)
-			throws BadRequestPublixException, PublixException, IOException,
-			Throwable;
+			throws BadRequestPublixException;
 
 	/**
 	 * HTTP type: Ajax POST request

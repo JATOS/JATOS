@@ -15,10 +15,10 @@ import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
 import publix.controllers.StudyAssets;
-import publix.controllers.actors.GroupDispatcherAllocator;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.PublixException;
+import publix.services.ChannelService;
 import publix.services.jatos.JatosErrorMessages;
 import publix.services.jatos.JatosPublixUtils;
 import publix.services.jatos.JatosStudyAuthorisation;
@@ -27,8 +27,8 @@ import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import common.FlashScopeMessaging;
+
 import controllers.Users;
 
 /**
@@ -86,10 +86,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			JatosErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-			GroupDispatcherAllocator groupAllocator) {
+			ChannelService<JatosWorker> channelService) {
 		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
 				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
-				groupAllocator);
+				channelService);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;

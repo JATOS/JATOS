@@ -1,15 +1,15 @@
-package publix.controllers.actors.messages;
+package publix.akka.messages;
 
 /**
  * Message an GroupChannelActor can send to join a GroupActor.
  * 
  * @author Kristian Lange
  */
-public class JoinMsg {
-
-	public final long studyResultId;
-
-	public JoinMsg(long studyResultId) {
+public class DropGroup {
+	
+	public long studyResultId;
+	
+	public DropGroup(long studyResultId) {
 		this.studyResultId = studyResultId;
 	}
 

@@ -2,14 +2,11 @@ package publix.services;
 
 import models.workers.Worker;
 
-import com.google.inject.Singleton;
-
 /**
  * Helper class with methods that generate error strings.
  *
  * @author Kristian Lange
  */
-@Singleton
 public class PublixErrorMessages {
 
 	public static final String STUDY_NEVER_FINSHED = "Study not completed, but new study started by the same worker";

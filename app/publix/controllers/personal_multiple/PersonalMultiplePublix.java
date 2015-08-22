@@ -11,8 +11,8 @@ import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
 import publix.controllers.StudyAssets;
-import publix.controllers.actors.GroupDispatcherAllocator;
 import publix.exceptions.PublixException;
+import publix.services.ChannelService;
 import publix.services.personal_multiple.PersonalMultipleErrorMessages;
 import publix.services.personal_multiple.PersonalMultiplePublixUtils;
 import publix.services.personal_multiple.PersonalMultipleStudyAuthorisation;
@@ -45,10 +45,11 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 			PersonalMultipleErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			GroupResultDao groupResultDao, GroupDispatcherAllocator groupAllocator) {
+			GroupResultDao groupResultDao,
+			ChannelService<PersonalMultipleWorker> channelService) {
 		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
 				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
-				groupAllocator);
+				channelService);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 	}

@@ -1,8 +1,9 @@
-package publix.controllers.actors;
+package publix.services;
 
+import play.mvc.Result;
 import play.mvc.WebSocket;
-import publix.controllers.actors.actors.GroupChannel;
-import publix.controllers.actors.actors.SystemChannel;
+import publix.akka.actors.GroupChannel;
+import publix.akka.actors.SystemChannel;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 
@@ -13,10 +14,10 @@ import akka.actor.Props;
  */
 public class WebSocketBuilder {
 
-	public static <A> WebSocket<A> withSystemChannelActor(
+	public static WebSocket<String> withSystemChannelActor(
 			ActorRef systemDispatcherActor, long studyResultId) {
-		return new WebSocket<A>() {
-			public void onReady(In<A> in, Out<A> out) {
+		return new WebSocket<String>() {
+			public void onReady(In<String> in, Out<String> out) {
 			}
 
 			public boolean isActor() {
@@ -38,10 +39,10 @@ public class WebSocketBuilder {
 		};
 	}
 
-	public static <A> WebSocket<A> withGroupChannelActor(long studyResultId,
+	public static WebSocket<String> withGroupChannelActor(long studyResultId,
 			ActorRef groupDispatcher, ActorRef systemChannel) {
-		return new WebSocket<A>() {
-			public void onReady(In<A> in, Out<A> out) {
+		return new WebSocket<String>() {
+			public void onReady(In<String> in, Out<String> out) {
 			}
 
 			public boolean isActor() {
@@ -62,5 +63,22 @@ public class WebSocketBuilder {
 			}
 		};
 	}
+	
+    /**
+     * Rejects a WebSocket.
+     *
+     * @param result The result that will be returned.
+     * @return A rejected WebSocket.
+     */
+    public static WebSocket<String> reject(final Result result) {
+        return new WebSocket<String>() {
+            public void onReady(In<String> in, Out<String> out) {
+            }
+            public Result rejectWith() {
+                return result;
+            }
+        };
+    }
+
 
 }

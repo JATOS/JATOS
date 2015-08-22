@@ -22,6 +22,7 @@ import publix.controllers.personal_multiple.PersonalMultiplePublix;
 import publix.controllers.personal_single.PersonalSinglePublix;
 import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.ForbiddenPublixException;
+import publix.exceptions.InternalServerErrorPublixException;
 import publix.exceptions.NotFoundPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
@@ -264,7 +265,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public Result dropGroup(Long studyId) throws BadRequestPublixException,
-			NotFoundPublixException, ForbiddenPublixException {
+			NotFoundPublixException, ForbiddenPublixException,
+			InternalServerErrorPublixException {
 		Result result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
@@ -293,8 +295,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public WebSocket<String> openSystemChannel(Long studyId)
-			throws BadRequestPublixException, PublixException, IOException,
-			Throwable {
+			throws BadRequestPublixException {
 		WebSocket<String> result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
@@ -323,8 +324,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public WebSocket<String> openGroupChannel(Long studyId)
-			throws BadRequestPublixException, PublixException, IOException,
-			Throwable {
+			throws BadRequestPublixException {
 		WebSocket<String> result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:

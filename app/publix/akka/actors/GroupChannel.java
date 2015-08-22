@@ -1,8 +1,9 @@
-package publix.controllers.actors.actors;
+package publix.akka.actors;
 
-import publix.controllers.actors.messages.GroupMessage;
-import publix.controllers.actors.messages.JoinGroupMsg;
-import publix.controllers.actors.messages.PoisonMsg;
+import publix.akka.messages.DropGroup;
+import publix.akka.messages.GroupMsg;
+import publix.akka.messages.JoinGroup;
+import publix.akka.messages.PoisonSomeone;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -43,18 +44,23 @@ public class GroupChannel extends UntypedActor {
 
 	@Override
 	public void preStart() {
-		groupDispatcher.tell(new JoinGroupMsg(studyResultId, systemChannel),
+		groupDispatcher.tell(new JoinGroup(studyResultId, systemChannel),
 				self());
+	}
+
+	@Override
+	public void postStop() {
+		groupDispatcher.tell(new DropGroup(studyResultId), self());
 	}
 
 	@Override
 	// WebSocket's input channel: client -> JATOS
 	public void onReceive(Object msg) throws Exception {
 		if (msg instanceof String) {
-			groupDispatcher.tell(new GroupMessage(msg), self());
-		} else if (msg instanceof GroupMessage) {
+			groupDispatcher.tell(new GroupMsg(msg), self());
+		} else if (msg instanceof GroupMsg) {
 			out.tell(msg.toString(), self());
-		} else if (msg instanceof PoisonMsg) {
+		} else if (msg instanceof PoisonSomeone) {
 			self().tell(PoisonPill.getInstance(), self());
 		}
 	}

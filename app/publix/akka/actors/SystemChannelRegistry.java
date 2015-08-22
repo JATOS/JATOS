@@ -1,12 +1,13 @@
-package publix.controllers.actors.actors;
+package publix.akka.actors;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import publix.controllers.actors.messages.DropMsg;
-import publix.controllers.actors.messages.JoinMsg;
-import publix.controllers.actors.messages.PoisonMsg;
-import publix.controllers.actors.messages.WhichIsMsg;
+import publix.akka.messages.ItsThisOne;
+import publix.akka.messages.PoisonSomeone;
+import publix.akka.messages.Register;
+import publix.akka.messages.Unregister;
+import publix.akka.messages.Get;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
@@ -36,20 +37,21 @@ public class SystemChannelRegistry extends UntypedActor {
 
 	@Override
 	public void onReceive(Object msg) throws Exception {
-		if (msg instanceof WhichIsMsg) {
-			WhichIsMsg whichIsMsg = (WhichIsMsg) msg;
+		if (msg instanceof Get) {
+			Get whichIs = (Get) msg;
 			ActorRef systemChannel = systemChannelMap
-					.get(whichIsMsg.studyResultId);
-			sender().tell(systemChannel, self());
-		} else if (msg instanceof JoinMsg) {
-			JoinMsg joinMsg = (JoinMsg) msg;
-			systemChannelMap.put(joinMsg.studyResultId, sender());
-		} else if (msg instanceof DropMsg) {
-			DropMsg dropMsg = (DropMsg) msg;
-			systemChannelMap.remove(dropMsg.studyResultId);
-		} else if (msg instanceof PoisonMsg) {
-			PoisonMsg poisonMsg = (PoisonMsg) msg;
-			ActorRef actorRef = systemChannelMap.get(poisonMsg.studyResultId);
+					.get(whichIs.id);
+			ItsThisOne answer = new ItsThisOne(systemChannel);
+			sender().tell(answer, self());
+		} else if (msg instanceof Register) {
+			Register register = (Register) msg;
+			systemChannelMap.put(register.id, sender());
+		} else if (msg instanceof Unregister) {
+			Unregister unregister = (Unregister) msg;
+			systemChannelMap.remove(unregister.id);
+		} else if (msg instanceof PoisonSomeone) {
+			PoisonSomeone poison = (PoisonSomeone) msg;
+			ActorRef actorRef = systemChannelMap.get(poison.idOfTheOneToPoison);
 			if (actorRef != null) {
 				actorRef.forward(msg, getContext());
 			}

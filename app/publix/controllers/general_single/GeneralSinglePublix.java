@@ -13,8 +13,8 @@ import play.mvc.Result;
 import publix.controllers.IPublix;
 import publix.controllers.Publix;
 import publix.controllers.StudyAssets;
-import publix.controllers.actors.GroupDispatcherAllocator;
 import publix.exceptions.PublixException;
+import publix.services.ChannelService;
 import publix.services.general_single.GeneralSingleErrorMessages;
 import publix.services.general_single.GeneralSinglePublixUtils;
 import publix.services.general_single.GeneralSingleStudyAuthorisation;
@@ -53,10 +53,11 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, WorkerDao workerDao,
-			GroupResultDao groupResultDao, GroupDispatcherAllocator groupAllocator) {
+			GroupResultDao groupResultDao,
+			ChannelService<GeneralSingleWorker> channelService) {
 		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
 				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
-				groupAllocator);
+				channelService);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.workerDao = workerDao;

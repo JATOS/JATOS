@@ -37,6 +37,10 @@ jatos.httpRetry = 5;
  * How long should jatos.js wait between a failed HTTP call and a retry.
  */
 jatos.httpRetryWait = 1000;
+/**
+ * WebSocket support by the browser is needed for system and group channel.
+ */
+jatos.webSocketSupported = 'WebSocket' in window;
 
 /**
  * State booleans. If true jatos.js is in this state. Several states can be true
@@ -47,6 +51,7 @@ var onLoadCallbackCalled = false;
 var startingComponent = false;
 var endingComponent = false;
 var submittingResultData = false;
+var openingSystemChannel = false;
 var joiningGroup = false;
 var droppingGroup = false;
 var abortingComponent = false;
@@ -517,13 +522,17 @@ jatos.joinGroup = function(success, error) {
 		return;
 	}
 	joiningGroup = true;
+
+	openSystemChannel();
+	
 	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/group/join",
 		processData : false,
 		type : "GET",
 		timeout : jatos.httpTimeout,
 		success : function(response) {
-			openSystemAndGroupChannels();
+			joiningGroup = false;
+			openGroupChannel();
 			if (success) {
 				success(response)
 			}
@@ -537,15 +546,24 @@ jatos.joinGroup = function(success, error) {
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
-function openSystemAndGroupChannels() {
-	if (!jatos.jQuery) {
+function openSystemChannel() {
+	if (!jatos.jQuery || (systemChannel && systemChannel.readyState != 3)) {
 		return;
 	}
-	// TODO check that browser supports WebSockets
-	systemChannel = new WebSocket("ws://localhost:9000/publix/" + jatos.studyId + "/systemChannel/open");
+	if (!jatos.webSocketSupported) {
+		if (onErrorCallback) {
+			onErrorCallback("This browser does not support WebSockets.");
+		}
+		return;
+	}
+	
+	systemChannel = new WebSocket("ws://" + location.host + 
+			"/publix/" + jatos.studyId + "/systemChannel/open");
 	systemChannel.onopen = function() {
-		joiningGroup = false;
 		alert("System channel opened.");
+	};
+	systemChannel.onerror = function() {
+		alert("System channel error.");
 	};
 	systemChannel.onmessage = function(event) {
 		var receivedMsg = event.data;
@@ -554,11 +572,39 @@ function openSystemAndGroupChannels() {
 	systemChannel.onclose = function() {
 		alert("System channel closed.");
 	};
+}
 
-	groupChannel = new WebSocket("ws://localhost:9000/publix/" + jatos.studyId + "/groupChannel/open");
+function closeSystemChannel() {
+	if (!jatos.jQuery || (!systemChannel)) {
+		return;
+	}
+	if (!jatos.webSocketSupported) {
+		if (onErrorCallback) {
+			onErrorCallback("This browser does not support WebSockets.");
+		}
+		return;
+	}
+	systemChannel.close();
+}
+	
+function openGroupChannel() {
+	if (!jatos.jQuery || (groupChannel && groupChannel.readyState != 3)) {
+		return;
+	}
+	if (!jatos.webSocketSupported) {
+		if (onErrorCallback) {
+			onErrorCallback("This browser does not support WebSockets.");
+		}
+		return;
+	}
+	
+	groupChannel = new WebSocket("ws://" + location.host + 
+			"/publix/" + jatos.studyId + "/groupChannel/open");
 	groupChannel.onopen = function() {
-		joiningGroup = false;
 		alert("Group channel opened.");
+	};
+	groupChannel.onerror = function() {
+		alert("Group channel error.");
 	};
 	groupChannel.onmessage = function(event) {
 		var receivedMsg = event.data;
@@ -589,6 +635,8 @@ jatos.dropGroup = function(success, error) {
 		return;
 	}
 	droppingGroup = true;
+	
+	closeSystemChannel();
 	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/group/drop",
 		processData : false,
@@ -596,7 +644,6 @@ jatos.dropGroup = function(success, error) {
 		timeout : jatos.httpTimeout,
 		success : function(response) {
 			droppingGroup = false;
-			systemChannel.close();
 			if (success) {
 				success()
 			}

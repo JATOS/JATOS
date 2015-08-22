@@ -1,15 +1,15 @@
-package publix.controllers.actors.messages;
+package publix.akka.messages;
 
 /**
  * Message exchanged by GroupChannelActors.
  * 
  * @author madsen
  */
-public class SystemMessage {
+public class GroupMsg {
 	
 	public final String msg;
 
-	public SystemMessage(Object msg) {
+	public GroupMsg(Object msg) {
 		this.msg = msg.toString();
 	}
 	

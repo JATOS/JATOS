@@ -1,4 +1,4 @@
-package publix.controllers.actors.messages;
+package publix.akka.messages;
 
 import akka.actor.ActorRef;
 
@@ -7,12 +7,12 @@ import akka.actor.ActorRef;
  * 
  * @author Kristian Lange
  */
-public class JoinGroupMsg {
+public class JoinGroup {
 
 	public final long studyResultId;
 	public final ActorRef systemChannel;
 
-	public JoinGroupMsg(long studyResultId, ActorRef systemChannel) {
+	public JoinGroup(long studyResultId, ActorRef systemChannel) {
 		this.studyResultId = studyResultId;
 		this.systemChannel = systemChannel;
 	}
