@@ -10,11 +10,11 @@ import play.mvc.Controller;
 import play.mvc.WebSocket;
 import publix.akka.actors.GroupDispatcherRegistry;
 import publix.akka.actors.SystemChannelRegistry;
+import publix.akka.messages.Get;
 import publix.akka.messages.GetOrCreate;
 import publix.akka.messages.IsMember;
 import publix.akka.messages.ItsThisOne;
 import publix.akka.messages.PoisonSomeone;
-import publix.akka.messages.Get;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.InternalServerErrorPublixException;
 import publix.exceptions.NotFoundPublixException;
@@ -24,6 +24,7 @@ import scala.concurrent.duration.Duration;
 import akka.actor.ActorRef;
 import akka.util.Timeout;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -51,7 +52,7 @@ public class ChannelService<T extends Worker> {
 
 	}
 
-	public WebSocket<String> openGroupChannel(Long studyId, String workerIdStr)
+	public WebSocket<JsonNode> openGroupChannel(Long studyId, String workerIdStr)
 			throws InternalServerErrorPublixException,
 			ForbiddenPublixException, NotFoundPublixException {
 		T worker = publixUtils.retrieveTypedWorker(workerIdStr);

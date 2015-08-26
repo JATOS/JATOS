@@ -1,9 +1,12 @@
 package publix.akka.actors;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import publix.akka.messages.DropGroup;
 import publix.akka.messages.GroupMsg;
 import publix.akka.messages.JoinGroup;
 import publix.akka.messages.PoisonSomeone;
+import publix.akka.messages.SystemMsg;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -56,10 +59,15 @@ public class GroupChannel extends UntypedActor {
 	@Override
 	// WebSocket's input channel: client -> JATOS
 	public void onReceive(Object msg) throws Exception {
-		if (msg instanceof String) {
-			groupDispatcher.tell(new GroupMsg(msg), self());
+		if (msg instanceof JsonNode) {
+			JsonNode jsonNode = (JsonNode) msg;
+			groupDispatcher.tell(new GroupMsg(jsonNode), self());
 		} else if (msg instanceof GroupMsg) {
-			out.tell(msg.toString(), self());
+			JsonNode jsonNode = ((GroupMsg) msg).jsonNode;
+//			out.tell("bla", self());
+			out.tell(jsonNode.get("msg"), self());
+		} else if (msg instanceof SystemMsg) {
+			systemChannel.tell(msg, self());
 		} else if (msg instanceof PoisonSomeone) {
 			self().tell(PoisonPill.getInstance(), self());
 		}

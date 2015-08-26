@@ -32,6 +32,7 @@ import publix.services.WebSocketBuilder;
 import utils.ControllerUtils;
 import utils.JsonUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Singleton;
 
 /**
@@ -243,7 +244,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public WebSocket<String> openGroupChannel(Long studyId) {
+	public WebSocket<JsonNode> openGroupChannel(Long studyId) {
 		Logger.info(CLASS_NAME + ".openGroupChannel: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
 		String workerIdStr = session(Publix.WORKER_ID);

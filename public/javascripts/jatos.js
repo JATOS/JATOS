@@ -17,7 +17,7 @@ var jatos = {};
 // or functions or variables)
 (function() {
 	
-jatos.version = "1.2.1";
+jatos.version = "2.1.1";
 	
 /**
  * How long should JATOS wait until to retry the HTTP call. Warning: There is a
@@ -507,45 +507,7 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 }
 
-/**
- * Tries to join a group. Sends a request to JATOS. If it was successful it
- * answers with the group's ID. 
- * 
- * @param {optional
- *            Function} success - Function to be called after a group is joined.
- *            Gets the group's ID as parameter.
- * @param {optional
- *            Function} error - Function to be called in case of error
- */
-jatos.joinGroup = function(success, error) {
-	if (!jQueryExists() || joiningGroup) {
-		return;
-	}
-	joiningGroup = true;
-
-	openSystemChannel();
-	
-	jatos.jQuery.ajax({
-		url : "/publix/" + jatos.studyId + "/group/join",
-		processData : false,
-		type : "GET",
-		timeout : jatos.httpTimeout,
-		success : function(response) {
-			joiningGroup = false;
-			openGroupChannel();
-			if (success) {
-				success(response)
-			}
-		},
-		error : function(err) {
-			joiningGroup = false;
-			if (error) {
-				error(err)
-			}
-		}
-	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
-}
-
+//System channel is independent from group channel
 function openSystemChannel() {
 	if (!jatos.jQuery || (systemChannel && systemChannel.readyState != 3)) {
 		return;
@@ -560,14 +522,14 @@ function openSystemChannel() {
 	systemChannel = new WebSocket("ws://" + location.host + 
 			"/publix/" + jatos.studyId + "/systemChannel/open");
 	systemChannel.onopen = function() {
-		alert("System channel opened.");
+		//alert("System channel opened.");
 	};
 	systemChannel.onerror = function() {
 		alert("System channel error.");
 	};
 	systemChannel.onmessage = function(event) {
 		var receivedMsg = event.data;
-		alert("Message on system channel received: " + receivedMsg);
+		//alert("Message on system channel received: " + receivedMsg);
 	};
 	systemChannel.onclose = function() {
 		alert("System channel closed.");
@@ -586,8 +548,44 @@ function closeSystemChannel() {
 	}
 	systemChannel.close();
 }
+
+/**
+ * Tries to join a group. Sends a request to JATOS. If it was successful it
+ * answers with the group's ID. 
+ * 
+ * @param {optional
+ *            Function} success - Function to be called after a group is joined.
+ *            Gets the group's ID as parameter.
+ * @param {optional
+ *            Function} error - Function to be called in case of error
+ */
+jatos.joinGroup = function(groupMsgCallback, success, error) {
+	if (!jQueryExists() || joiningGroup) {
+		return;
+	}
+	joiningGroup = true;
+
+	openSystemChannel();
 	
-function openGroupChannel() {
+	jatos.jQuery.ajax({
+		url : "/publix/" + jatos.studyId + "/group/join",
+		processData : false,
+		type : "GET",
+		timeout : jatos.httpTimeout,
+		success : function(response) {
+			joiningGroup = false;
+			openGroupChannel(groupMsgCallback, success, error);
+		},
+		error : function(err) {
+			joiningGroup = false;
+			if (error) {
+				error(err)
+			}
+		}
+	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
+}
+
+function openGroupChannel(groupMsgCallback, success, error) {
 	if (!jatos.jQuery || (groupChannel && groupChannel.readyState != 3)) {
 		return;
 	}
@@ -601,14 +599,18 @@ function openGroupChannel() {
 	groupChannel = new WebSocket("ws://" + location.host + 
 			"/publix/" + jatos.studyId + "/groupChannel/open");
 	groupChannel.onopen = function() {
-		alert("Group channel opened.");
+		if (success) {
+			success();
+		}
+//		alert("Group channel opened.");
 	};
 	groupChannel.onerror = function() {
 		alert("Group channel error.");
 	};
 	groupChannel.onmessage = function(event) {
-		var receivedMsg = event.data;
-		alert("Message on group channel received: " + receivedMsg);
+		if (groupMsgCallback) {
+			groupMsgCallback(jatos.jQuery.parseJSON(event.data));
+		}
 	};
 	groupChannel.onclose = function() {
 		alert("Group channel closed.");
@@ -617,7 +619,18 @@ function openGroupChannel() {
 
 jatos.sendGroupMsg = function(msg) {
 	if (groupChannel) {
-		groupChannel.send(msg);
+		var msgObj = {};
+		msgObj["msg"] = msg;
+		groupChannel.send(JSON.stringify(msgObj));
+	}
+}
+
+jatos.sendGroupMsgTo = function(recipient, msg) {
+	if (groupChannel) {
+		var msgObj = {};
+		msgObj["recipient"] = recipient;
+		msgObj["msg"] = msg;
+		groupChannel.send(JSON.stringify(msgObj));
 	}
 }
 

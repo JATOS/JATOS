@@ -104,5 +104,5 @@ public class PublixErrorMessages {
 	public String studyFinishedWithMessage(String message) {
 		return "Study finished with message: " + message;
 	}
-
+	
 }

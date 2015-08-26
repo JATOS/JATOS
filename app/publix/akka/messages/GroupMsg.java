@@ -1,5 +1,7 @@
 package publix.akka.messages;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
  * Message exchanged by GroupChannelActors.
  * 
@@ -7,14 +9,14 @@ package publix.akka.messages;
  */
 public class GroupMsg {
 	
-	public final String msg;
+	public final JsonNode jsonNode;
 
-	public GroupMsg(Object msg) {
-		this.msg = msg.toString();
+	public GroupMsg(JsonNode jsonNode) {
+		this.jsonNode = jsonNode;
 	}
 	
 	@Override
 	public String toString() {
-		return msg;
+		return jsonNode.asText();
 	}
 }

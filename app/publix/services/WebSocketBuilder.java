@@ -1,5 +1,7 @@
 package publix.services;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import publix.akka.actors.GroupChannel;
@@ -39,10 +41,10 @@ public class WebSocketBuilder {
 		};
 	}
 
-	public static WebSocket<String> withGroupChannelActor(long studyResultId,
+	public static WebSocket<JsonNode> withGroupChannelActor(long studyResultId,
 			ActorRef groupDispatcher, ActorRef systemChannel) {
-		return new WebSocket<String>() {
-			public void onReady(In<String> in, Out<String> out) {
+		return new WebSocket<JsonNode>() {
+			public void onReady(In<JsonNode> in, Out<JsonNode> out) {
 			}
 
 			public boolean isActor() {
@@ -70,9 +72,9 @@ public class WebSocketBuilder {
      * @param result The result that will be returned.
      * @return A rejected WebSocket.
      */
-    public static WebSocket<String> reject(final Result result) {
-        return new WebSocket<String>() {
-            public void onReady(In<String> in, Out<String> out) {
+    public static <T> WebSocket<T> reject(final Result result) {
+        return new WebSocket<T>() {
+            public void onReady(In<T> in, Out<T> out) {
             }
             public Result rejectWith() {
                 return result;

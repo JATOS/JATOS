@@ -2,6 +2,8 @@ package publix.controllers;
 
 import java.io.IOException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import play.libs.F.Promise;
 import play.mvc.Result;
 import play.mvc.WebSocket;
@@ -102,7 +104,7 @@ public interface IPublix {
 	 * messages. JATOS just forwards messages coming from one group member to
 	 * all other members. Only works if this study is a group study.
 	 */
-	WebSocket<String> openGroupChannel(Long studyId)
+	WebSocket<JsonNode> openGroupChannel(Long studyId)
 			throws BadRequestPublixException;
 
 	/**

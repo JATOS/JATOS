@@ -2,12 +2,12 @@ package publix.controllers;
 
 import java.io.IOException;
 
-import models.workers.PersonalSingleWorker;
+import models.workers.GeneralSingleWorker;
 import models.workers.JatosWorker;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
-import models.workers.GeneralSingleWorker;
 import models.workers.PersonalMultipleWorker;
+import models.workers.PersonalSingleWorker;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.libs.F.Promise;
@@ -27,6 +27,7 @@ import publix.exceptions.NotFoundPublixException;
 import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -323,9 +324,9 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public WebSocket<String> openGroupChannel(Long studyId)
+	public WebSocket<JsonNode> openGroupChannel(Long studyId)
 			throws BadRequestPublixException {
-		WebSocket<String> result = null;
+		WebSocket<JsonNode> result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:

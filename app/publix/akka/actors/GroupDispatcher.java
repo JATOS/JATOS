@@ -15,6 +15,8 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
  * A GroupActor is an Akka Actor responsible for distributing messages within a
  * group. If one member of the group sends a messages, all other members should
@@ -27,6 +29,7 @@ import akka.actor.UntypedActor;
  */
 public class GroupDispatcher extends UntypedActor {
 
+	private static final String RECIPIENT = "recipient";
 	/**
 	 * Contains the members of this group. Maps StudyResult's IDs to ActorRefs.
 	 */
@@ -54,7 +57,12 @@ public class GroupDispatcher extends UntypedActor {
 	@Override
 	public void onReceive(Object msg) throws Exception {
 		if (msg instanceof GroupMsg) {
-			tellAllButSender(msg);
+			JsonNode jsonNode = ((GroupMsg) msg).jsonNode;
+			if (jsonNode.has(RECIPIENT)) {
+				tellRecipient(msg, jsonNode);
+			} else {
+				tellAllButSender(msg);
+			}
 		} else if (msg instanceof IsMember) {
 			IsMember isMember = (IsMember) msg;
 			ActorRef groupChannel = groupChannelMap.get(isMember.id);
@@ -87,6 +95,26 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
+	private void tellRecipient(Object msg, JsonNode jsonNode) {
+		Long studyResultId = null;
+		try {
+			studyResultId = Long.valueOf(jsonNode.get(RECIPIENT).asText());
+		} catch (NumberFormatException e) {
+			String errorMsg = "Recipient " + jsonNode.get(RECIPIENT).asText()
+					+ " isn't a study result ID.";
+			sender().tell(new SystemMsg(errorMsg), self());
+		}
+
+		ActorRef actorRef = groupChannelMap.get(studyResultId);
+		if (actorRef != null) {
+			actorRef.tell(msg, self());
+		} else {
+			String errorMsg = "Recipient " + studyResultId.toString()
+					+ " isn't member of this group.";
+			sender().tell(new SystemMsg(errorMsg), self());
+		}
+	}
+
 	private void tellAllButSender(Object msg) {
 		for (ActorRef actorRef : groupChannelMap.values()) {
 			if (actorRef != sender()) {
@@ -100,4 +128,5 @@ public class GroupDispatcher extends UntypedActor {
 			actorRef.tell(msg, self());
 		}
 	}
+
 }
