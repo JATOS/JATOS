@@ -3,19 +3,19 @@ package publix.akka.actors;
 import java.util.HashMap;
 import java.util.Map;
 
-import publix.akka.messages.DropGroup;
+import publix.akka.messages.Droppout;
 import publix.akka.messages.GroupMsg;
 import publix.akka.messages.IsMember;
 import publix.akka.messages.JoinGroup;
 import publix.akka.messages.PoisonSomeone;
-import publix.akka.messages.SystemMsg;
 import publix.akka.messages.Unregister;
+import utils.JsonUtils;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * A GroupActor is an Akka Actor responsible for distributing messages within a
@@ -29,12 +29,15 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class GroupDispatcher extends UntypedActor {
 
+	private static final String ERROR = "error";
+	private static final String JOINED = "joined";
+	private static final String GROUP_MEMBERS = "groupMembers";
+	private static final String DROPPED = "dropped";
 	private static final String RECIPIENT = "recipient";
 	/**
 	 * Contains the members of this group. Maps StudyResult's IDs to ActorRefs.
 	 */
 	private final Map<Long, ActorRef> groupChannelMap = new HashMap<>();
-	private final Map<Long, ActorRef> systemChannelMap = new HashMap<>();
 	private final ActorRef groupDispatcherRegistry;
 	private long groupResultId;
 
@@ -57,52 +60,37 @@ public class GroupDispatcher extends UntypedActor {
 	@Override
 	public void onReceive(Object msg) throws Exception {
 		if (msg instanceof GroupMsg) {
-			JsonNode jsonNode = ((GroupMsg) msg).jsonNode;
-			if (jsonNode.has(RECIPIENT)) {
-				tellRecipient(msg, jsonNode);
-			} else {
-				tellAllButSender(msg);
-			}
+			// We got a GroupMsg from a client
+			dispatchGroupMsg(msg);
 		} else if (msg instanceof IsMember) {
-			IsMember isMember = (IsMember) msg;
-			ActorRef groupChannel = groupChannelMap.get(isMember.id);
-			sender().tell((groupChannel != null), self());
+			// Someone wants to know if this ID is a member in this group
+			returnIsMember(msg);
 		} else if (msg instanceof JoinGroup) {
-			JoinGroup joinGroup = (JoinGroup) msg;
-			groupChannelMap.put(joinGroup.studyResultId, sender());
-			systemChannelMap.put(joinGroup.studyResultId,
-					joinGroup.systemChannel);
-			tellSystemMsg(new SystemMsg(joinGroup.studyResultId + " joined"));
-		} else if (msg instanceof DropGroup) {
-			DropGroup dropGroup = (DropGroup) msg;
-			groupChannelMap.remove(dropGroup.studyResultId);
-			systemChannelMap.remove(dropGroup.studyResultId);
-			if (groupChannelMap.isEmpty()) {
-				// Tell this dispatcher to commit suicide if it has no more
-				// members
-				self().tell(PoisonPill.getInstance(), self());
-			} else {
-				tellSystemMsg(new SystemMsg(dropGroup.studyResultId
-						+ " dropped"));
-			}
+			joinGroup(msg);
+		} else if (msg instanceof Droppout) {
+			dropout(msg);
 		} else if (msg instanceof PoisonSomeone) {
-			PoisonSomeone poison = (PoisonSomeone) msg;
-			ActorRef groupChannel = groupChannelMap
-					.get(poison.idOfTheOneToPoison);
-			if (groupChannel != null) {
-				groupChannel.forward(msg, getContext());
-			}
+			closeAGroupChannel(msg);
 		}
 	}
 
-	private void tellRecipient(Object msg, JsonNode jsonNode) {
+	private void dispatchGroupMsg(Object msg) {
+		ObjectNode jsonNode = ((GroupMsg) msg).jsonNode;
+		if (jsonNode.has(RECIPIENT)) {
+			tellRecipientOnly(msg, jsonNode);
+		} else {
+			tellAllButSender(msg);
+		}
+	}
+
+	private void tellRecipientOnly(Object msg, ObjectNode jsonNode) {
 		Long studyResultId = null;
 		try {
 			studyResultId = Long.valueOf(jsonNode.get(RECIPIENT).asText());
 		} catch (NumberFormatException e) {
 			String errorMsg = "Recipient " + jsonNode.get(RECIPIENT).asText()
 					+ " isn't a study result ID.";
-			sender().tell(new SystemMsg(errorMsg), self());
+			sendErrorBackToSender(jsonNode, errorMsg);
 		}
 
 		ActorRef actorRef = groupChannelMap.get(studyResultId);
@@ -111,8 +99,46 @@ public class GroupDispatcher extends UntypedActor {
 		} else {
 			String errorMsg = "Recipient " + studyResultId.toString()
 					+ " isn't member of this group.";
-			sender().tell(new SystemMsg(errorMsg), self());
+			sendErrorBackToSender(jsonNode, errorMsg);
 		}
+	}
+
+	private void returnIsMember(Object msg) {
+		IsMember isMember = (IsMember) msg;
+		ActorRef groupChannel = groupChannelMap.get(isMember.id);
+		sender().tell((groupChannel != null), self());
+	}
+
+	private void closeAGroupChannel(Object msg) {
+		PoisonSomeone poison = (PoisonSomeone) msg;
+		ActorRef groupChannel = groupChannelMap.get(poison.idOfTheOneToPoison);
+		if (groupChannel != null) {
+			groupChannel.forward(msg, getContext());
+		}
+	}
+
+	private void dropout(Object msg) {
+		Droppout droppout = (Droppout) msg;
+		groupChannelMap.remove(droppout.studyResultId);
+		if (!groupChannelMap.isEmpty()) {
+			// Tell all group members "dropped" and the current group members
+			ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+			objectNode.put(DROPPED, droppout.studyResultId);
+			objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
+			tellAll(new GroupMsg(objectNode));
+		} else {
+			// Tell this dispatcher to kill itself if it has no more members
+			self().tell(PoisonPill.getInstance(), self());
+		}
+	}
+
+	private void joinGroup(Object msg) {
+		JoinGroup joinGroup = (JoinGroup) msg;
+		groupChannelMap.put(joinGroup.studyResultId, sender());
+		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		objectNode.put(JOINED, joinGroup.studyResultId);
+		objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
+		tellAll(new GroupMsg(objectNode));
 	}
 
 	private void tellAllButSender(Object msg) {
@@ -123,10 +149,19 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	private void tellSystemMsg(Object msg) {
-		for (ActorRef actorRef : systemChannelMap.values()) {
+	private void tellAll(Object msg) {
+		for (ActorRef actorRef : groupChannelMap.values()) {
 			actorRef.tell(msg, self());
 		}
+	}
+
+	/**
+	 * Send an error back to sender. Recycle the JsonNode.
+	 */
+	private void sendErrorBackToSender(ObjectNode jsonNode, String errorMsg) {
+		jsonNode.removeAll();
+		jsonNode.put(ERROR, errorMsg);
+		sender().tell(new GroupMsg(jsonNode), self());
 	}
 
 }

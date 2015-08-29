@@ -38,9 +38,18 @@ jatos.httpRetry = 5;
  */
 jatos.httpRetryWait = 1000;
 /**
- * WebSocket support by the browser is needed for system and group channel.
+ * WebSocket support by the browser is needed for group channel.
  */
 jatos.webSocketSupported = 'WebSocket' in window;
+/**
+ * True if the group is complete (a groupComplete message was received via the
+ * group channel)
+ */
+jatos.groupComplete = false;
+/**
+ * Current members of the group.
+ */
+jatos.groupMembers = [];
 
 /**
  * State booleans. If true jatos.js is in this state. Several states can be true
@@ -51,7 +60,6 @@ var onLoadCallbackCalled = false;
 var startingComponent = false;
 var endingComponent = false;
 var submittingResultData = false;
-var openingSystemChannel = false;
 var joiningGroup = false;
 var droppingGroup = false;
 var abortingComponent = false;
@@ -64,10 +72,6 @@ var onLoadCallback;
  * Callback function defined via jatos.onError.
  */
 var onErrorCallback;
-/**
- * System channel WebSocket to exchange messages between jatos.js and JATOS.
- */
-var systemChannel;
 /**
  * Group channel WebSocket to exchange messages between workers of a group.
  */
@@ -507,48 +511,6 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 }
 
-//System channel is independent from group channel
-function openSystemChannel() {
-	if (!jatos.jQuery || (systemChannel && systemChannel.readyState != 3)) {
-		return;
-	}
-	if (!jatos.webSocketSupported) {
-		if (onErrorCallback) {
-			onErrorCallback("This browser does not support WebSockets.");
-		}
-		return;
-	}
-	
-	systemChannel = new WebSocket("ws://" + location.host + 
-			"/publix/" + jatos.studyId + "/systemChannel/open");
-	systemChannel.onopen = function() {
-		//alert("System channel opened.");
-	};
-	systemChannel.onerror = function() {
-		alert("System channel error.");
-	};
-	systemChannel.onmessage = function(event) {
-		var receivedMsg = event.data;
-		//alert("Message on system channel received: " + receivedMsg);
-	};
-	systemChannel.onclose = function() {
-		alert("System channel closed.");
-	};
-}
-
-function closeSystemChannel() {
-	if (!jatos.jQuery || (!systemChannel)) {
-		return;
-	}
-	if (!jatos.webSocketSupported) {
-		if (onErrorCallback) {
-			onErrorCallback("This browser does not support WebSockets.");
-		}
-		return;
-	}
-	systemChannel.close();
-}
-
 /**
  * Tries to join a group. Sends a request to JATOS. If it was successful it
  * answers with the group's ID. 
@@ -565,8 +527,6 @@ jatos.joinGroup = function(groupMsgCallback, success, error) {
 	}
 	joiningGroup = true;
 
-	openSystemChannel();
-	
 	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/group/join",
 		processData : false,
@@ -602,19 +562,33 @@ function openGroupChannel(groupMsgCallback, success, error) {
 		if (success) {
 			success();
 		}
-//		alert("Group channel opened.");
 	};
 	groupChannel.onerror = function() {
 		alert("Group channel error.");
 	};
 	groupChannel.onmessage = function(event) {
-		if (groupMsgCallback) {
-			groupMsgCallback(jatos.jQuery.parseJSON(event.data));
-		}
+		handleGroupMsg(event.data, groupMsgCallback);
 	};
 	groupChannel.onclose = function() {
 		alert("Group channel closed.");
 	};
+}
+
+function handleGroupMsg(msg, groupMsgCallback) {
+	var groupMsg = jatos.jQuery.parseJSON(msg);
+	if (groupMsg.joined) {
+		jatos.groupMembers = groupMsg.groupMembers;
+	}
+	if (groupMsg.dropped) {
+		jatos.groupMembers = groupMsg.groupMembers;
+	}
+	if (groupMsg.complete) {
+		jatos.groupMembers = groupMsg.groupMembers;
+		jatos.groupComplete = groupMsg.complete;
+	}
+	if (groupMsgCallback) {
+		groupMsgCallback(groupMsg);
+	}
 }
 
 jatos.sendGroupMsg = function(msg) {
@@ -625,7 +599,7 @@ jatos.sendGroupMsg = function(msg) {
 	}
 }
 
-jatos.sendGroupMsgTo = function(recipient, msg) {
+jatos.sendMsgTo = function(recipient, msg) {
 	if (groupChannel) {
 		var msgObj = {};
 		msgObj["recipient"] = recipient;
@@ -649,7 +623,6 @@ jatos.dropGroup = function(success, error) {
 	}
 	droppingGroup = true;
 	
-	closeSystemChannel();
 	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/group/drop",
 		processData : false,

@@ -1,16 +1,15 @@
 package publix.akka.actors;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import publix.akka.messages.DropGroup;
+import publix.akka.messages.Droppout;
 import publix.akka.messages.GroupMsg;
 import publix.akka.messages.JoinGroup;
 import publix.akka.messages.PoisonSomeone;
-import publix.akka.messages.SystemMsg;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * GroupChannelActor is an Akka Actor that is used by the group channel. A group
@@ -29,46 +28,45 @@ public class GroupChannel extends UntypedActor {
 	private final ActorRef out;
 	private final long studyResultId;
 	private final ActorRef groupDispatcher;
-	private final ActorRef systemChannel;
 
 	public static Props props(ActorRef out, long studyResultId,
-			ActorRef groupDispatcher, ActorRef systemChannel) {
+			ActorRef groupDispatcher) {
 		return Props.create(GroupChannel.class, out, studyResultId,
-				groupDispatcher, systemChannel);
+				groupDispatcher);
 	}
 
 	public GroupChannel(ActorRef out, long studyResultId,
-			ActorRef groupDispatcher, ActorRef systemChannel) {
+			ActorRef groupDispatcher) {
 		this.out = out;
 		this.studyResultId = studyResultId;
 		this.groupDispatcher = groupDispatcher;
-		this.systemChannel = systemChannel;
 	}
 
 	@Override
 	public void preStart() {
-		groupDispatcher.tell(new JoinGroup(studyResultId, systemChannel),
-				self());
+		groupDispatcher.tell(new JoinGroup(studyResultId), self());
 	}
 
 	@Override
 	public void postStop() {
-		groupDispatcher.tell(new DropGroup(studyResultId), self());
+		groupDispatcher.tell(new Droppout(studyResultId), self());
 	}
 
 	@Override
 	// WebSocket's input channel: client -> JATOS
 	public void onReceive(Object msg) throws Exception {
-		if (msg instanceof JsonNode) {
-			JsonNode jsonNode = (JsonNode) msg;
+		if (msg instanceof ObjectNode) {
+			// If we receive a JsonNode (only from the client) wrap it in a
+			// GroupMsg and forward it to the GroupDispatcher
+			ObjectNode jsonNode = (ObjectNode) msg;
 			groupDispatcher.tell(new GroupMsg(jsonNode), self());
 		} else if (msg instanceof GroupMsg) {
-			JsonNode jsonNode = ((GroupMsg) msg).jsonNode;
-//			out.tell("bla", self());
-			out.tell(jsonNode.get("msg"), self());
-		} else if (msg instanceof SystemMsg) {
-			systemChannel.tell(msg, self());
+			// If we receive a GroupMessage (only from the GroupDispatcher) send
+			// the wrapped JsonNode to the client
+			GroupMsg groupMsg = (GroupMsg) msg;
+			out.tell(groupMsg.jsonNode, self());
 		} else if (msg instanceof PoisonSomeone) {
+			// Kill this group channel
 			self().tell(PoisonPill.getInstance(), self());
 		}
 	}

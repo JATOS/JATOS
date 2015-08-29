@@ -90,16 +90,6 @@ public interface IPublix {
 	/**
 	 * WebSocket
 	 * 
-	 * Opens a websocket between JATOS and the client to exchange system
-	 * messages (e.g. announce group is complete or new group member). Only
-	 * works if this study is a group study.
-	 */
-	WebSocket<String> openSystemChannel(Long studyId)
-			throws BadRequestPublixException;
-
-	/**
-	 * WebSocket
-	 * 
 	 * Opens a websocket between JATOS and the client to exchange group
 	 * messages. JATOS just forwards messages coming from one group member to
 	 * all other members. Only works if this study is a group study.

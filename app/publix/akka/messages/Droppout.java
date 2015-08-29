@@ -5,11 +5,11 @@ package publix.akka.messages;
  * 
  * @author Kristian Lange
  */
-public class DropGroup {
+public class Droppout {
 	
 	public long studyResultId;
 	
-	public DropGroup(long studyResultId) {
+	public Droppout(long studyResultId) {
 		this.studyResultId = studyResultId;
 	}
 

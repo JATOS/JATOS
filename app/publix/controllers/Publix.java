@@ -219,31 +219,6 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public WebSocket<String> openSystemChannel(Long studyId) {
-		Logger.info(CLASS_NAME + ".openSystemChannel: studyId " + studyId
-				+ ", " + "workerId " + session(WORKER_ID));
-		String workerIdStr = session(Publix.WORKER_ID);
-		// The @Transactional annotation can only be used with Actions. Since
-		// WebSockets aren't considered Actions in Play we have to do it
-		// manually. Additionally we have to catch the PublixExceptions
-		// manually because the PublixAction wouldn't send a rejected WebSocket
-		// but normal HTTP responses.
-		try {
-			return JPA.withTransaction(() -> channelService.openSystemChannel(
-					studyId, workerIdStr));
-		} catch (NotFoundPublixException e) {
-			Logger.info(CLASS_NAME + ".openSystemChannel: " + e.getMessage());
-			return WebSocketBuilder.reject(notFound());
-		} catch (ForbiddenPublixException e) {
-			Logger.info(CLASS_NAME + ".openSystemChannel: " + e.getMessage());
-			return WebSocketBuilder.reject(forbidden());
-		} catch (Throwable e) {
-			Logger.info(CLASS_NAME + ".openSystemChannel: ", e);
-			return WebSocketBuilder.reject(internalServerError());
-		}
-	}
-
-	@Override
 	public WebSocket<JsonNode> openGroupChannel(Long studyId) {
 		Logger.info(CLASS_NAME + ".openGroupChannel: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));

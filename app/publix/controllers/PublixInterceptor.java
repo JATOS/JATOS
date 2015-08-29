@@ -295,35 +295,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public WebSocket<String> openSystemChannel(Long studyId)
-			throws BadRequestPublixException {
-		WebSocket<String> result = null;
-		switch (getWorkerTypeFromSession()) {
-		case MTWorker.WORKER_TYPE:
-		case MTSandboxWorker.WORKER_TYPE:
-			result = mtPublix.openSystemChannel(studyId);
-			break;
-		case JatosWorker.WORKER_TYPE:
-			result = jatosPublix.openSystemChannel(studyId);
-			break;
-		case PersonalMultipleWorker.WORKER_TYPE:
-			result = pmPublix.openSystemChannel(studyId);
-			break;
-		case PersonalSingleWorker.WORKER_TYPE:
-			result = personalSinglePublix.openSystemChannel(studyId);
-			break;
-		case GeneralSingleWorker.WORKER_TYPE:
-			result = generalSinglePublix.openSystemChannel(studyId);
-			break;
-		default:
-			throw new BadRequestPublixException(
-					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-		}
-		return result;
-	}
-
-	@Override
-	@Transactional
 	public WebSocket<JsonNode> openGroupChannel(Long studyId)
 			throws BadRequestPublixException {
 		WebSocket<JsonNode> result = null;

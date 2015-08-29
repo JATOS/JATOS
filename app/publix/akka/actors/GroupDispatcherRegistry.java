@@ -4,12 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import play.libs.Akka;
+import publix.akka.messages.Get;
 import publix.akka.messages.GetOrCreate;
 import publix.akka.messages.ItsThisOne;
 import publix.akka.messages.PoisonSomeone;
-import publix.akka.messages.Register;
 import publix.akka.messages.Unregister;
-import publix.akka.messages.Get;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
@@ -44,9 +43,6 @@ public class GroupDispatcherRegistry extends UntypedActor {
 			}
 			ItsThisOne answer = new ItsThisOne(groupDispatcher);
 			sender().tell(answer, self());
-		} else if (msg instanceof Register) {
-			Register register = (Register) msg;
-			groupDispatcherMap.put(register.id, sender());
 		} else if (msg instanceof Unregister) {
 			Unregister unregister = (Unregister) msg;
 			groupDispatcherMap.remove(unregister.id);

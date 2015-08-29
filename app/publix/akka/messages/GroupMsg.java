@@ -1,6 +1,6 @@
 package publix.akka.messages;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Message exchanged by GroupChannelActors.
@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class GroupMsg {
 	
-	public final JsonNode jsonNode;
+	public final ObjectNode jsonNode;
 
-	public GroupMsg(JsonNode jsonNode) {
+	public GroupMsg(ObjectNode jsonNode) {
 		this.jsonNode = jsonNode;
 	}
 	

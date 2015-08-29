@@ -8,7 +8,6 @@ GET     /publix/:studyId/end                             @publix.controllers.Pub
 GET     /publix/:studyId/abort                           @publix.controllers.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null)
 GET     /publix/:studyId/group/join                      @publix.controllers.PublixInterceptor.joinGroup(studyId: Long)
 GET     /publix/:studyId/group/drop                      @publix.controllers.PublixInterceptor.dropGroup(studyId: Long)
-GET     /publix/:studyId/systemChannel/open              @publix.controllers.PublixInterceptor.openSystemChannel(studyId: Long)
 GET     /publix/:studyId/groupChannel/open               @publix.controllers.PublixInterceptor.openGroupChannel(studyId: Long)
 POST    /publix/:studyId/sessionData                     @publix.controllers.PublixInterceptor.setStudySessionData(studyId: Long)
 # Start component by ID

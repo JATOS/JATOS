@@ -9,7 +9,6 @@ import play.libs.Akka;
 import play.mvc.Controller;
 import play.mvc.WebSocket;
 import publix.akka.actors.GroupDispatcherRegistry;
-import publix.akka.actors.SystemChannelRegistry;
 import publix.akka.messages.Get;
 import publix.akka.messages.GetOrCreate;
 import publix.akka.messages.IsMember;
@@ -33,10 +32,8 @@ public class ChannelService<T extends Worker> {
 
 	private static final Timeout TIMEOUT = new Timeout(Duration.create(1000,
 			"seconds"));
-	private static final ActorRef SYSTEM_CHANNEL_REGISTRY = Akka.system().actorOf(
-			SystemChannelRegistry.props());
-	private static final ActorRef GROUP_DISPATCHER_REGISTRY = Akka.system().actorOf(
-			GroupDispatcherRegistry.props());
+	private static final ActorRef GROUP_DISPATCHER_REGISTRY = Akka.system()
+			.actorOf(GroupDispatcherRegistry.props());
 
 	private final PublixUtils<T> publixUtils;
 	private final IStudyAuthorisation<T> studyAuthorisation;
@@ -65,31 +62,16 @@ public class ChannelService<T extends Worker> {
 			throw new ForbiddenPublixException(
 					errorMessages.workerDidntJoinGroup(worker, study.getId()));
 		}
-		ActorRef groupDispatcher = getGroupDispatcher(new GetOrCreate(
+		// Get the GroupDispatcher that will handle this GroupResult. Create a
+		// new one or get the already existing one.
+		ActorRef groupDispatcher = retrieveGroupDispatcher(new GetOrCreate(
 				groupResult.getId()));
 		if (isMemberOfGroup(studyResult, groupDispatcher)) {
 			// This studyResult is already member of a group
 			return WebSocketBuilder.reject(Controller.badRequest());
 		}
-		ActorRef systemChannel = retrieveSystemChannel(studyResult);
 		return WebSocketBuilder.withGroupChannelActor(studyResult.getId(),
-				groupDispatcher, systemChannel);
-	}
-
-	public WebSocket<String> openSystemChannel(Long studyId, String workerIdStr)
-			throws ForbiddenPublixException, NotFoundPublixException,
-			InternalServerErrorPublixException {
-		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
-		final StudyResult studyResult = publixUtils
-				.retrieveWorkersLastStudyResult(worker, study);
-		ActorRef systemChannel = retrieveSystemChannel(studyResult);
-		if (systemChannel != null) {
-			return WebSocketBuilder.reject(Controller.forbidden());
-		}
-		return WebSocketBuilder.withSystemChannelActor(SYSTEM_CHANNEL_REGISTRY,
-				studyResult.getId());
+				groupDispatcher);
 	}
 
 	public void closeGroupChannel(StudyResult studyResult,
@@ -97,7 +79,7 @@ public class ChannelService<T extends Worker> {
 		if (groupResult == null) {
 			return;
 		}
-		ActorRef groupDispatcher = getGroupDispatcher(new Get(
+		ActorRef groupDispatcher = retrieveGroupDispatcher(new Get(
 				groupResult.getId()));
 		if (groupDispatcher != null) {
 			groupDispatcher.tell(new PoisonSomeone(studyResult.getId()),
@@ -105,20 +87,7 @@ public class ChannelService<T extends Worker> {
 		}
 	}
 
-	private ActorRef retrieveSystemChannel(StudyResult studyResult)
-			throws InternalServerErrorPublixException {
-		Future<Object> future = ask(SYSTEM_CHANNEL_REGISTRY,
-				new Get(studyResult.getId()), TIMEOUT);
-		Object answer;
-		try {
-			answer = Await.result(future, TIMEOUT.duration());
-		} catch (Exception e) {
-			throw new InternalServerErrorPublixException(e.getMessage());
-		}
-		return ((ItsThisOne) answer).channel;
-	}
-
-	private ActorRef getGroupDispatcher(Object msg)
+	private ActorRef retrieveGroupDispatcher(Object msg)
 			throws InternalServerErrorPublixException {
 		Future<Object> future = ask(GROUP_DISPATCHER_REGISTRY, msg, TIMEOUT);
 		Object answer;
