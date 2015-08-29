@@ -50,14 +50,14 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 	@Inject
 	GeneralSinglePublix(GeneralSinglePublixUtils publixUtils,
 			GeneralSingleStudyAuthorisation studyAuthorisation,
+			ChannelService channelService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, WorkerDao workerDao,
-			GroupResultDao groupResultDao,
-			ChannelService<GeneralSingleWorker> channelService) {
-		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
-				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
-				channelService);
+			GroupResultDao groupResultDao) {
+		super(publixUtils, studyAuthorisation, channelService, errorMessages,
+				studyAssets, componentResultDao, jsonUtils, studyResultDao,
+				groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.workerDao = workerDao;

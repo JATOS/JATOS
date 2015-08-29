@@ -31,6 +31,7 @@ import publix.controllers.Publix;
 import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
+import publix.exceptions.InternalServerErrorPublixException;
 import publix.exceptions.NotFoundPublixException;
 import publix.exceptions.PublixException;
 import publix.exceptions.UnsupportedMediaTypePublixException;
@@ -605,7 +606,8 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 	}
 
-	public void dropGroupResult(StudyResult studyResult) {
+	public void dropGroupResult(StudyResult studyResult)
+			throws InternalServerErrorPublixException {
 		GroupResult groupResult = studyResult.getGroupResult();
 		if (groupResult == null) {
 			return;

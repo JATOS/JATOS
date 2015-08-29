@@ -64,29 +64,29 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 	protected final PublixUtils<T> publixUtils;
 	protected final IStudyAuthorisation<T> studyAuthorisation;
+	protected final ChannelService channelService;
 	protected final PublixErrorMessages errorMessages;
 	protected final StudyAssets studyAssets;
 	protected final JsonUtils jsonUtils;
 	protected final ComponentResultDao componentResultDao;
 	protected final StudyResultDao studyResultDao;
 	protected final GroupResultDao groupResultDao;
-	protected final ChannelService<T> channelService;
 
 	public Publix(PublixUtils<T> utils,
 			IStudyAuthorisation<T> studyAuthorisation,
-			PublixErrorMessages errorMessages, StudyAssets studyAssets,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-			ChannelService<T> channelService) {
+			ChannelService channelService, PublixErrorMessages errorMessages,
+			StudyAssets studyAssets, ComponentResultDao componentResultDao,
+			JsonUtils jsonUtils, StudyResultDao studyResultDao,
+			GroupResultDao groupResultDao) {
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
+		this.channelService = channelService;
 		this.errorMessages = errorMessages;
 		this.studyAssets = studyAssets;
 		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
 		this.groupResultDao = groupResultDao;
-		this.channelService = channelService;
 	}
 
 	@Override
@@ -187,40 +187,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public Result joinGroup(Long studyId) throws NotFoundPublixException,
-			ForbiddenPublixException {
+	public WebSocket<JsonNode> joinGroup(Long studyId)
+			throws NotFoundPublixException, ForbiddenPublixException {
 		Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID));
-		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
-		publixUtils.checkStudyIsGroupStudy(study);
-		GroupResult groupResult = publixUtils.joinGroupResult(studyResult);
-		return ok(groupResult.getId().toString());
-	}
-
-	@Override
-	public Result dropGroup(Long studyId) throws ForbiddenPublixException,
-			InternalServerErrorPublixException, NotFoundPublixException {
-		Logger.info(CLASS_NAME + ".dropGroup: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID));
-		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
-		publixUtils.checkStudyIsGroupStudy(study);
-		GroupResult groupResult = studyResult.getGroupResult();
-		channelService.closeGroupChannel(studyResult, groupResult);
-		publixUtils.dropGroupResult(studyResult);
-		return ok().as("text/html");
-	}
-
-	@Override
-	public WebSocket<JsonNode> openGroupChannel(Long studyId) {
-		Logger.info(CLASS_NAME + ".openGroupChannel: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
 		String workerIdStr = session(Publix.WORKER_ID);
 		// The @Transactional annotation can only be used with Actions.
@@ -229,8 +198,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		// manually because the PublixAction wouldn't send a rejected WebSocket
 		// but normal HTTP responses.
 		try {
-			return JPA.withTransaction(() -> channelService.openGroupChannel(
-					studyId, workerIdStr));
+			return JPA.withTransaction(() -> joinGroup(studyId, workerIdStr));
 		} catch (NotFoundPublixException e) {
 			Logger.info(CLASS_NAME + ".openGroupChannel: " + e.getMessage());
 			return WebSocketBuilder.reject(notFound());
@@ -241,6 +209,39 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			Logger.info(CLASS_NAME + ".openGroupChannel: ", e);
 			return WebSocketBuilder.reject(internalServerError());
 		}
+	}
+
+	private WebSocket<JsonNode> joinGroup(Long studyId, String workerIdStr)
+			throws ForbiddenPublixException, NotFoundPublixException,
+			InternalServerErrorPublixException {
+		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
+		StudyModel study = publixUtils.retrieveStudy(studyId);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
+				worker, study);
+		publixUtils.checkStudyIsGroupStudy(study);
+		GroupResult groupResult = publixUtils.joinGroupResult(studyResult);
+		if (groupResult == null) {
+			throw new ForbiddenPublixException(
+					errorMessages.workerDidntJoinGroup(worker, study.getId()));
+		}
+		return channelService.openGroupChannel(studyResult, groupResult);
+	}
+
+	@Override
+	public Result dropGroup(Long studyId) throws ForbiddenPublixException,
+			InternalServerErrorPublixException, NotFoundPublixException {
+		Logger.info(CLASS_NAME + ".dropGroup: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID));
+		T worker = publixUtils.retrieveTypedWorker(session(Publix.WORKER_ID));
+		StudyModel study = publixUtils.retrieveStudy(studyId);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
+				worker, study);
+		publixUtils.checkStudyIsGroupStudy(study);
+		publixUtils.dropGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult);
+		return ok().as("text/html");
 	}
 
 	@Override

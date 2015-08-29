@@ -236,9 +236,9 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result joinGroup(Long studyId) throws BadRequestPublixException,
+	public WebSocket<JsonNode> joinGroup(Long studyId) throws BadRequestPublixException,
 			NotFoundPublixException, ForbiddenPublixException {
-		Result result = null;
+		WebSocket<JsonNode> result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
@@ -285,35 +285,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
 			result = generalSinglePublix.dropGroup(studyId);
-			break;
-		default:
-			throw new BadRequestPublixException(
-					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-		}
-		return result;
-	}
-
-	@Override
-	@Transactional
-	public WebSocket<JsonNode> openGroupChannel(Long studyId)
-			throws BadRequestPublixException {
-		WebSocket<JsonNode> result = null;
-		switch (getWorkerTypeFromSession()) {
-		case MTWorker.WORKER_TYPE:
-		case MTSandboxWorker.WORKER_TYPE:
-			result = mtPublix.openGroupChannel(studyId);
-			break;
-		case JatosWorker.WORKER_TYPE:
-			result = jatosPublix.openGroupChannel(studyId);
-			break;
-		case PersonalMultipleWorker.WORKER_TYPE:
-			result = pmPublix.openGroupChannel(studyId);
-			break;
-		case PersonalSingleWorker.WORKER_TYPE:
-			result = personalSinglePublix.openGroupChannel(studyId);
-			break;
-		case GeneralSingleWorker.WORKER_TYPE:
-			result = generalSinglePublix.openGroupChannel(studyId);
 			break;
 		default:
 			throw new BadRequestPublixException(

@@ -43,13 +43,13 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 	@Inject
 	PersonalSinglePublix(PersonalSinglePublixUtils publixUtils,
 			PersonalSingleStudyAuthorisation studyAuthorisation,
+			ChannelService channelService,
 			PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-			ChannelService<PersonalSingleWorker> channelService) {
-		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
-				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
-				channelService);
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+		super(publixUtils, studyAuthorisation, channelService, errorMessages,
+				studyAssets, componentResultDao, jsonUtils, studyResultDao,
+				groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 	}

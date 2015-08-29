@@ -2,9 +2,7 @@ package publix.services;
 
 import static akka.pattern.Patterns.ask;
 import models.GroupResult;
-import models.StudyModel;
 import models.StudyResult;
-import models.workers.Worker;
 import play.libs.Akka;
 import play.mvc.Controller;
 import play.mvc.WebSocket;
@@ -24,44 +22,19 @@ import akka.actor.ActorRef;
 import akka.util.Timeout;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
-public class ChannelService<T extends Worker> {
+public class ChannelService {
 
 	private static final Timeout TIMEOUT = new Timeout(Duration.create(1000,
 			"seconds"));
 	private static final ActorRef GROUP_DISPATCHER_REGISTRY = Akka.system()
 			.actorOf(GroupDispatcherRegistry.props());
 
-	private final PublixUtils<T> publixUtils;
-	private final IStudyAuthorisation<T> studyAuthorisation;
-	private final PublixErrorMessages errorMessages;
-
-	@Inject
-	public ChannelService(PublixUtils<T> publixUtils,
-			IStudyAuthorisation<T> studyAuthorisation,
-			PublixErrorMessages errorMessages) {
-		this.publixUtils = publixUtils;
-		this.studyAuthorisation = studyAuthorisation;
-		this.errorMessages = errorMessages;
-
-	}
-
-	public WebSocket<JsonNode> openGroupChannel(Long studyId, String workerIdStr)
-			throws InternalServerErrorPublixException,
+	public WebSocket<JsonNode> openGroupChannel(StudyResult studyResult,
+			GroupResult groupResult) throws InternalServerErrorPublixException,
 			ForbiddenPublixException, NotFoundPublixException {
-		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
-		GroupResult groupResult = studyResult.getGroupResult();
-		if (groupResult == null) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerDidntJoinGroup(worker, study.getId()));
-		}
 		// Get the GroupDispatcher that will handle this GroupResult. Create a
 		// new one or get the already existing one.
 		ActorRef groupDispatcher = retrieveGroupDispatcher(new GetOrCreate(
@@ -74,8 +47,9 @@ public class ChannelService<T extends Worker> {
 				groupDispatcher);
 	}
 
-	public void closeGroupChannel(StudyResult studyResult,
-			GroupResult groupResult) throws InternalServerErrorPublixException {
+	public void closeGroupChannel(StudyResult studyResult)
+			throws InternalServerErrorPublixException {
+		GroupResult groupResult = studyResult.getGroupResult();
 		if (groupResult == null) {
 			return;
 		}

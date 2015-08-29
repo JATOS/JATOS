@@ -73,11 +73,12 @@ public interface IPublix {
 			IOException;
 
 	/**
-	 * HTTP type: Ajax GET request
+	 * WebSocket
 	 * 
-	 * Let the worker join a group. Only works if this study is a group study.
+	 * Let the worker join a group and opens a WebSocket (group channel). Only
+	 * works if this study is a group study.
 	 */
-	Result joinGroup(Long studyId) throws PublixException;
+	WebSocket<JsonNode> joinGroup(Long studyId) throws PublixException;
 
 	/**
 	 * HTTP type: Ajax GET request
@@ -86,16 +87,6 @@ public interface IPublix {
 	 * study is a group study.
 	 */
 	Result dropGroup(Long studyId) throws PublixException;
-
-	/**
-	 * WebSocket
-	 * 
-	 * Opens a websocket between JATOS and the client to exchange group
-	 * messages. JATOS just forwards messages coming from one group member to
-	 * all other members. Only works if this study is a group study.
-	 */
-	WebSocket<JsonNode> openGroupChannel(Long studyId)
-			throws BadRequestPublixException;
 
 	/**
 	 * HTTP type: Ajax POST request

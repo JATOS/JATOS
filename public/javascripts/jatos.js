@@ -512,9 +512,11 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 }
 
 /**
- * Tries to join a group. Sends a request to JATOS. If it was successful it
- * answers with the group's ID. 
+ * Tries to join a group and open the groupChannel WebSocket.
  * 
+ * @param {optional
+ *            Function} groupMsgCallback - Function to be called when a group
+ *            message is received.
  * @param {optional
  *            Function} success - Function to be called after a group is joined.
  *            Gets the group's ID as parameter.
@@ -522,54 +524,40 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
  *            Function} error - Function to be called in case of error
  */
 jatos.joinGroup = function(groupMsgCallback, success, error) {
-	if (!jQueryExists() || joiningGroup) {
-		return;
-	}
-	joiningGroup = true;
-
-	jatos.jQuery.ajax({
-		url : "/publix/" + jatos.studyId + "/group/join",
-		processData : false,
-		type : "GET",
-		timeout : jatos.httpTimeout,
-		success : function(response) {
-			joiningGroup = false;
-			openGroupChannel(groupMsgCallback, success, error);
-		},
-		error : function(err) {
-			joiningGroup = false;
-			if (error) {
-				error(err)
-			}
-		}
-	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
-}
-
-function openGroupChannel(groupMsgCallback, success, error) {
-	if (!jatos.jQuery || (groupChannel && groupChannel.readyState != 3)) {
-		return;
-	}
 	if (!jatos.webSocketSupported) {
 		if (onErrorCallback) {
 			onErrorCallback("This browser does not support WebSockets.");
 		}
 		return;
 	}
+	// WebSocket's readyState:
+	//	CONNECTING	0	The connection is not yet open.
+	//	OPEN	1	The connection is open and ready to communicate.
+	//	CLOSING	2	The connection is in the process of closing.
+	//	CLOSED	3	The connection is closed or couldn't be opened.
+	if (!jatos.jQuery || joiningGroup 
+			|| (groupChannel && groupChannel.readyState != 3)) {
+		return;
+	}
+	joiningGroup = true;
 	
 	groupChannel = new WebSocket("ws://" + location.host + 
-			"/publix/" + jatos.studyId + "/groupChannel/open");
+			"/publix/" + jatos.studyId + "/group/join");
 	groupChannel.onopen = function() {
+		joiningGroup = false;
 		if (success) {
 			success();
 		}
 	};
 	groupChannel.onerror = function() {
+		joiningGroup = false;
 		alert("Group channel error.");
 	};
 	groupChannel.onmessage = function(event) {
 		handleGroupMsg(event.data, groupMsgCallback);
 	};
 	groupChannel.onclose = function() {
+		joiningGroup = false;
 		alert("Group channel closed.");
 	};
 }

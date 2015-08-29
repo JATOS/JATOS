@@ -83,13 +83,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Inject
 	JatosPublix(JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
-			JatosErrorMessages errorMessages, StudyAssets studyAssets,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-			ChannelService<JatosWorker> channelService) {
-		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
-				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
-				channelService);
+			ChannelService channelService, JatosErrorMessages errorMessages,
+			StudyAssets studyAssets, ComponentResultDao componentResultDao,
+			JsonUtils jsonUtils, StudyResultDao studyResultDao,
+			GroupResultDao groupResultDao) {
+		super(publixUtils, studyAuthorisation, channelService, errorMessages,
+				studyAssets, componentResultDao, jsonUtils, studyResultDao,
+				groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;

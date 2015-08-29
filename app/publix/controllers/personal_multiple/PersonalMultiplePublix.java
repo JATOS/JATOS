@@ -42,14 +42,14 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	@Inject
 	PersonalMultiplePublix(PersonalMultiplePublixUtils publixUtils,
 			PersonalMultipleStudyAuthorisation studyAuthorisation,
+			ChannelService channelService,
 			PersonalMultipleErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			GroupResultDao groupResultDao,
-			ChannelService<PersonalMultipleWorker> channelService) {
-		super(publixUtils, studyAuthorisation, errorMessages, studyAssets,
-				componentResultDao, jsonUtils, studyResultDao, groupResultDao,
-				channelService);
+			GroupResultDao groupResultDao) {
+		super(publixUtils, studyAuthorisation, channelService, errorMessages,
+				studyAssets, componentResultDao, jsonUtils, studyResultDao,
+				groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 	}
