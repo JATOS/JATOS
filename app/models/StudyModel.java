@@ -39,7 +39,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Domain model of a study.
+ * Domain model / entity of a study. Used for JSON marshalling and JPA persistance.
  * 
  * @author Kristian Lange
  */
