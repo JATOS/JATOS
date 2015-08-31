@@ -23,7 +23,7 @@ import services.MessagesStrings;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Domain model of a user.
+ * Domain model / entity of a user. Used for JSON marshalling and JPA persistance.
  * 
  * @author Kristian Lange
  */
