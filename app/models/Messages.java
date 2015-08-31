@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
- * Model for messages (success, info, warning, error) destined for JATOS' GUI
+ * Model for messages (success, info, warning, error) used for JSON marshalling destined for JATOS' GUI
  * views.
  * 
  * @author Kristian Lange
