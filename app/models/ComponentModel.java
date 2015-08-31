@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Domain model of a component.
+ * Domain model / entity of a component. It's used by JPA and JSON marshalling.
  * 
  * @author Kristian Lange
  */
