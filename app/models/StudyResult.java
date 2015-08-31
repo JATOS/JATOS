@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
- * Domain model of a study result.
+ * Domain model /entity of a study result. Used for JSON marshalling and JPA persistance.
  * 
  * @author Kristian Lange
  */
