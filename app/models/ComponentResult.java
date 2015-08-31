@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
- * Domain model of a component result.
+ * Domain model / entity of a component result. It's used by JPA and JSON marshalling.
  * 
  * @author Kristian Lange
  */
