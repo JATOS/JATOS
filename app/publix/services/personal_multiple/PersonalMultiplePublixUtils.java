@@ -4,7 +4,6 @@ import models.workers.PersonalMultipleWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.ComponentResultDao;
-import persistance.GroupResultDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
@@ -27,9 +26,9 @@ public class PersonalMultiplePublixUtils extends
 	PersonalMultiplePublixUtils(PersonalMultipleErrorMessages errorMessages,
 			StudyDao studyDao, StudyResultDao studyResultDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao, GroupResultDao groupResultDao) {
+			WorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao, groupResultDao);
+				componentResultDao, workerDao);
 	}
 
 	@Override

@@ -13,6 +13,7 @@ import publix.controllers.Publix;
 import publix.controllers.StudyAssets;
 import publix.exceptions.PublixException;
 import publix.services.ChannelService;
+import publix.services.GroupService;
 import publix.services.personal_multiple.PersonalMultipleErrorMessages;
 import publix.services.personal_multiple.PersonalMultiplePublixUtils;
 import publix.services.personal_multiple.PersonalMultipleStudyAuthorisation;
@@ -42,14 +43,14 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	@Inject
 	PersonalMultiplePublix(PersonalMultiplePublixUtils publixUtils,
 			PersonalMultipleStudyAuthorisation studyAuthorisation,
-			ChannelService channelService,
+			GroupService groupService, ChannelService channelService,
 			PersonalMultipleErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
 			GroupResultDao groupResultDao) {
-		super(publixUtils, studyAuthorisation, channelService, errorMessages,
-				studyAssets, componentResultDao, jsonUtils, studyResultDao,
-				groupResultDao);
+		super(publixUtils, studyAuthorisation, groupService, channelService,
+				errorMessages, studyAssets, componentResultDao, jsonUtils,
+				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 	}

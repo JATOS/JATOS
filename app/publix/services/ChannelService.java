@@ -6,6 +6,7 @@ import models.StudyResult;
 import play.libs.Akka;
 import play.mvc.Controller;
 import play.mvc.WebSocket;
+import publix.akka.GuiceExtension;
 import publix.akka.actors.GroupDispatcherRegistry;
 import publix.akka.messages.Get;
 import publix.akka.messages.GetOrCreate;
@@ -22,6 +23,7 @@ import akka.actor.ActorRef;
 import akka.util.Timeout;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
@@ -29,8 +31,15 @@ public class ChannelService {
 
 	private static final Timeout TIMEOUT = new Timeout(Duration.create(1000,
 			"seconds"));
-	private static final ActorRef GROUP_DISPATCHER_REGISTRY = Akka.system()
-			.actorOf(GroupDispatcherRegistry.props());
+	private final ActorRef GROUP_DISPATCHER_REGISTRY;
+
+	@Inject
+	ChannelService() {
+		GROUP_DISPATCHER_REGISTRY = Akka.system().actorOf(
+				GuiceExtension.GuiceExtProvider.get(Akka.system()).props(
+						GroupDispatcherRegistry.class),
+				"GroupDispatcherRegistry");
+	}
 
 	public WebSocket<JsonNode> openGroupChannel(StudyResult studyResult,
 			GroupResult groupResult) throws InternalServerErrorPublixException,
@@ -39,12 +48,28 @@ public class ChannelService {
 		// new one or get the already existing one.
 		ActorRef groupDispatcher = retrieveGroupDispatcher(new GetOrCreate(
 				groupResult.getId()));
-		if (isMemberOfGroup(studyResult, groupDispatcher)) {
-			// This studyResult is already member of a group
-			return WebSocketBuilder.reject(Controller.badRequest());
+		Future<Object> future = ask(groupDispatcher, new PoisonSomeone(
+				studyResult.getId()), TIMEOUT);
+		try {
+			Await.result(future, TIMEOUT.duration());
+		} catch (Exception e) {
+			throw new InternalServerErrorPublixException(e.getMessage());
 		}
 		return WebSocketBuilder.withGroupChannelActor(studyResult.getId(),
 				groupDispatcher);
+	}
+
+	private boolean closeGroupChannel(StudyResult studyResult,
+			ActorRef groupDispatcher) throws InternalServerErrorPublixException {
+		Future<Object> future = ask(groupDispatcher, new PoisonSomeone(
+				studyResult.getId()), TIMEOUT);
+		boolean result;
+		try {
+			result = (boolean) Await.result(future, TIMEOUT.duration());
+		} catch (Exception e) {
+			throw new InternalServerErrorPublixException(e.getMessage());
+		}
+		return result;
 	}
 
 	public void closeGroupChannel(StudyResult studyResult)
@@ -71,19 +96,6 @@ public class ChannelService {
 			throw new InternalServerErrorPublixException(e.getMessage());
 		}
 		return ((ItsThisOne) answer).channel;
-	}
-
-	private boolean isMemberOfGroup(StudyResult studyResult,
-			ActorRef groupDispatcher) throws InternalServerErrorPublixException {
-		Future<Object> future = ask(groupDispatcher,
-				new IsMember(studyResult.getId()), TIMEOUT);
-		boolean result;
-		try {
-			result = (boolean) Await.result(future, TIMEOUT.duration());
-		} catch (Exception e) {
-			throw new InternalServerErrorPublixException(e.getMessage());
-		}
-		return result;
 	}
 
 }

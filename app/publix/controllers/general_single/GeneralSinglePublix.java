@@ -15,6 +15,7 @@ import publix.controllers.Publix;
 import publix.controllers.StudyAssets;
 import publix.exceptions.PublixException;
 import publix.services.ChannelService;
+import publix.services.GroupService;
 import publix.services.general_single.GeneralSingleErrorMessages;
 import publix.services.general_single.GeneralSinglePublixUtils;
 import publix.services.general_single.GeneralSingleStudyAuthorisation;
@@ -50,14 +51,14 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 	@Inject
 	GeneralSinglePublix(GeneralSinglePublixUtils publixUtils,
 			GeneralSingleStudyAuthorisation studyAuthorisation,
-			ChannelService channelService,
+			GroupService groupService, ChannelService channelService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, WorkerDao workerDao,
 			GroupResultDao groupResultDao) {
-		super(publixUtils, studyAuthorisation, channelService, errorMessages,
-				studyAssets, componentResultDao, jsonUtils, studyResultDao,
-				groupResultDao);
+		super(publixUtils, studyAuthorisation, groupService, channelService,
+				errorMessages, studyAssets, componentResultDao, jsonUtils,
+				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.workerDao = workerDao;

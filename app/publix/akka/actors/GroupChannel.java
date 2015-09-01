@@ -1,6 +1,6 @@
 package publix.akka.actors;
 
-import publix.akka.messages.Droppout;
+import publix.akka.messages.Dropout;
 import publix.akka.messages.GroupMsg;
 import publix.akka.messages.JoinGroup;
 import publix.akka.messages.PoisonSomeone;
@@ -49,7 +49,7 @@ public class GroupChannel extends UntypedActor {
 
 	@Override
 	public void postStop() {
-		groupDispatcher.tell(new Droppout(studyResultId), self());
+		groupDispatcher.tell(new Dropout(studyResultId), self());
 	}
 
 	@Override

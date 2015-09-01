@@ -12,7 +12,6 @@ import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
 import models.GroupResult;
-import models.GroupResult.GroupState;
 import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
@@ -22,7 +21,6 @@ import org.w3c.dom.Document;
 
 import persistance.ComponentDao;
 import persistance.ComponentResultDao;
-import persistance.GroupResultDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
@@ -31,7 +29,6 @@ import publix.controllers.Publix;
 import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
-import publix.exceptions.InternalServerErrorPublixException;
 import publix.exceptions.NotFoundPublixException;
 import publix.exceptions.PublixException;
 import publix.exceptions.UnsupportedMediaTypePublixException;
@@ -53,19 +50,16 @@ public abstract class PublixUtils<T extends Worker> {
 	private final ComponentDao componentDao;
 	private final ComponentResultDao componentResultDao;
 	private final WorkerDao workerDao;
-	private final GroupResultDao groupResultDao;
 
 	public PublixUtils(PublixErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, WorkerDao workerDao,
-			GroupResultDao groupResultDao) {
+			ComponentResultDao componentResultDao, WorkerDao workerDao) {
 		this.errorMessages = errorMessages;
 		this.studyDao = studyDao;
 		this.studyResultDao = studyResultDao;
 		this.componentDao = componentDao;
 		this.componentResultDao = componentResultDao;
 		this.workerDao = workerDao;
-		this.groupResultDao = groupResultDao;
 	}
 
 	/**
@@ -552,79 +546,6 @@ public abstract class PublixUtils<T extends Worker> {
 				|| ComponentState.ABORTED == state
 				|| ComponentState.FAIL == state
 				|| ComponentState.RELOADED == state;
-	}
-
-	/**
-	 * Throws ForbiddenPublixException if study is not a group study.
-	 */
-	public void checkStudyIsGroupStudy(StudyModel study)
-			throws ForbiddenPublixException {
-		if (!study.isGroupStudy()) {
-			throw new ForbiddenPublixException(
-					errorMessages.studyNotGroupStudy(study.getId()));
-		}
-	}
-
-	/**
-	 * Joins the first incomplete GroupResult from the DB and returns it. If
-	 * such doesn't exist it creates a new one and persists it.
-	 */
-	public GroupResult joinGroupResult(StudyResult studyResult) {
-		// If we already have a group just return it
-		if (studyResult.getGroupResult() != null) {
-			return studyResult.getGroupResult();
-		}
-
-		// Look in the DB if we have an incomplete group. If not create new one.
-		StudyModel study = studyResult.getStudy();
-		GroupResult groupResult = groupResultDao.findFirstIncomplete(study);
-		if (groupResult == null) {
-			groupResult = new GroupResult(study);
-			groupResultDao.create(groupResult);
-		}
-
-		// Add StudyResult to GroupResult and vice versa
-		groupResult.addStudyResult(studyResult);
-		studyResult.setGroupResult(groupResult);
-
-		setGroupStateInComplete(groupResult, studyResult.getStudy());
-		groupResultDao.update(groupResult);
-		studyResultDao.update(studyResult);
-		return groupResult;
-	}
-
-	/**
-	 * Sets GroupResult's state to COMPLETE or INCOMPLETE according to study's
-	 * maxGroupSize.
-	 */
-	private void setGroupStateInComplete(GroupResult groupResult,
-			StudyModel study) {
-		if (groupResult.getStudyResultList().size() < study.getMaxGroupSize()) {
-			groupResult.setGroupState(GroupState.INCOMPLETE);
-		} else {
-			groupResult.setGroupState(GroupState.COMPLETE);
-		}
-	}
-
-	public void dropGroupResult(StudyResult studyResult)
-			throws InternalServerErrorPublixException {
-		GroupResult groupResult = studyResult.getGroupResult();
-		if (groupResult == null) {
-			return;
-		}
-
-		// Remove StudyResult from GroupResult and vice versa
-		groupResult.removeStudyResult(studyResult);
-		studyResult.setGroupResult(null);
-
-		setGroupStateInComplete(groupResult, studyResult.getStudy());
-		groupResultDao.update(groupResult);
-		studyResultDao.update(studyResult);
-
-		// If group empty remove it from DB
-		if (groupResult.getStudyResultList().isEmpty()) {
-			groupResultDao.remove(groupResult);
-		}
 	}
 
 }

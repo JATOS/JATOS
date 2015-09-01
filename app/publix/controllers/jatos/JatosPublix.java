@@ -19,6 +19,7 @@ import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.PublixException;
 import publix.services.ChannelService;
+import publix.services.GroupService;
 import publix.services.jatos.JatosErrorMessages;
 import publix.services.jatos.JatosPublixUtils;
 import publix.services.jatos.JatosStudyAuthorisation;
@@ -83,13 +84,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Inject
 	JatosPublix(JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
-			ChannelService channelService, JatosErrorMessages errorMessages,
-			StudyAssets studyAssets, ComponentResultDao componentResultDao,
-			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			GroupResultDao groupResultDao) {
-		super(publixUtils, studyAuthorisation, channelService, errorMessages,
-				studyAssets, componentResultDao, jsonUtils, studyResultDao,
-				groupResultDao);
+			GroupService groupService, ChannelService channelService,
+			JatosErrorMessages errorMessages, StudyAssets studyAssets,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+		super(publixUtils, studyAuthorisation, groupService, channelService,
+				errorMessages, studyAssets, componentResultDao, jsonUtils,
+				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;

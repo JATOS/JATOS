@@ -25,6 +25,7 @@ import publix.exceptions.InternalServerErrorPublixException;
 import publix.exceptions.NotFoundPublixException;
 import publix.exceptions.PublixException;
 import publix.services.ChannelService;
+import publix.services.GroupService;
 import publix.services.IStudyAuthorisation;
 import publix.services.PublixErrorMessages;
 import publix.services.PublixUtils;
@@ -64,6 +65,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 	protected final PublixUtils<T> publixUtils;
 	protected final IStudyAuthorisation<T> studyAuthorisation;
+	protected final GroupService groupService;
 	protected final ChannelService channelService;
 	protected final PublixErrorMessages errorMessages;
 	protected final StudyAssets studyAssets;
@@ -73,13 +75,14 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	protected final GroupResultDao groupResultDao;
 
 	public Publix(PublixUtils<T> utils,
-			IStudyAuthorisation<T> studyAuthorisation,
+			IStudyAuthorisation<T> studyAuthorisation, GroupService groupService,
 			ChannelService channelService, PublixErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
 			GroupResultDao groupResultDao) {
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
+		this.groupService = groupService;
 		this.channelService = channelService;
 		this.errorMessages = errorMessages;
 		this.studyAssets = studyAssets;
@@ -219,8 +222,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
-		publixUtils.checkStudyIsGroupStudy(study);
-		GroupResult groupResult = publixUtils.joinGroupResult(studyResult);
+		groupService.checkStudyIsGroupStudy(study);
+		GroupResult groupResult = groupService.joinGroupResult(studyResult);
 		if (groupResult == null) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerDidntJoinGroup(worker, study.getId()));
@@ -238,8 +241,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
-		publixUtils.checkStudyIsGroupStudy(study);
-		publixUtils.dropGroupResult(studyResult);
+		groupService.checkStudyIsGroupStudy(study);
+		groupService.dropGroupResult(studyResult);
 		channelService.closeGroupChannel(studyResult);
 		return ok().as("text/html");
 	}

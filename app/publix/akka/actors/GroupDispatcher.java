@@ -3,7 +3,7 @@ package publix.akka.actors;
 import java.util.HashMap;
 import java.util.Map;
 
-import publix.akka.messages.Droppout;
+import publix.akka.messages.Dropout;
 import publix.akka.messages.GroupMsg;
 import publix.akka.messages.IsMember;
 import publix.akka.messages.JoinGroup;
@@ -50,6 +50,7 @@ public class GroupDispatcher extends UntypedActor {
 	public GroupDispatcher(ActorRef groupDispatcherRegistry, long groupResultId) {
 		this.groupDispatcherRegistry = groupDispatcherRegistry;
 		this.groupResultId = groupResultId;
+
 	}
 
 	@Override
@@ -67,7 +68,7 @@ public class GroupDispatcher extends UntypedActor {
 			returnIsMember(msg);
 		} else if (msg instanceof JoinGroup) {
 			joinGroup(msg);
-		} else if (msg instanceof Droppout) {
+		} else if (msg instanceof Dropout) {
 			dropout(msg);
 		} else if (msg instanceof PoisonSomeone) {
 			closeAGroupChannel(msg);
@@ -109,24 +110,42 @@ public class GroupDispatcher extends UntypedActor {
 		sender().tell((groupChannel != null), self());
 	}
 
+	// Comes from ChannelService (no persisting)
 	private void closeAGroupChannel(Object msg) {
 		PoisonSomeone poison = (PoisonSomeone) msg;
-		ActorRef groupChannel = groupChannelMap.get(poison.idOfTheOneToPoison);
+		long studyResultId = poison.idOfTheOneToPoison;
+		ActorRef groupChannel = groupChannelMap.get(studyResultId);
 		if (groupChannel != null) {
+			// Remove from this GroupDispatcher
+			groupChannelMap.remove(studyResultId);
+			// Tell GroupChannel to close itself
 			groupChannel.forward(msg, getContext());
+			tellDropoutToEveryone(studyResultId);
+			sender().tell(true, self());
+		} else {
+			sender().tell(false, self());
 		}
 	}
+	
+	// Tell all group members "dropped" and the current group members
+	private void tellDropoutToEveryone(long studyResultId) {
+		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		objectNode.put(DROPPED, studyResultId);
+		objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
+		tellAll(new GroupMsg(objectNode));
+	}
 
+	// Comes from GroupChannel (has to be persisted)
 	private void dropout(Object msg) {
-		Droppout droppout = (Droppout) msg;
-		groupChannelMap.remove(droppout.studyResultId);
-		if (!groupChannelMap.isEmpty()) {
-			// Tell all group members "dropped" and the current group members
-			ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
-			objectNode.put(DROPPED, droppout.studyResultId);
-			objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
-			tellAll(new GroupMsg(objectNode));
-		} else {
+		Dropout droppout = (Dropout) msg;
+		long studyResultId = droppout.studyResultId;
+		// Only remove GroupChannel if it's the one from the sender
+		if (groupChannelMap.get(studyResultId).equals(sender())) {
+			groupChannelMap.remove(droppout.studyResultId);
+			groupDispatcherRegistry.tell(msg, self());
+			tellDropoutToEveryone(droppout.studyResultId);
+		}
+		if (groupChannelMap.isEmpty()) {
 			// Tell this dispatcher to kill itself if it has no more members
 			self().tell(PoisonPill.getInstance(), self());
 		}
@@ -134,9 +153,10 @@ public class GroupDispatcher extends UntypedActor {
 
 	private void joinGroup(Object msg) {
 		JoinGroup joinGroup = (JoinGroup) msg;
-		groupChannelMap.put(joinGroup.studyResultId, sender());
+		long studyResultId = joinGroup.studyResultId;
+		groupChannelMap.put(studyResultId, sender());
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
-		objectNode.put(JOINED, joinGroup.studyResultId);
+		objectNode.put(JOINED, studyResultId);
 		objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
 		tellAll(new GroupMsg(objectNode));
 	}

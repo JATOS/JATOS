@@ -18,6 +18,7 @@ import publix.controllers.StudyAssets;
 import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.PublixException;
 import publix.services.ChannelService;
+import publix.services.GroupService;
 import publix.services.mt.MTErrorMessages;
 import publix.services.mt.MTPublixUtils;
 import publix.services.mt.MTStudyAuthorisation;
@@ -58,14 +59,14 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	@Inject
 	MTPublix(MTPublixUtils publixUtils,
-			MTStudyAuthorisation studyAuthorisation,
+			MTStudyAuthorisation studyAuthorisation, GroupService groupService,
 			ChannelService channelService, MTErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
 			MTWorkerDao mtWorkerDao, GroupResultDao groupResultDao) {
-		super(publixUtils, studyAuthorisation, channelService, errorMessages,
-				studyAssets, componentResultDao, jsonUtils, studyResultDao,
-				groupResultDao);
+		super(publixUtils, studyAuthorisation, groupService, channelService,
+				errorMessages, studyAssets, componentResultDao, jsonUtils,
+				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;

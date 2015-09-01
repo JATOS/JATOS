@@ -5,7 +5,6 @@ import models.workers.JatosWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.ComponentResultDao;
-import persistance.GroupResultDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.UserDao;
@@ -36,9 +35,9 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	JatosPublixUtils(JatosErrorMessages errorMessages, UserDao userDao,
 			StudyDao studyDao, StudyResultDao studyResultDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao, GroupResultDao groupResultDao) {
+			WorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao, groupResultDao);
+				componentResultDao, workerDao);
 		this.errorMessages = errorMessages;
 		this.userDao = userDao;
 	}

@@ -4,7 +4,6 @@ import models.workers.MTWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.ComponentResultDao;
-import persistance.GroupResultDao;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
@@ -25,10 +24,9 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 	@Inject
 	MTPublixUtils(MTErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, WorkerDao workerDao,
-			GroupResultDao groupResultDao) {
+			ComponentResultDao componentResultDao, WorkerDao workerDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao, groupResultDao);
+				componentResultDao, workerDao);
 	}
 
 	@Override
