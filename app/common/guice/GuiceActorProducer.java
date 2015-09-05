@@ -1,4 +1,4 @@
-package publix.akka;
+package common.guice;
 
 import akka.actor.Actor;
 import akka.actor.IndirectActorProducer;

@@ -24,12 +24,12 @@ import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.InternalServerErrorPublixException;
 import publix.exceptions.NotFoundPublixException;
 import publix.exceptions.PublixException;
-import publix.services.ChannelService;
-import publix.services.GroupService;
+import publix.groupservices.ChannelService;
+import publix.groupservices.GroupService;
+import publix.groupservices.WebSocketBuilder;
 import publix.services.IStudyAuthorisation;
 import publix.services.PublixErrorMessages;
 import publix.services.PublixUtils;
-import publix.services.WebSocketBuilder;
 import utils.ControllerUtils;
 import utils.JsonUtils;
 
@@ -227,7 +227,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 				+ "workerId " + workerIdStr + " joined group "
 				+ groupResult.getId());
-		return channelService.openGroupChannel(studyResult, groupResult);
+		return channelService.openGroupChannel(studyResult);
 	}
 
 	@Override

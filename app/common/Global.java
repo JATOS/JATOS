@@ -10,6 +10,7 @@ import play.mvc.Results;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import common.guice.GuiceConfig;
 
 /**
  * Play's Global class. We use Guice for dependency injection.

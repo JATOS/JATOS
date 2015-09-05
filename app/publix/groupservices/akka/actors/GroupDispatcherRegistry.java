@@ -1,15 +1,15 @@
-package publix.akka.actors;
+package publix.groupservices.akka.actors;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import play.libs.Akka;
-import publix.akka.messages.Get;
-import publix.akka.messages.GetOrCreate;
-import publix.akka.messages.ItsThisOne;
-import publix.akka.messages.PoisonSomeone;
-import publix.akka.messages.Unregister;
-import publix.services.GroupService;
+import publix.groupservices.GroupService;
+import publix.groupservices.akka.messages.Get;
+import publix.groupservices.akka.messages.GetOrCreate;
+import publix.groupservices.akka.messages.ItsThisOne;
+import publix.groupservices.akka.messages.PoisonSomeone;
+import publix.groupservices.akka.messages.Unregister;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 
@@ -54,7 +54,7 @@ public class GroupDispatcherRegistry extends UntypedActor {
 			sender().tell(answer, self());
 		} else if (msg instanceof Unregister) {
 			Unregister unregister = (Unregister) msg;
-			groupDispatcherMap.remove(unregister.id);
+			groupDispatcherMap.remove(unregister.groupResultId);
 		} else if (msg instanceof PoisonSomeone) {
 			PoisonSomeone poison = (PoisonSomeone) msg;
 			ActorRef actorRef = groupDispatcherMap

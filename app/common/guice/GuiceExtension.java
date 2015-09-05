@@ -1,4 +1,4 @@
-package publix.akka;
+package common.guice;
 
 import java.lang.reflect.Type;
 

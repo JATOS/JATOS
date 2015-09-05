@@ -1,4 +1,4 @@
-package publix.akka.messages;
+package publix.groupservices.akka.messages;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 

@@ -1,9 +1,9 @@
-package publix.akka.actors;
+package publix.groupservices.akka.actors;
 
-import publix.akka.messages.Dropout;
-import publix.akka.messages.GroupMsg;
-import publix.akka.messages.JoinGroup;
-import publix.akka.messages.PoisonSomeone;
+import publix.groupservices.akka.messages.Dropout;
+import publix.groupservices.akka.messages.GroupMsg;
+import publix.groupservices.akka.messages.JoinGroup;
+import publix.groupservices.akka.messages.PoisonSomeone;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -12,11 +12,12 @@ import akka.actor.UntypedActor;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * GroupChannelActor is an Akka Actor that is used by the group channel. A group
- * channel is a WebSocket connecting a client who's running a study and the
- * JATOS server. A GroupChannelActor belongs to a group, which is managed be a
- * GroupActor. A GroupChannelActor joins it's group by sending the JoinMessage
- * to it's GroupActor.
+ * GroupChannel is an Akka Actor that represents the group channel's WebSocket.
+ * A group channel is a WebSocket connecting a client who's running a study and
+ * the JATOS server. A GroupChannel belongs to a group, which is managed by a
+ * GroupDispatcher. Group data are persisted in a GroupResult. A GroupChannel
+ * joins its group by sending the JoinMessage to it's GroupDispatcher and drops
+ * out of one by sending a Dropout message.
  * 
  * @author Kristian Lange
  */

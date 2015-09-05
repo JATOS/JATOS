@@ -1,4 +1,4 @@
-package publix.akka.messages;
+package publix.groupservices.akka.messages;
 
 /**
  * Message an GroupChannelActor can send to join a GroupActor.

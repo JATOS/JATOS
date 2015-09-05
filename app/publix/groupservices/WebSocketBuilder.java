@@ -1,21 +1,21 @@
-package publix.services;
+package publix.groupservices;
 
 import play.mvc.Result;
 import play.mvc.WebSocket;
-import publix.akka.actors.GroupChannel;
+import publix.groupservices.akka.actors.GroupChannel;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Builds new WebSockets on the GroupChannelActor and SystemChannelActor.
+ * Builds new WebSockets for group channel.
  * 
  * @author Kristian Lange
  */
 public class WebSocketBuilder {
 
-	public static WebSocket<JsonNode> withGroupChannelActor(long studyResultId,
+	public static WebSocket<JsonNode> withGroupChannel(long studyResultId,
 			ActorRef groupDispatcher) {
 		return new WebSocket<JsonNode>() {
 			public void onReady(In<JsonNode> in, Out<JsonNode> out) {
@@ -44,7 +44,7 @@ public class WebSocketBuilder {
 	 * Rejects a WebSocket.
 	 *
 	 * @param result
-	 *            The result that will be returned.
+	 *            The Result that will be returned.
 	 * @return A rejected WebSocket.
 	 */
 	public static <T> WebSocket<T> reject(final Result result) {

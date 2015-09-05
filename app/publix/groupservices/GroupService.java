@@ -1,4 +1,4 @@
-package publix.services;
+package publix.groupservices;
 
 import models.GroupResult;
 import models.GroupResult.GroupState;
@@ -9,6 +9,7 @@ import persistance.StudyResultDao;
 import play.Logger;
 import play.db.jpa.JPA;
 import publix.exceptions.ForbiddenPublixException;
+import publix.services.PublixErrorMessages;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

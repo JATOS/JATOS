@@ -1,16 +1,15 @@
-package publix.akka.actors;
+package publix.groupservices.akka.actors;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import models.GroupResult.GroupState;
-import publix.akka.messages.Dropout;
-import publix.akka.messages.GroupMsg;
-import publix.akka.messages.IsMember;
-import publix.akka.messages.JoinGroup;
-import publix.akka.messages.PoisonSomeone;
-import publix.akka.messages.Unregister;
-import publix.services.GroupService;
+import publix.groupservices.GroupService;
+import publix.groupservices.akka.messages.Dropout;
+import publix.groupservices.akka.messages.GroupMsg;
+import publix.groupservices.akka.messages.JoinGroup;
+import publix.groupservices.akka.messages.PoisonSomeone;
+import publix.groupservices.akka.messages.Unregister;
 import utils.JsonUtils;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
@@ -71,9 +70,6 @@ public class GroupDispatcher extends UntypedActor {
 		if (msg instanceof GroupMsg) {
 			// We got a GroupMsg from a client
 			dispatchGroupMsg(msg);
-		} else if (msg instanceof IsMember) {
-			// Someone wants to know if this ID is a member in this group
-			returnIsMember(msg);
 		} else if (msg instanceof JoinGroup) {
 			joinGroupDispatcher(msg);
 		} else if (msg instanceof Dropout) {
@@ -112,20 +108,13 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	private void returnIsMember(Object msg) {
-		IsMember isMember = (IsMember) msg;
-		ActorRef groupChannel = groupChannelMap.get(isMember.id);
-		sender().tell((groupChannel != null), self());
-	}
-
 	// Comes from ChannelService (no persisting)
 	private void closeAGroupChannel(Object msg) {
 		PoisonSomeone poison = (PoisonSomeone) msg;
 		long studyResultId = poison.idOfTheOneToPoison;
-		ActorRef groupChannel = groupChannelMap.get(studyResultId);
+		// Remove from this GroupDispatcher
+		ActorRef groupChannel = groupChannelMap.remove(studyResultId);
 		if (groupChannel != null) {
-			// Remove from this GroupDispatcher
-			groupChannelMap.remove(studyResultId);
 			// Tell GroupChannel to close itself
 			groupChannel.forward(msg, getContext());
 			tellDropoutToEveryone(studyResultId);
@@ -142,7 +131,7 @@ public class GroupDispatcher extends UntypedActor {
 		objectNode.put(GROUP_RESULT_ID, groupResultId);
 		objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
 		GroupState groupState = groupService.getGroupState(groupResultId);
-		objectNode.put(GROUP_STATE, groupState.toString());
+		objectNode.put(GROUP_STATE, String.valueOf(groupState));
 		tellAll(new GroupMsg(objectNode));
 	}
 

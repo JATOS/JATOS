@@ -1,4 +1,4 @@
-package common;
+package common.guice;
 
 import models.workers.GeneralSingleWorker;
 import models.workers.JatosWorker;
@@ -6,8 +6,7 @@ import models.workers.MTWorker;
 import models.workers.PersonalMultipleWorker;
 import models.workers.PersonalSingleWorker;
 import play.libs.Akka;
-import publix.akka.GuiceExtension;
-import publix.akka.actors.GroupDispatcherRegistry;
+import publix.groupservices.akka.actors.GroupDispatcherRegistry;
 import publix.services.IStudyAuthorisation;
 import publix.services.PublixUtils;
 import publix.services.general_single.GeneralSinglePublixUtils;
@@ -29,6 +28,13 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 
+import common.Global;
+
+/**
+ * Initial configuration of Guice dependency injection
+ * 
+ * @author Kristian Lange (2015)
+ */
 public class GuiceConfig extends AbstractModule {
 
 	@Override
@@ -56,21 +62,19 @@ public class GuiceConfig extends AbstractModule {
 		}).to(PersonalSinglePublixUtils.class);
 	}
 
+	/**
+	 * Initialize the guice injector in the Akka Guice Extension
+	 */
 	@Provides
 	public ActorSystem actorSystem() {
 		ActorSystem actorSystem = Akka.system();
-		// initialize the guice injector in the Akka Guice Extension.
 		GuiceExtension.GuiceExtProvider.get(actorSystem).initialize(
 				Global.INJECTOR);
 		return actorSystem;
 	}
 
 	/**
-	 * This actor is created so that actor system gets initialized with all the
-	 * actors.
-	 *
-	 * @param actorSystem
-	 * @return
+	 * This GroupDispatcherRegistry actor is created when Guice is initialised.
 	 */
 	@Provides
 	@Named(GroupDispatcherRegistry.ACTOR_NAME)

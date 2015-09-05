@@ -18,8 +18,8 @@ import publix.controllers.StudyAssets;
 import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.ForbiddenReloadException;
 import publix.exceptions.PublixException;
-import publix.services.ChannelService;
-import publix.services.GroupService;
+import publix.groupservices.ChannelService;
+import publix.groupservices.GroupService;
 import publix.services.jatos.JatosErrorMessages;
 import publix.services.jatos.JatosPublixUtils;
 import publix.services.jatos.JatosStudyAuthorisation;
@@ -28,8 +28,8 @@ import utils.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import common.FlashScopeMessaging;
 
+import common.FlashScopeMessaging;
 import controllers.Users;
 
 /**
