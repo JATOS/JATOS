@@ -242,10 +242,10 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupService.dropGroupResult(studyResult);
 		channelService.closeGroupChannel(studyResult);
+		groupService.dropGroupResult(studyResult);
 		if (groupResult != null) {
-			Logger.info(CLASS_NAME + ".dropGroupResult: Dropped out of group"
+			Logger.info(CLASS_NAME + ".dropGroupResult: Dropped out of group "
 					+ groupResult.getId());
 		}
 		return ok().as("text/html");

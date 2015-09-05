@@ -140,7 +140,8 @@ public class GroupDispatcher extends UntypedActor {
 		Dropout droppout = (Dropout) msg;
 		long studyResultId = droppout.studyResultId;
 		// Only remove GroupChannel if it's the one from the sender
-		if (groupChannelMap.get(studyResultId).equals(sender())) {
+		if (groupChannelMap.containsKey(studyResultId)
+				&& groupChannelMap.get(studyResultId).equals(sender())) {
 			groupChannelMap.remove(droppout.studyResultId);
 			groupService.dropGroupResult(droppout.studyResultId);
 			tellDropoutToEveryone(droppout.studyResultId);
