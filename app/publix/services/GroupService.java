@@ -6,8 +6,9 @@ import models.StudyModel;
 import models.StudyResult;
 import persistance.GroupResultDao;
 import persistance.StudyResultDao;
+import play.Logger;
+import play.db.jpa.JPA;
 import publix.exceptions.ForbiddenPublixException;
-import publix.exceptions.InternalServerErrorPublixException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -17,6 +18,8 @@ import com.google.inject.Singleton;
  */
 @Singleton
 public class GroupService {
+
+	private static final String CLASS_NAME = GroupService.class.getSimpleName();
 
 	private final PublixErrorMessages errorMessages;
 	private final StudyResultDao studyResultDao;
@@ -48,7 +51,8 @@ public class GroupService {
 	public GroupResult joinGroupResult(StudyResult studyResult) {
 		// If we already have a group just return it
 		GroupResult groupResult = studyResult.getGroupResult();
-		if (groupResult != null && groupResult.getGroupState() != GroupState.FINISHED) {
+		if (groupResult != null
+				&& groupResult.getGroupState() != GroupState.FINISHED) {
 			return studyResult.getGroupResult();
 		}
 
@@ -83,8 +87,33 @@ public class GroupService {
 		}
 	}
 
-	public void dropGroupResult(StudyResult studyResult)
-			throws InternalServerErrorPublixException {
+	public GroupState getGroupState(long groupResultId) {
+		try {
+			return JPA.withTransaction(() -> {
+				GroupResult groupResult = groupResultDao
+						.findById(groupResultId);
+				return (groupResult != null) ? groupResult.getGroupState()
+						: null;
+			});
+		} catch (Throwable e) {
+			Logger.error(CLASS_NAME + ".getGroupState: ", e);
+		}
+		return null;
+	}
+
+	public void dropGroupResult(long studyResultId) {
+		try {
+			JPA.withTransaction(() -> {
+				StudyResult studyResult = studyResultDao
+						.findById(studyResultId);
+				dropGroupResult(studyResult);
+			});
+		} catch (Throwable e) {
+			Logger.error(CLASS_NAME + ".getGroupState: ", e);
+		}
+	}
+
+	public void dropGroupResult(StudyResult studyResult) {
 		GroupResult groupResult = studyResult.getGroupResult();
 		if (groupResult == null) {
 			return;
@@ -102,6 +131,7 @@ public class GroupService {
 		if (groupResult.getStudyResultList().isEmpty()) {
 			groupResultDao.remove(groupResult);
 		}
+		
 	}
 
 }

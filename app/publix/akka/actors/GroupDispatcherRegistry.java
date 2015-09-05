@@ -3,10 +3,7 @@ package publix.akka.actors;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.StudyResult;
-import persistance.StudyResultDao;
 import play.libs.Akka;
-import publix.akka.messages.Dropout;
 import publix.akka.messages.Get;
 import publix.akka.messages.GetOrCreate;
 import publix.akka.messages.ItsThisOne;
@@ -30,13 +27,10 @@ public class GroupDispatcherRegistry extends UntypedActor {
 	// groupResultId -> GroupDispatcher
 	private Map<Long, ActorRef> groupDispatcherMap = new HashMap<Long, ActorRef>();
 	private final GroupService groupService;
-	private final StudyResultDao studyResultDao;
 
 	@Inject
-	public GroupDispatcherRegistry(GroupService groupService,
-			StudyResultDao studyResultDao) {
+	public GroupDispatcherRegistry(GroupService groupService) {
 		this.groupService = groupService;
-		this.studyResultDao = studyResultDao;
 	}
 
 	@Override
@@ -52,16 +46,12 @@ public class GroupDispatcherRegistry extends UntypedActor {
 			ActorRef groupDispatcher = groupDispatcherMap.get(getOrCreate.id);
 			if (groupDispatcher == null) {
 				groupDispatcher = Akka.system().actorOf(
-						GroupDispatcher.props(self(), getOrCreate.id));
+						GroupDispatcher.props(self(), groupService,
+								getOrCreate.id));
 				groupDispatcherMap.put(getOrCreate.id, groupDispatcher);
 			}
 			ItsThisOne answer = new ItsThisOne(groupDispatcher);
 			sender().tell(answer, self());
-		} else if (msg instanceof Dropout) {
-			Dropout droppout = (Dropout) msg;
-			StudyResult studyResult = studyResultDao
-					.findById(droppout.studyResultId);
-			groupService.dropGroupResult(studyResult);
 		} else if (msg instanceof Unregister) {
 			Unregister unregister = (Unregister) msg;
 			groupDispatcherMap.remove(unregister.id);

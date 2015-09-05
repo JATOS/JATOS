@@ -4,7 +4,6 @@ import akka.actor.Actor;
 import akka.actor.IndirectActorProducer;
 
 import com.google.inject.Injector;
-import common.Global;
 
 /**
  * An actor producer that lets Google Guice create the Actor instances.
@@ -22,7 +21,7 @@ public class GuiceActorProducer implements IndirectActorProducer {
 
 	@Override
 	public Actor produce() {
-		return Global.INJECTOR.getInstance(actorType);
+		return injector.getInstance(actorType);
 	}
 
 	@Override

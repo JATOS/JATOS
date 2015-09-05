@@ -3,12 +3,14 @@ package publix.akka.actors;
 import java.util.HashMap;
 import java.util.Map;
 
+import models.GroupResult.GroupState;
 import publix.akka.messages.Dropout;
 import publix.akka.messages.GroupMsg;
 import publix.akka.messages.IsMember;
 import publix.akka.messages.JoinGroup;
 import publix.akka.messages.PoisonSomeone;
 import publix.akka.messages.Unregister;
+import publix.services.GroupService;
 import utils.JsonUtils;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
@@ -29,9 +31,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 public class GroupDispatcher extends UntypedActor {
 
+	public static final String ACTOR_NAME = "GroupDispatcher";
+
 	private static final String ERROR = "error";
 	private static final String JOINED = "joined";
+	private static final String GROUP_RESULT_ID = "groupId";
 	private static final String GROUP_MEMBERS = "groupMembers";
+	private static final String GROUP_STATE = "groupState";
 	private static final String DROPPED = "dropped";
 	private static final String RECIPIENT = "recipient";
 	/**
@@ -39,18 +45,20 @@ public class GroupDispatcher extends UntypedActor {
 	 */
 	private final Map<Long, ActorRef> groupChannelMap = new HashMap<>();
 	private final ActorRef groupDispatcherRegistry;
+	private final GroupService groupService;
 	private long groupResultId;
 
 	public static Props props(ActorRef groupDispatcherRegistry,
-			long groupResultId) {
+			GroupService groupService, long groupResultId) {
 		return Props.create(GroupDispatcher.class, groupDispatcherRegistry,
-				groupResultId);
+				groupService, groupResultId);
 	}
 
-	public GroupDispatcher(ActorRef groupDispatcherRegistry, long groupResultId) {
+	public GroupDispatcher(ActorRef groupDispatcherRegistry,
+			GroupService groupService, long groupResultId) {
 		this.groupDispatcherRegistry = groupDispatcherRegistry;
+		this.groupService = groupService;
 		this.groupResultId = groupResultId;
-
 	}
 
 	@Override
@@ -67,7 +75,7 @@ public class GroupDispatcher extends UntypedActor {
 			// Someone wants to know if this ID is a member in this group
 			returnIsMember(msg);
 		} else if (msg instanceof JoinGroup) {
-			joinGroup(msg);
+			joinGroupDispatcher(msg);
 		} else if (msg instanceof Dropout) {
 			dropout(msg);
 		} else if (msg instanceof PoisonSomeone) {
@@ -126,12 +134,15 @@ public class GroupDispatcher extends UntypedActor {
 			sender().tell(false, self());
 		}
 	}
-	
+
 	// Tell all group members "dropped" and the current group members
 	private void tellDropoutToEveryone(long studyResultId) {
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(DROPPED, studyResultId);
+		objectNode.put(GROUP_RESULT_ID, groupResultId);
 		objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
+		GroupState groupState = groupService.getGroupState(groupResultId);
+		objectNode.put(GROUP_STATE, groupState.toString());
 		tellAll(new GroupMsg(objectNode));
 	}
 
@@ -142,7 +153,7 @@ public class GroupDispatcher extends UntypedActor {
 		// Only remove GroupChannel if it's the one from the sender
 		if (groupChannelMap.get(studyResultId).equals(sender())) {
 			groupChannelMap.remove(droppout.studyResultId);
-			groupDispatcherRegistry.tell(msg, self());
+			groupService.dropGroupResult(droppout.studyResultId);
 			tellDropoutToEveryone(droppout.studyResultId);
 		}
 		if (groupChannelMap.isEmpty()) {
@@ -151,13 +162,16 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	private void joinGroup(Object msg) {
+	private void joinGroupDispatcher(Object msg) {
 		JoinGroup joinGroup = (JoinGroup) msg;
 		long studyResultId = joinGroup.studyResultId;
 		groupChannelMap.put(studyResultId, sender());
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(JOINED, studyResultId);
+		objectNode.put(GROUP_RESULT_ID, groupResultId);
 		objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
+		GroupState groupState = groupService.getGroupState(groupResultId);
+		objectNode.put(GROUP_STATE, groupState.toString());
 		tellAll(new GroupMsg(objectNode));
 	}
 

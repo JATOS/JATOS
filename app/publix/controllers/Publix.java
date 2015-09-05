@@ -75,11 +75,11 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	protected final GroupResultDao groupResultDao;
 
 	public Publix(PublixUtils<T> utils,
-			IStudyAuthorisation<T> studyAuthorisation, GroupService groupService,
-			ChannelService channelService, PublixErrorMessages errorMessages,
-			StudyAssets studyAssets, ComponentResultDao componentResultDao,
-			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			GroupResultDao groupResultDao) {
+			IStudyAuthorisation<T> studyAuthorisation,
+			GroupService groupService, ChannelService channelService,
+			PublixErrorMessages errorMessages, StudyAssets studyAssets,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.groupService = groupService;
@@ -224,10 +224,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
 		GroupResult groupResult = groupService.joinGroupResult(studyResult);
-		if (groupResult == null) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerDidntJoinGroup(worker, study.getId()));
-		}
+		Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
+				+ "workerId " + workerIdStr + " joined group "
+				+ groupResult.getId());
 		return channelService.openGroupChannel(studyResult, groupResult);
 	}
 
@@ -242,8 +241,13 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
+		GroupResult groupResult = studyResult.getGroupResult();
 		groupService.dropGroupResult(studyResult);
 		channelService.closeGroupChannel(studyResult);
+		if (groupResult != null) {
+			Logger.info(CLASS_NAME + ".dropGroupResult: Dropped out of group"
+					+ groupResult.getId());
+		}
 		return ok().as("text/html");
 	}
 

@@ -7,6 +7,7 @@ import play.libs.Akka;
 import play.mvc.Controller;
 import play.mvc.WebSocket;
 import publix.akka.GuiceExtension;
+import publix.akka.GuiceFactory;
 import publix.akka.actors.GroupDispatcherRegistry;
 import publix.akka.messages.Get;
 import publix.akka.messages.GetOrCreate;
@@ -29,17 +30,10 @@ import com.google.inject.Singleton;
 @Singleton
 public class ChannelService {
 
-	private static final Timeout TIMEOUT = new Timeout(Duration.create(1000,
+	public static final Timeout TIMEOUT = new Timeout(Duration.create(1000,
 			"seconds"));
-	private final ActorRef GROUP_DISPATCHER_REGISTRY;
-
-	@Inject
-	ChannelService() {
-		GROUP_DISPATCHER_REGISTRY = Akka.system().actorOf(
-				GuiceExtension.GuiceExtProvider.get(Akka.system()).props(
-						GroupDispatcherRegistry.class),
-				"GroupDispatcherRegistry");
-	}
+	private final ActorRef GROUP_DISPATCHER_REGISTRY = GuiceFactory
+			.getGroupDispatcherRegistry();
 
 	public WebSocket<JsonNode> openGroupChannel(StudyResult studyResult,
 			GroupResult groupResult) throws InternalServerErrorPublixException,
@@ -48,6 +42,7 @@ public class ChannelService {
 		// new one or get the already existing one.
 		ActorRef groupDispatcher = retrieveGroupDispatcher(new GetOrCreate(
 				groupResult.getId()));
+		// TODO doc why poison
 		Future<Object> future = ask(groupDispatcher, new PoisonSomeone(
 				studyResult.getId()), TIMEOUT);
 		try {
