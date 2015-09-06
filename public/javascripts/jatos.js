@@ -523,7 +523,16 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
  * @param {optional
  *            Function} error - Function to be called in case of error
  */
-jatos.joinGroup = function(groupMsgCallback, success, error) {
+//onMessage
+//onOpen
+//onClose
+//onError
+//onDropped
+//onJoined
+//onCompleted
+//onIncompleted
+//jatos.joinGroup = function(groupMsgCallback, success, error) {
+jatos.joinGroup = function(callbacks) {
 	if (!jatos.webSocketSupported) {
 		if (onErrorCallback) {
 			onErrorCallback("This browser does not support WebSockets.");
@@ -545,37 +554,55 @@ jatos.joinGroup = function(groupMsgCallback, success, error) {
 			"/publix/" + jatos.studyId + "/group/join");
 	groupChannel.onopen = function() {
 		joiningGroup = false;
-		if (success) {
-			success();
+		if (callbacks.onOpen) {
+			callbacks.onOpen();
 		}
 	};
 	groupChannel.onerror = function() {
 		joiningGroup = false;
-		alert("Group channel error.");
+		if (callbacks.onError) {
+			callbacks.onError();
+		}
 	};
 	groupChannel.onmessage = function(event) {
-		handleGroupMsg(event.data, groupMsgCallback);
+		handleGroupMsg(event.data, callbacks);
 	};
 	groupChannel.onclose = function() {
 		joiningGroup = false;
-		alert("Group channel closed.");
+		if (callbacks.onClose) {
+			callbacks.onClose();
+		}
 	};
 }
 
-function handleGroupMsg(msg, groupMsgCallback) {
+function handleGroupMsg(msg, callbacks) {
 	var groupMsg = jatos.jQuery.parseJSON(msg);
+	if (groupMsg.groupId) {
+		jatos.groupId = groupMsg.groupId;
+	}
 	if (groupMsg.joined) {
 		jatos.groupMembers = groupMsg.groupMembers;
+		if (callbacks.onJoined) {
+			callbacks.onJoined(groupMsg.joined);
+		}
 	}
 	if (groupMsg.dropped) {
 		jatos.groupMembers = groupMsg.groupMembers;
+		if (callbacks.onDropped) {
+			callbacks.onDropped(groupMsg.dropped);
+		}
 	}
-	if (groupMsg.complete) {
+	if (groupMsg.groupState) {
 		jatos.groupMembers = groupMsg.groupMembers;
-		jatos.groupComplete = groupMsg.complete;
+		jatos.groupState = groupMsg.groupState;
+		if (groupMsg.groupState == "COMPLETE" && callbacks.onComplete) {
+			callbacks.onComplete();
+		} else if (groupMsg.groupState == "INCOMPLETE" && callbacks.onIncomplete) {
+			callbacks.onIncomplete();
+		}
 	}
-	if (groupMsgCallback) {
-		groupMsgCallback(groupMsg);
+	if (groupMsg.msg && callbacks.onMessage) {
+		callbacks.onMessage(groupMsg.msg);
 	}
 }
 
