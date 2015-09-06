@@ -3,7 +3,7 @@ package publix.groupservices.akka.actors;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.GroupResult.GroupState;
+import models.GroupResult;
 import publix.groupservices.GroupService;
 import publix.groupservices.akka.messages.Dropout;
 import publix.groupservices.akka.messages.GroupMsg;
@@ -25,6 +25,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * represent a WebSocket. Each WebSocket is connected to a group member. On the
  * group member's client runs a study. A GroupChannelActor can join a group by
  * sending the JoinMessage to it's GroupActor.
+ * 
+ * TODO GroupResult is the persisted entity and data there have precedence over
+ * GroupDispatcher
  * 
  * @author Kristian Lange
  */
@@ -76,6 +79,8 @@ public class GroupDispatcher extends UntypedActor {
 			dropout(msg);
 		} else if (msg instanceof PoisonSomeone) {
 			closeAGroupChannel(msg);
+		} else {
+			unhandled(msg);
 		}
 	}
 
@@ -129,21 +134,26 @@ public class GroupDispatcher extends UntypedActor {
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(DROPPED, studyResultId);
 		objectNode.put(GROUP_RESULT_ID, groupResultId);
-		objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
-		GroupState groupState = groupService.getGroupState(groupResultId);
-		objectNode.put(GROUP_STATE, String.valueOf(groupState));
+		// We can't use the groupChannelMap for getting the group members
+		// because there might be members who haven't a group channel
+		GroupResult groupResult = groupService.getGroupResult(groupResultId);
+		objectNode.put(GROUP_MEMBERS,
+				String.valueOf(groupResult.getStudyResultList()));
+		objectNode
+				.put(GROUP_STATE, String.valueOf(groupResult.getGroupState()));
 		tellAll(new GroupMsg(objectNode));
 	}
 
-	// Comes from GroupChannel (has to be persisted)
+	// Comes from GroupChannel; Don't persist GroupResult - it stays in the
+	// Group over components
 	private void dropout(Object msg) {
 		Dropout droppout = (Dropout) msg;
 		long studyResultId = droppout.studyResultId;
-		// Only remove GroupChannel if it's the one from the sender
+		// Only remove GroupChannel if it's the one from the sender (there might
+		// be a new GroupChannel for the same StudyResult after a reload)
 		if (groupChannelMap.containsKey(studyResultId)
 				&& groupChannelMap.get(studyResultId).equals(sender())) {
 			groupChannelMap.remove(droppout.studyResultId);
-			groupService.dropGroupResult(droppout.studyResultId);
 			tellDropoutToEveryone(droppout.studyResultId);
 		}
 		if (groupChannelMap.isEmpty()) {
@@ -159,9 +169,13 @@ public class GroupDispatcher extends UntypedActor {
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(JOINED, studyResultId);
 		objectNode.put(GROUP_RESULT_ID, groupResultId);
-		objectNode.put(GROUP_MEMBERS, groupChannelMap.keySet().toString());
-		GroupState groupState = groupService.getGroupState(groupResultId);
-		objectNode.put(GROUP_STATE, groupState.toString());
+		// We can't use the groupChannelMap for getting the group members
+		// because there might be members who haven't a group channel
+		GroupResult groupResult = groupService.getGroupResult(groupResultId);
+		objectNode.put(GROUP_MEMBERS,
+				String.valueOf(groupResult.getStudyResultList()));
+		objectNode
+				.put(GROUP_STATE, String.valueOf(groupResult.getGroupState()));
 		tellAll(new GroupMsg(objectNode));
 	}
 

@@ -51,7 +51,7 @@ public class GroupResult {
 	@JoinColumn(name = "study_id")
 	private StudyModel study;
 
-	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	@JoinColumn(name = "groupResult_id")
 	private List<StudyResult> studyResultList = new ArrayList<>();
 
