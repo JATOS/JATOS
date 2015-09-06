@@ -62,6 +62,8 @@ public class GroupDispatcherRegistry extends UntypedActor {
 			if (actorRef != null) {
 				actorRef.forward(msg, getContext());
 			}
+		} else {
+			unhandled(msg);
 		}
 	}
 }

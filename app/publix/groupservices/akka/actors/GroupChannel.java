@@ -69,6 +69,8 @@ public class GroupChannel extends UntypedActor {
 		} else if (msg instanceof PoisonSomeone) {
 			// Kill this group channel
 			self().tell(PoisonPill.getInstance(), self());
+		} else {
+			unhandled(msg);
 		}
 	}
 

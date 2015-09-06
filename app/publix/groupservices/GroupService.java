@@ -1,5 +1,7 @@
 package publix.groupservices;
 
+import java.util.List;
+
 import models.GroupResult;
 import models.GroupResult.GroupState;
 import models.StudyModel;
@@ -45,21 +47,25 @@ public class GroupService {
 		}
 	}
 
+	public boolean hasValidGroupResult(StudyResult studyResult) {
+		GroupResult groupResult = studyResult.getGroupResult();
+		return groupResult != null
+				&& groupResult.getGroupState() != GroupState.FINISHED;
+	}
+
 	/**
 	 * Joins the first incomplete GroupResult from the DB and returns it. If
 	 * such doesn't exist it creates a new one and persists it.
 	 */
 	public GroupResult joinGroupResult(StudyResult studyResult) {
 		// If we already have a group just return it
-		GroupResult groupResult = studyResult.getGroupResult();
-		if (groupResult != null
-				&& groupResult.getGroupState() != GroupState.FINISHED) {
+		if (hasValidGroupResult(studyResult)) {
 			return studyResult.getGroupResult();
 		}
 
 		// Look in the DB if we have an incomplete group. If not create new one.
 		StudyModel study = studyResult.getStudy();
-		groupResult = groupResultDao.findFirstIncomplete(study);
+		GroupResult groupResult = groupResultDao.findFirstIncomplete(study);
 		if (groupResult == null) {
 			groupResult = new GroupResult(study);
 			groupResultDao.create(groupResult);
@@ -101,17 +107,31 @@ public class GroupService {
 		}
 		return null;
 	}
-
-	public void dropGroupResult(long studyResultId) {
+	
+	public List<StudyResult> getGroupStudyResultList(long groupResultId) {
 		try {
-			JPA.withTransaction(() -> {
-				StudyResult studyResult = studyResultDao
-						.findById(studyResultId);
-				dropGroupResult(studyResult);
+			return JPA.withTransaction(() -> {
+				GroupResult groupResult = groupResultDao
+						.findById(groupResultId);
+				return (groupResult != null) ? groupResult.getStudyResultList()
+						: null;
 			});
 		} catch (Throwable e) {
 			Logger.error(CLASS_NAME + ".getGroupState: ", e);
 		}
+		return null;
+	}
+	
+	public GroupResult getGroupResult(long groupResultId) {
+		try {
+			return JPA.withTransaction(() -> {
+				return groupResultDao
+						.findById(groupResultId);
+			});
+		} catch (Throwable e) {
+			Logger.error(CLASS_NAME + ".getGroupState: ", e);
+		}
+		return null;
 	}
 
 	public void dropGroupResult(StudyResult studyResult) {
@@ -132,7 +152,6 @@ public class GroupService {
 		if (groupResult.getStudyResultList().isEmpty()) {
 			groupResultDao.remove(groupResult);
 		}
-		
 	}
 
 }
