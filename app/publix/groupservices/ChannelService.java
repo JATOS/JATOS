@@ -22,14 +22,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Key;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
+
+import common.Common;
 import common.Global;
 
 @Singleton
 public class ChannelService {
 
-	public static final Timeout TIMEOUT = new Timeout(Duration.create(1000,
-			"seconds"));
-	
+	public static final Timeout TIMEOUT = new Timeout(Duration.create(
+			Common.GROUP_CHANNEL_TIMEOUT, "millis"));
+
 	private final ActorRef GROUP_DISPATCHER_REGISTRY = Global.INJECTOR
 			.getInstance(Key.get(ActorRef.class,
 					Names.named(GroupDispatcherRegistry.ACTOR_NAME)));
