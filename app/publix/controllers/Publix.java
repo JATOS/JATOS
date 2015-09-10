@@ -250,8 +250,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
 		GroupResult groupResult = studyResult.getGroupResult();
-		channelService.closeGroupChannel(studyResult);
 		groupService.dropGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult, groupResult);
 		if (groupResult != null) {
 			Logger.info(CLASS_NAME + ".dropGroupResult: studyId " + studyId
 					+ ", " + "workerId " + session(WORKER_ID)
@@ -363,7 +363,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 		}
-		channelService.closeGroupChannel(studyResult);
+		channelService.closeGroupChannel(studyResult,
+				studyResult.getGroupResult());
 		groupService.dropGroupResult(studyResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
@@ -388,7 +389,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
-		channelService.closeGroupChannel(studyResult);
+		channelService.closeGroupChannel(studyResult,
+				studyResult.getGroupResult());
 		groupService.dropGroupResult(studyResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {

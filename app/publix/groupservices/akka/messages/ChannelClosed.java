@@ -5,11 +5,11 @@ package publix.groupservices.akka.messages;
  * 
  * @author Kristian Lange
  */
-public class Dropout {
+public class ChannelClosed {
 	
 	public long studyResultId;
 	
-	public Dropout(long studyResultId) {
+	public ChannelClosed(long studyResultId) {
 		this.studyResultId = studyResultId;
 	}
 

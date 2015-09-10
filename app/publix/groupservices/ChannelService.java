@@ -77,13 +77,14 @@ public class ChannelService {
 	}
 
 	/**
-	 * Close the group channel that belongs to the given StudyResult. It just
-	 * sends the closing message to the GroupDispatcher without waiting for an
-	 * answer.
+	 * Close the group channel that belongs to the given StudyResult and
+	 * GroupResult. It just sends the closing message to the GroupDispatcher
+	 * without waiting for an answer. We take a separate GroupResult and not the
+	 * StudyResult's GroupResult because the StudyResult's GroupResult might
+	 * already be assigned a null value during dropping out of a group.
 	 */
-	public void closeGroupChannel(StudyResult studyResult)
-			throws InternalServerErrorPublixException {
-		GroupResult groupResult = studyResult.getGroupResult();
+	public void closeGroupChannel(StudyResult studyResult,
+			GroupResult groupResult) throws InternalServerErrorPublixException {
 		if (groupResult == null) {
 			return;
 		}

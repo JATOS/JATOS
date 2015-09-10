@@ -107,7 +107,7 @@ public class GroupService {
 		}
 		return null;
 	}
-	
+
 	public List<StudyResult> getGroupStudyResultList(long groupResultId) {
 		try {
 			return JPA.withTransaction(() -> {
@@ -121,12 +121,11 @@ public class GroupService {
 		}
 		return null;
 	}
-	
+
 	public GroupResult getGroupResult(long groupResultId) {
 		try {
 			return JPA.withTransaction(() -> {
-				return groupResultDao
-						.findById(groupResultId);
+				return groupResultDao.findById(groupResultId);
 			});
 		} catch (Throwable e) {
 			Logger.error(CLASS_NAME + ".getGroupState: ", e);
@@ -152,6 +151,8 @@ public class GroupService {
 		if (groupResult.getStudyResultList().isEmpty()) {
 			groupResultDao.remove(groupResult);
 		}
+		JPA.em().getTransaction().commit();
+		JPA.em().getTransaction().begin();
 	}
 
 }

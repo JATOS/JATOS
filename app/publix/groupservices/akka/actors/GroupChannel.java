@@ -1,6 +1,6 @@
 package publix.groupservices.akka.actors;
 
-import publix.groupservices.akka.messages.Dropout;
+import publix.groupservices.akka.messages.ChannelClosed;
 import publix.groupservices.akka.messages.GroupMsg;
 import publix.groupservices.akka.messages.JoinGroup;
 import publix.groupservices.akka.messages.PoisonSomeone;
@@ -50,7 +50,7 @@ public class GroupChannel extends UntypedActor {
 
 	@Override
 	public void postStop() {
-		groupDispatcher.tell(new Dropout(studyResultId), self());
+		groupDispatcher.tell(new ChannelClosed(studyResultId), self());
 	}
 
 	@Override

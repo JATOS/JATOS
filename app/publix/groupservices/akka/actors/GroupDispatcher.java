@@ -5,7 +5,7 @@ import java.util.Map;
 
 import models.GroupResult;
 import publix.groupservices.GroupService;
-import publix.groupservices.akka.messages.Dropout;
+import publix.groupservices.akka.messages.ChannelClosed;
 import publix.groupservices.akka.messages.GroupMsg;
 import publix.groupservices.akka.messages.JoinGroup;
 import publix.groupservices.akka.messages.PoisonSomeone;
@@ -75,9 +75,11 @@ public class GroupDispatcher extends UntypedActor {
 			dispatchGroupMsg(msg);
 		} else if (msg instanceof JoinGroup) {
 			joinGroupDispatcher(msg);
-		} else if (msg instanceof Dropout) {
-			dropout(msg);
+		} else if (msg instanceof ChannelClosed) {
+			// Comes from GroupChannel
+			groupChannelClosed(msg);
 		} else if (msg instanceof PoisonSomeone) {
+			// Comes from ChannelService
 			closeAGroupChannel(msg);
 		} else {
 			unhandled(msg);
@@ -113,48 +115,33 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	// Comes from ChannelService (no persisting)
+	// Comes from ChannelService
 	private void closeAGroupChannel(Object msg) {
 		PoisonSomeone poison = (PoisonSomeone) msg;
 		long studyResultId = poison.idOfTheOneToPoison;
-		// Remove from this GroupDispatcher
-		ActorRef groupChannel = groupChannelMap.remove(studyResultId);
+		ActorRef groupChannel = groupChannelMap.get(studyResultId);
 		if (groupChannel != null) {
-			// Tell GroupChannel to close itself
+			// Tell GroupChannel to close itself. The GroupChannel sends a
+			// ChannelClosed to this GroupDispatcher during postStop and then we
+			// can remove it from the groupChannelMap and tell all other members
+			// about it
 			groupChannel.forward(msg, getContext());
-			tellDropoutToEveryone(studyResultId);
 			sender().tell(true, self());
 		} else {
 			sender().tell(false, self());
 		}
 	}
 
-	// Tell all group members "dropped" and the current group members
-	private void tellDropoutToEveryone(long studyResultId) {
-		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
-		objectNode.put(DROPPED, studyResultId);
-		objectNode.put(GROUP_RESULT_ID, groupResultId);
-		// We can't use the groupChannelMap for getting the group members
-		// because there might be members who haven't a group channel
-		GroupResult groupResult = groupService.getGroupResult(groupResultId);
-		objectNode.put(GROUP_MEMBERS,
-				String.valueOf(groupResult.getStudyResultList()));
-		objectNode
-				.put(GROUP_STATE, String.valueOf(groupResult.getGroupState()));
-		tellAll(new GroupMsg(objectNode));
-	}
-
-	// Comes from GroupChannel; Don't persist GroupResult - it stays in the
-	// Group over components
-	private void dropout(Object msg) {
-		Dropout droppout = (Dropout) msg;
-		long studyResultId = droppout.studyResultId;
+	// Comes from GroupChannel
+	private void groupChannelClosed(Object msg) {
+		ChannelClosed channelClosed = (ChannelClosed) msg;
+		long studyResultId = channelClosed.studyResultId;
 		// Only remove GroupChannel if it's the one from the sender (there might
 		// be a new GroupChannel for the same StudyResult after a reload)
 		if (groupChannelMap.containsKey(studyResultId)
 				&& groupChannelMap.get(studyResultId).equals(sender())) {
-			groupChannelMap.remove(droppout.studyResultId);
-			tellDropoutToEveryone(droppout.studyResultId);
+			groupChannelMap.remove(channelClosed.studyResultId);
+			tellGroupStatsToEveryone(channelClosed.studyResultId, DROPPED);
 		}
 		if (groupChannelMap.isEmpty()) {
 			// Tell this dispatcher to kill itself if it has no more members
@@ -166,12 +153,20 @@ public class GroupDispatcher extends UntypedActor {
 		JoinGroup joinGroup = (JoinGroup) msg;
 		long studyResultId = joinGroup.studyResultId;
 		groupChannelMap.put(studyResultId, sender());
-		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
-		objectNode.put(JOINED, studyResultId);
-		objectNode.put(GROUP_RESULT_ID, groupResultId);
+		tellGroupStatsToEveryone(studyResultId, JOINED);
+	}
+
+	// Tell all group members "dropped" and the current group members
+	private void tellGroupStatsToEveryone(long studyResultId, String action) {
 		// We can't use the groupChannelMap for getting the group members
 		// because there might be members who haven't a group channel
 		GroupResult groupResult = groupService.getGroupResult(groupResultId);
+		if (groupResult == null) {
+			return;
+		}
+		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		objectNode.put(action, studyResultId);
+		objectNode.put(GROUP_RESULT_ID, groupResultId);
 		objectNode.put(GROUP_MEMBERS,
 				String.valueOf(groupResult.getStudyResultList()));
 		objectNode
