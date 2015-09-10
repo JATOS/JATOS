@@ -529,9 +529,8 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 //onError
 //onDropped
 //onJoined
-//onCompleted
-//onIncompleted
-//jatos.joinGroup = function(groupMsgCallback, success, error) {
+//onComplete
+//onIncomplete
 jatos.joinGroup = function(callbacks) {
 	if (!jatos.webSocketSupported) {
 		if (onErrorCallback) {
@@ -577,33 +576,43 @@ jatos.joinGroup = function(callbacks) {
 
 function handleGroupMsg(msg, callbacks) {
 	var groupMsg = jatos.jQuery.parseJSON(msg);
+	
+	// First update jatos.js internal group variables
 	if (groupMsg.groupId) {
 		jatos.groupId = groupMsg.groupId;
 	}
-	if (groupMsg.joined) {
-		jatos.groupMembers = groupMsg.groupMembers;
-		if (callbacks.onJoined) {
-			callbacks.onJoined(groupMsg.joined);
-		}
-	}
-	if (groupMsg.dropped) {
-		jatos.groupMembers = groupMsg.groupMembers;
-		if (callbacks.onDropped) {
-			callbacks.onDropped(groupMsg.dropped);
-		}
+	if (groupMsg.groupMembers) {
+		jatos.groupMembers = jatos.jQuery.parseJSON(groupMsg.groupMembers);
 	}
 	if (groupMsg.groupState) {
-		jatos.groupMembers = groupMsg.groupMembers;
 		jatos.groupState = groupMsg.groupState;
-		if (groupMsg.groupState == "COMPLETE" && callbacks.onComplete) {
+	}
+	
+	// Now do the callbacks
+	if (groupMsg.joined && callbacks.onJoined) {
+		callbacks.onJoined(groupMsg.joined);
+	}
+	if (groupMsg.dropped && callbacks.onDropped) {
+		callbacks.onDropped(groupMsg.dropped);
+	}
+	if (groupMsg.groupState) {
+		if (jatos.isGroupComplete && callbacks.onComplete) {
 			callbacks.onComplete();
-		} else if (groupMsg.groupState == "INCOMPLETE" && callbacks.onIncomplete) {
+		} else if (jatos.isGroupIncomplete && callbacks.onIncomplete) {
 			callbacks.onIncomplete();
 		}
 	}
 	if (groupMsg.msg && callbacks.onMessage) {
 		callbacks.onMessage(groupMsg.msg);
 	}
+}
+
+jatos.isGroupComplete = function() {
+	return jatos.groupState == "COMPLETE";
+}
+
+jatos.isGroupIncomplete = function() {
+	return jatos.groupState == "INCOMPLETE";
 }
 
 jatos.sendGroupMsg = function(msg) {
@@ -826,6 +835,7 @@ jatos.logError = function(logErrorMsg) {
  */
 jatos.addJatosIds = function(obj) {
 	obj.studyId = jatos.studyId;
+	obj.groupId = jatos.groupId;
 	obj.componentId = jatos.componentId;
 	obj.workerId = jatos.workerId;
 	obj.studyResultId = jatos.studyResultId;
