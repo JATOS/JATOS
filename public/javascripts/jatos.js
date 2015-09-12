@@ -42,14 +42,23 @@ jatos.httpRetryWait = 1000;
  */
 jatos.webSocketSupported = 'WebSocket' in window;
 /**
- * True if the group is complete (a groupComplete message was received via the
- * group channel)
- */
-jatos.groupComplete = false;
-/**
  * Current members of the group.
  */
 jatos.groupMembers = [];
+/**
+ * Possible group states are:
+ * NONE: Never joined a group
+ * INCOMPLETE: Joined a group and other members are still allowed to join
+ * COMPLETE: Joined a group and but no new members are allowed to join
+ * LEFT: Left the group
+ */
+var groupState = Object.freeze({
+	NONE : "NONE",
+	INCOMPLETE : "INCOMPLETE",
+	COMPLETE : "COMPLETE",
+	LEFT : "LEFT"
+});
+jatos.groupState = groupState.NONE;
 
 /**
  * State booleans. If true jatos.js is in this state. Several states can be true
@@ -61,7 +70,7 @@ var startingComponent = false;
 var endingComponent = false;
 var submittingResultData = false;
 var joiningGroup = false;
-var droppingGroup = false;
+var leavingGroup = false;
 var abortingComponent = false;
 
 /**
@@ -69,7 +78,7 @@ var abortingComponent = false;
  */
 var onLoadCallback;
 /**
- * Callback function defined via jatos.onError.
+ * Callback function if jatos.js produces an error, defined via jatos.onError.
  */
 var onErrorCallback;
 /**
@@ -512,25 +521,25 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 }
 
 /**
- * Tries to join a group and open the groupChannel WebSocket.
+ * Tries to join a group and open the group channel WebSocket.
  * 
- * @param {optional
- *            Function} groupMsgCallback - Function to be called when a group
- *            message is received.
- * @param {optional
- *            Function} success - Function to be called after a group is joined.
- *            Gets the group's ID as parameter.
- * @param {optional
- *            Function} error - Function to be called in case of error
+ * @param {optional Object} callbacks - Defining callback functions for group
+ * 			events:
+ *		onJoin:		to be called if the worker running this component
+ *					successfully joined a group 
+ *		onLeave:    to be called if the worker running this component left
+ *					the group
+ * 		onMessage: 	to be called if a message from another group member is
+ * 					received
+ *		onMemberJoin:	to be called if another member joined the group
+ *		onMemberLeave:	to be called if another member left the group
+ *		onComplete:		to be called if a member joins/leaves and the group
+ *						has reached the maximum amount of members
+ *		onIncomplete:	to be called if a member joins/leaves and the group
+ *						has not reached the maximum amount of members
+ *		onError:	to be called if an error in the group channel's
+ *					WebSocket occurs 
  */
-//onMessage
-//onOpen
-//onClose
-//onError
-//onDropped
-//onJoined
-//onComplete
-//onIncomplete
 jatos.joinGroup = function(callbacks) {
 	if (!jatos.webSocketSupported) {
 		if (onErrorCallback) {
@@ -551,12 +560,6 @@ jatos.joinGroup = function(callbacks) {
 	
 	groupChannel = new WebSocket("ws://" + location.host + 
 			"/publix/" + jatos.studyId + "/group/join");
-	groupChannel.onopen = function() {
-		joiningGroup = false;
-		if (callbacks.onOpen) {
-			callbacks.onOpen();
-		}
-	};
 	groupChannel.onerror = function() {
 		joiningGroup = false;
 		if (callbacks.onError) {
@@ -564,12 +567,15 @@ jatos.joinGroup = function(callbacks) {
 		}
 	};
 	groupChannel.onmessage = function(event) {
+		joiningGroup = false;
 		handleGroupMsg(event.data, callbacks);
 	};
 	groupChannel.onclose = function() {
 		joiningGroup = false;
-		if (callbacks.onClose) {
-			callbacks.onClose();
+		jatos.groupMembers = [];
+		jatos.groupState = groupState.LEFT;
+		if (callbacks.onLeave) {
+			callbacks.onLeave();
 		}
 	};
 }
@@ -585,15 +591,20 @@ function handleGroupMsg(msg, callbacks) {
 		jatos.groupMembers = jatos.jQuery.parseJSON(groupMsg.groupMembers);
 	}
 	if (groupMsg.groupState) {
+		// Group state can be COMPLETE or INCOMPLETE at this point
 		jatos.groupState = groupMsg.groupState;
 	}
 	
 	// Now do the callbacks
-	if (groupMsg.joined && callbacks.onJoined) {
-		callbacks.onJoined(groupMsg.joined);
+	if (groupMsg.joined) {
+		if (callbacks.onJoin && groupMsg.joined == jatos.studyResultId) {
+			callbacks.onJoin(groupMsg.joined);
+		} else if (callbacks.onMemberJoin) {
+			callbacks.onMemberJoin(groupMsg.joined);
+		}
 	}
-	if (groupMsg.dropped && callbacks.onDropped) {
-		callbacks.onDropped(groupMsg.dropped);
+	if (groupMsg.left && callbacks.onMemberLeave) {
+		callbacks.onMemberLeave(groupMsg.left);
 	}
 	if (groupMsg.groupState) {
 		if (jatos.isGroupComplete && callbacks.onComplete) {
@@ -607,14 +618,27 @@ function handleGroupMsg(msg, callbacks) {
 	}
 }
 
+/**
+ * @return {Boolean} True if the group has reached the maximum amount of
+ *         members.
+ */
 jatos.isGroupComplete = function() {
-	return jatos.groupState == "COMPLETE";
+	return jatos.groupState == groupState.COMPLETE;
 }
 
+/**
+ * @return {Boolean} True if the group has not reached the maximum amount of
+ *         members.
+ */
 jatos.isGroupIncomplete = function() {
-	return jatos.groupState == "INCOMPLETE";
+	return jatos.groupState == groupState.INCOMPLETE;
 }
 
+/**
+ * Sends a message to all group members.
+ * 
+ * @param {String} msg - Message to send
+ */
 jatos.sendGroupMsg = function(msg) {
 	if (groupChannel) {
 		var msgObj = {};
@@ -623,6 +647,12 @@ jatos.sendGroupMsg = function(msg) {
 	}
 }
 
+/**
+ * Sends a message to the group member with the given member ID only.
+ * 
+ * @param {String} recipient - Recipient's group member ID
+ * @param {String} msg - Message to send to the recipient
+ */
 jatos.sendMsgTo = function(recipient, msg) {
 	if (groupChannel) {
 		var msgObj = {};
@@ -633,7 +663,8 @@ jatos.sendMsgTo = function(recipient, msg) {
 }
 
 /**
- * Tries to drop out from the group it has previously joined.
+ * Tries to drop out from the group it has previously joined. The group channel
+ * WebSocket is not closed in the function - it's closed from the JATOS' side.
  * 
  * @param {optional
  *            Function} success - Function to be called after the group is
@@ -641,11 +672,11 @@ jatos.sendMsgTo = function(recipient, msg) {
  * @param {optional
  *            Function} error - Function to be called in case of error.
  */
-jatos.dropGroup = function(success, error) {
-	if (!jQueryExists() || droppingGroup) {
+jatos.leaveGroup = function(success, error) {
+	if (!jQueryExists() || leavingGroup) {
 		return;
 	}
-	droppingGroup = true;
+	leavingGroup = true;
 	
 	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/group/drop",
@@ -653,13 +684,13 @@ jatos.dropGroup = function(success, error) {
 		type : "GET",
 		timeout : jatos.httpTimeout,
 		success : function(response) {
-			droppingGroup = false;
+			leavingGroup = false;
 			if (success) {
 				success()
 			}
 		},
 		error : function(err) {
-			droppingGroup = false;
+			leavingGroup = false;
 			if (error) {
 				error(err)
 			}
