@@ -24,7 +24,7 @@ public class GroupDispatcherRegistry extends UntypedActor {
 
 	public static final String ACTOR_NAME = "GroupDispatcherRegistry";
 
-	// groupResultId -> GroupDispatcher
+	// groupId -> GroupDispatcher
 	private Map<Long, ActorRef> groupDispatcherMap = new HashMap<Long, ActorRef>();
 	private final GroupService groupService;
 
@@ -54,7 +54,7 @@ public class GroupDispatcherRegistry extends UntypedActor {
 			sender().tell(answer, self());
 		} else if (msg instanceof Unregister) {
 			Unregister unregister = (Unregister) msg;
-			groupDispatcherMap.remove(unregister.groupResultId);
+			groupDispatcherMap.remove(unregister.groupId);
 		} else if (msg instanceof PoisonSomeone) {
 			PoisonSomeone poison = (PoisonSomeone) msg;
 			ActorRef actorRef = groupDispatcherMap

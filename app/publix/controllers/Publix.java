@@ -5,13 +5,13 @@ import java.io.IOException;
 import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
-import models.GroupResult;
+import models.GroupModel;
 import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.Worker;
 import persistance.ComponentResultDao;
-import persistance.GroupResultDao;
+import persistance.GroupDao;
 import persistance.StudyResultDao;
 import play.Logger;
 import play.db.jpa.JPA;
@@ -54,7 +54,6 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	public static final String ID_COOKIE_NAME = "JATOS_IDS";
 	public static final String WORKER_ID = "workerId";
 	public static final String GROUP_ID = "groupId";
-	public static final String GROUP_RESULT_ID = "groupResultId";
 	public static final String STUDY_ID = "studyId";
 	public static final String STUDY_RESULT_ID = "studyResultId";
 	public static final String COMPONENT_ID = "componentId";
@@ -72,14 +71,14 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	protected final JsonUtils jsonUtils;
 	protected final ComponentResultDao componentResultDao;
 	protected final StudyResultDao studyResultDao;
-	protected final GroupResultDao groupResultDao;
+	protected final GroupDao groupDao;
 
 	public Publix(PublixUtils<T> utils,
 			IStudyAuthorisation<T> studyAuthorisation,
 			GroupService groupService, ChannelService channelService,
 			PublixErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+			StudyResultDao studyResultDao, GroupDao groupDao) {
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.groupService = groupService;
@@ -89,7 +88,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
-		this.groupResultDao = groupResultDao;
+		this.groupDao = groupDao;
 	}
 
 	@Override
@@ -114,9 +113,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 					.pure(redirect(publix.controllers.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupModel group = studyResult.getGroup();
 		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
-				componentResult, worker, groupResult);
+				componentResult, worker, group);
 		response().setCookie(Publix.ID_COOKIE_NAME, cookieValue);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
@@ -223,17 +222,17 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
-		GroupResult groupResult;
-		if (groupService.hasValidGroupResult(studyResult)) {
-			groupResult = studyResult.getGroupResult();
+		GroupModel group;
+		if (groupService.hasValidGroup(studyResult)) {
+			group = studyResult.getGroup();
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " already in group "
-					+ groupResult.getId());
+					+ group.getId());
 		} else {
-			groupResult = groupService.joinGroupResult(studyResult);
+			group = groupService.joinGroup(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " joined group "
-					+ groupResult.getId());
+					+ group.getId());
 		}
 		return channelService.openGroupChannel(studyResult);
 	}
@@ -249,15 +248,15 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
-		GroupResult groupResult = studyResult.getGroupResult();
-		groupService.dropGroupResult(studyResult);
-		channelService.closeGroupChannel(studyResult, groupResult);
-		if (groupResult != null) {
-			Logger.info(CLASS_NAME + ".dropGroupResult: studyId " + studyId
+		GroupModel group = studyResult.getGroup();
+		groupService.dropGroup(studyResult);
+		channelService.closeGroupChannel(studyResult, group);
+		if (group != null) {
+			Logger.info(CLASS_NAME + ".dropGroup: studyId " + studyId
 					+ ", " + "workerId " + session(WORKER_ID)
-					+ " dropped out of group " + groupResult.getId());
+					+ " dropped out of group " + group.getId());
 		} else {
-			Logger.info(CLASS_NAME + ".dropGroupResult: studyId " + studyId
+			Logger.info(CLASS_NAME + ".dropGroup: studyId " + studyId
 					+ ", " + "workerId " + session(WORKER_ID)
 					+ " isn't member of a group - can't drop out.");
 		}
@@ -363,9 +362,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 		}
-		channelService.closeGroupChannel(studyResult,
-				studyResult.getGroupResult());
-		groupService.dropGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
+		groupService.dropGroup(studyResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");
@@ -389,9 +387,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
-		channelService.closeGroupChannel(studyResult,
-				studyResult.getGroupResult());
-		groupService.dropGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
+		groupService.dropGroup(studyResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");

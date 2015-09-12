@@ -6,7 +6,7 @@ import models.StudyResult;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import persistance.ComponentResultDao;
-import persistance.GroupResultDao;
+import persistance.GroupDao;
 import persistance.StudyResultDao;
 import persistance.workers.MTWorkerDao;
 import play.Logger;
@@ -63,10 +63,10 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			ChannelService channelService, MTErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			MTWorkerDao mtWorkerDao, GroupResultDao groupResultDao) {
+			MTWorkerDao mtWorkerDao, GroupDao groupDao) {
 		super(publixUtils, studyAuthorisation, groupService, channelService,
 				errorMessages, studyAssets, componentResultDao, jsonUtils,
-				studyResultDao, groupResultDao);
+				studyResultDao, groupDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;

@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Domain model of a component.
+ * Model and DB entity of a component.
  * 
  * @author Kristian Lange
  */

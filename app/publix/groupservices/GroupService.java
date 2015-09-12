@@ -2,11 +2,11 @@ package publix.groupservices;
 
 import java.util.List;
 
-import models.GroupResult;
-import models.GroupResult.GroupState;
+import models.GroupModel;
+import models.GroupModel.GroupState;
 import models.StudyModel;
 import models.StudyResult;
-import persistance.GroupResultDao;
+import persistance.GroupDao;
 import persistance.StudyResultDao;
 import play.Logger;
 import play.db.jpa.JPA;
@@ -26,14 +26,14 @@ public class GroupService {
 
 	private final PublixErrorMessages errorMessages;
 	private final StudyResultDao studyResultDao;
-	private final GroupResultDao groupResultDao;
+	private final GroupDao groupDao;
 
 	@Inject
 	GroupService(PublixErrorMessages errorMessages,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+			StudyResultDao studyResultDao, GroupDao groupDao) {
 		this.errorMessages = errorMessages;
 		this.studyResultDao = studyResultDao;
-		this.groupResultDao = groupResultDao;
+		this.groupDao = groupDao;
 	}
 
 	/**
@@ -47,59 +47,56 @@ public class GroupService {
 		}
 	}
 
-	public boolean hasValidGroupResult(StudyResult studyResult) {
-		GroupResult groupResult = studyResult.getGroupResult();
-		return groupResult != null
-				&& groupResult.getGroupState() != GroupState.FINISHED;
+	public boolean hasValidGroup(StudyResult studyResult) {
+		GroupModel group = studyResult.getGroup();
+		return group != null && group.getGroupState() != GroupState.FINISHED;
 	}
 
 	/**
-	 * Joins the first incomplete GroupResult from the DB and returns it. If
-	 * such doesn't exist it creates a new one and persists it.
+	 * Joins the first incomplete Group from the DB and returns it. If such
+	 * doesn't exist it creates a new one and persists it.
 	 */
-	public GroupResult joinGroupResult(StudyResult studyResult) {
+	public GroupModel joinGroup(StudyResult studyResult) {
 		// If we already have a group just return it
-		if (hasValidGroupResult(studyResult)) {
-			return studyResult.getGroupResult();
+		if (hasValidGroup(studyResult)) {
+			return studyResult.getGroup();
 		}
 
 		// Look in the DB if we have an incomplete group. If not create new one.
 		StudyModel study = studyResult.getStudy();
-		GroupResult groupResult = groupResultDao.findFirstIncomplete(study);
-		if (groupResult == null) {
-			groupResult = new GroupResult(study);
-			groupResultDao.create(groupResult);
+		GroupModel group = groupDao.findFirstIncomplete(study);
+		if (group == null) {
+			group = new GroupModel(study);
+			groupDao.create(group);
 		}
 
-		// Add StudyResult to GroupResult and vice versa
-		groupResult.addStudyResult(studyResult);
-		studyResult.setGroupResult(groupResult);
+		// Add StudyResult to Group and vice versa
+		group.addStudyResult(studyResult);
+		studyResult.setGroup(group);
 
-		setGroupStateInComplete(groupResult, studyResult.getStudy());
-		groupResultDao.update(groupResult);
+		setGroupStateInComplete(group, studyResult.getStudy());
+		groupDao.update(group);
 		studyResultDao.update(studyResult);
-		return groupResult;
+		return group;
 	}
 
 	/**
-	 * Sets GroupResult's state to COMPLETE or INCOMPLETE according to study's
+	 * Sets Group's state to COMPLETE or INCOMPLETE according to study's
 	 * maxGroupSize.
 	 */
-	private void setGroupStateInComplete(GroupResult groupResult,
-			StudyModel study) {
-		if (groupResult.getStudyResultList().size() < study.getMaxGroupSize()) {
-			groupResult.setGroupState(GroupState.INCOMPLETE);
+	private void setGroupStateInComplete(GroupModel group, StudyModel study) {
+		if (group.getStudyResultList().size() < study.getMaxGroupSize()) {
+			group.setGroupState(GroupState.INCOMPLETE);
 		} else {
-			groupResult.setGroupState(GroupState.COMPLETE);
+			group.setGroupState(GroupState.COMPLETE);
 		}
 	}
 
-	public GroupState getGroupState(long groupResultId) {
+	public GroupState getGroupState(long groupId) {
 		try {
 			return JPA.withTransaction(() -> {
-				GroupResult groupResult = groupResultDao
-						.findById(groupResultId);
-				return (groupResult != null) ? groupResult.getGroupState()
+				GroupModel group = groupDao.findById(groupId);
+				return (group != null) ? group.getGroupState()
 						: null;
 			});
 		} catch (Throwable e) {
@@ -108,12 +105,11 @@ public class GroupService {
 		return null;
 	}
 
-	public List<StudyResult> getGroupStudyResultList(long groupResultId) {
+	public List<StudyResult> getGroupStudyResultList(long groupId) {
 		try {
 			return JPA.withTransaction(() -> {
-				GroupResult groupResult = groupResultDao
-						.findById(groupResultId);
-				return (groupResult != null) ? groupResult.getStudyResultList()
+				GroupModel group = groupDao.findById(groupId);
+				return (group != null) ? group.getStudyResultList()
 						: null;
 			});
 		} catch (Throwable e) {
@@ -122,10 +118,10 @@ public class GroupService {
 		return null;
 	}
 
-	public GroupResult getGroupResult(long groupResultId) {
+	public GroupModel getGroup(long groupId) {
 		try {
 			return JPA.withTransaction(() -> {
-				return groupResultDao.findById(groupResultId);
+				return groupDao.findById(groupId);
 			});
 		} catch (Throwable e) {
 			Logger.error(CLASS_NAME + ".getGroupState: ", e);
@@ -133,23 +129,23 @@ public class GroupService {
 		return null;
 	}
 
-	public void dropGroupResult(StudyResult studyResult) {
-		GroupResult groupResult = studyResult.getGroupResult();
-		if (groupResult == null) {
+	public void dropGroup(StudyResult studyResult) {
+		GroupModel group = studyResult.getGroup();
+		if (group == null) {
 			return;
 		}
 
-		// Remove StudyResult from GroupResult and vice versa
-		groupResult.removeStudyResult(studyResult);
-		studyResult.setGroupResult(null);
+		// Remove StudyResult from Group and vice versa
+		group.removeStudyResult(studyResult);
+		studyResult.setGroup(null);
 
-		setGroupStateInComplete(groupResult, studyResult.getStudy());
-		groupResultDao.update(groupResult);
+		setGroupStateInComplete(group, studyResult.getStudy());
+		groupDao.update(group);
 		studyResultDao.update(studyResult);
 
 		// If group empty remove it from DB
-		if (groupResult.getStudyResultList().isEmpty()) {
-			groupResultDao.remove(groupResult);
+		if (group.getStudyResultList().isEmpty()) {
+			groupDao.remove(group);
 		}
 		JPA.em().getTransaction().commit();
 		JPA.em().getTransaction().begin();

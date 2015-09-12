@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * Model for messages (success, info, warning, error) destined for JATOS' GUI
- * views.
+ * views (but never persisted in the DB).
  * 
  * @author Kristian Lange
  */

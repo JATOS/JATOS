@@ -39,8 +39,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Domain model of a study. Default values, where necessary, are at the fields
- * or the constructor.
+ * Model and DB entity of a study. Default values, where necessary,
+ * are at the fields or the constructor.
  * 
  * @author Kristian Lange
  */

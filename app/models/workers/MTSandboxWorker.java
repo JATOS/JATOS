@@ -6,7 +6,8 @@ import javax.persistence.Entity;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
- * Concrete worker who originates from the MTurk Sandbox.
+ * Model and DB entity of the concrete worker who originates from the MTurk
+ * Sandbox.
  * 
  * @author Kristian Lange
  */
@@ -24,7 +25,7 @@ public class MTSandboxWorker extends MTWorker {
 	public MTSandboxWorker(String mtWorkerId) {
 		super(mtWorkerId);
 	}
-	
+
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}

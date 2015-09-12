@@ -3,7 +3,7 @@ package publix.groupservices.akka.actors;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.GroupResult;
+import models.GroupModel;
 import publix.groupservices.GroupService;
 import publix.groupservices.akka.messages.ChannelClosed;
 import publix.groupservices.akka.messages.GroupMsg;
@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * group member's client runs a study. A GroupChannelActor can join a group by
  * sending the JoinMessage to it's GroupActor.
  * 
- * TODO GroupResult is the persisted entity and data there have precedence over
+ * TODO Group is the persisted entity and data there have precedence over
  * GroupDispatcher
  * 
  * @author Kristian Lange
@@ -37,10 +37,10 @@ public class GroupDispatcher extends UntypedActor {
 
 	private static final String ERROR = "error";
 	private static final String JOINED = "joined";
-	private static final String GROUP_RESULT_ID = "groupId";
+	private static final String LEFT = "left";
+	private static final String GROUP_ID = "groupId";
 	private static final String GROUP_MEMBERS = "groupMembers";
 	private static final String GROUP_STATE = "groupState";
-	private static final String DROPPED = "dropped";
 	private static final String RECIPIENT = "recipient";
 	/**
 	 * Contains the members of this group. Maps StudyResult's IDs to ActorRefs.
@@ -48,24 +48,24 @@ public class GroupDispatcher extends UntypedActor {
 	private final Map<Long, ActorRef> groupChannelMap = new HashMap<>();
 	private final ActorRef groupDispatcherRegistry;
 	private final GroupService groupService;
-	private long groupResultId;
+	private long groupId;
 
 	public static Props props(ActorRef groupDispatcherRegistry,
-			GroupService groupService, long groupResultId) {
+			GroupService groupService, long groupId) {
 		return Props.create(GroupDispatcher.class, groupDispatcherRegistry,
-				groupService, groupResultId);
+				groupService, groupId);
 	}
 
 	public GroupDispatcher(ActorRef groupDispatcherRegistry,
-			GroupService groupService, long groupResultId) {
+			GroupService groupService, long groupId) {
 		this.groupDispatcherRegistry = groupDispatcherRegistry;
 		this.groupService = groupService;
-		this.groupResultId = groupResultId;
+		this.groupId = groupId;
 	}
 
 	@Override
 	public void postStop() {
-		groupDispatcherRegistry.tell(new Unregister(groupResultId), self());
+		groupDispatcherRegistry.tell(new Unregister(groupId), self());
 	}
 
 	@Override
@@ -141,7 +141,7 @@ public class GroupDispatcher extends UntypedActor {
 		if (groupChannelMap.containsKey(studyResultId)
 				&& groupChannelMap.get(studyResultId).equals(sender())) {
 			groupChannelMap.remove(channelClosed.studyResultId);
-			tellGroupStatsToEveryone(channelClosed.studyResultId, DROPPED);
+			tellGroupStatsToEveryone(channelClosed.studyResultId, LEFT);
 		}
 		if (groupChannelMap.isEmpty()) {
 			// Tell this dispatcher to kill itself if it has no more members
@@ -156,21 +156,20 @@ public class GroupDispatcher extends UntypedActor {
 		tellGroupStatsToEveryone(studyResultId, JOINED);
 	}
 
-	// Tell all group members "dropped" and the current group members
 	private void tellGroupStatsToEveryone(long studyResultId, String action) {
 		// We can't use the groupChannelMap for getting the group members
 		// because there might be members who haven't a group channel
-		GroupResult groupResult = groupService.getGroupResult(groupResultId);
-		if (groupResult == null) {
+		GroupModel group = groupService.getGroup(groupId);
+		if (group == null) {
 			return;
 		}
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(action, studyResultId);
-		objectNode.put(GROUP_RESULT_ID, groupResultId);
+		objectNode.put(GROUP_ID, groupId);
 		objectNode.put(GROUP_MEMBERS,
-				String.valueOf(groupResult.getStudyResultList()));
+				String.valueOf(group.getStudyResultList()));
 		objectNode
-				.put(GROUP_STATE, String.valueOf(groupResult.getGroupState()));
+				.put(GROUP_STATE, String.valueOf(group.getGroupState()));
 		tellAll(new GroupMsg(objectNode));
 	}
 

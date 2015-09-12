@@ -5,10 +5,10 @@ package publix.groupservices.akka.messages;
  */
 public class Unregister {
 	
-	public long groupResultId;
+	public long groupId;
 	
-	public Unregister(long groupResultId) {
-		this.groupResultId = groupResultId;
+	public Unregister(long groupId) {
+		this.groupId = groupId;
 	}
 
 }

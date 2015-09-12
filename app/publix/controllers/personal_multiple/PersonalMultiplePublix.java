@@ -4,7 +4,7 @@ import models.ComponentModel;
 import models.StudyModel;
 import models.workers.PersonalMultipleWorker;
 import persistance.ComponentResultDao;
-import persistance.GroupResultDao;
+import persistance.GroupDao;
 import persistance.StudyResultDao;
 import play.Logger;
 import play.mvc.Result;
@@ -47,10 +47,10 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 			PersonalMultipleErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			GroupResultDao groupResultDao) {
+			GroupDao groupDao) {
 		super(publixUtils, studyAuthorisation, groupService, channelService,
 				errorMessages, studyAssets, componentResultDao, jsonUtils,
-				studyResultDao, groupResultDao);
+				studyResultDao, groupDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 	}

@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Concrete worker who originates from JATOS itself.
+ * Model and DB entity of the concrete Worker who originates from JATOS itself.
  * 
  * @author Kristian Lange
  */

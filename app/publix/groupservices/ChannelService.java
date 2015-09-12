@@ -1,7 +1,7 @@
 package publix.groupservices;
 
 import static akka.pattern.Patterns.ask;
-import models.GroupResult;
+import models.GroupModel;
 import models.StudyResult;
 import play.mvc.WebSocket;
 import publix.exceptions.ForbiddenPublixException;
@@ -42,10 +42,10 @@ public class ChannelService {
 	public WebSocket<JsonNode> openGroupChannel(StudyResult studyResult)
 			throws InternalServerErrorPublixException,
 			ForbiddenPublixException, NotFoundPublixException {
-		// Get the GroupDispatcher that will handle this GroupResult. Create a
+		// Get the GroupDispatcher that will handle this Group. Create a
 		// new GroupDispatcher or get the already existing one.
 		ActorRef groupDispatcher = getOrCreateGroupDispatcher(studyResult
-				.getGroupResult());
+				.getGroup());
 		// If this GroupDispatcher already has a group channel for this
 		// StudyResult, close the old one before opening a new one.
 		closeGroupChannel(studyResult, groupDispatcher);
@@ -78,31 +78,31 @@ public class ChannelService {
 
 	/**
 	 * Close the group channel that belongs to the given StudyResult and
-	 * GroupResult. It just sends the closing message to the GroupDispatcher
-	 * without waiting for an answer. We take a separate GroupResult and not the
-	 * StudyResult's GroupResult because the StudyResult's GroupResult might
+	 * group. It just sends the closing message to the GroupDispatcher
+	 * without waiting for an answer. We take a separate group and not the
+	 * StudyResult's group because the StudyResult's group might
 	 * already be assigned a null value during dropping out of a group.
 	 */
 	public void closeGroupChannel(StudyResult studyResult,
-			GroupResult groupResult) throws InternalServerErrorPublixException {
-		if (groupResult == null) {
+			GroupModel group) throws InternalServerErrorPublixException {
+		if (group == null) {
 			return;
 		}
-		ActorRef groupDispatcher = getGroupDispatcher(groupResult);
+		ActorRef groupDispatcher = getGroupDispatcher(group);
 		if (groupDispatcher != null) {
 			groupDispatcher.tell(new PoisonSomeone(studyResult.getId()),
 					ActorRef.noSender());
 		}
 	}
 
-	private ActorRef getGroupDispatcher(GroupResult groupResult)
+	private ActorRef getGroupDispatcher(GroupModel group)
 			throws InternalServerErrorPublixException {
-		return retrieveGroupDispatcher(new Get(groupResult.getId()));
+		return retrieveGroupDispatcher(new Get(group.getId()));
 	}
 
-	private ActorRef getOrCreateGroupDispatcher(GroupResult groupResult)
+	private ActorRef getOrCreateGroupDispatcher(GroupModel group)
 			throws InternalServerErrorPublixException {
-		return retrieveGroupDispatcher(new GetOrCreate(groupResult.getId()));
+		return retrieveGroupDispatcher(new GetOrCreate(group.getId()));
 	}
 
 	/**

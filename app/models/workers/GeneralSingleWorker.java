@@ -8,9 +8,10 @@ import javax.persistence.Entity;
 import play.data.validation.ValidationError;
 
 /**
- * Worker if a study is run as an General Single Worker. A General Single Worker
- * is a worker for an external run, the worker can run the study only once. The
- * worker is created during start of the study.
+ * Model and DB entity of the concrete Worker if a study is run as an General
+ * Single Worker. A General Single Worker is a worker for an external run, the
+ * worker can run the study only once. The worker is created during start of the
+ * study.
  * 
  * @author Kristian Lange
  */

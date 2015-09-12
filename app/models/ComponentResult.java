@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
- * Domain model of a component result.
+ * Model and DB entity of a component result.
  * 
  * @author Kristian Lange
  */

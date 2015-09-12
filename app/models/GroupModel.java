@@ -18,12 +18,12 @@ import javax.persistence.OneToOne;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * Domain model of a group result.
+ * Model and DB entity of a group result.
  * 
  * @author Kristian Lange
  */
 @Entity
-public class GroupResult {
+public class GroupModel {
 
 	@Id
 	@GeneratedValue
@@ -31,8 +31,8 @@ public class GroupResult {
 
 	public enum GroupState {
 		STARTED, // Group study run was started
-		INCOMPLETE, // GroupResult's number of worker < Group's maxWorker
-		COMPLETE, // GroupResult's number of worker = Group's maxWorker
+		INCOMPLETE, // Group's number of worker < Group's maxWorker
+		COMPLETE, // Group's number of worker = Group's maxWorker
 		READY, // Group is complete and all workers send the READY event via the
 				// system channel
 		FINISHED; // Group study run is finished
@@ -52,7 +52,7 @@ public class GroupResult {
 	private StudyModel study;
 
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-	@JoinColumn(name = "groupResult_id")
+	@JoinColumn(name = "group_id")
 	private List<StudyResult> studyResultList = new ArrayList<>();
 
 	/**
@@ -67,10 +67,10 @@ public class GroupResult {
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
 	private Timestamp endDate;
 
-	public GroupResult() {
+	public GroupModel() {
 	}
 
-	public GroupResult(StudyModel study) {
+	public GroupModel(StudyModel study) {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.study = study;
 		this.groupState = GroupState.STARTED;
@@ -153,10 +153,10 @@ public class GroupResult {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof GroupResult)) {
+		if (!(obj instanceof GroupModel)) {
 			return false;
 		}
-		GroupResult other = (GroupResult) obj;
+		GroupModel other = (GroupModel) obj;
 		if (id == null) {
 			if (other.id != null) {
 				return false;

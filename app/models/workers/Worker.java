@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 
 /**
- * Abstract domain model and DAO of a worker. Workers are doing studies (and
+ * Abstract model and DB entity of a worker. Workers are doing studies (and
  * their components) and produce study results (and their component results).
  * 
  * @author Kristian Lange

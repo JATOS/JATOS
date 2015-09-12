@@ -23,7 +23,7 @@ import utils.MessagesStrings;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Domain model of a user.
+ * Model and DB entity of a user.
  * 
  * @author Kristian Lange
  */

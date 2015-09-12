@@ -2,12 +2,12 @@ package publix.controllers.jatos;
 
 import models.ComponentModel;
 import models.ComponentResult;
-import models.GroupResult;
+import models.GroupModel;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.JatosWorker;
 import persistance.ComponentResultDao;
-import persistance.GroupResultDao;
+import persistance.GroupDao;
 import persistance.StudyResultDao;
 import play.Logger;
 import play.libs.F.Promise;
@@ -87,10 +87,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			GroupService groupService, ChannelService channelService,
 			JatosErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+			StudyResultDao studyResultDao, GroupDao groupDao) {
 		super(publixUtils, studyAuthorisation, groupService, channelService,
 				errorMessages, studyAssets, componentResultDao, jsonUtils,
-				studyResultDao, groupResultDao);
+				studyResultDao, groupDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
@@ -177,11 +177,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					.pure(redirect(publix.controllers.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupModel group = studyResult.getGroup();
 		response().setCookie(
 				Publix.ID_COOKIE_NAME,
 				publixUtils.generateIdCookieValue(studyResult, componentResult,
-						worker, groupResult));
+						worker, group));
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
 		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(request()

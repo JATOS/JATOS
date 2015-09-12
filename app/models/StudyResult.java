@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
- * Domain model of a study result.
+ * Model and DB entity of a study result.
  * 
  * @author Kristian Lange
  */
@@ -95,8 +95,8 @@ public class StudyResult {
 	
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "groupResult_id")
-	private GroupResult groupResult;
+	@JoinColumn(name = "group_id")
+	private GroupModel group;
 
 	private String confirmationCode;
 
@@ -227,12 +227,12 @@ public class StudyResult {
 		return this.worker;
 	}
 	
-	public GroupResult getGroupResult() {
-		return groupResult;
+	public GroupModel getGroup() {
+		return group;
 	}
 
-	public void setGroupResult(GroupResult groupResult) {
-		this.groupResult = groupResult;
+	public void setGroup(GroupModel group) {
+		this.group = group;
 	}
 
 	@Override

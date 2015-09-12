@@ -11,7 +11,7 @@ import java.util.Map.Entry;
 import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
-import models.GroupResult;
+import models.GroupModel;
 import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
@@ -144,7 +144,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public String generateIdCookieValue(StudyResult studyResult,
 			ComponentResult componentResult, Worker worker,
-			GroupResult groupResult) {
+			GroupModel group) {
 		StudyModel study = studyResult.getStudy();
 		ComponentModel component = componentResult.getComponent();
 		Map<String, String> cookieMap = new HashMap<>();
@@ -152,9 +152,9 @@ public abstract class PublixUtils<T extends Worker> {
 		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
 		cookieMap.put(Publix.STUDY_RESULT_ID,
 				String.valueOf(studyResult.getId()));
-		String groupId = (groupResult != null) ? String.valueOf(groupResult
+		String groupId = (group != null) ? String.valueOf(group
 				.getId()) : "null";
-		cookieMap.put(Publix.GROUP_RESULT_ID, groupId);
+		cookieMap.put(Publix.GROUP_ID, groupId);
 		cookieMap.put(Publix.COMPONENT_ID, String.valueOf(component.getId()));
 		cookieMap.put(Publix.COMPONENT_RESULT_ID,
 				String.valueOf(componentResult.getId()));

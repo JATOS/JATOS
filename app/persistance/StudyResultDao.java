@@ -5,7 +5,7 @@ import java.util.List;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
-import models.GroupResult;
+import models.GroupModel;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.Worker;
@@ -22,11 +22,11 @@ import com.google.inject.Singleton;
 @Singleton
 public class StudyResultDao extends AbstractDao {
 
-	private final GroupResultDao groupResultDao;
+	private final GroupDao groupDao;
 
 	@Inject
-	StudyResultDao(GroupResultDao groupResultDao) {
-		this.groupResultDao = groupResultDao;
+	StudyResultDao(GroupDao groupDao) {
+		this.groupDao = groupDao;
 	}
 	
 	/**
@@ -57,15 +57,15 @@ public class StudyResultDao extends AbstractDao {
 		worker.removeStudyResult(studyResult);
 		merge(worker);
 
-		// Remove studyResult from groupResult
-		GroupResult groupResult = studyResult.getGroupResult();
-		if (groupResult != null) {
-			groupResult.removeStudyResult(studyResult);
-			if (groupResult.getStudyResultList().isEmpty()) {
-				// Remove groupResult if it has no StudyResults
-				groupResultDao.remove(groupResult);
+		// Remove studyResult from group
+		GroupModel group = studyResult.getGroup();
+		if (group != null) {
+			group.removeStudyResult(studyResult);
+			if (group.getStudyResultList().isEmpty()) {
+				// Remove group if it has no StudyResults
+				groupDao.remove(group);
 			} else {
-				merge(groupResult);
+				merge(group);
 			}
 		}
 		
