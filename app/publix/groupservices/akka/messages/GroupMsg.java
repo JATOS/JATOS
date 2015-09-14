@@ -9,6 +9,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 public class GroupMsg {
 
+	/**
+	 * JSON variables that can be send in a GroupMsg
+	 */
+	public static final String JOINED = "joined";
+	public static final String LEFT = "left";
+	public static final String GROUP_ID = "groupId";
+	public static final String GROUP_MEMBERS = "groupMembers";
+	public static final String GROUP_STATE = "groupState";
+	public static final String RECIPIENT = "recipient";
+	public static final String ERROR = "error";
+
 	public final ObjectNode jsonNode;
 
 	public GroupMsg(ObjectNode jsonNode) {

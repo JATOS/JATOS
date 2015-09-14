@@ -1,5 +1,13 @@
 package publix.groupservices.akka.actors;
 
+import static publix.groupservices.akka.messages.GroupMsg.ERROR;
+import static publix.groupservices.akka.messages.GroupMsg.GROUP_ID;
+import static publix.groupservices.akka.messages.GroupMsg.GROUP_MEMBERS;
+import static publix.groupservices.akka.messages.GroupMsg.GROUP_STATE;
+import static publix.groupservices.akka.messages.GroupMsg.JOINED;
+import static publix.groupservices.akka.messages.GroupMsg.LEFT;
+import static publix.groupservices.akka.messages.GroupMsg.RECIPIENT;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,7 +15,7 @@ import models.GroupModel;
 import publix.groupservices.GroupService;
 import publix.groupservices.akka.messages.ChannelClosed;
 import publix.groupservices.akka.messages.GroupMsg;
-import publix.groupservices.akka.messages.JoinGroup;
+import publix.groupservices.akka.messages.Join;
 import publix.groupservices.akka.messages.PoisonSomeone;
 import publix.groupservices.akka.messages.Unregister;
 import utils.JsonUtils;
@@ -19,15 +27,17 @@ import akka.actor.UntypedActor;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * A GroupActor is an Akka Actor responsible for distributing messages within a
- * group. If one member of the group sends a messages, all other members should
- * receive it. Members of the group are GroupChannelActors, which in turn
- * represent a WebSocket. Each WebSocket is connected to a group member. On the
- * group member's client runs a study. A GroupChannelActor can join a group by
- * sending the JoinMessage to it's GroupActor.
+ * A GroupDispatcher is an Akka Actor responsible for distributing messages
+ * (GroupMsg) within a group. Members of the group are GroupChannel actors,
+ * which in turn represent a WebSocket. Each WebSocket is connected to a group
+ * member. The study itself runs on the group member's client (e.g. browser).
  * 
- * TODO Group is the persisted entity and data there have precedence over
- * GroupDispatcher
+ * A GroupChannel joins a GroupDispatcher by sending the Join message and leaves
+ * by sending a ChannelClosed message.
+ * 
+ * A GroupDispatcher only handles the GroupChannels but is not responsible for
+ * the actual joining of a group. This is done before creating a GroupDispatcher
+ * by the GroupService which persists all data in a GroupModel.
  * 
  * @author Kristian Lange
  */
@@ -35,15 +45,9 @@ public class GroupDispatcher extends UntypedActor {
 
 	public static final String ACTOR_NAME = "GroupDispatcher";
 
-	private static final String ERROR = "error";
-	private static final String JOINED = "joined";
-	private static final String LEFT = "left";
-	private static final String GROUP_ID = "groupId";
-	private static final String GROUP_MEMBERS = "groupMembers";
-	private static final String GROUP_STATE = "groupState";
-	private static final String RECIPIENT = "recipient";
 	/**
-	 * Contains the members of this group. Maps StudyResult's IDs to ActorRefs.
+	 * Contains the members that are handled by this GroupDispatcher. Maps
+	 * StudyResult's IDs to ActorRefs.
 	 */
 	private final Map<Long, ActorRef> groupChannelMap = new HashMap<>();
 	private final ActorRef groupDispatcherRegistry;
@@ -73,13 +77,14 @@ public class GroupDispatcher extends UntypedActor {
 		if (msg instanceof GroupMsg) {
 			// We got a GroupMsg from a client
 			dispatchGroupMsg(msg);
-		} else if (msg instanceof JoinGroup) {
+		} else if (msg instanceof Join) {
+			// A GroupChannel wants to join
 			joinGroupDispatcher(msg);
 		} else if (msg instanceof ChannelClosed) {
-			// Comes from GroupChannel
+			// Comes from GroupChannel: it closed
 			groupChannelClosed(msg);
 		} else if (msg instanceof PoisonSomeone) {
-			// Comes from ChannelService
+			// Comes from ChannelService: close a group channel
 			closeAGroupChannel(msg);
 		} else {
 			unhandled(msg);
@@ -115,7 +120,6 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	// Comes from ChannelService
 	private void closeAGroupChannel(Object msg) {
 		PoisonSomeone poison = (PoisonSomeone) msg;
 		long studyResultId = poison.idOfTheOneToPoison;
@@ -132,7 +136,6 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	// Comes from GroupChannel
 	private void groupChannelClosed(Object msg) {
 		ChannelClosed channelClosed = (ChannelClosed) msg;
 		long studyResultId = channelClosed.studyResultId;
@@ -143,22 +146,23 @@ public class GroupDispatcher extends UntypedActor {
 			groupChannelMap.remove(channelClosed.studyResultId);
 			tellGroupStatsToEveryone(channelClosed.studyResultId, LEFT);
 		}
+		
+		// Tell this dispatcher to kill itself if it has no more members
 		if (groupChannelMap.isEmpty()) {
-			// Tell this dispatcher to kill itself if it has no more members
 			self().tell(PoisonPill.getInstance(), self());
 		}
 	}
 
 	private void joinGroupDispatcher(Object msg) {
-		JoinGroup joinGroup = (JoinGroup) msg;
+		Join joinGroup = (Join) msg;
 		long studyResultId = joinGroup.studyResultId;
 		groupChannelMap.put(studyResultId, sender());
 		tellGroupStatsToEveryone(studyResultId, JOINED);
 	}
 
 	private void tellGroupStatsToEveryone(long studyResultId, String action) {
-		// We can't use the groupChannelMap for getting the group members
-		// because there might be members who haven't a group channel
+		// The current group data are persisted in a GroupModel. The GroupModel
+		// determines who is member of the group - and not the groupChannelMap.
 		GroupModel group = groupService.getGroup(groupId);
 		if (group == null) {
 			return;

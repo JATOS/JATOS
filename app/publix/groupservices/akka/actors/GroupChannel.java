@@ -2,7 +2,7 @@ package publix.groupservices.akka.actors;
 
 import publix.groupservices.akka.messages.ChannelClosed;
 import publix.groupservices.akka.messages.GroupMsg;
-import publix.groupservices.akka.messages.JoinGroup;
+import publix.groupservices.akka.messages.Join;
 import publix.groupservices.akka.messages.PoisonSomeone;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
@@ -13,18 +13,18 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * GroupChannel is an Akka Actor that represents the group channel's WebSocket.
- * A group channel is a WebSocket connecting a client who's running a study and
+ * A group channel is a WebSocket connecting a client who's running a study with
  * the JATOS server. A GroupChannel belongs to a group, which is managed by a
  * GroupDispatcher. Group data are persisted in a GroupModel. A GroupChannel
- * joins its group by sending the JoinMessage to it's GroupDispatcher and leaves
- * one by sending a Dropout message.
+ * joins its group by sending the Join to it's GroupDispatcher and leaves
+ * one by sending a ChannelClosed message.
  * 
- * @author Kristian Lange
+ * @author Kristian Lange (2015)
  */
 public class GroupChannel extends UntypedActor {
 
 	/**
-	 * Output channel of the WebSocket: JATOS -> client
+	 * Output of the WebSocket: JATOS -> client
 	 */
 	private final ActorRef out;
 	private final long studyResultId;
@@ -45,11 +45,13 @@ public class GroupChannel extends UntypedActor {
 
 	@Override
 	public void preStart() {
-		groupDispatcher.tell(new JoinGroup(studyResultId), self());
+		// Join our GroupDispatcher
+		groupDispatcher.tell(new Join(studyResultId), self());
 	}
 
 	@Override
 	public void postStop() {
+		// Tell our GroupDispatcher that our Websocket closed
 		groupDispatcher.tell(new ChannelClosed(studyResultId), self());
 	}
 

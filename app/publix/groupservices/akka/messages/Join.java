@@ -5,11 +5,11 @@ package publix.groupservices.akka.messages;
  * 
  * @author Kristian Lange (2015)
  */
-public class JoinGroup {
+public class Join {
 
 	public final long studyResultId;
 
-	public JoinGroup(long studyResultId) {
+	public Join(long studyResultId) {
 		this.studyResultId = studyResultId;
 	}
 

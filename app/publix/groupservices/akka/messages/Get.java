@@ -7,10 +7,10 @@ package publix.groupservices.akka.messages;
  */
 public class Get {
 
-	public final long id;
+	public final long groupId;
 
-	public Get(long id) {
-		this.id = id;
+	public Get(long groupId) {
+		this.groupId = groupId;
 	}
 
 }
