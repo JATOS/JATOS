@@ -663,12 +663,12 @@ jatos.sendMsgTo = function(recipient, msg) {
 }
 
 /**
- * Tries to drop out from the group it has previously joined. The group channel
+ * Tries to leave the group it has previously joined. The group channel
  * WebSocket is not closed in the function - it's closed from the JATOS' side.
  * 
  * @param {optional
  *            Function} success - Function to be called after the group is
- *            dropped.
+ *            left.
  * @param {optional
  *            Function} error - Function to be called in case of error.
  */
@@ -679,7 +679,7 @@ jatos.leaveGroup = function(success, error) {
 	leavingGroup = true;
 	
 	jatos.jQuery.ajax({
-		url : "/publix/" + jatos.studyId + "/group/drop",
+		url : "/publix/" + jatos.studyId + "/group/leave",
 		processData : false,
 		type : "GET",
 		timeout : jatos.httpTimeout,

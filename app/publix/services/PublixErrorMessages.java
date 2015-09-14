@@ -38,7 +38,7 @@ public class PublixErrorMessages {
 
 	public String workerDidntJoinGroup(Worker worker, Long studyId) {
 		return "Worker " + worker.getId()
-				+ " isn't member in a group (didn't join or droped out)"
+				+ " isn't member in a group (didn't join or left)"
 				+ " for study " + studyId + ".";
 	}
 

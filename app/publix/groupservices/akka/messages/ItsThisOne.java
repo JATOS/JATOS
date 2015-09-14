@@ -3,9 +3,9 @@ package publix.groupservices.akka.messages;
 import akka.actor.ActorRef;
 
 /**
- * Message exchanged by GroupChannelActors.
+ * Transports a GroupDispatcher ActorRef as an answer to Get or GetOrCreate
  * 
- * @author madsen
+ * @author Kristian Lange (2015)
  */
 public class ItsThisOne {
 	

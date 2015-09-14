@@ -238,9 +238,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public Result dropGroup(Long studyId) throws ForbiddenPublixException,
+	public Result leaveGroup(Long studyId) throws ForbiddenPublixException,
 			InternalServerErrorPublixException, NotFoundPublixException {
-		Logger.info(CLASS_NAME + ".dropGroup: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(Publix.WORKER_ID));
 		StudyModel study = publixUtils.retrieveStudy(studyId);
@@ -249,16 +249,16 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
 		GroupModel group = studyResult.getGroup();
-		groupService.dropGroup(studyResult);
+		groupService.leaveGroup(studyResult);
 		channelService.closeGroupChannel(studyResult, group);
 		if (group != null) {
-			Logger.info(CLASS_NAME + ".dropGroup: studyId " + studyId
+			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId
 					+ ", " + "workerId " + session(WORKER_ID)
-					+ " dropped out of group " + group.getId());
+					+ " left group " + group.getId());
 		} else {
-			Logger.info(CLASS_NAME + ".dropGroup: studyId " + studyId
+			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId
 					+ ", " + "workerId " + session(WORKER_ID)
-					+ " isn't member of a group - can't drop out.");
+					+ " isn't member of a group - can't leave.");
 		}
 		return ok().as("text/html");
 	}
@@ -363,7 +363,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			publixUtils.abortStudy(message, studyResult);
 		}
 		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
-		groupService.dropGroup(studyResult);
+		groupService.leaveGroup(studyResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");
@@ -388,7 +388,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
 		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
-		groupService.dropGroup(studyResult);
+		groupService.leaveGroup(studyResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");

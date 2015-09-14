@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Key;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
-
 import common.Common;
 import common.Global;
 
@@ -81,7 +80,7 @@ public class ChannelService {
 	 * group. It just sends the closing message to the GroupDispatcher
 	 * without waiting for an answer. We take a separate group and not the
 	 * StudyResult's group because the StudyResult's group might
-	 * already be assigned a null value during dropping out of a group.
+	 * already be assigned a null value during leaving of a group.
 	 */
 	public void closeGroupChannel(StudyResult studyResult,
 			GroupModel group) throws InternalServerErrorPublixException {

@@ -16,8 +16,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * A group channel is a WebSocket connecting a client who's running a study and
  * the JATOS server. A GroupChannel belongs to a group, which is managed by a
  * GroupDispatcher. Group data are persisted in a GroupModel. A GroupChannel
- * joins its group by sending the JoinMessage to it's GroupDispatcher and drops
- * out of one by sending a Dropout message.
+ * joins its group by sending the JoinMessage to it's GroupDispatcher and leaves
+ * one by sending a Dropout message.
  * 
  * @author Kristian Lange
  */

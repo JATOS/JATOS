@@ -1,7 +1,9 @@
 package publix.groupservices.akka.messages;
 
 /**
- * @author Kristian Lange
+ * Like Get but creates the GroupDispatcher if it doesn't exist
+ * 
+ * @author Kristian Lange (2015)
  */
 public class GetOrCreate {
 

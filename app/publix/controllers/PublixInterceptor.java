@@ -265,26 +265,26 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result dropGroup(Long studyId) throws BadRequestPublixException,
+	public Result leaveGroup(Long studyId) throws BadRequestPublixException,
 			NotFoundPublixException, ForbiddenPublixException,
 			InternalServerErrorPublixException {
 		Result result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
-			result = mtPublix.dropGroup(studyId);
+			result = mtPublix.leaveGroup(studyId);
 			break;
 		case JatosWorker.WORKER_TYPE:
-			result = jatosPublix.dropGroup(studyId);
+			result = jatosPublix.leaveGroup(studyId);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
-			result = pmPublix.dropGroup(studyId);
+			result = pmPublix.leaveGroup(studyId);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
-			result = personalSinglePublix.dropGroup(studyId);
+			result = personalSinglePublix.leaveGroup(studyId);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
-			result = generalSinglePublix.dropGroup(studyId);
+			result = generalSinglePublix.leaveGroup(studyId);
 			break;
 		default:
 			throw new BadRequestPublixException(

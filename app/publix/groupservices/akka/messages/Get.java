@@ -1,7 +1,9 @@
 package publix.groupservices.akka.messages;
 
 /**
- * @author Kristian Lange
+ * Getter for a GroupDispatcher actor
+ * 
+ * @author Kristian Lange (2015)
  */
 public class Get {
 

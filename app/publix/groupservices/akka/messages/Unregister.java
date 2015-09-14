@@ -1,7 +1,9 @@
 package publix.groupservices.akka.messages;
 
 /**
- * @author Kristian Lange
+ * Unregister a GroupDispatcher from a GroupDispatcherRegistry
+ * 
+ * @author Kristian Lange (2015)
  */
 public class Unregister {
 	

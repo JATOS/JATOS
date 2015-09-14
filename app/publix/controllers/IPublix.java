@@ -83,10 +83,10 @@ public interface IPublix {
 	/**
 	 * HTTP type: Ajax GET request
 	 * 
-	 * Let the worker drop out of the group he joined before. Only works if this
+	 * Let the worker leave the group he joined before. Only works if this
 	 * study is a group study.
 	 */
-	Result dropGroup(Long studyId) throws PublixException;
+	Result leaveGroup(Long studyId) throws PublixException;
 
 	/**
 	 * HTTP type: Ajax POST request

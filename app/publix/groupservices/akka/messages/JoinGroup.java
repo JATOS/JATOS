@@ -1,9 +1,9 @@
 package publix.groupservices.akka.messages;
 
 /**
- * Message an GroupChannelActor can send to join a GroupActor.
+ * Message a GroupChannel can send to join a GroupDispatcher.
  * 
- * @author Kristian Lange
+ * @author Kristian Lange (2015)
  */
 public class JoinGroup {
 

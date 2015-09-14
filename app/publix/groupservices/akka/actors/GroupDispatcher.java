@@ -168,8 +168,7 @@ public class GroupDispatcher extends UntypedActor {
 		objectNode.put(GROUP_ID, groupId);
 		objectNode.put(GROUP_MEMBERS,
 				String.valueOf(group.getStudyResultList()));
-		objectNode
-				.put(GROUP_STATE, String.valueOf(group.getGroupState()));
+		objectNode.put(GROUP_STATE, String.valueOf(group.getGroupState()));
 		tellAll(new GroupMsg(objectNode));
 	}
 

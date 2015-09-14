@@ -129,7 +129,7 @@ public class GroupService {
 		return null;
 	}
 
-	public void dropGroup(StudyResult studyResult) {
+	public void leaveGroup(StudyResult studyResult) {
 		GroupModel group = studyResult.getGroup();
 		if (group == null) {
 			return;
