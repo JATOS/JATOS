@@ -5,10 +5,10 @@ import java.util.Map;
 
 import play.libs.Akka;
 import publix.groupservices.GroupService;
-import publix.groupservices.akka.messages.Get;
-import publix.groupservices.akka.messages.GetOrCreate;
-import publix.groupservices.akka.messages.ItsThisOne;
-import publix.groupservices.akka.messages.Unregister;
+import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Get;
+import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
+import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
+import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 
@@ -17,7 +17,7 @@ import com.google.inject.Singleton;
 
 /**
  * A GroupDispatcherRegistry is an Akka Actor keeps track of all
- * GroupDispatcher.
+ * GroupDispatchers.
  * 
  * @author Kristian Lange (2015)
  */
@@ -42,24 +42,11 @@ public class GroupDispatcherRegistry extends UntypedActor {
 	public void onReceive(Object msg) throws Exception {
 		if (msg instanceof Get) {
 			// Someone wants to know the GroupDispatcher for a group ID
-			Get get = (Get) msg;
-			ActorRef groupDispatcher = groupDispatcherMap.get(get.groupId);
-			ItsThisOne answer = new ItsThisOne(groupDispatcher);
-			sender().tell(answer, self());
+			tellGroupDispatcher((Get) msg);
 		} else if (msg instanceof GetOrCreate) {
 			// Someone wants to know the GroupDispatcher for a group ID. If it
 			// doesn't exist, create a new one.
-			GetOrCreate getOrCreate = (GetOrCreate) msg;
-			ActorRef groupDispatcher = groupDispatcherMap
-					.get(getOrCreate.groupId);
-			if (groupDispatcher == null) {
-				groupDispatcher = Akka.system().actorOf(
-						GroupDispatcher.props(self(), groupService,
-								getOrCreate.groupId));
-				groupDispatcherMap.put(getOrCreate.groupId, groupDispatcher);
-			}
-			ItsThisOne answer = new ItsThisOne(groupDispatcher);
-			sender().tell(answer, self());
+			createAndTellGroupDispatcher((GetOrCreate) msg);
 		} else if (msg instanceof Unregister) {
 			// A GroupDispatcher closed down and wants to unregister
 			Unregister unregister = (Unregister) msg;
@@ -68,4 +55,24 @@ public class GroupDispatcherRegistry extends UntypedActor {
 			unhandled(msg);
 		}
 	}
+
+	private void tellGroupDispatcher(Get get) {
+		ActorRef groupDispatcher = groupDispatcherMap.get(get.groupId);
+		ItsThisOne answer = new ItsThisOne(groupDispatcher);
+		sender().tell(answer, self());
+	}
+	
+	private void createAndTellGroupDispatcher(GetOrCreate getOrCreate) {
+		ActorRef groupDispatcher = groupDispatcherMap
+				.get(getOrCreate.groupId);
+		if (groupDispatcher == null) {
+			groupDispatcher = Akka.system().actorOf(
+					GroupDispatcher.props(self(), groupService,
+							getOrCreate.groupId));
+			groupDispatcherMap.put(getOrCreate.groupId, groupDispatcher);
+		}
+		ItsThisOne answer = new ItsThisOne(groupDispatcher);
+		sender().tell(answer, self());
+	}
+
 }

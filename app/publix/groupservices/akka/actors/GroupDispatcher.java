@@ -1,23 +1,15 @@
 package publix.groupservices.akka.actors;
 
-import static publix.groupservices.akka.messages.GroupMsg.ERROR;
-import static publix.groupservices.akka.messages.GroupMsg.GROUP_ID;
-import static publix.groupservices.akka.messages.GroupMsg.GROUP_MEMBERS;
-import static publix.groupservices.akka.messages.GroupMsg.GROUP_STATE;
-import static publix.groupservices.akka.messages.GroupMsg.JOINED;
-import static publix.groupservices.akka.messages.GroupMsg.LEFT;
-import static publix.groupservices.akka.messages.GroupMsg.RECIPIENT;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import models.GroupModel;
 import publix.groupservices.GroupService;
-import publix.groupservices.akka.messages.ChannelClosed;
-import publix.groupservices.akka.messages.GroupMsg;
-import publix.groupservices.akka.messages.Join;
-import publix.groupservices.akka.messages.PoisonSomeone;
-import publix.groupservices.akka.messages.Unregister;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.ChannelClosed;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.GroupMsg;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.Join;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.PoisonChannel;
+import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
 import utils.JsonUtils;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
@@ -83,7 +75,7 @@ public class GroupDispatcher extends UntypedActor {
 		} else if (msg instanceof ChannelClosed) {
 			// Comes from GroupChannel: it closed
 			groupChannelClosed(msg);
-		} else if (msg instanceof PoisonSomeone) {
+		} else if (msg instanceof PoisonChannel) {
 			// Comes from ChannelService: close a group channel
 			closeAGroupChannel(msg);
 		} else {
@@ -93,7 +85,7 @@ public class GroupDispatcher extends UntypedActor {
 
 	private void dispatchGroupMsg(Object msg) {
 		ObjectNode jsonNode = ((GroupMsg) msg).jsonNode;
-		if (jsonNode.has(RECIPIENT)) {
+		if (jsonNode.has(GroupMsg.RECIPIENT)) {
 			tellRecipientOnly(msg, jsonNode);
 		} else {
 			tellAllButSender(msg);
@@ -103,9 +95,11 @@ public class GroupDispatcher extends UntypedActor {
 	private void tellRecipientOnly(Object msg, ObjectNode jsonNode) {
 		Long studyResultId = null;
 		try {
-			studyResultId = Long.valueOf(jsonNode.get(RECIPIENT).asText());
+			studyResultId = Long.valueOf(jsonNode.get(GroupMsg.RECIPIENT)
+					.asText());
 		} catch (NumberFormatException e) {
-			String errorMsg = "Recipient " + jsonNode.get(RECIPIENT).asText()
+			String errorMsg = "Recipient "
+					+ jsonNode.get(GroupMsg.RECIPIENT).asText()
 					+ " isn't a study result ID.";
 			sendErrorBackToSender(jsonNode, errorMsg);
 		}
@@ -121,7 +115,7 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	private void closeAGroupChannel(Object msg) {
-		PoisonSomeone poison = (PoisonSomeone) msg;
+		PoisonChannel poison = (PoisonChannel) msg;
 		long studyResultId = poison.studyResultIdOfTheOneToPoison;
 		ActorRef groupChannel = groupChannelMap.get(studyResultId);
 		if (groupChannel != null) {
@@ -144,9 +138,9 @@ public class GroupDispatcher extends UntypedActor {
 		if (groupChannelMap.containsKey(studyResultId)
 				&& groupChannelMap.get(studyResultId).equals(sender())) {
 			groupChannelMap.remove(channelClosed.studyResultId);
-			tellGroupStatsToEveryone(channelClosed.studyResultId, LEFT);
+			tellGroupStatsToEveryone(channelClosed.studyResultId, GroupMsg.LEFT);
 		}
-		
+
 		// Tell this dispatcher to kill itself if it has no more members
 		if (groupChannelMap.isEmpty()) {
 			self().tell(PoisonPill.getInstance(), self());
@@ -157,7 +151,7 @@ public class GroupDispatcher extends UntypedActor {
 		Join joinGroup = (Join) msg;
 		long studyResultId = joinGroup.studyResultId;
 		groupChannelMap.put(studyResultId, sender());
-		tellGroupStatsToEveryone(studyResultId, JOINED);
+		tellGroupStatsToEveryone(studyResultId, GroupMsg.JOINED);
 	}
 
 	private void tellGroupStatsToEveryone(long studyResultId, String action) {
@@ -169,10 +163,11 @@ public class GroupDispatcher extends UntypedActor {
 		}
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(action, studyResultId);
-		objectNode.put(GROUP_ID, groupId);
-		objectNode.put(GROUP_MEMBERS,
+		objectNode.put(GroupMsg.GROUP_ID, groupId);
+		objectNode.put(GroupMsg.GROUP_MEMBERS,
 				String.valueOf(group.getStudyResultList()));
-		objectNode.put(GROUP_STATE, String.valueOf(group.getGroupState()));
+		objectNode.put(GroupMsg.GROUP_STATE,
+				String.valueOf(group.getGroupState()));
 		tellAll(new GroupMsg(objectNode));
 	}
 
@@ -195,7 +190,7 @@ public class GroupDispatcher extends UntypedActor {
 	 */
 	private void sendErrorBackToSender(ObjectNode jsonNode, String errorMsg) {
 		jsonNode.removeAll();
-		jsonNode.put(ERROR, errorMsg);
+		jsonNode.put(GroupMsg.ERROR, errorMsg);
 		sender().tell(new GroupMsg(jsonNode), self());
 	}
 

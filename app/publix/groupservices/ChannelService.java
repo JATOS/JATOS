@@ -8,10 +8,10 @@ import publix.exceptions.ForbiddenPublixException;
 import publix.exceptions.InternalServerErrorPublixException;
 import publix.exceptions.NotFoundPublixException;
 import publix.groupservices.akka.actors.GroupDispatcherRegistry;
-import publix.groupservices.akka.messages.Get;
-import publix.groupservices.akka.messages.GetOrCreate;
-import publix.groupservices.akka.messages.ItsThisOne;
-import publix.groupservices.akka.messages.PoisonSomeone;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.PoisonChannel;
+import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Get;
+import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
+import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
@@ -66,7 +66,7 @@ public class ChannelService {
 	 */
 	private boolean closeGroupChannel(StudyResult studyResult,
 			ActorRef groupDispatcher) throws InternalServerErrorPublixException {
-		Future<Object> future = ask(groupDispatcher, new PoisonSomeone(
+		Future<Object> future = ask(groupDispatcher, new PoisonChannel(
 				studyResult.getId()), TIMEOUT);
 		try {
 			return (boolean) Await.result(future, TIMEOUT.duration());
@@ -89,7 +89,7 @@ public class ChannelService {
 		}
 		ActorRef groupDispatcher = getGroupDispatcher(group);
 		if (groupDispatcher != null) {
-			groupDispatcher.tell(new PoisonSomeone(studyResult.getId()),
+			groupDispatcher.tell(new PoisonChannel(studyResult.getId()),
 					ActorRef.noSender());
 		}
 	}

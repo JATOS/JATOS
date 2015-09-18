@@ -1,9 +1,9 @@
 package publix.groupservices.akka.actors;
 
-import publix.groupservices.akka.messages.ChannelClosed;
-import publix.groupservices.akka.messages.GroupMsg;
-import publix.groupservices.akka.messages.Join;
-import publix.groupservices.akka.messages.PoisonSomeone;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.ChannelClosed;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.GroupMsg;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.Join;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.PoisonChannel;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -68,7 +68,7 @@ public class GroupChannel extends UntypedActor {
 			// the wrapped JsonNode to the client
 			GroupMsg groupMsg = (GroupMsg) msg;
 			out.tell(groupMsg.jsonNode, self());
-		} else if (msg instanceof PoisonSomeone) {
+		} else if (msg instanceof PoisonChannel) {
 			// Kill this group channel
 			self().tell(PoisonPill.getInstance(), self());
 		} else {
