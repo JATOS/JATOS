@@ -17,7 +17,7 @@ import com.google.inject.Singleton;
 
 /**
  * A GroupDispatcherRegistry is an Akka Actor keeps track of all
- * GroupDispatchers.
+ * GroupDispatchers Actors.
  * 
  * @author Kristian Lange (2015)
  */

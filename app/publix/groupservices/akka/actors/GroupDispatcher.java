@@ -28,10 +28,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * by sending a ChannelClosed message.
  * 
  * A GroupDispatcher only handles the GroupChannels but is not responsible for
- * the actual joining of a group. This is done before creating a GroupDispatcher
- * by the GroupService which persists all data in a GroupModel.
+ * the actual joining of a group. This is done prior to creating a
+ * GroupDispatcher by the GroupService which persists all data in a GroupModel.
  * 
- * @author Kristian Lange
+ * @author Kristian Lange (2015)
  */
 public class GroupDispatcher extends UntypedActor {
 

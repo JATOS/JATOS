@@ -24,12 +24,6 @@ public class Common {
 			.configuration().getString("db.default.url")
 			.contains("jdbc:h2:mem:");
 
-	/**
-	 * Timeout of the group channel WebSocket in milliseconds 
-	 */
-	public static final int GROUP_CHANNEL_TIMEOUT = Play.application()
-			.configuration().getInt("jatos.groupChannelTimeout");
-
 	private static String getBasePath() {
 		String tempBasePath = Play.application().path().getAbsolutePath();
 		if (tempBasePath.endsWith(File.separator + ".")) {
