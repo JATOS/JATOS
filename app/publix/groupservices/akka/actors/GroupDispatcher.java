@@ -122,7 +122,7 @@ public class GroupDispatcher extends UntypedActor {
 
 	private void closeAGroupChannel(Object msg) {
 		PoisonSomeone poison = (PoisonSomeone) msg;
-		long studyResultId = poison.idOfTheOneToPoison;
+		long studyResultId = poison.studyResultIdOfTheOneToPoison;
 		ActorRef groupChannel = groupChannelMap.get(studyResultId);
 		if (groupChannel != null) {
 			// Tell GroupChannel to close itself. The GroupChannel sends a

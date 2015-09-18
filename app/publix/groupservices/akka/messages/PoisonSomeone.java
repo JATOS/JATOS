@@ -7,10 +7,10 @@ package publix.groupservices.akka.messages;
  */
 public class PoisonSomeone {
 
-	public long idOfTheOneToPoison;
+	public long studyResultIdOfTheOneToPoison;
 
-	public PoisonSomeone(long idOfTheOneToPoison) {
-		this.idOfTheOneToPoison = idOfTheOneToPoison;
+	public PoisonSomeone(long studyResultIdOfTheOneToPoison) {
+		this.studyResultIdOfTheOneToPoison = studyResultIdOfTheOneToPoison;
 	}
 
 }

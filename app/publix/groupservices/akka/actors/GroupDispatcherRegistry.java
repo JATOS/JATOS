@@ -8,7 +8,6 @@ import publix.groupservices.GroupService;
 import publix.groupservices.akka.messages.Get;
 import publix.groupservices.akka.messages.GetOrCreate;
 import publix.groupservices.akka.messages.ItsThisOne;
-import publix.groupservices.akka.messages.PoisonSomeone;
 import publix.groupservices.akka.messages.Unregister;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
@@ -65,14 +64,6 @@ public class GroupDispatcherRegistry extends UntypedActor {
 			// A GroupDispatcher closed down and wants to unregister
 			Unregister unregister = (Unregister) msg;
 			groupDispatcherMap.remove(unregister.groupId);
-		} else if (msg instanceof PoisonSomeone) {
-			// TODO 
-			PoisonSomeone poison = (PoisonSomeone) msg;
-			ActorRef actorRef = groupDispatcherMap
-					.get(poison.idOfTheOneToPoison);
-			if (actorRef != null) {
-				actorRef.forward(msg, getContext());
-			}
 		} else {
 			unhandled(msg);
 		}
