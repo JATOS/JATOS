@@ -300,6 +300,7 @@ public abstract class PublixUtils<T extends Worker> {
 		for (StudyResult studyResult : studyResultList) {
 			if (study.getId().equals(studyResult.getStudy().getId())
 					&& !studyDone(studyResult)) {
+				// Should be max. one StudyResult to finish this way
 				finishStudyResult(false,
 						PublixErrorMessages.STUDY_NEVER_FINSHED, studyResult);
 			}

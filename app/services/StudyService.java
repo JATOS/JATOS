@@ -148,7 +148,7 @@ public class StudyService {
 				RequestScopeMessaging.error(errorMsg);
 				throw new BadRequestException(errorMsg);
 			}
-			userList.add(userDao.findByEmail(email));
+			userList.add(user);
 		}
 		if (userList.isEmpty()) {
 			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
