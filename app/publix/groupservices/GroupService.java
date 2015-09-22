@@ -17,7 +17,14 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 /**
- * @author Kristian Lange
+ * Handles groups, e.g. joining or leaving a group. Members of a group are
+ * StudyResults, which represents a particular study run. A group is persisted
+ * in a GroupModel.
+ * 
+ * All group members exchange messages via WebSockets that are called group
+ * channels in JATOS. The message dispatching system is implemented with Akka.
+ * 
+ * @author Kristian Lange (2015)
  */
 @Singleton
 public class GroupService {
@@ -47,7 +54,11 @@ public class GroupService {
 		}
 	}
 
-	public boolean hasValidGroup(StudyResult studyResult) {
+	/**
+	 * Checks whether this StudyResult has a group that is not in state
+	 * FINISHED.
+	 */
+	public boolean hasUnfinishedGroup(StudyResult studyResult) {
 		GroupModel group = studyResult.getGroup();
 		return group != null && group.getGroupState() != GroupState.FINISHED;
 	}
@@ -58,7 +69,7 @@ public class GroupService {
 	 */
 	public GroupModel joinGroup(StudyResult studyResult) {
 		// If we already have a group just return it
-		if (hasValidGroup(studyResult)) {
+		if (hasUnfinishedGroup(studyResult)) {
 			return studyResult.getGroup();
 		}
 
@@ -77,6 +88,8 @@ public class GroupService {
 		setGroupStateInComplete(group, studyResult.getStudy());
 		groupDao.update(group);
 		studyResultDao.update(studyResult);
+		JPA.em().getTransaction().commit();
+		JPA.em().getTransaction().begin();
 		return group;
 	}
 
@@ -96,8 +109,7 @@ public class GroupService {
 		try {
 			return JPA.withTransaction(() -> {
 				GroupModel group = groupDao.findById(groupId);
-				return (group != null) ? group.getGroupState()
-						: null;
+				return (group != null) ? group.getGroupState() : null;
 			});
 		} catch (Throwable e) {
 			Logger.error(CLASS_NAME + ".getGroupState: ", e);
@@ -109,8 +121,7 @@ public class GroupService {
 		try {
 			return JPA.withTransaction(() -> {
 				GroupModel group = groupDao.findById(groupId);
-				return (group != null) ? group.getStudyResultList()
-						: null;
+				return (group != null) ? group.getStudyResultList() : null;
 			});
 		} catch (Throwable e) {
 			Logger.error(CLASS_NAME + ".getGroupState: ", e);

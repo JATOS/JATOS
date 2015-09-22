@@ -6,6 +6,8 @@ import models.StudyResult;
 import play.mvc.WebSocket;
 import publix.exceptions.InternalServerErrorPublixException;
 import publix.groupservices.akka.actors.GroupDispatcherRegistry;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.Joined;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.Left;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.PoisonChannel;
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Get;
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
@@ -71,33 +73,32 @@ public class ChannelService {
 		if (group == null) {
 			return;
 		}
-		ActorRef groupDispatcher = getGroupDispatcher(group);
-		if (groupDispatcher != null) {
-			groupDispatcher.tell(new PoisonChannel(studyResult.getId()),
-					ActorRef.noSender());
-		}
+		sendMsg(studyResult, new PoisonChannel(studyResult.getId()));
 	}
 
 	/**
-	 * Closes the group channel that belongs to the given StudyResult and is
-	 * managed by the given GroupDispatcher. Waits until it receives a result
-	 * from the GroupDispatcher actor.
-	 * 
-	 * @param studyResult
-	 * @param groupDispatcher
-	 * @return true if the GroupChannel was managed by the GroupDispatcher and
-	 *         was successfully removed from the GroupDispatcher, false
-	 *         otherwise (it was probably never managed by the dispatcher).
-	 * @throws InternalServerErrorPublixException
+	 * Sends a message to each member of the group (the group this studyResult
+	 * is in). This message tells that this member has joined the group.
 	 */
-	private boolean closeGroupChannel(StudyResult studyResult,
-			ActorRef groupDispatcher) throws InternalServerErrorPublixException {
-		Future<Object> future = ask(groupDispatcher, new PoisonChannel(
-				studyResult.getId()), TIMEOUT);
-		try {
-			return (boolean) Await.result(future, TIMEOUT.duration());
-		} catch (Exception e) {
-			throw new InternalServerErrorPublixException(e.getMessage());
+	public void sendJoinedMsg(StudyResult studyResult)
+			throws InternalServerErrorPublixException {
+		sendMsg(studyResult, new Joined(studyResult.getId()));
+	}
+
+	/**
+	 * Sends a message to each member of the group (the group this studyResult
+	 * is in). This message tells that this member has left the group.
+	 */
+	public void sendLeftMsg(StudyResult studyResult)
+			throws InternalServerErrorPublixException {
+		sendMsg(studyResult, new Left(studyResult.getId()));
+	}
+
+	private void sendMsg(StudyResult studyResult, Object msg)
+			throws InternalServerErrorPublixException {
+		ActorRef groupDispatcher = getGroupDispatcher(studyResult.getGroup());
+		if (groupDispatcher != null) {
+			groupDispatcher.tell(msg, ActorRef.noSender());
 		}
 	}
 
@@ -142,6 +143,29 @@ public class ChannelService {
 		Future<Object> future = ask(groupDispatcherRegistry, msg, TIMEOUT);
 		try {
 			return Await.result(future, TIMEOUT.duration());
+		} catch (Exception e) {
+			throw new InternalServerErrorPublixException(e.getMessage());
+		}
+	}
+
+	/**
+	 * Closes the group channel that belongs to the given StudyResult and is
+	 * managed by the given GroupDispatcher. Waits until it receives a result
+	 * from the GroupDispatcher actor.
+	 * 
+	 * @param studyResult
+	 * @param groupDispatcher
+	 * @return true if the GroupChannel was managed by the GroupDispatcher and
+	 *         was successfully removed from the GroupDispatcher, false
+	 *         otherwise (it was probably never managed by the dispatcher).
+	 * @throws InternalServerErrorPublixException
+	 */
+	private boolean closeGroupChannel(StudyResult studyResult,
+			ActorRef groupDispatcher) throws InternalServerErrorPublixException {
+		Future<Object> future = ask(groupDispatcher, new PoisonChannel(
+				studyResult.getId()), TIMEOUT);
+		try {
+			return (boolean) Await.result(future, TIMEOUT.duration());
 		} catch (Exception e) {
 			throw new InternalServerErrorPublixException(e.getMessage());
 		}

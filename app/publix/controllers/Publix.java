@@ -223,13 +223,14 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
 		GroupModel group;
-		if (groupService.hasValidGroup(studyResult)) {
+		if (groupService.hasUnfinishedGroup(studyResult)) {
 			group = studyResult.getGroup();
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " already in group "
 					+ group.getId());
 		} else {
 			group = groupService.joinGroup(studyResult);
+			channelService.sendJoinedMsg(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " joined group "
 					+ group.getId());
@@ -249,17 +250,18 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
 		GroupModel group = studyResult.getGroup();
+		if (group == null) {
+			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
+					+ "workerId " + session(WORKER_ID)
+					+ " isn't member of a group - can't leave.");
+			return ok().as("text/html");
+		}
 		groupService.leaveGroup(studyResult);
 		channelService.closeGroupChannel(studyResult, group);
-		if (group != null) {
-			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId
-					+ ", " + "workerId " + session(WORKER_ID)
-					+ " left group " + group.getId());
-		} else {
-			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId
-					+ ", " + "workerId " + session(WORKER_ID)
-					+ " isn't member of a group - can't leave.");
-		}
+		channelService.sendLeftMsg(studyResult);
+		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID) + " left group "
+				+ group.getId());
 		return ok().as("text/html");
 	}
 
@@ -362,8 +364,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 		}
-		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
 		groupService.leaveGroup(studyResult);
+		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
+		channelService.sendLeftMsg(studyResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");
@@ -387,8 +390,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
-		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
 		groupService.leaveGroup(studyResult);
+		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
+		channelService.sendLeftMsg(studyResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");

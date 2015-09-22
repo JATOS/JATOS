@@ -11,17 +11,46 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class GroupDispatcherProtocol {
 
 	/**
-	 * Message an GroupChannel can send to a GroupDispatcher to indicate it's
-	 * closure.
+	 * Message to a GroupDispatcher. The GroupDispatcher will tell all other
+	 * members of its group about the new member. This will NOT open a new group
+	 * channel (a group channel is opened by the WebSocketBuilder and registers
+	 * only with a GroupDispatcher).
 	 */
-	public static class ChannelClosed {
+	public static class Joined {
 
 		public long studyResultId;
 
-		public ChannelClosed(long studyResultId) {
+		public Joined(long studyResultId) {
 			this.studyResultId = studyResultId;
 		}
+	}
 
+	/**
+	 * Message to a GroupDispatcher. The GroupDispatcher will just tell all
+	 * other members of its group about the left member. This will NOT close the
+	 * group channel (a group channel is closed by sending a PoisonChannel
+	 * message.
+	 */
+	public static class Left {
+
+		public long studyResultId;
+
+		public Left(long studyResultId) {
+			this.studyResultId = studyResultId;
+		}
+	}
+
+	/**
+	 * Message an GroupChannel can send to its GroupDispatcher to indicate it's
+	 * closure.
+	 */
+	public static class UnregisterChannel {
+
+		public long studyResultId;
+
+		public UnregisterChannel(long studyResultId) {
+			this.studyResultId = studyResultId;
+		}
 	}
 
 	/**
@@ -35,8 +64,11 @@ public class GroupDispatcherProtocol {
 		 */
 		public static final String JOINED = "joined";
 		public static final String LEFT = "left";
+		public static final String OPENED = "opened";
+		public static final String CLOSED = "closed";
 		public static final String GROUP_ID = "groupId";
 		public static final String GROUP_MEMBERS = "groupMembers";
+		public static final String OPEN_CHANNELS = "openChannels";
 		public static final String GROUP_STATE = "groupState";
 		public static final String RECIPIENT = "recipient";
 		public static final String ERROR = "error";
@@ -54,16 +86,15 @@ public class GroupDispatcherProtocol {
 	}
 
 	/**
-	 * Message a GroupChannel can send to join a GroupDispatcher.
+	 * Message a GroupChannel can send to register in a GroupDispatcher.
 	 */
-	public static class Join {
+	public static class RegisterChannel {
 
 		public final long studyResultId;
 
-		public Join(long studyResultId) {
+		public RegisterChannel(long studyResultId) {
 			this.studyResultId = studyResultId;
 		}
-
 	}
 
 	/**
@@ -77,7 +108,6 @@ public class GroupDispatcherProtocol {
 		public PoisonChannel(long studyResultIdOfTheOneToPoison) {
 			this.studyResultIdOfTheOneToPoison = studyResultIdOfTheOneToPoison;
 		}
-
 	}
 
 }

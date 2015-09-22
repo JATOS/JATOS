@@ -5,10 +5,12 @@ import java.util.Map;
 
 import models.GroupModel;
 import publix.groupservices.GroupService;
-import publix.groupservices.akka.messages.GroupDispatcherProtocol.ChannelClosed;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.GroupMsg;
-import publix.groupservices.akka.messages.GroupDispatcherProtocol.Join;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.Joined;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.Left;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.PoisonChannel;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.RegisterChannel;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.UnregisterChannel;
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
 import utils.JsonUtils;
 import akka.actor.ActorRef;
@@ -20,16 +22,21 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * A GroupDispatcher is an Akka Actor responsible for distributing messages
- * (GroupMsg) within a group. Members of the group are GroupChannel actors,
- * which in turn represent a WebSocket. Each WebSocket is connected to a group
- * member. The study itself runs on the group member's client (e.g. browser).
- * 
- * A GroupChannel joins a GroupDispatcher by sending the Join message and leaves
- * by sending a ChannelClosed message.
+ * (GroupMsg) within a group.
  * 
  * A GroupDispatcher only handles the GroupChannels but is not responsible for
  * the actual joining of a group. This is done prior to creating a
  * GroupDispatcher by the GroupService which persists all data in a GroupModel.
+ * 
+ * A GroupChannel is only be opened after a StudyResult joined a group, which is
+ * done in the GroupService. Group data (e.g. who's member) are persisted in a
+ * GroupModel. A GroupChannel is closed after the StudyResult left the group.
+ * 
+ * A GroupChannel registers in a GroupDispatcher by sending the RegisterChannel
+ * message and unregisters by sending a UnregisterChannel message.
+ * 
+ * A new GroupDispatcher is created by the GroupDispatcherRegistry. If a
+ * GroupDispatcher has no more members it closes itself.
  * 
  * @author Kristian Lange (2015)
  */
@@ -69,15 +76,21 @@ public class GroupDispatcher extends UntypedActor {
 		if (msg instanceof GroupMsg) {
 			// We got a GroupMsg from a client
 			dispatchGroupMsg(msg);
-		} else if (msg instanceof Join) {
-			// A GroupChannel wants to join
-			joinGroupDispatcher(msg);
-		} else if (msg instanceof ChannelClosed) {
-			// Comes from GroupChannel: it closed
-			groupChannelClosed(msg);
+		} else if (msg instanceof Joined) {
+			// A member joined
+			joined(msg);
+		} else if (msg instanceof Left) {
+			// A member left
+			left(msg);
+		} else if (msg instanceof RegisterChannel) {
+			// A GroupChannel wants to register
+			registerChannel(msg);
+		} else if (msg instanceof UnregisterChannel) {
+			// A GroupChannel wants to unregister
+			unregisterChannel(msg);
 		} else if (msg instanceof PoisonChannel) {
 			// Comes from ChannelService: close a group channel
-			closeAGroupChannel(msg);
+			poisonAGroupChannel(msg);
 		} else {
 			unhandled(msg);
 		}
@@ -114,31 +127,22 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	private void closeAGroupChannel(Object msg) {
-		PoisonChannel poison = (PoisonChannel) msg;
-		long studyResultId = poison.studyResultIdOfTheOneToPoison;
-		ActorRef groupChannel = groupChannelMap.get(studyResultId);
-		if (groupChannel != null) {
-			// Tell GroupChannel to close itself. The GroupChannel sends a
-			// ChannelClosed to this GroupDispatcher during postStop and then we
-			// can remove it from the groupChannelMap and tell all other members
-			// about it
-			groupChannel.forward(msg, getContext());
-			sender().tell(true, self());
-		} else {
-			sender().tell(false, self());
-		}
+	private void registerChannel(Object msg) {
+		RegisterChannel registerChannel = (RegisterChannel) msg;
+		long studyResultId = registerChannel.studyResultId;
+		groupChannelMap.put(studyResultId, sender());
+		tellGroupStatsToEveryone(studyResultId, GroupMsg.OPENED);
 	}
 
-	private void groupChannelClosed(Object msg) {
-		ChannelClosed channelClosed = (ChannelClosed) msg;
+	private void unregisterChannel(Object msg) {
+		UnregisterChannel channelClosed = (UnregisterChannel) msg;
 		long studyResultId = channelClosed.studyResultId;
 		// Only remove GroupChannel if it's the one from the sender (there might
 		// be a new GroupChannel for the same StudyResult after a reload)
 		if (groupChannelMap.containsKey(studyResultId)
 				&& groupChannelMap.get(studyResultId).equals(sender())) {
 			groupChannelMap.remove(channelClosed.studyResultId);
-			tellGroupStatsToEveryone(channelClosed.studyResultId, GroupMsg.LEFT);
+			tellGroupStatsToEveryone(studyResultId, GroupMsg.CLOSED);
 		}
 
 		// Tell this dispatcher to kill itself if it has no more members
@@ -147,11 +151,14 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	private void joinGroupDispatcher(Object msg) {
-		Join joinGroup = (Join) msg;
-		long studyResultId = joinGroup.studyResultId;
-		groupChannelMap.put(studyResultId, sender());
-		tellGroupStatsToEveryone(studyResultId, GroupMsg.JOINED);
+	private void joined(Object msg) {
+		Joined joined = (Joined) msg;
+		tellGroupStatsToEveryone(joined.studyResultId, GroupMsg.JOINED);
+	}
+
+	private void left(Object msg) {
+		Left left = (Left) msg;
+		tellGroupStatsToEveryone(left.studyResultId, GroupMsg.LEFT);
 	}
 
 	private void tellGroupStatsToEveryone(long studyResultId, String action) {
@@ -166,9 +173,27 @@ public class GroupDispatcher extends UntypedActor {
 		objectNode.put(GroupMsg.GROUP_ID, groupId);
 		objectNode.put(GroupMsg.GROUP_MEMBERS,
 				String.valueOf(group.getStudyResultList()));
+		objectNode.put(GroupMsg.OPEN_CHANNELS,
+				String.valueOf(groupChannelMap.keySet()));
 		objectNode.put(GroupMsg.GROUP_STATE,
 				String.valueOf(group.getGroupState()));
 		tellAll(new GroupMsg(objectNode));
+	}
+
+	private void poisonAGroupChannel(Object msg) {
+		PoisonChannel poison = (PoisonChannel) msg;
+		long studyResultId = poison.studyResultIdOfTheOneToPoison;
+		ActorRef groupChannel = groupChannelMap.get(studyResultId);
+		if (groupChannel != null) {
+			// Tell GroupChannel to close itself. The GroupChannel sends a
+			// ChannelClosed to this GroupDispatcher during postStop and then we
+			// can remove it from the groupChannelMap and tell all other members
+			// about it
+			groupChannel.forward(msg, getContext());
+			sender().tell(true, self());
+		} else {
+			sender().tell(false, self());
+		}
 	}
 
 	private void tellAllButSender(Object msg) {

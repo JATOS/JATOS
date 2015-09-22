@@ -1,8 +1,8 @@
 package publix.groupservices.akka.actors;
 
-import publix.groupservices.akka.messages.GroupDispatcherProtocol.ChannelClosed;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.UnregisterChannel;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.GroupMsg;
-import publix.groupservices.akka.messages.GroupDispatcherProtocol.Join;
+import publix.groupservices.akka.messages.GroupDispatcherProtocol.RegisterChannel;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.PoisonChannel;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
@@ -14,10 +14,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 /**
  * GroupChannel is an Akka Actor that represents the group channel's WebSocket.
  * A group channel is a WebSocket connecting a client who's running a study with
- * the JATOS server. A GroupChannel belongs to a group, which is managed by a
- * GroupDispatcher. Group data are persisted in a GroupModel. A GroupChannel
- * joins its group by sending the Join to it's GroupDispatcher and leaves
- * one by sending a ChannelClosed message.
+ * the JATOS server.
+ * 
+ * A GroupChannel is only be opened after a StudyResult joined a group, which is
+ * done in the GroupService. Group data (e.g. who's member) are persisted in a
+ * GroupModel. A GroupChannel is closed after the StudyResult left the group.
+ * 
+ * A GroupChannel belongs to a GroupDispatcher. A GroupChannel is created by the
+ * ChannelService and registers itself by sending a RegisterChannel message to
+ * its GroupDispatcher. A closes down after receiving a PoisonChannel message or
+ * if the WebSocket is closed. While closing down it unregisters from the
+ * GroupDispatcher by sending a UnregisterChannel message.
  * 
  * @author Kristian Lange (2015)
  */
@@ -45,14 +52,12 @@ public class GroupChannel extends UntypedActor {
 
 	@Override
 	public void preStart() {
-		// Join our GroupDispatcher
-		groupDispatcher.tell(new Join(studyResultId), self());
+		groupDispatcher.tell(new RegisterChannel(studyResultId), self());
 	}
 
 	@Override
 	public void postStop() {
-		// Tell our GroupDispatcher that our Websocket closed
-		groupDispatcher.tell(new ChannelClosed(studyResultId), self());
+		groupDispatcher.tell(new UnregisterChannel(studyResultId), self());
 	}
 
 	@Override
