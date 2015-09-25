@@ -107,8 +107,8 @@ public class ImportExportService {
 		ComponentModel uploadedComponent = unmarshalComponent(componentFile);
 		ComponentModel currentComponent = componentDao.findByUuid(
 				uploadedComponent.getUuid(), study);
-		boolean componentExists = (currentComponent != null);
-		if (componentExists) {
+		boolean componentExistsInStudy = (currentComponent != null);
+		if (componentExistsInStudy) {
 			componentService.updateProperties(currentComponent, uploadedComponent);
 			RequestScopeMessaging.success(MessagesStrings
 					.componentsPropertiesOverwritten(currentComponent.getId(),
