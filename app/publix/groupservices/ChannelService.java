@@ -73,7 +73,7 @@ public class ChannelService {
 		if (group == null) {
 			return;
 		}
-		sendMsg(studyResult, new PoisonChannel(studyResult.getId()));
+		sendMsg(studyResult, group, new PoisonChannel(studyResult.getId()));
 	}
 
 	/**
@@ -82,21 +82,22 @@ public class ChannelService {
 	 */
 	public void sendJoinedMsg(StudyResult studyResult)
 			throws InternalServerErrorPublixException {
-		sendMsg(studyResult, new Joined(studyResult.getId()));
+		sendMsg(studyResult, studyResult.getGroup(),
+				new Joined(studyResult.getId()));
 	}
 
 	/**
-	 * Sends a message to each member of the group (the group this studyResult
-	 * is in). This message tells that this member has left the group.
+	 * Sends a message to each member of the group that this member (specified
+	 * by studyResult) has left the group.
 	 */
-	public void sendLeftMsg(StudyResult studyResult)
+	public void sendLeftMsg(StudyResult studyResult, GroupModel group)
 			throws InternalServerErrorPublixException {
-		sendMsg(studyResult, new Left(studyResult.getId()));
+		sendMsg(studyResult, group, new Left(studyResult.getId()));
 	}
 
-	private void sendMsg(StudyResult studyResult, Object msg)
+	private void sendMsg(StudyResult studyResult, GroupModel group, Object msg)
 			throws InternalServerErrorPublixException {
-		ActorRef groupDispatcher = getGroupDispatcher(studyResult.getGroup());
+		ActorRef groupDispatcher = getGroupDispatcher(group);
 		if (groupDispatcher != null) {
 			groupDispatcher.tell(msg, ActorRef.noSender());
 		}

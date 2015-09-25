@@ -171,11 +171,11 @@ public class GroupDispatcher extends UntypedActor {
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(action, studyResultId);
 		objectNode.put(GroupMsg.GROUP_ID, groupId);
-		objectNode.put(GroupMsg.GROUP_MEMBERS,
+		objectNode.put(GroupMsg.MEMBERS,
 				String.valueOf(group.getStudyResultList()));
-		objectNode.put(GroupMsg.OPEN_CHANNELS,
+		objectNode.put(GroupMsg.CHANNELS,
 				String.valueOf(groupChannelMap.keySet()));
-		objectNode.put(GroupMsg.GROUP_STATE,
+		objectNode.put(GroupMsg.STATE,
 				String.valueOf(group.getGroupState()));
 		tellAll(new GroupMsg(objectNode));
 	}

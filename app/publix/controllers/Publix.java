@@ -258,7 +258,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		}
 		groupService.leaveGroup(studyResult);
 		channelService.closeGroupChannel(studyResult, group);
-		channelService.sendLeftMsg(studyResult);
+		channelService.sendLeftMsg(studyResult, group);
 		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID) + " left group "
 				+ group.getId());
@@ -364,9 +364,10 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 		}
+		GroupModel group = studyResult.getGroup();
 		groupService.leaveGroup(studyResult);
-		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
-		channelService.sendLeftMsg(studyResult);
+		channelService.closeGroupChannel(studyResult, group);
+		channelService.sendLeftMsg(studyResult, group);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");
@@ -390,9 +391,10 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
+		GroupModel group = studyResult.getGroup();
 		groupService.leaveGroup(studyResult);
-		channelService.closeGroupChannel(studyResult, studyResult.getGroup());
-		channelService.sendLeftMsg(studyResult);
+		channelService.closeGroupChannel(studyResult, group);
+		channelService.sendLeftMsg(studyResult, group);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");
