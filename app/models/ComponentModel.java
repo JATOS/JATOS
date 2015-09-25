@@ -60,7 +60,7 @@ public class ComponentModel {
 	 * same UUID, although it is allowed to have other studies that have this
 	 * component with this UUID.
 	 */
-	@Column(unique = true, nullable = false)
+	@Column(unique = false, nullable = false)
 	@JsonView(JsonUtils.JsonForIO.class)
 	private String uuid;
 
