@@ -38,13 +38,13 @@ jatos.httpRetry = 5;
  */
 jatos.httpRetryWait = 1000;
 /**
- * WebSocket support by the browser is needed for group channel.
- */
-jatos.webSocketSupported = 'WebSocket' in window;
-/**
- * Current members of the group.
+ * Member IDs of the current members of the group.
  */
 jatos.groupMembers = [];
+/**
+ * member IDs of the currently open group channels.
+ */
+jatos.groupChannels = [];
 /**
  * Possible group states are:
  * CLOSE: No group joined (and group channel is closed)
@@ -56,18 +56,27 @@ var groupState = Object.freeze({
 	INCOMPLETE : "INCOMPLETE",
 	COMPLETE : "COMPLETE",
 });
-jatos.groupState = groupState.CLOSE;
+var currentGroupState = groupState.CLOSE;
 /**
  * Group state prior to the last change. For internal jatos.js use only.
  */
 var priorGroupState;
+/**
+ * Group channel WebSocket to exchange messages between workers of a group.
+ * Not to be confused with 'jatos.groupChannels'. Accessible only by jatos.js.
+ */
+var groupChannel;
+/**
+ * WebSocket support by the browser is needed for group channel.
+ */
+var webSocketSupported = 'WebSocket' in window;
 
 /**
  * State booleans. If true jatos.js is in this state. Several states can be true
  * at the same time.
  */
 var initialized = false;
-var onLoadCallbackCalled = false;
+var onJatosLoadCalled = false;
 var startingComponent = false;
 var endingComponent = false;
 var submittingResultData = false;
@@ -78,16 +87,11 @@ var abortingComponent = false;
 /**
  * Callback function defined via jatos.onLoad.
  */
-var onLoadCallback;
+var onJatosLoad;
 /**
  * Callback function if jatos.js produces an error, defined via jatos.onError.
  */
-var onErrorCallback;
-/**
- * Group channel WebSocket to exchange messages between workers of a group.
- * Not to be confused with 'jatos.groupChannels'.
- */
-var groupChannel;
+var onJatosError;
 
 // Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
 // a component's jQuery version. Afterwards initialise (jatos.js will always be
@@ -101,7 +105,7 @@ getScript('/assets/javascripts/jquery-1.11.1.min.js', function() {
 /**
  * Adds a <script> element into HTML's head and call success function when loaded
  */
-function getScript(url, success) {
+function getScript(url, onSuccess) {
 	var script = document.createElement('script');
 	script.src = url;
 	var head = document.getElementsByTagName('head')[0], done = false;
@@ -109,7 +113,7 @@ function getScript(url, success) {
 		if (!done && (!this.readyState || this.readyState == 'loaded'
 				|| this.readyState == 'complete')) {
 			done = true;
-			success();
+			onSuccess();
 			script.onload = script.onreadystatechange = null;
 			head.removeChild(script);
 		}
@@ -120,7 +124,7 @@ function getScript(url, success) {
 /**
  * Load and run additional JS.
  */
-function loadScripts(successCallback) {
+function loadScripts(onSuccess) {
 	if (!jQueryExists()) {
 		return;
 	}
@@ -129,7 +133,7 @@ function loadScripts(successCallback) {
 		url: "/assets/javascripts/jquery.ajax-retry.min.js",
 		dataType: "script",
 		cache: true
-	}).done(successCallback);
+	}).done(onSuccess);
 }
 
 /**
@@ -200,8 +204,8 @@ function initJatos() {
 			jatos.studySessionData = jatos.jQuery.parseJSON(initData.studySession);
 		} catch (e) {
 			jatos.studySessionData = "Error parsing JSON";
-			if (onErrorCallback) {
-				onErrorCallback(e);
+			if (onJatosError) {
+				onJatosError(e);
 			}
 		}
 		jatos.studySessionDataFrozen = Object.freeze({
@@ -243,8 +247,8 @@ function initJatos() {
  */
 function jQueryExists() {
 	if (!jatos.jQuery) {
-		if (onErrorCallback) {
-			onErrorCallback("jatos.js' jQuery not (yet?) loaded");
+		if (onJatosError) {
+			onJatosError("jatos.js' jQuery not (yet?) loaded");
 		}
 		return false;
 	}
@@ -252,16 +256,16 @@ function jQueryExists() {
 }
 
 /**
- * Call onLoadCallback() if it already exists and jatos.js is initialised
+ * Call onJatosLoad() if it already exists and jatos.js is initialised
  */
 function ready() {
-	if (onErrorCallback) {
+	if (onJatosError) {
 		// If we have an error callback also set the jQuery ajax error callback
-		setJQueryAjaxError(onErrorCallback);
+		setJQueryAjaxError(onJatosError);
 	}
-	if (onLoadCallback && !onLoadCallbackCalled && initialized) {
-		onLoadCallbackCalled = true;
-		onLoadCallback();
+	if (onJatosLoad && !onJatosLoadCalled && initialized) {
+		onJatosLoadCalled = true;
+		onJatosLoad();
 	}
 }
 
@@ -269,8 +273,8 @@ function ready() {
  * Defines callback function that is to be called when jatos.js finished its
  * initialisation.
  */
-jatos.onLoad = function(callback) {
-	onLoadCallback = callback;
+jatos.onLoad = function(onLoad) {
+	onJatosLoad = onLoad;
 	ready();
 }
 
@@ -278,28 +282,42 @@ jatos.onLoad = function(callback) {
  * Defines callback function that is to be called in case jatos.js produces an
  * error, e.g. Ajax errors.
  */
-jatos.onError = function(callback) {
-	onErrorCallback = callback;
+jatos.onError = function(onError) {
+	onJatosError = onError;
 	// If we have an error callback also set the jQuery ajax error callback
-	setJQueryAjaxError(onErrorCallback);
+	setJQueryAjaxError(onJatosError);
 };
 
 /**
  * Define what jQuery should do if an ajax error happens. This way we can
- * define it once without writing it on every ajax call.
+ * define it once without writing it on every ajax call. It uses
+ * jQuery.ajaxErorr, which is called additionally to any local error callback.
  */
-function setJQueryAjaxError(callback) {
-	if (!jatos.jQuery || !callback) {
+function setJQueryAjaxError(onJatosError) {
+	if (!jatos.jQuery || !onJatosError) {
 		return;
 	}
-	jatos.jQuery(document).ajaxError(function(event, jqxhr, settings, thrownError) {
+	jatos.jQuery(document).ajaxError(function(event, jqxhr, settings,
+			thrownError) {
 		if (jqxhr.statusText == 'timeout') {
-			callback("JATOS server not responding while trying to get URL "
+			onJatosError("JATOS server not responding while trying to get URL "
 					+ settings.url);
 		} else {
-			callback(jqxhr.responseText);
+			onJatosError(jqxhr.responseText);
 		}
 	});
+}
+
+/**
+ * Little helper function calls either onError or onJatosError if one of them is
+ * defined.
+ */
+function callingOnError(onError, errorMsg) {
+	if (onError) {
+		onError(errorMsg);
+	} else if (onJatosError) {
+		onJatosError(errorMsg);
+	}
 }
 
 /**
@@ -308,12 +326,12 @@ function setJQueryAjaxError(callback) {
  * @param {Object}
  *            resultData - String to be submitted
  * @param {optional
- *            Function} success - Function to be called in case of successful
+ *            Function} onSuccess - Function to be called in case of successful
  *            submit
  * @param {optional
- *            Function} error - Function to be called in case of error
+ *            Function} onError - Function to be called in case of error
  */
-jatos.submitResultData = function(resultData, success, error) {
+jatos.submitResultData = function(resultData, onSuccess, onError) {
 	if (!jQueryExists() || submittingResultData) {
 		return;
 	}
@@ -328,15 +346,13 @@ jatos.submitResultData = function(resultData, success, error) {
 		timeout : jatos.httpTimeout,
 		success : function(response) {
 			submittingResultData = false;
-			if (success) {
-				success(response)
+			if (onSuccess) {
+				onSuccess(response)
 			}
 		},
 		error : function(err) {
 			submittingResultData = false;
-			if (error) {
-				error(err)
-			}
+			callingOnError(onError, err);
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
@@ -349,10 +365,10 @@ jatos.submitResultData = function(resultData, success, error) {
  * @param {Object}
  *            sessionData - Object to be submitted
  * @param {optional
- *            Function} complete - Function to be called after this function is
+ *            Function} onComplete - Function to be called after this function is
  *            finished
  */
-jatos.setStudySessionData = function(sessionData, complete) {
+jatos.setStudySessionData = function(sessionData, onComplete) {
 	if (!jQueryExists()) {
 		return;
 	}
@@ -360,18 +376,18 @@ jatos.setStudySessionData = function(sessionData, complete) {
 	try {
 		sessionDataStr = JSON.stringify(sessionData);
 	} catch (error) {
-		if (onErrorCallback) {
-			onErrorCallback(error);
+		if (onJatosError) {
+			onJatosError(error);
 		}
-		if (complete) {
-			complete()
+		if (onComplete) {
+			onComplete()
 		}
 		return;
 	}
 	if (jatos.studySessionDataFrozen.sessionDataStr == sessionDataStr) {
 		// If old and new session data are equal don't post it
-		if (complete) {
-			complete()
+		if (onComplete) {
+			onComplete()
 		}
 		return;
 	}
@@ -383,8 +399,8 @@ jatos.setStudySessionData = function(sessionData, complete) {
 		contentType : "text/plain",
 		timeout : jatos.httpTimeout,
 		complete : function() {
-			if (complete) {
-				complete()
+			if (onComplete) {
+				onComplete()
 			}
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
@@ -405,14 +421,14 @@ jatos.startComponent = function(componentId, queryString) {
 		return;
 	}
 	startingComponent = true;
-	var callbackWhenComplete = function() {
+	var onComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/" + componentId + "/start";
 		if (queryString) {
 			url += "?" + queryString;
 		}
 		window.location.href = url;
 	};
-	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
+	jatos.setStudySessionData(jatos.studySessionData, onComplete);
 }
 
 /**
@@ -430,7 +446,7 @@ jatos.startComponentByPos = function(componentPos, queryString) {
 		return;
 	}
 	startingComponent = true;
-	var callbackWhenComplete = function() {
+	var onComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/component/start?position="
 				+ componentPos;
 		if (queryString) {
@@ -438,7 +454,7 @@ jatos.startComponentByPos = function(componentPos, queryString) {
 		}
 		window.location.href = url;
 	}
-	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
+	jatos.setStudySessionData(jatos.studySessionData, onComplete);
 }
 
 /**
@@ -478,17 +494,17 @@ jatos.startNextComponent = function(queryString) {
  * @param {optional
  *            String} errorMsg - Error message that should be logged.
  * @param {optional
- *            Function} success - Function to be called in case of successful
+ *            Function} onSuccess - Function to be called in case of successful
  *            submit
  * @param {optional
- *            Function} error - Function to be called in case of error
+ *            Function} onError - Function to be called in case of error
  */
-jatos.endComponent = function(successful, errorMsg, success, error) {
+jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
 	if (!jQueryExists() || endingComponent) {
 		return;
 	}
 	endingComponent = true;
-	var callbackWhenComplete = function() {
+	var onComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end";
 		var fullUrl;
 		if (undefined == successful || undefined == errorMsg) {
@@ -508,19 +524,17 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
 			timeout : jatos.httpTimeout,
 			success : function(response) {
 				endingComponent = false;
-				if (success) {
-					success(response)
+				if (onSuccess) {
+					onSuccess(response)
 				}
 			},
 			error : function(err) {
 				endingComponent = false;
-				if (error) {
-					error(err)
-				}
+				callingOnError(onError, err);
 			}
 		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	}
-	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
+	jatos.setStudySessionData(jatos.studySessionData, onComplete);
 }
 
 /**
@@ -555,10 +569,9 @@ jatos.endComponent = function(successful, errorMsg, success, error) {
  *			members anymore (group state changed from COMPLETE to INCOMPLETE)
  */
 jatos.joinGroup = function(callbacks) {
-	if (!jatos.webSocketSupported) {
-		if (onErrorCallback) {
-			onErrorCallback("This browser does not support WebSockets.");
-		}
+	if (!webSocketSupported) {
+		callingOnError(callbacks.onError,
+				"This browser does not support WebSockets.");
 		return;
 	}
 	// WebSocket's readyState:
@@ -580,17 +593,16 @@ jatos.joinGroup = function(callbacks) {
 	};
 	groupChannel.onerror = function() {
 		joiningGroup = false;
-		jatos.groupState = groupState.CLOSE;
-		if (callbacks.onError) {
-			callbacks.onError();
-		}
+		currentGroupState = groupState.CLOSE;
+		callingOnError(callbacks.onError,
+				"Error during opening of group channel");
 	};
 	groupChannel.onclose = function() {
 		joiningGroup = false;
 		jatos.groupMemberId = null;
 		jatos.groupMembers = [];
 		jatos.groupChannels = [];
-		jatos.groupState = groupState.CLOSE;
+		currentGroupState = groupState.CLOSE;
 		if (callbacks.onClose) {
 			callbacks.onClose();
 		}
@@ -616,9 +628,9 @@ function updateGroupVars(groupMsg) {
 		jatos.groupChannels = jatos.jQuery.parseJSON(groupMsg.channels);
 	}
 	if (groupMsg.state) {
-		priorGroupState = jatos.groupState;
+		priorGroupState = currentGroupState;
 		if (groupMsg.state == "COMPLETE" || groupMsg.state == "INCOMPLETE") {
-			jatos.groupState = groupMsg.state;
+			currentGroupState = groupMsg.state;
 		}
 	}
 }
@@ -688,11 +700,18 @@ function callGroupCallbacks(groupMsg, callbacks) {
 }
 
 /**
+ * Returns the current group state.
+ */
+jatos.getGroupState = function() {
+	return currentGroupState;
+}
+
+/**
  * @return {Boolean} True if the group has reached the maximum amount of
  *         members.
  */
 jatos.isGroupComplete = function() {
-	return jatos.groupState == groupState.COMPLETE;
+	return currentGroupState == groupState.COMPLETE;
 }
 
 /**
@@ -709,7 +728,7 @@ jatos.isGroupCompleteOpen = function() {
  *         members.
  */
 jatos.isGroupIncomplete = function() {
-	return jatos.groupState == groupState.INCOMPLETE;
+	return currentGroupState == groupState.INCOMPLETE;
 }
 
 /**
@@ -745,12 +764,12 @@ jatos.sendMsgTo = function(recipient, msg) {
  * WebSocket is not closed in the function - it's closed from the JATOS' side.
  * 
  * @param {optional
- *            Function} success - Function to be called after the group is
+ *            Function} onSuccess - Function to be called after the group is
  *            left.
  * @param {optional
- *            Function} error - Function to be called in case of error.
+ *            Function} onError - Function to be called in case of error.
  */
-jatos.leaveGroup = function(success, error) {
+jatos.leaveGroup = function(onSuccess, onError) {
 	if (!jQueryExists() || leavingGroup) {
 		return;
 	}
@@ -763,15 +782,13 @@ jatos.leaveGroup = function(success, error) {
 		timeout : jatos.httpTimeout,
 		success : function(response) {
 			leavingGroup = false;
-			if (success) {
-				success()
+			if (onSuccess) {
+				onSuccess()
 			}
 		},
 		error : function(err) {
 			leavingGroup = false;
-			if (error) {
-				error(err)
-			}
+			callingOnError(onError, err);
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
@@ -782,12 +799,12 @@ jatos.leaveGroup = function(success, error) {
  * @param {optional
  *            String} message - Message that should be logged
  * @param {optional
- *            Function} success - Function to be called in case of successful
+ *            Function} onSuccess - Function to be called in case of successful
  *            submit
  * @param {optional
- *            Function} error - Function to be called in case of error
+ *            Function} onError - Function to be called in case of error
  */
-jatos.abortStudyAjax = function(message, success, error) {
+jatos.abortStudyAjax = function(message, onSuccess, onError) {
 	if (!jQueryExists() || abortingComponent) {
 		return;
 	}
@@ -806,15 +823,13 @@ jatos.abortStudyAjax = function(message, success, error) {
 		timeout : jatos.httpTimeout,
 		success : function(response) {
 			abortingComponent = false;
-			if (success) {
-				success(response)
+			if (onSuccess) {
+				onSuccess(response)
 			}
 		},
 		error : function(err) {
 			abortingComponent = false;
-			if (error) {
-				error(err)
-			}
+			callingOnError(onError, err);
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
@@ -848,12 +863,12 @@ jatos.abortStudy = function(message) {
  * @param {optional
  *            String} errorMsg - Error message that should be logged.
  * @param {optional
- *            Function} success - Function to be called in case of successful
+ *            Function} onSuccess - Function to be called in case of successful
  *            submit
  * @param {optional
- *            Function} error - Function to be called in case of error
+ *            Function} onError - Function to be called in case of error
  */
-jatos.endStudyAjax = function(successful, errorMsg, success, error) {
+jatos.endStudyAjax = function(successful, errorMsg, onSuccess, onError) {
 	if (!jQueryExists() || endingComponent) {
 		return;
 	}
@@ -876,15 +891,13 @@ jatos.endStudyAjax = function(successful, errorMsg, success, error) {
 		timeout : jatos.httpTimeout,
 		success : function(response) {
 			endingComponent = false;
-			if (success) {
-				success(response)
+			if (onSuccess) {
+				onSuccess(response)
 			}
 		},
 		error : function(err) {
 			endingComponent = false;
-			if (error) {
-				error(err)
-			}
+			callingOnError(onError, err);
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
