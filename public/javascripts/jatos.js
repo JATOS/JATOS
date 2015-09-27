@@ -1,11 +1,11 @@
 /**
  * jatos.js (JATOS JavaScript Library)
- * Version 1.2.1
+ * Version 2.1.1
  * http://www.jatos.org
  * Author Kristian Lange 2014 - 2015
  * Licensed under Apache License 2.0
  * 
- * Plugin: jquery.ajax-retry
+ * Uses plugin jquery.ajax-retry:
  * https://github.com/johnkpaul/jquery-ajax-retry
  * Copyright (c) 2012 John Paul
  * Licensed under the MIT license.
@@ -16,6 +16,7 @@ var jatos = {};
 // Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
 // or functions or variables)
 (function() {
+"use strict";
 	
 jatos.version = "2.1.1";
 	
@@ -132,7 +133,10 @@ function loadScripts(onSuccess) {
 	jatos.jQuery.ajax({
 		url: "/assets/javascripts/jquery.ajax-retry.min.js",
 		dataType: "script",
-		cache: true
+		cache: true,
+		error: function(err) {
+			callingOnError(null, getAjaxErrorMsg(err))
+		}
 	}).done(onSuccess);
 }
 
@@ -191,7 +195,10 @@ function initJatos() {
 			type : "GET",
 			dataType : 'json',
 			timeout : jatos.httpTimeout,
-			success : setInitData
+			success : setInitData,
+			error: function(err) {
+				callingOnError(null, getAjaxErrorMsg(err))
+			}
 		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	}
 
@@ -259,10 +266,6 @@ function jQueryExists() {
  * Call onJatosLoad() if it already exists and jatos.js is initialised
  */
 function ready() {
-	if (onJatosError) {
-		// If we have an error callback also set the jQuery ajax error callback
-		setJQueryAjaxError(onJatosError);
-	}
 	if (onJatosLoad && !onJatosLoadCalled && initialized) {
 		onJatosLoadCalled = true;
 		onJatosLoad();
@@ -284,28 +287,23 @@ jatos.onLoad = function(onLoad) {
  */
 jatos.onError = function(onError) {
 	onJatosError = onError;
-	// If we have an error callback also set the jQuery ajax error callback
-	setJQueryAjaxError(onJatosError);
 };
 
 /**
- * Define what jQuery should do if an ajax error happens. This way we can
- * define it once without writing it on every ajax call. It uses
- * jQuery.ajaxErorr, which is called additionally to any local error callback.
+ * Takes a jQuery Ajax response and returns an error message.
  */
-function setJQueryAjaxError(onJatosError) {
-	if (!jatos.jQuery || !onJatosError) {
-		return;
-	}
-	jatos.jQuery(document).ajaxError(function(event, jqxhr, settings,
-			thrownError) {
-		if (jqxhr.statusText == 'timeout') {
-			onJatosError("JATOS server not responding while trying to get URL "
-					+ settings.url);
+function getAjaxErrorMsg(jqxhr) {
+	if (jqxhr.statusText == 'timeout') {
+		return "JATOS server not responding while trying to get URL "
+				+ settings.url;
+	} else {
+		if (jqxhr.responseText) {
+			return jqxhr.statusText + ": " + jqxhr.responseText;
 		} else {
-			onJatosError(jqxhr.responseText);
+			return jqxhr.statusText + ": "
+				+ "Error during Ajax call to JATOS server.";
 		}
-	});
+	}
 }
 
 /**
@@ -352,7 +350,7 @@ jatos.submitResultData = function(resultData, onSuccess, onError) {
 		},
 		error : function(err) {
 			submittingResultData = false;
-			callingOnError(onError, err);
+			callingOnError(onError, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
@@ -402,6 +400,9 @@ jatos.setStudySessionData = function(sessionData, onComplete) {
 			if (onComplete) {
 				onComplete()
 			}
+		},
+		error: function(err) {
+			callingOnError(null, getAjaxErrorMsg(err))
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
@@ -530,7 +531,7 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
 			},
 			error : function(err) {
 				endingComponent = false;
-				callingOnError(onError, err);
+				callingOnError(onError, getAjaxErrorMsg(err));
 			}
 		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	}
@@ -788,7 +789,7 @@ jatos.leaveGroup = function(onSuccess, onError) {
 		},
 		error : function(err) {
 			leavingGroup = false;
-			callingOnError(onError, err);
+			callingOnError(onError, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
@@ -829,7 +830,7 @@ jatos.abortStudyAjax = function(message, onSuccess, onError) {
 		},
 		error : function(err) {
 			abortingComponent = false;
-			callingOnError(onError, err);
+			callingOnError(onError, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
@@ -897,7 +898,7 @@ jatos.endStudyAjax = function(successful, errorMsg, onSuccess, onError) {
 		},
 		error : function(err) {
 			endingComponent = false;
-			callingOnError(onError, err);
+			callingOnError(onError, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
@@ -944,7 +945,10 @@ jatos.logError = function(logErrorMsg) {
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
-		timeout : jatos.httpTimeout
+		timeout : jatos.httpTimeout,
+		error : function(err) {
+			callingOnError(null, getAjaxErrorMsg(err));
+		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 }
 
