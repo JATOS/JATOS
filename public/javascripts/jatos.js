@@ -57,7 +57,10 @@ var groupState = Object.freeze({
 	INCOMPLETE : "INCOMPLETE",
 	COMPLETE : "COMPLETE",
 });
-var currentGroupState = groupState.CLOSE;
+/**
+ * Current group state 
+ */
+jatos.groupState = groupState.CLOSE;
 /**
  * Group state prior to the last change. For internal jatos.js use only.
  */
@@ -594,7 +597,7 @@ jatos.joinGroup = function(callbacks) {
 	};
 	groupChannel.onerror = function() {
 		joiningGroup = false;
-		currentGroupState = groupState.CLOSE;
+		jatos.groupState = groupState.CLOSE;
 		callingOnError(callbacks.onError,
 				"Error during opening of group channel");
 	};
@@ -603,7 +606,7 @@ jatos.joinGroup = function(callbacks) {
 		jatos.groupMemberId = null;
 		jatos.groupMembers = [];
 		jatos.groupChannels = [];
-		currentGroupState = groupState.CLOSE;
+		jatos.groupState = groupState.CLOSE;
 		if (callbacks.onClose) {
 			callbacks.onClose();
 		}
@@ -629,9 +632,11 @@ function updateGroupVars(groupMsg) {
 		jatos.groupChannels = jatos.jQuery.parseJSON(groupMsg.channels);
 	}
 	if (groupMsg.state) {
-		priorGroupState = currentGroupState;
-		if (groupMsg.state == "COMPLETE" || groupMsg.state == "INCOMPLETE") {
-			currentGroupState = groupMsg.state;
+		priorGroupState = jatos.groupState;
+		if (groupMsg.state == "COMPLETE") {
+			jatos.groupState = groupState.COMPLETE;
+		} else if (groupMsg.state == "INCOMPLETE") {
+			jatos.groupState = groupState.INCOMPLETE;
 		}
 	}
 }
@@ -701,18 +706,11 @@ function callGroupCallbacks(groupMsg, callbacks) {
 }
 
 /**
- * Returns the current group state.
- */
-jatos.getGroupState = function() {
-	return currentGroupState;
-}
-
-/**
  * @return {Boolean} True if the group has reached the maximum amount of
  *         members.
  */
 jatos.isGroupComplete = function() {
-	return currentGroupState == groupState.COMPLETE;
+	return jatos.groupState == groupState.COMPLETE;
 }
 
 /**
@@ -729,7 +727,7 @@ jatos.isGroupCompleteOpen = function() {
  *         members.
  */
 jatos.isGroupIncomplete = function() {
-	return currentGroupState == groupState.INCOMPLETE;
+	return jatos.groupState == groupState.INCOMPLETE;
 }
 
 /**
