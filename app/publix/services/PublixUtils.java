@@ -197,10 +197,11 @@ public abstract class PublixUtils<T extends Worker> {
 		// Finish the other ComponentResults
 		finishAllComponentResults(studyResult);
 
-		// Clear all data from all ComponentResults of this StudyResult.
+		// Clear all data and set ABORTED for all ComponentResults
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
 			componentResult.setData(null);
+			componentResult.setComponentState(ComponentState.ABORTED);
 			componentResultDao.update(componentResult);
 		}
 
