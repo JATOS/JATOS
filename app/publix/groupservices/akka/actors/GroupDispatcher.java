@@ -131,7 +131,7 @@ public class GroupDispatcher extends UntypedActor {
 		RegisterChannel registerChannel = (RegisterChannel) msg;
 		long studyResultId = registerChannel.studyResultId;
 		groupChannelMap.put(studyResultId, sender());
-		tellGroupStatsToEveryone(studyResultId, GroupMsg.OPENED);
+		tellGroupStats(studyResultId, GroupMsg.OPENED);
 	}
 
 	private void unregisterChannel(Object msg) {
@@ -142,7 +142,7 @@ public class GroupDispatcher extends UntypedActor {
 		if (groupChannelMap.containsKey(studyResultId)
 				&& groupChannelMap.get(studyResultId).equals(sender())) {
 			groupChannelMap.remove(channelClosed.studyResultId);
-			tellGroupStatsToEveryone(studyResultId, GroupMsg.CLOSED);
+			tellGroupStats(studyResultId, GroupMsg.CLOSED);
 		}
 
 		// Tell this dispatcher to kill itself if it has no more members
@@ -153,15 +153,15 @@ public class GroupDispatcher extends UntypedActor {
 
 	private void joined(Object msg) {
 		Joined joined = (Joined) msg;
-		tellGroupStatsToEveryone(joined.studyResultId, GroupMsg.JOINED);
+		tellGroupStats(joined.studyResultId, GroupMsg.JOINED);
 	}
 
 	private void left(Object msg) {
 		Left left = (Left) msg;
-		tellGroupStatsToEveryone(left.studyResultId, GroupMsg.LEFT);
+		tellGroupStats(left.studyResultId, GroupMsg.LEFT);
 	}
 
-	private void tellGroupStatsToEveryone(long studyResultId, String action) {
+	private void tellGroupStats(long studyResultId, String action) {
 		// The current group data are persisted in a GroupModel. The GroupModel
 		// determines who is member of the group - and not the groupChannelMap.
 		GroupModel group = groupService.getGroup(groupId);
