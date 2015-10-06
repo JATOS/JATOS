@@ -43,7 +43,8 @@ jatos.httpRetryWait = 1000;
  */
 jatos.groupMembers = [];
 /**
- * member IDs of the currently open group channels.
+ * Member IDs of the currently open group channels. Don't confuse with internal
+ * groupChannel variable.
  */
 jatos.groupChannels = [];
 /**
@@ -731,12 +732,12 @@ jatos.isGroupIncomplete = function() {
 }
 
 /**
- * Sends a message to all group members.
+ * Sends a message to all group members if group channel is open.
  * 
  * @param {String} msg - Message to send
  */
 jatos.sendGroupMsg = function(msg) {
-	if (groupChannel) {
+	if (groupChannel && groupChannel.readyState == 1) {
 		var msgObj = {};
 		msgObj["msg"] = msg;
 		groupChannel.send(JSON.stringify(msgObj));
@@ -744,13 +745,14 @@ jatos.sendGroupMsg = function(msg) {
 }
 
 /**
- * Sends a message to the group member with the given member ID only.
+ * Sends a message to the group member with the given member ID only  if group
+ * channel is open.
  * 
  * @param {String} recipient - Recipient's group member ID
  * @param {String} msg - Message to send to the recipient
  */
 jatos.sendMsgTo = function(recipient, msg) {
-	if (groupChannel) {
+	if (groupChannel && groupChannel.readyState == 1) {
 		var msgObj = {};
 		msgObj["recipient"] = recipient;
 		msgObj["msg"] = msg;
