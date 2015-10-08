@@ -465,10 +465,16 @@ jatos.startNextComponent = function() {
 }
 
 /**
- * Starts the last component of this study.
+ * Starts the last component of this study or if it's inactive the component
+ * with the highest position that is active.
  */
 jatos.startLastComponent = function() {
-	jatos.startComponentByPos(jatos.componentList.length);
+	for (var i = jatos.componentList.length - 1; i >= 0; i--) {
+	    if (jatos.componentList[i].active) {
+	    	jatos.startComponentByPos(i + 1);
+	    	break;
+	    }
+	}
 }
 
 /**
