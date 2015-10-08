@@ -33,8 +33,6 @@ public class GroupModel {
 		STARTED, // Group study run was started
 		INCOMPLETE, // Group's number of worker < Group's maxWorker
 		COMPLETE, // Group's number of worker = Group's maxWorker
-		READY, // Group is complete and all workers send the READY event via the
-				// system channel
 		FINISHED; // Group study run is finished
 		public static String allStatesAsString() {
 			String str = Arrays.toString(values());
