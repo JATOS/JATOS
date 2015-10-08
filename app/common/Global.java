@@ -34,9 +34,14 @@ public class Global extends GlobalSettings {
 
 	@Override
 	public void onStart(Application app) {
-		Logger.info(CLASS_NAME + ".onStart: Application has started");
+		Logger.info(CLASS_NAME + ".onStart: JATOS has started");
 		// Do some JATOS specific initialisation
 		INJECTOR.getInstance(Initializer.class).initialize();
+	}
+
+	@Override
+	public void onStop(Application app) {
+		Logger.info(CLASS_NAME + ".onStop: JATOS shutdown");
 	}
 
 	@Override
