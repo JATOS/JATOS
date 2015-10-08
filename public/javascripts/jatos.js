@@ -229,8 +229,9 @@ function initJatos() {
 				.parseJSON(jatos.studyProperties.jsonData);
 		delete jatos.studyProperties.jsonData;
 		
-		// Study's component list
+		// Study's component list and study length
 		jatos.componentList = initData.componentList;
+		jatos.studyLength = initData.componentList.length;
 		
 		// Component properties
 		jatos.componentProperties = initData.componentProperties;
@@ -412,78 +413,62 @@ jatos.setStudySessionData = function(sessionData, onComplete) {
 }
 
 /**
- * Starts the component with the given ID. You can pass on information to the
- * next component by adding a query string.
+ * Starts the component with the given ID.
  * 
  * @param {Object}
  *            componentId - ID of the component to start
- * @param {optional
- *            Object} queryString - Query string without the initial '?' that
- *            should be added to the URL
  */
-jatos.startComponent = function(componentId, queryString) {
+jatos.startComponent = function(componentId) {
 	if (startingComponent) {
 		return;
 	}
 	startingComponent = true;
 	var onComplete = function() {
-		var url = "/publix/" + jatos.studyId + "/" + componentId + "/start";
-		if (queryString) {
-			url += "?" + queryString;
-		}
-		window.location.href = url;
+		window.location.href = "/publix/" + jatos.studyId + "/" + componentId
+				+ "/start";
 	};
 	jatos.setStudySessionData(jatos.studySessionData, onComplete);
 }
 
 /**
  * Starts the component with the given position (# of component within study).
- * You can pass on information to the next component by adding a query string.
  * 
  * @param {Object}
  *            componentPos - Position of the component to start
- * @param {optional
- *            Object} queryString - Query string without the initial '?' that
- *            should be added to the URL
  */
-jatos.startComponentByPos = function(componentPos, queryString) {
+jatos.startComponentByPos = function(componentPos) {
 	if (startingComponent) {
 		return;
 	}
 	startingComponent = true;
 	var onComplete = function() {
-		var url = "/publix/" + jatos.studyId + "/component/start?position="
-				+ componentPos;
-		if (queryString) {
-			url += "&" + queryString;
-		}
-		window.location.href = url;
+		window.location.href = "/publix/" + jatos.studyId
+				+ "/component/start?position=" + componentPos;
 	}
 	jatos.setStudySessionData(jatos.studySessionData, onComplete);
 }
 
 /**
  * Starts the next component of this study. The next component is the one with
- * position + 1. You can pass on information to the next component by adding a
- * query string.
- * 
- * @param {optional
- *            Object} queryString - Query string without the initial '?' that
- *            should be added to the URL
+ * position + 1.
  */
-jatos.startNextComponent = function(queryString) {
+jatos.startNextComponent = function() {
 	if (startingComponent) {
 		return;
 	}
 	startingComponent = true;
 	var callbackWhenComplete = function() {
-		var url = "/publix/" + jatos.studyId + "/nextComponent/start";
-		if (queryString) {
-			url += "?" + queryString;
-		}
-		window.location.href = url;
+		window.location.href = "/publix/" + jatos.studyId
+				+ "/nextComponent/start";;
 	}
 	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
+}
+
+/**
+ * Starts the last component of this study.
+ */
+jatos.startLastComponent = function() {
+	jatos.startComponentByPos(jatos.componentList.length);
 }
 
 /**
