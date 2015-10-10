@@ -385,6 +385,9 @@ function postStudyImportConfirm(jsonData) {
 		success: function(result) {
 			showMessages(JSON.parse(result));
 			fillSidebar();
+			if (componentsTable) {
+				componentsTable.ajax.reload();
+			}
 		},
 		error : function(err) {
 			showError(err.responseText);
