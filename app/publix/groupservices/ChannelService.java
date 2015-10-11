@@ -25,7 +25,8 @@ import com.google.inject.name.Names;
 import common.Global;
 
 /**
- * Service class that handles opening and closing of GroupChannels.
+ * Service class that handles of opening and closing of group channels with
+ * Akka.
  * 
  * @author Kristian Lange (2015)
  */
