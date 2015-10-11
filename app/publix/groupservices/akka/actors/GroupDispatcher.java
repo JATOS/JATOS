@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import models.GroupModel;
+import persistance.GroupDao;
+import play.Logger;
+import play.db.jpa.JPA;
 import publix.groupservices.GroupService;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.GroupMsg;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.Joined;
@@ -44,13 +47,15 @@ public class GroupDispatcher extends UntypedActor {
 
 	public static final String ACTOR_NAME = "GroupDispatcher";
 
+	private static final String CLASS_NAME = GroupDispatcher.class.getSimpleName();
+
 	/**
 	 * Contains the members that are handled by this GroupDispatcher. Maps
 	 * StudyResult's IDs to ActorRefs.
 	 */
 	private final Map<Long, ActorRef> groupChannelMap = new HashMap<>();
 	private final ActorRef groupDispatcherRegistry;
-	private final GroupService groupService;
+	private final GroupDao groupDao;
 	private long groupId;
 
 	public static Props props(ActorRef groupDispatcherRegistry,
@@ -60,9 +65,9 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	public GroupDispatcher(ActorRef groupDispatcherRegistry,
-			GroupService groupService, long groupId) {
+			GroupDao groupDao, long groupId) {
 		this.groupDispatcherRegistry = groupDispatcherRegistry;
-		this.groupService = groupService;
+		this.groupDao = groupDao;
 		this.groupId = groupId;
 	}
 
@@ -164,7 +169,7 @@ public class GroupDispatcher extends UntypedActor {
 	private void tellGroupAction(long studyResultId, String action) {
 		// The current group data are persisted in a GroupModel. The GroupModel
 		// determines who is member of the group - and not the groupChannelMap.
-		GroupModel group = groupService.getGroup(groupId);
+		GroupModel group = getGroup(groupId);
 		if (group == null) {
 			return;
 		}
@@ -216,6 +221,17 @@ public class GroupDispatcher extends UntypedActor {
 		jsonNode.removeAll();
 		jsonNode.put(GroupMsg.ERROR, errorMsg);
 		sender().tell(new GroupMsg(jsonNode), self());
+	}
+	
+	private GroupModel getGroup(long groupId) {
+		try {
+			return JPA.withTransaction(() -> {
+				return groupDao.findById(groupId);
+			});
+		} catch (Throwable e) {
+			Logger.error(CLASS_NAME + ".getGroup: ", e);
+		}
+		return null;
 	}
 
 }

@@ -1,14 +1,11 @@
 package publix.groupservices;
 
-import java.util.List;
-
 import models.GroupModel;
 import models.GroupModel.GroupState;
 import models.StudyModel;
 import models.StudyResult;
 import persistance.GroupDao;
 import persistance.StudyResultDao;
-import play.Logger;
 import play.db.jpa.JPA;
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.PublixErrorMessages;
@@ -28,8 +25,6 @@ import com.google.inject.Singleton;
  */
 @Singleton
 public class GroupService {
-
-	private static final String CLASS_NAME = GroupService.class.getSimpleName();
 
 	private final PublixErrorMessages errorMessages;
 	private final StudyResultDao studyResultDao;
@@ -91,41 +86,6 @@ public class GroupService {
 		JPA.em().getTransaction().commit();
 		JPA.em().getTransaction().begin();
 		return group;
-	}
-
-	public GroupState getGroupState(long groupId) {
-		try {
-			return JPA.withTransaction(() -> {
-				GroupModel group = groupDao.findById(groupId);
-				return (group != null) ? group.getGroupState() : null;
-			});
-		} catch (Throwable e) {
-			Logger.error(CLASS_NAME + ".getGroupState: ", e);
-		}
-		return null;
-	}
-
-	public List<StudyResult> getGroupStudyResultList(long groupId) {
-		try {
-			return JPA.withTransaction(() -> {
-				GroupModel group = groupDao.findById(groupId);
-				return (group != null) ? group.getStudyResultList() : null;
-			});
-		} catch (Throwable e) {
-			Logger.error(CLASS_NAME + ".getGroupState: ", e);
-		}
-		return null;
-	}
-
-	public GroupModel getGroup(long groupId) {
-		try {
-			return JPA.withTransaction(() -> {
-				return groupDao.findById(groupId);
-			});
-		} catch (Throwable e) {
-			Logger.error(CLASS_NAME + ".getGroupState: ", e);
-		}
-		return null;
 	}
 
 	public void leaveGroup(StudyResult studyResult) {
