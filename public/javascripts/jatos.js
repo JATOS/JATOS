@@ -645,7 +645,7 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
  *         members. It's not necessary that all members have an open group
  *         channel.
  */
-jatos.isGroupMinReached = function() {
+jatos.isMinGroupReached = function() {
 	return jatos.groupMembers.length >= jatos.studyProperties.minGroupSize;
 }
 
@@ -653,7 +653,7 @@ jatos.isGroupMinReached = function() {
  * @return {Boolean} True if the group has reached the minimum amount of
  *         members and each member has an open group channel.
  */
-jatos.isGroupMinOpen = function() {
+jatos.isMinGroupOpen = function() {
 	return jatos.groupChannels.length >= jatos.studyProperties.minGroupSize;
 }
 
@@ -662,7 +662,7 @@ jatos.isGroupMinOpen = function() {
  *         members. It's not necessary that all members have an open group
  *         channel.
  */
-jatos.isGroupMaxReached = function() {
+jatos.isMaxGroupReached = function() {
 	return jatos.groupMembers.length >= jatos.studyProperties.maxGroupSize;
 }
 
@@ -670,7 +670,7 @@ jatos.isGroupMaxReached = function() {
  * @return {Boolean} True if the group has reached the maximum amount of
  *         members and each member has an open group channel.
  */
-jatos.isGroupMaxOpen = function() {
+jatos.isMaxGroupOpen = function() {
 	return jatos.groupChannels.length >= jatos.studyProperties.maxGroupSize;
 }
 
