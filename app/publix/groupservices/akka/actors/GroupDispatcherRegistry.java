@@ -3,8 +3,8 @@ package publix.groupservices.akka.actors;
 import java.util.HashMap;
 import java.util.Map;
 
+import persistance.GroupDao;
 import play.libs.Akka;
-import publix.groupservices.GroupService;
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Get;
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
@@ -31,11 +31,11 @@ public class GroupDispatcherRegistry extends UntypedActor {
 	 * GroupModel's ID to the ActorRef.
 	 */
 	private Map<Long, ActorRef> groupDispatcherMap = new HashMap<Long, ActorRef>();
-	private final GroupService groupService;
+	private final GroupDao groupDao;
 
 	@Inject
-	public GroupDispatcherRegistry(GroupService groupService) {
-		this.groupService = groupService;
+	public GroupDispatcherRegistry(GroupDao groupDao) {
+		this.groupDao = groupDao;
 	}
 
 	@Override
@@ -61,14 +61,13 @@ public class GroupDispatcherRegistry extends UntypedActor {
 		ItsThisOne answer = new ItsThisOne(groupDispatcher);
 		sender().tell(answer, self());
 	}
-	
+
 	private void createAndTellGroupDispatcher(GetOrCreate getOrCreate) {
-		ActorRef groupDispatcher = groupDispatcherMap
-				.get(getOrCreate.groupId);
+		ActorRef groupDispatcher = groupDispatcherMap.get(getOrCreate.groupId);
 		if (groupDispatcher == null) {
 			groupDispatcher = Akka.system().actorOf(
-					GroupDispatcher.props(self(), groupService,
-							getOrCreate.groupId));
+					GroupDispatcher
+							.props(self(), groupDao, getOrCreate.groupId));
 			groupDispatcherMap.put(getOrCreate.groupId, groupDispatcher);
 		}
 		ItsThisOne answer = new ItsThisOne(groupDispatcher);

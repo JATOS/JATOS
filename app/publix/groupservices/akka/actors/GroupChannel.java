@@ -37,6 +37,10 @@ public class GroupChannel extends UntypedActor {
 	private final long studyResultId;
 	private final ActorRef groupDispatcher;
 
+	/**
+	 * Akka method to get this Actor started. Changes in props must be done in
+	 * the constructor too.
+	 */
 	public static Props props(ActorRef out, long studyResultId,
 			ActorRef groupDispatcher) {
 		return Props.create(GroupChannel.class, out, studyResultId,

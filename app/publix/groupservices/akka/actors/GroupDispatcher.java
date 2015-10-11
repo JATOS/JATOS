@@ -7,7 +7,6 @@ import models.GroupModel;
 import persistance.GroupDao;
 import play.Logger;
 import play.db.jpa.JPA;
-import publix.groupservices.GroupService;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.GroupMsg;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.Joined;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.Left;
@@ -47,7 +46,8 @@ public class GroupDispatcher extends UntypedActor {
 
 	public static final String ACTOR_NAME = "GroupDispatcher";
 
-	private static final String CLASS_NAME = GroupDispatcher.class.getSimpleName();
+	private static final String CLASS_NAME = GroupDispatcher.class
+			.getSimpleName();
 
 	/**
 	 * Contains the members that are handled by this GroupDispatcher. Maps
@@ -58,14 +58,18 @@ public class GroupDispatcher extends UntypedActor {
 	private final GroupDao groupDao;
 	private long groupId;
 
+	/**
+	 * Akka method to get this Actor started. Changes in props must be done in
+	 * the constructor too.
+	 */
 	public static Props props(ActorRef groupDispatcherRegistry,
-			GroupService groupService, long groupId) {
+			GroupDao groupDao, long groupId) {
 		return Props.create(GroupDispatcher.class, groupDispatcherRegistry,
-				groupService, groupId);
+				groupDao, groupId);
 	}
 
-	public GroupDispatcher(ActorRef groupDispatcherRegistry,
-			GroupDao groupDao, long groupId) {
+	public GroupDispatcher(ActorRef groupDispatcherRegistry, GroupDao groupDao,
+			long groupId) {
 		this.groupDispatcherRegistry = groupDispatcherRegistry;
 		this.groupDao = groupDao;
 		this.groupId = groupId;
@@ -222,7 +226,7 @@ public class GroupDispatcher extends UntypedActor {
 		jsonNode.put(GroupMsg.ERROR, errorMsg);
 		sender().tell(new GroupMsg(jsonNode), self());
 	}
-	
+
 	private GroupModel getGroup(long groupId) {
 		try {
 			return JPA.withTransaction(() -> {
