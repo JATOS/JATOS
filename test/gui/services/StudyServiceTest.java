@@ -118,6 +118,7 @@ public class StudyServiceTest extends AbstractTest {
 		updatedStudy.setComments("Changed comments");
 		updatedStudy.setJsonData("{}");
 		updatedStudy.setGroupStudy(true);
+		updatedStudy.setMinGroupSize(5);
 		updatedStudy.setMaxGroupSize(5);
 		updatedStudy.setTitle("Changed Title");
 		updatedStudy.setUuid("changed uuid");
@@ -137,6 +138,8 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(study.getAllowedWorkerList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
 		assertThat(study.isGroupStudy()).isEqualTo(updatedStudy.isGroupStudy());
+		assertThat(study.getMinGroupSize()).isEqualTo(
+				updatedStudy.getMinGroupSize());
 		assertThat(study.getMaxGroupSize()).isEqualTo(
 				updatedStudy.getMaxGroupSize());
 
@@ -349,6 +352,8 @@ public class StudyServiceTest extends AbstractTest {
 		formMap.put(StudyModel.DIRNAME, dirNameArray);
 		String[] groupStudyArray = { "true" };
 		formMap.put(StudyModel.GROUP_STUDY, groupStudyArray);
+		String[] minGroupSizeArray = { "5" };
+		formMap.put(StudyModel.MIN_GROUP_SIZE, minGroupSizeArray);
 		String[] maxGroupSizeArray = { "5" };
 		formMap.put(StudyModel.MAX_GROUP_SIZE, maxGroupSizeArray);
 		String[] jsonArray = { "{}" };
@@ -362,6 +367,7 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(study.getComments()).isEqualTo("This is a comment");
 		assertThat(study.getDirName()).isEqualTo("dir_name");
 		assertThat(study.isGroupStudy()).isTrue();
+		assertThat(study.getMinGroupSize()).isEqualTo(5);
 		assertThat(study.getMaxGroupSize()).isEqualTo(5);
 		assertThat(study.getJsonData()).isEqualTo("{}");
 		assertThat(study.getAllowedWorkerList()).containsOnly(

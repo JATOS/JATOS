@@ -89,6 +89,7 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.COMMENTS, "Comments test.");
 		formMap.put(StudyModel.DIRNAME, "dirName_submit");
 		formMap.put(StudyModel.GROUP_STUDY, "true");
+		formMap.put(StudyModel.MIN_GROUP_SIZE, "5");
 		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
 		formMap.put(StudyModel.JSON_DATA, "{}");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
@@ -108,6 +109,7 @@ public class StudiesControllerTest extends AbstractTest {
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
 		assertThat(study.isGroupStudy()).isTrue();
+		assertThat(study.getMinGroupSize()).isEqualTo(5);
 		assertThat(study.getMaxGroupSize()).isEqualTo(5);
 		assertEquals("{}", study.getJsonData());
 		assertThat((study.getComponentList().isEmpty()));
@@ -128,6 +130,7 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.COMMENTS, "Comments test <i>.");
 		formMap.put(StudyModel.DIRNAME, "%.test");
 		formMap.put(StudyModel.GROUP_STUDY, "true");
+		formMap.put(StudyModel.MIN_GROUP_SIZE, "5");
 		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
 		formMap.put(StudyModel.JSON_DATA, "{");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "WrongWorker");
@@ -150,6 +153,7 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.DESCRIPTION, "Description test.");
 		formMap.put(StudyModel.COMMENTS, "Comments test.");
 		formMap.put(StudyModel.GROUP_STUDY, "true");
+		formMap.put(StudyModel.MIN_GROUP_SIZE, "5");
 		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
 		formMap.put(StudyModel.DIRNAME, studyClone.getDirName());
 		formMap.put(StudyModel.JSON_DATA, "{}");
@@ -196,6 +200,7 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.COMMENTS, "Comments test.");
 		formMap.put(StudyModel.DIRNAME, "dirName_submitEdited");
 		formMap.put(StudyModel.GROUP_STUDY, "true");
+		formMap.put(StudyModel.MIN_GROUP_SIZE, "5");
 		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
 		formMap.put(StudyModel.JSON_DATA, "{}");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");

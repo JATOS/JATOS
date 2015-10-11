@@ -131,7 +131,7 @@ public class GroupDispatcher extends UntypedActor {
 		RegisterChannel registerChannel = (RegisterChannel) msg;
 		long studyResultId = registerChannel.studyResultId;
 		groupChannelMap.put(studyResultId, sender());
-		tellGroupStats(studyResultId, GroupMsg.OPENED);
+		tellGroupAction(studyResultId, GroupMsg.OPENED);
 	}
 
 	private void unregisterChannel(Object msg) {
@@ -142,7 +142,7 @@ public class GroupDispatcher extends UntypedActor {
 		if (groupChannelMap.containsKey(studyResultId)
 				&& groupChannelMap.get(studyResultId).equals(sender())) {
 			groupChannelMap.remove(channelClosed.studyResultId);
-			tellGroupStats(studyResultId, GroupMsg.CLOSED);
+			tellGroupAction(studyResultId, GroupMsg.CLOSED);
 		}
 
 		// Tell this dispatcher to kill itself if it has no more members
@@ -153,15 +153,15 @@ public class GroupDispatcher extends UntypedActor {
 
 	private void joined(Object msg) {
 		Joined joined = (Joined) msg;
-		tellGroupStats(joined.studyResultId, GroupMsg.JOINED);
+		tellGroupAction(joined.studyResultId, GroupMsg.JOINED);
 	}
 
 	private void left(Object msg) {
 		Left left = (Left) msg;
-		tellGroupStats(left.studyResultId, GroupMsg.LEFT);
+		tellGroupAction(left.studyResultId, GroupMsg.LEFT);
 	}
 
-	private void tellGroupStats(long studyResultId, String action) {
+	private void tellGroupAction(long studyResultId, String action) {
 		// The current group data are persisted in a GroupModel. The GroupModel
 		// determines who is member of the group - and not the groupChannelMap.
 		GroupModel group = groupService.getGroup(groupId);
@@ -169,14 +169,13 @@ public class GroupDispatcher extends UntypedActor {
 			return;
 		}
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
-		objectNode.put(action, studyResultId);
+		objectNode.put(GroupMsg.ACTION, action);
 		objectNode.put(GroupMsg.GROUP_ID, groupId);
+		objectNode.put(GroupMsg.MEMBER_ID, studyResultId);
 		objectNode.put(GroupMsg.MEMBERS,
 				String.valueOf(group.getStudyResultList()));
 		objectNode.put(GroupMsg.CHANNELS,
 				String.valueOf(groupChannelMap.keySet()));
-		objectNode.put(GroupMsg.STATE,
-				String.valueOf(group.getGroupState()));
 		tellAll(new GroupMsg(objectNode));
 	}
 

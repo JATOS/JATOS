@@ -64,8 +64,9 @@ public class GroupService {
 	}
 
 	/**
-	 * Joins the first incomplete Group from the DB and returns it. If such
-	 * doesn't exist it creates a new one and persists it.
+	 * Joins the first group where the max number of members is not reached yet
+	 * and returns it. If such doesn't exist it creates a new one and persists
+	 * it.
 	 */
 	public GroupModel joinGroup(StudyResult studyResult) {
 		// If we already have a group just return it
@@ -75,7 +76,7 @@ public class GroupService {
 
 		// Look in the DB if we have an incomplete group. If not create new one.
 		StudyModel study = studyResult.getStudy();
-		GroupModel group = groupDao.findFirstIncomplete(study);
+		GroupModel group = groupDao.findFirstMaxNotReached(study);
 		if (group == null) {
 			group = new GroupModel(study);
 			groupDao.create(group);
@@ -85,24 +86,11 @@ public class GroupService {
 		group.addStudyResult(studyResult);
 		studyResult.setGroup(group);
 
-		setGroupStateInComplete(group, studyResult.getStudy());
 		groupDao.update(group);
 		studyResultDao.update(studyResult);
 		JPA.em().getTransaction().commit();
 		JPA.em().getTransaction().begin();
 		return group;
-	}
-
-	/**
-	 * Sets Group's state to COMPLETE or INCOMPLETE according to study's
-	 * maxGroupSize.
-	 */
-	private void setGroupStateInComplete(GroupModel group, StudyModel study) {
-		if (group.getStudyResultList().size() < study.getMaxGroupSize()) {
-			group.setGroupState(GroupState.INCOMPLETE);
-		} else {
-			group.setGroupState(GroupState.COMPLETE);
-		}
 	}
 
 	public GroupState getGroupState(long groupId) {
@@ -150,7 +138,6 @@ public class GroupService {
 		group.removeStudyResult(studyResult);
 		studyResult.setGroup(null);
 
-		setGroupStateInComplete(group, studyResult.getStudy());
 		groupDao.update(group);
 		studyResultDao.update(studyResult);
 

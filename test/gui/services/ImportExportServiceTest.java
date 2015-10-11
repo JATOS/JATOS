@@ -247,6 +247,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		assertThat(study.getDescription()).isEqualTo(
 				"A couple of sample components.");
 		assertThat(study.isGroupStudy()).isFalse();
+		assertThat(study.getMinGroupSize()).isEqualTo(2);
 		assertThat(study.getMaxGroupSize()).isEqualTo(2);
 		assertThat(study.getId()).isPositive();
 		assertThat(study.getJsonData().contains("\"totalStudySlides\":17"))
@@ -428,6 +429,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		assertThat(study.getDescription()).isEqualTo("Changed description");
 		assertThat(study.getId()).isPositive();
 		assertThat(study.isGroupStudy()).isTrue();
+		assertThat(study.getMinGroupSize()).isEqualTo(5);
 		assertThat(study.getMaxGroupSize()).isEqualTo(5);
 		assertThat(study.getJsonData()).isEqualTo("{}");
 		assertThat(study.getMemberList().contains(admin)).isTrue();
@@ -449,6 +451,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		study.getLastComponent().setTitle("Changed title");
 		study.setDescription("Changed description");
 		study.setGroupStudy(true);
+		study.setMinGroupSize(5);
 		study.setMaxGroupSize(5);
 		study.setJsonData("{}");
 		study.setTitle("Changed Title");

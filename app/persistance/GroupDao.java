@@ -40,16 +40,20 @@ public class GroupDao extends AbstractDao {
 	}
 
 	/**
-	 * Searches the DB for all groups with this studyId that have the
-	 * state INCOMPLETE and returns the first occurrence.
+	 * Searches the DB for the a group with this studyId where the maximum
+	 * group size is not reached yet.
 	 */
-	public GroupModel findFirstIncomplete(StudyModel study) {
-		String queryStr = "SELECT e FROM GroupModel e "
-				+ "WHERE e.study=:studyId AND e.groupState=:groupState";
+	public GroupModel findFirstMaxNotReached(StudyModel study) {
+		// String queryStr = "SELECT e FROM GroupModel e "
+		// + "WHERE e.study=:studyId AND e.groupState=:groupState";
+		String queryStr = "SELECT e FROM GroupModel e, StudyModel s "
+				+ "WHERE e.study=:studyId AND s.id=:studyId "
+				+ "AND e.groupState=:groupState "
+				+ "AND size(e.studyResultList) < s.maxGroupSize";
 		TypedQuery<GroupModel> query = JPA.em().createQuery(queryStr,
 				GroupModel.class);
 		query.setParameter("studyId", study);
-		query.setParameter("groupState", GroupState.INCOMPLETE);
+		query.setParameter("groupState", GroupState.STARTED);
 		query.setMaxResults(1);
 		List<GroupModel> groupList = query.getResultList();
 		return (!groupList.isEmpty()) ? groupList.get(0) : null;

@@ -290,7 +290,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		assertThat(componentResult1.getComponentState()).isEqualTo(
-				ComponentState.FINISHED);
+				ComponentState.ABORTED);
 		assertThat(componentResult1.getData()).isNullOrEmpty();
 		assertThat(componentResult2.getComponentState()).isEqualTo(
 				ComponentState.ABORTED);

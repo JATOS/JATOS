@@ -31,8 +31,6 @@ public class GroupModel {
 
 	public enum GroupState {
 		STARTED, // Group study run was started
-		INCOMPLETE, // Group's number of worker < Group's maxWorker
-		COMPLETE, // Group's number of worker = Group's maxWorker
 		FINISHED; // Group study run is finished
 		public static String allStatesAsString() {
 			String str = Arrays.toString(values());

@@ -71,6 +71,7 @@ public class StudyService {
 		clone.setJsonData(study.getJsonData());
 		clone.setTitle(study.getTitle());
 		clone.setGroupStudy(study.isGroupStudy());
+		clone.setMinGroupSize(study.getMinGroupSize());
 		clone.setMaxGroupSize(study.getMaxGroupSize());
 		clone.setLocked(false);
 		study.getAllowedWorkerList().forEach(clone::addAllowedWorker);
@@ -123,6 +124,7 @@ public class StudyService {
 		study.setDescription(updatedStudy.getDescription());
 		study.setComments(updatedStudy.getComments());
 		study.setGroupStudy(updatedStudy.isGroupStudy());
+		study.setMinGroupSize(updatedStudy.getMinGroupSize());
 		study.setMaxGroupSize(updatedStudy.getMaxGroupSize());
 		study.setJsonData(updatedStudy.getJsonData());
 		study.getAllowedWorkerList().clear();
@@ -225,6 +227,8 @@ public class StudyService {
 		study.setGroupStudy(Boolean.parseBoolean(formMap
 				.get(StudyModel.GROUP_STUDY)[0]));
 		if (study.isGroupStudy()) {
+			study.setMinGroupSize(Integer.parseInt(formMap
+					.get(StudyModel.MIN_GROUP_SIZE)[0]));
 			study.setMaxGroupSize(Integer.parseInt(formMap
 					.get(StudyModel.MAX_GROUP_SIZE)[0]));
 		}

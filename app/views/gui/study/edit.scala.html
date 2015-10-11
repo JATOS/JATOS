@@ -69,7 +69,15 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 </div>
 
 <div class="form-group">
-	<label class="control-label col-xs-2" for="maxGroupSize">Maximal group size &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of members in this group." aria-hidden="true"></span></label>
+	<label class="control-label col-xs-2" for="minGroupSize">Minimum group size &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the minimal number of members in this group." aria-hidden="true"></span></label>
+	<div class="col-xs-2">
+		<input type="number" class="form-control" id="minGroupSize" name="@StudyModel.MIN_GROUP_SIZE" value="@form(StudyModel.MIN_GROUP_SIZE).value" min="2" placeholder="2"
+		@if("false".equals(form(StudyModel.GROUP_STUDY).value)) {disabled}>
+	</div>
+</div>
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="maxGroupSize">Maximum group size &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of members in this group." aria-hidden="true"></span></label>
 	<div class="col-xs-2">
 		<input type="number" class="form-control" id="maxGroupSize" name="@StudyModel.MAX_GROUP_SIZE" value="@form(StudyModel.MAX_GROUP_SIZE).value" min="2" placeholder="2"
 		@if("false".equals(form(StudyModel.GROUP_STUDY).value)) {disabled}>
@@ -123,8 +131,10 @@ submitAction: play.api.mvc.Call, form: Form[StudyModel], studyIsLocked: Boolean)
 <script>
 $('#groupStudy').change(function() {
 	if ($(this).is(':checked')) {
+		$('#minGroupSize').attr("disabled", false);
 		$('#maxGroupSize').attr("disabled", false);
 	} else {
+		$('#minGroupSize').attr("disabled", true);
 		$('#maxGroupSize').attr("disabled", true);
 	}
 });
@@ -158,6 +168,10 @@ $('#groupStudy').change(function() {
 @for(error <- form(StudyModel.JSON_DATA).errors) {
 	$('#jsonData').closest(".form-group").addClass("has-error");
 	$('#jsonData').after('<span class="help-block">@error.message</span>');
+}
+@for(error <- form(StudyModel.MIN_GROUP_SIZE).errors) {
+	$('#minGroupSize').closest(".form-group").addClass("has-error");
+	$('#minGroupSize').after('<span class="help-block">@error.message</span>');
 }
 @for(error <- form(StudyModel.MAX_GROUP_SIZE).errors) {
 	$('#maxGroupSize').closest(".form-group").addClass("has-error");

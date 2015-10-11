@@ -48,25 +48,6 @@ jatos.groupMembers = [];
  */
 jatos.groupChannels = [];
 /**
- * Possible group states are:
- * CLOSE: No group joined (and group channel is closed)
- * INCOMPLETE: Joined a group and other members are still allowed to join
- * COMPLETE: Joined a group and but no new members are allowed to join
- */
-var groupState = Object.freeze({
-	CLOSE : "CLOSE",
-	INCOMPLETE : "INCOMPLETE",
-	COMPLETE : "COMPLETE",
-});
-/**
- * Current group state 
- */
-jatos.groupState = groupState.CLOSE;
-/**
- * Group state prior to the last change. For internal jatos.js use only.
- */
-var priorGroupState;
-/**
  * Group channel WebSocket to exchange messages between workers of a group.
  * Not to be confused with 'jatos.groupChannels'. Accessible only by jatos.js.
  */
@@ -556,13 +537,6 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
  *		onMemberClose(memberId): to be called when another member (not the worker
  *			running this study) closed his group channel. It gets the group 
  *			member ID as a parameter.
- *		onComplete: to be called when the group has reached the maximum
- *			amount of members, but it's not necessary that each member opened a
- *			group channel (group state changed from INCOMPLETE to COMPLETE)
- *		onCompleteOpen: to be called when the group has reached the maximum
- *			amount of members and each member opened a group channel
- *		onIncomplete: to be called when a group has not the maximum amount of
- *			members anymore (group state changed from COMPLETE to INCOMPLETE)
  */
 jatos.joinGroup = function(callbacks) {
 	if (!webSocketSupported) {
@@ -589,7 +563,6 @@ jatos.joinGroup = function(callbacks) {
 	};
 	groupChannel.onerror = function() {
 		joiningGroup = false;
-		jatos.groupState = groupState.CLOSE;
 		callingOnError(callbacks.onError,
 				"Error during opening of group channel");
 	};
@@ -598,7 +571,6 @@ jatos.joinGroup = function(callbacks) {
 		jatos.groupMemberId = null;
 		jatos.groupMembers = [];
 		jatos.groupChannels = [];
-		jatos.groupState = groupState.CLOSE;
 		if (callbacks.onClose) {
 			callbacks.onClose();
 		}
@@ -609,12 +581,17 @@ function handleGroupMsg(msg, callbacks) {
 	var groupMsg = jatos.jQuery.parseJSON(msg);
 	updateGroupVars(groupMsg);
 	// Now do the callbacks that were given as parameter to joinGroup
-	callGroupCallbacks(groupMsg, callbacks);
+	callGroupActionCallbacks(groupMsg, callbacks);
+	// Handle onMessage callback
+	if (groupMsg.msg && callbacks.onMessage) {
+		callbacks.onMessage(groupMsg.msg);
+	}
 }
 
 function updateGroupVars(groupMsg) {
 	if (groupMsg.groupId) {
 		jatos.groupId = groupMsg.groupId;
+		// Group member ID is equal to study result ID
 		jatos.groupMemberId = jatos.studyResultId;
 	}
 	if (groupMsg.members) {
@@ -623,103 +600,87 @@ function updateGroupVars(groupMsg) {
 	if (groupMsg.channels) {
 		jatos.groupChannels = jatos.jQuery.parseJSON(groupMsg.channels);
 	}
-	if (groupMsg.state) {
-		priorGroupState = jatos.groupState;
-		if (groupMsg.state == "COMPLETE") {
-			jatos.groupState = groupState.COMPLETE;
-		} else if (groupMsg.state == "INCOMPLETE") {
-			jatos.groupState = groupState.INCOMPLETE;
-		}
-	}
 }
 
-function callGroupCallbacks(groupMsg, callbacks) {
+function callGroupActionCallbacks(groupMsg, callbacks) {
+	if (!groupMsg.action) {
+		return;
+	}
 	// onOpen and onMemberOpen
 	// Someone opened a group channel; distinguish between the worker running
 	// this study and others
-	if (groupMsg.opened) {
-		if (groupMsg.opened == jatos.studyResultId && callbacks.onOpen) {
-			callbacks.onOpen(groupMsg.opened);
-		} else if (callbacks.onMemberOpen) {
-			callbacks.onMemberOpen(groupMsg.opened);
+	if (groupMsg.action == "opened") {
+		if (groupMsg.memberId == jatos.groupMemberId && callbacks.onOpen) {
+			callbacks.onOpen(groupMsg.memberId);
+		} else if (groupMsg.memberId != jatos.groupMemberId
+				&& callbacks.onMemberOpen) {
+			callbacks.onMemberOpen(groupMsg.memberId);
 		}
 	}
 	// onMemberClose
 	// Some member closed its group channel
-	if (groupMsg.closed && groupMsg.closed != jatos.studyResultId
+	// (onClose callback function is handled during groupChannel.onclose)
+	if (groupMsg.action == "closed" && groupMsg.memberId != jatos.groupMemberId
 			&& callbacks.onMemberClose) {
-		callbacks.onMemberClose(groupMsg.closed);
+		callbacks.onMemberClose(groupMsg.memberId);
 	}
 	// onMemberJoin
 	// Some member joined (it should not happen, but check the group member ID
 	// (aka study result ID) is not the one of the joined member)
-	if (groupMsg.joined && groupMsg.joined != jatos.studyResultId
+	if (groupMsg.action == "joined" && groupMsg.memberId != jatos.groupMemberId
 			&& callbacks.onMemberJoin) {
-		callbacks.onMemberJoin(groupMsg.joined);
+		callbacks.onMemberJoin(groupMsg.memberId);
 	}
 	// onMemberLeave
 	// Some member left (it should not happen, but check the group member ID
 	// (aka study result ID) is not the one of the left member)
-	if (groupMsg.left && groupMsg.left != jatos.studyResultId
+	if (groupMsg.action == "left" && groupMsg.memberId != jatos.groupMemberId
 			 && callbacks.onMemberLeave) {
-		callbacks.onMemberLeave(groupMsg.left);
+		callbacks.onMemberLeave(groupMsg.memberId);
 	}
-	// onComplete
-	// Group is full now - the state changed from INCOMPLETE to COMPLETE.
-	// It's not necessary at this point that every member opened its channel.
-	// It's not important which event triggers 'joined' or 'opened'.
-	if (groupMsg.state && (groupMsg.joined || groupMsg.opened)
-			&& jatos.isGroupComplete()
-			&& priorGroupState == groupState.INCOMPLETE
-			&& callbacks.onComplete) {
-		callbacks.onComplete();
-	}
-	// onIncomplete
-	// Group is not full anymore - the state changed from INCOMPLETE to
-	// COMPLETE. It's not important which event triggers 'left' or 'closed'.
-	if (groupMsg.state && (groupMsg.left || groupMsg.closed)
-			&& jatos.isGroupIncomplete()
-			&& priorGroupState == groupState.COMPLETE
-			&& callbacks.onIncomplete) {
-		callbacks.onIncomplete();
-	}
-	// onCompleteOpen
-	// The group is complete and every member has an open channel
-	if (groupMsg.state && groupMsg.opened && jatos.isGroupCompleteOpen()
-			&& callbacks.onCompleteOpen) {
-		callbacks.onCompleteOpen();
-	}
-	// onMessage
-	// This callback must be the last, because all jatos.js membershop vars have
-	// to be up to date 
-	if (groupMsg.msg && callbacks.onMessage) {
-		callbacks.onMessage(groupMsg.msg);
-	}
+}
+
+/**
+ * @return {Boolean} True if the group has reached the minimum amount of
+ *         members. It's not necessary that all members have an open group
+ *         channel.
+ */
+jatos.isGroupMinReached = function() {
+	return jatos.groupMembers.length >= jatos.studyProperties.minGroupSize;
+}
+
+/**
+ * @return {Boolean} True if the group has reached the minimum amount of
+ *         members and each member has an open group channel.
+ */
+jatos.isGroupMinOpen = function() {
+	return jatos.groupChannels.length >= jatos.studyProperties.minGroupSize;
 }
 
 /**
  * @return {Boolean} True if the group has reached the maximum amount of
- *         members.
+ *         members. It's not necessary that all members have an open group
+ *         channel.
  */
-jatos.isGroupComplete = function() {
-	return jatos.groupState == groupState.COMPLETE;
+jatos.isGroupMaxReached = function() {
+	return jatos.groupMembers.length >= jatos.studyProperties.maxGroupSize;
 }
 
 /**
  * @return {Boolean} True if the group has reached the maximum amount of
- *         members and all members have an open group channel.
+ *         members and each member has an open group channel.
  */
-jatos.isGroupCompleteOpen = function() {
-	return jatos.isGroupComplete() && jatos.groupMembers && jatos.groupChannels
-			&& jatos.groupMembers.length == jatos.groupChannels.length;
+jatos.isGroupMaxOpen = function() {
+	return jatos.groupChannels.length >= jatos.studyProperties.maxGroupSize;
 }
 
 /**
- * @return {Boolean} True if the group has not reached the maximum amount of
- *         members.
+ * @return {Boolean} True if all members of the group have an open group
+ *         channel. It's not necessary that the group has reached its minimum
+ *         or maximum size.
  */
-jatos.isGroupIncomplete = function() {
-	return jatos.groupState == groupState.INCOMPLETE;
+jatos.isGroupOpen = function() {
+	return jatos.groupMembers.length == jatos.groupChannels.length;
 }
 
 /**

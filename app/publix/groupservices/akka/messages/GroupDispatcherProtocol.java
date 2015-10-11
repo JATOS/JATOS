@@ -66,10 +66,11 @@ public class GroupDispatcherProtocol {
 		public static final String LEFT = "left";
 		public static final String OPENED = "opened";
 		public static final String CLOSED = "closed";
+		public static final String ACTION = "action";
 		public static final String GROUP_ID = "groupId";
+		public static final String MEMBER_ID = "memberId";
 		public static final String MEMBERS = "members";
 		public static final String CHANNELS = "channels";
-		public static final String STATE = "state";
 		public static final String RECIPIENT = "recipient";
 		public static final String ERROR = "error";
 

@@ -63,6 +63,7 @@ public class StudyModel {
 	public static final String STUDY = "study";
 	public static final String GROUP_STUDY = "groupStudy";
 	public static final String MAX_GROUP_SIZE = "maxGroupSize";
+	public static final String MIN_GROUP_SIZE = "minGroupSize";
 	public static final String ALLOWED_WORKER_LIST = "allowedWorkerList";
 
 	@Id
@@ -134,11 +135,17 @@ public class StudyModel {
 	private boolean groupStudy = false;
 
 	/**
-	 * Maximal number of workers in a group. Is at least 2.
+	 * Minimum number of workers in a group. Is at least 2.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+	private int minGroupSize = 2;
+
+	/**
+	 * Maximum number of workers in a group. Is at least 2.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private int maxGroupSize = 2;
-
+	
 	/**
 	 * List of users that are members of this study (have access rights).
 	 */
@@ -264,6 +271,14 @@ public class StudyModel {
 
 	public void setGroupStudy(boolean groupStudy) {
 		this.groupStudy = groupStudy;
+	}
+	
+	public int getMinGroupSize() {
+		return minGroupSize;
+	}
+
+	public void setMinGroupSize(int minGroupSize) {
+		this.minGroupSize = minGroupSize;
 	}
 
 	public int getMaxGroupSize() {
@@ -405,9 +420,17 @@ public class StudyModel {
 			errorList.add(new ValidationError(DIRNAME,
 					MessagesStrings.INVALID_DIR_NAME));
 		}
+		if (groupStudy && minGroupSize < 2) {
+			errorList.add(new ValidationError(MIN_GROUP_SIZE,
+					MessagesStrings.STUDY_GROUP_SIZE));
+		}
 		if (groupStudy && maxGroupSize < 2) {
 			errorList.add(new ValidationError(MAX_GROUP_SIZE,
 					MessagesStrings.STUDY_GROUP_SIZE));
+		}
+		if (maxGroupSize < minGroupSize) {
+			errorList.add(new ValidationError(MAX_GROUP_SIZE,
+					MessagesStrings.STUDY_MAX_GROUP_SIZE));
 		}
 		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENTS,
