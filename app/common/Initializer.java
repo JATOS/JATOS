@@ -8,9 +8,12 @@ import java.util.UUID;
 import javax.persistence.Query;
 
 import models.ComponentModel;
+import models.GroupModel;
 import models.StudyModel;
 import models.UserModel;
+import models.GroupModel.GroupState;
 import persistance.ComponentDao;
+import persistance.GroupDao;
 import persistance.StudyDao;
 import persistance.UserDao;
 import play.Logger;
@@ -34,14 +37,16 @@ public class Initializer {
 	private final UserDao userDao;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
+	private final GroupDao groupDao;
 
 	@Inject
 	Initializer(UserDao userDao, UserService userService, StudyDao studyDao,
-			ComponentDao componentDao) {
+			ComponentDao componentDao, GroupDao groupDao) {
 		this.userDao = userDao;
 		this.userService = userService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
+		this.groupDao = groupDao;
 	}
 
 	/**
@@ -53,6 +58,7 @@ public class Initializer {
 		checkUuid();
 		checkStudyAssetsRootDir();
 		checkWorkerTypes();
+		checkGroups();
 	}
 
 	/**
@@ -91,9 +97,7 @@ public class Initializer {
 			query = JPA.em().createQuery(queryStr);
 			count = query.executeUpdate();
 			if (count > 0) {
-				Logger.info(CLASS_NAME
-						+ ".checkWorkerTypes: Updated "
-						+ count
+				Logger.info(CLASS_NAME + ".checkWorkerTypes: Updated " + count
 						+ " worker of type Tester to type PersonalMultiple.");
 			}
 			// ClosedStandalone -> PersonalSingle
@@ -116,12 +120,11 @@ public class Initializer {
 		JPA.withTransaction(() -> {
 			List<StudyModel> studyModelList = studyDao.findAll();
 			for (StudyModel study : studyModelList) {
-				if (study.getUuid() == null
-						|| study.getUuid().trim().isEmpty()) {
+				if (study.getUuid() == null || study.getUuid().trim().isEmpty()) {
 					study.setUuid(UUID.randomUUID().toString());
 				}
-				Iterator<ComponentModel> iterator = study
-						.getComponentList().iterator();
+				Iterator<ComponentModel> iterator = study.getComponentList()
+						.iterator();
 				while (iterator.hasNext()) {
 					ComponentModel component = iterator.next();
 					if (component == null) {
@@ -150,4 +153,19 @@ public class Initializer {
 		});
 	}
 
+	/**
+	 * Check that all groups are in state FINISHED
+	 */
+	private void checkGroups() {
+		JPA.withTransaction(() -> {
+			List<GroupModel> groupList = groupDao.findAllNotFinished();
+			for (GroupModel group : groupList) {
+				group.setGroupState(GroupState.FINISHED);
+				groupDao.update(group);
+				Logger.info(CLASS_NAME + ".checkGroups: All groups should be "
+						+ "finished when starting, but group " + group.getId()
+						+ " wasn't. Finish it now.");
+			}
+		});
+	}
 }

@@ -38,14 +38,21 @@ public class GroupDao extends AbstractDao {
 	public GroupModel findById(Long id) {
 		return JPA.em().find(GroupModel.class, id);
 	}
-
+	
 	/**
-	 * Searches the DB for the a group with this studyId where the maximum
-	 * group size is not reached yet.
+	 * Searches the DB for the first group with this studyId where the maximum
+	 * group size is not reached yet and that is in state STARTED.
 	 */
 	public GroupModel findFirstMaxNotReached(StudyModel study) {
-		// String queryStr = "SELECT e FROM GroupModel e "
-		// + "WHERE e.study=:studyId AND e.groupState=:groupState";
+		List<GroupModel> groupList = findAllMaxNotReached(study);
+		return !groupList.isEmpty() ? groupList.get(0) : null;
+	}
+
+	/**
+	 * Searches the DB for all groups with this studyId where the maximum
+	 * group size is not reached yet and that are in state STARTED.
+	 */
+	public List<GroupModel> findAllMaxNotReached(StudyModel study) {
 		String queryStr = "SELECT e FROM GroupModel e, StudyModel s "
 				+ "WHERE e.study=:studyId AND s.id=:studyId "
 				+ "AND e.groupState=:groupState "
@@ -54,9 +61,15 @@ public class GroupDao extends AbstractDao {
 				GroupModel.class);
 		query.setParameter("studyId", study);
 		query.setParameter("groupState", GroupState.STARTED);
-		query.setMaxResults(1);
-		List<GroupModel> groupList = query.getResultList();
-		return (!groupList.isEmpty()) ? groupList.get(0) : null;
+		return query.getResultList();
+	}
+	
+	public List<GroupModel> findAllNotFinished() {
+		String queryStr = "SELECT e FROM GroupModel e WHERE e.groupState <> :groupState";
+		TypedQuery<GroupModel> query = JPA.em().createQuery(queryStr,
+				GroupModel.class);
+		query.setParameter("groupState", GroupState.FINISHED);
+		return query.getResultList();
 	}
 
 }
