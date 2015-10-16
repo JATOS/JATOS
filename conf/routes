@@ -87,6 +87,7 @@ GET     /jatos/:studyId/:componentId/clone           @controllers.Components.clo
 GET     /jatos/:studyId/:componentId/export          @controllers.ImportExport.exportComponent(studyId: Long, componentId: Long)
 
 # Static resources
+GET     /favicon.ico                       controllers.Assets.at(path="/public", file="favicon.ico")
 GET     /study_assets/*file                @publix.controllers.StudyAssets.at(file)
 GET     /assets/*file                      controllers.Assets.at(path = "/public", file)
 GET     /webjars/*file                     controllers.WebJarAssets.at(file)
