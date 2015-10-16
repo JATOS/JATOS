@@ -46,6 +46,7 @@ public class Global extends GlobalSettings {
 
 	@Override
 	public Promise<Result> onError(RequestHeader request, Throwable t) {
+		Logger.info(CLASS_NAME + ".onError: Internal JATOS error", t);
 		return Promise.<Result> pure(Results
 				.internalServerError(views.html.error
 						.render("Internal JATOS error")));
@@ -53,6 +54,8 @@ public class Global extends GlobalSettings {
 
 	@Override
 	public Promise<Result> onHandlerNotFound(RequestHeader request) {
+		Logger.info(CLASS_NAME + ".onHandlerNotFound: Requested page \""
+				+ request.uri() + "\" doesn't exist.");
 		return Promise.<Result> pure(Results.notFound(views.html.publix.error
 				.render("Requested page \"" + request.uri()
 						+ "\" doesn't exist.")));
@@ -60,8 +63,9 @@ public class Global extends GlobalSettings {
 
 	@Override
 	public Promise<Result> onBadRequest(RequestHeader request, String error) {
+		Logger.info(CLASS_NAME + ".onBadRequest: " + error);
 		return Promise.<Result> pure(Results.badRequest(views.html.error
-				.render("bad request")));
+				.render("Bad request")));
 	}
 
 }
