@@ -353,7 +353,7 @@ public class JsonUtils {
 	private class SidebarStudyComparator implements Comparator<SidebarStudy> {
 		@Override
 		public int compare(SidebarStudy ss1, SidebarStudy ss2) {
-			return ss1.title.compareTo(ss2.title);
+			return ss1.title.toLowerCase().compareTo(ss2.title.toLowerCase());
 		}
 	}
 
