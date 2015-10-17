@@ -30,21 +30,6 @@ studyResultsCount: Integer)
 		<div class="btn-group">
 			<button type="button" class="btn btn-primary dropdown-toggle"
 				data-toggle="dropdown">
-				Members <span class="caret"></span>
-			</button>
-			<ul class="dropdown-menu" role="menu">
-				@for(member <- study.getMemberList()) {
-				<li><a href="@controllers.routes.Users.profile(member.getEmail())">@member.getName()
-						(@member.getEmail())</a></li> }
-				<li class="divider"></li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Change members of this study">
-					<a href="@controllers.routes.Studies.changeMembers(study.getId())">Change</a>
-				</li>
-			</ul>
-		</div>
-		<div class="btn-group">
-			<button type="button" class="btn btn-primary dropdown-toggle"
-				data-toggle="dropdown">
 				<span class="glyphicon glyphicon-globe" aria-hidden="true"></span> External Runs <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
@@ -79,7 +64,13 @@ studyResultsCount: Integer)
 				</li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Source code to copy-paste into Mechanical Turk">
 					<a href="@controllers.routes.Studies.showMTurkSourceCode(study.getId())">
-						MT Source Code
+						MT&nbsp;Source&nbsp;Code
+					</a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Change members of this study">
+					<a href="@controllers.routes.Studies.changeMembers(study.getId())">
+						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+						Change&nbsp;Members
 					</a>
 				</li>
 				<li class="divider"></li>
