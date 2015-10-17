@@ -88,6 +88,9 @@ GET     /jatos/:studyId/:componentId/export          @controllers.ImportExport.e
 
 # Static resources
 GET     /favicon.ico                       controllers.Assets.at(path="/public", file="favicon.ico")
+GET     /favicon-16x16.png                 controllers.Assets.at(path="/public", file="favicon-16x16.png")
+GET     /favicon-32x32.png                 controllers.Assets.at(path="/public", file="favicon-32x32.png")
+GET     /favicon-96x96.png                 controllers.Assets.at(path="/public", file="favicon-96x96.png")
 GET     /study_assets/*file                @publix.controllers.StudyAssets.at(file)
 GET     /assets/*file                      controllers.Assets.at(path = "/public", file)
 GET     /webjars/*file                     controllers.WebJarAssets.at(file)
