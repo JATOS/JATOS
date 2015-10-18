@@ -52,9 +52,12 @@ public class ChannelService {
 	 */
 	public WebSocket<JsonNode> openGroupChannel(StudyResult studyResult)
 			throws InternalServerErrorPublixException {
+		GroupModel group = studyResult.getGroup();
+		if (group == null) {
+			return null;
+		}
 		// Get the GroupDispatcher that will handle this Group.
-		ActorRef groupDispatcher = getOrCreateGroupDispatcher(studyResult
-				.getGroup());
+		ActorRef groupDispatcher = getOrCreateGroupDispatcher(group);
 		// If this GroupDispatcher already has a group channel for this
 		// StudyResult, close the old one before opening a new one.
 		closeGroupChannel(studyResult, groupDispatcher);
@@ -83,8 +86,10 @@ public class ChannelService {
 	 */
 	public void sendJoinedMsg(StudyResult studyResult)
 			throws InternalServerErrorPublixException {
-		sendMsg(studyResult, studyResult.getGroup(),
-				new Joined(studyResult.getId()));
+		GroupModel group = studyResult.getGroup();
+		if (group != null) {
+			sendMsg(studyResult, group, new Joined(studyResult.getId()));
+		}
 	}
 
 	/**
@@ -93,7 +98,9 @@ public class ChannelService {
 	 */
 	public void sendLeftMsg(StudyResult studyResult, GroupModel group)
 			throws InternalServerErrorPublixException {
-		sendMsg(studyResult, group, new Left(studyResult.getId()));
+		if (group != null) {
+			sendMsg(studyResult, group, new Left(studyResult.getId()));
+		}
 	}
 
 	private void sendMsg(StudyResult studyResult, GroupModel group, Object msg)
