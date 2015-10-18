@@ -1,21 +1,15 @@
 package common;
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.persistence.Query;
 
-import models.ComponentModel;
 import models.GroupResult;
 import models.GroupResult.GroupState;
-import models.StudyModel;
 import models.UserModel;
-import persistance.ComponentDao;
 import persistance.GroupResultDao;
-import persistance.StudyDao;
 import persistance.UserDao;
 import play.Logger;
 import play.db.jpa.JPA;
@@ -34,17 +28,13 @@ public class Initializer {
 
 	private final UserService userService;
 	private final UserDao userDao;
-	private final StudyDao studyDao;
-	private final ComponentDao componentDao;
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	Initializer(UserDao userDao, UserService userService, StudyDao studyDao,
-			ComponentDao componentDao, GroupResultDao groupResultDao) {
+	Initializer(UserDao userDao, UserService userService,
+			GroupResultDao groupResultDao) {
 		this.userDao = userDao;
 		this.userService = userService;
-		this.studyDao = studyDao;
-		this.componentDao = componentDao;
 		this.groupResultDao = groupResultDao;
 	}
 
@@ -54,7 +44,6 @@ public class Initializer {
 	 */
 	public void initialize() {
 		checkAdmin();
-		checkUuid();
 		checkStudyAssetsRootDir();
 		checkWorkerTypes();
 		checkGroupResults();
@@ -108,33 +97,6 @@ public class Initializer {
 						+ ".checkWorkerTypes: Updated "
 						+ count
 						+ " worker of type ClosedStandalone to type PersonalSingle.");
-			}
-		});
-	}
-
-	/**
-	 * Migration from older DB schema: generate UUID for all studies/components.
-	 */
-	private void checkUuid() {
-		JPA.withTransaction(() -> {
-			List<StudyModel> studyModelList = studyDao.findAll();
-			for (StudyModel study : studyModelList) {
-				if (study.getUuid() == null || study.getUuid().trim().isEmpty()) {
-					study.setUuid(UUID.randomUUID().toString());
-				}
-				Iterator<ComponentModel> iterator = study.getComponentList()
-						.iterator();
-				while (iterator.hasNext()) {
-					ComponentModel component = iterator.next();
-					if (component == null) {
-						iterator.remove();
-					} else if (component.getUuid() == null
-							|| component.getUuid().trim().isEmpty()) {
-						component.setUuid(UUID.randomUUID().toString());
-						componentDao.update(component);
-					}
-				}
-				studyDao.update(study);
 			}
 		});
 	}
