@@ -409,11 +409,14 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	}
 
 	@Override
-	public Result logError(Long studyId, Long componentId) {
+	public Result log(Long studyId, Long componentId) throws PublixException {
+		StudyModel study = publixUtils.retrieveStudy(studyId);
+		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		String msg = request().body().asText();
-		Logger.error(CLASS_NAME + " - logging component script error: studyId "
-				+ studyId + ", " + "componentId " + componentId + ", "
-				+ "error message \"" + msg + "\".");
+		Logger.info(CLASS_NAME + " - logging from client: study ID " + studyId
+				+ ", component ID " + componentId + ", worker ID "
+				+ worker.getId() + ", message \"" + msg + "\".");
 		return ok().as("text/html");
 	}
 

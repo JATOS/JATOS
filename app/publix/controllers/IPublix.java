@@ -2,13 +2,12 @@ package publix.controllers;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import play.libs.F.Promise;
 import play.mvc.Result;
 import play.mvc.WebSocket;
-import publix.exceptions.BadRequestPublixException;
 import publix.exceptions.PublixException;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Interface to Publix the public API of JATOS. With these actions/methods the
@@ -147,9 +146,8 @@ public interface IPublix {
 	/**
 	 * HTTP type: Ajax POST request
 	 * 
-	 * In case the client side wants to log an error.
+	 * With this method the client side can log into the server's log.
 	 */
-	Result logError(Long studyId, Long componentId)
-			throws BadRequestPublixException;
+	Result log(Long studyId, Long componentId) throws PublixException;
 
 }

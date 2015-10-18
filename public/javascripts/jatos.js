@@ -880,16 +880,23 @@ jatos.endStudy = function(successful, errorMsg) {
 }
 
 /**
- * Logs an error within the JATOS.
+ * Logs a message within the JATOS log on the server side.
  */
 jatos.logError = function(logErrorMsg) {
+	jatos.log(logErrorMsg);
+}
+
+/**
+ * Logs a message within the JATOS log on the server side.
+ */
+jatos.log = function(logMsg) {
 	if (!jQueryExists()) {
 		return;
 	}
 	jatos.jQuery.ajax({
 		url : "/publix/" + jatos.studyId + "/" + jatos.componentId
 				+ "/log",
-		data : logErrorMsg,
+		data : logMsg,
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",

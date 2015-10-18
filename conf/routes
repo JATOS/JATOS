@@ -17,7 +17,7 @@ GET     /publix/:studyId/:componentId/start              @publix.controllers.Pub
 GET     /publix/:studyId/:componentId/end                @publix.controllers.PublixInterceptor.finishComponent(studyId: Long, componentId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
 GET     /publix/:studyId/:componentId/initData           @publix.controllers.PublixInterceptor.getInitData(studyId: Long, componentId: Long)
 POST    /publix/:studyId/:componentId/resultData         @publix.controllers.PublixInterceptor.submitResultData(studyId: Long, componentId: Long)
-POST    /publix/:studyId/:componentId/log                @publix.controllers.PublixInterceptor.logError(studyId: Long, componentId: Long)
+POST    /publix/:studyId/:componentId/log                @publix.controllers.PublixInterceptor.log(studyId: Long, componentId: Long)
 
 # JATOS
 GET     /jatos/login                                 @controllers.Authentication.login()

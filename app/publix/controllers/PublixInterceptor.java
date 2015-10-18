@@ -449,20 +449,20 @@ public class PublixInterceptor extends Controller implements IPublix {
 	}
 
 	@Override
-	public Result logError(Long studyId, Long componentId)
-			throws BadRequestPublixException {
+	@Transactional
+	public Result log(Long studyId, Long componentId) throws PublixException {
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
-			return mtPublix.logError(studyId, componentId);
+			return mtPublix.log(studyId, componentId);
 		case JatosWorker.WORKER_TYPE:
-			return jatosPublix.logError(studyId, componentId);
+			return jatosPublix.log(studyId, componentId);
 		case PersonalMultipleWorker.WORKER_TYPE:
-			return pmPublix.logError(studyId, componentId);
+			return pmPublix.log(studyId, componentId);
 		case PersonalSingleWorker.WORKER_TYPE:
-			return personalSinglePublix.logError(studyId, componentId);
+			return personalSinglePublix.log(studyId, componentId);
 		case GeneralSingleWorker.WORKER_TYPE:
-			return generalSinglePublix.logError(studyId, componentId);
+			return generalSinglePublix.log(studyId, componentId);
 		default:
 			throw new BadRequestPublixException(
 					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
