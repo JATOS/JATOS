@@ -3,6 +3,9 @@ package controllers;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import persistance.UserDao;
 import play.Logger;
 import play.data.Form;
@@ -12,10 +15,8 @@ import play.mvc.Result;
 import services.UserService;
 import utils.MessagesStrings;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import common.FlashScopeMessaging;
+
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 
 /**

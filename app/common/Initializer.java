@@ -5,13 +5,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import javax.inject.Inject;
 import javax.persistence.Query;
 
 import models.ComponentModel;
 import models.GroupModel;
+import models.GroupModel.GroupState;
 import models.StudyModel;
 import models.UserModel;
-import models.GroupModel.GroupState;
 import persistance.ComponentDao;
 import persistance.GroupDao;
 import persistance.StudyDao;
@@ -20,8 +21,6 @@ import play.Logger;
 import play.db.jpa.JPA;
 import publix.controllers.StudyAssets;
 import services.UserService;
-
-import com.google.inject.Inject;
 
 /**
  * This Initializer is called once with every start and does some JATOS specific

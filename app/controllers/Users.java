@@ -4,6 +4,9 @@ import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.UserModel;
 import play.Logger;
 import play.data.DynamicForm;
@@ -17,10 +20,6 @@ import services.BreadcrumbsService;
 import services.JatosGuiExceptionThrower;
 import services.UserService;
 import utils.ControllerUtils;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.ForbiddenException;

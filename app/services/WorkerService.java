@@ -4,21 +4,20 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.StudyModel;
 import models.StudyResult;
 import models.UserModel;
-import models.workers.PersonalSingleWorker;
 import models.workers.JatosWorker;
 import models.workers.PersonalMultipleWorker;
+import models.workers.PersonalSingleWorker;
 import models.workers.Worker;
 import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import play.data.validation.ValidationError;
 import utils.MessagesStrings;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 
@@ -86,14 +85,15 @@ public class WorkerService {
 	public Set<Worker> retrieveWorkers(StudyModel study) {
 		List<StudyResult> studyResultList = studyResultDao
 				.findAllByStudy(study);
-		return studyResultList.stream()
-				.map(StudyResult::getWorker).collect(Collectors.toSet());
+		return studyResultList.stream().map(StudyResult::getWorker)
+				.collect(Collectors.toSet());
 	}
 
 	/**
 	 * Creates, validates and persists a PersonalSingleWorker.
 	 */
-	public PersonalSingleWorker createPersonalSingleWorker(String comment) throws BadRequestException {
+	public PersonalSingleWorker createPersonalSingleWorker(String comment)
+			throws BadRequestException {
 		PersonalSingleWorker worker = new PersonalSingleWorker(comment);
 		validateWorker(worker);
 		workerDao.create(worker);
@@ -104,15 +104,15 @@ public class WorkerService {
 	 * Creates, validates and persists a PersonalMultipleWorker (worker for a
 	 * Personal Multiple Run).
 	 */
-	public PersonalMultipleWorker createPersonalMultipleWorker(String comment) throws BadRequestException {
+	public PersonalMultipleWorker createPersonalMultipleWorker(String comment)
+			throws BadRequestException {
 		PersonalMultipleWorker worker = new PersonalMultipleWorker(comment);
 		validateWorker(worker);
 		workerDao.create(worker);
 		return worker;
 	}
 
-	private void validateWorker(Worker worker)
-			throws BadRequestException {
+	private void validateWorker(Worker worker) throws BadRequestException {
 		List<ValidationError> errorList = worker.validate();
 		if (errorList != null && !errorList.isEmpty()) {
 			String errorMsg = errorList.get(0).message();

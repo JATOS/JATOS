@@ -2,6 +2,8 @@ package persistance;
 
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
@@ -10,9 +12,6 @@ import models.StudyModel;
 import models.StudyResult;
 import models.workers.Worker;
 import play.db.jpa.JPA;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * DAO for StudyResult model
@@ -28,7 +27,7 @@ public class StudyResultDao extends AbstractDao {
 	StudyResultDao(GroupDao groupDao) {
 		this.groupDao = groupDao;
 	}
-	
+
 	/**
 	 * Creates StudyResult and adds it to the given Worker.
 	 */
@@ -68,11 +67,11 @@ public class StudyResultDao extends AbstractDao {
 				merge(group);
 			}
 		}
-		
+
 		// Remove studyResult
 		super.remove(studyResult);
 	}
-	
+
 	public void refresh(StudyResult studyResult) {
 		super.refresh(studyResult);
 	}

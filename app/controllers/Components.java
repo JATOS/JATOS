@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -26,10 +29,8 @@ import services.UserService;
 import utils.ControllerUtils;
 import utils.MessagesStrings;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
+
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.BadRequestException;

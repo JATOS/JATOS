@@ -1,13 +1,13 @@
 package utils;
 
+import javax.inject.Singleton;
+
 import models.ComponentResult.ComponentState;
 import models.StudyResult.StudyState;
 import models.UserModel;
-import models.workers.PersonalSingleWorker;
 import models.workers.MTWorker;
 import models.workers.PersonalMultipleWorker;
-
-import com.google.inject.Singleton;
+import models.workers.PersonalSingleWorker;
 
 /**
  * Helper class with methods that generate error strings.
@@ -65,7 +65,6 @@ public abstract class MessagesStrings {
 	public static final String WRONG_STUDY_VERSION = "This study is from an newer version of JATOS. Try updating your JATOS.";
 	public static final String WRONG_COMPONENT_VERSION = "This component is from an newer version of JATOS. Try updating your JATOS.";
 
-	
 	// Results
 	public static final String RESULTS_EXPORT_DATA = "Select results and export them as a text file to your local file system";
 	public static final String RESULTS_EXPORT_ALL_DATA = "Export all results as a text file to your local file system";
@@ -96,7 +95,6 @@ public abstract class MessagesStrings {
 	public static final String COMPONENT_DELETED_BUT_FILES_NOT = "Component deleted, but all files (e.g. its HTML file) in study assets remain untouched.";
 	public static final String PROBLEM_GENERATING_BREADCRUMBS = "Problem generating breadcrumbs";
 
-	
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
 	}

@@ -5,6 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import javax.inject.Inject;
+
 import models.UserModel;
 import persistance.UserDao;
 import play.libs.F;
@@ -14,9 +16,8 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 
-import com.google.inject.Inject;
-
 import common.RequestScope;
+
 import controllers.Authentication;
 import controllers.Users;
 import controllers.actionannotations.AuthenticationAction.Authenticated;
@@ -52,8 +53,8 @@ public class AuthenticationAction extends Action<Authenticated> {
 			loggedInUser = userDao.findByEmail(email);
 		}
 		if (loggedInUser == null) {
-			call = Promise
-					.pure(redirect(controllers.routes.Authentication.login()));
+			call = Promise.pure(redirect(controllers.routes.Authentication
+					.login()));
 		} else {
 			RequestScope.put(Authentication.LOGGED_IN_USER, loggedInUser);
 			call = delegate.call(ctx);

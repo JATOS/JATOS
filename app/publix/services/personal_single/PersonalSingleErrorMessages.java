@@ -1,9 +1,9 @@
 package publix.services.personal_single;
 
-import publix.services.PublixErrorMessages;
-import models.workers.PersonalSingleWorker;
+import javax.inject.Singleton;
 
-import com.google.inject.Singleton;
+import models.workers.PersonalSingleWorker;
+import publix.services.PublixErrorMessages;
 
 /**
  * PersonalSinglePublix' implementation of PublixErrorMessages
@@ -11,8 +11,7 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalSingleErrorMessages extends
-		PublixErrorMessages {
+public class PersonalSingleErrorMessages extends PublixErrorMessages {
 
 	@Override
 	public String workerNotCorrectType(Long workerId) {

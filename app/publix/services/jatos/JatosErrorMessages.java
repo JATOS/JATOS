@@ -1,9 +1,9 @@
 package publix.services.jatos;
 
-import publix.services.PublixErrorMessages;
-import models.workers.JatosWorker;
+import javax.inject.Singleton;
 
-import com.google.inject.Singleton;
+import models.workers.JatosWorker;
+import publix.services.PublixErrorMessages;
 
 /**
  * JatosPublix' implementation of PublixErrorMessages (studies or components

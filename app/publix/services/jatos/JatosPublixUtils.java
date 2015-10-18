@@ -1,5 +1,8 @@
 package publix.services.jatos;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.UserModel;
 import models.workers.JatosWorker;
 import models.workers.Worker;
@@ -13,10 +16,6 @@ import publix.controllers.Publix;
 import publix.controllers.jatos.JatosPublix;
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.PublixUtils;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import controllers.Users;
 
 /**

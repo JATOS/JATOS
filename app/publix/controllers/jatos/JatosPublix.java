@@ -1,5 +1,8 @@
 package publix.controllers.jatos;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.ComponentResult;
 import models.GroupModel;
@@ -26,10 +29,8 @@ import publix.services.jatos.JatosStudyAuthorisation;
 import utils.ControllerUtils;
 import utils.JsonUtils;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import common.FlashScopeMessaging;
+
 import controllers.Users;
 
 /**

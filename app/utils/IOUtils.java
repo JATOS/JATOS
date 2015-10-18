@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import javax.inject.Singleton;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
@@ -13,8 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 import play.mvc.Results.Chunks;
 import play.mvc.Results.StringChunks;
 import publix.controllers.StudyAssets;
-
-import com.google.inject.Singleton;
 
 import common.Common;
 
@@ -323,8 +323,8 @@ public class IOUtils {
 	 */
 	public static File[] findFiles(File dir, final String prefix,
 			final String suffix) {
-		return dir.listFiles((file, name) ->
-				name.startsWith(prefix) && name.endsWith(suffix));
+		return dir.listFiles((file, name) -> name.startsWith(prefix)
+				&& name.endsWith(suffix));
 	}
 
 	/**

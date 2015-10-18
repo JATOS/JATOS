@@ -2,6 +2,7 @@ package persistance;
 
 import java.util.List;
 
+import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
@@ -10,8 +11,6 @@ import models.ComponentResult;
 import models.StudyResult;
 import play.Logger;
 import play.db.jpa.JPA;
-
-import com.google.inject.Singleton;
 
 /**
  * DAO for ComponentResult model
@@ -59,7 +58,7 @@ public class ComponentResultDao extends AbstractDao {
 		}
 		super.remove(componentResult);
 	}
-	
+
 	public void refresh(ComponentResult componentResult) {
 		super.refresh(componentResult);
 	}

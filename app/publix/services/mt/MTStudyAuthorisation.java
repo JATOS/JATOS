@@ -1,14 +1,14 @@
 package publix.services.mt;
 
-import publix.exceptions.ForbiddenPublixException;
-import publix.services.IStudyAuthorisation;
-import publix.services.PublixErrorMessages;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.StudyModel;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import publix.exceptions.ForbiddenPublixException;
+import publix.services.IStudyAuthorisation;
+import publix.services.PublixErrorMessages;
 
 /**
  * PersonalMultiplePublix's Implementation of IStudyAuthorization

@@ -1,5 +1,8 @@
 package publix.controllers.mt;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.StudyResult;
@@ -24,9 +27,6 @@ import publix.services.mt.MTPublixUtils;
 import publix.services.mt.MTStudyAuthorisation;
 import utils.ControllerUtils;
 import utils.JsonUtils;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * Implementation of JATOS' public API for studies that are started via MTurk. A

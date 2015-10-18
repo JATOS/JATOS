@@ -12,7 +12,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 
 /**
  * Utility class that does zipping and unzipping.

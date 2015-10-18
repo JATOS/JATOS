@@ -1,9 +1,9 @@
 package publix.services.mt;
 
-import publix.services.PublixErrorMessages;
-import models.workers.MTWorker;
+import javax.inject.Singleton;
 
-import com.google.inject.Singleton;
+import models.workers.MTWorker;
+import publix.services.PublixErrorMessages;
 
 /**
  * MTPublix' implementation of PublixErrorMessages (studies started via MTurk).

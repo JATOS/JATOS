@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.ComponentModel;
@@ -11,9 +13,6 @@ import models.ComponentResult;
 import models.StudyModel;
 import models.UserModel;
 import play.db.jpa.JPA;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * DAO of StudyModel.

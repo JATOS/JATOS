@@ -2,6 +2,9 @@ package controllers;
 
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.StudyModel;
 import models.UserModel;
 import persistance.StudyDao;
@@ -16,10 +19,6 @@ import services.UserService;
 import utils.IOUtils;
 import utils.JsonUtils;
 import utils.MessagesStrings;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.JatosGuiException;
@@ -44,7 +43,8 @@ public class Home extends Controller {
 
 	@Inject
 	Home(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			JsonUtils jsonUtils, UserService userService, BreadcrumbsService breadcrumbsService, StudyDao studyDao) {
+			JsonUtils jsonUtils, UserService userService,
+			BreadcrumbsService breadcrumbsService, StudyDao studyDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.jsonUtils = jsonUtils;
 		this.userService = userService;

@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -17,16 +20,14 @@ import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData.FilePart;
 import utils.IOUtils;
 import utils.JsonUtils;
-import utils.MessagesStrings;
 import utils.JsonUtils.UploadUnmarshaller;
+import utils.MessagesStrings;
 import utils.ZipUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
+
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 
@@ -59,7 +60,8 @@ public class ImportExportService {
 	private final ComponentDao componentDao;
 
 	@Inject
-	ImportExportService(StudyService studyService, ComponentService componentService, JsonUtils jsonUtils,
+	ImportExportService(StudyService studyService,
+			ComponentService componentService, JsonUtils jsonUtils,
 			StudyDao studyDao, ComponentDao componentDao) {
 		this.studyService = studyService;
 		this.componentService = componentService;
@@ -82,8 +84,8 @@ public class ImportExportService {
 			throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
 		}
 
-		ComponentModel uploadedComponent = unmarshalComponent(
-				filePart.getFile());
+		ComponentModel uploadedComponent = unmarshalComponent(filePart
+				.getFile());
 
 		boolean componentExists = componentDao.findByUuid(
 				uploadedComponent.getUuid(), study) != null;
@@ -109,7 +111,8 @@ public class ImportExportService {
 				uploadedComponent.getUuid(), study);
 		boolean componentExistsInStudy = (currentComponent != null);
 		if (componentExistsInStudy) {
-			componentService.updateProperties(currentComponent, uploadedComponent);
+			componentService.updateProperties(currentComponent,
+					uploadedComponent);
 			RequestScopeMessaging.success(MessagesStrings
 					.componentsPropertiesOverwritten(currentComponent.getId(),
 							uploadedComponent.getTitle()));
@@ -253,7 +256,8 @@ public class ImportExportService {
 				// If we don't overwrite the current study dir with the
 				// uploaded one, don't change the study dir name in the
 				// properties
-				studyService.updatePropertiesWODirName(currentStudy, importedStudy);
+				studyService.updatePropertiesWODirName(currentStudy,
+						importedStudy);
 			}
 			updateStudysComponents(currentStudy, importedStudy);
 			RequestScopeMessaging.success(MessagesStrings
@@ -335,7 +339,8 @@ public class ImportExportService {
 	 * from Java's temp dir to study assets root dir
 	 */
 	private void moveStudyAssetsDir(File unzippedStudyDir,
-			StudyModel currentStudy, String studyAssetsDirName) throws IOException {
+			StudyModel currentStudy, String studyAssetsDirName)
+			throws IOException {
 		if (currentStudy != null) {
 			IOUtils.removeStudyAssetsDir(currentStudy.getDirName());
 		}
@@ -394,11 +399,10 @@ public class ImportExportService {
 		return tempDir;
 	}
 
-	private ComponentModel unmarshalComponent(File file)
-			throws IOException {
+	private ComponentModel unmarshalComponent(File file) throws IOException {
 		UploadUnmarshaller uploadUnmarshaller = new JsonUtils.UploadUnmarshaller();
-		ComponentModel component = uploadUnmarshaller
-				.unmarshalling(file, ComponentModel.class);
+		ComponentModel component = uploadUnmarshaller.unmarshalling(file,
+				ComponentModel.class);
 		if (component == null) {
 			throw new IOException(uploadUnmarshaller.getErrorMsg());
 		}
@@ -430,8 +434,7 @@ public class ImportExportService {
 		if (study.validate() != null) {
 			Logger.warn(CLASS_NAME
 					+ ".unmarshalStudy: "
-					+ study.validate().stream()
-							.map(ValidationError::message)
+					+ study.validate().stream().map(ValidationError::message)
 							.collect(Collectors.joining(", ")));
 			throw new IOException(MessagesStrings.STUDY_INVALID);
 		}

@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -41,10 +44,8 @@ import utils.JsonUtils;
 import utils.MessagesStrings;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
+
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.BadRequestException;

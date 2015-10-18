@@ -5,6 +5,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.ComponentResult;
 import models.StudyModel;
@@ -14,10 +17,6 @@ import models.workers.Worker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
 import utils.MessagesStrings;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
@@ -152,8 +151,8 @@ public class ResultService {
 	}
 
 	/**
-	 * Get all StudyResults or throw an Exception if one doesn't exist. Throws an
-	 * exception if the StudyResult doesn't exist.
+	 * Get all StudyResults or throw an Exception if one doesn't exist. Throws
+	 * an exception if the StudyResult doesn't exist.
 	 */
 	public List<StudyResult> getStudyResults(List<Long> studyResultIdList)
 			throws NotFoundException {
@@ -176,8 +175,7 @@ public class ResultService {
 	 */
 	public List<StudyResult> getAllowedStudyResultList(UserModel user,
 			Worker worker) {
-		return worker.getStudyResultList()
-				.stream()
+		return worker.getStudyResultList().stream()
 				.filter(studyResult -> studyResult.getStudy().hasMember(user))
 				.collect(Collectors.toList());
 	}

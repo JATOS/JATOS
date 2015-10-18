@@ -1,15 +1,14 @@
 package publix.services.jatos;
 
-import publix.controllers.Publix;
-import publix.exceptions.ForbiddenPublixException;
-import publix.services.IStudyAuthorisation;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.StudyModel;
 import models.UserModel;
 import models.workers.JatosWorker;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
+import publix.controllers.Publix;
+import publix.exceptions.ForbiddenPublixException;
+import publix.services.IStudyAuthorisation;
 import controllers.Users;
 
 /**

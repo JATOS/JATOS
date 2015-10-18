@@ -1,5 +1,8 @@
 package publix.services.general_single;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.StudyModel;
 import models.workers.GeneralSingleWorker;
 import models.workers.Worker;
@@ -12,9 +15,6 @@ import play.mvc.Http.Cookie;
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.PublixErrorMessages;
 import publix.services.PublixUtils;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * GeneralSinglePublix' implementation of PublixUtils

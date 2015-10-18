@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.Breadcrumbs;
 import models.Breadcrumbs.Breadcrumb;
 import models.ComponentModel;
@@ -33,8 +36,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and

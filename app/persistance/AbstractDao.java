@@ -1,8 +1,8 @@
 package persistance;
 
-import play.db.jpa.JPA;
+import javax.inject.Singleton;
 
-import com.google.inject.Singleton;
+import play.db.jpa.JPA;
 
 /**
  * Abstract DAO: Of the JPA calls only refresh() is public - persist(), merge()
@@ -25,7 +25,7 @@ public abstract class AbstractDao {
 	protected void remove(Object entity) {
 		JPA.em().remove(entity);
 	}
-	
+
 	protected void refresh(Object entity) {
 		JPA.em().refresh(entity);
 	}

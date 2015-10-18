@@ -1,10 +1,9 @@
 package publix.services.personal_multiple;
 
-import publix.services.PublixErrorMessages;
-
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 
 import models.workers.PersonalMultipleWorker;
+import publix.services.PublixErrorMessages;
 
 /**
  * PersonalMultiplePublix' implementation of PublixErrorMessages

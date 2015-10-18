@@ -1,6 +1,9 @@
 package publix.groupservices;
 
 import static akka.pattern.Patterns.ask;
+
+import javax.inject.Singleton;
+
 import models.GroupModel;
 import models.StudyResult;
 import play.mvc.WebSocket;
@@ -20,7 +23,6 @@ import akka.util.Timeout;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Key;
-import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import common.Global;
 

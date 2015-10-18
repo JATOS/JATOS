@@ -2,6 +2,8 @@ package publix.controllers;
 
 import java.io.IOException;
 
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
@@ -34,7 +36,6 @@ import utils.ControllerUtils;
 import utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Singleton;
 
 /**
  * Abstract controller class for all controllers that implement the IPublix

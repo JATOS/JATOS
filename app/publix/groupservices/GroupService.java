@@ -1,5 +1,8 @@
 package publix.groupservices;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.GroupModel;
 import models.GroupModel.GroupState;
 import models.StudyModel;
@@ -9,9 +12,6 @@ import persistance.StudyResultDao;
 import play.db.jpa.JPA;
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.PublixErrorMessages;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * Handles groups, e.g. joining or leaving a group. Members of a group are

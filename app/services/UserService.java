@@ -6,15 +6,16 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.UserModel;
 import persistance.UserDao;
 import play.data.validation.ValidationError;
 import utils.MessagesStrings;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import common.RequestScope;
+
 import controllers.Authentication;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
@@ -60,8 +61,7 @@ public class UserService {
 	}
 
 	/**
-	 * Throws an Exception in case the user isn't equal to the
-	 * loggedInUser.
+	 * Throws an Exception in case the user isn't equal to the loggedInUser.
 	 */
 	public void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
 			throws ForbiddenException {

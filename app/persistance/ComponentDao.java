@@ -3,6 +3,8 @@ package persistance;
 import java.util.List;
 import java.util.UUID;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
@@ -11,9 +13,6 @@ import models.ComponentResult;
 import models.StudyModel;
 import models.StudyResult;
 import play.db.jpa.JPA;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * DAO for ComponentModel

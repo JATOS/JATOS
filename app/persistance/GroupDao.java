@@ -2,14 +2,13 @@ package persistance;
 
 import java.util.List;
 
+import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.GroupModel;
 import models.GroupModel.GroupState;
 import models.StudyModel;
 import play.db.jpa.JPA;
-
-import com.google.inject.Singleton;
 
 /**
  * DAO for GroupModel
@@ -38,7 +37,7 @@ public class GroupDao extends AbstractDao {
 	public GroupModel findById(Long id) {
 		return JPA.em().find(GroupModel.class, id);
 	}
-	
+
 	/**
 	 * Searches the DB for the first group with this studyId where the maximum
 	 * group size is not reached yet and that is in state STARTED.
@@ -49,8 +48,8 @@ public class GroupDao extends AbstractDao {
 	}
 
 	/**
-	 * Searches the DB for all groups with this studyId where the maximum
-	 * group size is not reached yet and that are in state STARTED.
+	 * Searches the DB for all groups with this studyId where the maximum group
+	 * size is not reached yet and that are in state STARTED.
 	 */
 	public List<GroupModel> findAllMaxNotReached(StudyModel study) {
 		String queryStr = "SELECT e FROM GroupModel e, StudyModel s "
@@ -63,7 +62,7 @@ public class GroupDao extends AbstractDao {
 		query.setParameter("groupState", GroupState.STARTED);
 		return query.getResultList();
 	}
-	
+
 	public List<GroupModel> findAllNotFinished() {
 		String queryStr = "SELECT e FROM GroupModel e WHERE e.groupState <> :groupState";
 		TypedQuery<GroupModel> query = JPA.em().createQuery(queryStr,

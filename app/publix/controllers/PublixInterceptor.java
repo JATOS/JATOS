@@ -2,6 +2,9 @@ package publix.controllers;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.workers.GeneralSingleWorker;
 import models.workers.JatosWorker;
 import models.workers.MTSandboxWorker;
@@ -28,8 +31,6 @@ import publix.exceptions.PublixException;
 import publix.services.PublixErrorMessages;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * Interceptor for Publix: it intercepts requests for JATOS' public API (Publix)
@@ -236,8 +237,9 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public WebSocket<JsonNode> joinGroup(Long studyId) throws BadRequestPublixException,
-			NotFoundPublixException, ForbiddenPublixException {
+	public WebSocket<JsonNode> joinGroup(Long studyId)
+			throws BadRequestPublixException, NotFoundPublixException,
+			ForbiddenPublixException {
 		WebSocket<JsonNode> result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:

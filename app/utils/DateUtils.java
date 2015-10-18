@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 
 @Singleton
 public class DateUtils {

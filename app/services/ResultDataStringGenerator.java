@@ -2,6 +2,9 @@ package services;
 
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.ComponentResult;
 import models.StudyModel;
@@ -10,10 +13,6 @@ import models.UserModel;
 import models.workers.Worker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 import exceptions.NotFoundException;

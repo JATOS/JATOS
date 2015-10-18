@@ -2,14 +2,13 @@ package persistance.workers;
 
 import java.util.List;
 
+import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import models.workers.Worker;
 import play.db.jpa.JPA;
-
-import com.google.inject.Singleton;
 
 /**
  * DAO for MTWorker model
@@ -45,8 +44,7 @@ public class MTWorkerDao extends WorkerDao {
 		query.setParameter("mtWorkerId", mtWorkerId);
 		query.setMaxResults(1);
 		List<Worker> workerList = query.getResultList();
-		return workerList.isEmpty() ? null : (MTWorker) workerList
-				.get(0);
+		return workerList.isEmpty() ? null : (MTWorker) workerList.get(0);
 	}
 
 }

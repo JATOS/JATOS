@@ -2,6 +2,7 @@ package utils;
 
 import java.io.StringWriter;
 
+import javax.inject.Singleton;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -12,8 +13,6 @@ import org.w3c.dom.Document;
 
 import play.Logger;
 import publix.services.PublixUtils;
-
-import com.google.inject.Singleton;
 
 /**
  * Utils around XML

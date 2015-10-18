@@ -1,5 +1,8 @@
 package publix.controllers.general_single;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.GeneralSingleWorker;
@@ -20,9 +23,6 @@ import publix.services.general_single.GeneralSingleErrorMessages;
 import publix.services.general_single.GeneralSinglePublixUtils;
 import publix.services.general_single.GeneralSingleStudyAuthorisation;
 import utils.JsonUtils;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * Implementation of JATOS' public API for general single study runs (open to

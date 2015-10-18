@@ -2,16 +2,15 @@ package services;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import play.api.mvc.Call;
 import play.mvc.Http;
 import play.mvc.Results;
 import play.mvc.Result;
 import utils.ControllerUtils;
-
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
-
 import common.FlashScopeMessaging;
 import common.RequestScopeMessaging;
 import controllers.Home;

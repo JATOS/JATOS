@@ -3,6 +3,9 @@ package publix.groupservices.akka.actors;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import persistance.GroupDao;
 import play.libs.Akka;
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Get;
@@ -11,9 +14,6 @@ import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.ItsThi
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * A GroupDispatcherRegistry is an Akka Actor keeps track of all

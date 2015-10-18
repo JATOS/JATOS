@@ -1,12 +1,12 @@
 package publix.services.personal_multiple;
 
-import publix.exceptions.ForbiddenPublixException;
-import publix.services.IStudyAuthorisation;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.StudyModel;
 import models.workers.PersonalMultipleWorker;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import publix.exceptions.ForbiddenPublixException;
+import publix.services.IStudyAuthorisation;
 
 /**
  * PersonalMultiplePublix's Implementation of IStudyAuthorization
@@ -14,13 +14,14 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalMultipleStudyAuthorisation
-		implements IStudyAuthorisation<PersonalMultipleWorker> {
+public class PersonalMultipleStudyAuthorisation implements
+		IStudyAuthorisation<PersonalMultipleWorker> {
 
 	private final PersonalMultipleErrorMessages errorMessages;
 
 	@Inject
-	PersonalMultipleStudyAuthorisation(PersonalMultipleErrorMessages errorMessages) {
+	PersonalMultipleStudyAuthorisation(
+			PersonalMultipleErrorMessages errorMessages) {
 		this.errorMessages = errorMessages;
 	}
 

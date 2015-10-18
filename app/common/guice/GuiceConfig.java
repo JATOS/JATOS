@@ -1,5 +1,8 @@
 package common.guice;
 
+import javax.inject.Named;
+import javax.inject.Singleton;
+
 import models.workers.GeneralSingleWorker;
 import models.workers.JatosWorker;
 import models.workers.MTWorker;
@@ -24,10 +27,7 @@ import akka.actor.ActorSystem;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
-import com.google.inject.name.Named;
-
 import common.Global;
 
 /**

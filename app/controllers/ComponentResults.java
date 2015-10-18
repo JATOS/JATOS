@@ -2,6 +2,9 @@ package controllers;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -20,10 +23,8 @@ import services.StudyService;
 import services.UserService;
 import utils.JsonUtils;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
+
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.BadRequestException;

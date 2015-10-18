@@ -1,5 +1,8 @@
 package publix.services.personal_multiple;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.workers.PersonalMultipleWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
@@ -9,9 +12,6 @@ import persistance.StudyResultDao;
 import persistance.workers.WorkerDao;
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.PublixUtils;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * PersonalMultiplePublix' implementation of PublixUtils

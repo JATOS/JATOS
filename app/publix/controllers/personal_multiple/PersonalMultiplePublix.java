@@ -1,5 +1,8 @@
 package publix.controllers.personal_multiple;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.workers.PersonalMultipleWorker;
@@ -18,9 +21,6 @@ import publix.services.personal_multiple.PersonalMultipleErrorMessages;
 import publix.services.personal_multiple.PersonalMultiplePublixUtils;
 import publix.services.personal_multiple.PersonalMultipleStudyAuthorisation;
 import utils.JsonUtils;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * Implementation of JATOS' public API for studies run by

@@ -2,13 +2,12 @@ package persistance;
 
 import java.util.List;
 
+import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.UserModel;
 import models.workers.JatosWorker;
 import play.db.jpa.JPA;
-
-import com.google.inject.Singleton;
 
 /**
  * DAO for UserModel

@@ -1,13 +1,13 @@
 package publix.services.general_single;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import models.StudyModel;
+import models.workers.GeneralSingleWorker;
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.IStudyAuthorisation;
 import publix.services.PublixErrorMessages;
-import models.StudyModel;
-import models.workers.GeneralSingleWorker;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 /**
  * GeneralSinglePublix's Implementation of IStudyAuthorization
@@ -15,8 +15,8 @@ import com.google.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class GeneralSingleStudyAuthorisation
-		implements IStudyAuthorisation<GeneralSingleWorker> {
+public class GeneralSingleStudyAuthorisation implements
+		IStudyAuthorisation<GeneralSingleWorker> {
 
 	private final GeneralSingleErrorMessages errorMessages;
 	private final GeneralSinglePublixUtils publixUtils;

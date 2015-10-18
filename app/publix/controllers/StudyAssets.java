@@ -3,6 +3,8 @@ package publix.controllers;
 import java.io.File;
 import java.io.IOException;
 
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import play.Logger;
 import play.Play;
@@ -16,8 +18,6 @@ import utils.IOUtils;
 import utils.MessagesStrings;
 
 import com.google.common.base.Strings;
-import com.google.inject.Singleton;
-
 import common.Common;
 
 /**

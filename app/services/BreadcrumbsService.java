@@ -1,5 +1,7 @@
 package services;
 
+import javax.inject.Singleton;
+
 import models.Breadcrumbs;
 import models.ComponentModel;
 import models.StudyModel;
@@ -10,8 +12,6 @@ import utils.JsonUtils;
 import utils.MessagesStrings;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
 
 /**
@@ -135,8 +135,8 @@ public class BreadcrumbsService {
 			ComponentModel component, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		breadcrumbs.addBreadcrumb(HOME, controllers.routes.Home.home().url());
-		breadcrumbs.addBreadcrumb(study.getTitle(),
-						controllers.routes.Studies.index(study.getId()).url());
+		breadcrumbs.addBreadcrumb(study.getTitle(), controllers.routes.Studies
+				.index(study.getId()).url());
 		breadcrumbs.addBreadcrumb(component.getTitle(), "");
 		breadcrumbs.addBreadcrumb(last, "");
 		String breadcrumbsStr = "";

@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import persistance.ComponentDao;
 import play.Logger;
@@ -11,10 +14,8 @@ import utils.IOUtils;
 import utils.JsonUtils;
 import utils.MessagesStrings;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
+
 import exceptions.BadRequestException;
 
 /**
@@ -34,7 +35,7 @@ public class ComponentService {
 	ComponentService(ComponentDao componentDao) {
 		this.componentDao = componentDao;
 	}
-	
+
 	/**
 	 * Update component's properties with the ones from updatedComponent.
 	 */
@@ -169,8 +170,7 @@ public class ComponentService {
 	 * problem.
 	 */
 	public void checkStandardForComponents(Long studyId, Long componentId,
-			ComponentModel component)
-			throws BadRequestException {
+			ComponentModel component) throws BadRequestException {
 		if (component == null) {
 			throw new BadRequestException(
 					MessagesStrings.componentNotExist(componentId));

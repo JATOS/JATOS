@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import models.ComponentModel;
 import models.StudyModel;
 import models.UserModel;
@@ -14,10 +17,8 @@ import utils.IOUtils;
 import utils.JsonUtils;
 import utils.MessagesStrings;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import common.RequestScopeMessaging;
+
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 
@@ -98,7 +99,7 @@ public class StudyService {
 		}
 		return cloneTitle;
 	}
-	
+
 	/**
 	 * Update properties of study with properties of updatedStudy.
 	 */

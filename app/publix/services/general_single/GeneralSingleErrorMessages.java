@@ -1,9 +1,9 @@
 package publix.services.general_single;
 
-import publix.services.PublixErrorMessages;
-import models.workers.GeneralSingleWorker;
+import javax.inject.Singleton;
 
-import com.google.inject.Singleton;
+import models.workers.GeneralSingleWorker;
+import publix.services.PublixErrorMessages;
 
 /**
  * GeneralSinglePublix' implementation of PublixErrorMessages
