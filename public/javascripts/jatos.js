@@ -223,12 +223,6 @@ function initJatos() {
 		// Conveniently set document's title
 		document.title = jatos.componentProperties.title;
 		
-		// Depreacated variables - will be removed in future
-		jatos.studyData = jatos.studyProperties;
-		jatos.studyJsonData = jatos.studyJsonInput;
-		jatos.componentData = jatos.componentProperties;
-		jatos.componentJsonData = jatos.componentJsonInput;
-		
 		// Initialising finished
 		initialized = true;
 		ready();
