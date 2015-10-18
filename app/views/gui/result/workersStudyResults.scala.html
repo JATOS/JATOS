@@ -59,6 +59,7 @@
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_ID">Study ID</th>
 			<th>Study Title</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_CONFIRMATION_CODE">Confirmation Code</th>
+			<th>Group ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_STATE">State</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
 		</tr>
@@ -73,6 +74,7 @@
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_ID">Study ID</th>
 			<th>Study Title</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_CONFIRMATION_CODE">Confirmation Code</th>
+			<th>Group ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_STATE">State</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
 		</tr>
@@ -123,6 +125,12 @@ $(document).ready(function() {
 			},
 			{ "data": "studyTitle" },
 			{ "data": getConfirmationCode },
+			{ 
+				"data": "groupId",
+				"render": function (data, type, full, meta) {
+					return (data) ? data : "none";
+				}
+			},
 			{ "data": "studyState" },
 			{ 
 				"data": getMessages,

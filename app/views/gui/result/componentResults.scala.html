@@ -36,6 +36,7 @@ breadcrumbs: String, study: StudyModel, component: ComponentModel)
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
 			<th>Duration</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+			<th>Group ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
 		</tr>
@@ -48,6 +49,7 @@ breadcrumbs: String, study: StudyModel, component: ComponentModel)
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
 			<th>Duration</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
+			<th>Group ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_COMPONENT_STATE">State</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_COMPONENT_MESSAGES">Messages</th>
 		</tr>
@@ -92,6 +94,12 @@ $(document).ready(function() {
 				"render": function (data, type, full, meta) {
 					return '<a href="/jatos/worker/'
 						+ data + '">' + data + '</a>';
+				}
+			},
+			{ 
+				"data": "groupId",
+				"render": function (data, type, full, meta) {
+					return (data) ? data : "none";
 				}
 			},
 			{ "data": "componentState" },

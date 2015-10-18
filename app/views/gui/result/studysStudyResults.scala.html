@@ -37,8 +37,8 @@
 			<th>Duration</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
-			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_MT_WORKER_ID">MTurk Worker ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_CONFIRMATION_CODE">Confirmation Code</th>
+			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
+			<th>Group ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_STATE">State</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
 		</tr>
@@ -52,8 +52,8 @@
 			<th>Duration</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_WORKER_ID">Worker ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_WORKER_TYPE">Worker Type</th>
-			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_MT_WORKER_ID">MTurk Worker ID</th>
-			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_CONFIRMATION_CODE">Confirmation Code</th>
+			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_MT_WORKER_ID_CONFIRMATION_CODE">MTurk Worker ID (Confirmation Code)</th>
+			<th>Group ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_STATE">State</th>
 			<th data-toggle="tooltip" data-placement="top" title="@utils.MessagesStrings.RESULTS_STUDY_MESSAGES">Messages</th>
 		</tr>
@@ -102,13 +102,16 @@ $(document).ready(function() {
 			},
 			{ "data": "worker.uiWorkerType" },
 			{ 
-				"data": "worker.mtWorkerId",
 				"render": function (data, type, full, meta) {
-					return (data) ? data : "none";
+					var mtWorkerId = (full.worker.mtWorkerId) ?
+							full.worker.mtWorkerId : "none";
+					var confirmationCode = (full.confirmationCode) ?
+							full.confirmationCode : "none";
+					return mtWorkerId + "<br>(" + confirmationCode + ")";
 				}
 			},
 			{ 
-				"data": "confirmationCode",
+				"data": "groupId",
 				"render": function (data, type, full, meta) {
 					return (data) ? data : "none";
 				}
