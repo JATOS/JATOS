@@ -16,7 +16,7 @@ import models.Breadcrumbs;
 import models.Breadcrumbs.Breadcrumb;
 import models.ComponentModel;
 import models.ComponentResult;
-import models.GroupModel;
+import models.GroupResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.Worker;
@@ -276,9 +276,10 @@ public class JsonUtils {
 		studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
 		studyResultNode.put("duration", DateUtils.getDurationPretty(
 				studyResult.getStartDate(), studyResult.getEndDate()));
-		String groupId = studyResult.getGroup() != null ? studyResult
-				.getGroup().getId().toString() : null;
-		studyResultNode.put("groupId", groupId);
+		String groupResultId = studyResult.getGroupResult() != null ? studyResult
+				.getGroupResult().getId().toString()
+				: null;
+		studyResultNode.put("groupResultId", groupResultId);
 
 		// Add all componentResults
 		ArrayNode arrayNode = studyResultNode.arrayNode();
@@ -309,9 +310,11 @@ public class JsonUtils {
 				.getComponent().getTitle());
 		componentResultNode.put("duration", DateUtils.getDurationPretty(
 				componentResult.getStartDate(), componentResult.getEndDate()));
-		GroupModel group = componentResult.getStudyResult().getGroup();
-		String groupId = group != null ? group.getId().toString() : null;
-		componentResultNode.put("groupId", groupId);
+		GroupResult groupResult = componentResult.getStudyResult()
+				.getGroupResult();
+		String groupResultId = groupResult != null ? groupResult.getId().toString()
+				: null;
+		componentResultNode.put("groupResultId", groupResultId);
 
 		// Add componentResult's data
 		componentResultNode

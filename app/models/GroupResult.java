@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * @author Kristian Lange
  */
 @Entity
-public class GroupModel {
+public class GroupResult {
 
 	@Id
 	@GeneratedValue
@@ -39,7 +39,8 @@ public class GroupModel {
 	}
 
 	/**
-	 * Current group state
+	 * Current group result state (Yes, it should be named
+	 * groupResultState - but hey, it's so much nice this way.)
 	 */
 	private GroupState groupState;
 
@@ -48,7 +49,7 @@ public class GroupModel {
 	private StudyModel study;
 
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-	@JoinColumn(name = "group_id")
+	@JoinColumn(name = "groupResult_id")
 	private List<StudyResult> studyResultList = new ArrayList<>();
 
 	/**
@@ -63,10 +64,10 @@ public class GroupModel {
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
 	private Timestamp endDate;
 
-	public GroupModel() {
+	public GroupResult() {
 	}
 
-	public GroupModel(StudyModel study) {
+	public GroupResult(StudyModel study) {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.study = study;
 		this.groupState = GroupState.STARTED;
@@ -149,10 +150,10 @@ public class GroupModel {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof GroupModel)) {
+		if (!(obj instanceof GroupResult)) {
 			return false;
 		}
-		GroupModel other = (GroupModel) obj;
+		GroupResult other = (GroupResult) obj;
 		if (id == null) {
 			if (other.id != null) {
 				return false;

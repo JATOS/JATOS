@@ -6,7 +6,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import persistance.GroupDao;
+import persistance.GroupResultDao;
 import play.libs.Akka;
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.Get;
 import publix.groupservices.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
@@ -28,47 +28,48 @@ public class GroupDispatcherRegistry extends UntypedActor {
 
 	/**
 	 * Contains the GroupDispatchers that are currently registered. Maps the
-	 * GroupModel's ID to the ActorRef.
+	 * GroupResult's ID to the ActorRef.
 	 */
 	private Map<Long, ActorRef> groupDispatcherMap = new HashMap<Long, ActorRef>();
-	private final GroupDao groupDao;
+	private final GroupResultDao groupResultDao;
 
 	@Inject
-	public GroupDispatcherRegistry(GroupDao groupDao) {
-		this.groupDao = groupDao;
+	public GroupDispatcherRegistry(GroupResultDao groupResultDao) {
+		this.groupResultDao = groupResultDao;
 	}
 
 	@Override
 	public void onReceive(Object msg) throws Exception {
 		if (msg instanceof Get) {
-			// Someone wants to know the GroupDispatcher for a group ID
+			// Someone wants to know the GroupDispatcher for a group result ID
 			tellGroupDispatcher((Get) msg);
 		} else if (msg instanceof GetOrCreate) {
-			// Someone wants to know the GroupDispatcher for a group ID. If it
-			// doesn't exist, create a new one.
+			// Someone wants to know the GroupDispatcher for a group result ID.
+			// If it doesn't exist, create a new one.
 			createAndTellGroupDispatcher((GetOrCreate) msg);
 		} else if (msg instanceof Unregister) {
 			// A GroupDispatcher closed down and wants to unregister
 			Unregister unregister = (Unregister) msg;
-			groupDispatcherMap.remove(unregister.groupId);
+			groupDispatcherMap.remove(unregister.groupResultId);
 		} else {
 			unhandled(msg);
 		}
 	}
 
 	private void tellGroupDispatcher(Get get) {
-		ActorRef groupDispatcher = groupDispatcherMap.get(get.groupId);
+		ActorRef groupDispatcher = groupDispatcherMap.get(get.groupResultId);
 		ItsThisOne answer = new ItsThisOne(groupDispatcher);
 		sender().tell(answer, self());
 	}
 
 	private void createAndTellGroupDispatcher(GetOrCreate getOrCreate) {
-		ActorRef groupDispatcher = groupDispatcherMap.get(getOrCreate.groupId);
+		ActorRef groupDispatcher = groupDispatcherMap
+				.get(getOrCreate.groupResultId);
 		if (groupDispatcher == null) {
 			groupDispatcher = Akka.system().actorOf(
-					GroupDispatcher
-							.props(self(), groupDao, getOrCreate.groupId));
-			groupDispatcherMap.put(getOrCreate.groupId, groupDispatcher);
+					GroupDispatcher.props(self(), groupResultDao,
+							getOrCreate.groupResultId));
+			groupDispatcherMap.put(getOrCreate.groupResultId, groupDispatcher);
 		}
 		ItsThisOne answer = new ItsThisOne(groupDispatcher);
 		sender().tell(answer, self());

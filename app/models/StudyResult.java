@@ -64,7 +64,8 @@ public class StudyResult {
 	}
 
 	/**
-	 * State in the progress of a study.
+	 * State in the progress of a study. (Yes, it should be named
+	 * studyResultState - but hey, it's so much nice this way.)
 	 */
 	private StudyState studyState;
 
@@ -92,11 +93,11 @@ public class StudyResult {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "worker_id")
 	private Worker worker;
-	
+
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "group_id")
-	private GroupModel group;
+	@JoinColumn(name = "groupResult_id")
+	private GroupResult groupResult;
 
 	private String confirmationCode;
 
@@ -226,13 +227,13 @@ public class StudyResult {
 	public Worker getWorker() {
 		return this.worker;
 	}
-	
-	public GroupModel getGroup() {
-		return group;
+
+	public GroupResult getGroupResult() {
+		return groupResult;
 	}
 
-	public void setGroup(GroupModel group) {
-		this.group = group;
+	public void setGroupResult(GroupResult groupResult) {
+		this.groupResult = groupResult;
 	}
 
 	@Override

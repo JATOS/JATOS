@@ -245,7 +245,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
 				componentResult, admin.getWorker(),
-				studyResult.getGroup());
+				studyResult.getGroupResult());
 
 		// Check IDs in cookie value String
 		Map<String, String> cookieMap = new HashMap<>();

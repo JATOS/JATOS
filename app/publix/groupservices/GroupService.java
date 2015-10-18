@@ -3,23 +3,23 @@ package publix.groupservices;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.GroupModel;
-import models.GroupModel.GroupState;
+import models.GroupResult;
+import models.GroupResult.GroupState;
 import models.StudyModel;
 import models.StudyResult;
-import persistance.GroupDao;
+import persistance.GroupResultDao;
 import persistance.StudyResultDao;
 import play.db.jpa.JPA;
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.PublixErrorMessages;
 
 /**
- * Handles groups, e.g. joining or leaving a group. Members of a group are
- * StudyResults, which represents a particular study run. A group is persisted
- * in a GroupModel.
+ * Handles groups, e.g. joining or leaving a GroupResult. Members of a
+ * GroupResult are StudyResults, which represents a particular study run.
  * 
- * All group members exchange messages via WebSockets that are called group
- * channels in JATOS. The message dispatching system is implemented with Akka.
+ * All GroupResult members exchange messages via WebSockets that are called
+ * group channels in JATOS. The message dispatching system is implemented with
+ * Akka.
  * 
  * @author Kristian Lange (2015)
  */
@@ -28,14 +28,14 @@ public class GroupService {
 
 	private final PublixErrorMessages errorMessages;
 	private final StudyResultDao studyResultDao;
-	private final GroupDao groupDao;
+	private final GroupResultDao groupResultDao;
 
 	@Inject
 	GroupService(PublixErrorMessages errorMessages,
-			StudyResultDao studyResultDao, GroupDao groupDao) {
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		this.errorMessages = errorMessages;
 		this.studyResultDao = studyResultDao;
-		this.groupDao = groupDao;
+		this.groupResultDao = groupResultDao;
 	}
 
 	/**
@@ -50,61 +50,63 @@ public class GroupService {
 	}
 
 	/**
-	 * Checks whether this StudyResult has a group that is not in state
+	 * Checks whether this StudyResult has a GroupResult that is not in state
 	 * FINISHED.
 	 */
-	public boolean hasUnfinishedGroup(StudyResult studyResult) {
-		GroupModel group = studyResult.getGroup();
-		return group != null && group.getGroupState() != GroupState.FINISHED;
+	public boolean hasUnfinishedGroupResult(StudyResult studyResult) {
+		GroupResult groupResult = studyResult.getGroupResult();
+		return groupResult != null
+				&& groupResult.getGroupState() != GroupState.FINISHED;
 	}
 
 	/**
-	 * Joins the first group where the max number of members is not reached yet
-	 * and returns it. If such doesn't exist it creates a new one and persists
-	 * it.
+	 * Joins the first GroupResult where the max number of members is not
+	 * reached yet and returns it. If such doesn't exist it creates a new one
+	 * and persists it.
 	 */
-	public GroupModel joinGroup(StudyResult studyResult) {
-		// If we already have a group just return it
-		if (hasUnfinishedGroup(studyResult)) {
-			return studyResult.getGroup();
+	public GroupResult joinGroup(StudyResult studyResult) {
+		// If we already have a GroupResult just return it
+		if (hasUnfinishedGroupResult(studyResult)) {
+			return studyResult.getGroupResult();
 		}
 
-		// Look in the DB if we have an incomplete group. If not create new one.
+		// Look in the DB if we have an incomplete GroupResult. If not create
+		// new one.
 		StudyModel study = studyResult.getStudy();
-		GroupModel group = groupDao.findFirstMaxNotReached(study);
-		if (group == null) {
-			group = new GroupModel(study);
-			groupDao.create(group);
+		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(study);
+		if (groupResult == null) {
+			groupResult = new GroupResult(study);
+			groupResultDao.create(groupResult);
 		}
 
-		// Add StudyResult to Group and vice versa
-		group.addStudyResult(studyResult);
-		studyResult.setGroup(group);
+		// Add StudyResult to GroupResult and vice versa
+		groupResult.addStudyResult(studyResult);
+		studyResult.setGroupResult(groupResult);
 
-		groupDao.update(group);
+		groupResultDao.update(groupResult);
 		studyResultDao.update(studyResult);
 		JPA.em().getTransaction().commit();
 		JPA.em().getTransaction().begin();
-		return group;
+		return groupResult;
 	}
 
-	public void leaveGroup(StudyResult studyResult) {
-		GroupModel group = studyResult.getGroup();
-		if (group == null) {
+	public void leaveGroupResult(StudyResult studyResult) {
+		GroupResult groupResult = studyResult.getGroupResult();
+		if (groupResult == null) {
 			return;
 		}
 
-		// Remove StudyResult from Group and vice versa
-		group.removeStudyResult(studyResult);
-		studyResult.setGroup(null);
+		// Remove StudyResult from GroupResult and vice versa
+//		groupResult.removeStudyResult(studyResult);
+//		studyResult.setGroupResult(null);
 
-		groupDao.update(group);
-		studyResultDao.update(studyResult);
+//		groupResultDao.update(groupResult);
+//		studyResultDao.update(studyResult);
 
-		// If group empty remove it from DB
-		if (group.getStudyResultList().isEmpty()) {
-			groupDao.remove(group);
-		}
+		// If GroupResult has no more members empty remove it from DB
+//		if (groupResult.getStudyResultList().isEmpty()) {
+//			groupResultDao.remove(groupResult);
+//		}
 		JPA.em().getTransaction().commit();
 		JPA.em().getTransaction().begin();
 	}

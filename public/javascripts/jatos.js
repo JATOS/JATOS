@@ -39,7 +39,7 @@ jatos.httpRetry = 5;
  */
 jatos.httpRetryWait = 1000;
 /**
- * Member IDs of the current members of the group.
+ * Member IDs of the current members of the group result .
  */
 jatos.groupMembers = [];
 /**
@@ -515,7 +515,8 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
 }
 
 /**
- * Tries to join a group in the JATOS server and open the group channel WebSocket.
+ * Tries to join a group (actually a GroupResult) in the JATOS server and open
+ * the group channel WebSocket.
  * 
  * @param {Object} callbacks - Defining callback functions for group
  * 			events. These callbacks functions can be:
@@ -589,8 +590,8 @@ function handleGroupMsg(msg, callbacks) {
 }
 
 function updateGroupVars(groupMsg) {
-	if (groupMsg.groupId) {
-		jatos.groupId = groupMsg.groupId;
+	if (groupMsg.groupResultId) {
+		jatos.groupResultId = groupMsg.groupResultId;
 		// Group member ID is equal to study result ID
 		jatos.groupMemberId = jatos.studyResultId;
 	}
@@ -713,8 +714,9 @@ jatos.sendMsgTo = function(recipient, msg) {
 }
 
 /**
- * Tries to leave the group it has previously joined. The group channel
- * WebSocket is not closed in the function - it's closed from the JATOS' side.
+ * Tries to leave the group (actually a GroupResult) it has previously joined.
+ * The group channel WebSocket is not closed in the function - it's closed from
+ * the JATOS' side.
  * 
  * @param {optional
  *            Function} onSuccess - Function to be called after the group is
@@ -913,7 +915,7 @@ jatos.logError = function(logErrorMsg) {
  */
 jatos.addJatosIds = function(obj) {
 	obj.studyId = jatos.studyId;
-	obj.groupId = jatos.groupId;
+	obj.groupResultId = jatos.groupResultId;
 	obj.componentId = jatos.componentId;
 	obj.workerId = jatos.workerId;
 	obj.studyResultId = jatos.studyResultId;

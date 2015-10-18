@@ -15,10 +15,10 @@ public class GroupDispatcherRegistryProtocol {
 	 */
 	public static class Get {
 
-		public final long groupId;
+		public final long groupResultId;
 
-		public Get(long groupId) {
-			this.groupId = groupId;
+		public Get(long groupResultId) {
+			this.groupResultId = groupResultId;
 		}
 	}
 
@@ -27,10 +27,10 @@ public class GroupDispatcherRegistryProtocol {
 	 */
 	public static class GetOrCreate {
 
-		public final long groupId;
+		public final long groupResultId;
 
 		public GetOrCreate(long groupId) {
-			this.groupId = groupId;
+			this.groupResultId = groupId;
 		}
 	}
 
@@ -51,10 +51,10 @@ public class GroupDispatcherRegistryProtocol {
 	 */
 	public static class Unregister {
 
-		public long groupId;
+		public long groupResultId;
 
-		public Unregister(long groupId) {
-			this.groupId = groupId;
+		public Unregister(long groupResultId) {
+			this.groupResultId = groupResultId;
 		}
 	}
 

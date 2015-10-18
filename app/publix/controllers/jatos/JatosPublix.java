@@ -5,12 +5,12 @@ import javax.inject.Singleton;
 
 import models.ComponentModel;
 import models.ComponentResult;
-import models.GroupModel;
+import models.GroupResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.JatosWorker;
 import persistance.ComponentResultDao;
-import persistance.GroupDao;
+import persistance.GroupResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
 import play.libs.F.Promise;
@@ -88,10 +88,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			GroupService groupService, ChannelService channelService,
 			JatosErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupDao groupDao) {
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(publixUtils, studyAuthorisation, groupService, channelService,
 				errorMessages, studyAssets, componentResultDao, jsonUtils,
-				studyResultDao, groupDao);
+				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
@@ -178,11 +178,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					.pure(redirect(publix.controllers.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		GroupModel group = studyResult.getGroup();
+		GroupResult groupResult = studyResult.getGroupResult();
 		response().setCookie(
 				Publix.ID_COOKIE_NAME,
 				publixUtils.generateIdCookieValue(studyResult, componentResult,
-						worker, group));
+						worker, groupResult));
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
 		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(request()
@@ -254,7 +254,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			publixUtils.abortStudy(message, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-
+		GroupResult groupResult = studyResult.getGroupResult();
+		groupService.leaveGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult, groupResult);
+		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");
@@ -286,7 +289,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-
+		GroupResult groupResult = studyResult.getGroupResult();
+		groupService.leaveGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult, groupResult);
+		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);

@@ -9,12 +9,12 @@ import javax.inject.Inject;
 import javax.persistence.Query;
 
 import models.ComponentModel;
-import models.GroupModel;
-import models.GroupModel.GroupState;
+import models.GroupResult;
+import models.GroupResult.GroupState;
 import models.StudyModel;
 import models.UserModel;
 import persistance.ComponentDao;
-import persistance.GroupDao;
+import persistance.GroupResultDao;
 import persistance.StudyDao;
 import persistance.UserDao;
 import play.Logger;
@@ -36,16 +36,16 @@ public class Initializer {
 	private final UserDao userDao;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
-	private final GroupDao groupDao;
+	private final GroupResultDao groupResultDao;
 
 	@Inject
 	Initializer(UserDao userDao, UserService userService, StudyDao studyDao,
-			ComponentDao componentDao, GroupDao groupDao) {
+			ComponentDao componentDao, GroupResultDao groupResultDao) {
 		this.userDao = userDao;
 		this.userService = userService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
-		this.groupDao = groupDao;
+		this.groupResultDao = groupResultDao;
 	}
 
 	/**
@@ -57,7 +57,7 @@ public class Initializer {
 		checkUuid();
 		checkStudyAssetsRootDir();
 		checkWorkerTypes();
-		checkGroups();
+		checkGroupResults();
 	}
 
 	/**
@@ -153,17 +153,19 @@ public class Initializer {
 	}
 
 	/**
-	 * Check that all groups are in state FINISHED
+	 * Check that all group results are in state FINISHED
 	 */
-	private void checkGroups() {
+	private void checkGroupResults() {
 		JPA.withTransaction(() -> {
-			List<GroupModel> groupList = groupDao.findAllNotFinished();
-			for (GroupModel group : groupList) {
-				group.setGroupState(GroupState.FINISHED);
-				groupDao.update(group);
-				Logger.info(CLASS_NAME + ".checkGroups: All groups should be "
-						+ "finished when starting, but group " + group.getId()
-						+ " wasn't. Finish it now.");
+			List<GroupResult> groupResultList = groupResultDao
+					.findAllNotFinished();
+			for (GroupResult groupresult : groupResultList) {
+				groupresult.setGroupState(GroupState.FINISHED);
+				groupResultDao.update(groupresult);
+				Logger.info(CLASS_NAME
+						+ ".checkGroupResults: All group results should be "
+						+ "finished when starting, but group result "
+						+ groupresult.getId() + " wasn't. Finish it now.");
 			}
 		});
 	}

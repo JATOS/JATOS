@@ -4,7 +4,7 @@ import static akka.pattern.Patterns.ask;
 
 import javax.inject.Singleton;
 
-import models.GroupModel;
+import models.GroupResult;
 import models.StudyResult;
 import play.mvc.WebSocket;
 import publix.exceptions.InternalServerErrorPublixException;
@@ -54,12 +54,12 @@ public class ChannelService {
 	 */
 	public WebSocket<JsonNode> openGroupChannel(StudyResult studyResult)
 			throws InternalServerErrorPublixException {
-		GroupModel group = studyResult.getGroup();
-		if (group == null) {
+		GroupResult groupResult = studyResult.getGroupResult();
+		if (groupResult == null) {
 			return null;
 		}
-		// Get the GroupDispatcher that will handle this Group.
-		ActorRef groupDispatcher = getOrCreateGroupDispatcher(group);
+		// Get the GroupDispatcher that will handle this GroupResult.
+		ActorRef groupDispatcher = getOrCreateGroupDispatcher(groupResult);
 		// If this GroupDispatcher already has a group channel for this
 		// StudyResult, close the old one before opening a new one.
 		closeGroupChannel(studyResult, groupDispatcher);
@@ -68,76 +68,79 @@ public class ChannelService {
 	}
 
 	/**
-	 * Close the group channel that belongs to the given StudyResult and group.
-	 * It just sends the closing message to the GroupDispatcher without waiting
-	 * for an answer. We don't use the StudyResult's group but ask for a
-	 * separate parameter for the group because the StudyResult's group might
-	 * already be null in the process of leaving a group.
+	 * Close the group channel that belongs to the given StudyResult and
+	 * GroupResult. It just sends the closing message to the GroupDispatcher
+	 * without waiting for an answer. We don't use the StudyResult's GroupResult
+	 * but ask for a separate parameter for the GroupResult because the
+	 * StudyResult's GroupResult might already be null in the process of leaving
+	 * a GroupResult.
 	 */
-	public void closeGroupChannel(StudyResult studyResult, GroupModel group)
-			throws InternalServerErrorPublixException {
-		if (group == null) {
+	public void closeGroupChannel(StudyResult studyResult,
+			GroupResult groupResult) throws InternalServerErrorPublixException {
+		if (groupResult == null) {
 			return;
 		}
-		sendMsg(studyResult, group, new PoisonChannel(studyResult.getId()));
+		sendMsg(studyResult, groupResult,
+				new PoisonChannel(studyResult.getId()));
 	}
 
 	/**
-	 * Sends a message to each member of the group (the group this studyResult
-	 * is in). This message tells that this member has joined the group.
+	 * Sends a message to each member of the group (the GroupResult this
+	 * studyResult is in). This message tells that this member has joined the
+	 * GroupResult.
 	 */
 	public void sendJoinedMsg(StudyResult studyResult)
 			throws InternalServerErrorPublixException {
-		GroupModel group = studyResult.getGroup();
-		if (group != null) {
-			sendMsg(studyResult, group, new Joined(studyResult.getId()));
+		GroupResult groupResult = studyResult.getGroupResult();
+		if (groupResult != null) {
+			sendMsg(studyResult, groupResult, new Joined(studyResult.getId()));
 		}
 	}
 
 	/**
-	 * Sends a message to each member of the group that this member (specified
-	 * by studyResult) has left the group.
+	 * Sends a message to each member of the GroupResult that this member
+	 * (specified by StudyResult) has left the GroupResult.
 	 */
-	public void sendLeftMsg(StudyResult studyResult, GroupModel group)
+	public void sendLeftMsg(StudyResult studyResult, GroupResult groupResult)
 			throws InternalServerErrorPublixException {
-		if (group != null) {
-			sendMsg(studyResult, group, new Left(studyResult.getId()));
+		if (groupResult != null) {
+			sendMsg(studyResult, groupResult, new Left(studyResult.getId()));
 		}
 	}
 
-	private void sendMsg(StudyResult studyResult, GroupModel group, Object msg)
-			throws InternalServerErrorPublixException {
-		ActorRef groupDispatcher = getGroupDispatcher(group);
+	private void sendMsg(StudyResult studyResult, GroupResult groupResult,
+			Object msg) throws InternalServerErrorPublixException {
+		ActorRef groupDispatcher = getGroupDispatcher(groupResult);
 		if (groupDispatcher != null) {
 			groupDispatcher.tell(msg, ActorRef.noSender());
 		}
 	}
 
 	/**
-	 * Get the GroupDispatcher to this group.
+	 * Get the GroupDispatcher to this GroupResult.
 	 * 
-	 * @param group
+	 * @param groupResult
 	 * @return ActorRef of the GroupDispatcher
 	 * @throws InternalServerErrorPublixException
 	 */
-	private ActorRef getGroupDispatcher(GroupModel group)
+	private ActorRef getGroupDispatcher(GroupResult groupResult)
 			throws InternalServerErrorPublixException {
-		Object answer = askGroupDispatcherRegistry(new Get(group.getId()));
+		Object answer = askGroupDispatcherRegistry(new Get(groupResult.getId()));
 		return ((ItsThisOne) answer).groupDispatcher;
 	}
 
 	/**
-	 * Create a new GroupDispatcher to this group or get the already existing
-	 * one.
+	 * Create a new GroupDispatcher to this GroupResult or get the already
+	 * existing one.
 	 * 
-	 * @param group
+	 * @param groupResult
 	 * @return ActorRef of the GroupDispatcher
 	 * @throws InternalServerErrorPublixException
 	 */
-	private ActorRef getOrCreateGroupDispatcher(GroupModel group)
+	private ActorRef getOrCreateGroupDispatcher(GroupResult groupResult)
 			throws InternalServerErrorPublixException {
 		Object answer = askGroupDispatcherRegistry(new GetOrCreate(
-				group.getId()));
+				groupResult.getId()));
 		return ((ItsThisOne) answer).groupDispatcher;
 	}
 

@@ -3,8 +3,8 @@ package publix.groupservices.akka.actors;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.GroupModel;
-import persistance.GroupDao;
+import models.GroupResult;
+import persistance.GroupResultDao;
 import play.Logger;
 import play.db.jpa.JPA;
 import publix.groupservices.akka.messages.GroupDispatcherProtocol.GroupMsg;
@@ -27,12 +27,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * (GroupMsg) within a group.
  * 
  * A GroupDispatcher only handles the GroupChannels but is not responsible for
- * the actual joining of a group. This is done prior to creating a
- * GroupDispatcher by the GroupService which persists all data in a GroupModel.
+ * the actual joining of a GroupResult. This is done prior to creating a
+ * GroupDispatcher by the GroupService which persists all data in a GroupResult.
  * 
- * A GroupChannel is only be opened after a StudyResult joined a group, which is
- * done in the GroupService. Group data (e.g. who's member) are persisted in a
- * GroupModel. A GroupChannel is closed after the StudyResult left the group.
+ * A GroupChannel is only be opened after a StudyResult joined a GroupResult,
+ * which is done in the GroupService. Group data (e.g. who's member) are
+ * persisted in a GroupResult entity. A GroupChannel is closed after the
+ * StudyResult left the group.
  * 
  * A GroupChannel registers in a GroupDispatcher by sending the RegisterChannel
  * message and unregisters by sending a UnregisterChannel message.
@@ -55,29 +56,29 @@ public class GroupDispatcher extends UntypedActor {
 	 */
 	private final Map<Long, ActorRef> groupChannelMap = new HashMap<>();
 	private final ActorRef groupDispatcherRegistry;
-	private final GroupDao groupDao;
-	private long groupId;
+	private final GroupResultDao groupResultDao;
+	private long groupResultId;
 
 	/**
 	 * Akka method to get this Actor started. Changes in props must be done in
 	 * the constructor too.
 	 */
 	public static Props props(ActorRef groupDispatcherRegistry,
-			GroupDao groupDao, long groupId) {
+			GroupResultDao groupResultDao, long groupResultId) {
 		return Props.create(GroupDispatcher.class, groupDispatcherRegistry,
-				groupDao, groupId);
+				groupResultDao, groupResultId);
 	}
 
-	public GroupDispatcher(ActorRef groupDispatcherRegistry, GroupDao groupDao,
-			long groupId) {
+	public GroupDispatcher(ActorRef groupDispatcherRegistry,
+			GroupResultDao groupResultDao, long groupResultId) {
 		this.groupDispatcherRegistry = groupDispatcherRegistry;
-		this.groupDao = groupDao;
-		this.groupId = groupId;
+		this.groupResultDao = groupResultDao;
+		this.groupResultId = groupResultId;
 	}
 
 	@Override
 	public void postStop() {
-		groupDispatcherRegistry.tell(new Unregister(groupId), self());
+		groupDispatcherRegistry.tell(new Unregister(groupResultId), self());
 	}
 
 	@Override
@@ -171,18 +172,19 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	private void tellGroupAction(long studyResultId, String action) {
-		// The current group data are persisted in a GroupModel. The GroupModel
-		// determines who is member of the group - and not the groupChannelMap.
-		GroupModel group = getGroup(groupId);
-		if (group == null) {
+		// The current group data are persisted in a GroupResult entity. The
+		// GroupResult determines who is member of the group - and not
+		// the groupChannelMap.
+		GroupResult groupResult = getGroupResult(groupResultId);
+		if (groupResult == null) {
 			return;
 		}
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(GroupMsg.ACTION, action);
-		objectNode.put(GroupMsg.GROUP_ID, groupId);
+		objectNode.put(GroupMsg.GROUP_RESULT_ID, groupResultId);
 		objectNode.put(GroupMsg.MEMBER_ID, studyResultId);
 		objectNode.put(GroupMsg.MEMBERS,
-				String.valueOf(group.getStudyResultList()));
+				String.valueOf(groupResult.getStudyResultList()));
 		objectNode.put(GroupMsg.CHANNELS,
 				String.valueOf(groupChannelMap.keySet()));
 		tellAll(new GroupMsg(objectNode));
@@ -227,13 +229,13 @@ public class GroupDispatcher extends UntypedActor {
 		sender().tell(new GroupMsg(jsonNode), self());
 	}
 
-	private GroupModel getGroup(long groupId) {
+	private GroupResult getGroupResult(long groupResultId) {
 		try {
 			return JPA.withTransaction(() -> {
-				return groupDao.findById(groupId);
+				return groupResultDao.findById(groupResultId);
 			});
 		} catch (Throwable e) {
-			Logger.error(CLASS_NAME + ".getGroup: ", e);
+			Logger.error(CLASS_NAME + ".getGroupResult: ", e);
 		}
 		return null;
 	}

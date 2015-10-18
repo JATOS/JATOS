@@ -61,7 +61,8 @@ public class ComponentResult {
 	}
 
 	/**
-	 * State in the progress of a component.
+	 * State in the progress of a component result. (Yes, it should be named
+	 * componentResultState - but hey, it's so much nice this way.)
 	 */
 	private ComponentState componentState;
 

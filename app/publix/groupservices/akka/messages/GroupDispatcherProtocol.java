@@ -27,9 +27,9 @@ public class GroupDispatcherProtocol {
 
 	/**
 	 * Message to a GroupDispatcher. The GroupDispatcher will just tell all
-	 * other members of its group about the left member. This will NOT close the
-	 * group channel (a group channel is closed by sending a PoisonChannel
-	 * message.
+	 * other members of its GroupResult about the left member. This will NOT
+	 * close the group channel (a group channel is closed by sending a
+	 * PoisonChannel message.
 	 */
 	public static class Left {
 
@@ -67,7 +67,7 @@ public class GroupDispatcherProtocol {
 		public static final String OPENED = "opened";
 		public static final String CLOSED = "closed";
 		public static final String ACTION = "action";
-		public static final String GROUP_ID = "groupId";
+		public static final String GROUP_RESULT_ID = "groupResultId";
 		public static final String MEMBER_ID = "memberId";
 		public static final String MEMBERS = "members";
 		public static final String CHANNELS = "channels";

@@ -75,10 +75,10 @@ public interface IPublix {
 	/**
 	 * HTTP type: WebSocket
 	 * 
-	 * Let the worker join a group and open a WebSocket (group channel). Only
-	 * works if this study is a group study. All group data are stored in a
-	 * GroupModel and the group channels will be handled by a GroupDispatcher
-	 * which uses Akka.
+	 * Let the worker join a group (actually a GroupResult) and open a WebSocket
+	 * (group channel). Only works if this study is a group study. All group
+	 * data are stored in a GroupResult and the group channels will be handled
+	 * by a GroupDispatcher which uses Akka.
 	 * 
 	 * @param studyId
 	 *            Study's ID
@@ -90,8 +90,8 @@ public interface IPublix {
 	/**
 	 * HTTP type: Ajax GET request
 	 * 
-	 * Let the worker leave the group he joined before and closes the group
-	 * channel . Only works if this study is a group study.
+	 * Let the worker leave the group (actually a GroupResult) he joined before
+	 * and closes the group channel. Only works if this study is a group study.
 	 */
 	Result leaveGroup(Long studyId) throws PublixException;
 

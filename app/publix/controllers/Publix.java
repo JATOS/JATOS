@@ -7,13 +7,13 @@ import javax.inject.Singleton;
 import models.ComponentModel;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
-import models.GroupModel;
+import models.GroupResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.Worker;
 import persistance.ComponentResultDao;
-import persistance.GroupDao;
+import persistance.GroupResultDao;
 import persistance.StudyResultDao;
 import play.Logger;
 import play.db.jpa.JPA;
@@ -54,7 +54,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	 */
 	public static final String ID_COOKIE_NAME = "JATOS_IDS";
 	public static final String WORKER_ID = "workerId";
-	public static final String GROUP_ID = "groupId";
+	public static final String GROUP_RESULT_ID = "groupResultId";
 	public static final String STUDY_ID = "studyId";
 	public static final String STUDY_RESULT_ID = "studyResultId";
 	public static final String COMPONENT_ID = "componentId";
@@ -72,14 +72,14 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	protected final JsonUtils jsonUtils;
 	protected final ComponentResultDao componentResultDao;
 	protected final StudyResultDao studyResultDao;
-	protected final GroupDao groupDao;
+	protected final GroupResultDao groupResultDao;
 
 	public Publix(PublixUtils<T> utils,
 			IStudyAuthorisation<T> studyAuthorisation,
 			GroupService groupService, ChannelService channelService,
 			PublixErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupDao groupDao) {
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.groupService = groupService;
@@ -89,7 +89,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
-		this.groupDao = groupDao;
+		this.groupResultDao = groupResultDao;
 	}
 
 	@Override
@@ -114,9 +114,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 					.pure(redirect(publix.controllers.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		GroupModel group = studyResult.getGroup();
+		GroupResult groupResult = studyResult.getGroupResult();
 		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
-				componentResult, worker, group);
+				componentResult, worker, groupResult);
 		response().setCookie(Publix.ID_COOKIE_NAME, cookieValue);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
@@ -223,18 +223,18 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
-		GroupModel group;
-		if (groupService.hasUnfinishedGroup(studyResult)) {
-			group = studyResult.getGroup();
+		GroupResult groupResult;
+		if (groupService.hasUnfinishedGroupResult(studyResult)) {
+			groupResult = studyResult.getGroupResult();
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
-					+ "workerId " + workerIdStr + " already in group "
-					+ group.getId());
+					+ "workerId " + workerIdStr
+					+ " already member of group result " + groupResult.getId());
 		} else {
-			group = groupService.joinGroup(studyResult);
+			groupResult = groupService.joinGroup(studyResult);
 			channelService.sendJoinedMsg(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
-					+ "workerId " + workerIdStr + " joined group "
-					+ group.getId());
+					+ "workerId " + workerIdStr + " joined group result "
+					+ groupResult.getId());
 		}
 		return channelService.openGroupChannel(studyResult);
 	}
@@ -250,19 +250,19 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 		groupService.checkStudyIsGroupStudy(study);
-		GroupModel group = studyResult.getGroup();
-		if (group == null) {
+		GroupResult groupResult = studyResult.getGroupResult();
+		if (groupResult == null) {
 			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
 					+ "workerId " + session(WORKER_ID)
-					+ " isn't member of a group - can't leave.");
+					+ " isn't member of a group result - can't leave.");
 			return ok().as("text/html");
 		}
-		groupService.leaveGroup(studyResult);
-		channelService.closeGroupChannel(studyResult, group);
-		channelService.sendLeftMsg(studyResult, group);
+		groupService.leaveGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult, groupResult);
+		channelService.sendLeftMsg(studyResult, groupResult);
 		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID) + " left group "
-				+ group.getId());
+				+ "workerId " + session(WORKER_ID) + " left group result "
+				+ groupResult.getId());
 		return ok().as("text/html");
 	}
 
@@ -365,10 +365,10 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 		}
-		GroupModel group = studyResult.getGroup();
-		groupService.leaveGroup(studyResult);
-		channelService.closeGroupChannel(studyResult, group);
-		channelService.sendLeftMsg(studyResult, group);
+		GroupResult groupResult = studyResult.getGroupResult();
+		groupService.leaveGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult, groupResult);
+		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");
@@ -392,10 +392,10 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
-		GroupModel group = studyResult.getGroup();
-		groupService.leaveGroup(studyResult);
-		channelService.closeGroupChannel(studyResult, group);
-		channelService.sendLeftMsg(studyResult, group);
+		GroupResult groupResult = studyResult.getGroupResult();
+		groupService.leaveGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult, groupResult);
+		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok().as("text/html");

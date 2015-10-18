@@ -4,12 +4,13 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import models.ComponentModel;
+import models.GroupResult;
 import models.StudyModel;
 import models.StudyResult;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import persistance.ComponentResultDao;
-import persistance.GroupDao;
+import persistance.GroupResultDao;
 import persistance.StudyResultDao;
 import persistance.workers.MTWorkerDao;
 import play.Logger;
@@ -63,10 +64,10 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			ChannelService channelService, MTErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			MTWorkerDao mtWorkerDao, GroupDao groupDao) {
+			MTWorkerDao mtWorkerDao, GroupResultDao groupResultDao) {
 		super(publixUtils, studyAuthorisation, groupService, channelService,
 				errorMessages, studyAssets, componentResultDao, jsonUtils,
-				studyResultDao, groupDao);
+				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
@@ -137,7 +138,10 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
-
+		GroupResult groupResult = studyResult.getGroupResult();
+		groupService.leaveGroupResult(studyResult);
+		channelService.closeGroupChannel(studyResult, groupResult);
+		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok(confirmationCode);

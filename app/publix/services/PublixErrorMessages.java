@@ -36,12 +36,6 @@ public class PublixErrorMessages {
 				+ " already.";
 	}
 
-	public String workerDidntJoinGroup(Worker worker, Long studyId) {
-		return "Worker " + worker.getId()
-				+ " isn't member in a group (didn't join or left)"
-				+ " for study " + studyId + ".";
-	}
-
 	public String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
 	}
