@@ -79,7 +79,7 @@ public class ResultService {
 	 *            A list of ComponentResults
 	 * @param user
 	 *            The study that corresponds to the results must have this user
-	 *            as a member otherwise ForbiddenException will be thrown.
+	 *            otherwise ForbiddenException will be thrown.
 	 * @param studyMustNotBeLocked
 	 *            If true the study that corresponds to the results must not be
 	 *            locked and it will throw an ForbiddenException.
@@ -111,7 +111,7 @@ public class ResultService {
 	 *            A list of StudyResults
 	 * @param user
 	 *            The study that corresponds to the results must have this user
-	 *            as a member otherwise ForbiddenException will be thrown.
+	 *            otherwise ForbiddenException will be thrown.
 	 * @param studyMustNotBeLocked
 	 *            If true the study that corresponds to the results must not be
 	 *            locked and it will throw an ForbiddenException.
@@ -171,12 +171,12 @@ public class ResultService {
 	/**
 	 * Generate the list of StudyResults that belong to the given Worker and
 	 * that the given user is allowed to see. A user is allowed if the study
-	 * that the StudyResult belongs too has the user as a member.
+	 * that the StudyResult belongs too has this user.
 	 */
 	public List<StudyResult> getAllowedStudyResultList(UserModel user,
 			Worker worker) {
 		return worker.getStudyResultList().stream()
-				.filter(studyResult -> studyResult.getStudy().hasMember(user))
+				.filter(studyResult -> studyResult.getStudy().hasUser(user))
 				.collect(Collectors.toList());
 	}
 

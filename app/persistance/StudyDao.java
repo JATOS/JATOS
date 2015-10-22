@@ -35,7 +35,7 @@ public class StudyDao extends AbstractDao {
 	}
 
 	/**
-	 * Persist study and it's components and add member.
+	 * Persist study and it's components and add user.
 	 */
 	public void create(StudyModel study, UserModel user) {
 		if (study.getUuid() == null) {
@@ -43,14 +43,14 @@ public class StudyDao extends AbstractDao {
 		}
 		study.getComponentList().forEach(componentDao::create);
 		persist(study);
-		addMember(study, user);
+		addUser(study, user);
 	}
 
 	/**
-	 * Add member to study.
+	 * Add user to study.
 	 */
-	public void addMember(StudyModel study, UserModel member) {
-		study.addMember(member);
+	public void addUser(StudyModel study, UserModel user) {
+		study.addUser(user);
 		merge(study);
 	}
 
@@ -107,11 +107,11 @@ public class StudyDao extends AbstractDao {
 		return query.getResultList();
 	}
 
-	public List<StudyModel> findAllByUser(String memberEmail) {
+	public List<StudyModel> findAllByUser(String userEmail) {
 		TypedQuery<StudyModel> query = JPA.em().createQuery(
 				"SELECT DISTINCT g FROM UserModel u LEFT JOIN u.studyList g "
-						+ "WHERE u.email = :member", StudyModel.class);
-		query.setParameter("member", memberEmail);
+						+ "WHERE u.email = :user", StudyModel.class);
+		query.setParameter("user", userEmail);
 		List<StudyModel> studyList = query.getResultList();
 		// Sometimes the DB returns an element that's just null (bug?). Iterate
 		// through the list and remove all null elements.

@@ -33,11 +33,13 @@ public abstract class MessagesStrings {
 	public static final String NO_HTML_ALLOWED = "No HTML allowed";
 	public static final String NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a valid path or filename. Remember to use '/' as folder separator, and to include the file extension. You can leave it empty for now.";
 	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format";
-	public static final String STUDY_AT_LEAST_ONE_MEMBER = "An study should have at least one member.";
+	public static final String STUDY_AT_LEAST_ONE_USER = "An study should have at least one user.";
 	public static final String STUDY_IS_LOCKED = "Study is locked. It's not possible to edit.";
 	public static final String STUDY_WASNT_SAVED = "Study wasn't saved";
-	public static final String STUDY_GROUP_SIZE = "Study group size must be greater than 2.";
-	public static final String STUDY_MAX_GROUP_SIZE = "Study maximum group size must be greater than the minimum one.";
+	public static final String GROUP_MEMBER_SIZE = "Group's min and max member size must be at least 2.";
+	public static final String GROUP_MAX_MEMBER_SIZE = "Group's maximum member size must be greater than the minimum one.";
+	public static final String GROUP_WORKER_SIZE = "Group's maximum worker size must be at least 2.";
+	public static final String GROUP_MAX_WORKER_SIZE = "Group's maximum worker size must be greater than the maximum member size.";
 	public static final String COMPONENT_WASNT_SAVED = "Component wasn't saved";
 
 	// User
@@ -109,9 +111,9 @@ public abstract class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String studyNotMember(String username, String email,
+	public static String studyNotUser(String username, String email,
 			Long studyId, String studyTitle) {
-		String errorMsg = username + " (" + email + ") isn't member of study "
+		String errorMsg = username + " (" + email + ") isn't user of study "
 				+ studyId + " \"" + studyTitle + "\".";
 		return errorMsg;
 	}
@@ -124,9 +126,9 @@ public abstract class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String studyImportNotMember(String studyTitle) {
+	public static String studyImportNotUser(String studyTitle) {
 		String errorMsg = "The study \"" + studyTitle + "\" you're trying "
-				+ "to upload already exists but you aren't a member of it.";
+				+ "to upload already exists but you aren't a user of it.";
 		return errorMsg;
 	}
 

@@ -15,6 +15,7 @@ import static play.test.Helpers.status;
 import java.util.HashMap;
 import java.util.Map;
 
+import models.GroupModel;
 import models.StudyModel;
 import models.workers.PersonalSingleWorker;
 
@@ -89,8 +90,8 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.COMMENTS, "Comments test.");
 		formMap.put(StudyModel.DIRNAME, "dirName_submit");
 		formMap.put(StudyModel.GROUP_STUDY, "true");
-		formMap.put(StudyModel.MIN_GROUP_SIZE, "5");
-		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
+		formMap.put(GroupModel.MIN_MEMBER_SIZE, "5");
+		formMap.put(GroupModel.MAX_MEMBER_SIZE, "5");
 		formMap.put(StudyModel.JSON_DATA, "{}");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
@@ -109,11 +110,11 @@ public class StudiesControllerTest extends AbstractTest {
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
 		assertThat(study.isGroupStudy()).isTrue();
-		assertThat(study.getMinGroupSize()).isEqualTo(5);
-		assertThat(study.getMaxGroupSize()).isEqualTo(5);
+		assertThat(study.getGroup().getMinMemberSize()).isEqualTo(5);
+		assertThat(study.getGroup().getMaxMemberSize()).isEqualTo(5);
 		assertEquals("{}", study.getJsonData());
 		assertThat((study.getComponentList().isEmpty()));
-		assertThat((study.getMemberList().contains(admin)));
+		assertThat((study.getUserList().contains(admin)));
 		assertThat((!study.isLocked()));
 		assertThat((study.getAllowedWorkerList().isEmpty()));
 
@@ -130,8 +131,8 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.COMMENTS, "Comments test <i>.");
 		formMap.put(StudyModel.DIRNAME, "%.test");
 		formMap.put(StudyModel.GROUP_STUDY, "true");
-		formMap.put(StudyModel.MIN_GROUP_SIZE, "5");
-		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
+		formMap.put(GroupModel.MIN_MEMBER_SIZE, "5");
+		formMap.put(GroupModel.MAX_MEMBER_SIZE, "5");
 		formMap.put(StudyModel.JSON_DATA, "{");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "WrongWorker");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
@@ -153,8 +154,8 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.DESCRIPTION, "Description test.");
 		formMap.put(StudyModel.COMMENTS, "Comments test.");
 		formMap.put(StudyModel.GROUP_STUDY, "true");
-		formMap.put(StudyModel.MIN_GROUP_SIZE, "5");
-		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
+		formMap.put(GroupModel.MIN_MEMBER_SIZE, "5");
+		formMap.put(GroupModel.MAX_MEMBER_SIZE, "5");
 		formMap.put(StudyModel.DIRNAME, studyClone.getDirName());
 		formMap.put(StudyModel.JSON_DATA, "{}");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
@@ -200,8 +201,8 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyModel.COMMENTS, "Comments test.");
 		formMap.put(StudyModel.DIRNAME, "dirName_submitEdited");
 		formMap.put(StudyModel.GROUP_STUDY, "true");
-		formMap.put(StudyModel.MIN_GROUP_SIZE, "5");
-		formMap.put(StudyModel.MAX_GROUP_SIZE, "5");
+		formMap.put(GroupModel.MIN_MEMBER_SIZE, "5");
+		formMap.put(GroupModel.MAX_MEMBER_SIZE, "5");
 		formMap.put(StudyModel.JSON_DATA, "{}");
 		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
@@ -260,12 +261,12 @@ public class StudiesControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callChangeMember() throws Exception {
+	public void callChangeUser() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies
-						.changeMembers(studyClone.getId()),
+						.changeUsers(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -275,14 +276,14 @@ public class StudiesControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callSubmitChangedMembers() throws Exception {
+	public void callSubmitChangedUsers() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.routes.ref.Studies.submitChangedMembers(studyClone
+				controllers.routes.ref.Studies.submitChangedUsers(studyClone
 						.getId()),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
+						ImmutableMap.of(StudyModel.USERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 
@@ -291,18 +292,18 @@ public class StudiesControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callSubmitChangedMembersZeroMembers() throws Exception {
+	public void callSubmitChangedUsersZeroUsers() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.routes.ref.Studies.submitChangedMembers(studyClone
+				controllers.routes.ref.Studies.submitChangedUsers(studyClone
 						.getId()),
 				fakeRequest().withFormUrlEncodedBody(
 				// Just put some gibberish in the map
 						ImmutableMap.of("bla", "blu")).withSession(
 						Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(contentAsString(result)).contains(
-				"An study should have at least one member.");
+				"An study should have at least one user.");
 
 		removeStudy(studyClone);
 	}
@@ -317,7 +318,7 @@ public class StudiesControllerTest extends AbstractTest {
 						studyClone.getId(), studyClone.getComponentList()
 								.get(0).getId(), "2"),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
+						ImmutableMap.of(StudyModel.USERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
@@ -327,7 +328,7 @@ public class StudiesControllerTest extends AbstractTest {
 						studyClone.getId(), studyClone.getComponentList()
 								.get(1).getId(), "1"),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(StudyModel.MEMBERS, "admin"))
+						ImmutableMap.of(StudyModel.USERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 

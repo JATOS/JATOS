@@ -212,8 +212,8 @@ public class ImportExportService {
 	private void checkStudyImport(UserModel loggedInUser,
 			StudyModel uploadedStudy, StudyModel currentStudy,
 			boolean studyExists, boolean dirExists) throws ForbiddenException {
-		if (studyExists && !currentStudy.hasMember(loggedInUser)) {
-			String errorMsg = MessagesStrings.studyImportNotMember(currentStudy
+		if (studyExists && !currentStudy.hasUser(loggedInUser)) {
+			String errorMsg = MessagesStrings.studyImportNotUser(currentStudy
 					.getTitle());
 			throw new ForbiddenException(errorMsg);
 		}

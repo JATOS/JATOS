@@ -41,7 +41,7 @@ public class ResultDataStringGenerator {
 	/**
 	 * Retrieves all StudyResults that belong to the given worker and that the
 	 * given user is allowed to see (means StudyResults from studies he is a
-	 * member of), checks them and returns all their result data in one string.
+	 * user of), checks them and returns all their result data in one string.
 	 */
 	public String forWorker(UserModel user, Worker worker)
 			throws ForbiddenException, BadRequestException {

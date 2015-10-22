@@ -7,13 +7,13 @@ breadcrumbs: String, study: StudyModel, userList: List[UserModel])
 var studyId = @study.getId();
 </script>
 
-@helper.form(action = controllers.routes.Studies.submitChangedMembers(study.getId()), 'class -> "form-horizontal") {
+@helper.form(action = controllers.routes.Studies.submitChangedUsers(study.getId()), 'class -> "form-horizontal") {
 @for(user <- userList) {
 <div class="form-group">
 	<div class="col-lg-offset-2 col-lg-10">
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyModel.MEMBERS" value="@user.getEmail()"
-					@if(study.hasMember(user)) {checked}
+			<input type="checkbox" name="@StudyModel.USERS" value="@user.getEmail()"
+					@if(study.hasUser(user)) {checked}
 					>@user.toString()
 		</label>
 	</div>

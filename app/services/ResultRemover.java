@@ -46,7 +46,7 @@ public class ResultRemover {
 	 *            Takes a comma separated list of IDs of ComponentResults.
 	 * @param user
 	 *            For each ComponentResult it will be checked that the given
-	 *            user is a member of the study that the ComponentResult belongs
+	 *            user is a user of the study that the ComponentResult belongs
 	 *            too.
 	 * @throws BadRequestException
 	 * @throws NotFoundException
@@ -71,7 +71,7 @@ public class ResultRemover {
 	 *            Takes a comma separated list of IDs of StudyResults.
 	 * @param user
 	 *            For each StudyResult it will be checked that the given user is
-	 *            a member of the study that the StudyResult belongs too.
+	 *            a user of the study that the StudyResult belongs too.
 	 * @throws BadRequestException
 	 * @throws NotFoundException
 	 * @throws ForbiddenException

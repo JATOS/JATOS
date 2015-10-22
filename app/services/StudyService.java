@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import models.ComponentModel;
+import models.GroupModel;
 import models.StudyModel;
 import models.UserModel;
 import persistance.StudyDao;
@@ -34,13 +35,15 @@ public class StudyService {
 	public static final String COMPONENT_POSITION_UP = "up";
 
 	private final ComponentService componentService;
+	private final GroupService groupService;
 	private final StudyDao studyDao;
 	private final UserDao userDao;
 
 	@Inject
-	StudyService(ComponentService componentService, StudyDao studyDao,
-			UserDao userDao) {
+	StudyService(ComponentService componentService, GroupService groupService,
+			StudyDao studyDao, UserDao userDao) {
 		this.componentService = componentService;
+		this.groupService = groupService;
 		this.studyDao = studyDao;
 		this.userDao = userDao;
 	}
@@ -61,7 +64,7 @@ public class StudyService {
 	}
 
 	/**
-	 * Clones a StudyModel. It does NOT copy the memberList, id, uuid, date or
+	 * Clones a StudyModel. It does NOT copy the userList, id, uuid, date or
 	 * locked (set to false).
 	 */
 	private StudyModel cloneStudyProperties(StudyModel study) {
@@ -72,8 +75,11 @@ public class StudyService {
 		clone.setJsonData(study.getJsonData());
 		clone.setTitle(study.getTitle());
 		clone.setGroupStudy(study.isGroupStudy());
-		clone.setMinGroupSize(study.getMinGroupSize());
-		clone.setMaxGroupSize(study.getMaxGroupSize());
+		if (study.getGroup() != null) {
+			GroupModel groupClone = groupService.clone(study.getGroup());
+			groupClone.setStudy(clone);
+			clone.setGroup(groupClone);
+		}
 		clone.setLocked(false);
 		study.getAllowedWorkerList().forEach(clone::addAllowedWorker);
 		// Clone each component
@@ -104,7 +110,7 @@ public class StudyService {
 	 * Update properties of study with properties of updatedStudy.
 	 */
 	public void updateProperties(StudyModel study, StudyModel updatedStudy) {
-		updatePropertiesWODirNameWOMerge(study, updatedStudy);
+		updatePropertiesWODirNameWOUpdate(study, updatedStudy);
 		study.setDirName(updatedStudy.getDirName());
 		studyDao.update(study);
 	}
@@ -115,32 +121,34 @@ public class StudyService {
 	 */
 	public void updatePropertiesWODirName(StudyModel study,
 			StudyModel updatedStudy) {
-		updatePropertiesWODirNameWOMerge(study, updatedStudy);
+		updatePropertiesWODirNameWOUpdate(study, updatedStudy);
 		studyDao.update(study);
 	}
 
-	private void updatePropertiesWODirNameWOMerge(StudyModel study,
+	private void updatePropertiesWODirNameWOUpdate(StudyModel study,
 			StudyModel updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
 		study.setComments(updatedStudy.getComments());
 		study.setGroupStudy(updatedStudy.isGroupStudy());
-		study.setMinGroupSize(updatedStudy.getMinGroupSize());
-		study.setMaxGroupSize(updatedStudy.getMaxGroupSize());
+		if (study.isGroupStudy()) {
+			groupService.updateProperties(study.getGroup(),
+					updatedStudy.getGroup());
+		}
 		study.setJsonData(updatedStudy.getJsonData());
 		study.getAllowedWorkerList().clear();
 		updatedStudy.getAllowedWorkerList().forEach(study::addAllowedWorker);
 	}
 
 	/**
-	 * Deletes all current members of the given study and adds the new users. A
+	 * Deletes all current users of the given study and adds the new users. A
 	 * user is identified by its email. In case of an empty list an
 	 * BadRequestException is thrown.
 	 */
-	public void exchangeMembers(StudyModel study, String[] userEmailArray)
+	public void exchangeUsers(StudyModel study, String[] userEmailArray)
 			throws BadRequestException {
 		if (userEmailArray == null) {
-			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
+			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_USER;
 			throw new BadRequestException(errorMsg);
 		}
 		List<UserModel> userList = new ArrayList<>();
@@ -154,13 +162,13 @@ public class StudyService {
 			userList.add(user);
 		}
 		if (userList.isEmpty()) {
-			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER;
+			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_USER;
 			RequestScopeMessaging.error(errorMsg);
 			throw new BadRequestException(errorMsg);
 		}
-		study.getMemberList().clear();
+		study.getUserList().clear();
 		for (UserModel user : userList) {
-			studyDao.addMember(study, user);
+			studyDao.addUser(study, user);
 		}
 	}
 
@@ -183,9 +191,9 @@ public class StudyService {
 			String errorMsg = MessagesStrings.studyNotExist(studyId);
 			throw new BadRequestException(errorMsg);
 		}
-		// Check that the user is a member of the study
-		if (!study.hasMember(user)) {
-			String errorMsg = MessagesStrings.studyNotMember(user.getName(),
+		// Check that the user is a user of the study
+		if (!study.hasUser(user)) {
+			String errorMsg = MessagesStrings.studyNotUser(user.getName(),
 					user.getEmail(), studyId, study.getTitle());
 			throw new ForbiddenException(errorMsg);
 		}
@@ -228,10 +236,7 @@ public class StudyService {
 		study.setGroupStudy(Boolean.parseBoolean(formMap
 				.get(StudyModel.GROUP_STUDY)[0]));
 		if (study.isGroupStudy()) {
-			study.setMinGroupSize(Integer.parseInt(formMap
-					.get(StudyModel.MIN_GROUP_SIZE)[0]));
-			study.setMaxGroupSize(Integer.parseInt(formMap
-					.get(StudyModel.MAX_GROUP_SIZE)[0]));
+			study.setGroup(groupService.bindFromRequest(formMap));
 		}
 		study.setJsonData(JsonUtils.asStringForDB(formMap
 				.get(StudyModel.JSON_DATA)[0]));

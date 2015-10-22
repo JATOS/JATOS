@@ -139,7 +139,7 @@ public class ResultServiceTest extends AbstractTest {
 					true);
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyNotMember(testUser.getName(),
+					MessagesStrings.studyNotUser(testUser.getName(),
 							testUser.getEmail(), study.getId(),
 							study.getTitle()));
 		}
@@ -370,10 +370,10 @@ public class ResultServiceTest extends AbstractTest {
 				.getAllowedStudyResultList(admin, admin.getWorker());
 		assertThat(studyResultList.size()).isEqualTo(2);
 
-		// Leave the StudyResult but remove admin from the members of the
+		// Leave the StudyResult but remove admin from the users of the
 		// corresponding study
 		entityManager.getTransaction().begin();
-		studyResultList.get(0).getStudy().removeMember(admin);
+		studyResultList.get(0).getStudy().removeUser(admin);
 		entityManager.getTransaction().commit();
 
 		// Must be empty

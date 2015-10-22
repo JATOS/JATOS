@@ -246,10 +246,10 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 	}
 
-	protected synchronized void removeMember(StudyModel studyClone,
-			UserModel member) {
+	protected synchronized void removeUser(StudyModel studyClone,
+			UserModel user) {
 		entityManager.getTransaction().begin();
-		studyDao.findById(studyClone.getId()).removeMember(member);
+		studyDao.findById(studyClone.getId()).removeUser(user);
 		entityManager.getTransaction().commit();
 	}
 

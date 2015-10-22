@@ -83,7 +83,7 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(cloneInDb.getComments())
 				.isEqualTo(study.getComments());
 		assertThat(cloneInDb.getJsonData()).isEqualTo(study.getJsonData());
-		assertThat(cloneInDb.getMemberList()).containsOnly(admin);
+		assertThat(cloneInDb.getUserList()).containsOnly(admin);
 		assertThat(cloneInDb.getTitle()).isEqualTo(
 				study.getTitle() + " (clone)");
 
@@ -118,11 +118,12 @@ public class StudyServiceTest extends AbstractTest {
 		updatedStudy.setComments("Changed comments");
 		updatedStudy.setJsonData("{}");
 		updatedStudy.setGroupStudy(true);
-		updatedStudy.setMinGroupSize(5);
-		updatedStudy.setMaxGroupSize(5);
+		// TODO
+//		updatedStudy.setMinGroupSize(5);
+//		updatedStudy.setMaxGroupSize(5);
 		updatedStudy.setTitle("Changed Title");
 		updatedStudy.setUuid("changed uuid");
-		updatedStudy.getMemberList().remove(admin);
+		updatedStudy.getUserList().remove(admin);
 		long studyId = study.getId();
 
 		entityManager.getTransaction().begin();
@@ -138,10 +139,11 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(study.getAllowedWorkerList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
 		assertThat(study.isGroupStudy()).isEqualTo(updatedStudy.isGroupStudy());
-		assertThat(study.getMinGroupSize()).isEqualTo(
-				updatedStudy.getMinGroupSize());
-		assertThat(study.getMaxGroupSize()).isEqualTo(
-				updatedStudy.getMaxGroupSize());
+		// TODO
+//		assertThat(study.getMinGroupSize()).isEqualTo(
+//				updatedStudy.getMinGroupSize());
+//		assertThat(study.getMaxGroupSize()).isEqualTo(
+//				updatedStudy.getMaxGroupSize());
 
 		// Unchanged
 		assertThat(study.getComponentList().size()).isEqualTo(7);
@@ -150,7 +152,7 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(study.getLastComponent().getTitle())
 				.isEqualTo("Quit button");
 		assertThat(study.getId()).isEqualTo(studyId);
-		assertThat(study.getMemberList()).contains(admin);
+		assertThat(study.getUserList()).contains(admin);
 		assertThat(study.getUuid()).isEqualTo(
 				"5c85bd82-0258-45c6-934a-97ecc1ad6617");
 
@@ -160,7 +162,7 @@ public class StudyServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkExchangeMembers() throws NoSuchAlgorithmException,
+	public void checkExchangeUsers() throws NoSuchAlgorithmException,
 			IOException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
@@ -171,29 +173,29 @@ public class StudyServiceTest extends AbstractTest {
 		entityManager.getTransaction().begin();
 		try {
 			String[] userList = { "admin", "bla@bla.com" };
-			studyService.exchangeMembers(study, userList);
+			studyService.exchangeUsers(study, userList);
 		} catch (BadRequestException e) {
 			Fail.fail();
 		}
 		entityManager.getTransaction().commit();
 
 		StudyModel studyInDb = studyDao.findByUuid(study.getUuid());
-		assertThat(studyInDb.getMemberList()).containsOnly(userBla, admin);
+		assertThat(studyInDb.getUserList()).containsOnly(userBla, admin);
 
 		// Empty user list
 		try {
 			String[] userList = {};
-			studyService.exchangeMembers(study, userList);
+			studyService.exchangeUsers(study, userList);
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.STUDY_AT_LEAST_ONE_MEMBER);
+					MessagesStrings.STUDY_AT_LEAST_ONE_USER);
 		}
 
 		// Not existent user
 		try {
 			String[] userList = { "not_exist", "admin" };
-			studyService.exchangeMembers(study, userList);
+			studyService.exchangeUsers(study, userList);
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -252,13 +254,13 @@ public class StudyServiceTest extends AbstractTest {
 			Fail.fail();
 		}
 
-		study.getMemberList().remove(admin);
+		study.getUserList().remove(admin);
 		try {
 			studyService.checkStandardForStudy(study, study.getId(), admin);
 			Fail.fail();
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyNotMember(admin.getName(),
+					MessagesStrings.studyNotUser(admin.getName(),
 							admin.getEmail(), study.getId(), study.getTitle()));
 		} catch (BadRequestException e) {
 			Fail.fail();
@@ -352,10 +354,11 @@ public class StudyServiceTest extends AbstractTest {
 		formMap.put(StudyModel.DIRNAME, dirNameArray);
 		String[] groupStudyArray = { "true" };
 		formMap.put(StudyModel.GROUP_STUDY, groupStudyArray);
-		String[] minGroupSizeArray = { "5" };
-		formMap.put(StudyModel.MIN_GROUP_SIZE, minGroupSizeArray);
-		String[] maxGroupSizeArray = { "5" };
-		formMap.put(StudyModel.MAX_GROUP_SIZE, maxGroupSizeArray);
+		// TODO
+//		String[] minGroupSizeArray = { "5" };
+//		formMap.put(StudyModel.MIN_GROUP_SIZE, minGroupSizeArray);
+//		String[] maxGroupSizeArray = { "5" };
+//		formMap.put(StudyModel.MAX_GROUP_SIZE, maxGroupSizeArray);
 		String[] jsonArray = { "{}" };
 		formMap.put(StudyModel.JSON_DATA, jsonArray);
 		String[] allowedWorkerArray = { JatosWorker.WORKER_TYPE };
@@ -367,8 +370,9 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(study.getComments()).isEqualTo("This is a comment");
 		assertThat(study.getDirName()).isEqualTo("dir_name");
 		assertThat(study.isGroupStudy()).isTrue();
-		assertThat(study.getMinGroupSize()).isEqualTo(5);
-		assertThat(study.getMaxGroupSize()).isEqualTo(5);
+		// TODO
+//		assertThat(study.getMinGroupSize()).isEqualTo(5);
+//		assertThat(study.getMaxGroupSize()).isEqualTo(5);
 		assertThat(study.getJsonData()).isEqualTo("{}");
 		assertThat(study.getAllowedWorkerList()).containsOnly(
 				JatosWorker.WORKER_TYPE);

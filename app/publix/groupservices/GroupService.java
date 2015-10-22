@@ -3,6 +3,7 @@ package publix.groupservices;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import models.GroupModel;
 import models.GroupResult;
 import models.GroupResult.GroupState;
 import models.StudyModel;
@@ -72,10 +73,10 @@ public class GroupService {
 
 		// Look in the DB if we have an incomplete GroupResult. If not create
 		// new one.
-		StudyModel study = studyResult.getStudy();
-		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(study);
+		GroupModel group = studyResult.getStudy().getGroup();
+		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(group);
 		if (groupResult == null) {
-			groupResult = new GroupResult(study);
+			groupResult = new GroupResult(group);
 			groupResultDao.create(groupResult);
 		}
 
@@ -96,19 +97,21 @@ public class GroupService {
 			return;
 		}
 
-		// Remove StudyResult from GroupResult and vice versa
-//		groupResult.removeStudyResult(studyResult);
-//		studyResult.setGroupResult(null);
+		moveStudyResultToHistory(studyResult, groupResult);
 
-//		groupResultDao.update(groupResult);
-//		studyResultDao.update(studyResult);
-
-		// If GroupResult has no more members empty remove it from DB
+		// TODO If GroupResult has no more members empty remove it from DB
 //		if (groupResult.getStudyResultList().isEmpty()) {
 //			groupResultDao.remove(groupResult);
 //		}
 		JPA.em().getTransaction().commit();
 		JPA.em().getTransaction().begin();
+	}
+
+	private void moveStudyResultToHistory(StudyResult studyResult,
+			GroupResult groupResult) {
+		groupResult.removeStudyResult(studyResult);
+		groupResult.addStudyResultToHistory(studyResult);
+		groupResultDao.update(groupResult);
 	}
 
 }

@@ -239,7 +239,7 @@ public class ResultRemoverTest extends AbstractTest {
 			Fail.fail();
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyNotMember(testUser.getName(),
+					MessagesStrings.studyNotUser(testUser.getName(),
 							testUser.getEmail(), study.getId(),
 							study.getTitle()));
 		}

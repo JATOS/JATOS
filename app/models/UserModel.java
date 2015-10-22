@@ -48,7 +48,7 @@ public class UserModel {
 	// Password is stored as a hash
 	private String passwordHash;
 
-	@ManyToMany(mappedBy = "memberList", fetch = FetchType.LAZY)
+	@ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
 	private Set<StudyModel> studyList = new HashSet<>();
 
 	public UserModel(String email, String name, String passwordHash) {

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -21,6 +20,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
 
 import models.workers.JatosWorker;
@@ -39,8 +39,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Model and DB entity of a study. Default values, where necessary,
- * are at the fields or the constructor.
+ * Model and DB entity of a study. Default values, where necessary, are at the
+ * fields or the constructor.
  * 
  * @author Kristian Lange
  */
@@ -54,7 +54,7 @@ public class StudyModel {
 
 	public static final String ID = "id";
 	public static final String UUID = "uuid";
-	public static final String MEMBERS = "user";
+	public static final String USERS = "user";
 	public static final String TITLE = "title";
 	public static final String JSON_DATA = "jsonData";
 	public static final String DESCRIPTION = "description";
@@ -62,8 +62,6 @@ public class StudyModel {
 	public static final String COMMENTS = "comments";
 	public static final String STUDY = "study";
 	public static final String GROUP_STUDY = "groupStudy";
-	public static final String MAX_GROUP_SIZE = "maxGroupSize";
-	public static final String MIN_GROUP_SIZE = "minGroupSize";
 	public static final String ALLOWED_WORKER_LIST = "allowedWorkerList";
 
 	@Id
@@ -135,24 +133,20 @@ public class StudyModel {
 	private boolean groupStudy = false;
 
 	/**
-	 * Minimum number of workers in a group. Is at least 2.
+	 * If this is a group study, in the GroupModel are the properties of the
+	 * group.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private int minGroupSize = 2;
+	@OneToOne(mappedBy = "study", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	private GroupModel group;
 
 	/**
-	 * Maximum number of workers in a group. Is at least 2.
-	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private int maxGroupSize = 2;
-	
-	/**
-	 * List of users that are members of this study (have access rights).
+	 * List of users that are users of this study (have access rights).
 	 */
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "email") })
-	private Set<UserModel> memberList = new HashSet<>();
+	@JoinTable(name = "StudyUserMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "user_email", referencedColumnName = "email") })
+	private Set<UserModel> userList = new HashSet<>();
 
 	/**
 	 * Ordered list of component of this study
@@ -168,29 +162,6 @@ public class StudyModel {
 		addAllowedWorker(JatosWorker.WORKER_TYPE);
 		addAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
 		addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
-	}
-
-	/**
-	 * Constructor for cloning (without fields id, date, memberList, uuid, and
-	 * locked)
-	 */
-	public StudyModel(StudyModel study) {
-		// Don't clone fields 'memberList' and 'locked'
-		this.description = study.description;
-		this.dirName = study.dirName;
-		this.jsonData = study.jsonData;
-		this.title = study.title;
-		this.comments = study.comments;
-		this.locked = false;
-		this.groupStudy = study.groupStudy;
-		this.maxGroupSize = study.maxGroupSize;
-		this.allowedWorkerList.addAll(study.allowedWorkerList.stream().collect(
-				Collectors.toList()));
-		for (ComponentModel component : study.componentList) {
-			ComponentModel clone = new ComponentModel(component);
-			clone.setStudy(this);
-			this.componentList.add(clone);
-		}
 	}
 
 	public void setId(Long id) {
@@ -272,22 +243,6 @@ public class StudyModel {
 	public void setGroupStudy(boolean groupStudy) {
 		this.groupStudy = groupStudy;
 	}
-	
-	public int getMinGroupSize() {
-		return minGroupSize;
-	}
-
-	public void setMinGroupSize(int minGroupSize) {
-		this.minGroupSize = minGroupSize;
-	}
-
-	public int getMaxGroupSize() {
-		return maxGroupSize;
-	}
-
-	public void setMaxGroupSize(int maxGroupSize) {
-		this.maxGroupSize = maxGroupSize;
-	}
 
 	public void setAllowedWorkerList(Set<String> allowedWorkerList) {
 		this.allowedWorkerList = allowedWorkerList;
@@ -309,24 +264,32 @@ public class StudyModel {
 		return allowedWorkerList.contains(workerType);
 	}
 
-	public void setMemberList(Set<UserModel> memberList) {
-		this.memberList = memberList;
+	public void setUserList(Set<UserModel> userList) {
+		this.userList = userList;
 	}
 
-	public Set<UserModel> getMemberList() {
-		return memberList;
+	public Set<UserModel> getUserList() {
+		return userList;
 	}
 
-	public void addMember(UserModel user) {
-		memberList.add(user);
+	public void addUser(UserModel user) {
+		userList.add(user);
 	}
 
-	public void removeMember(UserModel user) {
-		memberList.remove(user);
+	public void removeUser(UserModel user) {
+		userList.remove(user);
 	}
 
-	public boolean hasMember(UserModel user) {
-		return memberList.contains(user);
+	public boolean hasUser(UserModel user) {
+		return userList.contains(user);
+	}
+
+	public GroupModel getGroup() {
+		return this.group;
+	}
+
+	public void setGroup(GroupModel group) {
+		this.group = group;
 	}
 
 	public void setComponentList(List<ComponentModel> componentList) {
@@ -419,18 +382,6 @@ public class StudyModel {
 		if (dirName != null && matcher.find()) {
 			errorList.add(new ValidationError(DIRNAME,
 					MessagesStrings.INVALID_DIR_NAME));
-		}
-		if (groupStudy && minGroupSize < 2) {
-			errorList.add(new ValidationError(MIN_GROUP_SIZE,
-					MessagesStrings.STUDY_GROUP_SIZE));
-		}
-		if (groupStudy && maxGroupSize < 2) {
-			errorList.add(new ValidationError(MAX_GROUP_SIZE,
-					MessagesStrings.STUDY_GROUP_SIZE));
-		}
-		if (maxGroupSize < minGroupSize) {
-			errorList.add(new ValidationError(MAX_GROUP_SIZE,
-					MessagesStrings.STUDY_MAX_GROUP_SIZE));
 		}
 		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENTS,

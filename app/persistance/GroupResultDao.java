@@ -5,9 +5,9 @@ import java.util.List;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
+import models.GroupModel;
 import models.GroupResult;
 import models.GroupResult.GroupState;
-import models.StudyModel;
 import play.db.jpa.JPA;
 
 /**
@@ -38,27 +38,35 @@ public class GroupResultDao extends AbstractDao {
 		return JPA.em().find(GroupResult.class, id);
 	}
 
+	public List<GroupResult> findAllByGroup(GroupModel group) {
+		String queryStr = "SELECT e FROM GroupResult e "
+				+ "WHERE e.group=:groupId";
+		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
+				GroupResult.class);
+		return query.setParameter("groupId", group).getResultList();
+	}
+
 	/**
-	 * Searches the DB for the first group result with this studyId where the
+	 * Searches the DB for the first group result of this group where the
 	 * maximum group size is not reached yet and that is in state STARTED.
 	 */
-	public GroupResult findFirstMaxNotReached(StudyModel study) {
-		List<GroupResult> groupResultList = findAllMaxNotReached(study);
+	public GroupResult findFirstMaxNotReached(GroupModel group) {
+		List<GroupResult> groupResultList = findAllMaxNotReached(group);
 		return !groupResultList.isEmpty() ? groupResultList.get(0) : null;
 	}
 
 	/**
-	 * Searches the DB for all group results with this studyId where the
-	 * maximum group size is not reached yet and that are in state STARTED.
+	 * Searches the DB for all group results of this group where the maximum
+	 * group size is not reached yet and that are in state STARTED.
 	 */
-	public List<GroupResult> findAllMaxNotReached(StudyModel study) {
-		String queryStr = "SELECT e FROM GroupResult e, StudyModel s "
-				+ "WHERE e.study=:studyId AND s.id=:studyId "
+	public List<GroupResult> findAllMaxNotReached(GroupModel group) {
+		String queryStr = "SELECT e FROM GroupResult e, GroupModel s "
+				+ "WHERE e.group=:groupId AND s.id=:groupId "
 				+ "AND e.groupState=:groupState "
 				+ "AND size(e.studyResultList) < s.maxGroupSize";
 		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
-		query.setParameter("studyId", study);
+		query.setParameter("groupId", group);
 		query.setParameter("groupState", GroupState.STARTED);
 		return query.getResultList();
 	}

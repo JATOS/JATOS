@@ -45,13 +45,17 @@ public class GroupResult {
 	private GroupState groupState;
 
 	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "study_id")
-	private StudyModel study;
+	@JoinColumn(name = "group_id")
+	private GroupModel group;
 
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	@JoinColumn(name = "groupResult_id")
 	private List<StudyResult> studyResultList = new ArrayList<>();
 
+	@OneToMany(cascade = CascadeType.ALL)
+	@JoinColumn(name = "groupResultHistory_id")
+	private List<StudyResult> studyResultHistory = new ArrayList<>();
+	
 	/**
 	 * Time and date when the study was started on the server.
 	 */
@@ -67,9 +71,9 @@ public class GroupResult {
 	public GroupResult() {
 	}
 
-	public GroupResult(StudyModel study) {
+	public GroupResult(GroupModel group) {
 		this.startDate = new Timestamp(new Date().getTime());
-		this.study = study;
+		this.group = group;
 		this.groupState = GroupState.STARTED;
 	}
 
@@ -89,12 +93,12 @@ public class GroupResult {
 		this.groupState = groupState;
 	}
 
-	public StudyModel getStudy() {
-		return study;
+	public GroupModel getGroup() {
+		return group;
 	}
 
-	public void setStudy(StudyModel study) {
-		this.study = study;
+	public void setGroup(GroupModel group) {
+		this.group = group;
 	}
 
 	public void setStartDate(Timestamp startDate) {
@@ -127,6 +131,22 @@ public class GroupResult {
 
 	public void addStudyResult(StudyResult studyResult) {
 		studyResultList.add(studyResult);
+	}
+	
+	public void setStudyResultHistory(List<StudyResult> studyResultHistory) {
+		this.studyResultHistory = studyResultHistory;
+	}
+
+	public List<StudyResult> getStudyResultHistory() {
+		return this.studyResultHistory;
+	}
+
+	public void removeStudyResultFromHistory(StudyResult studyResult) {
+		studyResultHistory.remove(studyResult);
+	}
+
+	public void addStudyResultToHistory(StudyResult studyResult) {
+		studyResultHistory.add(studyResult);
 	}
 
 	@Override

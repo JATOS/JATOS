@@ -40,8 +40,8 @@ public class JatosStudyAuthorisation implements IStudyAuthorisation<JatosWorker>
 					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 		UserModel user = worker.getUser();
-		// User has to be a member of this study
-		if (!study.hasMember(user)) {
+		// User has to be a user of this study
+		if (!study.hasUser(user)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotAllowedStudy(worker, study.getId()));
 		}

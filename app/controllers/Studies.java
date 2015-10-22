@@ -347,17 +347,17 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
-	public Result changeMembers(Long studyId) throws JatosGuiException {
-		return changeMembers(studyId, Http.Status.OK);
+	public Result changeUsers(Long studyId) throws JatosGuiException {
+		return changeUsers(studyId, Http.Status.OK);
 	}
 
 	/**
-	 * Shows a view with a form to change members of a study.
+	 * Shows a view with a form to change users of a study.
 	 */
 	@Transactional
-	public Result changeMembers(Long studyId, int httpStatus)
+	public Result changeUsers(Long studyId, int httpStatus)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".changeMembers: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".changeUsers: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
 		UserModel loggedInUser = userService.retrieveLoggedInUser();
@@ -365,17 +365,17 @@ public class Studies extends Controller {
 
 		List<UserModel> userList = userDao.findAll();
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
-				BreadcrumbsService.CHANGE_MEMBERS);
-		return status(httpStatus, views.html.gui.study.changeMembers.render(
+				BreadcrumbsService.CHANGE_USERS);
+		return status(httpStatus, views.html.gui.study.changeUsers.render(
 				loggedInUser, breadcrumbs, study, userList));
 	}
 
 	/**
-	 * POST request that handles changed members of a study.
+	 * POST request that handles changed users of a study.
 	 */
 	@Transactional
-	public Result submitChangedMembers(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".submitChangedMembers: studyId " + studyId
+	public Result submitChangedUsers(Long studyId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".submitChangedUser: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		StudyModel study = studyDao.findById(studyId);
@@ -388,12 +388,12 @@ public class Studies extends Controller {
 		}
 
 		String[] checkedUsers = request().body().asFormUrlEncoded()
-				.get(StudyModel.MEMBERS);
+				.get(StudyModel.USERS);
 		try {
-			studyService.exchangeMembers(study, checkedUsers);
+			studyService.exchangeUsers(study, checkedUsers);
 		} catch (BadRequestException e) {
 			RequestScopeMessaging.error(e.getMessage());
-			Result result = changeMembers(study.getId(),
+			Result result = changeUsers(study.getId(),
 					Http.Status.BAD_REQUEST);
 			throw new JatosGuiException(result, e.getMessage());
 		}

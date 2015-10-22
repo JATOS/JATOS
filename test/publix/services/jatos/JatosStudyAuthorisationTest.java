@@ -79,16 +79,16 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkWorkerAllowedToDoStudyNotMember()
+	public void checkWorkerAllowedToDoStudyNotUser()
 			throws NoSuchAlgorithmException, IOException {
 		StudyModel study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		study.removeMember(admin);
+		study.removeUser(admin);
 		entityManager.getTransaction().commit();
 
-		// User has to be a member of this study
+		// User has to be a user of this study
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
 					study);

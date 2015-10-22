@@ -29,7 +29,7 @@ public class BreadcrumbsService {
 	public static final String EDIT_PROPERTIES = "Edit Properties";
 	public static final String WORKERS = "Workers";
 	public static final String MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE = "Mechanical Turk HIT Layout Source Code";
-	public static final String CHANGE_MEMBERS = "Change Members";
+	public static final String CHANGE_USERS = "Change Users";
 	public static final String NEW_STUDY = "New Study";
 	public static final String RESULTS = "Results";
 	public static final String NEW_COMPONENT = "New Component";

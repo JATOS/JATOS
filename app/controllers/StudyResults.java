@@ -165,7 +165,7 @@ public class StudyResults extends Controller {
 	 * Ajax request
 	 * 
 	 * Removes all StudyResults that belong to the given worker and the
-	 * logged-in user is allowed to delete (only if he's a member of the study).
+	 * logged-in user is allowed to delete (only if he's a user of the study).
 	 */
 	@Transactional
 	public Result removeAllOfWorker(Long workerId) throws JatosGuiException {

@@ -53,13 +53,13 @@ public class AccessControllerTest extends AbstractTest {
 		assertThat(redirectLocation(result)).contains("/jatos/login");
 	}
 
-	private void checkNotMember(HandlerRef ref, StudyModel study) {
-		removeMember(study, admin);
+	private void checkNotUser(HandlerRef ref, StudyModel study) {
+		removeUser(study, admin);
 		Result result = callAction(ref,
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(FORBIDDEN);
-		assertThat(contentAsString(result)).contains("isn't member of study");
+		assertThat(contentAsString(result)).contains("isn't user of study");
 	}
 
 	private void checkRightUserWithRedirect(HandlerRef ref) {
@@ -85,7 +85,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies.index(studyClone
 				.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -107,7 +107,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies.edit(studyClone
 				.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -117,13 +117,13 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies
 				.submitEdited(studyClone.getId());
 		checkDeniedAccess(ref);
-		removeMember(studyClone, admin);
+		removeUser(studyClone, admin);
 		Result result = callAction(ref,
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(SEE_OTHER);
 		assertThat(flash(result).get(FlashScopeMessaging.ERROR)).contains(
-				"isn't member of study");
+				"isn't user of study");
 		removeStudy(studyClone);
 	}
 
@@ -133,7 +133,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies.swapLock(studyClone
 				.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -143,7 +143,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies.remove(studyClone
 				.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -153,34 +153,34 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies
 				.cloneStudy(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
 	@Test
-	public void callStudiesChangeMember() throws Exception {
+	public void callStudiesChangeUser() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies
-				.changeMembers(studyClone.getId());
+				.changeUsers(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
 	@Test
-	public void callStudiesSubmitChangedMembers() throws Exception {
+	public void callStudiesSubmitChangedUsers() throws Exception {
 		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
 		HandlerRef ref = controllers.routes.ref.Studies
-				.submitChangedMembers(studyClone.getId());
+				.submitChangedUsers(studyClone.getId());
 		checkDeniedAccess(ref);
-		// Check not member
-		removeMember(studyClone, admin);
+		// Check not user of study
+		removeUser(studyClone, admin);
 		Result result = callAction(ref,
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(SEE_OTHER);
 		assertThat(flash(result).get(FlashScopeMessaging.ERROR)).contains(
-				"isn't member of study");
+				"isn't user of study");
 		removeStudy(studyClone);
 	}
 
@@ -192,7 +192,7 @@ public class AccessControllerTest extends AbstractTest {
 						.getComponentList().get(0).getId(),
 						StudyService.COMPONENT_POSITION_DOWN);
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -202,7 +202,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies
 				.showStudy(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -212,7 +212,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies
 				.createPersonalSingleRun(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -222,7 +222,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies
 				.createPersonalMultipleRun(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -232,7 +232,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies
 				.showMTurkSourceCode(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -242,7 +242,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Studies.workers(studyClone
 				.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -252,7 +252,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Components.showComponent(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -262,7 +262,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Components
 				.create(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -272,7 +272,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Components
 				.submit(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -282,7 +282,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Components.changeProperty(
 				studyClone.getId(), studyClone.getComponent(1).getId(), true);
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -292,7 +292,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Components.cloneComponent(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -302,7 +302,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.Components.remove(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -331,7 +331,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.ImportExport
 				.importComponent(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -342,7 +342,7 @@ public class AccessControllerTest extends AbstractTest {
 				.exportComponent(studyClone.getId(), studyClone.getComponent(1)
 						.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -352,7 +352,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.ImportExport
 				.exportStudy(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -362,7 +362,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.ComponentResults.index(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -371,7 +371,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.ComponentResults
 				.remove("1");
 		checkDeniedAccess(ref);
-		// TODO check whether result's study has appropriate member
+		// TODO check whether result's study has appropriate user
 	}
 
 	@Test
@@ -381,7 +381,7 @@ public class AccessControllerTest extends AbstractTest {
 				.tableDataByComponent(studyClone.getId(), studyClone
 						.getComponent(1).getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -390,7 +390,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.ImportExport
 				.exportDataOfComponentResults("1");
 		checkDeniedAccess(ref);
-		// TODO check whether result's study has appropriate member
+		// TODO check whether result's study has appropriate user
 	}
 
 	@Test
@@ -399,7 +399,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.StudyResults
 				.index(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -407,7 +407,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callStudyResultsRemove() throws Exception {
 		HandlerRef ref = controllers.routes.ref.StudyResults.remove("1");
 		checkDeniedAccess(ref);
-		// TODO check whether result's study has appropriate member
+		// TODO check whether result's study has appropriate user
 	}
 
 	@Test
@@ -416,7 +416,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.StudyResults
 				.tableDataByStudy(studyClone.getId());
 		checkDeniedAccess(ref);
-		checkNotMember(ref, studyClone);
+		checkNotUser(ref, studyClone);
 		removeStudy(studyClone);
 	}
 
@@ -425,7 +425,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.StudyResults
 				.tableDataByWorker(1l);
 		checkDeniedAccess(ref);
-		// TODO check whether result's study has appropriate member
+		// TODO check whether result's study has appropriate user
 	}
 
 	@Test
@@ -433,7 +433,7 @@ public class AccessControllerTest extends AbstractTest {
 		HandlerRef ref = controllers.routes.ref.ImportExport
 				.exportDataOfStudyResults("1");
 		checkDeniedAccess(ref);
-		// TODO check whether result's study has appropriate member
+		// TODO check whether result's study has appropriate user
 	}
 
 	@Test
