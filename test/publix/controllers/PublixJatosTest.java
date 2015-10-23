@@ -17,7 +17,7 @@ import java.io.IOException;
 
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.JatosWorker;
@@ -63,7 +63,7 @@ public class PublixJatosTest extends AbstractTest {
 	 */
 	@Test
 	public void runWholeStudy() throws IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		// ***
@@ -389,7 +389,7 @@ public class PublixJatosTest extends AbstractTest {
 
 	// TODO abort study
 
-	private void checkIdCookie(Result result, Worker worker, StudyModel study,
+	private void checkIdCookie(Result result, Worker worker, Study study,
 			StudyResult studyResult, int componentPosition) {
 		Cookie idCookie = cookie(Publix.ID_COOKIE_NAME, result);
 		assertThat(idCookie.value()).contains("workerId=" + worker.getId());
@@ -410,7 +410,7 @@ public class PublixJatosTest extends AbstractTest {
 				componentState);
 	}
 
-	private void checkComponentResultAfterStart(StudyModel study,
+	private void checkComponentResultAfterStart(Study study,
 			StudyResult studyResult, int componentPosition,
 			int componentResultListSize) {
 		assertThat(studyResult.getComponentResultList().size()).isEqualTo(

@@ -3,10 +3,10 @@ package publix.groupservices;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.GroupModel;
+import models.Group;
 import models.GroupResult;
 import models.GroupResult.GroupState;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 import persistance.GroupResultDao;
 import persistance.StudyResultDao;
@@ -42,7 +42,7 @@ public class GroupService {
 	/**
 	 * Throws ForbiddenPublixException if study is not a group study.
 	 */
-	public void checkStudyIsGroupStudy(StudyModel study)
+	public void checkStudyIsGroupStudy(Study study)
 			throws ForbiddenPublixException {
 		if (!study.isGroupStudy()) {
 			throw new ForbiddenPublixException(
@@ -73,7 +73,7 @@ public class GroupService {
 
 		// Look in the DB if we have an incomplete GroupResult. If not create
 		// new one.
-		GroupModel group = studyResult.getStudy().getGroup();
+		Group group = studyResult.getStudy().getGroup();
 		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(group);
 		if (groupResult == null) {
 			groupResult = new GroupResult(group);

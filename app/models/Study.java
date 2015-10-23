@@ -22,6 +22,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
+import javax.persistence.Table;
 
 import models.workers.JatosWorker;
 import models.workers.PersonalMultipleWorker;
@@ -45,7 +46,8 @@ import com.fasterxml.jackson.annotation.JsonView;
  * @author Kristian Lange
  */
 @Entity
-public class StudyModel {
+@Table(name = "Study")
+public class Study {
 
 	/**
 	 * Version of this model used for serialisation (e.g. JSON marshaling)
@@ -103,7 +105,7 @@ public class StudyModel {
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	@ElementCollection
-	private Set<String> allowedWorkerList = new HashSet<>();
+	private Set<String> allowedWorkerTypeList = new HashSet<>();
 
 	/**
 	 * Study assets directory name
@@ -133,12 +135,12 @@ public class StudyModel {
 	private boolean groupStudy = false;
 
 	/**
-	 * If this is a group study, in the GroupModel are the properties of the
+	 * If this is a group study, in the Group are the properties of the
 	 * group.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	@OneToOne(mappedBy = "study", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	private GroupModel group;
+	private Group group;
 
 	/**
 	 * List of users that are users of this study (have access rights).
@@ -146,7 +148,7 @@ public class StudyModel {
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "StudyUserMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "user_email", referencedColumnName = "email") })
-	private Set<UserModel> userList = new HashSet<>();
+	private Set<User> userList = new HashSet<>();
 
 	/**
 	 * Ordered list of component of this study
@@ -155,13 +157,13 @@ public class StudyModel {
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
-	private List<ComponentModel> componentList = new ArrayList<>();
+	private List<Component> componentList = new ArrayList<>();
 
-	public StudyModel() {
+	public Study() {
 		// Add default allowed workers
-		addAllowedWorker(JatosWorker.WORKER_TYPE);
-		addAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
-		addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+		addAllowedWorkerType(JatosWorker.WORKER_TYPE);
+		addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+		addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 	}
 
 	public void setId(Long id) {
@@ -244,59 +246,59 @@ public class StudyModel {
 		this.groupStudy = groupStudy;
 	}
 
-	public void setAllowedWorkerList(Set<String> allowedWorkerList) {
-		this.allowedWorkerList = allowedWorkerList;
+	public void setAllowedWorkerTypeList(Set<String> allowedWorkerTypeList) {
+		this.allowedWorkerTypeList = allowedWorkerTypeList;
 	}
 
-	public Set<String> getAllowedWorkerList() {
-		return this.allowedWorkerList;
+	public Set<String> getAllowedWorkerTypeList() {
+		return this.allowedWorkerTypeList;
 	}
 
-	public void addAllowedWorker(String workerType) {
-		allowedWorkerList.add(workerType);
+	public void addAllowedWorkerType(String workerType) {
+		allowedWorkerTypeList.add(workerType);
 	}
 
-	public void removeAllowedWorker(String workerType) {
-		allowedWorkerList.remove(workerType);
+	public void removeAllowedWorkerType(String workerType) {
+		allowedWorkerTypeList.remove(workerType);
 	}
 
-	public boolean hasAllowedWorker(String workerType) {
-		return allowedWorkerList.contains(workerType);
+	public boolean hasAllowedWorkerType(String workerType) {
+		return allowedWorkerTypeList.contains(workerType);
 	}
 
-	public void setUserList(Set<UserModel> userList) {
+	public void setUserList(Set<User> userList) {
 		this.userList = userList;
 	}
 
-	public Set<UserModel> getUserList() {
+	public Set<User> getUserList() {
 		return userList;
 	}
 
-	public void addUser(UserModel user) {
+	public void addUser(User user) {
 		userList.add(user);
 	}
 
-	public void removeUser(UserModel user) {
+	public void removeUser(User user) {
 		userList.remove(user);
 	}
 
-	public boolean hasUser(UserModel user) {
+	public boolean hasUser(User user) {
 		return userList.contains(user);
 	}
 
-	public GroupModel getGroup() {
+	public Group getGroup() {
 		return this.group;
 	}
 
-	public void setGroup(GroupModel group) {
+	public void setGroup(Group group) {
 		this.group = group;
 	}
 
-	public void setComponentList(List<ComponentModel> componentList) {
+	public void setComponentList(List<Component> componentList) {
 		this.componentList = componentList;
 	}
 
-	public List<ComponentModel> getComponentList() {
+	public List<Component> getComponentList() {
 		return this.componentList;
 	}
 
@@ -304,7 +306,7 @@ public class StudyModel {
 	 * Gets the component of this study at the given position. The smallest
 	 * position is 1 (and not 0 as in an array).
 	 */
-	public ComponentModel getComponent(int position) {
+	public Component getComponent(int position) {
 		return componentList.get(position - 1);
 	}
 
@@ -312,7 +314,7 @@ public class StudyModel {
 	 * Returns the position (index+1) of the component in the list of components
 	 * of this study or null if it doesn't exist.
 	 */
-	public Integer getComponentPosition(ComponentModel component) {
+	public Integer getComponentPosition(Component component) {
 		int index = componentList.indexOf(component);
 		if (index != -1) {
 			return index + 1;
@@ -321,20 +323,20 @@ public class StudyModel {
 		}
 	}
 
-	public void addComponent(ComponentModel component) {
+	public void addComponent(Component component) {
 		componentList.add(component);
 	}
 
-	public void removeComponent(ComponentModel component) {
+	public void removeComponent(Component component) {
 		componentList.remove(component);
 	}
 
-	public boolean hasComponent(ComponentModel component) {
+	public boolean hasComponent(Component component) {
 		return componentList.contains(component);
 	}
 
 	@JsonIgnore
-	public ComponentModel getFirstComponent() {
+	public Component getFirstComponent() {
 		if (componentList.size() > 0) {
 			return componentList.get(0);
 		}
@@ -342,7 +344,7 @@ public class StudyModel {
 	}
 
 	@JsonIgnore
-	public ComponentModel getLastComponent() {
+	public Component getLastComponent() {
 		if (componentList.size() > 0) {
 			return componentList.get(componentList.size() - 1);
 		}
@@ -350,7 +352,7 @@ public class StudyModel {
 	}
 
 	@JsonIgnore
-	public ComponentModel getNextComponent(ComponentModel component) {
+	public Component getNextComponent(Component component) {
 		int index = componentList.indexOf(component);
 		if (index < componentList.size() - 1) {
 			return componentList.get(index + 1);
@@ -415,10 +417,10 @@ public class StudyModel {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof StudyModel)) {
+		if (!(obj instanceof Study)) {
 			return false;
 		}
-		StudyModel other = (StudyModel) obj;
+		Study other = (Study) obj;
 		if (id == null) {
 			if (other.getId() != null) {
 				return false;

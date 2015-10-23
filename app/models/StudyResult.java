@@ -17,6 +17,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
+import javax.persistence.Table;
 
 import models.workers.Worker;
 
@@ -31,6 +32,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * @author Kristian Lange
  */
 @Entity
+@Table(name = "StudyResult")
 @JsonPropertyOrder(value = { "id", "startDate", "worker", "confirmationCode",
 		"studyState", "errorMsg", "abortMsg" })
 public class StudyResult {
@@ -81,7 +83,7 @@ public class StudyResult {
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "study_id")
-	private StudyModel study;
+	private Study study;
 
 	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -116,7 +118,7 @@ public class StudyResult {
 	public StudyResult() {
 	}
 
-	public StudyResult(StudyModel study) {
+	public StudyResult(Study study) {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.study = study;
 		this.studyState = StudyState.STARTED;
@@ -172,11 +174,11 @@ public class StudyResult {
 		return this.studySessionData;
 	}
 
-	public void setStudy(StudyModel study) {
+	public void setStudy(Study study) {
 		this.study = study;
 	}
 
-	public StudyModel getStudy() {
+	public Study getStudy() {
 		return this.study;
 	}
 

@@ -9,7 +9,7 @@ import static play.test.Helpers.status;
 import java.io.IOException;
 
 import common.AbstractTest;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 
 import org.junit.Rule;
@@ -35,7 +35,7 @@ import controllers.Users;
  */
 public class LockedStudyControllerTest extends AbstractTest {
 
-	private static StudyModel studyTemplate;
+	private static Study studyTemplate;
 	private JatosPublixUtils jatosPublixUtils;
 	private StudyResultDao studyResultDao;
 
@@ -67,7 +67,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 
 	@Test
 	public void callStudiesSubmitEdited() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
 		HandlerRef ref = controllers.routes.ref.Studies
 				.submitEdited(studyClone.getId());
@@ -78,7 +78,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 
 	@Test
 	public void callStudiesRemove() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
 		HandlerRef ref = controllers.routes.ref.Studies.remove(studyClone
 				.getId());
@@ -88,7 +88,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 
 	@Test
 	public void callStudiesChangeComponentOrder() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
 		HandlerRef ref = controllers.routes.ref.Studies
 				.changeComponentOrder(studyClone.getId(), studyClone
@@ -101,7 +101,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 	@Test
 	public void callExportComponentResults() throws IOException,
 			ForbiddenPublixException, ForbiddenReloadException {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
 		
 		// Create some results

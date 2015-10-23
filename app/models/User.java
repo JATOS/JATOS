@@ -11,6 +11,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 import models.workers.JatosWorker;
 
@@ -28,7 +29,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author Kristian Lange
  */
 @Entity
-public class UserModel {
+@Table(name = "User")
+public class User {
 
 	public static final String NAME = "name";
 	public static final String EMAIL = "email";
@@ -49,15 +51,15 @@ public class UserModel {
 	private String passwordHash;
 
 	@ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
-	private Set<StudyModel> studyList = new HashSet<>();
+	private Set<Study> studyList = new HashSet<>();
 
-	public UserModel(String email, String name, String passwordHash) {
+	public User(String email, String name, String passwordHash) {
 		this.email = email;
 		this.name = name;
 		this.passwordHash = passwordHash;
 	}
 
-	public UserModel() {
+	public User() {
 	}
 
 	public void setEmail(String email) {
@@ -84,11 +86,11 @@ public class UserModel {
 		return this.passwordHash;
 	}
 
-	public void setStudyList(Set<StudyModel> studyList) {
+	public void setStudyList(Set<Study> studyList) {
 		this.studyList = studyList;
 	}
 
-	public Set<StudyModel> getStudyList() {
+	public Set<Study> getStudyList() {
 		return this.studyList;
 	}
 
@@ -125,10 +127,10 @@ public class UserModel {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof UserModel)) {
+		if (!(obj instanceof User)) {
 			return false;
 		}
-		UserModel other = (UserModel) obj;
+		User other = (User) obj;
 		if (email == null) {
 			if (other.getEmail() != null) {
 				return false;

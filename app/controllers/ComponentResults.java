@@ -5,9 +5,9 @@ import java.io.IOException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
-import models.StudyModel;
-import models.UserModel;
+import models.Component;
+import models.Study;
+import models.User;
 import persistance.ComponentDao;
 import persistance.StudyDao;
 import play.Logger;
@@ -81,9 +81,9 @@ public class ComponentResults extends Controller {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		ComponentModel component = componentDao.findById(componentId);
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Component component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
@@ -123,7 +123,7 @@ public class ComponentResults extends Controller {
 		Logger.info(CLASS_NAME + ".remove: componentResultIds "
 				+ componentResultIds + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			resultRemover.removeComponentResults(componentResultIds,
 					loggedInUser);
@@ -144,9 +144,9 @@ public class ComponentResults extends Controller {
 		Logger.info(CLASS_NAME + ".removeAllOfComponent: studyId " + studyId
 				+ ", " + "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		ComponentModel component = componentDao.findById(componentId);
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Component component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
@@ -174,9 +174,9 @@ public class ComponentResults extends Controller {
 		Logger.info(CLASS_NAME + ".tableDataByComponent: studyId " + studyId
 				+ ", " + "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		ComponentModel component = componentDao.findById(componentId);
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Component component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,

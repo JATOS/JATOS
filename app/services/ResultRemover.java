@@ -5,11 +5,11 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
+import models.Component;
 import models.ComponentResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
-import models.UserModel;
+import models.User;
 import models.workers.Worker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
@@ -52,7 +52,7 @@ public class ResultRemover {
 	 * @throws NotFoundException
 	 * @throws ForbiddenException
 	 */
-	public void removeComponentResults(String componentResultIds, UserModel user)
+	public void removeComponentResults(String componentResultIds, User user)
 			throws BadRequestException, NotFoundException, ForbiddenException {
 		List<Long> componentResultIdList = resultService
 				.extractResultIds(componentResultIds);
@@ -76,7 +76,7 @@ public class ResultRemover {
 	 * @throws NotFoundException
 	 * @throws ForbiddenException
 	 */
-	public void removeStudyResults(String studyResultIds, UserModel user)
+	public void removeStudyResults(String studyResultIds, User user)
 			throws BadRequestException, NotFoundException, ForbiddenException {
 		List<Long> studyResultIdList = resultService
 				.extractResultIds(studyResultIds);
@@ -91,8 +91,8 @@ public class ResultRemover {
 	 * Retrieves all ComponentResults of the given component, checks if the
 	 * given user is allowed to remove them and if yes, removes them.
 	 */
-	public void removeAllComponentResults(ComponentModel component,
-			UserModel user) throws ForbiddenException, BadRequestException {
+	public void removeAllComponentResults(Component component,
+			User user) throws ForbiddenException, BadRequestException {
 		List<ComponentResult> componentResultList = componentResultDao
 				.findAllByComponent(component);
 		resultService.checkComponentResults(componentResultList, user, true);
@@ -104,7 +104,7 @@ public class ResultRemover {
 	 * StudyResults of the given study, checks if the given user is allowed to
 	 * remove them and if yes, removes them.
 	 */
-	public void removeAllStudyResults(StudyModel study, UserModel user)
+	public void removeAllStudyResults(Study study, User user)
 			throws ForbiddenException, BadRequestException {
 		List<StudyResult> studyResultList = studyResultDao
 				.findAllByStudy(study);
@@ -117,7 +117,7 @@ public class ResultRemover {
 	 * StudyResults that belong to the given worker, checks if the given user is
 	 * allowed to remove them and if yes, removes them.
 	 */
-	public void removeAllStudyResults(Worker worker, UserModel user)
+	public void removeAllStudyResults(Worker worker, User user)
 			throws ForbiddenException, BadRequestException {
 		List<StudyResult> allowedStudyResultList = resultService
 				.getAllowedStudyResultList(user, worker);

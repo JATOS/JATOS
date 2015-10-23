@@ -7,7 +7,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.UserModel;
+import models.User;
 import play.Logger;
 import play.data.DynamicForm;
 import play.data.Form;
@@ -59,8 +59,8 @@ public class Users extends Controller {
 	public Result profile(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".profile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = checkStandard(email, loggedInUser);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		User user = checkStandard(email, loggedInUser);
 		String breadcrumbs = breadcrumbsService.generateForUser(user);
 		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
 				user));
@@ -73,11 +73,11 @@ public class Users extends Controller {
 	public Result create() {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 		String breadcrumbs = breadcrumbsService
 				.generateForHome(BreadcrumbsService.NEW_USER);
 		return ok(views.html.gui.user.create.render(loggedInUser, breadcrumbs,
-				Form.form(UserModel.class)));
+				Form.form(User.class)));
 	}
 
 	/**
@@ -88,18 +88,18 @@ public class Users extends Controller {
 			NoSuchAlgorithmException {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Form<User> form = Form.form(User.class).bindFromRequest();
+		User loggedInUser = userService.retrieveLoggedInUser();
 
 		if (form.hasErrors()) {
 			return showCreateUserAfterError(loggedInUser, form, null,
 					Http.Status.BAD_REQUEST);
 		}
 
-		UserModel newUser = form.get();
+		User newUser = form.get();
 		DynamicForm requestData = Form.form().bindFromRequest();
-		String password = requestData.get(UserModel.PASSWORD);
-		String passwordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
+		String password = requestData.get(User.PASSWORD);
+		String passwordRepeat = requestData.get(User.PASSWORD_REPEAT);
 		List<ValidationError> errorList = userService.validateNewUser(newUser,
 				password, passwordRepeat);
 		if (!errorList.isEmpty()) {
@@ -111,8 +111,8 @@ public class Users extends Controller {
 		return redirect(controllers.routes.Home.home());
 	}
 
-	private Result showCreateUserAfterError(UserModel loggedInUser,
-			Form<UserModel> form, List<ValidationError> errorList,
+	private Result showCreateUserAfterError(User loggedInUser,
+			Form<User> form, List<ValidationError> errorList,
 			int httpStatus) {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
@@ -126,8 +126,8 @@ public class Users extends Controller {
 		}
 	}
 
-	private Result showEditUserAfterError(UserModel loggedInUser,
-			Form<UserModel> form, UserModel user, int httpStatus) {
+	private Result showEditUserAfterError(User loggedInUser,
+			Form<User> form, User user, int httpStatus) {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
 		} else {
@@ -138,9 +138,9 @@ public class Users extends Controller {
 		}
 	}
 
-	private Result showChangePasswordAfterError(UserModel loggedInUser,
-			Form<UserModel> form, List<ValidationError> errorList,
-			int httpStatus, UserModel user) {
+	private Result showChangePasswordAfterError(User loggedInUser,
+			Form<User> form, List<ValidationError> errorList,
+			int httpStatus, User user) {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
 		} else {
@@ -162,9 +162,9 @@ public class Users extends Controller {
 	public Result editProfile(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".editProfile: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = checkStandard(email, loggedInUser);
-		Form<UserModel> form = Form.form(UserModel.class).fill(user);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		User user = checkStandard(email, loggedInUser);
+		Form<User> form = Form.form(User.class).fill(user);
 		String breadcrumbs = breadcrumbsService.generateForUser(user,
 				BreadcrumbsService.EDIT_PROFILE);
 		return ok(views.html.gui.user.editProfile.render(loggedInUser,
@@ -179,10 +179,10 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".submitEditedProfile: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = checkStandard(email, loggedInUser);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		User user = checkStandard(email, loggedInUser);
 
-		Form<UserModel> form = Form.form(UserModel.class).bindFromRequest();
+		Form<User> form = Form.form(User.class).bindFromRequest();
 		if (form.hasErrors()) {
 			return showEditUserAfterError(loggedInUser, form, loggedInUser,
 					Http.Status.BAD_REQUEST);
@@ -191,7 +191,7 @@ public class Users extends Controller {
 		// Do not update 'email' since it's the ID and should stay
 		// unaltered. For the password we have an extra form.
 		DynamicForm requestData = Form.form().bindFromRequest();
-		String name = requestData.get(UserModel.NAME);
+		String name = requestData.get(User.NAME);
 		userService.updateName(user, name);
 		return redirect(controllers.routes.Users.profile(email));
 	}
@@ -203,10 +203,10 @@ public class Users extends Controller {
 	public Result changePassword(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".changePassword: " + "email " + email + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = checkStandard(email, loggedInUser);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		User user = checkStandard(email, loggedInUser);
 
-		Form<UserModel> form = Form.form(UserModel.class).fill(user);
+		Form<User> form = Form.form(User.class).fill(user);
 		String breadcrumbs = breadcrumbsService.generateForUser(user,
 				BreadcrumbsService.CHANGE_PASSWORD);
 		return ok(views.html.gui.user.changePassword.render(loggedInUser,
@@ -222,15 +222,15 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".submitChangedPassword: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		UserModel user = checkStandard(email, loggedInUser);
-		Form<UserModel> form = Form.form(UserModel.class).fill(user);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		User user = checkStandard(email, loggedInUser);
+		Form<User> form = Form.form(User.class).fill(user);
 
 		DynamicForm requestData = Form.form().bindFromRequest();
-		String newPassword = requestData.get(UserModel.PASSWORD);
-		String newPasswordRepeat = requestData.get(UserModel.PASSWORD_REPEAT);
+		String newPassword = requestData.get(User.PASSWORD);
+		String newPasswordRepeat = requestData.get(User.PASSWORD_REPEAT);
 		String oldPasswordHash = userService.getHashMDFive(requestData
-				.get(UserModel.OLD_PASSWORD));
+				.get(User.OLD_PASSWORD));
 		List<ValidationError> errorList = userService.validateChangePassword(
 				user, newPassword, newPasswordRepeat, oldPasswordHash);
 		if (!errorList.isEmpty()) {
@@ -243,9 +243,9 @@ public class Users extends Controller {
 		return redirect(controllers.routes.Users.profile(email));
 	}
 
-	private UserModel checkStandard(String email, UserModel loggedInUser)
+	private User checkStandard(String email, User loggedInUser)
 			throws JatosGuiException {
-		UserModel user = null;
+		User user = null;
 		try {
 			user = userService.retrieveUser(email);
 			userService.checkUserLoggedIn(user, loggedInUser);

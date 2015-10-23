@@ -3,8 +3,8 @@ package publix.controllers.general_single;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
-import models.StudyModel;
+import models.Component;
+import models.Study;
 import models.workers.GeneralSingleWorker;
 import persistance.ComponentResultDao;
 import persistance.GroupResultDao;
@@ -67,7 +67,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 	@Override
 	public Result startStudy(Long studyId) throws PublixException {
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId);
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		Cookie cookie = Publix.request().cookie(GeneralSinglePublix.COOKIE);
 		publixUtils.checkStudyInCookie(study, cookie);
 
@@ -84,7 +84,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 		String cookieValue = publixUtils.addStudyToCookie(study, cookie);
 		Publix.response().setCookie(GeneralSinglePublix.COOKIE, cookieValue);
 
-		ComponentModel firstComponent = publixUtils
+		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
 		return redirect(publix.controllers.routes.PublixInterceptor
 				.startComponent(studyId, firstComponent.getId()));

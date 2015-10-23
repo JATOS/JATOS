@@ -7,10 +7,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.ComponentModel;
+import models.Component;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.Worker;
@@ -88,7 +88,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkStartComponent() throws NoSuchAlgorithmException,
 			IOException, ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -121,7 +121,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkStartComponentFinishPriorComponentResult()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -157,7 +157,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkStartComponentFinishReloadableComponentResult()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -193,7 +193,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkStartComponentNotReloadable()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -231,7 +231,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkGenerateIdCookieValue() throws NoSuchAlgorithmException,
 			IOException, ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -268,7 +268,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkAbortStudy() throws IOException, NoSuchAlgorithmException,
 			ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -308,7 +308,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkFinishStudyResultSuccessful() throws IOException,
 			NoSuchAlgorithmException, ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -347,7 +347,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkFinishAllPriorStudyResults() throws IOException,
 			NoSuchAlgorithmException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -379,11 +379,11 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkRetrieveWorkersLastStudyResult() throws IOException,
 			NoSuchAlgorithmException, ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyModel clone = studyService.cloneStudy(study, admin);
+		Study clone = studyService.cloneStudy(study, admin);
 		entityManager.getTransaction().commit();
 
 		entityManager.getTransaction().begin();
@@ -415,11 +415,11 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkRetrieveWorkersLastStudyResultNeverDidStudy()
 			throws IOException, NoSuchAlgorithmException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyModel clone = studyService.cloneStudy(study, admin);
+		Study clone = studyService.cloneStudy(study, admin);
 		entityManager.getTransaction().commit();
 
 		entityManager.getTransaction().begin();
@@ -452,7 +452,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkRetrieveWorkersLastStudyResultAlreadyFinished()
 			throws IOException, NoSuchAlgorithmException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -484,11 +484,11 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkRetrieveFirstActiveComponent() throws IOException,
 			NoSuchAlgorithmException, NotFoundPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		study.getFirstComponent().setActive(false);
 		addStudy(study);
 
-		ComponentModel component = publixUtils
+		Component component = publixUtils
 				.retrieveFirstActiveComponent(study);
 		assertThat(component).isEqualTo(study.getComponent(2));
 
@@ -500,8 +500,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkRetrieveFirstActiveComponentNonActive()
 			throws IOException, NoSuchAlgorithmException,
 			NotFoundPublixException {
-		StudyModel study = importExampleStudy();
-		for (ComponentModel component : study.getComponentList()) {
+		Study study = importExampleStudy();
+		for (Component component : study.getComponentList()) {
 			component.setActive(false);
 		}
 		addStudy(study);
@@ -522,8 +522,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkRetrieveNextActiveComponent() throws IOException,
 			NoSuchAlgorithmException, NotFoundPublixException,
 			ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
-		for (ComponentModel component : study.getComponentList()) {
+		Study study = importExampleStudy();
+		for (Component component : study.getComponentList()) {
 			component.setActive(false);
 		}
 		addStudy(study);
@@ -536,7 +536,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		publixUtils.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
-		ComponentModel component = publixUtils
+		Component component = publixUtils
 				.retrieveNextActiveComponent(studyResult);
 		// Since the 2. component is not active ...
 		assertThat(component).isNull();
@@ -549,11 +549,11 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkRetrieveComponent() throws IOException,
 			NotFoundPublixException, BadRequestPublixException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		study.getLastComponent().setStudy(study);
 		addStudy(study);
 
-		ComponentModel component = publixUtils.retrieveComponent(study, study
+		Component component = publixUtils.retrieveComponent(study, study
 				.getLastComponent().getId());
 		assertThat(component).isEqualTo(study.getLastComponent());
 
@@ -565,7 +565,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkRetrieveComponentWrongId() throws IOException,
 			NotFoundPublixException, BadRequestPublixException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		try {
@@ -584,11 +584,11 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkRetrieveComponentWrongComponent() throws IOException,
 			NotFoundPublixException, BadRequestPublixException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyModel clone = studyService.cloneStudy(study, admin);
+		Study clone = studyService.cloneStudy(study, admin);
 		entityManager.getTransaction().commit();
 
 		try {
@@ -610,7 +610,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	public void checkRetrieveComponentNotActive() throws IOException,
 			NotFoundPublixException, BadRequestPublixException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		study.getFirstComponent().setActive(false);
 		study.getFirstComponent().setStudy(study);
 		addStudy(study);
@@ -632,10 +632,10 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkRetrieveComponentByPosition() throws IOException,
 			PublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		ComponentModel component = publixUtils.retrieveComponentByPosition(
+		Component component = publixUtils.retrieveComponentByPosition(
 				study.getId(), 1);
 		assertThat(component).isEqualTo(study.getFirstComponent());
 
@@ -646,7 +646,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkRetrieveComponentByPositionNull() throws IOException,
 			PublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		try {
@@ -664,7 +664,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkRetrieveComponentByPositionWrong() throws IOException,
 			PublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		try {
@@ -682,10 +682,10 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkRetrieveStudy() throws NotFoundPublixException,
 			IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		StudyModel retrievedStudy = publixUtils.retrieveStudy(study.getId());
+		Study retrievedStudy = publixUtils.retrieveStudy(study.getId());
 		assertThat(retrievedStudy).isEqualTo(study);
 
 		// Clean-up
@@ -695,7 +695,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkRetrieveStudyNotFound() throws NotFoundPublixException,
 			IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		try {
@@ -713,7 +713,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkComponentBelongsToStudy() throws IOException,
 			PublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		study.getFirstComponent().setStudy(study);
 		addStudy(study);
 
@@ -727,12 +727,12 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkComponentBelongsToStudyFail() throws IOException,
 			PublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		study.getFirstComponent().setStudy(study);
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyModel clone = studyService.cloneStudy(study, admin);
+		Study clone = studyService.cloneStudy(study, admin);
 		entityManager.getTransaction().commit();
 
 		try {
@@ -752,7 +752,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	@Test
 	public void checkFinishedStudyAlready() throws IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -787,11 +787,11 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	@Test
 	public void checkFinishedStudyAlreadyWrong() throws IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		StudyModel clone = studyService.cloneStudy(study, admin);
+		Study clone = studyService.cloneStudy(study, admin);
 		entityManager.getTransaction().commit();
 
 		entityManager.getTransaction().begin();
@@ -812,7 +812,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	@Test
 	public void checkDidStudyAlready() throws IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		assertThat(publixUtils.didStudyAlready(admin.getWorker(), study))
@@ -834,7 +834,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	@Test
 	public void checkStudyDone() throws IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -865,7 +865,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	@Test
 	public void checkComponentDone() throws IOException,
 			ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();

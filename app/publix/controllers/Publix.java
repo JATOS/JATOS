@@ -4,11 +4,11 @@ import java.io.IOException;
 
 import javax.inject.Singleton;
 
-import models.ComponentModel;
+import models.Component;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
 import models.GroupResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.Worker;
@@ -100,8 +100,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ session(WORKER_ID));
 
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		ComponentModel component = publixUtils.retrieveComponent(study,
+		Study study = publixUtils.retrieveStudy(studyId);
+		Component component = publixUtils.retrieveComponent(study,
 				componentId);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
@@ -131,7 +131,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".startComponentByPosition: studyId "
 				+ studyId + ", " + "position " + position + ", " + ", "
 				+ "workerId " + session(WORKER_ID));
-		ComponentModel component = publixUtils.retrieveComponentByPosition(
+		Component component = publixUtils.retrieveComponentByPosition(
 				studyId, position);
 		return startComponent(studyId, component.getId());
 	}
@@ -141,11 +141,11 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
 				+ ", " + "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
 
-		ComponentModel nextComponent = publixUtils
+		Component nextComponent = publixUtils
 				.retrieveNextActiveComponent(studyResult);
 		if (nextComponent == null) {
 			// Study has no more components -> finish it
@@ -166,8 +166,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
-		ComponentModel component = publixUtils.retrieveComponent(study,
+		Study study = publixUtils.retrieveStudy(studyId);
+		Component component = publixUtils.retrieveComponent(study,
 				componentId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
@@ -218,7 +218,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			throws ForbiddenPublixException, NotFoundPublixException,
 			InternalServerErrorPublixException {
 		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
@@ -245,7 +245,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(Publix.WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
@@ -271,7 +271,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".setStudySessionData: studyId " + studyId
 				+ ", " + "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
@@ -288,9 +288,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".submitResultData: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		ComponentModel component = publixUtils.retrieveComponent(study,
+		Component component = publixUtils.retrieveComponent(study,
 				componentId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
@@ -321,9 +321,9 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID) + ", " + "successful " + successful + ", "
 				+ "errorMsg \"" + errorMsg + "\"");
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		ComponentModel component = publixUtils.retrieveComponent(study,
+		Component component = publixUtils.retrieveComponent(study,
 				componentId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
@@ -356,7 +356,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
 				+ ", " + "workerId " + session(WORKER_ID) + ", " + "message \""
 				+ message + "\"");
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
@@ -383,7 +383,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
@@ -410,7 +410,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 	@Override
 	public Result log(Long studyId, Long componentId) throws PublixException {
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		String msg = request().body().asText();

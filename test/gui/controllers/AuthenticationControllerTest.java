@@ -14,7 +14,7 @@ import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
 import common.AbstractTest;
-import models.UserModel;
+import models.User;
 
 import org.junit.Test;
 
@@ -66,12 +66,12 @@ public class AuthenticationControllerTest extends AbstractTest {
 		Result result = callAction(
 				controllers.routes.ref.Authentication.authenticate(),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(UserModel.EMAIL,
-								UserService.ADMIN_EMAIL, UserModel.PASSWORD,
+						ImmutableMap.of(User.EMAIL,
+								UserService.ADMIN_EMAIL, User.PASSWORD,
 								UserService.ADMIN_PASSWORD)));
 		assertEquals(303, status(result));
 		assertEquals(UserService.ADMIN_EMAIL,
-				session(result).get(UserModel.EMAIL));
+				session(result).get(User.EMAIL));
 	}
 
 	@Test
@@ -79,11 +79,11 @@ public class AuthenticationControllerTest extends AbstractTest {
 		Result result = callAction(
 				controllers.routes.ref.Authentication.authenticate(),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(UserModel.EMAIL,
-								UserService.ADMIN_EMAIL, UserModel.PASSWORD,
+						ImmutableMap.of(User.EMAIL,
+								UserService.ADMIN_EMAIL, User.PASSWORD,
 								"bla")));
 		assertEquals(400, status(result));
-		assertNull(session(result).get(UserModel.EMAIL));
+		assertNull(session(result).get(User.EMAIL));
 	}
 
 }

@@ -8,11 +8,11 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
+import models.Component;
 import models.ComponentResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
-import models.UserModel;
+import models.User;
 import models.workers.Worker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
@@ -87,12 +87,12 @@ public class ResultService {
 	 * @throws BadRequestException
 	 */
 	public void checkComponentResults(
-			List<ComponentResult> componentResultList, UserModel user,
+			List<ComponentResult> componentResultList, User user,
 			boolean studyMustNotBeLocked) throws ForbiddenException,
 			BadRequestException {
 		for (ComponentResult componentResult : componentResultList) {
-			ComponentModel component = componentResult.getComponent();
-			StudyModel study = component.getStudy();
+			Component component = componentResult.getComponent();
+			Study study = component.getStudy();
 			studyService.checkStandardForStudy(study, study.getId(), user);
 			componentService.checkStandardForComponents(study.getId(),
 					component.getId(), component);
@@ -119,10 +119,10 @@ public class ResultService {
 	 * @throws BadRequestException
 	 */
 	public void checkStudyResults(List<StudyResult> studyResultList,
-			UserModel user, boolean studyMustNotBeLocked)
+			User user, boolean studyMustNotBeLocked)
 			throws ForbiddenException, BadRequestException {
 		for (StudyResult studyResult : studyResultList) {
-			StudyModel study = studyResult.getStudy();
+			Study study = studyResult.getStudy();
 			studyService.checkStandardForStudy(study, study.getId(), user);
 			if (studyMustNotBeLocked) {
 				studyService.checkStudyLocked(study);
@@ -173,7 +173,7 @@ public class ResultService {
 	 * that the given user is allowed to see. A user is allowed if the study
 	 * that the StudyResult belongs too has this user.
 	 */
-	public List<StudyResult> getAllowedStudyResultList(UserModel user,
+	public List<StudyResult> getAllowedStudyResultList(User user,
 			Worker worker) {
 		return worker.getStudyResultList().stream()
 				.filter(studyResult -> studyResult.getStudy().hasUser(user))

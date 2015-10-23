@@ -3,8 +3,8 @@ package publix.controllers.personal_multiple;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
-import models.StudyModel;
+import models.Component;
+import models.Study;
 import models.workers.PersonalMultipleWorker;
 import persistance.ComponentResultDao;
 import persistance.GroupResultDao;
@@ -60,7 +60,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 		String workerId = getQueryString(PERSONAL_MULTIPLE_ID);
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ "workerId " + workerId);
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 
 		PersonalMultipleWorker worker = publixUtils
 				.retrieveTypedWorker(workerId);
@@ -70,7 +70,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);
 
-		ComponentModel firstComponent = publixUtils
+		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
 		return redirect(publix.controllers.routes.PublixInterceptor
 				.startComponent(studyId, firstComponent.getId()));

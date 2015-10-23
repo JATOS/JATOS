@@ -3,9 +3,9 @@ package services;
 import javax.inject.Singleton;
 
 import models.Breadcrumbs;
-import models.ComponentModel;
-import models.StudyModel;
-import models.UserModel;
+import models.Component;
+import models.Study;
+import models.User;
 import models.workers.Worker;
 import play.Logger;
 import utils.JsonUtils;
@@ -61,11 +61,11 @@ public class BreadcrumbsService {
 		return breadcrumbsStr;
 	}
 
-	public String generateForUser(UserModel user) {
+	public String generateForUser(User user) {
 		return generateForUser(user, null);
 	}
 
-	public String generateForUser(UserModel user, String last) {
+	public String generateForUser(User user, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		breadcrumbs.addBreadcrumb(HOME, controllers.routes.Home.home().url());
 		if (last != null) {
@@ -86,11 +86,11 @@ public class BreadcrumbsService {
 		return breadcrumbsStr;
 	}
 
-	public String generateForStudy(StudyModel study) {
+	public String generateForStudy(Study study) {
 		return generateForStudy(study, null);
 	}
 
-	public String generateForStudy(StudyModel study, String last) {
+	public String generateForStudy(Study study, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		breadcrumbs.addBreadcrumb(HOME, controllers.routes.Home.home().url());
 		if (last != null) {
@@ -131,8 +131,8 @@ public class BreadcrumbsService {
 		return breadcrumbsStr;
 	}
 
-	public String generateForComponent(StudyModel study,
-			ComponentModel component, String last) {
+	public String generateForComponent(Study study,
+			Component component, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		breadcrumbs.addBreadcrumb(HOME, controllers.routes.Home.home().url());
 		breadcrumbs.addBreadcrumb(study.getTitle(), controllers.routes.Studies

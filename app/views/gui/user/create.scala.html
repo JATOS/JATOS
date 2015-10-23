@@ -1,5 +1,5 @@
-@(loggedInUser: UserModel,
-breadcrumbs: String, form: Form[UserModel])
+@(loggedInUser: User,
+breadcrumbs: String, form: Form[User])
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
@@ -8,7 +8,7 @@ breadcrumbs: String, form: Form[UserModel])
 <div class="form-group">
 	<label class="control-label col-xs-2" for="email">Email address</label>
 	<div class="col-xs-10">
-		<input type="email" class="form-control" id="email" name="@UserModel.EMAIL" value="@form(UserModel.EMAIL).value" placeholder="Your email">
+		<input type="email" class="form-control" id="email" name="@User.EMAIL" value="@form(User.EMAIL).value" placeholder="Your email">
 		<span class="help-block">This will be your username.</span>
 	</div>
 </div>
@@ -16,15 +16,15 @@ breadcrumbs: String, form: Form[UserModel])
 <div class="form-group">
 	<label class="control-label col-xs-2" for="name">Name</label>
 	<div class="col-xs-10">
-		<input type="text" class="form-control" id="name" name="@UserModel.NAME" value="@form(UserModel.NAME).value" placeholder="Your name">
+		<input type="text" class="form-control" id="name" name="@User.NAME" value="@form(User.NAME).value" placeholder="Your name">
 	</div>
 </div>
 
 <div class="form-group">
 	<label class="control-label col-xs-2" for="password">Password</label>
 	<div class="col-xs-10">
-		<input type="password" class="form-control" id="password" name="@UserModel.PASSWORD" placeholder="Your password">
-		<input type="password" class="form-control" id="repeatPassword" name="@UserModel.PASSWORD_REPEAT" placeholder="Repeat your password">
+		<input type="password" class="form-control" id="password" name="@User.PASSWORD" placeholder="Your password">
+		<input type="password" class="form-control" id="repeatPassword" name="@User.PASSWORD_REPEAT" placeholder="Repeat your password">
 	</div>
 </div>
 
@@ -43,19 +43,19 @@ breadcrumbs: String, form: Form[UserModel])
 @for(error <- form.globalErrors) {
 	showError("@error.message");
 }
-@for(error <- form(UserModel.NAME).errors) {
+@for(error <- form(User.NAME).errors) {
 	$('#name').closest(".form-group").addClass("has-error");
 	$('#name').after('<span class="help-block">@error.message</span>');
 }
-@for(error <- form(UserModel.EMAIL).errors) {
+@for(error <- form(User.EMAIL).errors) {
 	$('#email').closest(".form-group").addClass("has-error");
 	$('#email').after('<span class="help-block">@error.message</span>');
 }
-@for(error <- form(UserModel.PASSWORD).errors) {
+@for(error <- form(User.PASSWORD).errors) {
 	$('#password').closest(".form-group").addClass("has-error");
 	$('#password').after('<span class="help-block">@error.message</span>');
 }
-@for(error <- form(UserModel.PASSWORD_REPEAT).errors) {
+@for(error <- form(User.PASSWORD_REPEAT).errors) {
 	$('#repeatPassword').closest(".form-group").addClass("has-error");
 	$('#repeatPassword').after('<span class="help-block">@error.message</span>');
 }

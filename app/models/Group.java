@@ -9,6 +9,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 import play.data.validation.ValidationError;
 import utils.MessagesStrings;
@@ -20,7 +21,8 @@ import utils.MessagesStrings;
  * @author Kristian Lange
  */
 @Entity
-public class GroupModel {
+@Table(name = "\"Group\"")
+public class Group {
 
 	public static final String ID = "id";
 	public static final String MIN_MEMBER_SIZE = "minGroupSize";
@@ -48,9 +50,9 @@ public class GroupModel {
 	private Integer maxWorkerSize = null;
 	
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	private StudyModel study;
+	private Study study;
 
-	public GroupModel() {
+	public Group() {
 	}
 	
 	public void setId(Long id) {
@@ -85,11 +87,11 @@ public class GroupModel {
 		this.maxWorkerSize = maxWorkerSize;
 	}
 	
-	public StudyModel getStudy() {
+	public Study getStudy() {
 		return this.study;
 	}
 	
-	public void setStudy(StudyModel study) {
+	public void setStudy(Study study) {
 		this.study = study;
 	}
 
@@ -139,10 +141,10 @@ public class GroupModel {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof GroupModel)) {
+		if (!(obj instanceof Group)) {
 			return false;
 		}
-		GroupModel other = (GroupModel) obj;
+		Group other = (Group) obj;
 		if (id == null) {
 			if (other.getId() != null) {
 				return false;

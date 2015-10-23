@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 import javax.inject.Inject;
 
-import models.UserModel;
+import models.User;
 import persistance.UserDao;
 import play.libs.F;
 import play.libs.F.Promise;
@@ -25,7 +25,7 @@ import controllers.actionannotations.AuthenticationAction.Authenticated;
 /**
  * For all actions in a controller that are annotated with @Authenticated check
  * authentication. An action is authenticated if there is an email in the
- * session that correspondents to a valid user. If successful the UserModel is
+ * session that correspondents to a valid user. If successful the User is
  * stored in the RequestScope.
  *
  * @author Kristian Lange
@@ -48,7 +48,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
 		Promise<Result> call;
 		String email = ctx.session().get(Users.SESSION_EMAIL);
-		UserModel loggedInUser = null;
+		User loggedInUser = null;
 		if (email != null) {
 			loggedInUser = userDao.findByEmail(email);
 		}

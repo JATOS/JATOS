@@ -7,9 +7,9 @@ import java.util.Date;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
-import models.StudyModel;
-import models.UserModel;
+import models.Component;
+import models.Study;
+import models.User;
 import models.workers.Worker;
 import persistance.ComponentDao;
 import persistance.StudyDao;
@@ -101,17 +101,17 @@ public class ImportExport extends Controller {
 	public Result importStudy() throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".importStudy: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 
 		// Get file from request
 		FilePart filePart = request().body().asMultipartFormData()
-				.getFile(StudyModel.STUDY);
+				.getFile(Study.STUDY);
 
 		if (filePart == null) {
 			jatosGuiExceptionThrower.throwAjax(MessagesStrings.FILE_MISSING,
 					Http.Status.BAD_REQUEST);
 		}
-		if (!filePart.getKey().equals(StudyModel.STUDY)) {
+		if (!filePart.getKey().equals(Study.STUDY)) {
 			// If wrong key the upload comes from wrong form
 			jatosGuiExceptionThrower.throwAjax(MessagesStrings.NO_STUDY_UPLOAD,
 					Http.Status.BAD_REQUEST);
@@ -138,7 +138,7 @@ public class ImportExport extends Controller {
 	public Result importStudyConfirmed() throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".importStudyConfirmed: "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 
 		// Get confirmation: overwrite study's properties and/or study assets
 		JsonNode json = request().body().asJson();
@@ -162,8 +162,8 @@ public class ImportExport extends Controller {
 	public Result exportStudy(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -198,9 +198,9 @@ public class ImportExport extends Controller {
 		Logger.info(CLASS_NAME + ".exportComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		ComponentModel component = componentDao.findById(componentId);
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Component component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
@@ -237,15 +237,15 @@ public class ImportExport extends Controller {
 	public Result importComponent(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".importComponent: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		ObjectNode json = null;
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			studyService.checkStudyLocked(study);
 
 			FilePart filePart = request().body().asMultipartFormData()
-					.getFile(ComponentModel.COMPONENT);
+					.getFile(Component.COMPONENT);
 			json = importExportService.importComponent(study, filePart);
 		} catch (ForbiddenException | BadRequestException | IOException e) {
 			importExportService.cleanupAfterComponentImport();
@@ -265,8 +265,8 @@ public class ImportExport extends Controller {
 		Logger.info(CLASS_NAME + ".importComponentConfirmed: " + "studyId "
 				+ studyId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
@@ -298,7 +298,7 @@ public class ImportExport extends Controller {
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 
 		String resultDataAsStr = null;
 		try {
@@ -325,8 +325,8 @@ public class ImportExport extends Controller {
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -359,7 +359,7 @@ public class ImportExport extends Controller {
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 
 		String resultDataAsStr = null;
 		try {
@@ -388,9 +388,9 @@ public class ImportExport extends Controller {
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		ComponentModel component = componentDao.findById(componentId);
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Component component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			componentService.checkStandardForComponents(studyId, componentId,
@@ -426,7 +426,7 @@ public class ImportExport extends Controller {
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
 		Worker worker = workerDao.findById(workerId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			workerService.checkWorker(worker, workerId);
 		} catch (BadRequestException e) {

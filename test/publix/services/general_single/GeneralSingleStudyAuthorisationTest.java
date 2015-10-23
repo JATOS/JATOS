@@ -5,7 +5,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.StudyModel;
+import models.Study;
 import models.StudyResult.StudyState;
 import models.workers.GeneralSingleWorker;
 
@@ -42,8 +42,8 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 	@Test
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(GeneralSingleWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);
@@ -59,7 +59,7 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 	@Test
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 
@@ -80,8 +80,8 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 	@Test
 	public void checkWorkerAllowedToDoStudyFinishedStudy()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(GeneralSingleWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);

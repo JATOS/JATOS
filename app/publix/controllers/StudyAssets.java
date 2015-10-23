@@ -5,7 +5,7 @@ import java.io.IOException;
 
 import javax.inject.Singleton;
 
-import models.ComponentModel;
+import models.Component;
 import play.Logger;
 import play.Play;
 import play.libs.F.Promise;
@@ -109,7 +109,7 @@ public class StudyAssets extends Controller {
 	}
 
 	public static String getComponentUrlPath(String studyAssetsDirName,
-			ComponentModel component) throws NotFoundPublixException {
+			Component component) throws NotFoundPublixException {
 		if (Strings.isNullOrEmpty(studyAssetsDirName)
 				|| Strings.isNullOrEmpty(component.getHtmlFilePath())) {
 			throw new NotFoundPublixException(

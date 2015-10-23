@@ -3,7 +3,7 @@ package publix.services.personal_single;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.StudyModel;
+import models.Study;
 import models.workers.PersonalSingleWorker;
 import publix.exceptions.ForbiddenPublixException;
 import publix.services.IStudyAuthorisation;
@@ -30,7 +30,7 @@ public class PersonalSingleStudyAuthorisation implements
 
 	@Override
 	public void checkWorkerAllowedToStartStudy(PersonalSingleWorker worker,
-			StudyModel study) throws ForbiddenPublixException {
+			Study study) throws ForbiddenPublixException {
 		// Personal Single Runs are used only once - don't start if worker has a
 		// study result
 		if (!worker.getStudyResultList().isEmpty()) {
@@ -42,8 +42,8 @@ public class PersonalSingleStudyAuthorisation implements
 
 	@Override
 	public void checkWorkerAllowedToDoStudy(PersonalSingleWorker worker,
-			StudyModel study) throws ForbiddenPublixException {
-		if (!study.hasAllowedWorker(worker.getWorkerType())) {
+			Study study) throws ForbiddenPublixException {
+		if (!study.hasAllowedWorkerType(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}

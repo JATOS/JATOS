@@ -5,11 +5,11 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
+import models.Component;
 import models.ComponentResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
-import models.UserModel;
+import models.User;
 import models.workers.Worker;
 import persistance.ComponentResultDao;
 import persistance.StudyResultDao;
@@ -43,7 +43,7 @@ public class ResultDataStringGenerator {
 	 * given user is allowed to see (means StudyResults from studies he is a
 	 * user of), checks them and returns all their result data in one string.
 	 */
-	public String forWorker(UserModel user, Worker worker)
+	public String forWorker(User user, Worker worker)
 			throws ForbiddenException, BadRequestException {
 		List<StudyResult> allowedStudyResultList = resultService
 				.getAllowedStudyResultList(user, worker);
@@ -55,7 +55,7 @@ public class ResultDataStringGenerator {
 	 * Retrieves all StudyResults of the given study, checks them and returns
 	 * all their result data in one string.
 	 */
-	public String forStudy(UserModel user, StudyModel study)
+	public String forStudy(User user, Study study)
 			throws ForbiddenException, BadRequestException {
 		List<StudyResult> studyResultList = studyResultDao
 				.findAllByStudy(study);
@@ -67,7 +67,7 @@ public class ResultDataStringGenerator {
 	 * Retrieves all ComponentResults of the given component, checks them and
 	 * returns them all their result data in one string.
 	 */
-	public String forComponent(UserModel user, ComponentModel component)
+	public String forComponent(User user, Component component)
 			throws ForbiddenException, BadRequestException {
 		List<ComponentResult> componentResultList = componentResultDao
 				.findAllByComponent(component);
@@ -79,7 +79,7 @@ public class ResultDataStringGenerator {
 	 * Retrieves the StudyResults that correspond to the IDs, checks them and
 	 * returns all their result data in one string.
 	 */
-	public String fromListOfStudyResultIds(String studyResultIds, UserModel user)
+	public String fromListOfStudyResultIds(String studyResultIds, User user)
 			throws BadRequestException, NotFoundException, ForbiddenException {
 		List<Long> studyResultIdList = resultService
 				.extractResultIds(studyResultIds);
@@ -94,7 +94,7 @@ public class ResultDataStringGenerator {
 	 * and returns all their result data in one string.
 	 */
 	public String fromListOfComponentResultIds(String componentResultIds,
-			UserModel user) throws BadRequestException, NotFoundException,
+			User user) throws BadRequestException, NotFoundException,
 			ForbiddenException {
 		List<Long> componentResultIdList = resultService
 				.extractResultIds(componentResultIds);

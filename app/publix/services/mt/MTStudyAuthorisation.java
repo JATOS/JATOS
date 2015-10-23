@@ -3,7 +3,7 @@ package publix.services.mt;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.StudyModel;
+import models.Study;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
 import publix.exceptions.ForbiddenPublixException;
@@ -29,7 +29,7 @@ public class MTStudyAuthorisation implements IStudyAuthorisation<MTWorker> {
 	}
 
 	@Override
-	public void checkWorkerAllowedToStartStudy(MTWorker worker, StudyModel study)
+	public void checkWorkerAllowedToStartStudy(MTWorker worker, Study study)
 			throws ForbiddenPublixException {
 		if (!(worker instanceof MTSandboxWorker)
 				&& publixUtils.didStudyAlready(worker, study)) {
@@ -40,9 +40,9 @@ public class MTStudyAuthorisation implements IStudyAuthorisation<MTWorker> {
 	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(MTWorker worker, StudyModel study)
+	public void checkWorkerAllowedToDoStudy(MTWorker worker, Study study)
 			throws ForbiddenPublixException {
-		if (!study.hasAllowedWorker(worker.getWorkerType())) {
+		if (!study.hasAllowedWorkerType(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}

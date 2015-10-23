@@ -5,7 +5,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.StudyModel;
+import models.Study;
 import models.StudyResult.StudyState;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
@@ -51,8 +51,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(MTWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
 		studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study);
@@ -75,8 +75,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(MTWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
 		// MTWorker is not allowed to start an already started study regardless
@@ -109,8 +109,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(MTWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
 		addStudyResult(study, mtWorker, StudyState.STARTED);
@@ -125,14 +125,14 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 	@Test
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
 		addWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
 		addWorker(mtSandboxWorker);
-		study.removeAllowedWorker(MTWorker.WORKER_TYPE);
-		study.removeAllowedWorker(MTSandboxWorker.WORKER_TYPE);
+		study.removeAllowedWorkerType(MTWorker.WORKER_TYPE);
+		study.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
 		addStudy(study);
 
 		// Study doesn't allow this worker type
@@ -164,12 +164,12 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyMoreThanOnce()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		MTWorker mtWorker = new MTWorker();
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
 		addWorker(mtWorker);
-		study.addAllowedWorker(MTWorker.WORKER_TYPE);
-		study.removeAllowedWorker(MTSandboxWorker.WORKER_TYPE);
+		study.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+		study.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
 		addStudy(study);
 
 		// MTWorkers cannot repeat the same study (StudyState in FINISHED, FAIL,

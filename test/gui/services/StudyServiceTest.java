@@ -10,9 +10,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.ComponentModel;
-import models.StudyModel;
-import models.UserModel;
+import models.Component;
+import models.Study;
+import models.User;
 import models.workers.PersonalSingleWorker;
 import models.workers.JatosWorker;
 import models.workers.PersonalMultipleWorker;
@@ -59,16 +59,16 @@ public class StudyServiceTest extends AbstractTest {
 
 	@Test
 	public void checkCloneStudy() throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		entityManager.getTransaction().begin();
-		StudyModel clone = studyService.cloneStudy(study, admin);
+		Study clone = studyService.cloneStudy(study, admin);
 		entityManager.getTransaction().commit();
 
-		StudyModel cloneInDb = studyDao.findByUuid(clone.getUuid());
+		Study cloneInDb = studyDao.findByUuid(clone.getUuid());
 
 		// Equal
-		assertThat(cloneInDb.getAllowedWorkerList()).containsOnly(
+		assertThat(cloneInDb.getAllowedWorkerTypeList()).containsOnly(
 				JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE,
 				PersonalMultipleWorker.WORKER_TYPE);
 		assertThat(cloneInDb.getComponentList().size()).isEqualTo(
@@ -106,12 +106,12 @@ public class StudyServiceTest extends AbstractTest {
 	
 	@Test
 	public void checkUpdateStudy() throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		StudyModel updatedStudy = studyService.cloneStudy(study, admin);
-		updatedStudy.removeAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
-		updatedStudy.removeAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
+		Study updatedStudy = studyService.cloneStudy(study, admin);
+		updatedStudy.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		updatedStudy.removeAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		updatedStudy.getComponentList().remove(0);
 		updatedStudy.getLastComponent().setTitle("Changed title");
 		updatedStudy.setDescription("Changed description");
@@ -136,7 +136,7 @@ public class StudyServiceTest extends AbstractTest {
 				updatedStudy.getDescription());
 		assertThat(study.getComments()).isEqualTo(updatedStudy.getComments());
 		assertThat(study.getJsonData()).isEqualTo(updatedStudy.getJsonData());
-		assertThat(study.getAllowedWorkerList()).containsOnly(
+		assertThat(study.getAllowedWorkerTypeList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
 		assertThat(study.isGroupStudy()).isEqualTo(updatedStudy.isGroupStudy());
 		// TODO
@@ -164,10 +164,10 @@ public class StudyServiceTest extends AbstractTest {
 	@Test
 	public void checkExchangeUsers() throws NoSuchAlgorithmException,
 			IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		UserModel userBla = createAndPersistUser("bla@bla.com", "Bla", "bla");
+		User userBla = createAndPersistUser("bla@bla.com", "Bla", "bla");
 		createAndPersistUser("blu@blu.com", "Blu", "blu");
 
 		entityManager.getTransaction().begin();
@@ -179,7 +179,7 @@ public class StudyServiceTest extends AbstractTest {
 		}
 		entityManager.getTransaction().commit();
 
-		StudyModel studyInDb = studyDao.findByUuid(study.getUuid());
+		Study studyInDb = studyDao.findByUuid(study.getUuid());
 		assertThat(studyInDb.getUserList()).containsOnly(userBla, admin);
 
 		// Empty user list
@@ -209,7 +209,7 @@ public class StudyServiceTest extends AbstractTest {
 	@Test
 	public void testCheckStudyLocked() throws NoSuchAlgorithmException,
 			IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		try {
@@ -244,7 +244,7 @@ public class StudyServiceTest extends AbstractTest {
 					MessagesStrings.studyNotExist(1l));
 		}
 
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		try {
 			studyService.checkStandardForStudy(study, study.getId(), admin);
@@ -273,11 +273,11 @@ public class StudyServiceTest extends AbstractTest {
 	@Test
 	public void checkChangeComponentPosition() throws NoSuchAlgorithmException,
 			IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		// First component to third position
-		ComponentModel component = study.getFirstComponent();
+		Component component = study.getFirstComponent();
 		try {
 			entityManager.getTransaction().begin();
 			studyService.changeComponentPosition("3", study, component);
@@ -345,26 +345,26 @@ public class StudyServiceTest extends AbstractTest {
 	public void checkBindStudyFromRequest() {
 		Map<String, String[]> formMap = new HashMap<String, String[]>();
 		String[] titleArray = { "This is a title" };
-		formMap.put(StudyModel.TITLE, titleArray);
+		formMap.put(Study.TITLE, titleArray);
 		String[] descArray = { "This is a description" };
-		formMap.put(StudyModel.DESCRIPTION, descArray);
+		formMap.put(Study.DESCRIPTION, descArray);
 		String[] commentsArray = { "This is a comment" };
-		formMap.put(StudyModel.COMMENTS, commentsArray);
+		formMap.put(Study.COMMENTS, commentsArray);
 		String[] dirNameArray = { "dir_name" };
-		formMap.put(StudyModel.DIRNAME, dirNameArray);
+		formMap.put(Study.DIRNAME, dirNameArray);
 		String[] groupStudyArray = { "true" };
-		formMap.put(StudyModel.GROUP_STUDY, groupStudyArray);
+		formMap.put(Study.GROUP_STUDY, groupStudyArray);
 		// TODO
 //		String[] minGroupSizeArray = { "5" };
-//		formMap.put(StudyModel.MIN_GROUP_SIZE, minGroupSizeArray);
+//		formMap.put(Study.MIN_GROUP_SIZE, minGroupSizeArray);
 //		String[] maxGroupSizeArray = { "5" };
-//		formMap.put(StudyModel.MAX_GROUP_SIZE, maxGroupSizeArray);
+//		formMap.put(Study.MAX_GROUP_SIZE, maxGroupSizeArray);
 		String[] jsonArray = { "{}" };
-		formMap.put(StudyModel.JSON_DATA, jsonArray);
+		formMap.put(Study.JSON_DATA, jsonArray);
 		String[] allowedWorkerArray = { JatosWorker.WORKER_TYPE };
-		formMap.put(StudyModel.ALLOWED_WORKER_LIST, allowedWorkerArray);
+		formMap.put(Study.ALLOWED_WORKER_LIST, allowedWorkerArray);
 
-		StudyModel study = studyService.bindStudyFromRequest(formMap);
+		Study study = studyService.bindStudyFromRequest(formMap);
 		assertThat(study.getTitle()).isEqualTo("This is a title");
 		assertThat(study.getDescription()).isEqualTo("This is a description");
 		assertThat(study.getComments()).isEqualTo("This is a comment");
@@ -374,14 +374,14 @@ public class StudyServiceTest extends AbstractTest {
 //		assertThat(study.getMinGroupSize()).isEqualTo(5);
 //		assertThat(study.getMaxGroupSize()).isEqualTo(5);
 		assertThat(study.getJsonData()).isEqualTo("{}");
-		assertThat(study.getAllowedWorkerList()).containsOnly(
+		assertThat(study.getAllowedWorkerTypeList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
 	}
 
 	@Test
 	public void checkRenameStudyAssetsDir() throws NoSuchAlgorithmException,
 			IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		String oldDirName = study.getDirName();

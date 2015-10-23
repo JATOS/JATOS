@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
-import models.UserModel;
+import models.User;
 import models.workers.JatosWorker;
 import models.workers.PersonalMultipleWorker;
 import models.workers.PersonalSingleWorker;
@@ -59,7 +59,7 @@ public class WorkerService {
 	 * @throws BadRequestException
 	 * @throws ForbiddenException
 	 */
-	public void checkRemovalAllowed(Worker worker, UserModel loggedInUser)
+	public void checkRemovalAllowed(Worker worker, User loggedInUser)
 			throws ForbiddenException, BadRequestException {
 		// JatosWorker associated to a JATOS user must not be removed
 		if (worker instanceof JatosWorker) {
@@ -72,7 +72,7 @@ public class WorkerService {
 
 		// Check for every study if removal is allowed
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			StudyModel study = studyResult.getStudy();
+			Study study = studyResult.getStudy();
 			studyService.checkStandardForStudy(study, study.getId(),
 					loggedInUser);
 			studyService.checkStudyLocked(study);
@@ -82,7 +82,7 @@ public class WorkerService {
 	/**
 	 * Retrieve all workersProvider that did this study.
 	 */
-	public Set<Worker> retrieveWorkers(StudyModel study) {
+	public Set<Worker> retrieveWorkers(Study study) {
 		List<StudyResult> studyResultList = studyResultDao
 				.findAllByStudy(study);
 		return studyResultList.stream().map(StudyResult::getWorker)

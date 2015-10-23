@@ -10,9 +10,9 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
-import models.StudyModel;
-import models.UserModel;
+import models.Component;
+import models.Study;
+import models.User;
 import models.workers.MTWorker;
 import models.workers.PersonalMultipleWorker;
 import models.workers.PersonalSingleWorker;
@@ -103,8 +103,8 @@ public class Studies extends Controller {
 	public Result index(Long studyId, int httpStatus) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
@@ -128,9 +128,9 @@ public class Studies extends Controller {
 	public Result create() {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		StudyModel study = new StudyModel();
-		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Study study = new Study();
+		Form<Study> form = Form.form(Study.class).fill(study);
 		// It's a generic template for editing a study. We have to tell it the
 		// submit action.
 		Call submitAction = controllers.routes.Studies.submit();
@@ -147,9 +147,9 @@ public class Studies extends Controller {
 	public Result submit() {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 
-		StudyModel study = studyService.bindStudyFromRequest(request().body()
+		Study study = studyService.bindStudyFromRequest(request().body()
 				.asFormUrlEncoded());
 		List<ValidationError> errorList = study.validate();
 		if (errorList != null) {
@@ -162,7 +162,7 @@ public class Studies extends Controller {
 			IOUtils.createStudyAssetsDir(study.getDirName());
 		} catch (IOException e) {
 			errorList = new ArrayList<>();
-			errorList.add(new ValidationError(StudyModel.DIRNAME, e
+			errorList.add(new ValidationError(Study.DIRNAME, e
 					.getMessage()));
 			return failStudyCreate(loggedInUser, study, errorList);
 		}
@@ -170,9 +170,9 @@ public class Studies extends Controller {
 		return redirect(controllers.routes.Studies.index(study.getId()));
 	}
 
-	private Result failStudyCreate(UserModel loggedInUser, StudyModel study,
+	private Result failStudyCreate(User loggedInUser, Study study,
 			List<ValidationError> errorList) {
-		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
+		Form<Study> form = Form.form(Study.class).fill(study);
 		String breadcrumbs = breadcrumbsService
 				.generateForHome(BreadcrumbsService.NEW_STUDY);
 		Call submitAction = controllers.routes.Studies.submit();
@@ -180,8 +180,8 @@ public class Studies extends Controller {
 				Http.Status.BAD_REQUEST, breadcrumbs, submitAction, false);
 	}
 
-	private Result showEditStudyAfterError(UserModel loggedInUser,
-			Form<StudyModel> form, List<ValidationError> errorList,
+	private Result showEditStudyAfterError(User loggedInUser,
+			Form<Study> form, List<ValidationError> errorList,
 			int httpStatus, String breadcrumbs, Call submitAction,
 			boolean studyIsLocked) {
 		if (ControllerUtils.isAjax()) {
@@ -203,14 +203,14 @@ public class Studies extends Controller {
 	public Result edit(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		if (study.isLocked()) {
 			RequestScopeMessaging.warning(MessagesStrings.STUDY_IS_LOCKED);
 		}
-		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
+		Form<Study> form = Form.form(Study.class).fill(study);
 		Call submitAction = controllers.routes.Studies.submitEdited(study
 				.getId());
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
@@ -226,8 +226,8 @@ public class Studies extends Controller {
 	public Result submitEdited(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".submitEdited: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -241,7 +241,7 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwRedirect(e, call);
 		}
 
-		StudyModel updatedStudy = studyService.bindStudyFromRequest(request()
+		Study updatedStudy = studyService.bindStudyFromRequest(request()
 				.body().asFormUrlEncoded());
 		List<ValidationError> errorList = updatedStudy.validate();
 		if (errorList != null) {
@@ -255,16 +255,16 @@ public class Studies extends Controller {
 			studyService.renameStudyAssetsDir(study, updatedStudy.getDirName());
 		} catch (IOException e) {
 			errorList = new ArrayList<>();
-			errorList.add(new ValidationError(StudyModel.DIRNAME, e
+			errorList.add(new ValidationError(Study.DIRNAME, e
 					.getMessage()));
 			return failStudyEdit(loggedInUser, study, errorList);
 		}
 		return redirect(controllers.routes.Studies.index(studyId));
 	}
 
-	private Result failStudyEdit(UserModel loggedInUser, StudyModel study,
+	private Result failStudyEdit(User loggedInUser, Study study,
 			List<ValidationError> errorList) {
-		Form<StudyModel> form = Form.form(StudyModel.class).fill(study);
+		Form<Study> form = Form.form(Study.class).fill(study);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.EDIT_PROPERTIES);
 		Call submitAction = controllers.routes.Studies.submitEdited(study
@@ -283,8 +283,8 @@ public class Studies extends Controller {
 	public Result swapLock(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".swapLock: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		study.setLocked(!study.isLocked());
@@ -301,8 +301,8 @@ public class Studies extends Controller {
 	public Result remove(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			studyService.checkStudyLocked(study);
@@ -329,8 +329,8 @@ public class Studies extends Controller {
 	public Result cloneStudy(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".cloneStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -359,11 +359,11 @@ public class Studies extends Controller {
 			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".changeUsers: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
-		List<UserModel> userList = userDao.findAll();
+		List<User> userList = userDao.findAll();
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.CHANGE_USERS);
 		return status(httpStatus, views.html.gui.study.changeUsers.render(
@@ -378,8 +378,8 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".submitChangedUser: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -388,7 +388,7 @@ public class Studies extends Controller {
 		}
 
 		String[] checkedUsers = request().body().asFormUrlEncoded()
-				.get(StudyModel.USERS);
+				.get(Study.USERS);
 		try {
 			studyService.exchangeUsers(study, checkedUsers);
 		} catch (BadRequestException e) {
@@ -411,9 +411,9 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".changeComponentOrder: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		ComponentModel component = componentDao.findById(componentId);
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Component component = componentDao.findById(componentId);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			studyService.checkStudyLocked(study);
@@ -434,8 +434,8 @@ public class Studies extends Controller {
 	public Result showStudy(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".showStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
@@ -458,8 +458,8 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".createPersonalSingleRun: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -501,8 +501,8 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".createPersonalMultipleRun: studyId "
 				+ studyId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -541,8 +541,8 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".showMTurkSourceCode: studyId " + studyId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		URL jatosURL = null;
@@ -553,7 +553,7 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwStudyIndex(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		if (!study.hasAllowedWorker(MTWorker.WORKER_TYPE)) {
+		if (!study.hasAllowedWorkerType(MTWorker.WORKER_TYPE)) {
 			RequestScopeMessaging
 					.warning(MessagesStrings.MTWORKER_ALLOWANCE_MISSING);
 		}
@@ -572,8 +572,8 @@ public class Studies extends Controller {
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		JsonNode dataAsJson = jsonUtils.allComponentsForUI(study
@@ -589,8 +589,8 @@ public class Studies extends Controller {
 			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		RequestScopeMessaging.error(errorMsg);
@@ -611,8 +611,8 @@ public class Studies extends Controller {
 		return workers(studyId, null, Http.Status.OK);
 	}
 
-	private void checkStandardForStudy(Long studyId, StudyModel study,
-			UserModel loggedInUser) throws JatosGuiException {
+	private void checkStandardForStudy(Long studyId, Study study,
+			User loggedInUser) throws JatosGuiException {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {

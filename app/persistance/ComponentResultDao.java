@@ -6,14 +6,14 @@ import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
-import models.ComponentModel;
+import models.Component;
 import models.ComponentResult;
 import models.StudyResult;
 import play.Logger;
 import play.db.jpa.JPA;
 
 /**
- * DAO for ComponentResult model
+ * DAO for ComponentResult entity
  * 
  * @author Kristian Lange
  */
@@ -28,7 +28,7 @@ public class ComponentResultDao extends AbstractDao {
 	 * StudyResult.
 	 */
 	public ComponentResult create(StudyResult studyResult,
-			ComponentModel component) {
+			Component component) {
 		ComponentResult componentResult = new ComponentResult(component);
 		componentResult.setStudyResult(studyResult);
 		persist(componentResult);
@@ -70,7 +70,7 @@ public class ComponentResultDao extends AbstractDao {
 	/**
 	 * Returns the number of ComponentResults belonging to the given Component.
 	 */
-	public int countByComponent(ComponentModel component) {
+	public int countByComponent(Component component) {
 		String queryStr = "SELECT COUNT(e) FROM ComponentResult e WHERE e.component=:componentId";
 		Query query = JPA.em().createQuery(queryStr);
 		Number result = (Number) query.setParameter("componentId", component)
@@ -78,7 +78,7 @@ public class ComponentResultDao extends AbstractDao {
 		return result.intValue();
 	}
 
-	public List<ComponentResult> findAllByComponent(ComponentModel component) {
+	public List<ComponentResult> findAllByComponent(Component component) {
 		String queryStr = "SELECT e FROM ComponentResult e "
 				+ "WHERE e.component=:componentId";
 		TypedQuery<ComponentResult> query = JPA.em().createQuery(queryStr,

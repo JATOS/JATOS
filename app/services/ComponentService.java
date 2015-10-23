@@ -7,7 +7,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
+import models.Component;
 import persistance.ComponentDao;
 import play.Logger;
 import utils.IOUtils;
@@ -39,8 +39,8 @@ public class ComponentService {
 	/**
 	 * Update component's properties with the ones from updatedComponent.
 	 */
-	public void updateProperties(ComponentModel component,
-			ComponentModel updatedComponent) {
+	public void updateProperties(Component component,
+			Component updatedComponent) {
 		component.setTitle(updatedComponent.getTitle());
 		component.setReloadable(updatedComponent.isReloadable());
 		component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
@@ -54,8 +54,8 @@ public class ComponentService {
 	 * Update component's properties with the ones from updatedComponent, but
 	 * not htmlFilePath and not active.
 	 */
-	public void updateComponentAfterEdit(ComponentModel component,
-			ComponentModel updatedComponent) {
+	public void updateComponentAfterEdit(Component component,
+			Component updatedComponent) {
 		component.setTitle(updatedComponent.getTitle());
 		component.setReloadable(updatedComponent.isReloadable());
 		component.setComments(updatedComponent.getComments());
@@ -64,11 +64,11 @@ public class ComponentService {
 	}
 
 	/**
-	 * Clones a ComponentModel. Does not clone id, uuid, or date. Does not
+	 * Clones a Component entity. Does not clone id, uuid, or date. Does not
 	 * persist the clone. Does not clone the HTML file.
 	 */
-	public ComponentModel cloneComponentModel(ComponentModel component) {
-		ComponentModel clone = new ComponentModel();
+	public Component cloneComponentEntity(Component component) {
+		Component clone = new Component();
 		clone.setStudy(component.getStudy());
 		clone.setTitle(component.getTitle());
 		clone.setHtmlFilePath(component.getHtmlFilePath());
@@ -80,12 +80,12 @@ public class ComponentService {
 	}
 
 	/**
-	 * Does the same as {@link #cloneComponentModel(ComponentModel)
-	 * cloneComponentModel} and additionally clones the HTML file and changes
+	 * Does the same as {@link #cloneComponentEntity(Component)
+	 * cloneComponent} and additionally clones the HTML file and changes
 	 * the title.
 	 */
-	public ComponentModel cloneComponent(ComponentModel component) {
-		ComponentModel clone = cloneComponentModel(component);
+	public Component cloneWholeComponent(Component component) {
+		Component clone = cloneComponentEntity(component);
 		clone.setTitle(cloneTitle(component.getTitle()));
 		try {
 			String clonedHtmlFileName = IOUtils.cloneComponentHtmlFile(
@@ -117,18 +117,18 @@ public class ComponentService {
 
 	/**
 	 * Binds component data from a edit/create component request onto a
-	 * ComponentModel. Play's default form binder doesn't work here.
+	 * Component. Play's default form binder doesn't work here.
 	 */
-	public ComponentModel bindComponentFromRequest(Map<String, String[]> formMap) {
-		ComponentModel component = new ComponentModel();
-		component.setTitle(formMap.get(ComponentModel.TITLE)[0]);
+	public Component bindComponentFromRequest(Map<String, String[]> formMap) {
+		Component component = new Component();
+		component.setTitle(formMap.get(Component.TITLE)[0]);
 		component
-				.setHtmlFilePath(formMap.get(ComponentModel.HTML_FILE_PATH)[0]);
+				.setHtmlFilePath(formMap.get(Component.HTML_FILE_PATH)[0]);
 		component.setReloadable(Boolean.parseBoolean(formMap
-				.get(ComponentModel.RELOADABLE)[0]));
-		component.setComments(formMap.get(ComponentModel.COMMENTS)[0]);
+				.get(Component.RELOADABLE)[0]));
+		component.setComments(formMap.get(Component.COMMENTS)[0]);
 		component.setJsonData(JsonUtils.asStringForDB(formMap
-				.get(ComponentModel.JSON_DATA)[0]));
+				.get(Component.JSON_DATA)[0]));
 		return component;
 	}
 
@@ -136,7 +136,7 @@ public class ComponentService {
 	 * Renames the path to the HTML file in the file system and persists the
 	 * component's property.
 	 */
-	public void renameHtmlFilePath(ComponentModel component,
+	public void renameHtmlFilePath(Component component,
 			String newHtmlFilePath) throws IOException {
 
 		// If the new HTML file name is empty persist an empty string
@@ -170,7 +170,7 @@ public class ComponentService {
 	 * problem.
 	 */
 	public void checkStandardForComponents(Long studyId, Long componentId,
-			ComponentModel component) throws BadRequestException {
+			Component component) throws BadRequestException {
 		if (component == null) {
 			throw new BadRequestException(
 					MessagesStrings.componentNotExist(componentId));

@@ -16,8 +16,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.ComponentModel;
-import models.StudyModel;
+import models.Component;
+import models.Study;
 
 import org.apache.http.HttpHeaders;
 import org.junit.Test;
@@ -37,7 +37,7 @@ import controllers.Users;
  */
 public class ComponentsControllerTest extends AbstractTest {
 
-	private static StudyModel studyTemplate;
+	private static Study studyTemplate;
 
 	@Override
 	public void before() throws Exception {
@@ -54,7 +54,7 @@ public class ComponentsControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callShowComponent() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(controllers.routes.ref.Components
 				.showComponent(studyClone.getId(), studyClone.getComponent(1)
@@ -80,7 +80,7 @@ public class ComponentsControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callShowComponentNoHtml() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		entityManager.getTransaction().begin();
 		studyClone.getComponent(1).setHtmlFilePath(null);
@@ -102,7 +102,7 @@ public class ComponentsControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callCreate() throws IOException {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Components
@@ -122,14 +122,14 @@ public class ComponentsControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callSubmit() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
-		form.put(ComponentModel.TITLE, "Title Test");
-		form.put(ComponentModel.RELOADABLE, "true");
-		form.put(ComponentModel.HTML_FILE_PATH, "html_file_path_test.html");
-		form.put(ComponentModel.COMMENTS, "Comments test test.");
-		form.put(ComponentModel.JSON_DATA, "{}");
+		form.put(Component.TITLE, "Title Test");
+		form.put(Component.RELOADABLE, "true");
+		form.put(Component.HTML_FILE_PATH, "html_file_path_test.html");
+		form.put(Component.COMMENTS, "Comments test test.");
+		form.put(Component.JSON_DATA, "{}");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(form);
@@ -150,14 +150,14 @@ public class ComponentsControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callSubmitAndShow() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
-		form.put(ComponentModel.TITLE, "Title Test");
-		form.put(ComponentModel.RELOADABLE, "true");
-		form.put(ComponentModel.HTML_FILE_PATH, "html_file_path_test.html");
-		form.put(ComponentModel.COMMENTS, "Comments test test.");
-		form.put(ComponentModel.JSON_DATA, "{}");
+		form.put(Component.TITLE, "Title Test");
+		form.put(Component.RELOADABLE, "true");
+		form.put(Component.HTML_FILE_PATH, "html_file_path_test.html");
+		form.put(Component.COMMENTS, "Comments test test.");
+		form.put(Component.JSON_DATA, "{}");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(form);
@@ -177,14 +177,14 @@ public class ComponentsControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callSubmitValidationError() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
-		form.put(ComponentModel.TITLE, "");
-		form.put(ComponentModel.RELOADABLE, "true");
-		form.put(ComponentModel.HTML_FILE_PATH, "");
-		form.put(ComponentModel.COMMENTS, "");
-		form.put(ComponentModel.JSON_DATA, "{");
+		form.put(Component.TITLE, "");
+		form.put(Component.RELOADABLE, "true");
+		form.put(Component.HTML_FILE_PATH, "");
+		form.put(Component.COMMENTS, "");
+		form.put(Component.JSON_DATA, "{");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(form);
@@ -200,7 +200,7 @@ public class ComponentsControllerTest extends AbstractTest {
 
 	@Test
 	public void callChangeProperties() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail());
@@ -216,7 +216,7 @@ public class ComponentsControllerTest extends AbstractTest {
 
 	@Test
 	public void callCloneComponent() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail());
@@ -232,7 +232,7 @@ public class ComponentsControllerTest extends AbstractTest {
 
 	@Test
 	public void callRemove() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail());

@@ -3,9 +3,9 @@ package publix.controllers.mt;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.ComponentModel;
+import models.Component;
 import models.GroupResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 import models.workers.MTSandboxWorker;
 import models.workers.MTWorker;
@@ -82,7 +82,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		// String mtHitId = getQueryString(HIT_ID);
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId);
 
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 
 		// Check if it's just a preview coming from MTurk. We don't allow
 		// previews.
@@ -113,7 +113,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		studyResultDao.create(study, worker);
 
-		ComponentModel firstComponent = publixUtils
+		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
 		return redirect(publix.controllers.routes.PublixInterceptor
 				.startComponent(studyId, firstComponent.getId()));
@@ -125,7 +125,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
-		StudyModel study = publixUtils.retrieveStudy(studyId);
+		Study study = publixUtils.retrieveStudy(studyId);
 		MTWorker worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 

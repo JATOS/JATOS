@@ -8,13 +8,13 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import models.GroupResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 import models.workers.Worker;
 import play.db.jpa.JPA;
 
 /**
- * DAO for StudyResult model
+ * DAO for StudyResult entity
  * 
  * @author Kristian Lange
  */
@@ -31,7 +31,7 @@ public class StudyResultDao extends AbstractDao {
 	/**
 	 * Creates StudyResult and adds it to the given Worker.
 	 */
-	public StudyResult create(StudyModel study, Worker worker) {
+	public StudyResult create(Study study, Worker worker) {
 		StudyResult studyResult = new StudyResult(study);
 		persist(studyResult);
 		worker.addStudyResult(studyResult);
@@ -80,7 +80,7 @@ public class StudyResultDao extends AbstractDao {
 	 * Removes ALL StudyResults including their ComponentResult of the specified
 	 * study.
 	 */
-	public void removeAllOfStudy(StudyModel study) {
+	public void removeAllOfStudy(Study study) {
 		List<StudyResult> studyResultList = findAllByStudy(study);
 		studyResultList.forEach(this::remove);
 	}
@@ -92,7 +92,7 @@ public class StudyResultDao extends AbstractDao {
 	/**
 	 * Returns the number of StudyResults belonging to the given study.
 	 */
-	public int countByStudy(StudyModel study) {
+	public int countByStudy(Study study) {
 		String queryStr = "SELECT COUNT(e) FROM StudyResult e WHERE e.study=:studyId";
 		Query query = JPA.em().createQuery(queryStr);
 		Number result = (Number) query.setParameter("studyId", study)
@@ -100,7 +100,7 @@ public class StudyResultDao extends AbstractDao {
 		return result.intValue();
 	}
 
-	public List<StudyResult> findAllByStudy(StudyModel study) {
+	public List<StudyResult> findAllByStudy(Study study) {
 		String queryStr = "SELECT e FROM StudyResult e "
 				+ "WHERE e.study=:studyId";
 		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,

@@ -9,7 +9,7 @@ import static play.test.Helpers.contentType;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.status;
 import common.AbstractTest;
-import models.UserModel;
+import models.User;
 
 import org.junit.Test;
 
@@ -56,7 +56,7 @@ public class HomeControllerTest extends AbstractTest {
 		assertThat(contentType(result)).isEqualTo("text/plain");
 		assertThat(contentAsString(result)).contains(".log: lineLimit ");
 		
-		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
+		User testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 		result = callAction(controllers.routes.ref.Home.log(1000),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, testUser.getEmail()));

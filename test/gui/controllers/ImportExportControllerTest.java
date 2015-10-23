@@ -15,8 +15,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import models.ComponentModel;
-import models.StudyModel;
+import models.Component;
+import models.Study;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
@@ -99,7 +99,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		assertThat(!unzippedStudyDir.exists());
 
 		// Clean up, third call: remove()
-		StudyModel importedStudy = studyDao
+		Study importedStudy = studyDao
 				.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617");
 		result = callAction(
 				controllers.routes.ref.Studies
@@ -115,7 +115,7 @@ public class ImportExportControllerTest extends AbstractTest {
 	@Test
 	public synchronized void checkCallImportStudyOverride() throws Exception {
 		// Import study manually
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		// Change study a little so we have something to check later
 		study.setTitle("Different Title");
 		// Change a file name
@@ -194,7 +194,7 @@ public class ImportExportControllerTest extends AbstractTest {
 	@Test
 	public synchronized void checkCallImportComponent() throws Exception {
 		// Import study manually and remove first component
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		study.removeComponent(study.getFirstComponent());
 		addStudy(study);
 
@@ -211,7 +211,7 @@ public class ImportExportControllerTest extends AbstractTest {
 						.withAnyContent(
 								getMultiPartFormDataForFileUpload(
 										componentFile,
-										ComponentModel.COMPONENT,
+										Component.COMPONENT,
 										"application/json"),
 								"multipart/form-data", "POST"));
 
@@ -259,7 +259,7 @@ public class ImportExportControllerTest extends AbstractTest {
 
 	@Test
 	public synchronized void checkCallExportStudy() throws Exception {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		Result result = callAction(
@@ -276,7 +276,7 @@ public class ImportExportControllerTest extends AbstractTest {
 
 	@Test
 	public synchronized void checkCallExportComponent() throws Exception {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		Result result = callAction(
@@ -303,7 +303,7 @@ public class ImportExportControllerTest extends AbstractTest {
 						.withSession(Users.SESSION_EMAIL, admin.getEmail())
 						.withAnyContent(
 								getMultiPartFormDataForFileUpload(studyZipBkp,
-										StudyModel.STUDY, "application/zip"),
+										Study.STUDY, "application/zip"),
 								"multipart/form-data", "POST"));
 		// Clean up
 		if (studyZipBkp.exists()) {

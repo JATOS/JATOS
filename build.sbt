@@ -16,7 +16,7 @@ libraryDependencies ++= Seq(
 	javaJpa,
 	javaWs,
 	"org.hibernate" % "hibernate-entitymanager" % "4.2.15.Final",
-	"mysql" % "mysql-connector-java" % "5.1.18",
+	"mysql" % "mysql-connector-java" % "5.1.31",
 	"com.google.inject" % "guice" % "4.0",
 	"org.jsoup" % "jsoup" % "1.8.1",
 	"commons-io" % "commons-io" % "2.4",

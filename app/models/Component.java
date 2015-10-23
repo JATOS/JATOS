@@ -13,6 +13,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
@@ -30,7 +31,8 @@ import com.fasterxml.jackson.annotation.JsonView;
  * @author Kristian Lange
  */
 @Entity
-public class ComponentModel {
+@Table(name = "Component")
+public class Component {
 
 	/**
 	 * Version of this model used for serialisation (e.g. JSON marshaling)
@@ -67,7 +69,7 @@ public class ComponentModel {
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "study_id")
-	private StudyModel study;
+	private Study study;
 
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String title;
@@ -109,7 +111,7 @@ public class ComponentModel {
 	@Lob
 	private String jsonData;
 
-	public ComponentModel() {
+	public Component() {
 	}
 
 	public void setId(Long id) {
@@ -128,11 +130,11 @@ public class ComponentModel {
 		return this.uuid;
 	}
 
-	public void setStudy(StudyModel study) {
+	public void setStudy(Study study) {
 		this.study = study;
 	}
 
-	public StudyModel getStudy() {
+	public Study getStudy() {
 		return this.study;
 	}
 
@@ -249,10 +251,10 @@ public class ComponentModel {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof ComponentModel)) {
+		if (!(obj instanceof Component)) {
 			return false;
 		}
-		ComponentModel other = (ComponentModel) obj;
+		Component other = (Component) obj;
 		if (id == null) {
 			if (other.getId() != null) {
 				return false;

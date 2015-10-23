@@ -10,8 +10,8 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-import models.ComponentModel;
-import models.StudyModel;
+import models.Component;
+import models.Study;
 import models.workers.PersonalSingleWorker;
 import models.workers.JatosWorker;
 import models.workers.PersonalMultipleWorker;
@@ -65,12 +65,12 @@ public class ImportExportServiceTest extends AbstractTest {
 	 */
 	@Test
 	public void importExistingComponent() throws Exception {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		// First component of the study is the one in the component file
 		File componentFile = getExampleComponentFile();
-		FilePart filePart = new FilePart(ComponentModel.COMPONENT,
+		FilePart filePart = new FilePart(Component.COMPONENT,
 				componentFile.getName(), "multipart/form-data", componentFile);
 
 		// Call importComponent()
@@ -84,7 +84,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Change properties of first component, so we have something to check
 		// later on
-		ComponentModel firstComponent = study.getFirstComponent();
+		Component firstComponent = study.getFirstComponent();
 		firstComponent = JsonUtils.initializeAndUnproxy(firstComponent);
 		firstComponent.setTitle("Changed Title");
 		firstComponent.setActive(false);
@@ -106,7 +106,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		// Check that everything in the first component was updated
-		ComponentModel updatedComponent = study.getFirstComponent();
+		Component updatedComponent = study.getFirstComponent();
 
 		// Check that IDs are unchanged
 		assertThat(updatedComponent.getId()).isEqualTo(firstComponent.getId());
@@ -134,10 +134,10 @@ public class ImportExportServiceTest extends AbstractTest {
 	@Test
 	public void importNewComponent() throws NoSuchAlgorithmException,
 			IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		File componentFile = getExampleComponentFile();
-		FilePart filePart = new FilePart(ComponentModel.COMPONENT,
+		FilePart filePart = new FilePart(Component.COMPONENT,
 				componentFile.getName(), "multipart/form-data", componentFile);
 
 		// Remove the last component (so we can import it again later on)
@@ -169,7 +169,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		// Check all properties of the imported component
-		ComponentModel importedComponent = study.getLastComponent();
+		Component importedComponent = study.getLastComponent();
 		assertThat(study.getLastComponent().getTitle())
 				.isEqualTo("Quit button");
 		assertThat(importedComponent.getId()).isNotNull();
@@ -197,7 +197,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. part: Call importStudy()
 		File studyFile = getExampleStudyFile();
-		FilePart filePart = new FilePart(StudyModel.STUDY, studyFile.getName(),
+		FilePart filePart = new FilePart(Study.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
@@ -224,9 +224,9 @@ public class ImportExportServiceTest extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		// Check properties and assets of imported study
-		List<StudyModel> studyList = studyDao.findAll();
+		List<Study> studyList = studyDao.findAll();
 		assertThat(studyList.size() == 1).isTrue();
-		StudyModel study = studyList.get(0);
+		Study study = studyList.get(0);
 		checkPropertiesOfBasicExampleStudy(study);
 		checkAssetsOfBasicExampleStudy(study, "basic_example_study");
 
@@ -234,8 +234,8 @@ public class ImportExportServiceTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void checkPropertiesOfBasicExampleStudy(StudyModel study) {
-		assertThat(study.getAllowedWorkerList()).containsOnly(
+	private void checkPropertiesOfBasicExampleStudy(Study study) {
+		assertThat(study.getAllowedWorkerTypeList()).containsOnly(
 				JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE,
 				PersonalMultipleWorker.WORKER_TYPE);
 		assertThat(study.getComponentList().size()).isEqualTo(7);
@@ -259,7 +259,7 @@ public class ImportExportServiceTest extends AbstractTest {
 				"5c85bd82-0258-45c6-934a-97ecc1ad6617");
 	}
 
-	private void checkAssetsOfBasicExampleStudy(StudyModel study, String dirName)
+	private void checkAssetsOfBasicExampleStudy(Study study, String dirName)
 			throws IOException {
 		assertThat(study.getDirName()).isEqualTo(dirName);
 		assertThat(IOUtils.checkStudyAssetsDirExists(study.getDirName()))
@@ -276,7 +276,7 @@ public class ImportExportServiceTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException, ForbiddenException,
 			BadRequestException {
 		// Import study and alter it, so we have something to overwrite later on
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		alterStudy(study);
 		addStudy(study);
 
@@ -286,7 +286,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. call: importStudy()
 		File studyFile = getExampleStudyFile();
-		FilePart filePart = new FilePart(StudyModel.STUDY, studyFile.getName(),
+		FilePart filePart = new FilePart(Study.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
@@ -313,9 +313,9 @@ public class ImportExportServiceTest extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		// Check properties and assets of imported study
-		List<StudyModel> studyList = studyDao.findAll();
+		List<Study> studyList = studyDao.findAll();
 		assertThat(studyList.size() == 1).isTrue();
-		StudyModel importedStudy = studyList.get(0);
+		Study importedStudy = studyList.get(0);
 		checkPropertiesOfBasicExampleStudy(importedStudy);
 		checkAssetsOfBasicExampleStudy(study, "basic_example_study");
 
@@ -328,7 +328,7 @@ public class ImportExportServiceTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException, ForbiddenException,
 			BadRequestException {
 		// Import study, so we have something to overwrite
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		alterStudy(study);
 		addStudy(study);
 
@@ -339,7 +339,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. call: importStudy()
 		File studyFile = getExampleStudyFile();
-		FilePart filePart = new FilePart(StudyModel.STUDY, studyFile.getName(),
+		FilePart filePart = new FilePart(Study.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
@@ -366,9 +366,9 @@ public class ImportExportServiceTest extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		// Check properties (overwritten) and assets (not overwritten)
-		List<StudyModel> studyList = studyDao.findAll();
+		List<Study> studyList = studyDao.findAll();
 		assertThat(studyList.size() == 1).isTrue();
-		StudyModel importedStudy = studyList.get(0);
+		Study importedStudy = studyList.get(0);
 		checkPropertiesOfBasicExampleStudy(importedStudy);
 		checkAssetsOfBasicExampleStudy(study, "original_dirname");
 
@@ -381,7 +381,7 @@ public class ImportExportServiceTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException, ForbiddenException,
 			BadRequestException {
 		// Import study and alter it, so we have something to overwrite
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		alterStudy(study);
 		addStudy(study);
 
@@ -392,7 +392,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. call
 		File studyFile = getExampleStudyFile();
-		FilePart filePart = new FilePart(StudyModel.STUDY, studyFile.getName(),
+		FilePart filePart = new FilePart(Study.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
@@ -419,7 +419,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		// Check Properties (should not have changed) 
-		assertThat(study.getAllowedWorkerList()).containsOnly(
+		assertThat(study.getAllowedWorkerTypeList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
 		assertThat(study.getComponentList().size()).isEqualTo(6);
 		assertThat(study.getComponent(1).getTitle()).isEqualTo(
@@ -446,9 +446,9 @@ public class ImportExportServiceTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void alterStudy(StudyModel study) {
-		study.removeAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
-		study.removeAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
+	private void alterStudy(Study study) {
+		study.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		study.removeAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		study.getComponentList().remove(0);
 		study.getLastComponent().setTitle("Changed title");
 		study.setDescription("Changed description");
@@ -463,7 +463,7 @@ public class ImportExportServiceTest extends AbstractTest {
 	@Test
 	public void checkCreateStudyExportZipFile()
 			throws NoSuchAlgorithmException, IOException, ForbiddenException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		// Export study into a file

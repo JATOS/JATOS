@@ -3,7 +3,7 @@ package publix.services.jatos;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.UserModel;
+import models.User;
 import models.workers.JatosWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
@@ -56,13 +56,13 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	 * Retrieves the currently logged-in user or throws an
 	 * ForbiddenPublixException if none is logged-in.
 	 */
-	public UserModel retrieveLoggedInUser() throws ForbiddenPublixException {
+	public User retrieveLoggedInUser() throws ForbiddenPublixException {
 		String email = Publix.session(Users.SESSION_EMAIL);
 		if (email == null) {
 			throw new ForbiddenPublixException(
 					JatosErrorMessages.NO_USER_LOGGED_IN);
 		}
-		UserModel loggedInUser = userDao.findByEmail(email);
+		User loggedInUser = userDao.findByEmail(email);
 		if (loggedInUser == null) {
 			throw new ForbiddenPublixException(
 					errorMessages.userNotExist(email));

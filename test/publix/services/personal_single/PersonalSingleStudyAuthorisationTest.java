@@ -5,7 +5,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.StudyModel;
+import models.Study;
 import models.StudyResult.StudyState;
 import models.workers.PersonalSingleWorker;
 
@@ -43,8 +43,8 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToStartStudy()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
@@ -59,8 +59,8 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToStartStudyFail()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
@@ -83,8 +83,8 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 	@Test
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
@@ -99,8 +99,8 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
-		study.removeAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
@@ -122,8 +122,8 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyFinishedStudy()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);

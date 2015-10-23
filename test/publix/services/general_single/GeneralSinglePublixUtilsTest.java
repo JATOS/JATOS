@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.StudyModel;
+import models.Study;
 import models.workers.GeneralSingleWorker;
 
 import org.fest.assertions.Fail;
@@ -74,7 +74,7 @@ public class GeneralSinglePublixUtilsTest extends
 	@Test
 	public void checkStudyInCookie() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		Cookie cookie = mock(Cookie.class);
@@ -101,7 +101,7 @@ public class GeneralSinglePublixUtilsTest extends
 	public void checkStudyInCookieAlreadyDone()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		Cookie cookie = mock(Cookie.class);
@@ -122,7 +122,7 @@ public class GeneralSinglePublixUtilsTest extends
 
 	@Test
 	public void addStudyToCookie() throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		Cookie cookie = mock(Cookie.class);

@@ -12,7 +12,7 @@ import static play.test.Helpers.status;
 import java.io.File;
 import java.io.IOException;
 
-import models.StudyModel;
+import models.Study;
 
 import org.fest.assertions.Fail;
 import org.junit.Test;
@@ -30,7 +30,7 @@ import common.AbstractTest;
  */
 public class StudyAssetsTest extends AbstractTest {
 
-	private static StudyModel studyExample;
+	private static Study studyExample;
 
 	@Override
 	public void before() throws Exception {
@@ -58,7 +58,7 @@ public class StudyAssetsTest extends AbstractTest {
 
 	@Test
 	public void testAt() throws IOException {
-		StudyModel studyClone = cloneAndPersistStudy(studyExample);
+		Study studyClone = cloneAndPersistStudy(studyExample);
 
 		Result result = callAction(publix.controllers.routes.ref.StudyAssets
 				.at("basic_example_study/quit_button.html"));
@@ -81,7 +81,7 @@ public class StudyAssetsTest extends AbstractTest {
 
 	@Test
 	public void testAtPathTraversalAttack() throws IOException {
-		StudyModel studyClone = cloneAndPersistStudy(studyExample);
+		Study studyClone = cloneAndPersistStudy(studyExample);
 
 		// Although this file exists, it shouldn't be found
 		Result result = callAction(publix.controllers.routes.ref.StudyAssets
@@ -95,7 +95,7 @@ public class StudyAssetsTest extends AbstractTest {
 	@Test
 	public void testGetComponentUrlPath() throws IOException,
 			NotFoundPublixException {
-		StudyModel studyClone = cloneAndPersistStudy(studyExample);
+		Study studyClone = cloneAndPersistStudy(studyExample);
 
 		String urlPath = StudyAssets.getComponentUrlPath(
 				studyClone.getDirName(), studyClone.getFirstComponent());
@@ -111,7 +111,7 @@ public class StudyAssetsTest extends AbstractTest {
 
 	@Test
 	public void testGetComponentUrlPathNotFound() throws IOException {
-		StudyModel studyClone = cloneAndPersistStudy(studyExample);
+		Study studyClone = cloneAndPersistStudy(studyExample);
 		studyClone.getFirstComponent().setHtmlFilePath(null);
 
 		try {
@@ -138,7 +138,7 @@ public class StudyAssetsTest extends AbstractTest {
 
 	@Test
 	public void testForwardTo() throws IOException, NotFoundPublixException {
-		StudyModel studyClone = cloneAndPersistStudy(studyExample);
+		Study studyClone = cloneAndPersistStudy(studyExample);
 		mockContext();
 
 		String urlPath = StudyAssets.getComponentUrlPath(
@@ -161,7 +161,7 @@ public class StudyAssetsTest extends AbstractTest {
 	@Test
 	public void testForwardToNotFound() throws IOException,
 			NotFoundPublixException {
-		StudyModel studyClone = cloneAndPersistStudy(studyExample);
+		Study studyClone = cloneAndPersistStudy(studyExample);
 		mockContext();
 
 		Result result = studyAssets.forwardTo(

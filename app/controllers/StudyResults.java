@@ -6,9 +6,9 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
-import models.UserModel;
+import models.User;
 import models.workers.Worker;
 import persistance.StudyDao;
 import persistance.StudyResultDao;
@@ -89,8 +89,8 @@ public class StudyResults extends Controller {
 			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -127,7 +127,7 @@ public class StudyResults extends Controller {
 		Logger.info(CLASS_NAME + ".remove: studyResultIds " + studyResultIds
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			resultRemover.removeStudyResults(studyResultIds, loggedInUser);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
@@ -145,8 +145,8 @@ public class StudyResults extends Controller {
 	public Result removeAllOfStudy(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".removeAllOfStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -173,7 +173,7 @@ public class StudyResults extends Controller {
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		Worker worker = workerDao.findById(workerId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			workerService.checkWorker(worker, workerId);
 		} catch (BadRequestException e) {
@@ -198,8 +198,8 @@ public class StudyResults extends Controller {
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		StudyModel study = studyDao.findById(studyId);
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
 		String dataAsJson = null;
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
@@ -225,7 +225,7 @@ public class StudyResults extends Controller {
 		Logger.info(CLASS_NAME + ".tableDataByWorker: workerId " + workerId
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 		Worker worker = workerDao.findById(workerId);
 		try {
 			workerService.checkWorker(worker, workerId);

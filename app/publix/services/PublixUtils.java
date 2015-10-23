@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import models.ComponentModel;
+import models.Component;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
 import models.GroupResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 import models.StudyResult.StudyState;
 import models.workers.Worker;
@@ -98,7 +98,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Start or restart a component. It either returns a newly started component
 	 * or an exception but never null.
 	 */
-	public ComponentResult startComponent(ComponentModel component,
+	public ComponentResult startComponent(Component component,
 			StudyResult studyResult) throws ForbiddenReloadException {
 		// Deal with the last component
 		ComponentResult lastComponentResult = retrieveLastComponentResult(studyResult);
@@ -145,8 +145,8 @@ public abstract class PublixUtils<T extends Worker> {
 	public String generateIdCookieValue(StudyResult studyResult,
 			ComponentResult componentResult, Worker worker,
 			GroupResult groupResult) {
-		StudyModel study = studyResult.getStudy();
-		ComponentModel component = componentResult.getComponent();
+		Study study = studyResult.getStudy();
+		Component component = componentResult.getComponent();
 		Map<String, String> cookieMap = new HashMap<>();
 		cookieMap.put(Publix.WORKER_ID, String.valueOf(worker.getId()));
 		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
@@ -296,7 +296,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * 'done'. Each worker can do only one study with the same ID at the same
 	 * time.
 	 */
-	public void finishAllPriorStudyResults(Worker worker, StudyModel study) {
+	public void finishAllPriorStudyResults(Worker worker, Study study) {
 		List<StudyResult> studyResultList = worker.getStudyResultList();
 		for (StudyResult studyResult : studyResultList) {
 			if (study.getId().equals(studyResult.getStudy().getId())
@@ -315,7 +315,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * StudyResult or throws an exception but never returns null.
 	 */
 	public StudyResult retrieveWorkersLastStudyResult(Worker worker,
-			StudyModel study) throws ForbiddenPublixException {
+			Study study) throws ForbiddenPublixException {
 		int studyResultListSize = worker.getStudyResultList().size();
 		for (int i = (studyResultListSize - 1); i >= 0; i--) {
 			StudyResult studyResult = worker.getStudyResultList().get(i);
@@ -352,7 +352,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Retrieves the last ComponentResult's component (of the given StudyResult)
 	 * or null if it doesn't exist.
 	 */
-	public ComponentModel retrieveLastComponent(StudyResult studyResult) {
+	public Component retrieveLastComponent(StudyResult studyResult) {
 		ComponentResult componentResult = retrieveLastComponentResult(studyResult);
 		return (componentResult != null) ? componentResult.getComponent()
 				: null;
@@ -376,7 +376,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * starts one.
 	 */
 	public ComponentResult retrieveStartedComponentResult(
-			ComponentModel component, StudyResult studyResult)
+			Component component, StudyResult studyResult)
 			throws ForbiddenReloadException {
 		ComponentResult componentResult = retrieveCurrentComponentResult(studyResult);
 		// Start the component if it was never started (== null) or if it's
@@ -391,9 +391,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Returns the first component in the given study that is active. If there
 	 * is no such component it throws a NotFoundPublixException.
 	 */
-	public ComponentModel retrieveFirstActiveComponent(StudyModel study)
+	public Component retrieveFirstActiveComponent(Study study)
 			throws NotFoundPublixException {
-		ComponentModel component = study.getFirstComponent();
+		Component component = study.getFirstComponent();
 		// Find first active component or null if study has no active components
 		while (component != null && !component.isActive()) {
 			component = study.getNextComponent(component);
@@ -410,9 +410,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 * correspond to the ComponentResults of the given StudyResult. Returns null
 	 * if such component doesn't exist.
 	 */
-	public ComponentModel retrieveNextActiveComponent(StudyResult studyResult) {
-		ComponentModel currentComponent = retrieveLastComponent(studyResult);
-		ComponentModel nextComponent = studyResult.getStudy().getNextComponent(
+	public Component retrieveNextActiveComponent(StudyResult studyResult) {
+		Component currentComponent = retrieveLastComponent(studyResult);
+		Component nextComponent = studyResult.getStudy().getNextComponent(
 				currentComponent);
 		// Find next active component or null if study has no more components
 		while (nextComponent != null && !nextComponent.isActive()) {
@@ -427,10 +427,10 @@ public abstract class PublixUtils<T extends Worker> {
 	 * given study.
 	 *
 	 * @param study
-	 *            A StudyModel
+	 *            A Study
 	 * @param componentId
 	 *            The component's ID
-	 * @return The ComponentModel
+	 * @return The Component
 	 * @throws NotFoundPublixException
 	 *             Thrown if such component doesn't exist.
 	 * @throws BadRequestPublixException
@@ -438,10 +438,10 @@ public abstract class PublixUtils<T extends Worker> {
 	 * @throws ForbiddenPublixException
 	 *             Thrown if the component isn't active.
 	 */
-	public ComponentModel retrieveComponent(StudyModel study, Long componentId)
+	public Component retrieveComponent(Study study, Long componentId)
 			throws NotFoundPublixException, BadRequestPublixException,
 			ForbiddenPublixException {
-		ComponentModel component = componentDao.findById(componentId);
+		Component component = componentDao.findById(componentId);
 		if (component == null) {
 			throw new NotFoundPublixException(errorMessages.componentNotExist(
 					study.getId(), componentId));
@@ -458,14 +458,14 @@ public abstract class PublixUtils<T extends Worker> {
 		return component;
 	}
 
-	public ComponentModel retrieveComponentByPosition(Long studyId,
+	public Component retrieveComponentByPosition(Long studyId,
 			Integer position) throws PublixException {
-		StudyModel study = retrieveStudy(studyId);
+		Study study = retrieveStudy(studyId);
 		if (position == null) {
 			throw new BadRequestPublixException(
 					PublixErrorMessages.COMPONENTS_POSITION_NOT_NULL);
 		}
-		ComponentModel component;
+		Component component;
 		try {
 			component = study.getComponent(position);
 		} catch (IndexOutOfBoundsException e) {
@@ -479,9 +479,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Returns the study corresponding to the given study ID. It throws an
 	 * NotFoundPublixException if there is no such study.
 	 */
-	public StudyModel retrieveStudy(Long studyId)
+	public Study retrieveStudy(Long studyId)
 			throws NotFoundPublixException {
-		StudyModel study = studyDao.findById(studyId);
+		Study study = studyDao.findById(studyId);
 		if (study == null) {
 			throw new NotFoundPublixException(
 					errorMessages.studyNotExist(studyId));
@@ -493,8 +493,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Checks if this component belongs to this study and throws an
 	 * BadRequestPublixException if it doesn't.
 	 */
-	public void checkComponentBelongsToStudy(StudyModel study,
-			ComponentModel component) throws PublixException {
+	public void checkComponentBelongsToStudy(Study study,
+			Component component) throws PublixException {
 		if (!component.getStudy().equals(study)) {
 			throw new BadRequestPublixException(
 					errorMessages.componentNotBelongToStudy(study.getId(),
@@ -506,7 +506,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Checks if the worker finished this study already. 'Finished' includes
 	 * failed and aborted.
 	 */
-	public boolean finishedStudyAlready(Worker worker, StudyModel study) {
+	public boolean finishedStudyAlready(Worker worker, Study study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
 			if (studyResult.getStudy().equals(study) && studyDone(studyResult)) {
 				return true;
@@ -519,7 +519,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Checks if the worker ever did this study independent of the study
 	 * result's state.
 	 */
-	public boolean didStudyAlready(Worker worker, StudyModel study) {
+	public boolean didStudyAlready(Worker worker, Study study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
 			if (studyResult.getStudy().equals(study)) {
 				return true;

@@ -11,9 +11,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import models.ComponentResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
-import models.UserModel;
+import models.User;
 
 import org.fest.assertions.Fail;
 import org.junit.Test;
@@ -104,7 +104,7 @@ public class ResultServiceTest extends AbstractTest {
 	public void checkCheckComponentResults() throws ForbiddenReloadException,
 			NoSuchAlgorithmException, IOException, BadRequestException,
 			NotFoundException, ForbiddenException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
 
@@ -124,7 +124,7 @@ public class ResultServiceTest extends AbstractTest {
 			throws ForbiddenReloadException, NoSuchAlgorithmException,
 			IOException, BadRequestException, NotFoundException,
 			ForbiddenException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
 
@@ -133,7 +133,7 @@ public class ResultServiceTest extends AbstractTest {
 				.getComponentResults(idList);
 
 		// Check results with wrong user
-		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
+		User testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 		try {
 			resultService.checkComponentResults(componentResultList, testUser,
 					true);
@@ -153,7 +153,7 @@ public class ResultServiceTest extends AbstractTest {
 			throws ForbiddenReloadException, NoSuchAlgorithmException,
 			IOException, BadRequestException, NotFoundException,
 			ForbiddenException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
 
@@ -187,7 +187,7 @@ public class ResultServiceTest extends AbstractTest {
 	public void checkCheckStudyResults() throws ForbiddenReloadException,
 			NoSuchAlgorithmException, IOException, BadRequestException,
 			NotFoundException, ForbiddenException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -206,7 +206,7 @@ public class ResultServiceTest extends AbstractTest {
 	public void checkCheckStudyResultsLocked() throws ForbiddenReloadException,
 			NoSuchAlgorithmException, IOException, BadRequestException,
 			NotFoundException, ForbiddenException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -239,7 +239,7 @@ public class ResultServiceTest extends AbstractTest {
 	public void checkGetComponentResults() throws IOException,
 			NoSuchAlgorithmException, ForbiddenReloadException,
 			BadRequestException, NotFoundException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
 
@@ -253,7 +253,7 @@ public class ResultServiceTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoComponentResults(StudyModel study)
+	private void createTwoComponentResults(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
@@ -271,7 +271,7 @@ public class ResultServiceTest extends AbstractTest {
 	public void checkGetComponentResultsWrongId() throws IOException,
 			BadRequestException, ForbiddenReloadException,
 			NoSuchAlgorithmException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
 
@@ -292,7 +292,7 @@ public class ResultServiceTest extends AbstractTest {
 	@Test
 	public void checkGetComponentResultsNotExist() throws BadRequestException,
 			NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		// Check that ComponentResults with ID 1, 2 don't exist
@@ -312,7 +312,7 @@ public class ResultServiceTest extends AbstractTest {
 	@Test
 	public void checkGetStudyResults() throws IOException,
 			NoSuchAlgorithmException, BadRequestException, NotFoundException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -328,7 +328,7 @@ public class ResultServiceTest extends AbstractTest {
 	@Test
 	public void checkGetStudyResultsNotExist() throws NoSuchAlgorithmException,
 			IOException, BadRequestException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		// Don't add any results
@@ -345,7 +345,7 @@ public class ResultServiceTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoStudyResults(StudyModel study) {
+	private void createTwoStudyResults(Study study) {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = studyResultDao.create(study,
 				admin.getWorker());
@@ -361,7 +361,7 @@ public class ResultServiceTest extends AbstractTest {
 	@Test
 	public void checkGetAllowedStudyResultList()
 			throws NoSuchAlgorithmException, IOException, BadRequestException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -388,7 +388,7 @@ public class ResultServiceTest extends AbstractTest {
 	@Test
 	public void checkGetAllowedStudyResultListEmpty() throws IOException,
 			NoSuchAlgorithmException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		// Don't add any results
@@ -403,12 +403,12 @@ public class ResultServiceTest extends AbstractTest {
 	@Test
 	public void checkGetAllowedStudyResultListWrongUser()
 			throws NoSuchAlgorithmException, IOException, BadRequestException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
 		// Use wrong user to retrieve results
-		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
+		User testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 		List<StudyResult> studyResultList = resultService
 				.getAllowedStudyResultList(admin, testUser.getWorker());
 		assertThat(studyResultList).isEmpty();

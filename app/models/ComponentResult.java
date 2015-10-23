@@ -12,6 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * @author Kristian Lange
  */
 @Entity
+@Table(name = "ComponentResult")
 @JsonPropertyOrder(value = { "id", "startDate", "workerId", "workerType",
 		"componentState" })
 public class ComponentResult {
@@ -69,7 +71,7 @@ public class ComponentResult {
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "component_id")
-	private ComponentModel component;
+	private Component component;
 
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -93,7 +95,7 @@ public class ComponentResult {
 	public ComponentResult() {
 	}
 
-	public ComponentResult(ComponentModel component) {
+	public ComponentResult(Component component) {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.component = component;
 		this.componentState = ComponentState.STARTED;
@@ -141,11 +143,11 @@ public class ComponentResult {
 		return this.componentState;
 	}
 
-	public void setComponent(ComponentModel component) {
+	public void setComponent(Component component) {
 		this.component = component;
 	}
 
-	public ComponentModel getComponent() {
+	public Component getComponent() {
 		return this.component;
 	}
 

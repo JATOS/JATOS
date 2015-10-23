@@ -1,4 +1,4 @@
-@(user: UserModel, breadcrumbs: String)(body: Html)
+@(user: User, breadcrumbs: String)(body: Html)
 
 <!DOCTYPE html>
 
@@ -104,7 +104,7 @@ function showError(msg) {
 					</a>
 				</li>
 				<li><input id="importStudyBrowser" type="file"
-					name="@StudyModel.STUDY" style="display: none;"></li>
+					name="@Study.STUDY" style="display: none;"></li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Import a study from the local file system">
 					<a id="importStudyLink" href="#">
 						<span class="glyphicon glyphicon-import" aria-hidden="true"></span>
@@ -292,7 +292,7 @@ $('#jatosHeader').on('change', '#importStudyBrowser', function() {
 	var data = new FormData();
 	var files = $('#importStudyBrowser').prop('files');
 	$.each(files , function(index, value){
-		data.append('@StudyModel.STUDY', value);
+		data.append('@Study.STUDY', value);
 	});
 	$('#uploadingModal').modal('show');
 	$.ajax({

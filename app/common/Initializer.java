@@ -8,7 +8,7 @@ import javax.persistence.Query;
 
 import models.GroupResult;
 import models.GroupResult.GroupState;
-import models.UserModel;
+import models.User;
 import persistance.GroupResultDao;
 import persistance.UserDao;
 import play.Logger;
@@ -107,7 +107,7 @@ public class Initializer {
 	 */
 	private void checkAdmin() {
 		JPA.withTransaction(() -> {
-			UserModel admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			if (admin == null) {
 				userService.createAdmin();
 			}

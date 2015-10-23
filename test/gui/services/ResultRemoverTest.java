@@ -11,9 +11,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import models.ComponentResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
-import models.UserModel;
+import models.User;
 
 import org.fest.assertions.Fail;
 import org.junit.Test;
@@ -60,7 +60,7 @@ public class ResultRemoverTest extends AbstractTest {
 	public void checkRemoveComponentResults() throws NoSuchAlgorithmException,
 			IOException, ForbiddenReloadException, BadRequestException,
 			NotFoundException, ForbiddenException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
 
@@ -89,7 +89,7 @@ public class ResultRemoverTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoComponentResults(StudyModel study)
+	private void createTwoComponentResults(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
@@ -108,7 +108,7 @@ public class ResultRemoverTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException, BadRequestException, ForbiddenException,
 			NotFoundException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
 
@@ -140,7 +140,7 @@ public class ResultRemoverTest extends AbstractTest {
 	public void checkRemoveStudyResults() throws NoSuchAlgorithmException,
 			IOException, ForbiddenReloadException, BadRequestException,
 			NotFoundException, ForbiddenException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -162,7 +162,7 @@ public class ResultRemoverTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoStudyResults(StudyModel study)
+	private void createTwoStudyResults(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = studyResultDao.create(study,
@@ -197,7 +197,7 @@ public class ResultRemoverTest extends AbstractTest {
 	public void checkRemoveAllStudyResults() throws NoSuchAlgorithmException,
 			IOException, ForbiddenReloadException, ForbiddenException,
 			BadRequestException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -223,7 +223,7 @@ public class ResultRemoverTest extends AbstractTest {
 	public void checkRemoveAllStudyResultsWrongUser() throws IOException,
 			NoSuchAlgorithmException, ForbiddenReloadException,
 			BadRequestException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -233,7 +233,7 @@ public class ResultRemoverTest extends AbstractTest {
 		assertThat(studyResultList.size()).isEqualTo(2);
 
 		// And now try to remove them with the wrong user
-		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
+		User testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 		try {
 			resultRemover.removeAllStudyResults(study, testUser);
 			Fail.fail();
@@ -256,7 +256,7 @@ public class ResultRemoverTest extends AbstractTest {
 	public void checkRemoveAllStudyResultsStudyLocked()
 			throws BadRequestException, ForbiddenReloadException,
 			NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 

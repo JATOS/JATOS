@@ -3,7 +3,7 @@ package publix.services.personal_multiple;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.StudyModel;
+import models.Study;
 import models.StudyResult.StudyState;
 import models.workers.PersonalMultipleWorker;
 
@@ -34,8 +34,8 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 	@Test
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
 		addWorker(worker);
@@ -50,8 +50,8 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyFinishedStudy()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		StudyModel study = importExampleStudy();
-		study.addAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
+		Study study = importExampleStudy();
+		study.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
 		addWorker(worker);

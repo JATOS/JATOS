@@ -5,8 +5,8 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.StudyModel;
-import models.UserModel;
+import models.Study;
+import models.User;
 import persistance.StudyDao;
 import play.Logger;
 import play.db.jpa.Transactional;
@@ -59,8 +59,8 @@ public class Home extends Controller {
 	public Result home(int httpStatus) {
 		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
+		User loggedInUser = userService.retrieveLoggedInUser();
+		List<Study> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 		String breadcrumbs = breadcrumbsService.generateForHome();
 		return status(httpStatus, views.html.gui.home.render(studyList,
@@ -82,8 +82,8 @@ public class Home extends Controller {
 	public Result sidebarStudyList() {
 		Logger.info(CLASS_NAME + ".sidebarStudyList: "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
-		List<StudyModel> studyList = studyDao.findAllByUser(loggedInUser
+		User loggedInUser = userService.retrieveLoggedInUser();
+		List<Study> studyList = studyDao.findAllByUser(loggedInUser
 				.getEmail());
 		return ok(jsonUtils.sidebarStudyList(studyList));
 	}
@@ -96,7 +96,7 @@ public class Home extends Controller {
 	public Result log(Integer lineLimit) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".log: " + "lineLimit " + lineLimit + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		UserModel loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = userService.retrieveLoggedInUser();
 		if (!loggedInUser.getEmail().equals(UserService.ADMIN_EMAIL)) {
 			jatosGuiExceptionThrower.throwHome(
 					MessagesStrings.ONLY_ADMIN_CAN_SEE_LOGS,

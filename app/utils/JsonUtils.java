@@ -14,10 +14,10 @@ import javax.inject.Singleton;
 
 import models.Breadcrumbs;
 import models.Breadcrumbs.Breadcrumb;
-import models.ComponentModel;
+import models.Component;
 import models.ComponentResult;
 import models.GroupResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 import models.workers.Worker;
 
@@ -169,8 +169,8 @@ public class JsonUtils {
 	 * and puts them together with the session data (stored in StudyResult) into
 	 * a new JSON object.
 	 */
-	public ObjectNode initData(StudyResult studyResult, StudyModel study,
-			ComponentModel component) throws IOException {
+	public ObjectNode initData(StudyResult studyResult, Study study,
+			Component component) throws IOException {
 		String studyProperties = asJsonForPublix(study);
 		ArrayNode componentList = getComponentListForInitData(study);
 		String componentProperties = asJsonForPublix(component);
@@ -190,14 +190,14 @@ public class JsonUtils {
 	 * jatos.js initData. For each component it adds only the bare minimum of
 	 * data.
 	 */
-	private ArrayNode getComponentListForInitData(StudyModel study) {
+	private ArrayNode getComponentListForInitData(Study study) {
 		ArrayNode componentList = OBJECTMAPPER.createArrayNode();
-		for (ComponentModel tempComponent : study.getComponentList()) {
+		for (Component tempComponent : study.getComponentList()) {
 			ObjectNode componentNode = OBJECTMAPPER.createObjectNode();
-			componentNode.put(ComponentModel.ID, tempComponent.getId());
-			componentNode.put(ComponentModel.TITLE, tempComponent.getTitle());
-			componentNode.put(ComponentModel.ACTIVE, tempComponent.isActive());
-			componentNode.put(ComponentModel.RELOADABLE,
+			componentNode.put(Component.ID, tempComponent.getId());
+			componentNode.put(Component.TITLE, tempComponent.getTitle());
+			componentNode.put(Component.ACTIVE, tempComponent.isActive());
+			componentNode.put(Component.RELOADABLE,
 					tempComponent.isReloadable());
 			componentList.add(componentNode);
 		}
@@ -245,7 +245,7 @@ public class JsonUtils {
 	 * Returns JSON of all ComponentResuls of the specified component. The JSON
 	 * string is intended for use in JATOS' GUI.
 	 */
-	public String allComponentResultsForUI(ComponentModel component)
+	public String allComponentResultsForUI(Component component)
 			throws JsonProcessingException {
 		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allComponentResultsNode.arrayNode();
@@ -328,7 +328,7 @@ public class JsonUtils {
 	 * the number of StudyResults of the study so far. This JSON is intended for
 	 * JATOS' GUI.
 	 */
-	public String studyForUI(StudyModel study) throws JsonProcessingException {
+	public String studyForUI(Study study) throws JsonProcessingException {
 		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
 		studyNode.put("resultCount", studyResultDao.countByStudy(study));
 		return OBJECTMAPPER.writeValueAsString(studyNode);
@@ -337,15 +337,15 @@ public class JsonUtils {
 	/**
 	 * Returns the JSON data for the sidebar (study title, ID and components)
 	 */
-	public JsonNode sidebarStudyList(List<StudyModel> studyList) {
+	public JsonNode sidebarStudyList(List<Study> studyList) {
 		List<SidebarStudy> sidebarStudyList = new ArrayList<>();
-		for (StudyModel study : studyList) {
+		for (Study study : studyList) {
 			SidebarStudy sidebarStudy = new SidebarStudy();
 			sidebarStudy.id = study.getId();
 			sidebarStudy.uuid = study.getUuid();
 			sidebarStudy.title = study.getTitle();
 			sidebarStudy.locked = study.isLocked();
-			for (ComponentModel component : study.getComponentList()) {
+			for (Component component : study.getComponentList()) {
 				SidebarComponent sidebarComponent = new SidebarStudy.SidebarComponent();
 				sidebarComponent.id = component.getId();
 				sidebarComponent.uuid = component.getUuid();
@@ -393,15 +393,15 @@ public class JsonUtils {
 	 * the 'resultCount', the number of ComponentResults of this component so
 	 * far. Intended for use in JATOS' GUI.
 	 */
-	public JsonNode allComponentsForUI(List<ComponentModel> componentList) {
+	public JsonNode allComponentsForUI(List<Component> componentList) {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
 		int i = 1;
-		for (ComponentModel component : componentList) {
+		for (Component component : componentList) {
 			ObjectNode componentNode = OBJECTMAPPER.valueToTree(component);
 			// Add count of component's results
 			componentNode.put("resultCount",
 					componentResultDao.countByComponent(component));
-			componentNode.put(ComponentModel.POSITION, i++);
+			componentNode.put(Component.POSITION, i++);
 			arrayNode.add(componentNode);
 		}
 		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
@@ -476,7 +476,7 @@ public class JsonUtils {
 	 */
 	public String componentAsJsonForIO(Object obj) throws IOException {
 		ObjectNode node = generateNodeWithVersionForIO(obj,
-				String.valueOf(ComponentModel.SERIAL_VERSION));
+				String.valueOf(Component.SERIAL_VERSION));
 		return OBJECTMAPPER.writer().writeValueAsString(node);
 	}
 
@@ -486,7 +486,7 @@ public class JsonUtils {
 	 */
 	public void studyAsJsonForIO(Object obj, File file) throws IOException {
 		ObjectNode node = generateNodeWithVersionForIO(obj,
-				String.valueOf(StudyModel.SERIAL_VERSION));
+				String.valueOf(Study.SERIAL_VERSION));
 		OBJECTMAPPER.writer().writeValue(file, node);
 	}
 
@@ -555,12 +555,12 @@ public class JsonUtils {
 		private <T> T checkVersionAndUnmarshall(Class<T> modelClass,
 				String jsonStr) throws IOException, JsonProcessingException {
 			JsonNode node = OBJECTMAPPER.readTree(jsonStr).findValue(VERSION);
-			if (modelClass.equals(StudyModel.class)
-					&& node.asInt() > StudyModel.SERIAL_VERSION) {
+			if (modelClass.equals(Study.class)
+					&& node.asInt() > Study.SERIAL_VERSION) {
 				errorMsg = MessagesStrings.WRONG_STUDY_VERSION;
 				return null;
-			} else if (modelClass.equals(ComponentModel.class)
-					&& node.asInt() > ComponentModel.SERIAL_VERSION) {
+			} else if (modelClass.equals(Component.class)
+					&& node.asInt() > Component.SERIAL_VERSION) {
 				errorMsg = MessagesStrings.WRONG_COMPONENT_VERSION;
 				return null;
 			} else {

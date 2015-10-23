@@ -3,7 +3,7 @@ package publix.services.general_single;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.StudyModel;
+import models.Study;
 import models.workers.GeneralSingleWorker;
 import models.workers.Worker;
 import persistance.ComponentDao;
@@ -48,7 +48,7 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	 * Check if study was done before. Throws an ForbiddenPublixException if
 	 * this study's UUID is in the cookie.
 	 */
-	public void checkStudyInCookie(StudyModel study, Cookie cookie)
+	public void checkStudyInCookie(Study study, Cookie cookie)
 			throws ForbiddenPublixException {
 		if (cookie != null) {
 			String[] studyUuidArray = cookie.value().split(",");
@@ -64,7 +64,7 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	/**
 	 * Adds this study's UUID to this cookie's value and returns the value.
 	 */
-	public String addStudyToCookie(StudyModel study, Cookie cookie) {
+	public String addStudyToCookie(Study study, Cookie cookie) {
 		String value;
 		if (cookie != null) {
 			value = cookie.value() + "," + study.getUuid();

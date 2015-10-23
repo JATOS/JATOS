@@ -9,7 +9,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 
 import play.data.validation.ValidationError;
-import models.UserModel;
+import models.User;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -29,20 +29,20 @@ public class JatosWorker extends Worker {
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_email")
-	private UserModel user;
+	private User user;
 
 	public JatosWorker() {
 	}
 	
-	public JatosWorker(UserModel user) {
+	public JatosWorker(User user) {
 		this.user = user;
 	}
 
-	public void setUser(UserModel user) {
+	public void setUser(User user) {
 		this.user = user;
 	}
 
-	public UserModel getUser() {
+	public User getUser() {
 		return this.user;
 	}
 	

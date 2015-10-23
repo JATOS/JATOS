@@ -8,8 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.ComponentModel;
-import models.StudyModel;
+import models.Component;
+import models.Study;
 
 import org.fest.assertions.Fail;
 import org.junit.Test;
@@ -46,11 +46,11 @@ public class ComponentServiceTest extends AbstractTest {
 	@Test
 	public void checkUpdateComponentAfterEdit()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		ComponentModel component = study.getFirstComponent();
-		ComponentModel clone = componentService.cloneComponentModel(component);
+		Component component = study.getFirstComponent();
+		Component clone = componentService.cloneComponentEntity(component);
 		clone.setActive(false);
 		clone.setComments("Changed comments");
 		clone.setHtmlFilePath("changed path");
@@ -62,7 +62,7 @@ public class ComponentServiceTest extends AbstractTest {
 		clone.setId(0l);
 
 		componentService.updateComponentAfterEdit(component, clone);
-		ComponentModel updatedComponent = componentDao.findByUuid(
+		Component updatedComponent = componentDao.findByUuid(
 				component.getUuid(), study);
 
 		// Unchanged stuff
@@ -91,10 +91,10 @@ public class ComponentServiceTest extends AbstractTest {
 	@Test
 	public void checkRenameHtmlFilePath() throws NoSuchAlgorithmException,
 			IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		ComponentModel component = study.getFirstComponent();
+		Component component = study.getFirstComponent();
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
@@ -116,10 +116,10 @@ public class ComponentServiceTest extends AbstractTest {
 	@Test
 	public void checkRenameHtmlFilePathNewFileExists()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		ComponentModel component = study.getFirstComponent();
+		Component component = study.getFirstComponent();
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
@@ -150,10 +150,10 @@ public class ComponentServiceTest extends AbstractTest {
 	@Test
 	public void checkRenameHtmlFilePathWithSubFolder()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		ComponentModel component = study.getFirstComponent();
+		Component component = study.getFirstComponent();
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
@@ -189,10 +189,10 @@ public class ComponentServiceTest extends AbstractTest {
 	@Test
 	public void checkRenameHtmlFilePathEmptyNewFile()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		ComponentModel component = study.getFirstComponent();
+		Component component = study.getFirstComponent();
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
@@ -212,10 +212,10 @@ public class ComponentServiceTest extends AbstractTest {
 	@Test
 	public void checkRenameHtmlFilePathCurrentFileNotExistNewFileNotExist()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		ComponentModel component = study.getFirstComponent();
+		Component component = study.getFirstComponent();
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
@@ -242,10 +242,10 @@ public class ComponentServiceTest extends AbstractTest {
 	@Test
 	public void checkRenameHtmlFilePathCurrentFileNotExistNewFileExist()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		ComponentModel component = study.getFirstComponent();
+		Component component = study.getFirstComponent();
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
@@ -273,13 +273,13 @@ public class ComponentServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkCloneComponentModel() throws NoSuchAlgorithmException,
+	public void checkCloneComponent() throws NoSuchAlgorithmException,
 			IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
-		ComponentModel original = study.getFirstComponent();
-		ComponentModel clone = componentService.cloneComponentModel(original);
+		Component original = study.getFirstComponent();
+		Component clone = componentService.cloneComponentEntity(original);
 
 		// Equal
 		assertThat(clone.getComments()).isEqualTo(original.getComments());
@@ -306,9 +306,9 @@ public class ComponentServiceTest extends AbstractTest {
 	@Test
 	public void checkCheckStandardForComponents()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
-		ComponentModel component = study.getFirstComponent();
+		Component component = study.getFirstComponent();
 		// Study not set automatically, weird!
 		component.setStudy(study);
 

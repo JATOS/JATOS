@@ -1,5 +1,5 @@
-@(loggedInUser: UserModel, breadcrumbs: String,
-study: StudyModel, workerSet: Set[workers.Worker], baseUrl: String,
+@(loggedInUser: User, breadcrumbs: String,
+study: Study, workerSet: Set[workers.Worker], baseUrl: String,
 studyResultsCount: Integer)
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
@@ -104,7 +104,7 @@ studyResultsCount: Integer)
 				</a>
 			</li>
 			<input id="importComponentBrowser" type="file"
-				name="@ComponentModel.COMPONENT" style="display: none;">
+				name="@Component.COMPONENT" style="display: none;">
 			<li data-toggle="tooltip" data-placement="bottom" title="Import a component from the local file system">
 				<a id="importComponentButton" href="#">
 					<span class="glyphicon glyphicon-import" aria-hidden="true"></span>
@@ -624,7 +624,7 @@ $('#studyToolbar').on('change', '#importComponentBrowser', function() {
 	var data = new FormData();
 	var files = $('#importComponentBrowser').prop('files');
 	$.each(files , function(index, value){
-		data.append('@ComponentModel.COMPONENT', value);
+		data.append('@Component.COMPONENT', value);
 	});
 	$.ajax({
 		url: '@controllers.routes.ImportExport.importComponent(study.getId())',

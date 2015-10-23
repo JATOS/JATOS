@@ -1,5 +1,5 @@
-@(loggedInUser: UserModel,
-breadcrumbs: String, user: UserModel, form: Form[UserModel])
+@(loggedInUser: User,
+breadcrumbs: String, user: User, form: Form[User])
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
@@ -8,11 +8,11 @@ breadcrumbs: String, user: UserModel, form: Form[UserModel])
 <div class="form-group">
 	<label class="control-label col-xs-2" for="name">Name</label>
 	<div class="col-xs-10">
-		<input type="text" class="form-control" id="name" name="@UserModel.NAME" value="@form(UserModel.NAME).value" placeholder="Your name">
+		<input type="text" class="form-control" id="name" name="@User.NAME" value="@form(User.NAME).value" placeholder="Your name">
 	</div>
 </div>
 
-<input type="hidden" name="@UserModel.EMAIL" value="@form(UserModel.EMAIL).value">
+<input type="hidden" name="@User.EMAIL" value="@form(User.EMAIL).value">
 
 <div class="form-group">
 	<div class="col-xs-offset-2 col-xs-10">
@@ -29,7 +29,7 @@ breadcrumbs: String, user: UserModel, form: Form[UserModel])
 @for(error <- form.globalErrors) {
 	showError("@error.message");
 }
-@for(error <- form(UserModel.NAME).errors) {
+@for(error <- form(User.NAME).errors) {
 	$('#name').closest(".form-group").addClass("has-error");
 	$('#name').after('<span class="help-block">@error.message</span>');
 }

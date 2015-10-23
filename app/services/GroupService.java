@@ -5,7 +5,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.GroupModel;
+import models.Group;
 import persistance.GroupDao;
 
 /**
@@ -24,10 +24,10 @@ public class GroupService {
 	}
 
 	/**
-	 * Clones a GroupModel.
+	 * Clones a Group
 	 */
-	public GroupModel clone(GroupModel group) {
-		GroupModel clone = new GroupModel();
+	public Group clone(Group group) {
+		Group clone = new Group();
 		clone.setMinMemberSize(group.getMinMemberSize());
 		clone.setMaxMemberSize(group.getMaxMemberSize());
 		clone.setMaxWorkerSize(group.getMaxWorkerSize());
@@ -40,21 +40,21 @@ public class GroupService {
 	 * group. Doesn't change the group's study.
 	 * 
 	 */
-	public void updateProperties(GroupModel group, GroupModel updatedGroup) {
+	public void updateProperties(Group group, Group updatedGroup) {
 		group.setMinMemberSize(updatedGroup.getMinMemberSize());
 		group.setMaxMemberSize(updatedGroup.getMaxMemberSize());
 		group.setMaxWorkerSize(updatedGroup.getMaxWorkerSize());
 		groupDao.update(group);
 	}
 
-	public GroupModel bindFromRequest(Map<String, String[]> formMap) {
-		GroupModel group = new GroupModel();
+	public Group bindFromRequest(Map<String, String[]> formMap) {
+		Group group = new Group();
 		group.setMinMemberSize(Integer.parseInt(formMap
-				.get(GroupModel.MIN_MEMBER_SIZE)[0]));
+				.get(Group.MIN_MEMBER_SIZE)[0]));
 		group.setMaxMemberSize(Integer.parseInt(formMap
-				.get(GroupModel.MAX_MEMBER_SIZE)[0]));
+				.get(Group.MAX_MEMBER_SIZE)[0]));
 		group.setMaxWorkerSize(Integer.parseInt(formMap
-				.get(GroupModel.MAX_WORKER_SIZE)[0]));
+				.get(Group.MAX_WORKER_SIZE)[0]));
 		return group;
 	}
 

@@ -4,7 +4,7 @@ import javax.inject.Singleton;
 
 import models.ComponentResult.ComponentState;
 import models.StudyResult.StudyState;
-import models.UserModel;
+import models.User;
 import models.workers.MTWorker;
 import models.workers.PersonalMultipleWorker;
 import models.workers.PersonalSingleWorker;
@@ -188,7 +188,7 @@ public abstract class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String userMustBeLoggedInToSeeProfile(UserModel user) {
+	public static String userMustBeLoggedInToSeeProfile(User user) {
 		return "You must be logged in as " + user.toString()
 				+ " to see the profile of this user.";
 	}

@@ -3,8 +3,8 @@ package publix.services.jatos;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.StudyModel;
-import models.UserModel;
+import models.Study;
+import models.User;
 import models.workers.JatosWorker;
 import publix.controllers.Publix;
 import publix.exceptions.ForbiddenPublixException;
@@ -28,18 +28,18 @@ public class JatosStudyAuthorisation implements IStudyAuthorisation<JatosWorker>
 
 	@Override
 	public void checkWorkerAllowedToStartStudy(JatosWorker worker,
-			StudyModel study) throws ForbiddenPublixException {
+			Study study) throws ForbiddenPublixException {
 		checkWorkerAllowedToDoStudy(worker, study);
 	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(JatosWorker worker, StudyModel study)
+	public void checkWorkerAllowedToDoStudy(JatosWorker worker, Study study)
 			throws ForbiddenPublixException {
-		if (!study.hasAllowedWorker(worker.getWorkerType())) {
+		if (!study.hasAllowedWorkerType(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
-		UserModel user = worker.getUser();
+		User user = worker.getUser();
 		// User has to be a user of this study
 		if (!study.hasUser(user)) {
 			throw new ForbiddenPublixException(

@@ -1,5 +1,4 @@
-@(loggedInUser: UserModel,
-breadcrumbs: String, study: StudyModel, userList: List[UserModel])
+@(loggedInUser: User, breadcrumbs: String, study: Study, userList: List[User])
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
@@ -12,7 +11,7 @@ var studyId = @study.getId();
 <div class="form-group">
 	<div class="col-lg-offset-2 col-lg-10">
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyModel.USERS" value="@user.getEmail()"
+			<input type="checkbox" name="@Study.USERS" value="@user.getEmail()"
 					@if(study.hasUser(user)) {checked}
 					>@user.toString()
 		</label>

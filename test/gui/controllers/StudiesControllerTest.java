@@ -15,8 +15,8 @@ import static play.test.Helpers.status;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.GroupModel;
-import models.StudyModel;
+import models.Group;
+import models.Study;
 import models.workers.PersonalSingleWorker;
 
 import org.apache.http.HttpHeaders;
@@ -41,7 +41,7 @@ import controllers.Users;
  */
 public class StudiesControllerTest extends AbstractTest {
 
-	private static StudyModel studyTemplate;
+	private static Study studyTemplate;
 
 	@Override
 	public void before() throws Exception {
@@ -55,7 +55,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callIndex() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.index(studyClone.getId()),
@@ -85,15 +85,15 @@ public class StudiesControllerTest extends AbstractTest {
 	@Test
 	public void callSubmit() throws Exception {
 		Map<String, String> formMap = new HashMap<String, String>();
-		formMap.put(StudyModel.TITLE, "Title Test");
-		formMap.put(StudyModel.DESCRIPTION, "Description test.");
-		formMap.put(StudyModel.COMMENTS, "Comments test.");
-		formMap.put(StudyModel.DIRNAME, "dirName_submit");
-		formMap.put(StudyModel.GROUP_STUDY, "true");
-		formMap.put(GroupModel.MIN_MEMBER_SIZE, "5");
-		formMap.put(GroupModel.MAX_MEMBER_SIZE, "5");
-		formMap.put(StudyModel.JSON_DATA, "{}");
-		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
+		formMap.put(Study.TITLE, "Title Test");
+		formMap.put(Study.DESCRIPTION, "Description test.");
+		formMap.put(Study.COMMENTS, "Comments test.");
+		formMap.put(Study.DIRNAME, "dirName_submit");
+		formMap.put(Study.GROUP_STUDY, "true");
+		formMap.put(Group.MIN_MEMBER_SIZE, "5");
+		formMap.put(Group.MAX_MEMBER_SIZE, "5");
+		formMap.put(Study.JSON_DATA, "{}");
+		formMap.put(Study.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 		Result result = callAction(controllers.routes.ref.Studies.submit(),
@@ -105,7 +105,7 @@ public class StudiesControllerTest extends AbstractTest {
 				.split("/");
 		Long studyId = Long.valueOf(locationArray[locationArray.length - 1]);
 
-		StudyModel study = studyDao.findById(studyId);
+		Study study = studyDao.findById(studyId);
 		assertEquals("Title Test", study.getTitle());
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
@@ -116,7 +116,7 @@ public class StudiesControllerTest extends AbstractTest {
 		assertThat((study.getComponentList().isEmpty()));
 		assertThat((study.getUserList().contains(admin)));
 		assertThat((!study.isLocked()));
-		assertThat((study.getAllowedWorkerList().isEmpty()));
+		assertThat((study.getAllowedWorkerTypeList().isEmpty()));
 
 		// Clean up
 		removeStudy(study);
@@ -126,15 +126,15 @@ public class StudiesControllerTest extends AbstractTest {
 	public void callSubmitValidationError() {
 		// Fill with non-valid values
 		Map<String, String> formMap = new HashMap<String, String>();
-		formMap.put(StudyModel.TITLE, " ");
-		formMap.put(StudyModel.DESCRIPTION, "Description test <b>.");
-		formMap.put(StudyModel.COMMENTS, "Comments test <i>.");
-		formMap.put(StudyModel.DIRNAME, "%.test");
-		formMap.put(StudyModel.GROUP_STUDY, "true");
-		formMap.put(GroupModel.MIN_MEMBER_SIZE, "5");
-		formMap.put(GroupModel.MAX_MEMBER_SIZE, "5");
-		formMap.put(StudyModel.JSON_DATA, "{");
-		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "WrongWorker");
+		formMap.put(Study.TITLE, " ");
+		formMap.put(Study.DESCRIPTION, "Description test <b>.");
+		formMap.put(Study.COMMENTS, "Comments test <i>.");
+		formMap.put(Study.DIRNAME, "%.test");
+		formMap.put(Study.GROUP_STUDY, "true");
+		formMap.put(Group.MIN_MEMBER_SIZE, "5");
+		formMap.put(Group.MAX_MEMBER_SIZE, "5");
+		formMap.put(Study.JSON_DATA, "{");
+		formMap.put(Study.ALLOWED_WORKER_LIST, "WrongWorker");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 
@@ -148,17 +148,17 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callSubmitStudyAssetsDirExists() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Map<String, String> formMap = new HashMap<String, String>();
-		formMap.put(StudyModel.TITLE, "Title Test");
-		formMap.put(StudyModel.DESCRIPTION, "Description test.");
-		formMap.put(StudyModel.COMMENTS, "Comments test.");
-		formMap.put(StudyModel.GROUP_STUDY, "true");
-		formMap.put(GroupModel.MIN_MEMBER_SIZE, "5");
-		formMap.put(GroupModel.MAX_MEMBER_SIZE, "5");
-		formMap.put(StudyModel.DIRNAME, studyClone.getDirName());
-		formMap.put(StudyModel.JSON_DATA, "{}");
-		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
+		formMap.put(Study.TITLE, "Title Test");
+		formMap.put(Study.DESCRIPTION, "Description test.");
+		formMap.put(Study.COMMENTS, "Comments test.");
+		formMap.put(Study.GROUP_STUDY, "true");
+		formMap.put(Group.MIN_MEMBER_SIZE, "5");
+		formMap.put(Group.MAX_MEMBER_SIZE, "5");
+		formMap.put(Study.DIRNAME, studyClone.getDirName());
+		formMap.put(Study.JSON_DATA, "{}");
+		formMap.put(Study.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 
@@ -175,7 +175,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callEdit() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.edit(studyClone.getId()),
@@ -193,18 +193,18 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callSubmitEdited() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> formMap = new HashMap<String, String>();
-		formMap.put(StudyModel.TITLE, "Title Test");
-		formMap.put(StudyModel.DESCRIPTION, "Description test.");
-		formMap.put(StudyModel.COMMENTS, "Comments test.");
-		formMap.put(StudyModel.DIRNAME, "dirName_submitEdited");
-		formMap.put(StudyModel.GROUP_STUDY, "true");
-		formMap.put(GroupModel.MIN_MEMBER_SIZE, "5");
-		formMap.put(GroupModel.MAX_MEMBER_SIZE, "5");
-		formMap.put(StudyModel.JSON_DATA, "{}");
-		formMap.put(StudyModel.ALLOWED_WORKER_LIST, "");
+		formMap.put(Study.TITLE, "Title Test");
+		formMap.put(Study.DESCRIPTION, "Description test.");
+		formMap.put(Study.COMMENTS, "Comments test.");
+		formMap.put(Study.DIRNAME, "dirName_submitEdited");
+		formMap.put(Study.GROUP_STUDY, "true");
+		formMap.put(Group.MIN_MEMBER_SIZE, "5");
+		formMap.put(Group.MAX_MEMBER_SIZE, "5");
+		formMap.put(Study.JSON_DATA, "{}");
+		formMap.put(Study.ALLOWED_WORKER_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 		Result result = callAction(
@@ -221,7 +221,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callSwapLock() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.swapLock(studyClone.getId()),
@@ -236,7 +236,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callRemove() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.remove(studyClone.getId()),
@@ -247,7 +247,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callCloneStudy() throws Exception {
-		StudyModel study = cloneAndPersistStudy(studyTemplate);
+		Study study = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.cloneStudy(study.getId()),
@@ -262,7 +262,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callChangeUser() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies
@@ -277,13 +277,13 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callSubmitChangedUsers() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.submitChangedUsers(studyClone
 						.getId()),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(StudyModel.USERS, "admin"))
+						ImmutableMap.of(Study.USERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 
@@ -293,7 +293,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callSubmitChangedUsersZeroUsers() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.submitChangedUsers(studyClone
@@ -310,7 +310,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callChangeComponentOrder() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		// Move first component to second position
 		Result result = callAction(
@@ -318,7 +318,7 @@ public class StudiesControllerTest extends AbstractTest {
 						studyClone.getId(), studyClone.getComponentList()
 								.get(0).getId(), "2"),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(StudyModel.USERS, "admin"))
+						ImmutableMap.of(Study.USERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
@@ -328,7 +328,7 @@ public class StudiesControllerTest extends AbstractTest {
 						studyClone.getId(), studyClone.getComponentList()
 								.get(1).getId(), "1"),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(StudyModel.USERS, "admin"))
+						ImmutableMap.of(Study.USERS, "admin"))
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
@@ -338,7 +338,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callShowStudy() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.showStudy(studyClone.getId()),
@@ -352,7 +352,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callCreatePersonalSingleRun() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
@@ -368,7 +368,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callCreatePersonalMultipleRun() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
 				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
@@ -384,7 +384,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callShowMTurkSourceCode() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.showMTurkSourceCode(studyClone
@@ -402,7 +402,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callWorkers() throws Exception {
-		StudyModel studyClone = cloneAndPersistStudy(studyTemplate);
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
 				controllers.routes.ref.Studies.workers(studyClone.getId()),

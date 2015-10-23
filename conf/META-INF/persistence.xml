@@ -9,8 +9,7 @@
 		<non-jta-data-source>DefaultDS</non-jta-data-source>
 		<properties>
 			<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
-			<!-- Maintain the schema to follow any changes of the models -->
-			<property name="hibernate.hbm2ddl.auto" value="update" />
+<!-- 			<property name="hibernate.hbm2ddl.auto" value="validate" /> -->
 			<property name="hibernate.show_sql" value="false"/>
 		</properties>
 	</persistence-unit>
@@ -21,8 +20,7 @@
 		<non-jta-data-source>DefaultDS</non-jta-data-source>
 		<properties>
 			<property name="hibernate.dialect" value="org.hibernate.dialect.MySQL5InnoDBDialect"/>
-			<!-- Maintain the schema to follow any changes of the models -->
-			<property name="hibernate.hbm2ddl.auto" value="update" />
+<!-- 			<property name="hibernate.hbm2ddl.auto" value="validate" /> -->
 			<property name="hibernate.show_sql" value="false"/>
 		</properties>
 	</persistence-unit>

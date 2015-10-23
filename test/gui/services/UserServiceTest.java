@@ -9,7 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-import models.UserModel;
+import models.User;
 
 import org.fest.assertions.Fail;
 import org.junit.Test;
@@ -45,7 +45,7 @@ public class UserServiceTest extends AbstractTest {
 
 	@Test
 	public void checkRetrieveUser() {
-		UserModel user = null;
+		User user = null;
 		try {
 			user = userService.retrieveUser("admin");
 		} catch (NotFoundException e) {
@@ -71,7 +71,7 @@ public class UserServiceTest extends AbstractTest {
 			Fail.fail();
 		}
 
-		UserModel testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
+		User testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 		try {
 			userService.checkUserLoggedIn(testUser, admin);
 			Fail.fail();
@@ -95,7 +95,7 @@ public class UserServiceTest extends AbstractTest {
 	@Test
 	public void checkValidateNewUser() throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
-		UserModel testUser = new UserModel("bla@bla.com", "Bla", "bla");
+		User testUser = new User("bla@bla.com", "Bla", "bla");
 		List<ValidationError> errorList = userService.validateNewUser(testUser,
 				"bla", "bla");
 		assertThat(errorList).isEmpty();

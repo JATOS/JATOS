@@ -3,11 +3,11 @@ package persistance;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.GroupModel;
+import models.Group;
 import play.db.jpa.JPA;
 
 /**
- * DAO of StudyModel.
+ * DAO of Group entity
  * 
  * @author Kristian Lange
  */
@@ -21,25 +21,25 @@ public class GroupDao extends AbstractDao {
 		this.groupResultDao = groupResultDao;
 	}
 
-	public void create(GroupModel group) {
+	public void create(Group group) {
 		persist(group);
 	}
 
-	public void update(GroupModel group) {
+	public void update(Group group) {
 		merge(group);
 	}
 
 	/**
 	 * Remove group and its group results
 	 */
-	public void remove(GroupModel group) {
+	public void remove(Group group) {
 		// Remove group's GroupResults
 		groupResultDao.findAllByGroup(group).forEach(groupResultDao::remove);
 		super.remove(group);
 	}
 
-	public GroupModel findById(Long id) {
-		return JPA.em().find(GroupModel.class, id);
+	public Group findById(Long id) {
+		return JPA.em().find(Group.class, id);
 	}
 
 }

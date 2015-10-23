@@ -9,7 +9,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.UserModel;
+import models.User;
 import persistance.UserDao;
 import play.data.validation.ValidationError;
 import utils.MessagesStrings;
@@ -21,8 +21,7 @@ import exceptions.ForbiddenException;
 import exceptions.NotFoundException;
 
 /**
- * Service class mostly for Users controller. Handles everything around
- * UserModel.
+ * Service class mostly for Users controller. Handles everything around User.
  * 
  * @author Kristian Lange
  */
@@ -44,8 +43,8 @@ public class UserService {
 	 * Retrieves the user with the given email form the DB. Throws an Exception
 	 * if it doesn't exist.
 	 */
-	public UserModel retrieveUser(String email) throws NotFoundException {
-		UserModel user = userDao.findByEmail(email);
+	public User retrieveUser(String email) throws NotFoundException {
+		User user = userDao.findByEmail(email);
 		if (user == null) {
 			throw new NotFoundException(MessagesStrings.userNotExist(email));
 		}
@@ -56,14 +55,14 @@ public class UserService {
 	 * Retrieves the user with the given email form the RequestScope. It was put
 	 * into the RequestScope by the AuthenticationAction.
 	 */
-	public UserModel retrieveLoggedInUser() {
-		return (UserModel) RequestScope.get(Authentication.LOGGED_IN_USER);
+	public User retrieveLoggedInUser() {
+		return (User) RequestScope.get(Authentication.LOGGED_IN_USER);
 	}
 
 	/**
 	 * Throws an Exception in case the user isn't equal to the loggedInUser.
 	 */
-	public void checkUserLoggedIn(UserModel user, UserModel loggedInUser)
+	public void checkUserLoggedIn(User user, User loggedInUser)
 			throws ForbiddenException {
 		if (!user.equals(loggedInUser)) {
 			throw new ForbiddenException(
@@ -71,11 +70,10 @@ public class UserService {
 		}
 	}
 
-	public UserModel createAdmin() throws UnsupportedEncodingException,
+	public User createAdmin() throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
 		String passwordHash = getHashMDFive(ADMIN_PASSWORD);
-		UserModel adminUser = new UserModel(ADMIN_EMAIL, ADMIN_NAME,
-				passwordHash);
+		User adminUser = new User(ADMIN_EMAIL, ADMIN_NAME, passwordHash);
 		userDao.create(adminUser);
 		return adminUser;
 	}
@@ -95,14 +93,14 @@ public class UserService {
 		return sb.toString();
 	}
 
-	public List<ValidationError> validateNewUser(UserModel newUser,
-			String password, String passwordRepeat)
-			throws UnsupportedEncodingException, NoSuchAlgorithmException {
+	public List<ValidationError> validateNewUser(User newUser, String password,
+			String passwordRepeat) throws UnsupportedEncodingException,
+			NoSuchAlgorithmException {
 		List<ValidationError> errorList = new ArrayList<>();
 
 		// Check if user with this email already exists.
 		if (userDao.findByEmail(newUser.getEmail()) != null) {
-			errorList.add(new ValidationError(UserModel.EMAIL,
+			errorList.add(new ValidationError(User.EMAIL,
 					MessagesStrings.THIS_EMAIL_IS_ALREADY_REGISTERED));
 		}
 
@@ -110,13 +108,13 @@ public class UserService {
 		return errorList;
 	}
 
-	public List<ValidationError> validateChangePassword(UserModel user,
+	public List<ValidationError> validateChangePassword(User user,
 			String password, String passwordRepeat, String oldPasswordHash)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 		List<ValidationError> errorList = new ArrayList<>();
 
 		if (userDao.authenticate(user.getEmail(), oldPasswordHash) == null) {
-			errorList.add(new ValidationError(UserModel.OLD_PASSWORD,
+			errorList.add(new ValidationError(User.OLD_PASSWORD,
 					MessagesStrings.WRONG_OLD_PASSWORD));
 		}
 
@@ -130,7 +128,7 @@ public class UserService {
 
 		// Check for non empty passwords
 		if (password.trim().isEmpty() || passwordRepeat.trim().isEmpty()) {
-			errorList.add(new ValidationError(UserModel.PASSWORD,
+			errorList.add(new ValidationError(User.PASSWORD,
 					MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
 		}
 
@@ -138,7 +136,7 @@ public class UserService {
 		String passwordHash = getHashMDFive(password);
 		String passwordHashRepeat = getHashMDFive(passwordRepeat);
 		if (!passwordHash.equals(passwordHashRepeat)) {
-			errorList.add(new ValidationError(UserModel.PASSWORD,
+			errorList.add(new ValidationError(User.PASSWORD,
 					MessagesStrings.PASSWORDS_DONT_MATCH));
 		}
 	}
@@ -146,7 +144,7 @@ public class UserService {
 	/**
 	 * Creates a user, sets password hash and persists it.
 	 */
-	public void createUser(UserModel newUser, String password)
+	public void createUser(User newUser, String password)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 		String passwordHash = getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
@@ -156,7 +154,7 @@ public class UserService {
 	/**
 	 * Change password hash and persist user.
 	 */
-	public void changePasswordHash(UserModel user, String newPasswordHash) {
+	public void changePasswordHash(User user, String newPasswordHash) {
 		user.setPasswordHash(newPasswordHash);
 		userDao.update(user);
 	}
@@ -164,7 +162,7 @@ public class UserService {
 	/**
 	 * Changes name and persists user.
 	 */
-	public void updateName(UserModel user, String name) {
+	public void updateName(User user, String name) {
 		userDao.updateName(user, name);
 	}
 

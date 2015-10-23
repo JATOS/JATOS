@@ -16,6 +16,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
+import javax.persistence.Table;
 
 import models.StudyResult;
 import play.data.validation.ValidationError;
@@ -32,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
  * @author Kristian Lange
  */
 @Entity
+@Table(name = "Worker")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = Worker.DISCRIMINATOR)
 @AttributeOverride(name = Worker.DISCRIMINATOR, column = @Column(name = Worker.DISCRIMINATOR, nullable = false, insertable = false, updatable = false))

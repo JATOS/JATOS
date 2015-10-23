@@ -12,9 +12,9 @@ import java.util.Map;
 
 import javax.persistence.EntityManager;
 
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
-import models.UserModel;
+import models.User;
 import models.StudyResult.StudyState;
 import models.workers.Worker;
 
@@ -76,7 +76,7 @@ public abstract class AbstractTest {
 	protected WorkerDao workerDao;
 	protected StudyResultDao studyResultDao;
 	protected ComponentResultDao componentResultDao;
-	protected UserModel admin;
+	protected User admin;
 
 	public abstract void before() throws Exception;
 
@@ -171,14 +171,14 @@ public abstract class AbstractTest {
 		FileUtils.deleteDirectory(assetsRoot);
 	}
 
-	protected StudyModel importExampleStudy() throws IOException {
+	protected Study importExampleStudy() throws IOException {
 		File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
 		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		File studyFile = studyFileList[0];
-		StudyModel importedStudy = new JsonUtils.UploadUnmarshaller()
-				.unmarshalling(studyFile, StudyModel.class);
+		Study importedStudy = new JsonUtils.UploadUnmarshaller()
+				.unmarshalling(studyFile, Study.class);
 		studyFile.delete();
 
 		File[] dirArray = IOUtils.findDirectories(tempUnzippedStudyDir);
@@ -207,26 +207,26 @@ public abstract class AbstractTest {
 		return componentFileBkp;
 	}
 
-	protected synchronized StudyModel cloneAndPersistStudy(
-			StudyModel studyToBeCloned) throws IOException {
+	protected synchronized Study cloneAndPersistStudy(
+			Study studyToBeCloned) throws IOException {
 		entityManager.getTransaction().begin();
-		StudyModel studyClone = studyService.cloneStudy(studyToBeCloned, admin);
+		Study studyClone = studyService.cloneStudy(studyToBeCloned, admin);
 		entityManager.getTransaction().commit();
 		return studyClone;
 	}
 
-	protected synchronized UserModel createAndPersistUser(String email,
+	protected synchronized User createAndPersistUser(String email,
 			String name, String password) throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
 		String passwordHash = userService.getHashMDFive(password);
-		UserModel user = new UserModel(email, name, passwordHash);
+		User user = new User(email, name, passwordHash);
 		entityManager.getTransaction().begin();
 		userDao.create(user);
 		entityManager.getTransaction().commit();
 		return user;
 	}
 
-	protected synchronized void removeStudy(StudyModel study)
+	protected synchronized void removeStudy(Study study)
 			throws IOException {
 		IOUtils.removeStudyAssetsDir(study.getDirName());
 		entityManager.getTransaction().begin();
@@ -234,20 +234,20 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 	}
 
-	protected synchronized void addStudy(StudyModel study) {
+	protected synchronized void addStudy(Study study) {
 		entityManager.getTransaction().begin();
 		studyDao.create(study, admin);
 		entityManager.getTransaction().commit();
 	}
 
-	protected synchronized void lockStudy(StudyModel study) {
+	protected synchronized void lockStudy(Study study) {
 		entityManager.getTransaction().begin();
 		study.setLocked(true);
 		entityManager.getTransaction().commit();
 	}
 
-	protected synchronized void removeUser(StudyModel studyClone,
-			UserModel user) {
+	protected synchronized void removeUser(Study studyClone,
+			User user) {
 		entityManager.getTransaction().begin();
 		studyDao.findById(studyClone.getId()).removeUser(user);
 		entityManager.getTransaction().commit();
@@ -259,7 +259,7 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 	}
 
-	protected void addStudyResult(StudyModel study, Worker worker,
+	protected void addStudyResult(Study study, Worker worker,
 			StudyState state) {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study, worker);

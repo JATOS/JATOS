@@ -12,7 +12,7 @@ import persistance.AbstractDao;
 import play.db.jpa.JPA;
 
 /**
- * DAO for abstract Worker model
+ * DAO for abstract Worker entity
  * 
  * @author Kristian Lange
  */

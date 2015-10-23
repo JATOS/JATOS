@@ -14,6 +14,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -23,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * @author Kristian Lange
  */
 @Entity
+@Table(name = "GroupResult")
 public class GroupResult {
 
 	@Id
@@ -46,7 +48,7 @@ public class GroupResult {
 
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "group_id")
-	private GroupModel group;
+	private Group group;
 
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	@JoinColumn(name = "groupResult_id")
@@ -71,7 +73,7 @@ public class GroupResult {
 	public GroupResult() {
 	}
 
-	public GroupResult(GroupModel group) {
+	public GroupResult(Group group) {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.group = group;
 		this.groupState = GroupState.STARTED;
@@ -93,11 +95,11 @@ public class GroupResult {
 		this.groupState = groupState;
 	}
 
-	public GroupModel getGroup() {
+	public Group getGroup() {
 		return group;
 	}
 
-	public void setGroup(GroupModel group) {
+	public void setGroup(Group group) {
 		this.group = group;
 	}
 

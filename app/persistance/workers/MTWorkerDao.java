@@ -11,7 +11,7 @@ import models.workers.Worker;
 import play.db.jpa.JPA;
 
 /**
- * DAO for MTWorker model
+ * DAO for MTWorker entity
  * 
  * @author Kristian Lange
  */

@@ -8,14 +8,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
-import models.ComponentModel;
+import models.Component;
 import models.ComponentResult;
-import models.StudyModel;
-import models.UserModel;
+import models.Study;
+import models.User;
 import play.db.jpa.JPA;
 
 /**
- * DAO of StudyModel.
+ * DAO of Study entity
  * 
  * @author Kristian Lange
  */
@@ -37,7 +37,7 @@ public class StudyDao extends AbstractDao {
 	/**
 	 * Persist study and it's components and add user.
 	 */
-	public void create(StudyModel study, UserModel user) {
+	public void create(Study study, User user) {
 		if (study.getUuid() == null) {
 			study.setUuid(UUID.randomUUID().toString());
 		}
@@ -49,21 +49,21 @@ public class StudyDao extends AbstractDao {
 	/**
 	 * Add user to study.
 	 */
-	public void addUser(StudyModel study, UserModel user) {
+	public void addUser(Study study, User user) {
 		study.addUser(user);
 		merge(study);
 	}
 
-	public void update(StudyModel study) {
+	public void update(Study study) {
 		merge(study);
 	}
 
 	/**
 	 * Remove study and its components
 	 */
-	public void remove(StudyModel study) {
+	public void remove(Study study) {
 		// Remove all study's components and their ComponentResults
-		for (ComponentModel component : study.getComponentList()) {
+		for (Component component : study.getComponentList()) {
 			List<ComponentResult> componentResultList = componentResultDao
 					.findAllByComponent(component);
 			componentResultList.forEach(componentResultDao::remove);
@@ -74,18 +74,18 @@ public class StudyDao extends AbstractDao {
 		super.remove(study);
 	}
 
-	public StudyModel findById(Long id) {
-		return JPA.em().find(StudyModel.class, id);
+	public Study findById(Long id) {
+		return JPA.em().find(Study.class, id);
 	}
 
-	public StudyModel findByUuid(String uuid) {
-		String queryStr = "SELECT e FROM StudyModel e WHERE " + "e.uuid=:uuid";
-		TypedQuery<StudyModel> query = JPA.em().createQuery(queryStr,
-				StudyModel.class);
+	public Study findByUuid(String uuid) {
+		String queryStr = "SELECT e FROM Study e WHERE " + "e.uuid=:uuid";
+		TypedQuery<Study> query = JPA.em().createQuery(queryStr,
+				Study.class);
 		query.setParameter("uuid", uuid);
 		// There can be only one study with this UUID
 		query.setMaxResults(1);
-		List<StudyModel> studyList = query.getResultList();
+		List<Study> studyList = query.getResultList();
 		return studyList.isEmpty() ? null : studyList.get(0);
 	}
 
@@ -93,31 +93,30 @@ public class StudyDao extends AbstractDao {
 	 * Finds all studies with the given title and returns them in a list. If
 	 * there is none it returns an empty list.
 	 */
-	public List<StudyModel> findByTitle(String title) {
-		String queryStr = "SELECT e FROM StudyModel e WHERE "
-				+ "e.title=:title";
-		TypedQuery<StudyModel> query = JPA.em().createQuery(queryStr,
-				StudyModel.class);
+	public List<Study> findByTitle(String title) {
+		String queryStr = "SELECT e FROM Study e WHERE e.title=:title";
+		TypedQuery<Study> query = JPA.em().createQuery(queryStr,
+				Study.class);
 		return query.setParameter("title", title).getResultList();
 	}
 
-	public List<StudyModel> findAll() {
-		TypedQuery<StudyModel> query = JPA.em().createQuery(
-				"SELECT e FROM StudyModel e", StudyModel.class);
+	public List<Study> findAll() {
+		TypedQuery<Study> query = JPA.em().createQuery(
+				"SELECT e FROM Study e", Study.class);
 		return query.getResultList();
 	}
 
-	public List<StudyModel> findAllByUser(String userEmail) {
-		TypedQuery<StudyModel> query = JPA.em().createQuery(
-				"SELECT DISTINCT g FROM UserModel u LEFT JOIN u.studyList g "
-						+ "WHERE u.email = :user", StudyModel.class);
+	public List<Study> findAllByUser(String userEmail) {
+		TypedQuery<Study> query = JPA.em().createQuery(
+				"SELECT DISTINCT g FROM User u LEFT JOIN u.studyList g "
+						+ "WHERE u.email = :user", Study.class);
 		query.setParameter("user", userEmail);
-		List<StudyModel> studyList = query.getResultList();
+		List<Study> studyList = query.getResultList();
 		// Sometimes the DB returns an element that's just null (bug?). Iterate
 		// through the list and remove all null elements.
-		Iterator<StudyModel> it = studyList.iterator();
+		Iterator<Study> it = studyList.iterator();
 		while (it.hasNext()) {
-			StudyModel study = it.next();
+			Study study = it.next();
 			if (study == null) {
 				it.remove();
 			}

@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 import models.ComponentResult;
-import models.StudyModel;
+import models.Study;
 import models.StudyResult;
 
 import org.fest.assertions.Fail;
@@ -55,7 +55,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	@Test
 	public void checkForWorker() throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException, ForbiddenException, BadRequestException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -76,7 +76,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	@Test
 	public void checkForStudy() throws NoSuchAlgorithmException, IOException,
 			ForbiddenReloadException, ForbiddenException, BadRequestException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -97,7 +97,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	public void checkForComponent() throws NoSuchAlgorithmException,
 			IOException, ForbiddenReloadException, ForbiddenException,
 			BadRequestException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -118,7 +118,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 			throws ForbiddenReloadException, BadRequestException,
 			ForbiddenException, IOException, NoSuchAlgorithmException,
 			NotFoundException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResultsWithData(study);
 
@@ -132,7 +132,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoComponentResultsWithData(StudyModel study)
+	private void createTwoComponentResultsWithData(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
@@ -156,7 +156,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	public void checkFromListOfComponentResultIdsEmpty()
 			throws BadRequestException, ForbiddenException,
 			ForbiddenReloadException, NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResultsWithoutData(study);
 
@@ -172,7 +172,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoComponentResultsWithoutData(StudyModel study)
+	private void createTwoComponentResultsWithoutData(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
@@ -194,7 +194,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	public void checkFromListOfStudyResultIds()
 			throws NoSuchAlgorithmException, IOException, BadRequestException,
 			NotFoundException, ForbiddenException, ForbiddenReloadException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
 
@@ -217,7 +217,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoStudyResults(StudyModel study)
+	private void createTwoStudyResults(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = studyResultDao.create(study,
@@ -268,7 +268,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	public void checkFromListOfStudyResultIdsEmpty()
 			throws NoSuchAlgorithmException, IOException, BadRequestException,
 			ForbiddenException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		// Never added any results

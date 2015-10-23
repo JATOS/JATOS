@@ -5,7 +5,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.StudyModel;
+import models.Study;
 
 import org.fest.assertions.Fail;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 		Http.Context.current().session()
 				.put(Users.SESSION_EMAIL, admin.getEmail());
 
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		studyAuthorisation
@@ -59,8 +59,8 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 	@Test
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
-		study.removeAllowedWorker(admin.getWorker().getWorkerType());
+		Study study = importExampleStudy();
+		study.removeAllowedWorkerType(admin.getWorker().getWorkerType());
 		addStudy(study);
 
 		// Study doesn't allow this worker type
@@ -81,7 +81,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 	@Test
 	public void checkWorkerAllowedToDoStudyNotUser()
 			throws NoSuchAlgorithmException, IOException {
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -108,7 +108,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException {
 		mockContext();
 
-		StudyModel study = importExampleStudy();
+		Study study = importExampleStudy();
 		addStudy(study);
 
 		// User has to be logged in
