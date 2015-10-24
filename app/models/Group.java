@@ -1,9 +1,5 @@
 package models;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -11,8 +7,10 @@ import javax.persistence.Id;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import play.data.validation.ValidationError;
-import utils.MessagesStrings;
+import utils.JsonUtils;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Model and DB entity of a group. Default values, where necessary, are at the
@@ -25,36 +23,40 @@ import utils.MessagesStrings;
 public class Group {
 
 	public static final String ID = "id";
-	public static final String MIN_MEMBER_SIZE = "minGroupSize";
-	public static final String MAX_MEMBER_SIZE = "maxGroupSize";
+	public static final String MIN_MEMBER_SIZE = "minMemberSize";
+	public static final String MAX_MEMBER_SIZE = "maxMemberSize";
 	public static final String MAX_WORKER_SIZE = "maxWorkerSize";
 
 	@Id
 	@GeneratedValue
+	@JsonView(JsonUtils.JsonForPublix.class)
 	private Long id;
 
 	/**
 	 * Minimum number of workers at the same time. Is at least 2.
 	 */
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private int minMemberSize = 2;
 
 	/**
 	 * Maximum number of workers at the same time. Is at least 2.
 	 */
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private int maxMemberSize = 2;
 
 	/**
-	 * Maximum number of workers altogether. Is at least 2. If it's null the
-	 * number is unlimited.
+	 * Maximum number of workers altogether. Is at least 2.
 	 */
-	private Integer maxWorkerSize = null;
-	
-	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+	private int maxWorkerSize = 2;
+
+	@JsonIgnore
+	@OneToOne(fetch = FetchType.LAZY)
 	private Study study;
 
 	public Group() {
 	}
-	
+
 	public void setId(Long id) {
 		this.id = id;
 	}
@@ -78,7 +80,7 @@ public class Group {
 	public void setMaxMemberSize(int maxMemberSize) {
 		this.maxMemberSize = maxMemberSize;
 	}
-	
+
 	public int getMaxWorkerSize() {
 		return maxWorkerSize;
 	}
@@ -86,38 +88,13 @@ public class Group {
 	public void setMaxWorkerSize(int maxWorkerSize) {
 		this.maxWorkerSize = maxWorkerSize;
 	}
-	
+
 	public Study getStudy() {
 		return this.study;
 	}
-	
+
 	public void setStudy(Study study) {
 		this.study = study;
-	}
-
-	public List<ValidationError> validate() {
-		List<ValidationError> errorList = new ArrayList<>();
-		if (minMemberSize < 2) {
-			errorList.add(new ValidationError(MIN_MEMBER_SIZE,
-					MessagesStrings.GROUP_MEMBER_SIZE));
-		}
-		if (maxMemberSize < 2) {
-			errorList.add(new ValidationError(MAX_MEMBER_SIZE,
-					MessagesStrings.GROUP_MEMBER_SIZE));
-		}
-		if (maxMemberSize < minMemberSize) {
-			errorList.add(new ValidationError(MAX_MEMBER_SIZE,
-					MessagesStrings.GROUP_MAX_MEMBER_SIZE));
-		}
-		if (maxWorkerSize != null && maxWorkerSize < 2) {
-			errorList.add(new ValidationError(MAX_WORKER_SIZE,
-					MessagesStrings.GROUP_WORKER_SIZE));
-		}
-		if (maxWorkerSize >= maxMemberSize) {
-			errorList.add(new ValidationError(MAX_MEMBER_SIZE,
-					MessagesStrings.GROUP_MAX_WORKER_SIZE));
-		}
-		return errorList.isEmpty() ? null : errorList;
 	}
 
 	@Override

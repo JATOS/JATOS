@@ -329,7 +329,7 @@ public class ImportExportControllerTest extends AbstractTest {
 	private Result callImportStudyConfirmed(String unzippedStudyDirName,
 			boolean overrideProperties, boolean overrideDir) {
 		ObjectNode jsonObj = JsonUtils.OBJECTMAPPER.createObjectNode();
-		jsonObj.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM,
+		jsonObj.put(ImportExportService.STUDYS_ENTITY_CONFIRM,
 				overrideProperties);
 		jsonObj.put(ImportExportService.STUDYS_DIR_CONFIRM, overrideDir);
 

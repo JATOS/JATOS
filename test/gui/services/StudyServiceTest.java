@@ -127,7 +127,7 @@ public class StudyServiceTest extends AbstractTest {
 		long studyId = study.getId();
 
 		entityManager.getTransaction().begin();
-		studyService.updatePropertiesWODirName(study, updatedStudy);
+		studyService.bindToStudyWithoutDirName(study, updatedStudy);
 		entityManager.getTransaction().commit();
 
 		// Changed
@@ -364,7 +364,7 @@ public class StudyServiceTest extends AbstractTest {
 		String[] allowedWorkerArray = { JatosWorker.WORKER_TYPE };
 		formMap.put(Study.ALLOWED_WORKER_LIST, allowedWorkerArray);
 
-		Study study = studyService.bindStudyFromRequest(formMap);
+		Study study = studyService.bindToStudy(formMap);
 		assertThat(study.getTitle()).isEqualTo("This is a title");
 		assertThat(study.getDescription()).isEqualTo("This is a description");
 		assertThat(study.getComments()).isEqualTo("This is a comment");

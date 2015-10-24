@@ -25,13 +25,16 @@ public class StudyDao extends AbstractDao {
 	private final StudyResultDao studyResultDao;
 	private final ComponentResultDao componentResultDao;
 	private final ComponentDao componentDao;
+	private final GroupDao groupDao;
 
 	@Inject
 	StudyDao(StudyResultDao studyResultDao,
-			ComponentResultDao componentResultDao, ComponentDao componentDao) {
+			ComponentResultDao componentResultDao, ComponentDao componentDao,
+			GroupDao groupDao) {
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
 		this.componentDao = componentDao;
+		this.groupDao = groupDao;
 	}
 
 	/**
@@ -42,6 +45,9 @@ public class StudyDao extends AbstractDao {
 			study.setUuid(UUID.randomUUID().toString());
 		}
 		study.getComponentList().forEach(componentDao::create);
+		if (study.getGroup() != null) {
+			groupDao.create(study.getGroup());
+		}
 		persist(study);
 		addUser(study, user);
 	}
@@ -55,6 +61,9 @@ public class StudyDao extends AbstractDao {
 	}
 
 	public void update(Study study) {
+		if (study.getGroup() != null) {
+			groupDao.update(study.getGroup());
+		}
 		merge(study);
 	}
 
@@ -69,6 +78,10 @@ public class StudyDao extends AbstractDao {
 			componentResultList.forEach(componentResultDao::remove);
 			remove(component);
 		}
+		// Remove group
+		if (study.getGroup() != null) {
+			groupDao.remove(study.getGroup());
+		}
 		// Remove study's StudyResults
 		studyResultDao.findAllByStudy(study).forEach(studyResultDao::remove);
 		super.remove(study);
@@ -80,8 +93,7 @@ public class StudyDao extends AbstractDao {
 
 	public Study findByUuid(String uuid) {
 		String queryStr = "SELECT e FROM Study e WHERE " + "e.uuid=:uuid";
-		TypedQuery<Study> query = JPA.em().createQuery(queryStr,
-				Study.class);
+		TypedQuery<Study> query = JPA.em().createQuery(queryStr, Study.class);
 		query.setParameter("uuid", uuid);
 		// There can be only one study with this UUID
 		query.setMaxResults(1);
@@ -95,14 +107,13 @@ public class StudyDao extends AbstractDao {
 	 */
 	public List<Study> findByTitle(String title) {
 		String queryStr = "SELECT e FROM Study e WHERE e.title=:title";
-		TypedQuery<Study> query = JPA.em().createQuery(queryStr,
-				Study.class);
+		TypedQuery<Study> query = JPA.em().createQuery(queryStr, Study.class);
 		return query.setParameter("title", title).getResultList();
 	}
 
 	public List<Study> findAll() {
-		TypedQuery<Study> query = JPA.em().createQuery(
-				"SELECT e FROM Study e", Study.class);
+		TypedQuery<Study> query = JPA.em().createQuery("SELECT e FROM Study e",
+				Study.class);
 		return query.getResultList();
 	}
 

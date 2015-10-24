@@ -175,6 +175,7 @@ public class ImportExport extends Controller {
 			zipFile = importExportService.createStudyExportZipFile(study);
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings.studyExportFailure(studyId);
+			Logger.error(errorMsg, e);
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}

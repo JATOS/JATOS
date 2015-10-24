@@ -217,7 +217,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		// Import 2. part: Call importStudyConfirmed(): Since this study is new,
 		// the overwrite parameters don't matter
 		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
-		node.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM, true);
+		node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, true);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
 		entityManager.getTransaction().begin();
 		importExportService.importStudyConfirmed(admin, node);
@@ -306,7 +306,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		// Import 2. call: importStudyConfirmed(): Allow properties and assets
 		// to be overwritten
 		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
-		node.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM, true);
+		node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, true);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
 		entityManager.getTransaction().begin();
 		importExportService.importStudyConfirmed(admin, node);
@@ -359,7 +359,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		// Call importStudyConfirmed(): Allow properties but not assets to be
 		// overwritten
 		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
-		node.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM, true);
+		node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, true);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, false);
 		entityManager.getTransaction().begin();
 		importExportService.importStudyConfirmed(admin, node);
@@ -412,7 +412,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		// Import 2. call: importStudyConfirmed(): Allow assets but not
 		// properties to be overwritten
 		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
-		node.put(ImportExportService.STUDYS_PROPERTIES_CONFIRM, false);
+		node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, false);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
 		entityManager.getTransaction().begin();
 		importExportService.importStudyConfirmed(admin, node);

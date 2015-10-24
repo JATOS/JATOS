@@ -3,7 +3,6 @@ package controllers;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -12,6 +11,7 @@ import javax.inject.Singleton;
 
 import models.Component;
 import models.Study;
+import models.StudyProperties;
 import models.User;
 import models.workers.MTWorker;
 import models.workers.PersonalMultipleWorker;
@@ -129,8 +129,8 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		User loggedInUser = userService.retrieveLoggedInUser();
-		Study study = new Study();
-		Form<Study> form = Form.form(Study.class).fill(study);
+		Form<StudyProperties> form = Form.form(StudyProperties.class).fill(
+				new StudyProperties().initStudyProperties());
 		// It's a generic template for editing a study. We have to tell it the
 		// submit action.
 		Call submitAction = controllers.routes.Studies.submit();
@@ -149,51 +149,32 @@ public class Studies extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		User loggedInUser = userService.retrieveLoggedInUser();
 
-		Study study = studyService.bindStudyFromRequest(request().body()
-				.asFormUrlEncoded());
-		List<ValidationError> errorList = study.validate();
-		if (errorList != null) {
-			return failStudyCreate(loggedInUser, study, errorList);
+		Form<StudyProperties> form = Form.form(StudyProperties.class)
+				.bindFromRequest();
+		if (form.hasErrors()) {
+			return failStudyCreate(loggedInUser, form);
 		}
-
-		studyDao.create(study, loggedInUser);
+		StudyProperties studyProperties = studyService.bindToProperties(form);
+		Study study = studyService.createStudyAndGroup(loggedInUser,
+				studyProperties);
 
 		try {
 			IOUtils.createStudyAssetsDir(study.getDirName());
 		} catch (IOException e) {
-			errorList = new ArrayList<>();
-			errorList.add(new ValidationError(Study.DIRNAME, e
-					.getMessage()));
-			return failStudyCreate(loggedInUser, study, errorList);
+			form.reject(new ValidationError(Study.DIRNAME, e.getMessage()));
+			return failStudyCreate(loggedInUser, form);
 		}
 
 		return redirect(controllers.routes.Studies.index(study.getId()));
 	}
 
-	private Result failStudyCreate(User loggedInUser, Study study,
-			List<ValidationError> errorList) {
-		Form<Study> form = Form.form(Study.class).fill(study);
+	private Result failStudyCreate(User loggedInUser, Form<StudyProperties> form) {
 		String breadcrumbs = breadcrumbsService
 				.generateForHome(BreadcrumbsService.NEW_STUDY);
 		Call submitAction = controllers.routes.Studies.submit();
-		return showEditStudyAfterError(loggedInUser, form, errorList,
-				Http.Status.BAD_REQUEST, breadcrumbs, submitAction, false);
-	}
-
-	private Result showEditStudyAfterError(User loggedInUser,
-			Form<Study> form, List<ValidationError> errorList,
-			int httpStatus, String breadcrumbs, Call submitAction,
-			boolean studyIsLocked) {
-		if (ControllerUtils.isAjax()) {
-			return status(httpStatus);
-		} else {
-			if (errorList != null) {
-				errorList.forEach(form::reject);
-			}
-			return status(httpStatus, views.html.gui.study.edit.render(
-					loggedInUser, breadcrumbs, submitAction, form,
-					studyIsLocked));
-		}
+		return status(Http.Status.BAD_REQUEST,
+				views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
+						submitAction, form, false));
 	}
 
 	/**
@@ -210,7 +191,9 @@ public class Studies extends Controller {
 		if (study.isLocked()) {
 			RequestScopeMessaging.warning(MessagesStrings.STUDY_IS_LOCKED);
 		}
-		Form<Study> form = Form.form(Study.class).fill(study);
+
+		Form<StudyProperties> form = Form.form(StudyProperties.class).fill(
+				studyService.bindToProperties(study));
 		Call submitAction = controllers.routes.Studies.submitEdited(study
 				.getId());
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
@@ -241,37 +224,33 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwRedirect(e, call);
 		}
 
-		Study updatedStudy = studyService.bindStudyFromRequest(request()
-				.body().asFormUrlEncoded());
-		List<ValidationError> errorList = updatedStudy.validate();
-		if (errorList != null) {
-			updatedStudy.setId(studyId);
-			updatedStudy.setUuid(study.getUuid());
-			return failStudyEdit(loggedInUser, updatedStudy, errorList);
+		Form<StudyProperties> form = Form.form(StudyProperties.class)
+				.bindFromRequest();
+		if (form.hasErrors()) {
+			return failStudyEdit(form, study, loggedInUser);
 		}
+		StudyProperties studyProperties = studyService.bindToProperties(form);
+		studyService.updateStudyAndGroup(study, studyProperties);
 
-		studyService.updatePropertiesWODirName(study, updatedStudy);
 		try {
-			studyService.renameStudyAssetsDir(study, updatedStudy.getDirName());
+			studyService.renameStudyAssetsDir(study,
+					studyProperties.getDirName());
 		} catch (IOException e) {
-			errorList = new ArrayList<>();
-			errorList.add(new ValidationError(Study.DIRNAME, e
-					.getMessage()));
-			return failStudyEdit(loggedInUser, study, errorList);
+			form.reject(new ValidationError(Study.DIRNAME, e.getMessage()));
+			return failStudyEdit(form, study, loggedInUser);
 		}
 		return redirect(controllers.routes.Studies.index(studyId));
 	}
 
-	private Result failStudyEdit(User loggedInUser, Study study,
-			List<ValidationError> errorList) {
-		Form<Study> form = Form.form(Study.class).fill(study);
+	private Result failStudyEdit(Form<StudyProperties> form, Study study,
+			User loggedInUser) {
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.EDIT_PROPERTIES);
 		Call submitAction = controllers.routes.Studies.submitEdited(study
 				.getId());
-		return showEditStudyAfterError(loggedInUser, form, errorList,
-				Http.Status.BAD_REQUEST, breadcrumbs, submitAction,
-				study.isLocked());
+		return status(Http.Status.BAD_REQUEST,
+				views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
+						submitAction, form, study.isLocked()));
 	}
 
 	/**
@@ -393,8 +372,7 @@ public class Studies extends Controller {
 			studyService.exchangeUsers(study, checkedUsers);
 		} catch (BadRequestException e) {
 			RequestScopeMessaging.error(e.getMessage());
-			Result result = changeUsers(study.getId(),
-					Http.Status.BAD_REQUEST);
+			Result result = changeUsers(study.getId(), Http.Status.BAD_REQUEST);
 			throw new JatosGuiException(result, e.getMessage());
 		}
 		return redirect(controllers.routes.Studies.index(studyId));

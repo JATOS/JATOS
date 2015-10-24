@@ -342,7 +342,7 @@ function askConfirmationForStudyExists(response) {
 		$('#confirmModalStudyImport').modal('hide');
 		var studysPropertiesConfirm = $('#studysPropertiesConfirm').is(':checked');
 		var studysDirConfirm = $('#studysDirConfirm').is(':checked');
-		var jsonData = JSON.stringify({ "@services.ImportExportService.STUDYS_PROPERTIES_CONFIRM": studysPropertiesConfirm,
+		var jsonData = JSON.stringify({ "@services.ImportExportService.STUDYS_ENTITY_CONFIRM": studysPropertiesConfirm,
 			"@services.ImportExportService.STUDYS_DIR_CONFIRM" : studysDirConfirm });
 		postStudyImportConfirm(jsonData);
 	});
@@ -356,7 +356,7 @@ function askConfirmationForStudyNotExistsDirExists(response) {
 		+ "If you proceed the <b>current directory will be overridden</b>.";
 	var postText = "Do you want to proceed?";
 	askConfirmation(title, preText, null, postText, 'Import', function() {
-		var jsonData = JSON.stringify({ "@services.ImportExportService.STUDYS_PROPERTIES_CONFIRM": true,
+		var jsonData = JSON.stringify({ "@services.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
 			"@services.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);
 	});
@@ -369,7 +369,7 @@ function askConfirmationForStudyNotExistsDirNotExists(response) {
 		+ "\".";
 	var postText = "Do you want to proceed?"
 	askConfirmation(title, preText, null, postText, 'Import', function() {
-		var jsonData = JSON.stringify({ "@services.ImportExportService.STUDYS_PROPERTIES_CONFIRM": true,
+		var jsonData = JSON.stringify({ "@services.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
 			"@services.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);
 	});

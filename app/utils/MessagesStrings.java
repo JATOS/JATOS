@@ -37,9 +37,9 @@ public abstract class MessagesStrings {
 	public static final String STUDY_IS_LOCKED = "Study is locked. It's not possible to edit.";
 	public static final String STUDY_WASNT_SAVED = "Study wasn't saved";
 	public static final String GROUP_MEMBER_SIZE = "Group's min and max member size must be at least 2.";
-	public static final String GROUP_MAX_MEMBER_SIZE = "Group's maximum member size must be greater than the minimum one.";
+	public static final String GROUP_MAX_MEMBER_SIZE = "Group's maximum member size must be greater or equal than the minimum one.";
 	public static final String GROUP_WORKER_SIZE = "Group's maximum worker size must be at least 2.";
-	public static final String GROUP_MAX_WORKER_SIZE = "Group's maximum worker size must be greater than the maximum member size.";
+	public static final String GROUP_MAX_WORKER_SIZE = "Group's maximum worker size must be greater or equal than the maximum member size.";
 	public static final String COMPONENT_WASNT_SAVED = "Component wasn't saved";
 
 	// User

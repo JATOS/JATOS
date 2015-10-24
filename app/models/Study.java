@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -24,24 +22,14 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 
-import models.workers.JatosWorker;
-import models.workers.PersonalMultipleWorker;
-import models.workers.PersonalSingleWorker;
-
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
-
-import play.data.validation.ValidationError;
-import utils.IOUtils;
 import utils.JsonUtils;
-import utils.MessagesStrings;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Model and DB entity of a study. Default values, where necessary, are at the
- * fields or the constructor.
+ * DB entity of a study. Default values, where necessary, are at the fields or
+ * in the constructor. For the GUI model StudyProperties is used.
  * 
  * @author Kristian Lange
  */
@@ -52,10 +40,8 @@ public class Study {
 	/**
 	 * Version of this model used for serialisation (e.g. JSON marshaling)
 	 */
-	public static final int SERIAL_VERSION = 3;
+	public static final int SERIAL_VERSION = 4;
 
-	public static final String ID = "id";
-	public static final String UUID = "uuid";
 	public static final String USERS = "user";
 	public static final String TITLE = "title";
 	public static final String JSON_DATA = "jsonData";
@@ -135,8 +121,7 @@ public class Study {
 	private boolean groupStudy = false;
 
 	/**
-	 * If this is a group study, in the Group are the properties of the
-	 * group.
+	 * If this is a group study, in the Group are the properties of the group.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	@OneToOne(mappedBy = "study", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -160,10 +145,6 @@ public class Study {
 	private List<Component> componentList = new ArrayList<>();
 
 	public Study() {
-		// Add default allowed workers
-		addAllowedWorkerType(JatosWorker.WORKER_TYPE);
-		addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
-		addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 	}
 
 	public void setId(Long id) {
@@ -358,42 +339,6 @@ public class Study {
 			return componentList.get(index + 1);
 		}
 		return null;
-	}
-
-	public List<ValidationError> validate() {
-		List<ValidationError> errorList = new ArrayList<>();
-		if (title == null || title.trim().isEmpty()) {
-			errorList.add(new ValidationError(TITLE,
-					MessagesStrings.MISSING_TITLE));
-		}
-		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
-			errorList.add(new ValidationError(TITLE,
-					MessagesStrings.NO_HTML_ALLOWED));
-		}
-		if (description != null
-				&& !Jsoup.isValid(description, Whitelist.none())) {
-			errorList.add(new ValidationError(DESCRIPTION,
-					MessagesStrings.NO_HTML_ALLOWED));
-		}
-		if (dirName == null || dirName.trim().isEmpty()) {
-			errorList.add(new ValidationError(DIRNAME,
-					MessagesStrings.MISSING_DIRNAME));
-		}
-		Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
-		Matcher matcher = pattern.matcher(dirName);
-		if (dirName != null && matcher.find()) {
-			errorList.add(new ValidationError(DIRNAME,
-					MessagesStrings.INVALID_DIR_NAME));
-		}
-		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
-			errorList.add(new ValidationError(COMMENTS,
-					MessagesStrings.NO_HTML_ALLOWED));
-		}
-		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
-			errorList.add(new ValidationError(JSON_DATA,
-					MessagesStrings.INVALID_JSON_FORMAT));
-		}
-		return errorList.isEmpty() ? null : errorList;
 	}
 
 	@Override

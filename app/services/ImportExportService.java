@@ -11,6 +11,7 @@ import javax.inject.Singleton;
 
 import models.Component;
 import models.Study;
+import models.StudyProperties;
 import models.User;
 import persistance.ComponentDao;
 import persistance.StudyDao;
@@ -26,8 +27,8 @@ import utils.ZipUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import common.RequestScopeMessaging;
 
+import common.RequestScopeMessaging;
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 
@@ -49,7 +50,7 @@ public class ImportExportService {
 	public static final String STUDY_TITLE = "studyTitle";
 	public static final String STUDY_EXISTS = "studyExists";
 	public static final String STUDYS_DIR_CONFIRM = "studysDirConfirm";
-	public static final String STUDYS_PROPERTIES_CONFIRM = "studysPropertiesConfirm";
+	public static final String STUDYS_ENTITY_CONFIRM = "studysEntityConfirm";
 	public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
 	public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 
@@ -84,8 +85,7 @@ public class ImportExportService {
 			throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
 		}
 
-		Component uploadedComponent = unmarshalComponent(filePart
-				.getFile());
+		Component uploadedComponent = unmarshalComponent(filePart.getFile());
 
 		boolean componentExists = componentDao.findByUuid(
 				uploadedComponent.getUuid(), study) != null;
@@ -169,15 +169,15 @@ public class ImportExportService {
 			Logger.error(CLASS_NAME + ".importStudyConfirmed: JSON is null");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
-		if (json.findPath(STUDYS_PROPERTIES_CONFIRM) == null
+		if (json.findPath(STUDYS_ENTITY_CONFIRM) == null
 				|| json.findPath(STUDYS_DIR_CONFIRM) == null) {
 			Logger.error(CLASS_NAME + ".importStudyConfirmed: "
-					+ "JSON is malformed: " + STUDYS_PROPERTIES_CONFIRM
-					+ " or " + STUDYS_DIR_CONFIRM + " missing");
+					+ "JSON is malformed: " + STUDYS_ENTITY_CONFIRM + " or "
+					+ STUDYS_DIR_CONFIRM + " missing");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
-		Boolean studysPropertiesConfirm = json.findPath(
-				STUDYS_PROPERTIES_CONFIRM).asBoolean();
+		Boolean studysEntityConfirm = json.findPath(STUDYS_ENTITY_CONFIRM)
+				.asBoolean();
 		Boolean studysDirConfirm = json.findPath(STUDYS_DIR_CONFIRM)
 				.asBoolean();
 
@@ -192,7 +192,7 @@ public class ImportExportService {
 
 		boolean studyExists = (currentStudy != null);
 		if (studyExists) {
-			overwriteExistingStudy(loggedInUser, studysPropertiesConfirm,
+			overwriteExistingStudy(loggedInUser, studysEntityConfirm,
 					studysDirConfirm, tempUnzippedStudyDir, importedStudy,
 					currentStudy);
 		} else {
@@ -209,9 +209,9 @@ public class ImportExportService {
 				ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
 	}
 
-	private void checkStudyImport(User loggedInUser,
-			Study uploadedStudy, Study currentStudy,
-			boolean studyExists, boolean dirExists) throws ForbiddenException {
+	private void checkStudyImport(User loggedInUser, Study uploadedStudy,
+			Study currentStudy, boolean studyExists, boolean dirExists)
+			throws ForbiddenException {
 		if (studyExists && !currentStudy.hasUser(loggedInUser)) {
 			String errorMsg = MessagesStrings.studyImportNotUser(currentStudy
 					.getTitle());
@@ -228,15 +228,14 @@ public class ImportExportService {
 	}
 
 	private void overwriteExistingStudy(User loggedInUser,
-			Boolean studysPropertiesConfirm, Boolean studysDirConfirm,
-			File tempUnzippedStudyDir, Study importedStudy,
-			Study currentStudy) throws IOException, ForbiddenException,
-			BadRequestException {
+			Boolean studyEntityConfirm, Boolean studysDirConfirm,
+			File tempUnzippedStudyDir, Study importedStudy, Study currentStudy)
+			throws IOException, ForbiddenException, BadRequestException {
 		studyService.checkStandardForStudy(currentStudy, currentStudy.getId(),
 				loggedInUser);
 		studyService.checkStudyLocked(currentStudy);
 		if (studysDirConfirm) {
-			if (studysPropertiesConfirm) {
+			if (studyEntityConfirm) {
 				moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy,
 						importedStudy.getDirName());
 			} else {
@@ -249,14 +248,14 @@ public class ImportExportService {
 					.studyAssetsOverwritten(importedStudy.getDirName(),
 							currentStudy.getId()));
 		}
-		if (studysPropertiesConfirm) {
+		if (studyEntityConfirm) {
 			if (studysDirConfirm) {
-				studyService.updateProperties(currentStudy, importedStudy);
+				studyService.updateStudyAndGroup(currentStudy, importedStudy);
 			} else {
 				// If we don't overwrite the current study dir with the
 				// uploaded one, don't change the study dir name in the
 				// properties
-				studyService.updatePropertiesWODirName(currentStudy,
+				studyService.updateStudyAndGroupWithoutDirName(currentStudy,
 						importedStudy);
 			}
 			updateStudysComponents(currentStudy, importedStudy);
@@ -265,9 +264,8 @@ public class ImportExportService {
 		}
 	}
 
-	private void importNewStudy(User loggedInUser,
-			File tempUnzippedStudyDir, Study importedStudy)
-			throws IOException {
+	private void importNewStudy(User loggedInUser, File tempUnzippedStudyDir,
+			Study importedStudy) throws IOException {
 		moveStudyAssetsDir(tempUnzippedStudyDir, null,
 				importedStudy.getDirName());
 		studyDao.create(importedStudy, loggedInUser);
@@ -294,8 +292,7 @@ public class ImportExportService {
 	 * Update the components of the current study with the one of the imported
 	 * study.
 	 */
-	private void updateStudysComponents(Study currentStudy,
-			Study updatedStudy) {
+	private void updateStudysComponents(Study currentStudy, Study updatedStudy) {
 		// Clear list and rebuild it from updated study
 		List<Component> currentComponentList = new ArrayList<>(
 				currentStudy.getComponentList());
@@ -338,9 +335,8 @@ public class ImportExportService {
 	 * Deletes current study assets' dir and moves imported study assets' dir
 	 * from Java's temp dir to study assets root dir
 	 */
-	private void moveStudyAssetsDir(File unzippedStudyDir,
-			Study currentStudy, String studyAssetsDirName)
-			throws IOException {
+	private void moveStudyAssetsDir(File unzippedStudyDir, Study currentStudy,
+			String studyAssetsDirName) throws IOException {
 		if (currentStudy != null) {
 			IOUtils.removeStudyAssetsDir(currentStudy.getDirName());
 		}
@@ -425,19 +421,29 @@ public class ImportExportService {
 			throw new IOException(MessagesStrings.STUDY_INVALID);
 		}
 		File studyFile = studyFileList[0];
+
+		// Unmarshall
 		UploadUnmarshaller uploadUnmarshaller = new JsonUtils.UploadUnmarshaller();
-		Study study = uploadUnmarshaller.unmarshalling(studyFile,
-				Study.class);
+		Study study = uploadUnmarshaller.unmarshalling(studyFile, Study.class);
 		if (study == null) {
 			throw new IOException(uploadUnmarshaller.getErrorMsg());
 		}
-		if (study.validate() != null) {
+		// Set circular reference: Group to Study
+		if (study.getGroup() != null) {
+			study.getGroup().setStudy(study);
+		}
+
+		// Check properties of study and it's group
+		StudyProperties studyProperties = studyService.bindToProperties(study);
+		if (studyProperties.validate() != null) {
 			Logger.warn(CLASS_NAME
 					+ ".unmarshalStudy: "
-					+ study.validate().stream().map(ValidationError::message)
+					+ studyProperties.validate().stream()
+							.map(ValidationError::message)
 							.collect(Collectors.joining(", ")));
 			throw new IOException(MessagesStrings.STUDY_INVALID);
 		}
+
 		if (deleteAfterwards) {
 			studyFile.delete();
 		}

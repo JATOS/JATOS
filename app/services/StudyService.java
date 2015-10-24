@@ -2,8 +2,8 @@ package services;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -11,11 +11,13 @@ import javax.inject.Singleton;
 import models.Component;
 import models.Group;
 import models.Study;
+import models.StudyProperties;
 import models.User;
 import persistance.StudyDao;
 import persistance.UserDao;
+import play.data.Form;
+import play.mvc.Controller;
 import utils.IOUtils;
-import utils.JsonUtils;
 import utils.MessagesStrings;
 
 import common.RequestScopeMessaging;
@@ -49,39 +51,26 @@ public class StudyService {
 	}
 
 	/**
-	 * Clones the given Study and persists it. Copies the corresponding
-	 * study assets.
+	 * Clones the given Study and persists it. Copies the corresponding study
+	 * assets.
 	 */
-	public Study cloneStudy(Study study, User loggedInUser)
-			throws IOException {
-		Study clone = cloneStudyProperties(study);
-		clone.setTitle(cloneTitle(study.getTitle()));
-		String destDirName = IOUtils.cloneStudyAssetsDirectory(study
-				.getDirName());
-		clone.setDirName(destDirName);
-		studyDao.create(clone, loggedInUser);
-		return clone;
-	}
-
-	/**
-	 * Clones a Study. It does NOT copy the userList, id, uuid, date or
-	 * locked (set to false).
-	 */
-	private Study cloneStudyProperties(Study study) {
+	public Study cloneStudy(Study study, User loggedInUser) throws IOException {
 		Study clone = new Study();
+		clone.setTitle(cloneTitle(study.getTitle()));
 		clone.setDescription(study.getDescription());
 		clone.setDirName(study.getDirName());
 		clone.setComments(study.getComments());
 		clone.setJsonData(study.getJsonData());
-		clone.setTitle(study.getTitle());
 		clone.setGroupStudy(study.isGroupStudy());
+
+		// Clone group
 		if (study.getGroup() != null) {
-			Group groupClone = groupService.clone(study.getGroup());
-			groupClone.setStudy(clone);
+			Group groupClone = groupService.clone(study.getGroup(), clone);
 			clone.setGroup(groupClone);
 		}
 		clone.setLocked(false);
 		study.getAllowedWorkerTypeList().forEach(clone::addAllowedWorkerType);
+
 		// Clone each component
 		for (Component component : study.getComponentList()) {
 			Component componentClone = componentService
@@ -89,6 +78,13 @@ public class StudyService {
 			componentClone.setStudy(clone);
 			clone.addComponent(componentClone);
 		}
+
+		// Clone assets directory
+		String destDirName = IOUtils.cloneStudyAssetsDirectory(study
+				.getDirName());
+		clone.setDirName(destDirName);
+
+		studyDao.create(clone, loggedInUser);
 		return clone;
 	}
 
@@ -104,40 +100,6 @@ public class StudyService {
 			i++;
 		}
 		return cloneTitle;
-	}
-
-	/**
-	 * Update properties of study with properties of updatedStudy.
-	 */
-	public void updateProperties(Study study, Study updatedStudy) {
-		updatePropertiesWODirNameWOUpdate(study, updatedStudy);
-		study.setDirName(updatedStudy.getDirName());
-		studyDao.update(study);
-	}
-
-	/**
-	 * Update properties of study with properties of updatedStudy (excluding
-	 * study's dir name).
-	 */
-	public void updatePropertiesWODirName(Study study,
-			Study updatedStudy) {
-		updatePropertiesWODirNameWOUpdate(study, updatedStudy);
-		studyDao.update(study);
-	}
-
-	private void updatePropertiesWODirNameWOUpdate(Study study,
-			Study updatedStudy) {
-		study.setTitle(updatedStudy.getTitle());
-		study.setDescription(updatedStudy.getDescription());
-		study.setComments(updatedStudy.getComments());
-		study.setGroupStudy(updatedStudy.isGroupStudy());
-		if (study.isGroupStudy()) {
-			groupService.updateProperties(study.getGroup(),
-					updatedStudy.getGroup());
-		}
-		study.setJsonData(updatedStudy.getJsonData());
-		study.getAllowedWorkerTypeList().clear();
-		updatedStudy.getAllowedWorkerTypeList().forEach(study::addAllowedWorkerType);
 	}
 
 	/**
@@ -185,8 +147,8 @@ public class StudyService {
 	/**
 	 * Checks the study and throws an Exception in case of a problem.
 	 */
-	public void checkStandardForStudy(Study study, Long studyId,
-			User user) throws ForbiddenException, BadRequestException {
+	public void checkStandardForStudy(Study study, Long studyId, User user)
+			throws ForbiddenException, BadRequestException {
 		if (study == null) {
 			String errorMsg = MessagesStrings.studyNotExist(studyId);
 			throw new BadRequestException(errorMsg);
@@ -223,34 +185,108 @@ public class StudyService {
 		}
 	}
 
-	/**
-	 * Binds study data from a edit/create study request onto a Study.
-	 * Play's default form binder doesn't work here.
-	 */
-	public Study bindStudyFromRequest(Map<String, String[]> formMap) {
-		Study study = new Study();
-		study.setTitle(formMap.get(Study.TITLE)[0]);
-		study.setDescription(formMap.get(Study.DESCRIPTION)[0]);
-		study.setComments(formMap.get(Study.COMMENTS)[0]);
-		study.setDirName(formMap.get(Study.DIRNAME)[0]);
-		study.setGroupStudy(Boolean.parseBoolean(formMap
-				.get(Study.GROUP_STUDY)[0]));
-		if (study.isGroupStudy()) {
-			study.setGroup(groupService.bindFromRequest(formMap));
-		}
-		study.setJsonData(JsonUtils.asStringForDB(formMap
-				.get(Study.JSON_DATA)[0]));
-		String[] allowedWorkerArray = formMap
-				.get(Study.ALLOWED_WORKER_LIST);
+	public StudyProperties bindToProperties(Form<StudyProperties> form) {
+		StudyProperties studyProperties = form.get();
+		// Have to bind list of ALLOWED_WORKER_TYPE by hand from checkboxes
+		String[] allowedWorkerArray = Controller.request().body()
+				.asFormUrlEncoded().get(StudyProperties.ALLOWED_WORKER_TYPE);
 		if (allowedWorkerArray != null) {
-			study.getAllowedWorkerTypeList().clear();
-			for (String worker : allowedWorkerArray) {
-				study.addAllowedWorkerType(worker);
-			}
-		} else {
-			study.getAllowedWorkerTypeList().clear();
+			Arrays.stream(allowedWorkerArray).forEach(
+					studyProperties::addAllowedWorkerType);
 		}
+		return studyProperties;
+	}
+
+	/**
+	 * Binds study and group properties from a edit/create study request onto a
+	 * Study.
+	 */
+	public Study bindToStudy(StudyProperties studyProperties) {
+		Study study = new Study();
+		bindToStudyWithoutDirName(study, studyProperties);
+		study.setDirName(studyProperties.getDirName());
 		return study;
+	}
+
+	/**
+	 * Create and persist Study and Group with given properties.
+	 */
+	public Study createStudyAndGroup(User loggedInUser,
+			StudyProperties studyProperties) {
+		Study study = bindToStudy(studyProperties);
+		if (studyProperties.isGroupStudy()) {
+			Group group = groupService.createGroup(studyProperties, study);
+			study.setGroup(group);
+		}
+		studyDao.create(study, loggedInUser);
+		return study;
+	}
+
+	/**
+	 * Update properties of study with properties of updatedStudy.
+	 */
+	public void updateStudyAndGroup(Study study, Study updatedStudy) {
+		updateStudyAndGroupCommon(study, updatedStudy);
+		study.setDirName(updatedStudy.getDirName());
+		studyDao.update(study);
+	}
+
+	/**
+	 * Update properties of study with properties of updatedStudy but not
+	 * Study's field dirName.
+	 */
+	public void updateStudyAndGroupWithoutDirName(Study study,
+			Study updatedStudy) {
+		updateStudyAndGroupCommon(study, updatedStudy);
+		studyDao.update(study);
+	}
+
+	private void updateStudyAndGroupCommon(Study study, Study updatedStudy) {
+		study.setTitle(updatedStudy.getTitle());
+		study.setDescription(updatedStudy.getDescription());
+		study.setComments(updatedStudy.getComments());
+		study.setGroupStudy(updatedStudy.isGroupStudy());
+		study.setJsonData(updatedStudy.getJsonData());
+		study.getAllowedWorkerTypeList().clear();
+		updatedStudy.getAllowedWorkerTypeList().forEach(
+				study::addAllowedWorkerType);
+		if (updatedStudy.getGroup() != null) {
+			groupService.updateGroup(study.getGroup(), updatedStudy.getGroup());
+		}
+	}
+
+	/**
+	 * Update Study and Group with given properties and persist. It doesn't
+	 * update Study's dirName field.
+	 */
+	public void updateStudyAndGroup(Study study, StudyProperties studyProperties) {
+		bindToStudyWithoutDirName(study, studyProperties);
+		if (studyProperties.isGroupStudy()) {
+			Group group = study.getGroup();
+			if (group == null) {
+				group = groupService.createGroup(studyProperties, study);
+				study.setGroup(group);
+			} else {
+				groupService.bindToGroup(group, studyProperties);
+			}
+		}
+		studyDao.update(study);
+	}
+
+	/**
+	 * Update properties of study with properties of updatedStudy (excluding
+	 * study's dir name).
+	 */
+	public void bindToStudyWithoutDirName(Study study,
+			StudyProperties studyProperties) {
+		study.setTitle(studyProperties.getTitle());
+		study.setDescription(studyProperties.getDescription());
+		study.setComments(studyProperties.getComments());
+		study.setGroupStudy(studyProperties.isGroupStudy());
+		study.setJsonData(studyProperties.getJsonData());
+		study.getAllowedWorkerTypeList().clear();
+		studyProperties.getAllowedWorkerTypeList().forEach(
+				study::addAllowedWorkerType);
 	}
 
 	/**
@@ -262,6 +298,30 @@ public class StudyService {
 		IOUtils.renameStudyAssetsDir(study.getDirName(), newDirName);
 		study.setDirName(newDirName);
 		studyDao.update(study);
+	}
+
+	/**
+	 * Fills a new StudyProperties with values from the given Study and it's
+	 * Group.
+	 */
+	public StudyProperties bindToProperties(Study study) {
+		StudyProperties studyProperties = new StudyProperties();
+		studyProperties.setStudyId(study.getId());
+		studyProperties.setUuid(study.getUuid());
+		studyProperties.setTitle(study.getTitle());
+		studyProperties.setDescription(study.getDescription());
+		studyProperties.setDate(study.getDate());
+		studyProperties.setLocked(study.isLocked());
+		study.getAllowedWorkerTypeList().forEach(
+				studyProperties::addAllowedWorkerType);
+		studyProperties.setDirName(study.getDirName());
+		studyProperties.setComments(study.getComments());
+		studyProperties.setJsonData(study.getJsonData());
+		studyProperties.setGroupStudy(study.isGroupStudy());
+		if (study.getGroup() != null) {
+			groupService.bindToProperties(studyProperties, study.getGroup());
+		}
+		return studyProperties;
 	}
 
 }

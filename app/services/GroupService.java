@@ -1,12 +1,10 @@
 package services;
 
-import java.util.Map;
-
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import models.Group;
-import persistance.GroupDao;
+import models.Study;
+import models.StudyProperties;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -16,23 +14,32 @@ import persistance.GroupDao;
 @Singleton
 public class GroupService {
 
-	private final GroupDao groupDao;
-
-	@Inject
-	GroupService(GroupDao groupDao) {
-		this.groupDao = groupDao;
-	}
-
 	/**
-	 * Clones a Group
+	 * Clones a Group and persists
 	 */
-	public Group clone(Group group) {
+	public Group clone(Group group, Study studyClone) {
 		Group clone = new Group();
 		clone.setMinMemberSize(group.getMinMemberSize());
 		clone.setMaxMemberSize(group.getMaxMemberSize());
 		clone.setMaxWorkerSize(group.getMaxWorkerSize());
-		clone.setStudy(group.getStudy());
+		clone.setStudy(studyClone);
+		// Not necessary to persist since study creates it already
+		// groupDao.create(clone);
 		return clone;
+	}
+
+	/**
+	 * Create and persist a new Group with the given parameters.
+	 */
+	public Group createGroup(StudyProperties studyProperties, Study study) {
+		Group group = new Group();
+		group.setMinMemberSize(studyProperties.getMinMemberSize());
+		group.setMaxMemberSize(studyProperties.getMaxMemberSize());
+		group.setMaxWorkerSize(studyProperties.getMaxWorkerSize());
+		group.setStudy(study);
+		// Not necessary to persist since study creates it already
+		// groupDao.create(group);
+		return group;
 	}
 
 	/**
@@ -40,22 +47,30 @@ public class GroupService {
 	 * group. Doesn't change the group's study.
 	 * 
 	 */
-	public void updateProperties(Group group, Group updatedGroup) {
+	public void bindToGroup(Group group, StudyProperties studyProperties) {
+		group.setMinMemberSize(studyProperties.getMinMemberSize());
+		group.setMaxMemberSize(studyProperties.getMaxMemberSize());
+		group.setMaxWorkerSize(studyProperties.getMaxWorkerSize());
+		// Not necessary to persist since study merges it already
+		// groupDao.update(group);
+	}
+
+	public void bindToProperties(StudyProperties studyProperties, Group group) {
+		studyProperties.setGroupId(group.getId());
+		studyProperties.setMinMemberSize(group.getMinMemberSize());
+		studyProperties.setMaxMemberSize(group.getMaxMemberSize());
+		studyProperties.setMaxWorkerSize(group.getMaxWorkerSize());
+	}
+	
+	public void updateGroup(Group group, Group updatedGroup) {
+		if (group == null) {
+			group = new Group();
+		}
 		group.setMinMemberSize(updatedGroup.getMinMemberSize());
 		group.setMaxMemberSize(updatedGroup.getMaxMemberSize());
 		group.setMaxWorkerSize(updatedGroup.getMaxWorkerSize());
-		groupDao.update(group);
-	}
-
-	public Group bindFromRequest(Map<String, String[]> formMap) {
-		Group group = new Group();
-		group.setMinMemberSize(Integer.parseInt(formMap
-				.get(Group.MIN_MEMBER_SIZE)[0]));
-		group.setMaxMemberSize(Integer.parseInt(formMap
-				.get(Group.MAX_MEMBER_SIZE)[0]));
-		group.setMaxWorkerSize(Integer.parseInt(formMap
-				.get(Group.MAX_WORKER_SIZE)[0]));
-		return group;
+		// Not necessary to persist since study merges it already
+		// groupDao.update(group);
 	}
 
 }
