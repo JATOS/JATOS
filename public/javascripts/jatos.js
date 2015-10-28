@@ -82,7 +82,7 @@ var onJatosError;
 // Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
 // a component's jQuery version. Afterwards initialise (jatos.js will always be
 // initialised - even if jatos.onLoad() is never called).
-jatos.jQuery;
+jatos.jQuery = {};
 getScript('/assets/javascripts/jquery-1.11.1.min.js', function() {
 	jatos.jQuery = jQuery.noConflict(true);
 	loadScripts(initJatos);
@@ -96,14 +96,14 @@ function getScript(url, onSuccess) {
 	script.src = url;
 	var head = document.getElementsByTagName('head')[0], done = false;
 	script.onload = script.onreadystatechange = function() {
-		if (!done && (!this.readyState || this.readyState == 'loaded'
+		if (!done && (!this.readyState || this.readyState == 'loaded' 
 				|| this.readyState == 'complete')) {
 			done = true;
 			onSuccess();
 			script.onload = script.onreadystatechange = null;
 			head.removeChild(script);
 		}
-	}
+	};
 	head.appendChild(script);
 }
 
@@ -120,7 +120,7 @@ function loadScripts(onSuccess) {
 		dataType: "script",
 		cache: true,
 		error: function(err) {
-			callingOnError(null, getAjaxErrorMsg(err))
+			callingOnError(null, getAjaxErrorMsg(err));
 		}
 	}).done(onSuccess);
 }
@@ -129,10 +129,6 @@ function loadScripts(onSuccess) {
  * Initialising jatos.js
  */
 function initJatos() {
-	
-	var studyPropertiesReady = false;
-	var studySessionDataReady = false;
-	var componentPropertiesReady = false;
 	
 	if (!jQueryExists()) {
 		return;
@@ -144,7 +140,7 @@ function initJatos() {
 	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope.
 	 */
 	function readIdCookie() {
-		var nameEQ = escape("JATOS_IDS") + "=";
+		var nameEQ = encodeURI("JATOS_IDS") + "=";
 		var ca = document.cookie.split(';');
 		for (var i = 0; i < ca.length; i++) {
 			var c = ca[i];
@@ -152,7 +148,7 @@ function initJatos() {
 				c = c.substring(1, c.length);
 			}
 			if (c.indexOf(nameEQ) === 0) {
-				var cookieStr = unescape(c.substring(nameEQ.length + 1,
+				var cookieStr = decodeURI(c.substring(nameEQ.length + 1,
 						c.length - 1));
 				var idMap = cookieStr.split("&");
 				idMap.forEach(function(entry) {
@@ -182,7 +178,7 @@ function initJatos() {
 			timeout : jatos.httpTimeout,
 			success : setInitData,
 			error: function(err) {
-				callingOnError(null, getAjaxErrorMsg(err))
+				callingOnError(null, getAjaxErrorMsg(err));
 			}
 		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
 	}
@@ -206,9 +202,17 @@ function initJatos() {
 		
 		// Study properties
 		jatos.studyProperties = initData.studyProperties;
-		jatos.studyJsonInput = jatos.jQuery
-				.parseJSON(jatos.studyProperties.jsonData);
+		if (jatos.studyProperties.jsonData) {
+			jatos.studyJsonInput = jatos.jQuery
+					.parseJSON(jatos.studyProperties.jsonData);
+		} else {
+			jatos.studyJsonInput = {};
+		}
 		delete jatos.studyProperties.jsonData;
+		
+		// Group properties
+		jatos.groupProperties = jatos.studyProperties.group;
+		delete jatos.studyProperties.group;
 		
 		// Study's component list and study length
 		jatos.componentList = initData.componentList;
@@ -216,12 +220,13 @@ function initJatos() {
 		
 		// Component properties
 		jatos.componentProperties = initData.componentProperties;
-		jatos.componentJsonInput = jatos.jQuery
-				.parseJSON(jatos.componentProperties.jsonData);
+		if (jatos.studyProperties.jsonData) {
+			jatos.componentJsonInput = jatos.jQuery
+					.parseJSON(jatos.componentProperties.jsonData);
+		} else {
+			jatos.componentJsonInput = {};
+		}
 		delete jatos.componentProperties.jsonData;
-		
-		// Conveniently set document's title
-		document.title = jatos.componentProperties.title;
 		
 		// Initialising finished
 		initialized = true;
@@ -259,7 +264,7 @@ function ready() {
 jatos.onLoad = function(onLoad) {
 	onJatosLoad = onLoad;
 	ready();
-}
+};
 
 /**
  * Defines callback function that is to be called in case jatos.js produces an
@@ -274,8 +279,7 @@ jatos.onError = function(onError) {
  */
 function getAjaxErrorMsg(jqxhr) {
 	if (jqxhr.statusText == 'timeout') {
-		return "JATOS server not responding while trying to get URL "
-				+ settings.url;
+		return "JATOS server not responding while trying to get URL";
 	} else {
 		if (jqxhr.responseText) {
 			return jqxhr.statusText + ": " + jqxhr.responseText;
@@ -325,7 +329,7 @@ jatos.submitResultData = function(resultData, onSuccess, onError) {
 		success : function(response) {
 			submittingResultData = false;
 			if (onSuccess) {
-				onSuccess(response)
+				onSuccess(response);
 			}
 		},
 		error : function(err) {
@@ -333,7 +337,7 @@ jatos.submitResultData = function(resultData, onSuccess, onError) {
 			callingOnError(onError, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
-}
+};
 
 /**
  * Posts study session data back to the JATOS server. This function is called by
@@ -358,14 +362,14 @@ jatos.setStudySessionData = function(sessionData, onComplete) {
 			onJatosError(error);
 		}
 		if (onComplete) {
-			onComplete()
+			onComplete();
 		}
 		return;
 	}
 	if (jatos.studySessionDataFrozen.sessionDataStr == sessionDataStr) {
 		// If old and new session data are equal don't post it
 		if (onComplete) {
-			onComplete()
+			onComplete();
 		}
 		return;
 	}
@@ -378,14 +382,14 @@ jatos.setStudySessionData = function(sessionData, onComplete) {
 		timeout : jatos.httpTimeout,
 		complete : function() {
 			if (onComplete) {
-				onComplete()
+				onComplete();
 			}
 		},
 		error: function(err) {
-			callingOnError(null, getAjaxErrorMsg(err))
+			callingOnError(null, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
-}
+};
 
 /**
  * Starts the component with the given ID.
@@ -403,7 +407,7 @@ jatos.startComponent = function(componentId) {
 				+ "/start";
 	};
 	jatos.setStudySessionData(jatos.studySessionData, onComplete);
-}
+};
 
 /**
  * Starts the component with the given position (# of component within study).
@@ -419,9 +423,9 @@ jatos.startComponentByPos = function(componentPos) {
 	var onComplete = function() {
 		window.location.href = "/publix/" + jatos.studyId
 				+ "/component/start?position=" + componentPos;
-	}
+	};
 	jatos.setStudySessionData(jatos.studySessionData, onComplete);
-}
+};
 
 /**
  * Starts the next component of this study. The next component is the one with
@@ -434,10 +438,10 @@ jatos.startNextComponent = function() {
 	startingComponent = true;
 	var callbackWhenComplete = function() {
 		window.location.href = "/publix/" + jatos.studyId
-				+ "/nextComponent/start";;
-	}
+				+ "/nextComponent/start";
+	};
 	jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
-}
+};
 
 /**
  * Starts the last component of this study or if it's inactive the component
@@ -450,7 +454,7 @@ jatos.startLastComponent = function() {
 	    	break;
 	    }
 	}
-}
+};
 
 /**
  * Finishes component. Usually this is not necessary because the last component
@@ -478,11 +482,11 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
 	var onComplete = function() {
 		var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end";
 		var fullUrl;
-		if (undefined == successful || undefined == errorMsg) {
+		if (undefined === successful || undefined === errorMsg) {
 			fullUrl = url;
-		} else if (undefined == successful) {
+		} else if (undefined === successful) {
 			fullUrl = url + "?errorMsg=" + errorMsg;
-		} else if (undefined == errorMsg) {
+		} else if (undefined === errorMsg) {
 			fullUrl = url + "?successful=" + successful;
 		} else {
 			fullUrl = url + "?successful=" + successful + "&errorMsg="
@@ -496,7 +500,7 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
 			success : function(response) {
 				endingComponent = false;
 				if (onSuccess) {
-					onSuccess(response)
+					onSuccess(response);
 				}
 			},
 			error : function(err) {
@@ -504,9 +508,9 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
 				callingOnError(onError, getAjaxErrorMsg(err));
 			}
 		}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
-	}
+	};
 	jatos.setStudySessionData(jatos.studySessionData, onComplete);
-}
+};
 
 /**
  * Tries to join a group (actually a GroupResult) in the JATOS server and open
@@ -570,7 +574,7 @@ jatos.joinGroup = function(callbacks) {
 			callbacks.onClose();
 		}
 	};
-}
+};
 
 function handleGroupMsg(msg, callbacks) {
 	var groupMsg = jatos.jQuery.parseJSON(msg);
@@ -636,47 +640,47 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 }
 
 /**
- * @return {Boolean} True if the group has reached the minimum amount of
- *         members. It's not necessary that all members have an open group
+ * @return {Boolean} True if the group has reached the minimum amount of active
+ *         members. It's not necessary that each member has an open group
  *         channel.
  */
-jatos.isMinGroupReached = function() {
-	return jatos.groupMembers.length >= jatos.studyProperties.minGroupSize;
-}
+jatos.isMinActiveMemberReached = function() {
+	return jatos.groupMembers.length >= jatos.groupProperties.minActiveMemberSize;
+};
 
 /**
- * @return {Boolean} True if the group has reached the minimum amount of
+ * @return {Boolean} True if the group has reached the minimum amount of active
  *         members and each member has an open group channel.
  */
-jatos.isMinGroupOpen = function() {
-	return jatos.groupChannels.length >= jatos.studyProperties.minGroupSize;
-}
+jatos.isMinActiveMemberOpen = function() {
+	return jatos.groupChannels.length >= jatos.groupProperties.minActiveMemberSize;
+};
 
 /**
- * @return {Boolean} True if the group has reached the maximum amount of
- *         members. It's not necessary that all members have an open group
+ * @return {Boolean} True if the group has reached the maximum amount of active
+ *         members. It's not necessary that each member has an open group
  *         channel.
  */
-jatos.isMaxGroupReached = function() {
-	return jatos.groupMembers.length >= jatos.studyProperties.maxGroupSize;
-}
+jatos.isMaxActiveMemberReached = function() {
+	return jatos.groupMembers.length >= jatos.groupProperties.maxActiveMemberSize;
+};
 
 /**
- * @return {Boolean} True if the group has reached the maximum amount of
+ * @return {Boolean} True if the group has reached the maximum amount of active
  *         members and each member has an open group channel.
  */
-jatos.isMaxGroupOpen = function() {
-	return jatos.groupChannels.length >= jatos.studyProperties.maxGroupSize;
-}
+jatos.isMaxActiveMemberOpen = function() {
+	return jatos.groupChannels.length >= jatos.groupProperties.maxActiveMemberSize;
+};
 
 /**
- * @return {Boolean} True if all members of the group have an open group
+ * @return {Boolean} True if all active members of the group have an open group
  *         channel. It's not necessary that the group has reached its minimum
- *         or maximum size.
+ *         or maximum active member size.
  */
 jatos.isGroupOpen = function() {
 	return jatos.groupMembers.length == jatos.groupChannels.length;
-}
+};
 
 /**
  * Sends a message to all group members if group channel is open.
@@ -686,10 +690,10 @@ jatos.isGroupOpen = function() {
 jatos.sendGroupMsg = function(msg) {
 	if (groupChannel && groupChannel.readyState == 1) {
 		var msgObj = {};
-		msgObj["msg"] = msg;
+		msgObj.msg = msg;
 		groupChannel.send(JSON.stringify(msgObj));
 	}
-}
+};
 
 /**
  * Sends a message to the group member with the given member ID only  if group
@@ -701,11 +705,11 @@ jatos.sendGroupMsg = function(msg) {
 jatos.sendMsgTo = function(recipient, msg) {
 	if (groupChannel && groupChannel.readyState == 1) {
 		var msgObj = {};
-		msgObj["recipient"] = recipient;
-		msgObj["msg"] = msg;
+		msgObj.recipient = recipient;
+		msgObj.msg = msg;
 		groupChannel.send(JSON.stringify(msgObj));
 	}
-}
+};
 
 /**
  * Tries to leave the group (actually a GroupResult) it has previously joined.
@@ -732,7 +736,7 @@ jatos.leaveGroup = function(onSuccess, onError) {
 		success : function(response) {
 			leavingGroup = false;
 			if (onSuccess) {
-				onSuccess()
+				onSuccess(response);
 			}
 		},
 		error : function(err) {
@@ -740,7 +744,7 @@ jatos.leaveGroup = function(onSuccess, onError) {
 			callingOnError(onError, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
-}
+};
 
 /**
  * Aborts study. All previously submitted data will be deleted.
@@ -760,7 +764,7 @@ jatos.abortStudyAjax = function(message, onSuccess, onError) {
 	abortingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/abort";
 	var fullUrl;
-	if (undefined == message) {
+	if (undefined === message) {
 		fullUrl = url;
 	} else {
 		fullUrl = url + "?message=" + message;
@@ -773,7 +777,7 @@ jatos.abortStudyAjax = function(message, onSuccess, onError) {
 		success : function(response) {
 			abortingComponent = false;
 			if (onSuccess) {
-				onSuccess(response)
+				onSuccess(response);
 			}
 		},
 		error : function(err) {
@@ -781,7 +785,7 @@ jatos.abortStudyAjax = function(message, onSuccess, onError) {
 			callingOnError(onError, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
-}
+};
 
 /**
  * Aborts study. All previously submitted data will be deleted.
@@ -795,12 +799,12 @@ jatos.abortStudy = function(message) {
 	}
 	abortingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/abort";
-	if (undefined == message) {
+	if (undefined === message) {
 		window.location.href = url;
 	} else {
 		window.location.href = url + "?message=" + message;
 	}
-}
+};
 
 /**
  * Ends study with an Ajax call.
@@ -824,11 +828,11 @@ jatos.endStudyAjax = function(successful, errorMsg, onSuccess, onError) {
 	endingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/end";
 	var fullUrl;
-	if (undefined == successful || undefined == errorMsg) {
+	if (undefined === successful || undefined === errorMsg) {
 		fullUrl = url;
-	} else if (undefined == successful) {
+	} else if (undefined === successful) {
 		fullUrl = url + "?errorMsg=" + errorMsg;
-	} else if (undefined == errorMsg) {
+	} else if (undefined === errorMsg) {
 		fullUrl = url + "?successful=" + successful;
 	} else {
 		fullUrl = url + "?successful=" + successful + "&errorMsg=" + errorMsg;
@@ -841,7 +845,7 @@ jatos.endStudyAjax = function(successful, errorMsg, onSuccess, onError) {
 		success : function(response) {
 			endingComponent = false;
 			if (onSuccess) {
-				onSuccess(response)
+				onSuccess(response);
 			}
 		},
 		error : function(err) {
@@ -849,7 +853,7 @@ jatos.endStudyAjax = function(successful, errorMsg, onSuccess, onError) {
 			callingOnError(onError, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
-}
+};
 
 /**
  * Ends study.
@@ -867,24 +871,24 @@ jatos.endStudy = function(successful, errorMsg) {
 	}
 	endingComponent = true;
 	var url = "/publix/" + jatos.studyId + "/end";
-	if (undefined == successful || undefined == errorMsg) {
+	if (undefined === successful || undefined === errorMsg) {
 		window.location.href = url;
-	} else if (undefined == successful) {
+	} else if (undefined === successful) {
 		window.location.href = url + "?errorMsg=" + errorMsg;
-	} else if (undefined == errorMsg) {
+	} else if (undefined === errorMsg) {
 		window.location.href = url + "?successful=" + successful;
 	} else {
 		window.location.href = url + "?successful=" + successful + "&errorMsg="
 				+ errorMsg;
 	}
-}
+};
 
 /**
  * Logs a message within the JATOS log on the server side.
  */
 jatos.logError = function(logErrorMsg) {
 	jatos.log(logErrorMsg);
-}
+};
 
 /**
  * Logs a message within the JATOS log on the server side.
@@ -905,7 +909,7 @@ jatos.log = function(logMsg) {
 			callingOnError(null, getAjaxErrorMsg(err));
 		}
 	}).retry({times : jatos.httpRetry, timeout : jatos.httpRetryWait});
-}
+};
 
 /**
  * Convenience function that adds all JATOS IDs (study ID, component ID, worker
@@ -921,7 +925,7 @@ jatos.addJatosIds = function(obj) {
 	obj.workerId = jatos.workerId;
 	obj.studyResultId = jatos.studyResultId;
 	obj.componentResultId = jatos.componentResultId;
-}
+};
 
 })();
 
