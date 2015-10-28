@@ -13,19 +13,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
- * Model and DB entity of a group. Default values, where necessary, are at the
- * fields or the constructor.
+ * Model of a DB entity of a group with all properties of a group but not the
+ * results. The results are stored in GroupResults. Default values, where
+ * necessary, are at the fields or the constructor.
  * 
- * @author Kristian Lange
+ * @author Kristian Lange (2015)
  */
 @Entity
 @Table(name = "\"Group\"")
 public class Group {
-
-	public static final String ID = "id";
-	public static final String MIN_MEMBER_SIZE = "minMemberSize";
-	public static final String MAX_MEMBER_SIZE = "maxMemberSize";
-	public static final String MAX_WORKER_SIZE = "maxWorkerSize";
 
 	@Id
 	@GeneratedValue
@@ -33,22 +29,25 @@ public class Group {
 	private Long id;
 
 	/**
-	 * Minimum number of workers at the same time. Is at least 2.
+	 * Minimum number of workers in the group that are active at the same time.
+	 * It's at least 2.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private int minMemberSize = 2;
+	private int minActiveMemberSize = 2;
 
 	/**
-	 * Maximum number of workers at the same time. Is at least 2.
+	 * Maximum number of workers in the group that are active at the same time.
+	 * It's at least 2.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private int maxMemberSize = 2;
+	private int maxActiveMemberSize = 2;
 
 	/**
-	 * Maximum number of workers altogether. Is at least 2.
+	 * Maximum number of workers that are allowed to be member in the group
+	 * altogether (active and inactive together). It's at least 2.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private int maxWorkerSize = 2;
+	private int maxTotalMemberSize = 2;
 
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
@@ -65,28 +64,28 @@ public class Group {
 		return this.id;
 	}
 
-	public int getMinMemberSize() {
-		return minMemberSize;
+	public int getMinActiveMemberSize() {
+		return minActiveMemberSize;
 	}
 
-	public void setMinMemberSize(int minMemberSize) {
-		this.minMemberSize = minMemberSize;
+	public void setMinActiveMemberSize(int minActiveMemberSize) {
+		this.minActiveMemberSize = minActiveMemberSize;
 	}
 
-	public int getMaxMemberSize() {
-		return maxMemberSize;
+	public int getMaxActiveMemberSize() {
+		return maxActiveMemberSize;
 	}
 
-	public void setMaxMemberSize(int maxMemberSize) {
-		this.maxMemberSize = maxMemberSize;
+	public void setMaxActiveMemberSize(int maxActiveMemberSize) {
+		this.maxActiveMemberSize = maxActiveMemberSize;
 	}
 
-	public int getMaxWorkerSize() {
-		return maxWorkerSize;
+	public int getMaxTotalMemberSize() {
+		return maxTotalMemberSize;
 	}
 
-	public void setMaxWorkerSize(int maxWorkerSize) {
-		this.maxWorkerSize = maxWorkerSize;
+	public void setMaxTotalMemberSize(int maxTotalMemberSize) {
+		this.maxTotalMemberSize = maxTotalMemberSize;
 	}
 
 	public Study getStudy() {

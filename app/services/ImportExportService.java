@@ -4,31 +4,30 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import models.Component;
 import models.Study;
-import models.StudyProperties;
 import models.User;
 import persistance.ComponentDao;
 import persistance.StudyDao;
 import play.Logger;
-import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData.FilePart;
+import utils.ComponentUploadUnmarshaller;
 import utils.IOUtils;
 import utils.JsonUtils;
-import utils.JsonUtils.UploadUnmarshaller;
 import utils.MessagesStrings;
+import utils.StudyUploadUnmarshaller;
+import utils.UploadUnmarshaller;
 import utils.ZipUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import common.RequestScopeMessaging;
+
 import exceptions.BadRequestException;
 import exceptions.ForbiddenException;
 
@@ -86,7 +85,6 @@ public class ImportExportService {
 		}
 
 		Component uploadedComponent = unmarshalComponent(filePart.getFile());
-
 		boolean componentExists = componentDao.findByUuid(
 				uploadedComponent.getUuid(), study) != null;
 
@@ -396,21 +394,8 @@ public class ImportExportService {
 	}
 
 	private Component unmarshalComponent(File file) throws IOException {
-		UploadUnmarshaller uploadUnmarshaller = new JsonUtils.UploadUnmarshaller();
-		Component component = uploadUnmarshaller.unmarshalling(file,
-				Component.class);
-		if (component == null) {
-			throw new IOException(uploadUnmarshaller.getErrorMsg());
-		}
-		if (component.validate() != null) {
-			Logger.warn(CLASS_NAME
-					+ ".unmarshalComponent: "
-					+ component.validate().stream()
-							.map(ValidationError::message)
-							.collect(Collectors.joining(", ")));
-			throw new IOException(MessagesStrings.COMPONENT_INVALID);
-		}
-		return component;
+		UploadUnmarshaller<Component> uploadUnmarshaller = new ComponentUploadUnmarshaller();
+		return uploadUnmarshaller.unmarshalling(file);
 	}
 
 	private Study unmarshalStudy(File tempDir, boolean deleteAfterwards)
@@ -422,26 +407,13 @@ public class ImportExportService {
 		}
 		File studyFile = studyFileList[0];
 
-		// Unmarshall
-		UploadUnmarshaller uploadUnmarshaller = new JsonUtils.UploadUnmarshaller();
-		Study study = uploadUnmarshaller.unmarshalling(studyFile, Study.class);
-		if (study == null) {
-			throw new IOException(uploadUnmarshaller.getErrorMsg());
-		}
+		UploadUnmarshaller<Study> uploadUnmarshaller = new StudyUploadUnmarshaller(
+				studyService);
+		Study study = uploadUnmarshaller.unmarshalling(studyFile);
+
 		// Set circular reference: Group to Study
 		if (study.getGroup() != null) {
 			study.getGroup().setStudy(study);
-		}
-
-		// Check properties of study and it's group
-		StudyProperties studyProperties = studyService.bindToProperties(study);
-		if (studyProperties.validate() != null) {
-			Logger.warn(CLASS_NAME
-					+ ".unmarshalStudy: "
-					+ studyProperties.validate().stream()
-							.map(ValidationError::message)
-							.collect(Collectors.joining(", ")));
-			throw new IOException(MessagesStrings.STUDY_INVALID);
 		}
 
 		if (deleteAfterwards) {

@@ -3,6 +3,7 @@ package controllers;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -44,8 +45,8 @@ import utils.JsonUtils;
 import utils.MessagesStrings;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import common.RequestScopeMessaging;
 
+import common.RequestScopeMessaging;
 import controllers.actionannotations.AuthenticationAction.Authenticated;
 import controllers.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.BadRequestException;
@@ -154,17 +155,18 @@ public class Studies extends Controller {
 		if (form.hasErrors()) {
 			return failStudyCreate(loggedInUser, form);
 		}
-		StudyProperties studyProperties = studyService.bindToProperties(form);
-		Study study = studyService.createStudyAndGroup(loggedInUser,
-				studyProperties);
+		StudyProperties studyProperties = bindToProperties(form);
 
 		try {
-			IOUtils.createStudyAssetsDir(study.getDirName());
+			IOUtils.createStudyAssetsDir(studyProperties.getDirName());
 		} catch (IOException e) {
-			form.reject(new ValidationError(Study.DIRNAME, e.getMessage()));
+			form.reject(new ValidationError(StudyProperties.DIRNAME, e
+					.getMessage()));
 			return failStudyCreate(loggedInUser, form);
 		}
 
+		Study study = studyService.createStudyAndGroup(loggedInUser,
+				studyProperties);
 		return redirect(controllers.routes.Studies.index(study.getId()));
 	}
 
@@ -175,6 +177,18 @@ public class Studies extends Controller {
 		return status(Http.Status.BAD_REQUEST,
 				views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
 						submitAction, form, false));
+	}
+	
+	private StudyProperties bindToProperties(Form<StudyProperties> form) {
+		StudyProperties studyProperties = form.get();
+		// Have to bind list of ALLOWED_WORKER_TYPE by hand from checkboxes
+		String[] allowedWorkerArray = Controller.request().body()
+				.asFormUrlEncoded().get(StudyProperties.ALLOWED_WORKER_TYPE);
+		if (allowedWorkerArray != null) {
+			Arrays.stream(allowedWorkerArray).forEach(
+					studyProperties::addAllowedWorkerType);
+		}
+		return studyProperties;
 	}
 
 	/**
@@ -229,16 +243,18 @@ public class Studies extends Controller {
 		if (form.hasErrors()) {
 			return failStudyEdit(form, study, loggedInUser);
 		}
-		StudyProperties studyProperties = studyService.bindToProperties(form);
-		studyService.updateStudyAndGroup(study, studyProperties);
+		StudyProperties studyProperties = bindToProperties(form);
 
 		try {
 			studyService.renameStudyAssetsDir(study,
 					studyProperties.getDirName());
 		} catch (IOException e) {
-			form.reject(new ValidationError(Study.DIRNAME, e.getMessage()));
+			form.reject(new ValidationError(StudyProperties.DIRNAME, e
+					.getMessage()));
 			return failStudyEdit(form, study, loggedInUser);
 		}
+
+		studyService.updateStudyAndGroup(study, studyProperties);
 		return redirect(controllers.routes.Studies.index(studyId));
 	}
 
@@ -597,5 +613,5 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwHome(e);
 		}
 	}
-
+	
 }

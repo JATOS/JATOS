@@ -33,9 +33,9 @@ CREATE TABLE `ComponentResult` (
 
 CREATE TABLE `Group` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `maxMemberSize` int(11) NOT NULL,
-  `maxWorkerSize` int(11) DEFAULT NULL,
-  `minMemberSize` int(11) NOT NULL,
+  `minActiveMemberSize` int(11) NOT NULL,
+  `maxActiveMemberSize` int(11) NOT NULL,
+  `maxTotalMemberSize` int(11) NOT NULL,
   `study_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;

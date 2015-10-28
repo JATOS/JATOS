@@ -60,10 +60,12 @@ public class GroupResultDao extends AbstractDao {
 	 * group size is not reached yet and that are in state STARTED.
 	 */
 	public List<GroupResult> findAllMaxNotReached(Group group) {
-		String queryStr = "SELECT e FROM GroupResult e, Group s "
-				+ "WHERE e.group=:groupId AND s.id=:groupId "
-				+ "AND e.groupState=:groupState "
-				+ "AND size(e.studyResultList) < s.maxGroupSize";
+		String queryStr = "SELECT gr FROM GroupResult gr, Group g "
+				+ "WHERE gr.group=:groupId AND g.id=:groupId "
+				+ "AND gr.groupState=:groupState "
+				+ "AND size(gr.studyResultList) < g.maxActiveMemberSize "
+				+ "AND (size(gr.studyResultList) + size(gr.studyResultHistory)) "
+				+ "< g.maxTotalMemberSize";
 		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
 		query.setParameter("groupId", group);

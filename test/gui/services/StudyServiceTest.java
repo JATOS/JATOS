@@ -1,21 +1,17 @@
 package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.BadRequestException;
-import exceptions.ForbiddenException;
-import common.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
 
 import models.Component;
 import models.Study;
+import models.StudyProperties;
 import models.User;
-import models.workers.PersonalSingleWorker;
 import models.workers.JatosWorker;
 import models.workers.PersonalMultipleWorker;
+import models.workers.PersonalSingleWorker;
 
 import org.fest.assertions.Fail;
 import org.junit.Rule;
@@ -26,7 +22,12 @@ import play.db.jpa.JPA;
 import services.StudyService;
 import utils.IOUtils;
 import utils.MessagesStrings;
+
+import common.AbstractTest;
 import common.Global;
+
+import exceptions.BadRequestException;
+import exceptions.ForbiddenException;
 
 /**
  * Tests StudyService
@@ -80,8 +81,7 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(cloneInDb.getDate()).isEqualTo(study.getDate());
 		assertThat(cloneInDb.getDescription())
 				.isEqualTo(study.getDescription());
-		assertThat(cloneInDb.getComments())
-				.isEqualTo(study.getComments());
+		assertThat(cloneInDb.getComments()).isEqualTo(study.getComments());
 		assertThat(cloneInDb.getJsonData()).isEqualTo(study.getJsonData());
 		assertThat(cloneInDb.getUserList()).containsOnly(admin);
 		assertThat(cloneInDb.getTitle()).isEqualTo(
@@ -103,47 +103,33 @@ public class StudyServiceTest extends AbstractTest {
 		removeStudy(study);
 		removeStudy(clone);
 	}
-	
+
 	@Test
 	public void checkUpdateStudy() throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		Study updatedStudy = studyService.cloneStudy(study, admin);
-		updatedStudy.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-		updatedStudy.removeAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
-		updatedStudy.getComponentList().remove(0);
-		updatedStudy.getLastComponent().setTitle("Changed title");
-		updatedStudy.setDescription("Changed description");
-		updatedStudy.setComments("Changed comments");
-		updatedStudy.setJsonData("{}");
-		updatedStudy.setGroupStudy(true);
-		// TODO
-//		updatedStudy.setMinGroupSize(5);
-//		updatedStudy.setMaxGroupSize(5);
-		updatedStudy.setTitle("Changed Title");
-		updatedStudy.setUuid("changed uuid");
-		updatedStudy.getUserList().remove(admin);
+		StudyProperties updatedProps = new StudyProperties();
+		updatedProps.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
+		updatedProps.setDescription("Changed description");
+		updatedProps.setComments("Changed comments");
+		updatedProps.setJsonData("{}");
+		updatedProps.setGroupStudy(true);
+		updatedProps.setTitle("Changed Title");
+		updatedProps.setUuid("changed uuid");
 		long studyId = study.getId();
 
-		entityManager.getTransaction().begin();
-		studyService.bindToStudyWithoutDirName(study, updatedStudy);
-		entityManager.getTransaction().commit();
+		studyService.bindToStudyWithoutDirName(study, updatedProps);
 
 		// Changed
-		assertThat(study.getTitle()).isEqualTo(updatedStudy.getTitle());
+		assertThat(study.getTitle()).isEqualTo(updatedProps.getTitle());
 		assertThat(study.getDescription()).isEqualTo(
-				updatedStudy.getDescription());
-		assertThat(study.getComments()).isEqualTo(updatedStudy.getComments());
-		assertThat(study.getJsonData()).isEqualTo(updatedStudy.getJsonData());
+				updatedProps.getDescription());
+		assertThat(study.getComments()).isEqualTo(updatedProps.getComments());
+		assertThat(study.getJsonData()).isEqualTo(updatedProps.getJsonData());
 		assertThat(study.getAllowedWorkerTypeList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
-		assertThat(study.isGroupStudy()).isEqualTo(updatedStudy.isGroupStudy());
-		// TODO
-//		assertThat(study.getMinGroupSize()).isEqualTo(
-//				updatedStudy.getMinGroupSize());
-//		assertThat(study.getMaxGroupSize()).isEqualTo(
-//				updatedStudy.getMaxGroupSize());
+		assertThat(study.isGroupStudy()).isEqualTo(updatedProps.isGroupStudy());
 
 		// Unchanged
 		assertThat(study.getComponentList().size()).isEqualTo(7);
@@ -158,7 +144,6 @@ public class StudyServiceTest extends AbstractTest {
 
 		// Clean-up
 		removeStudy(study);
-		removeStudy(updatedStudy);
 	}
 
 	@Test
@@ -339,43 +324,6 @@ public class StudyServiceTest extends AbstractTest {
 
 		// Clean-up
 		removeStudy(study);
-	}
-
-	@Test
-	public void checkBindStudyFromRequest() {
-		Map<String, String[]> formMap = new HashMap<String, String[]>();
-		String[] titleArray = { "This is a title" };
-		formMap.put(Study.TITLE, titleArray);
-		String[] descArray = { "This is a description" };
-		formMap.put(Study.DESCRIPTION, descArray);
-		String[] commentsArray = { "This is a comment" };
-		formMap.put(Study.COMMENTS, commentsArray);
-		String[] dirNameArray = { "dir_name" };
-		formMap.put(Study.DIRNAME, dirNameArray);
-		String[] groupStudyArray = { "true" };
-		formMap.put(Study.GROUP_STUDY, groupStudyArray);
-		// TODO
-//		String[] minGroupSizeArray = { "5" };
-//		formMap.put(Study.MIN_GROUP_SIZE, minGroupSizeArray);
-//		String[] maxGroupSizeArray = { "5" };
-//		formMap.put(Study.MAX_GROUP_SIZE, maxGroupSizeArray);
-		String[] jsonArray = { "{}" };
-		formMap.put(Study.JSON_DATA, jsonArray);
-		String[] allowedWorkerArray = { JatosWorker.WORKER_TYPE };
-		formMap.put(Study.ALLOWED_WORKER_LIST, allowedWorkerArray);
-
-		Study study = studyService.bindToStudy(formMap);
-		assertThat(study.getTitle()).isEqualTo("This is a title");
-		assertThat(study.getDescription()).isEqualTo("This is a description");
-		assertThat(study.getComments()).isEqualTo("This is a comment");
-		assertThat(study.getDirName()).isEqualTo("dir_name");
-		assertThat(study.isGroupStudy()).isTrue();
-		// TODO
-//		assertThat(study.getMinGroupSize()).isEqualTo(5);
-//		assertThat(study.getMaxGroupSize()).isEqualTo(5);
-		assertThat(study.getJsonData()).isEqualTo("{}");
-		assertThat(study.getAllowedWorkerTypeList()).containsOnly(
-				JatosWorker.WORKER_TYPE);
 	}
 
 	@Test

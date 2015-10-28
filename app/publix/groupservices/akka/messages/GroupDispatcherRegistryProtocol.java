@@ -29,8 +29,8 @@ public class GroupDispatcherRegistryProtocol {
 
 		public final long groupResultId;
 
-		public GetOrCreate(long groupId) {
-			this.groupResultId = groupId;
+		public GetOrCreate(long groupResultId) {
+			this.groupResultId = groupResultId;
 		}
 	}
 

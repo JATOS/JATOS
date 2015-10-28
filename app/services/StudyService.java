@@ -2,7 +2,6 @@ package services;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -15,8 +14,6 @@ import models.StudyProperties;
 import models.User;
 import persistance.StudyDao;
 import persistance.UserDao;
-import play.data.Form;
-import play.mvc.Controller;
 import utils.IOUtils;
 import utils.MessagesStrings;
 
@@ -183,18 +180,6 @@ public class StudyService {
 					MessagesStrings.studyReorderUnknownPosition(newPosition,
 							study.getId()));
 		}
-	}
-
-	public StudyProperties bindToProperties(Form<StudyProperties> form) {
-		StudyProperties studyProperties = form.get();
-		// Have to bind list of ALLOWED_WORKER_TYPE by hand from checkboxes
-		String[] allowedWorkerArray = Controller.request().body()
-				.asFormUrlEncoded().get(StudyProperties.ALLOWED_WORKER_TYPE);
-		if (allowedWorkerArray != null) {
-			Arrays.stream(allowedWorkerArray).forEach(
-					studyProperties::addAllowedWorkerType);
-		}
-		return studyProperties;
 	}
 
 	/**

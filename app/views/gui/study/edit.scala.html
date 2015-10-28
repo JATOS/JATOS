@@ -68,24 +68,24 @@ form: Form[StudyProperties], studyIsLocked: Boolean)
 	</div>
 </div>
 
-<div id="minMemberSizeDiv" class="form-group">
-	<label class="control-label col-xs-2" for="minMemberSize">Minimum member size &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the minimal number of members who can be in a group at the same time." aria-hidden="true"></span></label>
+<div id="minActiveMemberSizeDiv" class="form-group">
+	<label class="control-label col-xs-2" for="minActiveMemberSize">Min active members&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the minimal number of members who can be in a group at the same time." aria-hidden="true"></span></label>
 	<div class="col-xs-2">
-		<input type="number" class="form-control" id="minMemberSize" name="@StudyProperties.MIN_MEMBER_SIZE" value="@form(StudyProperties.MIN_MEMBER_SIZE).value" min="2" placeholder="2">
+		<input type="number" class="form-control" id="minActiveMemberSize" name="@StudyProperties.MIN_ACTIVE_MEMBER_SIZE" value="@form(StudyProperties.MIN_ACTIVE_MEMBER_SIZE).value" min="2" placeholder="2">
 	</div>
 </div>
 
-<div id="maxMemberSizeDiv" class="form-group">
-	<label class="control-label col-xs-2" for="maxMemberSize">Maximum member size &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of members who can be in a group at the same time." aria-hidden="true"></span></label>
+<div id="maxActiveMemberSizeDiv" class="form-group">
+	<label class="control-label col-xs-2" for="maxActiveMemberSize">Max active members&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of members who can be in a group at the same time." aria-hidden="true"></span></label>
 	<div class="col-xs-2">
-		<input type="number" class="form-control" id="maxMemberSize" name="@StudyProperties.MAX_MEMBER_SIZE" value="@form(StudyProperties.MAX_MEMBER_SIZE).value" min="2" placeholder="2">
+		<input type="number" class="form-control" id="maxActiveMemberSize" name="@StudyProperties.MAX_ACTIVE_MEMBER_SIZE" value="@form(StudyProperties.MAX_ACTIVE_MEMBER_SIZE).value" min="2" placeholder="2">
 	</div>
 </div>
 
-<div id="maxWorkerSizeDiv" class="form-group">
-	<label class="control-label col-xs-2" for="maxWorkerSize">Maximum worker size &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of workers who can be in the group altogether (not necessarily at the same time)." aria-hidden="true"></span></label>
+<div id="maxTotalMemberSizeDiv" class="form-group">
+	<label class="control-label col-xs-2" for="maxTotalMemberSize">Max total members&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of members who can be in the group altogether, active or inactive." aria-hidden="true"></span></label>
 	<div class="col-xs-2">
-		<input type="number" class="form-control" id="maxWorkerSize" name="@StudyProperties.MAX_WORKER_SIZE" value="@form(StudyProperties.MAX_WORKER_SIZE).value" min="2" placeholder="2">
+		<input type="number" class="form-control" id="maxTotalMemberSize" name="@StudyProperties.MAX_TOTAL_MEMBER_SIZE" value="@form(StudyProperties.MAX_TOTAL_MEMBER_SIZE).value" min="2" placeholder="2">
 	</div>
 </div>
 
@@ -139,13 +139,13 @@ window.onload = showGroupSettings;
 
 function showGroupSettings() {
 	if ($('#groupStudy').is(':checked')) {
-		$('#minMemberSizeDiv').show();
-		$('#maxMemberSizeDiv').show();
-		$('#maxWorkerSizeDiv').show();
+		$('#minActiveMemberSizeDiv').show();
+		$('#maxActiveMemberSizeDiv').show();
+		$('#maxTotalMemberSizeDiv').show();
 	} else {
-		$('#minMemberSizeDiv').hide();
-		$('#maxMemberSizeDiv').hide();
-		$('#maxWorkerSizeDiv').hide();
+		$('#minActiveMemberSizeDiv').hide();
+		$('#maxActiveMemberSizeDiv').hide();
+		$('#maxTotalMemberSizeDiv').hide();
 	}
 }
 
@@ -181,17 +181,17 @@ $('#groupStudy').change(showGroupSettings);
 	$('#jsonData').closest(".form-group").addClass("has-error");
 	$('#jsonData').after('<span class="help-block">@error.message</span>');
 }
-@for(error <- form(StudyProperties.MIN_MEMBER_SIZE).errors) {
-	$('#minMemberSize').closest(".form-group").addClass("has-error");
-	$('#minMemberSize').after('<span class="help-block">@error.message</span>');
+@for(error <- form(StudyProperties.MIN_ACTIVE_MEMBER_SIZE).errors) {
+	$('#minActiveMemberSize').closest(".form-group").addClass("has-error");
+	$('#minActiveMemberSize').after('<span class="help-block">@error.message</span>');
 }
-@for(error <- form(StudyProperties.MAX_MEMBER_SIZE).errors) {
-	$('#maxMemberSize').closest(".form-group").addClass("has-error");
-	$('#maxMemberSize').after('<span class="help-block">@error.message</span>');
+@for(error <- form(StudyProperties.MAX_ACTIVE_MEMBER_SIZE).errors) {
+	$('#maxActiveMemberSize').closest(".form-group").addClass("has-error");
+	$('#maxActiveMemberSize').after('<span class="help-block">@error.message</span>');
 }
-@for(error <- form(StudyProperties.MAX_WORKER_SIZE).errors) {
-	$('#maxWorkerSize').closest(".form-group").addClass("has-error");
-	$('#maxWorkerSize').after('<span class="help-block">@error.message</span>');
+@for(error <- form(StudyProperties.MAX_TOTAL_MEMBER_SIZE).errors) {
+	$('#maxTotalMemberSize').closest(".form-group").addClass("has-error");
+	$('#maxTotalMemberSize').after('<span class="help-block">@error.message</span>');
 }
 @if(studyIsLocked) {
 	$(':input').attr("disabled", true);

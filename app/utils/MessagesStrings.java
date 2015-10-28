@@ -36,10 +36,9 @@ public abstract class MessagesStrings {
 	public static final String STUDY_AT_LEAST_ONE_USER = "An study should have at least one user.";
 	public static final String STUDY_IS_LOCKED = "Study is locked. It's not possible to edit.";
 	public static final String STUDY_WASNT_SAVED = "Study wasn't saved";
-	public static final String GROUP_MEMBER_SIZE = "Group's min and max member size must be at least 2.";
-	public static final String GROUP_MAX_MEMBER_SIZE = "Group's maximum member size must be greater or equal than the minimum one.";
-	public static final String GROUP_WORKER_SIZE = "Group's maximum worker size must be at least 2.";
-	public static final String GROUP_MAX_WORKER_SIZE = "Group's maximum worker size must be greater or equal than the maximum member size.";
+	public static final String GROUP_MEMBER_SIZE = "Group's member size must be at least 2.";
+	public static final String GROUP_MAX_ACTIVE_MEMBER_SIZE = "Group's max active member size must be greater or equal than the min one.";
+	public static final String GROUP_MAX_TOTAL_MEMBER_SIZE = "Group's max total members size must be greater or equal than the maxactive member size.";
 	public static final String COMPONENT_WASNT_SAVED = "Component wasn't saved";
 
 	// User
@@ -64,8 +63,10 @@ public abstract class MessagesStrings {
 	public static final String IMPORT_OF_COMPONENT_FAILED = "Import of component failed";
 	public static final String NO_RESULTS_SELECTED = "No results selected";
 	public static final String PROBLEM_GENERATING_JSON_DATA = "Problem generate JSON data";
-	public static final String WRONG_STUDY_VERSION = "This study is from an newer version of JATOS. Try updating your JATOS.";
-	public static final String WRONG_COMPONENT_VERSION = "This component is from an newer version of JATOS. Try updating your JATOS.";
+	public static final String TOO_NEW_STUDY_VERSION = "This study is from an newer version of JATOS. Try updating your JATOS.";
+	public static final String UNSUPPORTED_STUDY_VERSION = "This study is from an unsupported version of JATOS.";
+	public static final String TOO_NEW_COMPONENT_VERSION = "This component is from an newer version of JATOS. Try updating your JATOS.";
+	public static final String UNSUPPORTED_COMPONENT_VERSION = "This component is from an unsupported version of JATOS.";
 
 	// Results
 	public static final String RESULTS_EXPORT_DATA = "Select results and export them as a text file to your local file system";

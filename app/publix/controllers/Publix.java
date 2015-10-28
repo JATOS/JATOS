@@ -54,6 +54,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	 */
 	public static final String ID_COOKIE_NAME = "JATOS_IDS";
 	public static final String WORKER_ID = "workerId";
+	public static final String GROUP_ID = "groupId";
 	public static final String GROUP_RESULT_ID = "groupResultId";
 	public static final String STUDY_ID = "studyId";
 	public static final String STUDY_RESULT_ID = "studyResultId";

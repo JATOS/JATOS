@@ -1,15 +1,16 @@
-package models;
+package models.old;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -18,16 +19,28 @@ import javax.persistence.JoinTable;
 import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
-import javax.persistence.Table;
 
+import models.Component;
+import models.User;
+import models.workers.JatosWorker;
+import models.workers.PersonalMultipleWorker;
+import models.workers.PersonalSingleWorker;
+
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+
+import play.data.validation.ValidationError;
+import utils.IOUtils;
 import utils.JsonUtils;
+import utils.MessagesStrings;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 /**
+ * Old model kept for unmarshaling JSON of old versions!
+ * 
  * Model for a DB entity of a study with all properties of a study but not the
  * results of a study. The results of a study are stored in StudyResults and
  * ComponentResult. A study consists of a list components and their model is
@@ -36,17 +49,23 @@ import com.fasterxml.jackson.annotation.JsonView;
  * 
  * @author Kristian Lange (2014)
  */
-@Entity
-@Table(name = "Study")
-public class Study {
+public class StudyV2 {
 
 	/**
 	 * Version of this model used for serialisation (e.g. JSON marshaling)
 	 */
-	public static final int SERIAL_VERSION = 3;
+	public static final String SERIAL_VERSION = "2";
 
-	public static final String USERS = "users";
+	public static final String ID = "id";
+	public static final String UUID = "uuid";
+	public static final String MEMBERS = "user";
+	public static final String TITLE = "title";
+	public static final String JSON_DATA = "jsonData";
+	public static final String DESCRIPTION = "description";
+	public static final String DIRNAME = "dirName";
+	public static final String COMMENTS = "comments";
 	public static final String STUDY = "study";
+	public static final String ALLOWED_WORKER_LIST = "allowedWorkerList";
 
 	@Id
 	@GeneratedValue
@@ -87,7 +106,7 @@ public class Study {
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	@ElementCollection
-	private Set<String> allowedWorkerTypeList = new HashSet<>();
+	private Set<String> allowedWorkerList = new HashSet<>();
 
 	/**
 	 * Study assets directory name
@@ -111,25 +130,12 @@ public class Study {
 	private String jsonData;
 
 	/**
-	 * Is this a group study with several workers running it at once.
-	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private boolean groupStudy = false;
-
-	/**
-	 * If this is a group study, in the Group are the properties of the group.
-	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	@OneToOne(mappedBy = "study", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	private Group group;
-
-	/**
-	 * List of users that are users of this study (have access rights).
+	 * List of users that are members of this study (have access rights).
 	 */
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "StudyUserMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "user_email", referencedColumnName = "email") })
-	private Set<User> userList = new HashSet<>();
+	@JoinTable(name = "StudyMemberMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "member_email", referencedColumnName = "email") })
+	private Set<User> memberList = new HashSet<>();
 
 	/**
 	 * Ordered list of component of this study
@@ -140,7 +146,11 @@ public class Study {
 	@JoinColumn(name = "study_id")
 	private List<Component> componentList = new ArrayList<>();
 
-	public Study() {
+	public StudyV2() {
+		// Add default allowed workers
+		addAllowedWorker(JatosWorker.WORKER_TYPE);
+		addAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
+		addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
 	}
 
 	public void setId(Long id) {
@@ -215,60 +225,44 @@ public class Study {
 		this.jsonData = jsonData;
 	}
 
-	public boolean isGroupStudy() {
-		return groupStudy;
+	public void setAllowedWorkerList(Set<String> allowedWorkerList) {
+		this.allowedWorkerList = allowedWorkerList;
 	}
 
-	public void setGroupStudy(boolean groupStudy) {
-		this.groupStudy = groupStudy;
+	public Set<String> getAllowedWorkerList() {
+		return this.allowedWorkerList;
 	}
 
-	public void setAllowedWorkerTypeList(Set<String> allowedWorkerTypeList) {
-		this.allowedWorkerTypeList = allowedWorkerTypeList;
+	public void addAllowedWorker(String workerType) {
+		allowedWorkerList.add(workerType);
 	}
 
-	public Set<String> getAllowedWorkerTypeList() {
-		return this.allowedWorkerTypeList;
+	public void removeAllowedWorker(String workerType) {
+		allowedWorkerList.remove(workerType);
 	}
 
-	public void addAllowedWorkerType(String workerType) {
-		allowedWorkerTypeList.add(workerType);
+	public boolean hasAllowedWorker(String workerType) {
+		return allowedWorkerList.contains(workerType);
 	}
 
-	public void removeAllowedWorkerType(String workerType) {
-		allowedWorkerTypeList.remove(workerType);
+	public void setMemberList(Set<User> memberList) {
+		this.memberList = memberList;
 	}
 
-	public boolean hasAllowedWorkerType(String workerType) {
-		return allowedWorkerTypeList.contains(workerType);
+	public Set<User> getMemberList() {
+		return memberList;
 	}
 
-	public void setUserList(Set<User> userList) {
-		this.userList = userList;
+	public void addMember(User user) {
+		memberList.add(user);
 	}
 
-	public Set<User> getUserList() {
-		return userList;
+	public void removeMember(User user) {
+		memberList.remove(user);
 	}
 
-	public void addUser(User user) {
-		userList.add(user);
-	}
-
-	public void removeUser(User user) {
-		userList.remove(user);
-	}
-
-	public boolean hasUser(User user) {
-		return userList.contains(user);
-	}
-
-	public Group getGroup() {
-		return this.group;
-	}
-
-	public void setGroup(Group group) {
-		this.group = group;
+	public boolean hasMember(User user) {
+		return memberList.contains(user);
 	}
 
 	public void setComponentList(List<Component> componentList) {
@@ -337,6 +331,42 @@ public class Study {
 		return null;
 	}
 
+	public List<ValidationError> validate() {
+		List<ValidationError> errorList = new ArrayList<>();
+		if (title == null || title.trim().isEmpty()) {
+			errorList.add(new ValidationError(TITLE,
+					MessagesStrings.MISSING_TITLE));
+		}
+		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
+			errorList.add(new ValidationError(TITLE,
+					MessagesStrings.NO_HTML_ALLOWED));
+		}
+		if (description != null
+				&& !Jsoup.isValid(description, Whitelist.none())) {
+			errorList.add(new ValidationError(DESCRIPTION,
+					MessagesStrings.NO_HTML_ALLOWED));
+		}
+		if (dirName == null || dirName.trim().isEmpty()) {
+			errorList.add(new ValidationError(DIRNAME,
+					MessagesStrings.MISSING_DIRNAME));
+		}
+		Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
+		Matcher matcher = pattern.matcher(dirName);
+		if (dirName != null && matcher.find()) {
+			errorList.add(new ValidationError(DIRNAME,
+					MessagesStrings.INVALID_DIR_NAME));
+		}
+		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
+			errorList.add(new ValidationError(COMMENTS,
+					MessagesStrings.NO_HTML_ALLOWED));
+		}
+		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
+			errorList.add(new ValidationError(JSON_DATA,
+					MessagesStrings.INVALID_JSON_FORMAT));
+		}
+		return errorList.isEmpty() ? null : errorList;
+	}
+
 	@Override
 	public String toString() {
 		return id + " " + title;
@@ -358,10 +388,10 @@ public class Study {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof Study)) {
+		if (!(obj instanceof StudyV2)) {
 			return false;
 		}
-		Study other = (Study) obj;
+		StudyV2 other = (StudyV2) obj;
 		if (id == null) {
 			if (other.getId() != null) {
 				return false;

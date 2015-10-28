@@ -38,10 +38,9 @@ public class StudyProperties {
 	public static final String ALLOWED_WORKER_TYPE = "allowedWorkerType";
 	public static final String ALLOWED_WORKER_TYPE_LIST = "allowedWorkerTypeList";
 	public static final String GROUP_ID = "groupId";
-	public static final String MIN_MEMBER_SIZE = "minMemberSize";
-	public static final String MAX_MEMBER_SIZE = "maxMemberSize";
-	public static final String MAX_WORKER_SIZE = "maxWorkerSize";
-	public static final String MAX_WORKER_UNLIMETED = "maxWorkerUnlimited";
+	public static final String MIN_ACTIVE_MEMBER_SIZE = "minActiveMemberSize";
+	public static final String MAX_ACTIVE_MEMBER_SIZE = "maxActiveMemberSize";
+	public static final String MAX_TOTAL_MEMBER_SIZE = "maxTotalMemberSize";
 
 	private Long studyId;
 
@@ -96,19 +95,22 @@ public class StudyProperties {
 	private Long groupId;
 
 	/**
-	 * Minimum number of workers at the same time. Is at least 2.
+	 * Minimum number of workers in the group that are active at the same time.
+	 * It's at least 2.
 	 */
-	private int minMemberSize = 2;
+	private int minActiveMemberSize = 2;
 
 	/**
-	 * Maximum number of workers at the same time. Is at least 2.
+	 * Maximum number of workers in the group that are active at the same time.
+	 * It's at least 2.
 	 */
-	private int maxMemberSize = 2;
+	private int maxActiveMemberSize = 2;
 
 	/**
-	 * Maximum number of workers altogether. Is at least 2.
+	 * Maximum number of workers that are allowed to be member in the group
+	 * altogether (active and inactive together). It's at least 2.
 	 */
-	private int maxWorkerSize = 2;
+	private int maxTotalMemberSize = 2;
 
 	public void setStudyId(Long studyId) {
 		this.studyId = studyId;
@@ -218,30 +220,30 @@ public class StudyProperties {
 		this.groupId = groupId;
 	}
 
-	public int getMinMemberSize() {
-		return minMemberSize;
+	public int getMinActiveMemberSize() {
+		return minActiveMemberSize;
 	}
 
-	public void setMinMemberSize(int minMemberSize) {
-		this.minMemberSize = minMemberSize;
+	public void setMinActiveMemberSize(int minActiveMemberSize) {
+		this.minActiveMemberSize = minActiveMemberSize;
 	}
 
-	public int getMaxMemberSize() {
-		return maxMemberSize;
+	public int getMaxActiveMemberSize() {
+		return maxActiveMemberSize;
 	}
 
-	public void setMaxMemberSize(int maxMemberSize) {
-		this.maxMemberSize = maxMemberSize;
+	public void setMaxActiveMemberSize(int maxActiveMemberSize) {
+		this.maxActiveMemberSize = maxActiveMemberSize;
 	}
 
-	public int getMaxWorkerSize() {
-		return maxWorkerSize;
+	public int getMaxTotalMemberSize() {
+		return maxTotalMemberSize;
 	}
 
-	public void setMaxWorkerSize(int maxWorkerSize) {
-		this.maxWorkerSize = maxWorkerSize;
+	public void setMaxTotalMemberSize(int maxTotalMemberSize) {
+		this.maxTotalMemberSize = maxTotalMemberSize;
 	}
-	
+
 	/**
 	 * Add default allowed workers
 	 */
@@ -285,25 +287,25 @@ public class StudyProperties {
 			errorList.add(new ValidationError(JSON_DATA,
 					MessagesStrings.INVALID_JSON_FORMAT));
 		}
-		if (groupStudy && minMemberSize < 2) {
-			errorList.add(new ValidationError(MIN_MEMBER_SIZE,
+		if (groupStudy && minActiveMemberSize < 2) {
+			errorList.add(new ValidationError(MIN_ACTIVE_MEMBER_SIZE,
 					MessagesStrings.GROUP_MEMBER_SIZE));
 		}
-		if (groupStudy && maxMemberSize < 2) {
-			errorList.add(new ValidationError(MAX_MEMBER_SIZE,
+		if (groupStudy && maxActiveMemberSize < 2) {
+			errorList.add(new ValidationError(MAX_ACTIVE_MEMBER_SIZE,
 					MessagesStrings.GROUP_MEMBER_SIZE));
 		}
-		if (groupStudy && maxMemberSize < minMemberSize) {
-			errorList.add(new ValidationError(MAX_MEMBER_SIZE,
-					MessagesStrings.GROUP_MAX_MEMBER_SIZE));
+		if (groupStudy && maxActiveMemberSize < minActiveMemberSize) {
+			errorList.add(new ValidationError(MAX_ACTIVE_MEMBER_SIZE,
+					MessagesStrings.GROUP_MAX_ACTIVE_MEMBER_SIZE));
 		}
-		if (groupStudy && maxWorkerSize < 2) {
-			errorList.add(new ValidationError(MAX_WORKER_SIZE,
-					MessagesStrings.GROUP_WORKER_SIZE));
+		if (groupStudy && maxTotalMemberSize < 2) {
+			errorList.add(new ValidationError(MAX_TOTAL_MEMBER_SIZE,
+					MessagesStrings.GROUP_MEMBER_SIZE));
 		}
-		if (groupStudy && maxWorkerSize < maxMemberSize) {
-			errorList.add(new ValidationError(MAX_WORKER_SIZE,
-					MessagesStrings.GROUP_MAX_WORKER_SIZE));
+		if (groupStudy && maxTotalMemberSize < maxActiveMemberSize) {
+			errorList.add(new ValidationError(MAX_TOTAL_MEMBER_SIZE,
+					MessagesStrings.GROUP_MAX_TOTAL_MEMBER_SIZE));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}

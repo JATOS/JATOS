@@ -1,10 +1,10 @@
 package models;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -41,8 +41,8 @@ public class GroupResult {
 	}
 
 	/**
-	 * Current group result state (Yes, it should be named
-	 * groupResultState - but hey, it's so much nice this way.)
+	 * Current group result state (Yes, it should be named groupResultState -
+	 * but hey, it's so much nice this way.)
 	 */
 	private GroupState groupState;
 
@@ -52,12 +52,12 @@ public class GroupResult {
 
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	@JoinColumn(name = "groupResult_id")
-	private List<StudyResult> studyResultList = new ArrayList<>();
+	private Set<StudyResult> studyResultList = new HashSet<>();
 
 	@OneToMany(cascade = CascadeType.ALL)
 	@JoinColumn(name = "groupResultHistory_id")
-	private List<StudyResult> studyResultHistory = new ArrayList<>();
-	
+	private Set<StudyResult> studyResultHistory = new HashSet<>();
+
 	/**
 	 * Time and date when the study was started on the server.
 	 */
@@ -119,11 +119,11 @@ public class GroupResult {
 		return this.endDate;
 	}
 
-	public void setStudyResultList(List<StudyResult> studyResultList) {
+	public void setStudyResultList(Set<StudyResult> studyResultList) {
 		this.studyResultList = studyResultList;
 	}
 
-	public List<StudyResult> getStudyResultList() {
+	public Set<StudyResult> getStudyResultList() {
 		return this.studyResultList;
 	}
 
@@ -134,12 +134,12 @@ public class GroupResult {
 	public void addStudyResult(StudyResult studyResult) {
 		studyResultList.add(studyResult);
 	}
-	
-	public void setStudyResultHistory(List<StudyResult> studyResultHistory) {
+
+	public void setStudyResultHistory(Set<StudyResult> studyResultHistory) {
 		this.studyResultHistory = studyResultHistory;
 	}
 
-	public List<StudyResult> getStudyResultHistory() {
+	public Set<StudyResult> getStudyResultHistory() {
 		return this.studyResultHistory;
 	}
 

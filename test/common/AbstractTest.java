@@ -14,8 +14,8 @@ import javax.persistence.EntityManager;
 
 import models.Study;
 import models.StudyResult;
-import models.User;
 import models.StudyResult.StudyState;
+import models.User;
 import models.workers.Worker;
 
 import org.apache.commons.io.FileUtils;
@@ -45,9 +45,8 @@ import scala.Option;
 import services.StudyService;
 import services.UserService;
 import utils.IOUtils;
-import utils.JsonUtils;
+import utils.StudyUploadUnmarshaller;
 import utils.ZipUtil;
-import common.Global;
 
 /**
  * Abstract class for tests. Starts fake application and an in-memory DB.
@@ -104,7 +103,8 @@ public abstract class AbstractTest {
 		componentDao = Global.INJECTOR.getInstance(ComponentDao.class);
 		workerDao = Global.INJECTOR.getInstance(WorkerDao.class);
 		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
-		componentResultDao = Global.INJECTOR.getInstance(ComponentResultDao.class);
+		componentResultDao = Global.INJECTOR
+				.getInstance(ComponentResultDao.class);
 
 		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
 				.plugin(JPAPlugin.class);
@@ -177,8 +177,8 @@ public abstract class AbstractTest {
 		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		File studyFile = studyFileList[0];
-		Study importedStudy = new JsonUtils.UploadUnmarshaller()
-				.unmarshalling(studyFile, Study.class);
+		Study importedStudy = new StudyUploadUnmarshaller(studyService)
+				.unmarshalling(studyFile);
 		studyFile.delete();
 
 		File[] dirArray = IOUtils.findDirectories(tempUnzippedStudyDir);
@@ -207,16 +207,16 @@ public abstract class AbstractTest {
 		return componentFileBkp;
 	}
 
-	protected synchronized Study cloneAndPersistStudy(
-			Study studyToBeCloned) throws IOException {
+	protected synchronized Study cloneAndPersistStudy(Study studyToBeCloned)
+			throws IOException {
 		entityManager.getTransaction().begin();
 		Study studyClone = studyService.cloneStudy(studyToBeCloned, admin);
 		entityManager.getTransaction().commit();
 		return studyClone;
 	}
 
-	protected synchronized User createAndPersistUser(String email,
-			String name, String password) throws UnsupportedEncodingException,
+	protected synchronized User createAndPersistUser(String email, String name,
+			String password) throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
 		String passwordHash = userService.getHashMDFive(password);
 		User user = new User(email, name, passwordHash);
@@ -226,8 +226,7 @@ public abstract class AbstractTest {
 		return user;
 	}
 
-	protected synchronized void removeStudy(Study study)
-			throws IOException {
+	protected synchronized void removeStudy(Study study) throws IOException {
 		IOUtils.removeStudyAssetsDir(study.getDirName());
 		entityManager.getTransaction().begin();
 		studyDao.remove(study);
@@ -246,8 +245,7 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 	}
 
-	protected synchronized void removeUser(Study studyClone,
-			User user) {
+	protected synchronized void removeUser(Study studyClone, User user) {
 		entityManager.getTransaction().begin();
 		studyDao.findById(studyClone.getId()).removeUser(user);
 		entityManager.getTransaction().commit();
@@ -259,8 +257,7 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 	}
 
-	protected void addStudyResult(Study study, Worker worker,
-			StudyState state) {
+	protected void addStudyResult(Study study, Worker worker, StudyState state) {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study, worker);
 		studyResult.setStudyState(state);

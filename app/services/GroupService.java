@@ -19,9 +19,9 @@ public class GroupService {
 	 */
 	public Group clone(Group group, Study studyClone) {
 		Group clone = new Group();
-		clone.setMinMemberSize(group.getMinMemberSize());
-		clone.setMaxMemberSize(group.getMaxMemberSize());
-		clone.setMaxWorkerSize(group.getMaxWorkerSize());
+		clone.setMinActiveMemberSize(group.getMinActiveMemberSize());
+		clone.setMaxActiveMemberSize(group.getMaxActiveMemberSize());
+		clone.setMaxTotalMemberSize(group.getMaxTotalMemberSize());
 		clone.setStudy(studyClone);
 		// Not necessary to persist since study creates it already
 		// groupDao.create(clone);
@@ -33,9 +33,9 @@ public class GroupService {
 	 */
 	public Group createGroup(StudyProperties studyProperties, Study study) {
 		Group group = new Group();
-		group.setMinMemberSize(studyProperties.getMinMemberSize());
-		group.setMaxMemberSize(studyProperties.getMaxMemberSize());
-		group.setMaxWorkerSize(studyProperties.getMaxWorkerSize());
+		group.setMinActiveMemberSize(studyProperties.getMinActiveMemberSize());
+		group.setMaxActiveMemberSize(studyProperties.getMaxActiveMemberSize());
+		group.setMaxTotalMemberSize(studyProperties.getMaxTotalMemberSize());
 		group.setStudy(study);
 		// Not necessary to persist since study creates it already
 		// groupDao.create(group);
@@ -48,27 +48,27 @@ public class GroupService {
 	 * 
 	 */
 	public void bindToGroup(Group group, StudyProperties studyProperties) {
-		group.setMinMemberSize(studyProperties.getMinMemberSize());
-		group.setMaxMemberSize(studyProperties.getMaxMemberSize());
-		group.setMaxWorkerSize(studyProperties.getMaxWorkerSize());
+		group.setMinActiveMemberSize(studyProperties.getMinActiveMemberSize());
+		group.setMaxActiveMemberSize(studyProperties.getMaxActiveMemberSize());
+		group.setMaxTotalMemberSize(studyProperties.getMaxTotalMemberSize());
 		// Not necessary to persist since study merges it already
 		// groupDao.update(group);
 	}
 
 	public void bindToProperties(StudyProperties studyProperties, Group group) {
 		studyProperties.setGroupId(group.getId());
-		studyProperties.setMinMemberSize(group.getMinMemberSize());
-		studyProperties.setMaxMemberSize(group.getMaxMemberSize());
-		studyProperties.setMaxWorkerSize(group.getMaxWorkerSize());
+		studyProperties.setMinActiveMemberSize(group.getMinActiveMemberSize());
+		studyProperties.setMaxActiveMemberSize(group.getMaxActiveMemberSize());
+		studyProperties.setMaxTotalMemberSize(group.getMaxTotalMemberSize());
 	}
 	
 	public void updateGroup(Group group, Group updatedGroup) {
 		if (group == null) {
 			group = new Group();
 		}
-		group.setMinMemberSize(updatedGroup.getMinMemberSize());
-		group.setMaxMemberSize(updatedGroup.getMaxMemberSize());
-		group.setMaxWorkerSize(updatedGroup.getMaxWorkerSize());
+		group.setMinActiveMemberSize(updatedGroup.getMinActiveMemberSize());
+		group.setMaxActiveMemberSize(updatedGroup.getMaxActiveMemberSize());
+		group.setMaxTotalMemberSize(updatedGroup.getMaxTotalMemberSize());
 		// Not necessary to persist since study merges it already
 		// groupDao.update(group);
 	}

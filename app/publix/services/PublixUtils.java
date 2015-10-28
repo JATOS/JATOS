@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import models.Component;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
+import models.Group;
 import models.GroupResult;
 import models.Study;
 import models.StudyResult;
@@ -146,14 +147,16 @@ public abstract class PublixUtils<T extends Worker> {
 			ComponentResult componentResult, Worker worker,
 			GroupResult groupResult) {
 		Study study = studyResult.getStudy();
+		Group group = study.getGroup();
 		Component component = componentResult.getComponent();
 		Map<String, String> cookieMap = new HashMap<>();
 		cookieMap.put(Publix.WORKER_ID, String.valueOf(worker.getId()));
 		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
 		cookieMap.put(Publix.STUDY_RESULT_ID,
 				String.valueOf(studyResult.getId()));
-		String groupResultId = (groupResult != null) ? String
-				.valueOf(groupResult.getId()) : "null";
+		String groupId = (group != null) ? String.valueOf(group.getId()) : "null";
+		cookieMap.put(Publix.GROUP_ID, groupId);
+		String groupResultId = (groupResult != null) ? String.valueOf(groupResult.getId()) : "null";
 		cookieMap.put(Publix.GROUP_RESULT_ID, groupResultId);
 		cookieMap.put(Publix.COMPONENT_ID, String.valueOf(component.getId()));
 		cookieMap.put(Publix.COMPONENT_RESULT_ID,
@@ -314,8 +317,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 * worker never started a StudyResult of this study. It either returns a
 	 * StudyResult or throws an exception but never returns null.
 	 */
-	public StudyResult retrieveWorkersLastStudyResult(Worker worker,
-			Study study) throws ForbiddenPublixException {
+	public StudyResult retrieveWorkersLastStudyResult(Worker worker, Study study)
+			throws ForbiddenPublixException {
 		int studyResultListSize = worker.getStudyResultList().size();
 		for (int i = (studyResultListSize - 1); i >= 0; i--) {
 			StudyResult studyResult = worker.getStudyResultList().get(i);
@@ -375,9 +378,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Gets the ComponentResult from the storage or if it doesn't exist yet
 	 * starts one.
 	 */
-	public ComponentResult retrieveStartedComponentResult(
-			Component component, StudyResult studyResult)
-			throws ForbiddenReloadException {
+	public ComponentResult retrieveStartedComponentResult(Component component,
+			StudyResult studyResult) throws ForbiddenReloadException {
 		ComponentResult componentResult = retrieveCurrentComponentResult(studyResult);
 		// Start the component if it was never started (== null) or if it's
 		// a reload of the component
@@ -458,8 +460,8 @@ public abstract class PublixUtils<T extends Worker> {
 		return component;
 	}
 
-	public Component retrieveComponentByPosition(Long studyId,
-			Integer position) throws PublixException {
+	public Component retrieveComponentByPosition(Long studyId, Integer position)
+			throws PublixException {
 		Study study = retrieveStudy(studyId);
 		if (position == null) {
 			throw new BadRequestPublixException(
@@ -479,8 +481,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Returns the study corresponding to the given study ID. It throws an
 	 * NotFoundPublixException if there is no such study.
 	 */
-	public Study retrieveStudy(Long studyId)
-			throws NotFoundPublixException {
+	public Study retrieveStudy(Long studyId) throws NotFoundPublixException {
 		Study study = studyDao.findById(studyId);
 		if (study == null) {
 			throw new NotFoundPublixException(
@@ -493,8 +494,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Checks if this component belongs to this study and throws an
 	 * BadRequestPublixException if it doesn't.
 	 */
-	public void checkComponentBelongsToStudy(Study study,
-			Component component) throws PublixException {
+	public void checkComponentBelongsToStudy(Study study, Component component)
+			throws PublixException {
 		if (!component.getStudy().equals(study)) {
 			throw new BadRequestPublixException(
 					errorMessages.componentNotBelongToStudy(study.getId(),

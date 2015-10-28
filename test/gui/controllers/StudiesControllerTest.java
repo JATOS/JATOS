@@ -15,8 +15,8 @@ import static play.test.Helpers.status;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.Group;
 import models.Study;
+import models.StudyProperties;
 import models.workers.PersonalSingleWorker;
 
 import org.apache.http.HttpHeaders;
@@ -85,15 +85,15 @@ public class StudiesControllerTest extends AbstractTest {
 	@Test
 	public void callSubmit() throws Exception {
 		Map<String, String> formMap = new HashMap<String, String>();
-		formMap.put(Study.TITLE, "Title Test");
-		formMap.put(Study.DESCRIPTION, "Description test.");
-		formMap.put(Study.COMMENTS, "Comments test.");
-		formMap.put(Study.DIRNAME, "dirName_submit");
-		formMap.put(Study.GROUP_STUDY, "true");
-		formMap.put(Group.MIN_MEMBER_SIZE, "5");
-		formMap.put(Group.MAX_MEMBER_SIZE, "5");
-		formMap.put(Study.JSON_DATA, "{}");
-		formMap.put(Study.ALLOWED_WORKER_LIST, "");
+		formMap.put(StudyProperties.TITLE, "Title Test");
+		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
+		formMap.put(StudyProperties.COMMENTS, "Comments test.");
+		formMap.put(StudyProperties.DIRNAME, "dirName_submit");
+		formMap.put(StudyProperties.GROUP_STUDY, "true");
+		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "5");
+		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "5");
+		formMap.put(StudyProperties.JSON_DATA, "{}");
+		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 		Result result = callAction(controllers.routes.ref.Studies.submit(),
@@ -110,8 +110,8 @@ public class StudiesControllerTest extends AbstractTest {
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
 		assertThat(study.isGroupStudy()).isTrue();
-		assertThat(study.getGroup().getMinMemberSize()).isEqualTo(5);
-		assertThat(study.getGroup().getMaxMemberSize()).isEqualTo(5);
+		assertThat(study.getGroup().getMinActiveMemberSize()).isEqualTo(5);
+		assertThat(study.getGroup().getMaxActiveMemberSize()).isEqualTo(5);
 		assertEquals("{}", study.getJsonData());
 		assertThat((study.getComponentList().isEmpty()));
 		assertThat((study.getUserList().contains(admin)));
@@ -126,15 +126,16 @@ public class StudiesControllerTest extends AbstractTest {
 	public void callSubmitValidationError() {
 		// Fill with non-valid values
 		Map<String, String> formMap = new HashMap<String, String>();
-		formMap.put(Study.TITLE, " ");
-		formMap.put(Study.DESCRIPTION, "Description test <b>.");
-		formMap.put(Study.COMMENTS, "Comments test <i>.");
-		formMap.put(Study.DIRNAME, "%.test");
-		formMap.put(Study.GROUP_STUDY, "true");
-		formMap.put(Group.MIN_MEMBER_SIZE, "5");
-		formMap.put(Group.MAX_MEMBER_SIZE, "5");
-		formMap.put(Study.JSON_DATA, "{");
-		formMap.put(Study.ALLOWED_WORKER_LIST, "WrongWorker");
+		formMap.put(StudyProperties.TITLE, " ");
+		formMap.put(StudyProperties.DESCRIPTION, "Description test <b>.");
+		formMap.put(StudyProperties.COMMENTS, "Comments test <i>.");
+		formMap.put(StudyProperties.DIRNAME, "%.test");
+		formMap.put(StudyProperties.GROUP_STUDY, "true");
+		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "5");
+		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "4");
+		formMap.put(StudyProperties.MAX_TOTAL_MEMBER_SIZE, "3");
+		formMap.put(StudyProperties.JSON_DATA, "{");
+		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "WrongWorker");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 
@@ -150,15 +151,16 @@ public class StudiesControllerTest extends AbstractTest {
 	public void callSubmitStudyAssetsDirExists() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Map<String, String> formMap = new HashMap<String, String>();
-		formMap.put(Study.TITLE, "Title Test");
-		formMap.put(Study.DESCRIPTION, "Description test.");
-		formMap.put(Study.COMMENTS, "Comments test.");
-		formMap.put(Study.GROUP_STUDY, "true");
-		formMap.put(Group.MIN_MEMBER_SIZE, "5");
-		formMap.put(Group.MAX_MEMBER_SIZE, "5");
-		formMap.put(Study.DIRNAME, studyClone.getDirName());
-		formMap.put(Study.JSON_DATA, "{}");
-		formMap.put(Study.ALLOWED_WORKER_LIST, "");
+		formMap.put(StudyProperties.TITLE, "Title Test");
+		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
+		formMap.put(StudyProperties.COMMENTS, "Comments test.");
+		formMap.put(StudyProperties.GROUP_STUDY, "true");
+		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "3");
+		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "4");
+		formMap.put(StudyProperties.MAX_TOTAL_MEMBER_SIZE, "5");
+		formMap.put(StudyProperties.DIRNAME, studyClone.getDirName());
+		formMap.put(StudyProperties.JSON_DATA, "{}");
+		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 
@@ -168,7 +170,7 @@ public class StudiesControllerTest extends AbstractTest {
 				BreadcrumbsService.NEW_STUDY);
 		assertThat(contentAsString(result)).contains(
 				"couldn&#x27;t be created because it already exists.");
-		
+
 		// Cleanup
 		removeStudy(studyClone);
 	}
@@ -196,15 +198,16 @@ public class StudiesControllerTest extends AbstractTest {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> formMap = new HashMap<String, String>();
-		formMap.put(Study.TITLE, "Title Test");
-		formMap.put(Study.DESCRIPTION, "Description test.");
-		formMap.put(Study.COMMENTS, "Comments test.");
-		formMap.put(Study.DIRNAME, "dirName_submitEdited");
-		formMap.put(Study.GROUP_STUDY, "true");
-		formMap.put(Group.MIN_MEMBER_SIZE, "5");
-		formMap.put(Group.MAX_MEMBER_SIZE, "5");
-		formMap.put(Study.JSON_DATA, "{}");
-		formMap.put(Study.ALLOWED_WORKER_LIST, "");
+		formMap.put(StudyProperties.TITLE, "Title Test");
+		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
+		formMap.put(StudyProperties.COMMENTS, "Comments test.");
+		formMap.put(StudyProperties.DIRNAME, "dirName_submitEdited");
+		formMap.put(StudyProperties.GROUP_STUDY, "true");
+		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "3");
+		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "4");
+		formMap.put(StudyProperties.MAX_TOTAL_MEMBER_SIZE, "5");
+		formMap.put(StudyProperties.JSON_DATA, "{}");
+		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 		Result result = callAction(
@@ -265,8 +268,7 @@ public class StudiesControllerTest extends AbstractTest {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Result result = callAction(
-				controllers.routes.ref.Studies
-						.changeUsers(studyClone.getId()),
+				controllers.routes.ref.Studies.changeUsers(studyClone.getId()),
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
@@ -283,8 +285,8 @@ public class StudiesControllerTest extends AbstractTest {
 				controllers.routes.ref.Studies.submitChangedUsers(studyClone
 						.getId()),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(Study.USERS, "admin"))
-						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+						ImmutableMap.of(Study.USERS, "admin")).withSession(
+						Users.SESSION_EMAIL, admin.getEmail()));
 		assertEquals(SEE_OTHER, status(result));
 
 		// Clean up
@@ -318,8 +320,8 @@ public class StudiesControllerTest extends AbstractTest {
 						studyClone.getId(), studyClone.getComponentList()
 								.get(0).getId(), "2"),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(Study.USERS, "admin"))
-						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+						ImmutableMap.of(Study.USERS, "admin")).withSession(
+						Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Move second component to first position
@@ -328,8 +330,8 @@ public class StudiesControllerTest extends AbstractTest {
 						studyClone.getId(), studyClone.getComponentList()
 								.get(1).getId(), "1"),
 				fakeRequest().withFormUrlEncodedBody(
-						ImmutableMap.of(Study.USERS, "admin"))
-						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+						ImmutableMap.of(Study.USERS, "admin")).withSession(
+						Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
