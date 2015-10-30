@@ -31,7 +31,7 @@ CREATE TABLE `ComponentResult` (
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 
-CREATE TABLE `Group` (
+CREATE TABLE `Groupp` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `minActiveMemberSize` int(11) NOT NULL,
   `maxActiveMemberSize` int(11) NOT NULL,
@@ -116,11 +116,11 @@ ALTER TABLE `ComponentResult` ADD KEY `FK_qxb7hfq7d4vaf9r5vjvnxpuwm` (`component
 ALTER TABLE `ComponentResult` ADD CONSTRAINT `FK_eevh468dxdqmcwsu8cqm4i2et` FOREIGN KEY (`studyResult_id`) REFERENCES `StudyResult` (`id`);
 ALTER TABLE `ComponentResult` ADD CONSTRAINT `FK_qxb7hfq7d4vaf9r5vjvnxpuwm` FOREIGN KEY (`component_id`) REFERENCES `Component` (`id`);
 
-ALTER TABLE `Group` ADD KEY `FK_80kwrl4v39mbxsw13mg09vnbi` (`study_id`);
-ALTER TABLE `Group` ADD CONSTRAINT `FK_80kwrl4v39mbxsw13mg09vnbi` FOREIGN KEY (`study_id`) REFERENCES `Study` (`id`);
+ALTER TABLE `Groupp` ADD KEY `FK_80kwrl4v39mbxsw13mg09vnbi` (`study_id`);
+ALTER TABLE `Groupp` ADD CONSTRAINT `FK_80kwrl4v39mbxsw13mg09vnbi` FOREIGN KEY (`study_id`) REFERENCES `Study` (`id`);
 
 ALTER TABLE `GroupResult` ADD KEY `FK_g1hsnkt6f7jp8ulpne7h87pi1` (`group_id`);
-ALTER TABLE `GroupResult` ADD CONSTRAINT `FK_g1hsnkt6f7jp8ulpne7h87pi1` FOREIGN KEY (`group_id`) REFERENCES `Group` (`id`);
+ALTER TABLE `GroupResult` ADD CONSTRAINT `FK_g1hsnkt6f7jp8ulpne7h87pi1` FOREIGN KEY (`group_id`) REFERENCES `Groupp` (`id`);
 
 ALTER TABLE `Study` ADD UNIQUE KEY `UK_k65c7qp8ndhaqllkeeianjrpc` (`uuid`);
 

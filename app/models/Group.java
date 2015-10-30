@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  * @author Kristian Lange (2015)
  */
 @Entity
-@Table(name = "\"Group\"")
+@Table(name = "Groupp")
 public class Group {
 
 	@Id
