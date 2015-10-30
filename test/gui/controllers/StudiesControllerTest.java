@@ -90,8 +90,9 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, "dirName_submit");
 		formMap.put(StudyProperties.GROUP_STUDY, "true");
-		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "5");
-		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "5");
+		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "3");
+		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "4");
+		formMap.put(StudyProperties.MAX_TOTAL_MEMBER_SIZE, "5");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
 		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
@@ -110,8 +111,9 @@ public class StudiesControllerTest extends AbstractTest {
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
 		assertThat(study.isGroupStudy()).isTrue();
-		assertThat(study.getGroup().getMinActiveMemberSize()).isEqualTo(5);
-		assertThat(study.getGroup().getMaxActiveMemberSize()).isEqualTo(5);
+		assertThat(study.getGroup().getMinActiveMemberSize()).isEqualTo(3);
+		assertThat(study.getGroup().getMaxActiveMemberSize()).isEqualTo(4);
+		assertThat(study.getGroup().getMaxTotalMemberSize()).isEqualTo(5);
 		assertEquals("{}", study.getJsonData());
 		assertThat((study.getComponentList().isEmpty()));
 		assertThat((study.getUserList().contains(admin)));
@@ -202,23 +204,23 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, "dirName_submitEdited");
-		formMap.put(StudyProperties.GROUP_STUDY, "true");
-		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "3");
-		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "4");
-		formMap.put(StudyProperties.MAX_TOTAL_MEMBER_SIZE, "5");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
 		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");
+
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
 				admin.getEmail()).withFormUrlEncodedBody(formMap);
 		Result result = callAction(
 				controllers.routes.ref.Studies.submitEdited(studyClone.getId()),
 				request);
-
 		assertEquals(SEE_OTHER, status(result));
 
-		// TODO It would be nice to test the edited study here
+		// TODO It would be nice to test the edited study here (somehow can't
+		// find edited study in DB)
 
 		// Clean up
+		// Weird: Can't get the edited study from DB but the edited assets dir
+		// is there
+		IOUtils.removeStudyAssetsDir("dirName_submitEdited");
 		removeStudy(studyClone);
 	}
 
@@ -246,6 +248,8 @@ public class StudiesControllerTest extends AbstractTest {
 				fakeRequest()
 						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
 		assertThat(status(result)).isEqualTo(OK);
+
+		// Clean up not necessary since we call remove action
 	}
 
 	@Test
@@ -307,6 +311,7 @@ public class StudiesControllerTest extends AbstractTest {
 		assertThat(contentAsString(result)).contains(
 				"An study should have at least one user.");
 
+		// Clean up
 		removeStudy(studyClone);
 	}
 
