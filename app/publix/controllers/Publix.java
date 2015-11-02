@@ -7,6 +7,7 @@ import javax.inject.Singleton;
 import models.Component;
 import models.ComponentResult;
 import models.ComponentResult.ComponentState;
+import models.Group;
 import models.GroupResult;
 import models.Study;
 import models.StudyResult;
@@ -223,7 +224,6 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
-		groupService.checkStudyIsGroupStudy(study);
 		GroupResult groupResult;
 		if (groupService.hasUnfinishedGroupResult(studyResult)) {
 			groupResult = studyResult.getGroupResult();
@@ -231,12 +231,15 @@ public abstract class Publix<T extends Worker> extends Controller implements
 					+ "workerId " + workerIdStr
 					+ " already member of group result " + groupResult.getId());
 		} else {
-			groupResult = groupService.joinGroup(studyResult);
+			// TODO 
+			Group group = study.getGroupList().get(0);
+			groupResult = groupService.joinGroup(studyResult, group);
 			channelService.sendJoinedMsg(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " joined group result "
 					+ groupResult.getId());
 		}
+		groupService.checkGroupAllowsMessaging(groupResult.getGroup());
 		return channelService.openGroupChannel(studyResult);
 	}
 
@@ -250,7 +253,6 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
 				worker, study);
-		groupService.checkStudyIsGroupStudy(study);
 		GroupResult groupResult = studyResult.getGroupResult();
 		if (groupResult == null) {
 			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "

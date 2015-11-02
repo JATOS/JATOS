@@ -1,16 +1,9 @@
 package models;
 
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
-
-import utils.JsonUtils;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Model of a DB entity of a group with all properties of a group but not the
@@ -25,33 +18,28 @@ public class Group {
 
 	@Id
 	@GeneratedValue
-	@JsonView(JsonUtils.JsonForPublix.class)
 	private Long id;
+
+	private String title;
+
+	private boolean messaging = false;
 
 	/**
 	 * Minimum number of workers in the group that are active at the same time.
-	 * It's at least 2.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private int minActiveMemberSize = 2;
 
 	/**
 	 * Maximum number of workers in the group that are active at the same time.
-	 * It's at least 2.
+	 * If there is no limit in active members the value is null.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private int maxActiveMemberSize = 2;
+	private Integer maxActiveMemberSize = null;
 
 	/**
-	 * Maximum number of workers that are allowed to be member in the group
-	 * altogether (active and inactive together). It's at least 2.
+	 * Maximum number of workers in total. If there is no limit in active
+	 * members the value is null.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private int maxTotalMemberSize = 2;
-
-	@JsonIgnore
-	@OneToOne(fetch = FetchType.LAZY)
-	private Study study;
+	private Integer maxTotalMemberSize = null;
 
 	public Group() {
 	}
@@ -64,6 +52,22 @@ public class Group {
 		return this.id;
 	}
 
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getTitle() {
+		return this.title;
+	}
+	
+	public boolean isMessaging() {
+		return messaging;
+	}
+
+	public void setMessaging(boolean messaging) {
+		this.messaging = messaging;
+	}
+
 	public int getMinActiveMemberSize() {
 		return minActiveMemberSize;
 	}
@@ -72,28 +76,20 @@ public class Group {
 		this.minActiveMemberSize = minActiveMemberSize;
 	}
 
-	public int getMaxActiveMemberSize() {
+	public Integer getMaxActiveMemberSize() {
 		return maxActiveMemberSize;
 	}
 
-	public void setMaxActiveMemberSize(int maxActiveMemberSize) {
+	public void setMaxActiveMemberSize(Integer maxActiveMemberSize) {
 		this.maxActiveMemberSize = maxActiveMemberSize;
 	}
 
-	public int getMaxTotalMemberSize() {
+	public Integer getMaxTotalMemberSize() {
 		return maxTotalMemberSize;
 	}
 
-	public void setMaxTotalMemberSize(int maxTotalMemberSize) {
+	public void setMaxTotalMemberSize(Integer maxTotalMemberSize) {
 		this.maxTotalMemberSize = maxTotalMemberSize;
-	}
-
-	public Study getStudy() {
-		return this.study;
-	}
-
-	public void setStudy(Study study) {
-		this.study = study;
 	}
 
 	@Override

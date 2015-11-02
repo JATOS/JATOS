@@ -165,7 +165,7 @@ public class Studies extends Controller {
 			return failStudyCreate(loggedInUser, form);
 		}
 
-		Study study = studyService.createStudyAndGroup(loggedInUser,
+		Study study = studyService.createStudy(loggedInUser,
 				studyProperties);
 		return redirect(controllers.routes.Studies.index(study.getId()));
 	}
@@ -183,7 +183,7 @@ public class Studies extends Controller {
 		StudyProperties studyProperties = form.get();
 		// Have to bind list of ALLOWED_WORKER_TYPE by hand from checkboxes
 		String[] allowedWorkerArray = Controller.request().body()
-				.asFormUrlEncoded().get(StudyProperties.ALLOWED_WORKER_TYPE);
+				.asFormUrlEncoded().get(StudyProperties.ALLOWED_WORKER_TYPE_LIST);
 		if (allowedWorkerArray != null) {
 			Arrays.stream(allowedWorkerArray).forEach(
 					studyProperties::addAllowedWorkerType);
@@ -254,7 +254,7 @@ public class Studies extends Controller {
 			return failStudyEdit(form, study, loggedInUser);
 		}
 
-		studyService.updateStudyAndGroup(study, studyProperties);
+		studyService.updateStudy(study, studyProperties);
 		return redirect(controllers.routes.Studies.index(studyId));
 	}
 

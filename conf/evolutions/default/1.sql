@@ -33,10 +33,12 @@ CREATE TABLE `ComponentResult` (
 
 CREATE TABLE `Groupp` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `messaging` tinyint(1) NOT NULL,
   `minActiveMemberSize` int(11) NOT NULL,
   `maxActiveMemberSize` int(11) NOT NULL,
   `maxTotalMemberSize` int(11) NOT NULL,
   `study_id` bigint(20) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 
@@ -55,7 +57,6 @@ CREATE TABLE `Study` (
   `date` datetime DEFAULT NULL,
   `description` longtext ,
   `dirName` varchar(255) DEFAULT NULL,
-  `groupStudy` tinyint(1) NOT NULL,
   `jsonData` longtext ,
   `locked` tinyint(1) NOT NULL,
   `title` varchar(255) DEFAULT NULL,

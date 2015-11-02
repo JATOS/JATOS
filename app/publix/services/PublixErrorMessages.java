@@ -59,8 +59,8 @@ public class PublixErrorMessages {
 		return "The study with ID " + studyId + " has no active components.";
 	}
 
-	public String studyNotGroupStudy(Long studyId) {
-		return "The study with ID " + studyId + " is not a group study.";
+	public String groupNotAllowMessaging(Long groupId) {
+		return "The group with ID " + groupId + " doesn't allow group messaging.";
 	}
 
 	public String componentNotExist(Long studyId, Long componentId) {

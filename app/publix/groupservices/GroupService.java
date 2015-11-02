@@ -6,7 +6,6 @@ import javax.inject.Singleton;
 import models.Group;
 import models.GroupResult;
 import models.GroupResult.GroupState;
-import models.Study;
 import models.StudyResult;
 import persistance.GroupResultDao;
 import persistance.StudyResultDao;
@@ -40,13 +39,13 @@ public class GroupService {
 	}
 
 	/**
-	 * Throws ForbiddenPublixException if study is not a group study.
+	 * Throws ForbiddenPublixException if group doesn't allow messaging.
 	 */
-	public void checkStudyIsGroupStudy(Study study)
+	public void checkGroupAllowsMessaging(Group group)
 			throws ForbiddenPublixException {
-		if (!study.isGroupStudy()) {
+		if (!group.isMessaging()) {
 			throw new ForbiddenPublixException(
-					errorMessages.studyNotGroupStudy(study.getId()));
+					errorMessages.groupNotAllowMessaging(group.getId()));
 		}
 	}
 
@@ -65,7 +64,7 @@ public class GroupService {
 	 * reached yet and returns it. If such doesn't exist it creates a new one
 	 * and persists it.
 	 */
-	public GroupResult joinGroup(StudyResult studyResult) {
+	public GroupResult joinGroup(StudyResult studyResult, Group group) {
 		// If we already have a GroupResult just return it
 		if (hasUnfinishedGroupResult(studyResult)) {
 			return studyResult.getGroupResult();
@@ -73,7 +72,6 @@ public class GroupService {
 
 		// Look in the DB if we have an incomplete GroupResult. If not create
 		// new one.
-		Group group = studyResult.getStudy().getGroup();
 		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(group);
 		if (groupResult == null) {
 			groupResult = new GroupResult(group);
@@ -100,9 +98,9 @@ public class GroupService {
 		moveStudyResultToHistory(studyResult, groupResult);
 
 		// TODO If GroupResult has no more members empty remove it from DB
-//		if (groupResult.getStudyResultList().isEmpty()) {
-//			groupResultDao.remove(groupResult);
-//		}
+		// if (groupResult.getStudyResultList().isEmpty()) {
+		// groupResultDao.remove(groupResult);
+		// }
 		JPA.em().getTransaction().commit();
 		JPA.em().getTransaction().begin();
 	}

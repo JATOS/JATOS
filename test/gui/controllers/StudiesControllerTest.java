@@ -89,10 +89,6 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, "dirName_submit");
-		formMap.put(StudyProperties.GROUP_STUDY, "true");
-		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "3");
-		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "4");
-		formMap.put(StudyProperties.MAX_TOTAL_MEMBER_SIZE, "5");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
 		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
@@ -110,10 +106,6 @@ public class StudiesControllerTest extends AbstractTest {
 		assertEquals("Title Test", study.getTitle());
 		assertEquals("Description test.", study.getDescription());
 		assertEquals("dirName_submit", study.getDirName());
-		assertThat(study.isGroupStudy()).isTrue();
-		assertThat(study.getGroup().getMinActiveMemberSize()).isEqualTo(3);
-		assertThat(study.getGroup().getMaxActiveMemberSize()).isEqualTo(4);
-		assertThat(study.getGroup().getMaxTotalMemberSize()).isEqualTo(5);
 		assertEquals("{}", study.getJsonData());
 		assertThat((study.getComponentList().isEmpty()));
 		assertThat((study.getUserList().contains(admin)));
@@ -132,10 +124,6 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.DESCRIPTION, "Description test <b>.");
 		formMap.put(StudyProperties.COMMENTS, "Comments test <i>.");
 		formMap.put(StudyProperties.DIRNAME, "%.test");
-		formMap.put(StudyProperties.GROUP_STUDY, "true");
-		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "5");
-		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "4");
-		formMap.put(StudyProperties.MAX_TOTAL_MEMBER_SIZE, "3");
 		formMap.put(StudyProperties.JSON_DATA, "{");
 		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "WrongWorker");
 		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
@@ -156,10 +144,6 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.TITLE, "Title Test");
 		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
-		formMap.put(StudyProperties.GROUP_STUDY, "true");
-		formMap.put(StudyProperties.MIN_ACTIVE_MEMBER_SIZE, "3");
-		formMap.put(StudyProperties.MAX_ACTIVE_MEMBER_SIZE, "4");
-		formMap.put(StudyProperties.MAX_TOTAL_MEMBER_SIZE, "5");
 		formMap.put(StudyProperties.DIRNAME, studyClone.getDirName());
 		formMap.put(StudyProperties.JSON_DATA, "{}");
 		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");

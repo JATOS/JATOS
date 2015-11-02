@@ -248,12 +248,12 @@ public class ImportExportService {
 		}
 		if (studyEntityConfirm) {
 			if (studysDirConfirm) {
-				studyService.updateStudyAndGroup(currentStudy, importedStudy);
+				studyService.updateStudy(currentStudy, importedStudy);
 			} else {
 				// If we don't overwrite the current study dir with the
 				// uploaded one, don't change the study dir name in the
 				// properties
-				studyService.updateStudyAndGroupWithoutDirName(currentStudy,
+				studyService.updateStudyWithoutDirName(currentStudy,
 						importedStudy);
 			}
 			updateStudysComponents(currentStudy, importedStudy);
@@ -266,7 +266,7 @@ public class ImportExportService {
 			Study importedStudy) throws IOException {
 		moveStudyAssetsDir(tempUnzippedStudyDir, null,
 				importedStudy.getDirName());
-		studyDao.create(importedStudy, loggedInUser);
+		studyService.createStudy(loggedInUser, importedStudy);
 		RequestScopeMessaging.success(MessagesStrings.importedNewStudy(
 				importedStudy.getDirName(), importedStudy.getId()));
 	}
@@ -410,11 +410,6 @@ public class ImportExportService {
 		UploadUnmarshaller<Study> uploadUnmarshaller = new StudyUploadUnmarshaller(
 				studyService);
 		Study study = uploadUnmarshaller.unmarshalling(studyFile);
-
-		// Set circular reference: Group to Study
-		if (study.getGroup() != null) {
-			study.getGroup().setStudy(study);
-		}
 
 		if (deleteAfterwards) {
 			studyFile.delete();

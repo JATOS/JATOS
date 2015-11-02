@@ -80,8 +80,6 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		study.setDirName(studyV2.getDirName());
 		study.setComments(studyV2.getComments());
 		study.setJsonData(studyV2.getJsonData());
-		// Version 2 had no groups yet
-		study.setGroupStudy(false);
 		study.setComponentList(studyV2.getComponentList());
 		return study;
 	}

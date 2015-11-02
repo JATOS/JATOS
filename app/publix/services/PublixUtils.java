@@ -147,16 +147,19 @@ public abstract class PublixUtils<T extends Worker> {
 			ComponentResult componentResult, Worker worker,
 			GroupResult groupResult) {
 		Study study = studyResult.getStudy();
-		Group group = study.getGroup();
+//		Group group = groupResult.getGroup();
 		Component component = componentResult.getComponent();
 		Map<String, String> cookieMap = new HashMap<>();
 		cookieMap.put(Publix.WORKER_ID, String.valueOf(worker.getId()));
 		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
 		cookieMap.put(Publix.STUDY_RESULT_ID,
 				String.valueOf(studyResult.getId()));
-		String groupId = (group != null) ? String.valueOf(group.getId()) : "null";
-		cookieMap.put(Publix.GROUP_ID, groupId);
-		String groupResultId = (groupResult != null) ? String.valueOf(groupResult.getId()) : "null";
+		// TODO
+//		String groupId = (group != null) ? String.valueOf(group.getId())
+//				: "null";
+//		cookieMap.put(Publix.GROUP_ID, groupId);
+		String groupResultId = (groupResult != null) ? String
+				.valueOf(groupResult.getId()) : "null";
 		cookieMap.put(Publix.GROUP_RESULT_ID, groupResultId);
 		cookieMap.put(Publix.COMPONENT_ID, String.valueOf(component.getId()));
 		cookieMap.put(Publix.COMPONENT_RESULT_ID,

@@ -34,13 +34,7 @@ public class StudyProperties {
 	public static final String DESCRIPTION = "description";
 	public static final String DIRNAME = "dirName";
 	public static final String COMMENTS = "comments";
-	public static final String GROUP_STUDY = "groupStudy";
-	public static final String ALLOWED_WORKER_TYPE = "allowedWorkerType";
 	public static final String ALLOWED_WORKER_TYPE_LIST = "allowedWorkerTypeList";
-	public static final String GROUP_ID = "groupId";
-	public static final String MIN_ACTIVE_MEMBER_SIZE = "minActiveMemberSize";
-	public static final String MAX_ACTIVE_MEMBER_SIZE = "maxActiveMemberSize";
-	public static final String MAX_TOTAL_MEMBER_SIZE = "maxTotalMemberSize";
 
 	private Long studyId;
 
@@ -86,31 +80,6 @@ public class StudyProperties {
 	 * Data in JSON format that are responded after public APIs 'getData' call.
 	 */
 	private String jsonData;
-
-	/**
-	 * Is this a group study with several workers running it at once.
-	 */
-	private boolean groupStudy = false;
-
-	private Long groupId;
-
-	/**
-	 * Minimum number of workers in the group that are active at the same time.
-	 * It's at least 2.
-	 */
-	private int minActiveMemberSize = 2;
-
-	/**
-	 * Maximum number of workers in the group that are active at the same time.
-	 * It's at least 2.
-	 */
-	private int maxActiveMemberSize = 2;
-
-	/**
-	 * Maximum number of workers that are allowed to be member in the group
-	 * altogether (active and inactive together). It's at least 2.
-	 */
-	private int maxTotalMemberSize = 2;
 
 	public void setStudyId(Long studyId) {
 		this.studyId = studyId;
@@ -184,14 +153,6 @@ public class StudyProperties {
 		this.jsonData = jsonData;
 	}
 
-	public boolean isGroupStudy() {
-		return groupStudy;
-	}
-
-	public void setGroupStudy(boolean groupStudy) {
-		this.groupStudy = groupStudy;
-	}
-
 	public void setAllowedWorkerTypeList(Set<String> allowedWorkerTypeList) {
 		this.allowedWorkerTypeList = allowedWorkerTypeList;
 	}
@@ -210,38 +171,6 @@ public class StudyProperties {
 
 	public boolean hasAllowedWorkerType(String workerType) {
 		return allowedWorkerTypeList.contains(workerType);
-	}
-
-	public Long getGroupId() {
-		return groupId;
-	}
-
-	public void setGroupId(Long groupId) {
-		this.groupId = groupId;
-	}
-
-	public int getMinActiveMemberSize() {
-		return minActiveMemberSize;
-	}
-
-	public void setMinActiveMemberSize(int minActiveMemberSize) {
-		this.minActiveMemberSize = minActiveMemberSize;
-	}
-
-	public int getMaxActiveMemberSize() {
-		return maxActiveMemberSize;
-	}
-
-	public void setMaxActiveMemberSize(int maxActiveMemberSize) {
-		this.maxActiveMemberSize = maxActiveMemberSize;
-	}
-
-	public int getMaxTotalMemberSize() {
-		return maxTotalMemberSize;
-	}
-
-	public void setMaxTotalMemberSize(int maxTotalMemberSize) {
-		this.maxTotalMemberSize = maxTotalMemberSize;
 	}
 
 	/**
@@ -286,26 +215,6 @@ public class StudyProperties {
 		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,
 					MessagesStrings.INVALID_JSON_FORMAT));
-		}
-		if (groupStudy && minActiveMemberSize < 2) {
-			errorList.add(new ValidationError(MIN_ACTIVE_MEMBER_SIZE,
-					MessagesStrings.GROUP_MEMBER_SIZE));
-		}
-		if (groupStudy && maxActiveMemberSize < 2) {
-			errorList.add(new ValidationError(MAX_ACTIVE_MEMBER_SIZE,
-					MessagesStrings.GROUP_MEMBER_SIZE));
-		}
-		if (groupStudy && maxActiveMemberSize < minActiveMemberSize) {
-			errorList.add(new ValidationError(MAX_ACTIVE_MEMBER_SIZE,
-					MessagesStrings.GROUP_MAX_ACTIVE_MEMBER_SIZE));
-		}
-		if (groupStudy && maxTotalMemberSize < 2) {
-			errorList.add(new ValidationError(MAX_TOTAL_MEMBER_SIZE,
-					MessagesStrings.GROUP_MEMBER_SIZE));
-		}
-		if (groupStudy && maxTotalMemberSize < maxActiveMemberSize) {
-			errorList.add(new ValidationError(MAX_TOTAL_MEMBER_SIZE,
-					MessagesStrings.GROUP_MAX_TOTAL_MEMBER_SIZE));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}

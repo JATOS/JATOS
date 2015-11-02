@@ -114,7 +114,6 @@ public class StudyServiceTest extends AbstractTest {
 		updatedProps.setDescription("Changed description");
 		updatedProps.setComments("Changed comments");
 		updatedProps.setJsonData("{}");
-		updatedProps.setGroupStudy(true);
 		updatedProps.setTitle("Changed Title");
 		updatedProps.setUuid("changed uuid");
 		long studyId = study.getId();
@@ -129,7 +128,6 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(study.getJsonData()).isEqualTo(updatedProps.getJsonData());
 		assertThat(study.getAllowedWorkerTypeList()).containsOnly(
 				JatosWorker.WORKER_TYPE);
-		assertThat(study.isGroupStudy()).isEqualTo(updatedProps.isGroupStudy());
 
 		// Unchanged
 		assertThat(study.getComponentList().size()).isEqualTo(7);

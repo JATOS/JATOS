@@ -25,16 +25,13 @@ public class StudyDao extends AbstractDao {
 	private final StudyResultDao studyResultDao;
 	private final ComponentResultDao componentResultDao;
 	private final ComponentDao componentDao;
-	private final GroupDao groupDao;
 
 	@Inject
 	StudyDao(StudyResultDao studyResultDao,
-			ComponentResultDao componentResultDao, ComponentDao componentDao,
-			GroupDao groupDao) {
+			ComponentResultDao componentResultDao, ComponentDao componentDao) {
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
 		this.componentDao = componentDao;
-		this.groupDao = groupDao;
 	}
 
 	/**
@@ -45,9 +42,6 @@ public class StudyDao extends AbstractDao {
 			study.setUuid(UUID.randomUUID().toString());
 		}
 		study.getComponentList().forEach(componentDao::create);
-		if (study.getGroup() != null) {
-			groupDao.create(study.getGroup());
-		}
 		persist(study);
 		addUser(study, user);
 	}
@@ -61,9 +55,6 @@ public class StudyDao extends AbstractDao {
 	}
 
 	public void update(Study study) {
-		if (study.getGroup() != null) {
-			groupDao.update(study.getGroup());
-		}
 		merge(study);
 	}
 
@@ -77,10 +68,6 @@ public class StudyDao extends AbstractDao {
 					.findAllByComponent(component);
 			componentResultList.forEach(componentResultDao::remove);
 			remove(component);
-		}
-		// Remove group
-		if (study.getGroup() != null) {
-			groupDao.remove(study.getGroup());
 		}
 		// Remove study's StudyResults
 		studyResultDao.findAllByStudy(study).forEach(studyResultDao::remove);

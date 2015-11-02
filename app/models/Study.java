@@ -18,7 +18,6 @@ import javax.persistence.JoinTable;
 import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 
@@ -111,19 +110,6 @@ public class Study {
 	private String jsonData;
 
 	/**
-	 * Is this a group study with several workers running it at once.
-	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private boolean groupStudy = false;
-
-	/**
-	 * If this is a group study, in the Group are the properties of the group.
-	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	@OneToOne(mappedBy = "study", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	private Group group;
-
-	/**
 	 * List of users that are users of this study (have access rights).
 	 */
 	@JsonIgnore
@@ -139,6 +125,11 @@ public class Study {
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
 	private List<Component> componentList = new ArrayList<>();
+	
+	@JsonIgnore
+	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "study_id")
+	private List<Group> groupList = new ArrayList<>();
 
 	public Study() {
 	}
@@ -215,14 +206,6 @@ public class Study {
 		this.jsonData = jsonData;
 	}
 
-	public boolean isGroupStudy() {
-		return groupStudy;
-	}
-
-	public void setGroupStudy(boolean groupStudy) {
-		this.groupStudy = groupStudy;
-	}
-
 	public void setAllowedWorkerTypeList(Set<String> allowedWorkerTypeList) {
 		this.allowedWorkerTypeList = allowedWorkerTypeList;
 	}
@@ -261,14 +244,6 @@ public class Study {
 
 	public boolean hasUser(User user) {
 		return userList.contains(user);
-	}
-
-	public Group getGroup() {
-		return this.group;
-	}
-
-	public void setGroup(Group group) {
-		this.group = group;
 	}
 
 	public void setComponentList(List<Component> componentList) {
@@ -335,6 +310,22 @@ public class Study {
 			return componentList.get(index + 1);
 		}
 		return null;
+	}
+	
+	public void setGroupList(List<Group> groupList) {
+		this.groupList = groupList;
+	}
+
+	public List<Group> getGroupList() {
+		return this.groupList;
+	}
+	
+	public void addGroup(Group group) {
+		groupList.add(group);
+	}
+
+	public void removeGroup(Group group) {
+		groupList.remove(group);
 	}
 
 	@Override

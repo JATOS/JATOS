@@ -58,13 +58,7 @@ public class StudyService {
 		clone.setDirName(study.getDirName());
 		clone.setComments(study.getComments());
 		clone.setJsonData(study.getJsonData());
-		clone.setGroupStudy(study.isGroupStudy());
 
-		// Clone group
-		if (study.getGroup() != null) {
-			Group groupClone = groupService.clone(study.getGroup(), clone);
-			clone.setGroup(groupClone);
-		}
 		clone.setLocked(false);
 		study.getAllowedWorkerTypeList().forEach(clone::addAllowedWorkerType);
 
@@ -75,13 +69,13 @@ public class StudyService {
 			componentClone.setStudy(clone);
 			clone.addComponent(componentClone);
 		}
-
+		
 		// Clone assets directory
 		String destDirName = IOUtils.cloneStudyAssetsDirectory(study
 				.getDirName());
 		clone.setDirName(destDirName);
 
-		studyDao.create(clone, loggedInUser);
+		createStudy(loggedInUser, clone);
 		return clone;
 	}
 
@@ -194,15 +188,20 @@ public class StudyService {
 	}
 
 	/**
-	 * Create and persist Study and Group with given properties.
+	 * Create and persist a Study with given properties and greate the default
+	 * Group.
 	 */
-	public Study createStudyAndGroup(User loggedInUser,
-			StudyProperties studyProperties) {
+	public Study createStudy(User loggedInUser, StudyProperties studyProperties) {
 		Study study = bindToStudy(studyProperties);
-		if (studyProperties.isGroupStudy()) {
-			Group group = groupService.createGroup(studyProperties, study);
-			study.setGroup(group);
-		}
+		return createStudy(loggedInUser, study);
+	}
+
+	/**
+	 * Persist the given Study and create the default Group.
+	 */
+	public Study createStudy(User loggedInUser, Study study) {
+		Group defaultGroup = groupService.createDefaultGroup();
+		study.addGroup(defaultGroup);
 		studyDao.create(study, loggedInUser);
 		return study;
 	}
@@ -210,8 +209,8 @@ public class StudyService {
 	/**
 	 * Update properties of study with properties of updatedStudy.
 	 */
-	public void updateStudyAndGroup(Study study, Study updatedStudy) {
-		updateStudyAndGroupCommon(study, updatedStudy);
+	public void updateStudy(Study study, Study updatedStudy) {
+		updateStudyCommon(study, updatedStudy);
 		study.setDirName(updatedStudy.getDirName());
 		studyDao.update(study);
 	}
@@ -220,41 +219,27 @@ public class StudyService {
 	 * Update properties of study with properties of updatedStudy but not
 	 * Study's field dirName.
 	 */
-	public void updateStudyAndGroupWithoutDirName(Study study,
-			Study updatedStudy) {
-		updateStudyAndGroupCommon(study, updatedStudy);
+	public void updateStudyWithoutDirName(Study study, Study updatedStudy) {
+		updateStudyCommon(study, updatedStudy);
 		studyDao.update(study);
 	}
 
-	private void updateStudyAndGroupCommon(Study study, Study updatedStudy) {
+	private void updateStudyCommon(Study study, Study updatedStudy) {
 		study.setTitle(updatedStudy.getTitle());
 		study.setDescription(updatedStudy.getDescription());
 		study.setComments(updatedStudy.getComments());
-		study.setGroupStudy(updatedStudy.isGroupStudy());
 		study.setJsonData(updatedStudy.getJsonData());
 		study.getAllowedWorkerTypeList().clear();
 		updatedStudy.getAllowedWorkerTypeList().forEach(
 				study::addAllowedWorkerType);
-		if (updatedStudy.getGroup() != null) {
-			groupService.updateGroup(study.getGroup(), updatedStudy.getGroup());
-		}
 	}
 
 	/**
-	 * Update Study and Group with given properties and persist. It doesn't
-	 * update Study's dirName field.
+	 * Update Study with given properties and persist. It doesn't update Study's
+	 * dirName field.
 	 */
-	public void updateStudyAndGroup(Study study, StudyProperties studyProperties) {
+	public void updateStudy(Study study, StudyProperties studyProperties) {
 		bindToStudyWithoutDirName(study, studyProperties);
-		if (studyProperties.isGroupStudy()) {
-			Group group = study.getGroup();
-			if (group == null) {
-				group = groupService.createGroup(studyProperties, study);
-				study.setGroup(group);
-			} else {
-				groupService.bindToGroup(group, studyProperties);
-			}
-		}
 		studyDao.update(study);
 	}
 
@@ -267,7 +252,6 @@ public class StudyService {
 		study.setTitle(studyProperties.getTitle());
 		study.setDescription(studyProperties.getDescription());
 		study.setComments(studyProperties.getComments());
-		study.setGroupStudy(studyProperties.isGroupStudy());
 		study.setJsonData(studyProperties.getJsonData());
 		study.getAllowedWorkerTypeList().clear();
 		studyProperties.getAllowedWorkerTypeList().forEach(
@@ -286,8 +270,7 @@ public class StudyService {
 	}
 
 	/**
-	 * Fills a new StudyProperties with values from the given Study and it's
-	 * Group.
+	 * Fills a new StudyProperties with values from the given Study.
 	 */
 	public StudyProperties bindToProperties(Study study) {
 		StudyProperties studyProperties = new StudyProperties();
@@ -302,10 +285,6 @@ public class StudyService {
 		studyProperties.setDirName(study.getDirName());
 		studyProperties.setComments(study.getComments());
 		studyProperties.setJsonData(study.getJsonData());
-		studyProperties.setGroupStudy(study.isGroupStudy());
-		if (study.getGroup() != null) {
-			groupService.bindToProperties(studyProperties, study.getGroup());
-		}
 		return studyProperties;
 	}
 
