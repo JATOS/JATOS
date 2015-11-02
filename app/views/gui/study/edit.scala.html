@@ -55,69 +55,34 @@ form: Form[StudyProperties], studyIsLocked: Boolean)
 </div>
 
 <div class="form-group">
-	<label class="control-label col-xs-2" for="allowedWorkerTypes">Group study&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Make this study a group study with several workers working together in a group." aria-hidden="true"></span></label>
-	<div class="col-xs-10">
-		<label class="checkbox-inline" for="groupStudy">
-			<input type="checkbox" name="@StudyProperties.GROUP_STUDY" id="groupStudy" value="true"
-					@if("true".equals(form(StudyProperties.GROUP_STUDY).value)) {checked="checked"}
-					>&nbsp;<!-- Don't remove this space! It's needed for checkbox-inline. -->
-			<!-- We need a hidden input field.
-			http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-			<input type="hidden" name="@StudyProperties.GROUP_STUDY" value="false" />
-		</label>
-	</div>
-</div>
-
-<div id="minActiveMemberSizeDiv" class="form-group">
-	<label class="control-label col-xs-2" for="minActiveMemberSize">Min active members&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the minimal number of members who can be in a group at the same time." aria-hidden="true"></span></label>
-	<div class="col-xs-2">
-		<input type="number" class="form-control" id="minActiveMemberSize" name="@StudyProperties.MIN_ACTIVE_MEMBER_SIZE" value="@form(StudyProperties.MIN_ACTIVE_MEMBER_SIZE).value" min="2" placeholder="2">
-	</div>
-</div>
-
-<div id="maxActiveMemberSizeDiv" class="form-group">
-	<label class="control-label col-xs-2" for="maxActiveMemberSize">Max active members&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of members who can be in a group at the same time." aria-hidden="true"></span></label>
-	<div class="col-xs-2">
-		<input type="number" class="form-control" id="maxActiveMemberSize" name="@StudyProperties.MAX_ACTIVE_MEMBER_SIZE" value="@form(StudyProperties.MAX_ACTIVE_MEMBER_SIZE).value" min="2" placeholder="2">
-	</div>
-</div>
-
-<div id="maxTotalMemberSizeDiv" class="form-group">
-	<label class="control-label col-xs-2" for="maxTotalMemberSize">Max total members&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of members who can be in the group altogether, active or inactive." aria-hidden="true"></span></label>
-	<div class="col-xs-2">
-		<input type="number" class="form-control" id="maxTotalMemberSize" name="@StudyProperties.MAX_TOTAL_MEMBER_SIZE" value="@form(StudyProperties.MAX_TOTAL_MEMBER_SIZE).value" min="2" placeholder="2">
-	</div>
-</div>
-
-<div class="form-group">
 	<label class="control-label col-xs-2" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
 	<div class="col-xs-10" id="allowedWorkerTypes">
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE" value="@workers.JatosWorker.WORKER_TYPE"
+			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@workers.JatosWorker.WORKER_TYPE"
 					@if(form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(workers.JatosWorker.WORKER_TYPE)) {checked}
 					>@workers.JatosWorker.UI_WORKER_TYPE
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
 		</label>
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE" value="@workers.PersonalMultipleWorker.WORKER_TYPE"
+			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@workers.PersonalMultipleWorker.WORKER_TYPE"
 					@if(form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(workers.PersonalMultipleWorker.WORKER_TYPE)) {checked}
 					>@workers.PersonalMultipleWorker.UI_WORKER_TYPE
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
 		</label>
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE" value="@workers.PersonalSingleWorker.WORKER_TYPE"
+			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@workers.PersonalSingleWorker.WORKER_TYPE"
 					@if(form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(workers.PersonalSingleWorker.WORKER_TYPE)) {checked}
 					>@workers.PersonalSingleWorker.UI_WORKER_TYPE
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
 		</label>
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE" value="@workers.GeneralSingleWorker.WORKER_TYPE"
+			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@workers.GeneralSingleWorker.WORKER_TYPE"
 					@if(form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(workers.GeneralSingleWorker.WORKER_TYPE)) {checked}
 					>@workers.GeneralSingleWorker.UI_WORKER_TYPE
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
 		</label>
 		<label class="checkbox-inline">
-			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE" value="@workers.MTWorker.WORKER_TYPE"
+			<input type="checkbox" name="@StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@workers.MTWorker.WORKER_TYPE"
 					@if(form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(workers.MTWorker.WORKER_TYPE)) {checked}
 					>@workers.MTWorker.UI_WORKER_TYPE
 					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
@@ -134,22 +99,6 @@ form: Form[StudyProperties], studyIsLocked: Boolean)
 }
 
 <script>
-
-window.onload = showGroupSettings;
-
-function showGroupSettings() {
-	if ($('#groupStudy').is(':checked')) {
-		$('#minActiveMemberSizeDiv').show();
-		$('#maxActiveMemberSizeDiv').show();
-		$('#maxTotalMemberSizeDiv').show();
-	} else {
-		$('#minActiveMemberSizeDiv').hide();
-		$('#maxActiveMemberSizeDiv').hide();
-		$('#maxTotalMemberSizeDiv').hide();
-	}
-}
-
-$('#groupStudy').change(showGroupSettings);
 
 @if(form(StudyProperties.STUDY_ID).value != null) {
 	var studyId = @form(StudyProperties.STUDY_ID).value;
@@ -180,18 +129,6 @@ $('#groupStudy').change(showGroupSettings);
 @for(error <- form(StudyProperties.JSON_DATA).errors) {
 	$('#jsonData').closest(".form-group").addClass("has-error");
 	$('#jsonData').after('<span class="help-block">@error.message</span>');
-}
-@for(error <- form(StudyProperties.MIN_ACTIVE_MEMBER_SIZE).errors) {
-	$('#minActiveMemberSize').closest(".form-group").addClass("has-error");
-	$('#minActiveMemberSize').after('<span class="help-block">@error.message</span>');
-}
-@for(error <- form(StudyProperties.MAX_ACTIVE_MEMBER_SIZE).errors) {
-	$('#maxActiveMemberSize').closest(".form-group").addClass("has-error");
-	$('#maxActiveMemberSize').after('<span class="help-block">@error.message</span>');
-}
-@for(error <- form(StudyProperties.MAX_TOTAL_MEMBER_SIZE).errors) {
-	$('#maxTotalMemberSize').closest(".form-group").addClass("has-error");
-	$('#maxTotalMemberSize').after('<span class="help-block">@error.message</span>');
 }
 @if(studyIsLocked) {
 	$(':input').attr("disabled", true);

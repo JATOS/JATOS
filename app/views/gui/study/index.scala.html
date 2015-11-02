@@ -350,7 +350,7 @@ $(document).ready(function() {
 		var postText = "Do you want to proceed?";
 		askConfirmation(title, preText, null, postText, 'Delete', function() {
 			$.ajax({
-				url : "/jatos/" + @study.getId() +"/" + componentId + "/remove",
+				url : "/jatos/" + @study.getId() +"/" + componentId,
 				type : 'DELETE',
 				success : function(result) {
 					showMessages(JSON.parse(result));
@@ -372,7 +372,7 @@ $(document).ready(function() {
 		var active = $(this).hasClass('activeComponent');
 		$.ajax({
 			url : "/jatos/" + @study.getId() +"/" + componentId
-					+ "/changeProperty?active=" + !active,
+					+ "/property?active=" + !active,
 			type : "POST",
 			success: function(response) {
 				setButtonActive($(button), response === 'true');
@@ -425,7 +425,7 @@ $("tbody.sortable").on("sortstop", function(event, ui) {
 	var componentId = getComponentId(ui.item);
 	var newPosition = ui.item.index() + 1;
 	$.ajax({
-		url : "/jatos/" + @study.getId() + "/changeComponentOrder"
+		url : "/jatos/" + @study.getId() + "/componentOrder"
 				+ "?componentId=" + componentId + "&newPosition="
 				+ newPosition,
 		type : "POST",
@@ -469,7 +469,7 @@ function ajaxChangeComponentOrder(componentId, direction, tr) {
 
 $('#studyToolbar').on('click', '#lockStudy', function() {
 	$.ajax({
-		url : "/jatos/" + @study.getId() +"/swapLock",
+		url : "@controllers.routes.Studies.swapLock(study.getId())",
 		type : "POST",
 		success : function(response) {
 			setLockButton(response === 'true');

@@ -197,8 +197,8 @@ $('#resultsToolbar').on('click', '.exportResultData', function() {
 		showError("No results selected");
 		return;
 	}
-	var url = '/jatos/studyresult'
-		+ '/exportResultData?studyResultIds=' + ids.join(", ");
+	var url = '/jatos/studyResult/export/resultData'
+		+ '?studyResultIds=' + ids.join(", ");
 	// Using johnculviner's jQuery.fileDownload plugin to detect a fail
 	$.fileDownload(url).fail(function () {
 		showError("Export of results failed");
@@ -207,7 +207,7 @@ $('#resultsToolbar').on('click', '.exportResultData', function() {
 });
 
 $('#resultsToolbar').on('click', '.exportAllResultData', function() {
-	var url = '/jatos/' + @study.getId() + '/exportAllResultData';
+	var url = "@controllers.routes.ImportExport.exportDataOfAllStudyResults(study.getId())";
 	// Using johnculviner's jQuery.fileDownload plugin to detect a fail
 	$.fileDownload(url).fail(function () {
 		showError("Export of results failed");
@@ -233,10 +233,10 @@ $('#resultsToolbar').on('click', '.remove', function() {
 		+ "<b>with all their component results</b>.";
 	var postText = "Do you want to proceed?";
 	askConfirmation(title, preText, null, postText, 'Delete', function() {
-		var url = '/jatos/studyresult/remove?studyResultIds=' + ids.toString();
+		var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
 		$.ajax({
 			url : url,
-			type : 'GET',
+			type : 'DELETE',
 			success : function(result) {
 				selectedTrs.forEach(function(selectedTr) {
 					resultsTable.row(selectedTr).remove().draw();
@@ -255,10 +255,10 @@ $('#resultsToolbar').on('click', '.removeAll', function() {
 		+ "<b>with all their component results</b>.";
 	var postText = "Do you want to proceed?";
 	askConfirmation(title, preText, null, postText, 'Delete', function() {
-		var url = '/jatos/' + @study.getId() + '/removeAllResults';
+		var url = "@controllers.routes.StudyResults.removeAllOfStudy(study.getId())";
 		$.ajax({
 			url : url,
-			type : 'GET',
+			type : 'DELETE',
 			success : function(result) {
 				resultsTable.ajax.reload();
 			},

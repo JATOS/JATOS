@@ -8,23 +8,23 @@ breadcrumbs: String, form: Form[User])
 <div class="form-group">
 	<label class="control-label col-xs-2" for="email">Email address</label>
 	<div class="col-xs-10">
-		<input type="email" class="form-control" id="email" name="@User.EMAIL" value="@form(User.EMAIL).value" placeholder="Your email">
-		<span class="help-block">This will be your username.</span>
+		<input type="email" class="form-control" id="email" name="@User.EMAIL" value="@form(User.EMAIL).value">
+		<span class="help-block">This will be the username.</span>
 	</div>
 </div>
 
 <div class="form-group">
 	<label class="control-label col-xs-2" for="name">Name</label>
 	<div class="col-xs-10">
-		<input type="text" class="form-control" id="name" name="@User.NAME" value="@form(User.NAME).value" placeholder="Your name">
+		<input type="text" class="form-control" id="name" name="@User.NAME" value="@form(User.NAME).value">
 	</div>
 </div>
 
 <div class="form-group">
 	<label class="control-label col-xs-2" for="password">Password</label>
 	<div class="col-xs-10">
-		<input type="password" class="form-control" id="password" name="@User.PASSWORD" placeholder="Your password">
-		<input type="password" class="form-control" id="repeatPassword" name="@User.PASSWORD_REPEAT" placeholder="Repeat your password">
+		<input type="password" class="form-control" id="password" name="@User.PASSWORD" placeholder="Password">
+		<input type="password" class="form-control" id="repeatPassword" name="@User.PASSWORD_REPEAT" placeholder="Repeat password">
 	</div>
 </div>
 
