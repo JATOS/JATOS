@@ -1,0 +1,459 @@
+@(user: common.User, breadcrumbs: String)(body: Html)
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<title>JATOS</title>
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-196x196.png")" sizes="196x196">
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-160x160.png")" sizes="160x160">
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-96x96.png")" sizes="96x96">
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-16x16.png")" sizes="16x16">
+<link rel="icon" type="image/png" href="@routes.Assets.at("images/favicon-32x32.png")" sizes="32x32">
+<link rel="stylesheet" href="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.css"))">
+<link rel="stylesheet" href="@routes.Assets.at("datatables/extensions/TableTools/css/dataTables.tableTools.min.css")">
+<link rel="stylesheet" href="@routes.Assets.at("datatables-plugins/integration/bootstrap/3/dataTables.bootstrap.css")">
+<link rel="stylesheet" href="@routes.Assets.at("jquery-ui-1.11.4.custom/jquery-ui.min.css")">
+<link rel="stylesheet" href="@controllers.gui.routes.Assets.at("stylesheets/main.css")">
+<script src="@routes.Assets.at("javascripts/jquery-1.11.1.min.js")"></script>
+<script src="@routes.Assets.at("javascripts/jquery.fileDownload.js")"></script>
+<script src="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.js"))"></script>
+<script src="@routes.Assets.at("datatables/media/js/jquery.dataTables.min.js")"></script>
+<script src="@routes.Assets.at("datatables/extensions/TableTools/js/dataTables.tableTools.min.js")"></script>
+<script src="@routes.Assets.at("datatables-plugins/integration/bootstrap/3/dataTables.bootstrap.min.js")"></script>
+<script src="@routes.Assets.at("jquery-ui-1.11.4.custom/jquery-ui.min.js")"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="Cache-Control" content="max-age=0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+<meta http-equiv="Expires" content="0" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+</head>
+
+<body>
+<script>
+function showSuccess(msg) {
+	var html = '<div class="alert alert-success alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ '<i class="glyphicon glyphicon-ok-circle" aria-hidden="true"></i>'
+		+ '<span>' + msg + '</span>'
+		+ '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function showInfo(msg) {
+	var html = '<div class="alert alert-info alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ '<i class="glyphicon glyphicon-eye-open" aria-hidden="true"></i>'
+		+ '<span>' + msg + '</span>'
+		+ '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function showWarning(msg) {
+	var html = '<div class="alert alert-warning alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ '<i class="glyphicon glyphicon-warning-sign" aria-hidden="true"></i>'
+		+ '<span>' + msg + '</span>'
+		+ '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+
+function showError(msg) {
+	var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
+		+ '<button type="button" class="close" data-dismiss="alert">'
+		+ '<span aria-hidden="true">&times;</span>'
+		+ '<span class="sr-only">Close</span></button>'
+		+ '<i class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></i>'
+		+ '<span>' + msg + '</span>'
+		+ '</div>';
+	$(html).insertAfter( "#breadcrumbs" );
+}
+</script>
+
+<nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top"
+	role="navigation">
+	<div class="container-fluid">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed"
+				data-toggle="collapse" data-target="#jatos-navbar-collapse" aria-expanded="false"
+				aria-controls="navbar">
+				<span class="sr-only">Toggle navigation</span> <span
+					class="icon-bar"></span> <span class="icon-bar"></span> <span
+					class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="@controllers.gui.routes.Home.home">
+				<img src="@routes.Assets.at("images/jatos_logo_grey.svg")" alt="JATOS logo" height="25pt">
+			</a>
+			<a class="navbar-brand" href="@controllers.gui.routes.Home.home">JATOS</a>
+		</div>
+		<div class="navbar-collapse collapse" id="jatos-navbar-collapse">
+			<ul class="nav navbar-nav navbar-left">
+				<li data-toggle="tooltip" data-placement="bottom" title="Create a new study">
+					<a href="@controllers.gui.routes.Studies.create()">
+						<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+						New Study
+					</a>
+				</li>
+				<li><input id="importStudyBrowser" type="file"
+					name="@common.Study.STUDY" style="display: none;"></li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Import a study from the local file system">
+					<a id="importStudyLink" href="#">
+						<span class="glyphicon glyphicon-import" aria-hidden="true"></span>
+						Import Study
+					</a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Create a new user">
+					<a href="@controllers.gui.routes.Users.create()">
+						<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+						New User
+					</a>
+				</li>
+			</ul>
+			<ul class="nav navbar-nav navbar-right">
+				<li><a href="@controllers.gui.routes.Users.profile(user.getEmail())">
+					<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+					@user.getName() (@user.getEmail())
+				</a></li>
+				<li><a href="@controllers.gui.routes.Authentication.logout()">
+					<span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+					Logout
+				</a></li>
+			</ul>
+		</div>
+	</div>
+</nav>
+
+<div class="container-fluid">
+	<div class="row">
+		<!-- Sidebar -->
+		<div class="col-sm-3 col-md-2 sidebar">
+			<ul id="sidebarStudyList" class="sidebar-nav">
+			<!-- Is dynamically filled via JavaScript -->
+			</ul>
+		</div>
+
+		<!-- Main -->
+		<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+			<ol id="breadcrumbs" class="breadcrumb"></ol>
+			@body
+		</div>
+	</div>
+</div>
+	
+<!-- Confirmation  Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title">Confirm</h4>
+			</div>
+			<div class="modal-body">
+				<p class="modalText"></p>
+				<p class="modalPostText"></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="confirmed btn btn-primary"></button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Confirmation Modal - Study Import -->
+<div class="modal fade" id="confirmModalStudyImport" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title">Study and study assets' directory already exist</h4>
+			</div>
+			<div class="modal-body">
+				<p class="modalText"></p>
+				<div class="checkbox">
+					<label><input type="checkbox" id="studysPropertiesConfirm"> Overwrite study's and its components' properties</label>
+					<span class="help-block">Components included in the imported study will be created or updated. Components not included in the imported study will be inactivated but not deleted.</span>
+				</div>
+				<div class="checkbox">
+					<label><input type="checkbox" id="studysDirConfirm"> Overwrite study assets' directory</label>
+					<span class="help-block">This directory contains the study's files like HTML, CSS, and JavaSript files and images.</span>
+				</div>
+				<p class="modalPostText"></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="confirmed btn btn-primary">Overwrite</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Uploading waiting Modal -->
+<div class="modal fade" id="uploadingModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" data-keyboard="false" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><img src="@routes.Assets.at("images/waiting.gif")">Uploading</h4>
+			</div>
+			<div class="modal-body">
+				 ... might take a while depending on your internet connection ... please be patient.
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+var messagesRequestScope = @Html(general.gui.RequestScopeMessaging.getAsJson());
+showMessages(messagesRequestScope);
+var messagesFlashScope = @Html(general.gui.FlashScopeMessaging.getAsJson());
+showMessages(messagesFlashScope);
+var breadcrumbs = @Html(breadcrumbs);
+showBreadcrumbs(breadcrumbs);
+fillSidebar();
+
+function showMessages(messages) {
+	if (messages != null) {
+		if (messages.successList != null) {
+			messages.successList.forEach(function(success) {
+				showSuccess(success);
+			});
+		}
+		if (messages.infoList != null) {
+			messages.infoList.forEach(function(info) {
+				showInfo(info);
+			});
+		}
+		if (messages.warningList != null) {
+			messages.warningList.forEach(function(warning) {
+				showWarning(warning);
+			});
+		}
+		if (messages.errorList != null) {
+			messages.errorList.forEach(function(error) {
+				showError(error);
+			});
+		}
+	}
+}
+
+@if(general.common.Common.IN_MEMORY_DB) {
+	showWarning("You are using an in-memory database. This is fine for initial evalution of JATOS. Unfortunately after closing JATOS all changes and results will be lost. If you want to continue working with JATOS, it's strongly recommended to setup a disk-based database.")
+}
+
+function showBreadcrumbs (breadcrumbs) {
+	$.each(breadcrumbs, function(index, breadcrumb) {
+		var breadcrumbHtml;
+		if (breadcrumb.url === null || breadcrumb.url === "") {
+			breadcrumbHtml = '<li class="active">' + breadcrumb.name + '</li>';
+		} else {
+			breadcrumbHtml = '<li><a href="' + breadcrumb.url + '">' + breadcrumb.name + '</a></li>';
+		}
+		$("#breadcrumbs").append(breadcrumbHtml);
+	});
+}
+
+function askConfirmation(title, preText, html, postText, buttonText, action) {
+		$('#confirmationModal').find('.modal-title').html(title);
+	if (preText) {
+		$('#confirmationModal').find('.modalText').html(preText);
+	}
+	if (html) {
+		if ($('#confirmationModal').find('.modalText').next().is('.modalPostText')) {
+			$('#confirmationModal').find('.modalText').after(html);
+		} else {
+			$('#confirmationModal').find('.modalText').next().html(html);
+		}
+	}
+	if (postText) {
+		$('#confirmationModal').find('.modalPostText').html(postText);
+	}
+	$('#confirmationModal').find('.confirmed').text(buttonText);
+	$('#confirmationModal').modal('show');
+	$('#confirmationModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
+		$('#confirmationModal').modal('hide');
+		action();
+	});
+}
+
+$('#jatosHeader').on('click', '#importStudyLink', function() {
+	$('#importStudyBrowser').trigger("click");
+});
+
+$('#jatosHeader').on('change', '#importStudyBrowser', function() {
+	var data = new FormData();
+	var files = $('#importStudyBrowser').prop('files');
+	$.each(files , function(index, value){
+		data.append('@common.Study.STUDY', value);
+	});
+	$('#uploadingModal').modal('show');
+	$.ajax({
+		url: '@controllers.gui.routes.ImportExport.importStudy()',
+		data: data,
+		cache: false,
+		contentType: false,
+		processData: false,
+		type: 'POST',
+		success: function(response) {
+			$('#uploadingModal').modal('hide');
+			importStudyConfirm(response);
+		},
+		error : function(err) {
+			$('#uploadingModal').modal('hide');
+			showError(err.responseText);
+		}
+	});
+});
+	
+function importStudyConfirm(response) {
+	if (response.studyExists) {
+		askConfirmationForStudyExists(response);
+	} else if (response.dirExists) {
+		askConfirmationForStudyNotExistsDirExists(response);
+	} else {
+		askConfirmationForStudyNotExistsDirNotExists(response);
+	}
+}
+
+function askConfirmationForStudyExists(response) {
+	var preText = "It seems a study \"" + response.studyTitle 
+		+ "\" and its directory \"" + response.dirPath
+		+ "\" already exist. What do you want to do?";
+	$('#confirmModalStudyImport').find('.modalText').html(preText);
+	$('#confirmModalStudyImport').on('click', '.checkbox', function() {
+		if (!$('#studysPropertiesConfirm').is(':checked')
+				&& !$('#studysDirConfirm').is(':checked')) {
+			$('.confirmed').attr("disabled", true);
+		} else {
+			$('.confirmed').attr("disabled", false);
+		}
+	});
+	$('#confirmModalStudyImport').find('.confirmed').attr("disabled", true);
+	$('#confirmModalStudyImport').modal('show');
+	$('#confirmModalStudyImport').off('click.confirm').on('click.confirm', '.confirmed', function() {
+		$('#confirmModalStudyImport').modal('hide');
+		var studysPropertiesConfirm = $('#studysPropertiesConfirm').is(':checked');
+		var studysDirConfirm = $('#studysDirConfirm').is(':checked');
+		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_ENTITY_CONFIRM": studysPropertiesConfirm,
+			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : studysDirConfirm });
+		postStudyImportConfirm(jsonData);
+	});
+}
+
+function askConfirmationForStudyNotExistsDirExists(response) {
+	var title = "Study import - but study assets' directory already exists";
+	var preText = "You are about to import the study \"" + response.studyTitle 
+		+ "\" and its directory \"" + response.dirPath
+		+ "\". There already exist a directory with the same name. "
+		+ "If you proceed the <b>current directory will be overridden</b>.";
+	var postText = "Do you want to proceed?";
+	askConfirmation(title, preText, null, postText, 'Import', function() {
+		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
+			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
+		postStudyImportConfirm(jsonData);
+	});
+}
+
+function askConfirmationForStudyNotExistsDirNotExists(response) {
+	var title = "Study import";
+	var preText = "You are about to import the study \"" + response.studyTitle 
+		+ "\" and its directory \"" + response.dirPath
+		+ "\".";
+	var postText = "Do you want to proceed?"
+	askConfirmation(title, preText, null, postText, 'Import', function() {
+		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
+			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
+		postStudyImportConfirm(jsonData);
+	});
+}
+
+function postStudyImportConfirm(jsonData) {
+	$.ajax({
+		type: 'POST',
+		url: '@controllers.gui.routes.ImportExport.importStudyConfirmed()',
+		contentType: "application/json; charset=utf-8",
+		dataType: 'text',
+		data: jsonData,
+		success: function(result) {
+			showMessages(JSON.parse(result));
+			fillSidebar();
+			if (componentsTable) {
+				componentsTable.ajax.reload();
+			}
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
+function fillSidebar() {
+	$.ajax({
+		type: 'GET',
+		url: '@controllers.gui.routes.Home.sidebarStudyList()',
+		success: function(result) {
+			fillSidebarStudyList(result);
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
+$('#sidebarStudyList').on('click', '.studyListItem', function(e) {
+	// If plus or minus expand the study
+	if($(e.target).hasClass('glyphicon-plus')
+			|| $(e.target).hasClass('glyphicon-minus')) {
+		$(this).find(".glyphicon").toggleClass('study-expanded study-collapsed');
+	} else {
+		var clickedStudyId = $(this).attr('id').replace('sidebarStudy', "");
+		window.location.href = "/jatos/" + clickedStudyId;
+	}
+});
+
+function fillSidebarStudyList(studyArray) {
+	$('#sidebarStudyList').empty();
+	$.each(studyArray, function(index, study) {
+		// Add study
+		var listItem = '<li id="sidebarStudy' + study.id + '" class="studyListItem' 
+		if (typeof studyId !== 'undefined' && study.id == studyId) {
+			listItem += ' currentStudy';
+		}
+		listItem += '">'
+				+ '<span data-toggle="collapse" data-target="#componentsOfStudy' + study.id + '" aria-expanded="false">'
+				+ '<span class="glyphicon glyphicon-plus gray-light study-collapsed" aria-hidden="true"></span>'
+				+ '<span class="glyphicon glyphicon-minus gray-light study-collapsed" aria-hidden="true"></span>'
+				+ '</span>'
+				+ '<span class="text-primary" data-toggle="tooltip" data-placement="bottom" title="ID ' + study.id + '" href="/jatos/' + study.id + '">'
+				+ '&nbsp;' + study.title;	
+		if (study.locked) {
+			listItem = listItem + '&nbsp;<span class="glyphicon glyphicon-lock gray-light" aria-hidden="true"></span>';
+		}
+		listItem = listItem + '</span>';
+		
+		// Add component list
+		var componentsStr = '<ul id="componentsOfStudy' + study.id + '" class="collapse">';
+		$.each(study.componentList, function(index, component) {
+			componentsStr += '<li data-toggle="tooltip" data-placement="bottom" title="ID '
+					+ component.id + '">'
+					+ component.title + '</li>';
+		});
+		componentsStr += '</ul></li>';
+		listItem = listItem + componentsStr;
+		$('#sidebarStudyList').append(listItem);
+	});
+	
+}
+
+</script>
+
+</body>
+</html>

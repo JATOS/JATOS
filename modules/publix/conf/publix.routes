@@ -1,0 +1,29 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Publix
+GET     /:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long)
+GET     /:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
+GET     /:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null)
+GET     /:studyId/group/join                      @controllers.publix.PublixInterceptor.joinGroup(studyId: Long)
+GET     /:studyId/group/leave                     @controllers.publix.PublixInterceptor.leaveGroup(studyId: Long)
+POST    /:studyId/sessionData                     @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long)
+GET     /:studyId/nextComponent/start             @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long)
+# Start component by position
+GET     /:studyId/component/start                 @controllers.publix.PublixInterceptor.startComponentByPosition(studyId: Long, position: Integer)
+# Start component by ID
+GET     /:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long)
+GET     /:studyId/:componentId/end                @controllers.publix.PublixInterceptor.finishComponent(studyId: Long, componentId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
+GET     /:studyId/:componentId/initData           @controllers.publix.PublixInterceptor.getInitData(studyId: Long, componentId: Long)
+POST    /:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long)
+POST    /:studyId/:componentId/log                @controllers.publix.PublixInterceptor.log(studyId: Long, componentId: Long)
+
+# Static resources
+GET     /favicon.ico                       controllers.Assets.at(path="/public", file="favicon.ico")
+GET     /favicon-16x16.png                 controllers.Assets.at(path="/public", file="favicon-16x16.png")
+GET     /favicon-32x32.png                 controllers.Assets.at(path="/public", file="favicon-32x32.png")
+GET     /favicon-96x96.png                 controllers.Assets.at(path="/public", file="favicon-96x96.png")
+GET     /study_assets/*file                @controllers.publix.StudyAssets.at(file)
+GET     /assets/*file                      controllers.Assets.at(path = "/public", file)
+

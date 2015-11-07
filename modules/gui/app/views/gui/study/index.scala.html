@@ -1,0 +1,680 @@
+@(loggedInUser: common.User, breadcrumbs: String,
+study: common.Study, workerSet: Set[common.workers.Worker], baseUrl: String,
+studyResultsCount: Integer)
+
+@views.html.gui.main(loggedInUser, breadcrumbs){
+
+<!-- Toolbar -->
+<div id="studyToolbar" class="btn-toolbar" role="toolbar">
+	<div class="btn-group">
+		<button id="showStudy" type="button" class="btn btn-primary"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Runs the study as a JATOS worker">
+			Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+		</button>
+		<button id="studyResults" type="button" class="btn btn-primary"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Shows study results">
+			Results <span class="badge">@studyResultsCount</span>
+		</button>
+		<button id="workers" type="button" class="btn btn-primary"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Shows workers who participated">
+			Workers <span class="badge">@workerSet.size()</span>
+		</button>
+		<button id="editStudy" type="button" class="btn btn-primary"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Study's properties">
+			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
+		</button>
+		<div class="btn-group">
+			<button type="button" class="btn btn-primary dropdown-toggle"
+				data-toggle="dropdown">
+				<span class="glyphicon glyphicon-globe" aria-hidden="true"></span> External Runs <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu" role="menu">
+				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used multiple times and always assigns the results to the same worker.">
+					<a id="personalMultipleRun" href="#">Personal Multiple Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used only once and always assigns the results to the same worker.">
+					<a id="personalSingleRun" href="#">Personal Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used only once and creates a new worker with each run. Warning: If a worker deletes their browser’s cookies, or uses a different browser or computer, JATOS will not realise that the worker already ran the study. This way workers can potentially run the same study several times.">
+					<a id="generalSingleRun" href="#">General Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
+				</li>
+			</ul>
+		</div>
+		<div class="btn-group">
+			<button type="button" class="btn btn-primary dropdown-toggle"
+				data-toggle="dropdown">
+				More <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu" role="menu">
+				<li data-toggle="tooltip" data-placement="bottom" title="Export this study to your local file system (including its components and study assets but without its results)">
+					<a href="@controllers.gui.routes.ImportExport.exportStudy(study.getId())">
+						<span class="glyphicon glyphicon-export" aria-hidden="true"></span>
+						Export
+					</a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Clone this study without its results">
+					<a id="cloneStudy" href="#">
+						<span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>
+						Clone
+					</a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Source code to copy-paste into Mechanical Turk">
+					<a href="@controllers.gui.routes.Studies.showMTurkSourceCode(study.getId())">
+						MT&nbsp;Source&nbsp;Code
+					</a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Change users of this study">
+					<a href="@controllers.gui.routes.Studies.changeUsers(study.getId())">
+						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+						Change&nbsp;Users
+					</a>
+				</li>
+				<li class="divider"></li>
+				<li  data-toggle="tooltip" data-placement="bottom" title="Delete this study including its components, assets and results">
+					<a id="removeStudy" href="#">
+						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+						Delete
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<!-- Content and tooltip of lock button is set later in JS -->
+	<div class="btn-group">
+		<button id="lockStudy" type="button" class="btn btn-primary"
+			data-toggle="tooltip" data-placement="bottom"
+			title="">
+			@if(study.isLocked()) {Locked} else {Unlocked}
+		</button>
+	</div>
+	<div class="btn-group">
+		<button type="button" class="btn btn-info dropdown-toggle"
+			data-toggle="dropdown">
+			Components <span class="caret"></span>
+		</button>
+		<ul class="dropdown-menu" role="menu">
+			<li data-toggle="tooltip" data-placement="bottom" title="Create a new component">
+				<a href="@controllers.gui.routes.Components.create(study.getId())">
+					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+					New
+				</a>
+			</li>
+			<input id="importComponentBrowser" type="file"
+				name="@common.Component.COMPONENT" style="display: none;">
+			<li data-toggle="tooltip" data-placement="bottom" title="Import a component from the local file system">
+				<a id="importComponentButton" href="#">
+					<span class="glyphicon glyphicon-import" aria-hidden="true"></span>
+					Import
+				</a>
+			</li>
+		</ul>
+	</div>
+</div>
+
+<!-- Components Table -->
+<table id="componentsTable" class="table table-hover table-row-border"
+	cellpadding="0" cellspacing="0" border="0" width="100%">
+	<thead>
+		<tr>
+			<th data-toggle="tooltip" data-placement="bottom" title="The number in the button shows the position in this study - Use the button to drag and drop the component to a new position"><span class="glyphicon glyphicon-sort" aria-hidden="true"></span></th>
+			<th data-toggle="tooltip" data-placement="bottom" title="Inactive components won't show up in the next run">Active</th>
+			<th data-toggle="tooltip" data-placement="bottom" title="ID of this component">ID</th>
+			<th>Title</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody class="sortable"> 
+	</tbody>
+</table>
+
+<!-- Template for active button in Component's row -->
+<div id="componentActiveButtonDiv" style="display: none">
+	<button type="button" class="btn btn-sm btn-default activeButton"
+		data-toggle="tooltip" data-placement="bottom" title="">
+		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+	</button>
+</div>
+
+<!-- Template for drag button in Component's row -->
+<div id="componentDragButtonDiv" style="display: none">
+	<button type="button" class="btn btn-sm btn-info dragButton"
+		data-toggle="tooltip" data-placement="bottom" title="">
+	</button>
+</div>
+
+<!-- Template for button toolbar in Component's row -->
+<div id="componentToolbarDiv" style="display: none">
+	<div class="componentBtnGroup btn-group" aria-hidden="true">
+		<button type="button" class="showComponent btn btn-info"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Runs only this component as a JATOS worker">
+			Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+		</button>
+		<button type="button" class="componentResults btn btn-info"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Shows only the results of this component">
+			Results <span class="resultsBadge badge"></span>
+		</button>
+		<button type="button" class="editComponent btn btn-info"
+			data-toggle="tooltip" data-placement="bottom"
+			title="This component's properties">
+			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
+		</button>
+		<div class="btn-group">
+			<button type="button" class="btn btn-info dropdown-toggle"
+				data-toggle="dropdown">
+				More <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu" role="menu">
+				<li  data-toggle="tooltip" data-placement="bottom" title="Export this component to the local file system (without its assets or results)">
+					<a class="exportComponent" href="#">
+						<span class="glyphicon glyphicon-export" aria-hidden="true"></span>
+						Export
+					</a>
+				</li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Clone this component without its results and assets">
+					<a class="cloneComponent" href="#">
+						<span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>
+						Clone
+					</a>
+				</li>
+				<li class="divider"></li>
+				<li data-toggle="tooltip" data-placement="bottom" title="Deletes this component without its results and assets">
+					<a class="removeComponent" href="#">
+						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+						Delete
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+<!-- Confirmation Modal - run Personal Single or General Single or Personal Multiple -->
+<div class="modal fade" id="confirmModalRun" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+					<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+				</button>
+				<h4 class="modal-title">Create run</h4>
+			</div>
+			<div class="modal-body">
+				<p class="modalText">You're about to create a worker.</p>
+				<div class="input-group">
+					<input type="text" class="comment form-control"
+						placeholder="Comment">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="confirmed btn btn-primary">Create</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+$(document).ready(setLockButton(@study.isLocked()));
+var studyId = @study.getId();
+
+var componentsTable;
+$(document).ready(function() {
+	componentsTable = $('#componentsTable').DataTable({
+		"ajax": {
+			"type": "GET",
+			"url" : '@controllers.gui.routes.Studies.tableDataByStudy(study.getId())',
+			"error": function(reason) {
+					showError("Couldn't read components data.")
+			}
+		},
+		"paging": false,
+		"info": false,
+		"filter": false,
+		"columnDefs": [ {
+			"searchable": false,
+			"orderable": false,
+			"targets": "_all"
+		} ],
+		"columns": [
+			{
+				"class": 'componentDragButton',
+				"data": null,
+				"defaultContent": '',
+				"width": "1px",
+				"render": function (data, type, full, meta) {
+					var button = $('#componentDragButtonDiv button:first-child').clone();
+					button.html(button.html() + data.position);
+					button.attr('title', "Use this button to drag and drop this component to a new position");
+					return button.prop('outerHTML');
+				}
+			},
+			{
+				"class": 'activeComponent',
+				"data": null,
+				"defaultContent": '',
+				"width": "1px",
+				"render": function (data, type, full, meta) {
+					var button = $('#componentActiveButtonDiv button:first-child').clone();
+					setButtonActive(button, data.active);
+					return button.prop('outerHTML');
+				}
+			},
+			{
+				"data": "id",
+				"width": "1px"
+			},
+			{ 
+				"data": "title",
+			},
+			{
+				"class": "toolbar",
+				"data": null,
+				"defaultContent": '',
+				"width": "1%",
+				"render": function (data, type, full, meta) {
+					var toolbar = $('#componentToolbarDiv').clone().show();
+					$(toolbar).find('.resultsBadge').text(data.resultCount);
+					return toolbar.html();
+				}
+			}
+		],
+		"order" : [],
+		"oLanguage": {
+			"sEmptyTable": "No components yet"
+		}
+	});
+	
+	// Adjust the width of every component's toolbar to the widest one
+	componentsTable.on('column-sizing.dt', function (e, settings) {
+		var maxWidth = 0;
+		$('.componentResults').each(function(index) {
+			var width = $(this).width();
+			if (width > maxWidth) {
+				maxWidth = width;
+			}
+		});
+		$('.componentResults').each(function(index) {
+			$(this).width(maxWidth);
+		});
+	});
+	
+	$('#componentsTable tbody').on('click', '.showComponent', function() {
+		window.location.href = "/jatos/" + @study.getId() +"/"
+			+ getComponentId(this) + "/show";
+	});
+	
+	$('#componentsTable tbody').on('click', '.componentResults', function() {
+		window.location.href = "/jatos/" + @study.getId() +"/"
+			+ getComponentId(this) + "/results";
+	});
+	
+	$('#componentsTable tbody').on('click', '.editComponent', function() {
+		window.location.href = "/jatos/" + @study.getId() +"/"
+			+ getComponentId(this) + "/edit";
+	});
+	
+	$('#componentsTable tbody').on('click', '.exportComponent', function() {
+		window.location.href = "/jatos/" + @study.getId() +"/"
+			+ getComponentId(this) + "/export";
+	});
+	
+	$('#componentsTable tbody').on('click', '.cloneComponent', function() {
+		$.ajax({
+			type: 'GET',
+			url: "/jatos/" + @study.getId() +"/" + getComponentId(this) + "/clone",
+			success: function(result) {
+				showMessages(JSON.parse(result));
+				componentsTable.ajax.reload();
+				fillSidebar();
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
+	
+	$('#componentsTable tbody').on('click', '.removeComponent', function() {
+		var element = this;
+		var componentId = getComponentId(this);
+		if (!componentId) {return} // should never happen
+		var componentTitle = getComponentTitle(this);
+		var title = "Confirm Delete";
+		var preText = "You are about to delete component \"" + componentTitle 
+			+ "\" (ID " + componentId + ") <b>with all its results</b>.";
+		var postText = "Do you want to proceed?";
+		askConfirmation(title, preText, null, postText, 'Delete', function() {
+			$.ajax({
+				url : "/jatos/" + @study.getId() +"/" + componentId,
+				type : 'DELETE',
+				success : function(result) {
+					showMessages(JSON.parse(result));
+					componentsTable.ajax.reload();
+					fillSidebar();
+				},
+				error : function(err) {
+					showError(err.responseText);
+				}
+			});
+		});
+	});
+	
+	$('#componentsTable tbody').on('click', '.activeButton', function() {
+		var button = this;
+		var checkbox = this;
+		var tr = $(this).closest('tr');
+		var componentId = getComponentId(this);
+		var active = $(this).hasClass('activeComponent');
+		$.ajax({
+			url : "/jatos/" + @study.getId() +"/" + componentId
+					+ "/property?active=" + !active,
+			type : "POST",
+			success: function(response) {
+				setButtonActive($(button), response === 'true');
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
+	
+	function setButtonActive(button, active) {
+		if (active) {
+			button.addClass('activeComponent');
+			button.removeClass('btn-warning');
+			button.addClass('btn-info');
+			button.attr('title', "Click to deactivate this component");
+			button.html($(button.html())
+					.removeClass('glyphicon-remove')
+					.addClass('glyphicon-ok').prop('outerHTML'));
+		} else {
+			button.removeClass('activeComponent');
+			button.removeClass('btn-info');
+			button.addClass('btn-warning');
+			button.attr('title', "Click to activate this component");
+			button.html($(button.html())
+					.removeClass('glyphicon-ok')
+					.addClass('glyphicon-remove').prop('outerHTML'));
+		}
+	}
+	
+	$("tbody.sortable").sortable({
+		items: "> tr",
+		handle: '.dragButton',
+		// Interferes with dragging - need to overwrite since default it button 
+		cancel: '',
+		helper: function(e, tr) {
+			var $originals = tr.children();
+			var $helper = tr.clone();
+			$helper.children().each(function(index) {
+				// Set helper cell sizes to match the original sizes
+				$(this).width($originals.eq(index).width());
+			});
+			return $helper;
+		},
+		zIndex: 9999,
+	}).disableSelection();
+});
+
+$("tbody.sortable").on("sortstop", function(event, ui) {
+	var componentId = getComponentId(ui.item);
+	var newPosition = ui.item.index() + 1;
+	$.ajax({
+		url : "/jatos/" + @study.getId() + "/componentOrder"
+				+ "?componentId=" + componentId + "&newPosition="
+				+ newPosition,
+		type : "POST",
+		success : function(response) {
+			componentsTable.ajax.reload();
+			fillSidebar();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+function getComponentId(element) {
+	var tr = $(element).closest('tr');
+	var rowData = componentsTable.row(tr).data();
+	return rowData.id;
+}
+
+function getComponentTitle(element) {
+	var tr = $(element).closest('tr');
+	var rowData = componentsTable.row(tr).data();
+	return rowData.title;
+}
+
+function ajaxChangeComponentOrder(componentId, direction, tr) {
+	$.ajax({
+		url : "/jatos/" + @study.getId() + "/changeComponentOrder"
+				+ "?componentId=" + componentId + "&direction="
+				+ direction,
+		type : "POST",
+		success : function(response) {
+			componentsTable.ajax.reload();
+			fillSidebar();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
+$('#studyToolbar').on('click', '#lockStudy', function() {
+	$.ajax({
+		url : "@controllers.gui.routes.Studies.swapLock(study.getId())",
+		type : "POST",
+		success : function(response) {
+			setLockButton(response === 'true');
+			fillSidebar();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+function setLockButton(locked) {
+	if (locked) {
+		$('#lockStudy').html('Locked');
+		$('#lockStudy').addClass('btn-warning');
+		$('#lockStudy').removeClass('btn-primary');
+		$("#lockStudy").attr("title", "Press to unlock this study and allow changes.");
+	} else {
+		$('#lockStudy').html('Unlocked');
+		$('#lockStudy').addClass('btn-primary');
+		$('#lockStudy').removeClass('btn-warning');
+		$("#lockStudy").attr("title", "Press to lock this study and prohibit changes.");
+	}
+}
+
+$('#studyToolbar').on('click', '#showStudy', function() {
+	window.location.href = "@controllers.gui.routes.Studies.showStudy(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#studyResults', function() {
+	window.location.href = "@controllers.gui.routes.StudyResults.index(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#workers', function() {
+	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#editStudy', function() {
+	window.location.href = "@controllers.gui.routes.Studies.edit(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#personalSingleRun', function() {
+	$('#confirmModalRun').find('.modal-title').html("Create Personal Single Run");
+	$('#confirmModalRun').find('.modalText').html("You're about to create a worker for a Personal Single Run.");
+	$('#confirmModalRun').modal('show');
+	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
+		$('#confirmModalRun').modal('hide');
+		var comment = $('#confirmModalRun').find('.comment').val();
+		var jsonData = JSON.stringify({ @common.workers.PersonalSingleWorker.COMMENT: comment });
+		$.ajax({
+			type: 'POST',
+			url: '@controllers.gui.routes.Studies.createPersonalSingleRun(study.getId())',
+			contentType: "application/json; charset=utf-8",
+			dataType: 'text',
+			data: jsonData,
+			success: function(result) {
+				var title = "Personal Single Run";
+				var preText = "Use this link";
+				var html = "<p>" + result + "</p>"; 
+				var postText = "or press \"Run\" to start it right away.";
+				askConfirmation(title, preText, html, postText, 'Run', function() {
+					window.location.href = result;
+				});
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
+});
+
+$('#studyToolbar').on('click', '#generalSingleRun', function() {
+	var title = "General Single Run";
+	var preText = "Use this link";
+	var url = "@baseUrl" + "/publix/@study.getId()/start?generalSingle";
+	var html = "<p>" + url + "</p>"; 
+	var postText = "or press \"Run\" to start one right away. Remember to allow General Single Workers in your study's properties.";
+	askConfirmation(title, preText, html, postText, 'Run', function() {
+		window.location.href = url;
+	});
+});
+
+$('#studyToolbar').on('click', '#personalMultipleRun', function() {
+	$('#confirmModalRun').find('.modal-title').html("Create Personal Multiple Run");
+	$('#confirmModalRun').find('.modalText').html("You're about to create a Personal Multiple Worker. Use a comment to distinguish this worker from others.");
+	$('#confirmModalRun').modal('show');
+	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
+		$('#confirmModalRun').modal('hide');
+		var comment = $('#confirmModalRun').find('.comment').val();
+		var jsonData = JSON.stringify({ @common.workers.PersonalMultipleWorker.COMMENT: comment });
+		$.ajax({
+			type: 'POST',
+			url: '@controllers.gui.routes.Studies.createPersonalMultipleRun(study.getId())',
+			contentType: "application/json; charset=utf-8",
+			dataType: 'text',
+			data: jsonData,
+			success: function(result) {
+				var title = "Personal Multiple Run";
+				var preText = "Use this link";
+				var html = "<p>" + result + "</p>"; 
+				var postText = "or press \"Run\" to start it right away.";
+				askConfirmation(title, preText, html, postText, 'Run', function() {
+					window.location.href = result;
+				});
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
+});
+
+$('#studyToolbar').on('click', '#removeStudy', function() {
+	var title = "Confirm Delete";
+	var preText = "You are about to delete study \"@study.getTitle()\" " 
+		+ "(ID @study.getId()) "
+		+ "<b>with all its components, results, and the entire study assets directory, "
+		+ "including the HTML files</b>.";
+	var postText = "Do you want to proceed?";
+	askConfirmation(title, preText, null, postText, 'Delete', function() {
+		$.ajax({
+			url : '@controllers.gui.routes.Studies.remove(study.getId())',
+			type : 'DELETE',
+			success : function(result) {
+				window.location.replace('@controllers.gui.routes.Home.home()');
+			},
+			error : function(err) {
+				showError(err.responseText);
+			}
+		});
+	});
+});
+
+$('#studyToolbar').on('click', '#cloneStudy', function() {
+	$.ajax({
+		url : '@controllers.gui.routes.Studies.cloneStudy(study.getId())',
+		type : 'GET',
+		success : function(result) {
+			fillSidebar();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+$('#studyToolbar').on('click', '#importComponentButton', function() {
+	$('#importComponentBrowser').trigger("click");
+});
+
+$('#studyToolbar').on('change', '#importComponentBrowser', function() {
+	var data = new FormData();
+	var files = $('#importComponentBrowser').prop('files');
+	$.each(files , function(index, value){
+		data.append('@common.Component.COMPONENT', value);
+	});
+	$.ajax({
+		url: '@controllers.gui.routes.ImportExport.importComponent(study.getId())',
+		data: data,
+		cache: false,
+		contentType: false,
+		processData: false,
+		type: 'POST',
+		success: importComponentConfirm,
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+function importComponentConfirm(response) {
+	if (response.componentExists) {
+		var title = "Component already exists";
+		var preText = "It seems a component \"" + response.componentTitle 
+			+ "\" already exist in this study.";
+		var postText = "Do you want to overwrite this component?";
+		askConfirmation(title, preText, null, postText, 'Overwrite', function() {
+			postComponentImportConfirm();
+		});
+	} else {
+		var title = "Import component";
+		var preText = "You are about to import the component \""
+			+ response.componentTitle + "\".";
+		var postText = "Do you want to proceed?";
+		askConfirmation(title, preText, null, postText, 'Import', function() {
+			postComponentImportConfirm();
+		});
+	}
+}
+
+function postComponentImportConfirm() {
+	$.ajax({
+		type: 'POST',
+		url: '@controllers.gui.routes.ImportExport.importComponentConfirmed(study.getId())',
+		success: function(result) {
+			componentsTable.ajax.reload();
+			showMessages(JSON.parse(result));
+			fillSidebar();
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
+
+</script>
+
+}

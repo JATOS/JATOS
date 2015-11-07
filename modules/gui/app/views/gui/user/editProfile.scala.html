@@ -1,0 +1,38 @@
+@(loggedInUser: common.User,
+breadcrumbs: String, user: common.User, form: Form[common.User])
+
+@views.html.gui.main(loggedInUser, breadcrumbs){
+
+@helper.form(action = controllers.gui.routes.Users.submitEditedProfile(user.getEmail()), 'class -> "form-horizontal", 'role -> "form") {
+
+<div class="form-group">
+	<label class="control-label col-xs-2" for="name">Name</label>
+	<div class="col-xs-10">
+		<input type="text" class="form-control" id="name" name="@common.User.NAME" value="@form(common.User.NAME).value" placeholder="Your name">
+	</div>
+</div>
+
+<input type="hidden" name="@common.User.EMAIL" value="@form(common.User.EMAIL).value">
+
+<div class="form-group">
+	<div class="col-xs-offset-2 col-xs-10">
+		<input type="submit" class="btn btn-primary" value="Update">
+	</div>
+</div>
+
+}
+
+<script>
+@if(form.hasErrors) {
+	showWarning("User profile wasn't updated");
+}
+@for(error <- form.globalErrors) {
+	showError("@error.message");
+}
+@for(error <- form(common.User.NAME).errors) {
+	$('#name').closest(".form-group").addClass("has-error");
+	$('#name').after('<span class="help-block">@error.message</span>');
+}
+</script>
+
+}
