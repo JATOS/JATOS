@@ -11,7 +11,7 @@ dist
 /*.iml
 /out
 /.idea_modules
-/.classpath
+*.classpath
 /.project
 /RUNNING_PID
 /.settings
