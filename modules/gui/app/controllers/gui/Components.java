@@ -105,9 +105,9 @@ public class Components extends Controller {
 		}
 		session("jatos_run", "single_component_start");
 		session("run_component_id", componentId.toString());
-		String startComponentUrl = "/publix/" + study.getId() + "/"
-				+ component.getId() + "/start?" + "jatosWorkerId" + "="
-				+ loggedInUser.getWorker().getId();
+		// Redirect to jatos-publix: start study
+		String startComponentUrl = "/publix/" + study.getId() + "/start?"
+				+ "jatosWorkerId" + "=" + loggedInUser.getWorker().getId();
 		return redirect(startComponentUrl);
 	}
 
