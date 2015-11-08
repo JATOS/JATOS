@@ -266,7 +266,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				Controller.flash("info", errorMessages
 						.studyFinishedWithMessage(message));
 			}
-			return redirect("jatos/" + study.getId());
+			return redirect("/jatos/" + study.getId());
 		}
 	}
 
@@ -301,7 +301,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				Controller.flash("info", errorMessages
 						.studyFinishedWithMessage(errorMsg));
 			}
-			return redirect("jatos/" + study.getId());
+			return redirect("/jatos/" + study.getId());
 		}
 	}
 

@@ -15,14 +15,8 @@ libraryDependencies ++= Seq(
 	javaJdbc,
 	javaJpa,
 	javaWs,
-	"org.hibernate" % "hibernate-entitymanager" % "4.2.15.Final",
-	"mysql" % "mysql-connector-java" % "5.1.31",
 	"com.google.inject" % "guice" % "4.0",
-	"org.jsoup" % "jsoup" % "1.8.1",
-	"commons-io" % "commons-io" % "2.4",
-	"org.mockito" % "mockito-core" % "1.9.5" % "test",
-	"org.webjars" %% "webjars-play" % "2.3.0-2",
-	"org.webjars" % "bootstrap" % "3.3.4"
+	"org.webjars" %% "webjars-play" % "2.3.0-2"
 )
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
@@ -32,10 +26,6 @@ initialize := {
 	if (sys.props("java.specification.version") != "1.8")
 		sys.error("Java 8 is required for this project.")
 }
-
-includeFilter in (Assets, LessKeys.less) := "*.less"
-
-excludeFilter in (Assets, LessKeys.less) := "_*.less"
 
 EclipseKeys.skipParents in ThisBuild := false
 

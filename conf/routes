@@ -3,8 +3,8 @@
 # ~~~~
 
 # Include other route files
-->  /publix  publix.Routes
-->  /        gui.Routes
+->  /  publix.Routes
+->  /  gui.Routes
 
 # Static resources
 GET     /favicon.ico                       controllers.Assets.at(path="/public", file="favicon.ico")
