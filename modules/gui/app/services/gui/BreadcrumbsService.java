@@ -5,13 +5,12 @@ import general.gui.RequestScopeMessaging;
 
 import javax.inject.Singleton;
 
-import models.common.Breadcrumbs;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
+import models.gui.Breadcrumbs;
 import play.Logger;
-import utils.common.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -53,7 +52,7 @@ public class BreadcrumbsService {
 		}
 		String breadcrumbsStr = "";
 		try {
-			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
 			Logger.error(CLASS_NAME + ".generateForHome", e);
 			RequestScopeMessaging
@@ -78,7 +77,7 @@ public class BreadcrumbsService {
 		}
 		String breadcrumbsStr = "";
 		try {
-			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
 			Logger.error(CLASS_NAME + ".generateForUser", e);
 			RequestScopeMessaging
@@ -103,7 +102,7 @@ public class BreadcrumbsService {
 		}
 		String breadcrumbsStr = "";
 		try {
-			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
 			Logger.error(CLASS_NAME + ".generateForStudy", e);
 			RequestScopeMessaging
@@ -123,7 +122,7 @@ public class BreadcrumbsService {
 		breadcrumbs.addBreadcrumb(last, "");
 		String breadcrumbsStr = "";
 		try {
-			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
 			Logger.error(CLASS_NAME + ".generateForWorker", e);
 			RequestScopeMessaging
@@ -142,7 +141,7 @@ public class BreadcrumbsService {
 		breadcrumbs.addBreadcrumb(last, "");
 		String breadcrumbsStr = "";
 		try {
-			breadcrumbsStr = JsonUtils.asJson(breadcrumbs);
+			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
 			Logger.error(CLASS_NAME + ".generateForComponent", e);
 			RequestScopeMessaging

@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 
 import models.common.Study;
-import models.common.StudyProperties;
 import models.common.old.StudyV2;
+import models.gui.StudyProperties;
 import play.Logger;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;

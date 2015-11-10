@@ -13,12 +13,12 @@ import javax.inject.Singleton;
 
 import models.common.Component;
 import models.common.Study;
-import models.common.StudyProperties;
 import models.common.User;
 import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
+import models.gui.StudyProperties;
 import play.Logger;
 import play.api.mvc.Call;
 import play.data.Form;

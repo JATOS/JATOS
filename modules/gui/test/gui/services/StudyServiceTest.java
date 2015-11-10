@@ -12,11 +12,11 @@ import java.security.NoSuchAlgorithmException;
 
 import models.common.Component;
 import models.common.Study;
-import models.common.StudyProperties;
 import models.common.User;
 import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
+import models.gui.StudyProperties;
 
 import org.fest.assertions.Fail;
 import org.junit.Rule;

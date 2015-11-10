@@ -1,4 +1,4 @@
-package models.common;
+package models.gui;
 
 import general.common.MessagesStrings;
 

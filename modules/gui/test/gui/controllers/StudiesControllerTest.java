@@ -17,8 +17,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import models.common.Study;
-import models.common.StudyProperties;
 import models.common.workers.PersonalSingleWorker;
+import models.gui.StudyProperties;
 
 import org.apache.http.HttpHeaders;
 import org.junit.Test;

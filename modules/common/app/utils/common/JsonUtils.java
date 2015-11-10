@@ -11,8 +11,6 @@ import java.util.TimeZone;
 
 import javax.inject.Singleton;
 
-import models.common.Breadcrumbs;
-import models.common.Breadcrumbs.Breadcrumb;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.GroupResult;
@@ -425,18 +423,6 @@ public class JsonUtils {
 					.getImplementation();
 		}
 		return obj;
-	}
-
-	public static String asJson(Breadcrumbs breadcrumbs)
-			throws JsonProcessingException {
-		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
-		for (Breadcrumb breadcrumb : breadcrumbs.getBreadcrumbs()) {
-			ObjectNode node = OBJECTMAPPER.createObjectNode();
-			node.put("name", breadcrumb.name);
-			node.put("url", breadcrumb.url);
-			arrayNode.add(node);
-		}
-		return OBJECTMAPPER.writeValueAsString(arrayNode);
 	}
 
 	/**

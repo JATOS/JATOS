@@ -1,6 +1,6 @@
 package general.gui;
 
-import models.common.Messages;
+import models.gui.Messages;
 import play.mvc.Controller;
 import utils.common.JsonUtils;
 
