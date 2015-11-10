@@ -22,7 +22,7 @@ import akka.actor.UntypedActor;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import daos.GroupResultDao;
+import daos.common.GroupResultDao;
 
 /**
  * A GroupDispatcher is an Akka Actor responsible for distributing messages

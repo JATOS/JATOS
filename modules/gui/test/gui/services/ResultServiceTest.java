@@ -1,7 +1,7 @@
 package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import daos.StudyResultDao;
+import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;

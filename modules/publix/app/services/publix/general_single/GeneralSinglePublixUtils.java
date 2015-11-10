@@ -9,11 +9,11 @@ import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
-import daos.ComponentDao;
-import daos.ComponentResultDao;
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.workers.WorkerDao;
+import daos.common.ComponentDao;
+import daos.common.ComponentResultDao;
+import daos.common.StudyDao;
+import daos.common.StudyResultDao;
+import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 
 /**

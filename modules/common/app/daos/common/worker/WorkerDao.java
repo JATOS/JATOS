@@ -1,15 +1,15 @@
-package daos.workers;
+package daos.common.worker;
 
 import java.util.List;
 
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
+import daos.common.AbstractDao;
 import models.common.StudyResult;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import play.db.jpa.JPA;
-import daos.AbstractDao;
 
 /**
  * DAO for abstract Worker entity

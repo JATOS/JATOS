@@ -12,7 +12,7 @@ import javax.inject.Singleton;
 import models.common.User;
 import play.data.validation.ValidationError;
 import controllers.gui.Authentication;
-import daos.UserDao;
+import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;

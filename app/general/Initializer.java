@@ -14,8 +14,8 @@ import models.common.User;
 import play.Logger;
 import play.db.jpa.JPA;
 import services.gui.UserService;
-import daos.GroupResultDao;
-import daos.UserDao;
+import daos.common.GroupResultDao;
+import daos.common.UserDao;
 
 /**
  * This Initializer is called once with every start and does some JATOS specific

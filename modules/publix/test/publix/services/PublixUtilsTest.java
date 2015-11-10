@@ -1,8 +1,8 @@
 package publix.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import daos.StudyResultDao;
-import daos.workers.WorkerDao;
+import daos.common.StudyResultDao;
+import daos.common.workers.WorkerDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;

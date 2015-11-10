@@ -21,8 +21,8 @@ import utils.common.ZipUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import daos.ComponentDao;
-import daos.StudyDao;
+import daos.common.ComponentDao;
+import daos.common.StudyDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;

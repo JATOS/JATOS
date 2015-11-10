@@ -33,9 +33,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import daos.ComponentDao;
-import daos.StudyDao;
-import daos.workers.WorkerDao;
+import daos.common.ComponentDao;
+import daos.common.StudyDao;
+import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;

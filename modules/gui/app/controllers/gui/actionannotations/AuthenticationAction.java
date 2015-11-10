@@ -19,7 +19,7 @@ import play.mvc.With;
 import controllers.gui.Authentication;
 import controllers.gui.Users;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import daos.UserDao;
+import daos.common.UserDao;
 
 /**
  * For all actions in a controller that are annotated with @Authenticated check

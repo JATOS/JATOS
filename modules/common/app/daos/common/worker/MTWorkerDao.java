@@ -1,4 +1,4 @@
-package daos.workers;
+package daos.common.worker;
 
 import java.util.List;
 

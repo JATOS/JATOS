@@ -1,7 +1,6 @@
-package daos;
+package daos.common;
 
 import javax.inject.Singleton;
-
 import play.db.jpa.JPA;
 
 /**

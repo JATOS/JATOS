@@ -42,12 +42,12 @@ import services.gui.StudyUploadUnmarshaller;
 import services.gui.UserService;
 import utils.common.IOUtils;
 import utils.common.ZipUtil;
-import daos.ComponentDao;
-import daos.ComponentResultDao;
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.UserDao;
-import daos.workers.WorkerDao;
+import daos.common.ComponentDao;
+import daos.common.ComponentResultDao;
+import daos.common.StudyDao;
+import daos.common.StudyResultDao;
+import daos.common.UserDao;
+import daos.common.workers.WorkerDao;
 
 /**
  * Abstract class for tests. Starts fake application and an in-memory DB.

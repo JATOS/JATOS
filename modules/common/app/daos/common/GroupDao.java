@@ -1,4 +1,4 @@
-package daos;
+package daos.common;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

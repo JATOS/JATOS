@@ -14,7 +14,7 @@ import models.common.Component;
 import play.Logger;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
-import daos.ComponentDao;
+import daos.common.ComponentDao;
 import exceptions.gui.BadRequestException;
 
 /**

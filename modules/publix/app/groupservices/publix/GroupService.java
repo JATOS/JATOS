@@ -9,8 +9,8 @@ import models.common.GroupResult.GroupState;
 import models.common.StudyResult;
 import play.db.jpa.JPA;
 import services.publix.PublixErrorMessages;
-import daos.GroupResultDao;
-import daos.StudyResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 
 /**

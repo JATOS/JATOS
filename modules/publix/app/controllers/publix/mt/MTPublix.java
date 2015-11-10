@@ -1,5 +1,8 @@
 package controllers.publix.mt;
 
+import groupservices.publix.ChannelService;
+import groupservices.publix.GroupService;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -20,14 +23,12 @@ import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.PublixInterceptor;
 import controllers.publix.StudyAssets;
-import daos.ComponentResultDao;
-import daos.GroupResultDao;
-import daos.StudyResultDao;
-import daos.workers.MTWorkerDao;
+import daos.common.ComponentResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
+import daos.common.worker.MTWorkerDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
-import groupservices.publix.ChannelService;
-import groupservices.publix.GroupService;
 
 /**
  * Implementation of JATOS' public API for studies that are started via MTurk. A

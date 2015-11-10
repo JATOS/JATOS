@@ -14,7 +14,7 @@ import javax.inject.Singleton;
 import play.libs.Akka;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
-import daos.GroupResultDao;
+import daos.common.GroupResultDao;
 
 /**
  * A GroupDispatcherRegistry is an Akka Actor keeps track of all

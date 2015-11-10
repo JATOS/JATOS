@@ -19,7 +19,7 @@ import utils.common.IOUtils;
 import utils.common.JsonUtils;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import daos.StudyDao;
+import daos.common.StudyDao;
 import exceptions.gui.JatosGuiException;
 import general.common.MessagesStrings;
 

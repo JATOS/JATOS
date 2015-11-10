@@ -1,5 +1,8 @@
 package controllers.publix.personal_multiple;
 
+import groupservices.publix.ChannelService;
+import groupservices.publix.GroupService;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -15,12 +18,10 @@ import utils.common.JsonUtils;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
-import daos.ComponentResultDao;
-import daos.GroupResultDao;
-import daos.StudyResultDao;
+import daos.common.ComponentResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
-import groupservices.publix.ChannelService;
-import groupservices.publix.GroupService;
 
 /**
  * Implementation of JATOS' public API for studies run by

@@ -16,7 +16,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import services.gui.UserService;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import daos.UserDao;
+import daos.common.UserDao;
 
 /**
  * Controller that deals with login/logout.

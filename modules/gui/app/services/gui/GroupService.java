@@ -4,7 +4,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import models.common.Group;
-import daos.GroupDao;
+import daos.common.GroupDao;
 
 /**
  * Service class for JATOS Controllers (not Publix).

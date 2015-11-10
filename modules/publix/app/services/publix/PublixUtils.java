@@ -25,11 +25,11 @@ import utils.common.XMLUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.publix.Publix;
-import daos.ComponentDao;
-import daos.ComponentResultDao;
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.workers.WorkerDao;
+import daos.common.ComponentDao;
+import daos.common.ComponentResultDao;
+import daos.common.StudyDao;
+import daos.common.StudyResultDao;
+import daos.common.worker.WorkerDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;

@@ -23,7 +23,7 @@ import play.mvc.Result;
 import services.gui.StudyService;
 import utils.common.IOUtils;
 import controllers.gui.Users;
-import daos.StudyResultDao;
+import daos.common.StudyResultDao;
 
 /**
  * Testing actions if study is locked

@@ -31,9 +31,9 @@ import utils.common.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import daos.ComponentResultDao;
-import daos.GroupResultDao;
-import daos.StudyResultDao;
+import daos.common.ComponentResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.InternalServerErrorPublixException;

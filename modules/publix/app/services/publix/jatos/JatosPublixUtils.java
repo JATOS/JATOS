@@ -9,12 +9,12 @@ import models.common.workers.Worker;
 import services.publix.PublixUtils;
 import controllers.publix.Publix;
 import controllers.publix.jatos.JatosPublix;
-import daos.ComponentDao;
-import daos.ComponentResultDao;
-import daos.StudyDao;
-import daos.StudyResultDao;
-import daos.UserDao;
-import daos.workers.WorkerDao;
+import daos.common.ComponentDao;
+import daos.common.ComponentResultDao;
+import daos.common.StudyDao;
+import daos.common.StudyResultDao;
+import daos.common.UserDao;
+import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 
 /**
