@@ -36,6 +36,7 @@ import services.gui.WorkerService;
 import utils.common.ControllerUtils;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
+import utils.common.StudyCloner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -76,6 +77,7 @@ public class Studies extends Controller {
 	private final ComponentDao componentDao;
 	private final StudyResultDao studyResultDao;
 	private final ComponentResultDao componentResultDao;
+	private final StudyCloner studyCloner;
 
 	@Inject
 	Studies(UserDao userDao, JatosGuiExceptionThrower jatosGuiExceptionThrower,
@@ -83,7 +85,7 @@ public class Studies extends Controller {
 			UserService userService, WorkerService workerService,
 			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
 			ComponentDao componentDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, ComponentResultDao componentResultDao) {
+			StudyResultDao studyResultDao, ComponentResultDao componentResultDao, StudyCloner studyCloner) {
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
@@ -96,6 +98,7 @@ public class Studies extends Controller {
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
+		this.studyCloner = studyCloner;
 	}
 
 	/**
@@ -334,7 +337,8 @@ public class Studies extends Controller {
 		}
 
 		try {
-			studyService.cloneStudy(study, loggedInUser);
+			Study clone = studyCloner.clone(study, loggedInUser);
+			studyService.createStudy(loggedInUser, clone);
 		} catch (IOException e) {
 			jatosGuiExceptionThrower.throwAjax(e.getMessage(),
 					Http.Status.INTERNAL_SERVER_ERROR);

@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.ValidationException;
 
 import models.common.Component;
 import models.common.Study;
@@ -14,8 +15,11 @@ import models.common.User;
 import play.Logger;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData.FilePart;
+import utils.common.ComponentUploadUnmarshaller;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
+import utils.common.StudyUploadUnmarshaller;
+import utils.common.UploadUnmarshaller;
 import utils.common.ZipUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -392,7 +396,13 @@ public class ImportExportService {
 
 	private Component unmarshalComponent(File file) throws IOException {
 		UploadUnmarshaller<Component> uploadUnmarshaller = new ComponentUploadUnmarshaller();
-		return uploadUnmarshaller.unmarshalling(file);
+		Component component = uploadUnmarshaller.unmarshalling(file);
+		try {
+			componentService.validate(component);
+		} catch (ValidationException e) {
+			throw new IOException(e);
+		}
+		return component;
 	}
 
 	private Study unmarshalStudy(File tempDir, boolean deleteAfterwards)
@@ -404,9 +414,14 @@ public class ImportExportService {
 		}
 		File studyFile = studyFileList[0];
 
-		UploadUnmarshaller<Study> uploadUnmarshaller = new StudyUploadUnmarshaller(
-				studyService);
+		UploadUnmarshaller<Study> uploadUnmarshaller = new StudyUploadUnmarshaller();
 		Study study = uploadUnmarshaller.unmarshalling(studyFile);
+
+		try {
+			studyService.validate(study);
+		} catch (ValidationException e) {
+			throw new IOException(e);
+		}
 
 		if (deleteAfterwards) {
 			studyFile.delete();

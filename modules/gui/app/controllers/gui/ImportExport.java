@@ -2,6 +2,7 @@ package controllers.gui;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.inject.Inject;
@@ -24,7 +25,6 @@ import services.gui.ResultDataStringGenerator;
 import services.gui.StudyService;
 import services.gui.UserService;
 import services.gui.WorkerService;
-import utils.common.DateUtils;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -56,6 +56,9 @@ public class ImportExport extends Controller {
 	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
 	public static final String JQDOWNLOAD_COOKIE_NAME = "fileDownload";
 	public static final String JQDOWNLOAD_COOKIE_CONTENT = "true";
+	public static final String DATE_FORMAT_FILE = "yyyyMMddHHmmss";
+	public static final SimpleDateFormat DATE_FORMATER_FILE = new SimpleDateFormat(
+			DATE_FORMAT_FILE);
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
@@ -454,8 +457,9 @@ public class ImportExport extends Controller {
 	 */
 	private void prepareResponseForExport() {
 		response().setContentType("application/x-download");
-		String filename = "results_" + DateUtils.getDateForFile(new Date())
-				+ "." + IOUtils.TXT_FILE_SUFFIX;
+		String dateForFile = DATE_FORMATER_FILE.format(new Date());
+		String filename = "results_" + dateForFile + "."
+				+ IOUtils.TXT_FILE_SUFFIX;
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
 		response().setCookie(JQDOWNLOAD_COOKIE_NAME, JQDOWNLOAD_COOKIE_CONTENT);

@@ -1,8 +1,6 @@
 package publix.services.personal_single;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.publix.PublixException;
-import general.Global;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -12,9 +10,11 @@ import models.common.workers.PersonalSingleWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import publix.PublixTestGlobal;
 import publix.services.PublixUtilsTest;
 import services.publix.personal_single.PersonalSingleErrorMessages;
 import services.publix.personal_single.PersonalSinglePublixUtils;
+import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -28,10 +28,10 @@ public class PersonalSinglePublixUtilsTest extends
 	@Override
 	public void before() throws Exception {
 		super.before();
-		personalSinglePublixUtils = Global.INJECTOR
+		personalSinglePublixUtils = PublixTestGlobal.INJECTOR
 				.getInstance(PersonalSinglePublixUtils.class);
 		publixUtils = personalSinglePublixUtils;
-		personalSingleErrorMessages = Global.INJECTOR
+		personalSingleErrorMessages = PublixTestGlobal.INJECTOR
 				.getInstance(PersonalSingleErrorMessages.class);
 		errorMessages = personalSingleErrorMessages;
 	}

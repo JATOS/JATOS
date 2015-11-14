@@ -1,9 +1,6 @@
 package publix.services.jatos;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
-import general.Global;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -15,10 +12,13 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import play.mvc.Http;
+import publix.PublixTestGlobal;
 import publix.services.PublixUtilsTest;
 import services.publix.jatos.JatosErrorMessages;
 import services.publix.jatos.JatosPublixUtils;
 import controllers.publix.jatos.JatosPublix;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -31,9 +31,9 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 	@Override
 	public void before() throws Exception {
 		super.before();
-		jatosPublixUtils = Global.INJECTOR.getInstance(JatosPublixUtils.class);
+		jatosPublixUtils = PublixTestGlobal.INJECTOR.getInstance(JatosPublixUtils.class);
 		publixUtils = jatosPublixUtils;
-		jatosErrorMessages = Global.INJECTOR
+		jatosErrorMessages = PublixTestGlobal.INJECTOR
 				.getInstance(JatosErrorMessages.class);
 		errorMessages = jatosErrorMessages;
 	}

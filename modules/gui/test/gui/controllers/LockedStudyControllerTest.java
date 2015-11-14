@@ -5,8 +5,8 @@ import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.redirectLocation;
 import static play.test.Helpers.status;
-import general.Global;
 import gui.AbstractTest;
+import gui.GuiTestGlobal;
 
 import java.io.IOException;
 
@@ -40,7 +40,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
+		studyResultDao = GuiTestGlobal.INJECTOR.getInstance(StudyResultDao.class);
 		studyTemplate = importExampleStudy();
 	}
 

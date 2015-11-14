@@ -12,7 +12,6 @@ import static play.test.Helpers.header;
 import static play.test.Helpers.routeAndCall;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
-import gui.AbstractTest;
 
 import java.io.IOException;
 
@@ -30,11 +29,11 @@ import play.mvc.Http.Cookie;
 import play.mvc.Http.HeaderNames;
 import play.mvc.Result;
 import play.test.FakeRequest;
+import publix.AbstractTest;
 import utils.common.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import controllers.gui.Users;
 import controllers.publix.Publix;
 import controllers.publix.PublixInterceptor;
 import controllers.publix.jatos.JatosPublix;
@@ -74,7 +73,7 @@ public class PublixJatosTest extends AbstractTest {
 		FakeRequest fakeReq = new FakeRequest(GET, "/publix/" + study.getId()
 				+ "/start?" + JatosPublix.JATOS_WORKER_ID + "="
 				+ admin.getWorker().getId());
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		Result result = routeAndCall(fakeReq, 10000);
 
@@ -111,7 +110,7 @@ public class PublixJatosTest extends AbstractTest {
 		// studyResult -> STARTED, componentResult -> STARTED
 		fakeReq = new FakeRequest(GET, "/publix/" + study.getId() + "/"
 				+ study.getFirstComponent().getId() + "/start");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());
@@ -141,7 +140,7 @@ public class PublixJatosTest extends AbstractTest {
 		// studyResult -> DATA_RETRIEVED, componentResult -> DATA_RETRIEVED
 		fakeReq = new FakeRequest(GET, "/publix/" + study.getId() + "/"
 				+ study.getFirstComponent().getId() + "/initData");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());
@@ -172,7 +171,7 @@ public class PublixJatosTest extends AbstractTest {
 		// studyResult -> DATA_RETRIEVED, componentResult -> RESULTDATA_POSTED
 		fakeReq = new FakeRequest(POST, "/publix/" + study.getId() + "/"
 				+ study.getFirstComponent().getId() + "/resultData");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());
@@ -199,7 +198,7 @@ public class PublixJatosTest extends AbstractTest {
 		// studyResult -> DATA_RETRIEVED, componentResult -> RESULTDATA_POSTED
 		fakeReq = new FakeRequest(POST, "/publix/" + study.getId()
 				+ "/sessionData");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());
@@ -226,7 +225,7 @@ public class PublixJatosTest extends AbstractTest {
 		// old componentResult -> FINISHED, new componentResult -> STARTED
 		fakeReq = new FakeRequest(GET, "/publix/" + study.getId()
 				+ "/nextComponent/start");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());
@@ -253,7 +252,7 @@ public class PublixJatosTest extends AbstractTest {
 		// old componentResult -> FINISHED, new componentResult -> STARTED
 		fakeReq = new FakeRequest(GET, "/publix/" + study.getId() + "/"
 				+ study.getComponent(2).getId() + "/start");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());
@@ -282,7 +281,7 @@ public class PublixJatosTest extends AbstractTest {
 		// old componentResult -> FINISHED, new componentResult -> STARTED
 		fakeReq = new FakeRequest(GET, "/publix/" + study.getId()
 				+ "/component/start?position=3");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());
@@ -311,7 +310,7 @@ public class PublixJatosTest extends AbstractTest {
 		// Log error
 		fakeReq = new FakeRequest(POST, "/publix/" + study.getId() + "/"
 				+ study.getComponent(3).getId() + "/log");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());
@@ -329,7 +328,7 @@ public class PublixJatosTest extends AbstractTest {
 		// studyResult -> DATA_RETRIEVED, componentResult -> DATA_RETRIEVED
 		fakeReq = new FakeRequest(GET, "/publix/" + study.getId() + "/"
 				+ study.getComponent(3).getId() + "/initData");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());
@@ -355,7 +354,7 @@ public class PublixJatosTest extends AbstractTest {
 		// Send request to end study
 		// studyResult -> FINISHED, componentResult -> FINISHED
 		fakeReq = new FakeRequest(GET, "/publix/" + study.getId() + "/end");
-		fakeReq.withSession(Users.SESSION_EMAIL, admin.getEmail());
+		fakeReq.withSession("email", admin.getEmail());
 		fakeReq.withSession(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
 		fakeReq.withSession(Publix.WORKER_ID, admin.getWorker().getId()
 				.toString());

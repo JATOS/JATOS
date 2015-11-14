@@ -2,6 +2,7 @@ package utils.common;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -258,7 +259,7 @@ public class JsonUtils {
 		// Add extra variables
 		studyResultNode.put("studyId", studyResult.getStudy().getId());
 		studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
-		studyResultNode.put("duration", DateUtils.getDurationPretty(
+		studyResultNode.put("duration", getDurationPretty(
 				studyResult.getStartDate(), studyResult.getEndDate()));
 		String groupResultId = studyResult.getGroupResult() != null ? studyResult
 				.getGroupResult().getId().toString()
@@ -292,7 +293,7 @@ public class JsonUtils {
 				.getId());
 		componentResultNode.put("componentTitle", componentResult
 				.getComponent().getTitle());
-		componentResultNode.put("duration", DateUtils.getDurationPretty(
+		componentResultNode.put("duration", getDurationPretty(
 				componentResult.getStartDate(), componentResult.getEndDate()));
 		GroupResult groupResult = componentResult.getStudyResult()
 				.getGroupResult();
@@ -305,6 +306,26 @@ public class JsonUtils {
 				.put(DATA, componentResultDataForUI(componentResult));
 
 		return componentResultNode;
+	}
+	
+	private static String getDurationPretty(Timestamp startDate,
+			Timestamp endDate) {
+		if (endDate != null) {
+			long duration = endDate.getTime() - startDate.getTime();
+			long diffSeconds = duration / 1000 % 60;
+			long diffMinutes = duration / (60 * 1000) % 60;
+			long diffHours = duration / (60 * 60 * 1000) % 24;
+			long diffDays = duration / (24 * 60 * 60 * 1000);
+			String asStr = String.format("%02d", diffHours) + ":"
+					+ String.format("%02d", diffMinutes) + ":"
+					+ String.format("%02d", diffSeconds);
+			if (diffDays == 0) {
+				return asStr;
+			} else {
+				return diffDays + ":" + asStr;
+			}
+		}
+		return null;
 	}
 
 	/**

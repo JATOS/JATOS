@@ -1,14 +1,9 @@
 package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
-import exceptions.publix.ForbiddenReloadException;
-import general.Global;
 import general.common.MessagesStrings;
 import gui.AbstractTest;
+import gui.GuiTestGlobal;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -20,6 +15,10 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import services.gui.ResultDataStringGenerator;
+import daos.common.StudyResultDao;
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
 
 /**
  * Tests ResultDataStringGenerator
@@ -33,9 +32,10 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		resultDataStringGenerator = Global.INJECTOR
+		resultDataStringGenerator = GuiTestGlobal.INJECTOR
 				.getInstance(ResultDataStringGenerator.class);
-		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
+		studyResultDao = GuiTestGlobal.INJECTOR
+				.getInstance(StudyResultDao.class);
 	}
 
 	@Override
@@ -50,7 +50,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 
 	@Test
 	public void checkForWorker() throws NoSuchAlgorithmException, IOException,
-			ForbiddenReloadException, ForbiddenException, BadRequestException {
+			ForbiddenException, BadRequestException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -71,7 +71,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 
 	@Test
 	public void checkForStudy() throws NoSuchAlgorithmException, IOException,
-			ForbiddenReloadException, ForbiddenException, BadRequestException {
+			ForbiddenException, BadRequestException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -91,8 +91,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 
 	@Test
 	public void checkForComponent() throws NoSuchAlgorithmException,
-			IOException, ForbiddenReloadException, ForbiddenException,
-			BadRequestException {
+			IOException, ForbiddenException, BadRequestException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -110,8 +109,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	}
 
 	@Test
-	public void checkFromListOfComponentResultIds()
-			throws ForbiddenReloadException, BadRequestException,
+	public void checkFromListOfComponentResultIds() throws BadRequestException,
 			ForbiddenException, IOException, NoSuchAlgorithmException,
 			NotFoundException {
 		Study study = importExampleStudy();
@@ -128,8 +126,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoComponentResultsWithData(Study study)
-			throws ForbiddenReloadException {
+	private void createTwoComponentResultsWithData(Study study) {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
 				admin.getWorker());
@@ -152,7 +149,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	@Test
 	public void checkFromListOfComponentResultIdsEmpty()
 			throws BadRequestException, ForbiddenException,
-			ForbiddenReloadException, NoSuchAlgorithmException, IOException {
+			NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResultsWithoutData(study);
@@ -169,8 +166,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoComponentResultsWithoutData(Study study)
-			throws ForbiddenReloadException {
+	private void createTwoComponentResultsWithoutData(Study study) {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
 				admin.getWorker());

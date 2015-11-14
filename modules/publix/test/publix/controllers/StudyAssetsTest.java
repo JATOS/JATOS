@@ -9,10 +9,8 @@ import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
 import static play.test.Helpers.status;
 import exceptions.publix.NotFoundPublixException;
-import general.Global;
 import general.common.Common;
 import general.common.MessagesStrings;
-import gui.AbstractTest;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +21,8 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import play.mvc.Result;
+import publix.AbstractTest;
+import publix.PublixTestGlobal;
 import utils.common.IOUtils;
 import controllers.publix.StudyAssets;
 
@@ -38,7 +38,7 @@ public class StudyAssetsTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		studyAssets = Global.INJECTOR.getInstance(StudyAssets.class);
+		studyAssets = PublixTestGlobal.INJECTOR.getInstance(StudyAssets.class);
 		studyExample = importExampleStudy();
 	}
 

@@ -1,21 +1,24 @@
 package services.gui;
 
-import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.ValidationException;
 
 import models.common.Component;
 import play.Logger;
+import play.data.validation.ValidationError;
+import utils.common.ComponentCloner;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 import daos.common.ComponentDao;
 import exceptions.gui.BadRequestException;
+import general.common.MessagesStrings;
+import general.gui.RequestScopeMessaging;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -29,17 +32,18 @@ public class ComponentService {
 			.getSimpleName();
 
 	private final ComponentDao componentDao;
+	private final ComponentCloner componentCloner;
 
 	@Inject
-	ComponentService(ComponentDao componentDao) {
+	ComponentService(ComponentDao componentDao, ComponentCloner componentCloner) {
 		this.componentDao = componentDao;
+		this.componentCloner = componentCloner;
 	}
 
 	/**
 	 * Update component's properties with the ones from updatedComponent.
 	 */
-	public void updateProperties(Component component,
-			Component updatedComponent) {
+	public void updateProperties(Component component, Component updatedComponent) {
 		component.setTitle(updatedComponent.getTitle());
 		component.setReloadable(updatedComponent.isReloadable());
 		component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
@@ -61,31 +65,14 @@ public class ComponentService {
 		component.setJsonData(updatedComponent.getJsonData());
 		componentDao.update(component);
 	}
-
+	
 	/**
-	 * Clones a Component entity. Does not clone id, uuid, or date. Does not
-	 * persist the clone. Does not clone the HTML file.
-	 */
-	public Component cloneComponentEntity(Component component) {
-		Component clone = new Component();
-		clone.setStudy(component.getStudy());
-		clone.setTitle(component.getTitle());
-		clone.setHtmlFilePath(component.getHtmlFilePath());
-		clone.setReloadable(component.isReloadable());
-		clone.setActive(component.isActive());
-		clone.setJsonData(component.getJsonData());
-		clone.setComments(component.getComments());
-		return clone;
-	}
-
-	/**
-	 * Does the same as {@link #cloneComponentEntity(Component)
-	 * cloneComponent} and additionally clones the HTML file and changes
-	 * the title.
+	 * Does the same as {@link #clone(Component) cloneComponent}
+	 * and additionally clones the HTML file and changes the title.
 	 */
 	public Component cloneWholeComponent(Component component) {
-		Component clone = cloneComponentEntity(component);
-		clone.setTitle(cloneTitle(component.getTitle()));
+		Component clone = componentCloner.clone(component);
+		clone.setTitle(componentCloner.cloneTitle(component.getTitle()));
 		try {
 			String clonedHtmlFileName = IOUtils.cloneComponentHtmlFile(
 					component.getStudy().getDirName(),
@@ -102,27 +89,13 @@ public class ComponentService {
 	}
 
 	/**
-	 * Generates an title for the cloned study that doesn't exist so far
-	 */
-	private String cloneTitle(String origTitle) {
-		String cloneTitle = origTitle + " (clone)";
-		int i = 2;
-		while (!componentDao.findByTitle(cloneTitle).isEmpty()) {
-			cloneTitle = origTitle + " (clone " + i + ")";
-			i++;
-		}
-		return cloneTitle;
-	}
-
-	/**
 	 * Binds component data from a edit/create component request onto a
 	 * Component. Play's default form binder doesn't work here.
 	 */
 	public Component bindComponentFromRequest(Map<String, String[]> formMap) {
 		Component component = new Component();
 		component.setTitle(formMap.get(Component.TITLE)[0]);
-		component
-				.setHtmlFilePath(formMap.get(Component.HTML_FILE_PATH)[0]);
+		component.setHtmlFilePath(formMap.get(Component.HTML_FILE_PATH)[0]);
 		component.setReloadable(Boolean.parseBoolean(formMap
 				.get(Component.RELOADABLE)[0]));
 		component.setComments(formMap.get(Component.COMMENTS)[0]);
@@ -135,8 +108,8 @@ public class ComponentService {
 	 * Renames the path to the HTML file in the file system and persists the
 	 * component's property.
 	 */
-	public void renameHtmlFilePath(Component component,
-			String newHtmlFilePath) throws IOException {
+	public void renameHtmlFilePath(Component component, String newHtmlFilePath)
+			throws IOException {
 
 		// If the new HTML file name is empty persist an empty string
 		if (newHtmlFilePath == null || newHtmlFilePath.trim().isEmpty()) {
@@ -183,6 +156,21 @@ public class ComponentService {
 			throw new BadRequestException(
 					MessagesStrings.componentNotBelongToStudy(studyId,
 							componentId));
+		}
+	}
+
+	/**
+	 * Validates the component by using the Component's model validation method.
+	 * Throws ValidationException in case of an error.
+	 */
+	public void validate(Component component) throws ValidationException {
+		if (component.validate() != null) {
+			Logger.warn(CLASS_NAME
+					+ ".validate: "
+					+ component.validate().stream()
+							.map(ValidationError::message)
+							.collect(Collectors.joining(", ")));
+			throw new ValidationException(MessagesStrings.COMPONENT_INVALID);
 		}
 	}
 

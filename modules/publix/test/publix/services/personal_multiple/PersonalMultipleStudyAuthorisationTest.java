@@ -1,9 +1,5 @@
 package publix.services.personal_multiple;
 
-import exceptions.publix.ForbiddenPublixException;
-import general.Global;
-import gui.AbstractTest;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
@@ -13,7 +9,10 @@ import models.common.workers.PersonalMultipleWorker;
 
 import org.junit.Test;
 
+import publix.AbstractTest;
+import publix.PublixTestGlobal;
 import services.publix.personal_multiple.PersonalMultipleStudyAuthorisation;
+import exceptions.publix.ForbiddenPublixException;
 
 /**
  * @author Kristian Lange
@@ -24,7 +23,7 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		studyAuthorisation = Global.INJECTOR
+		studyAuthorisation = PublixTestGlobal.INJECTOR
 				.getInstance(PersonalMultipleStudyAuthorisation.class);
 	}
 

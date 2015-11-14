@@ -14,7 +14,7 @@ import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.gui.UserService;
+import utils.common.HashUtils;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import daos.common.UserDao;
 
@@ -32,13 +32,11 @@ public class Authentication extends Controller {
 
 	public static final String LOGGED_IN_USER = "loggedInUser";
 
-	private final UserService userService;
 	private final UserDao userDao;
 
 	@Inject
-	Authentication(UserDao userDao, UserService userService) {
+	Authentication(UserDao userDao) {
 		this.userDao = userDao;
-		this.userService = userService;
 	}
 
 	/**
@@ -59,7 +57,7 @@ public class Authentication extends Controller {
 		Form<Login> loginForm = Form.form(Login.class).bindFromRequest();
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");
-		String passwordHash = userService.getHashMDFive(password);
+		String passwordHash = HashUtils.getHashMDFive(password);
 		if (userDao.authenticate(email, passwordHash) == null) {
 			loginForm.reject("Invalid user or password");
 			return badRequest(views.html.gui.auth.login.render(loginForm));

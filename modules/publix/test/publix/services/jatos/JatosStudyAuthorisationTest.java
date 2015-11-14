@@ -1,10 +1,6 @@
 package publix.services.jatos;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
-import general.Global;
-import gui.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -15,9 +11,12 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import play.mvc.Http;
+import publix.AbstractTest;
+import publix.PublixTestGlobal;
 import services.publix.jatos.JatosErrorMessages;
 import services.publix.jatos.JatosStudyAuthorisation;
-import controllers.gui.Users;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -29,9 +28,9 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		jatosErrorMessages = Global.INJECTOR
+		jatosErrorMessages = PublixTestGlobal.INJECTOR
 				.getInstance(JatosErrorMessages.class);
-		studyAuthorisation = Global.INJECTOR
+		studyAuthorisation = PublixTestGlobal.INJECTOR
 				.getInstance(JatosStudyAuthorisation.class);
 	}
 
@@ -43,8 +42,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
 		mockContext();
-		Http.Context.current().session()
-				.put(Users.SESSION_EMAIL, admin.getEmail());
+		Http.Context.current().session().put("email", admin.getEmail());
 
 		Study study = importExampleStudy();
 		addStudy(study);

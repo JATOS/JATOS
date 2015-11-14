@@ -3,9 +3,6 @@ package publix.services.general_single;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
-import general.Global;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -17,10 +14,13 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import play.mvc.Http.Cookie;
+import publix.PublixTestGlobal;
 import publix.services.PublixUtilsTest;
 import services.publix.PublixErrorMessages;
 import services.publix.general_single.GeneralSingleErrorMessages;
 import services.publix.general_single.GeneralSinglePublixUtils;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -34,10 +34,10 @@ public class GeneralSinglePublixUtilsTest extends
 	@Override
 	public void before() throws Exception {
 		super.before();
-		generalSinglePublixUtils = Global.INJECTOR
+		generalSinglePublixUtils = PublixTestGlobal.INJECTOR
 				.getInstance(GeneralSinglePublixUtils.class);
 		publixUtils = generalSinglePublixUtils;
-		generalSingleErrorMessages = Global.INJECTOR
+		generalSingleErrorMessages = PublixTestGlobal.INJECTOR
 				.getInstance(GeneralSingleErrorMessages.class);
 		errorMessages = generalSingleErrorMessages;
 	}

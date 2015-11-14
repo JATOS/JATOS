@@ -1,4 +1,4 @@
-package gui;
+package publix;
 
 import static org.mockito.Mockito.mock;
 import general.common.Common;
@@ -36,8 +36,6 @@ import play.test.FakeApplication;
 import play.test.Helpers;
 import play.test.TestServer;
 import scala.Option;
-import services.gui.StudyService;
-import services.gui.UserService;
 import utils.common.HashUtils;
 import utils.common.IOUtils;
 import utils.common.StudyCloner;
@@ -57,8 +55,10 @@ import daos.common.worker.WorkerDao;
  */
 public abstract class AbstractTest {
 
-	private static final String CLASS_NAME = AbstractTest.class.getSimpleName();
 	private static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
+
+	private static final String CLASS_NAME = AbstractTest.class.getSimpleName();
+
 	private static final String TEST_COMPONENT_JAC_PATH = "test/resources/quit_button.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "quit_button_bkp.jac";
 
@@ -66,8 +66,6 @@ public abstract class AbstractTest {
 	protected FakeApplication application;
 	protected TestServer testServer;
 	protected EntityManager entityManager;
-	protected UserService userService;
-	protected StudyService studyService;
 	protected UserDao userDao;
 	protected StudyDao studyDao;
 	protected ComponentDao componentDao;
@@ -87,33 +85,32 @@ public abstract class AbstractTest {
 				"gui.GuiTestGlobal").newInstance();
 
 		application = Helpers.fakeApplication(global);
-		Helpers.start(application);
-//		if (testServer != null) {
-//			testServer.stop();
-//		}
-//		testServer = Helpers.testServer(play.api.test.Helpers.testServerPort(),
-//				application);
-//		testServer.start();
+		if (testServer != null) {
+			testServer.stop();
+		}
+		testServer = Helpers.testServer(play.api.test.Helpers.testServerPort(),
+				application);
+		testServer.start();
 
 		// Use Guice dependency injection
-		userService = GuiTestGlobal.INJECTOR.getInstance(UserService.class);
-		studyService = GuiTestGlobal.INJECTOR.getInstance(StudyService.class);
-		userDao = GuiTestGlobal.INJECTOR.getInstance(UserDao.class);
-		studyDao = GuiTestGlobal.INJECTOR.getInstance(StudyDao.class);
-		componentDao = GuiTestGlobal.INJECTOR.getInstance(ComponentDao.class);
-		workerDao = GuiTestGlobal.INJECTOR.getInstance(WorkerDao.class);
-		studyResultDao = GuiTestGlobal.INJECTOR
+		userDao = PublixTestGlobal.INJECTOR.getInstance(UserDao.class);
+		studyDao = PublixTestGlobal.INJECTOR.getInstance(StudyDao.class);
+		componentDao = PublixTestGlobal.INJECTOR
+				.getInstance(ComponentDao.class);
+		workerDao = PublixTestGlobal.INJECTOR.getInstance(WorkerDao.class);
+		studyResultDao = PublixTestGlobal.INJECTOR
 				.getInstance(StudyResultDao.class);
-		componentResultDao = GuiTestGlobal.INJECTOR
+		componentResultDao = PublixTestGlobal.INJECTOR
 				.getInstance(ComponentResultDao.class);
-		studyCloner = GuiTestGlobal.INJECTOR.getInstance(StudyCloner.class);
+		studyCloner = PublixTestGlobal.INJECTOR.getInstance(StudyCloner.class);
 
 		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
 				.plugin(JPAPlugin.class);
 		entityManager = jpaPlugin.get().em("default");
 		JPA.bindForCurrentThread(entityManager);
 
-		checkAdmin();
+		// Get admin (admin is automatically created during initialisation)
+		admin = userDao.findByEmail("admin");
 
 		before();
 	}
@@ -127,10 +124,9 @@ public abstract class AbstractTest {
 		}
 		JPA.bindForCurrentThread(null);
 		removeStudyAssetsRootDir();
-//		if (testServer != null) {
-//			testServer.stop();
-//		}
-		Helpers.stop(application);
+		if (testServer != null) {
+			testServer.stop();
+		}
 	}
 
 	@BeforeClass
@@ -161,19 +157,10 @@ public abstract class AbstractTest {
 		// the context
 		JPA.bindForCurrentThread(entityManager);
 	}
-	
-	private void checkAdmin() {
-		JPA.withTransaction(() -> {
-			admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			if (admin == null) {
-				admin = userService.createAdmin();
-			}
-		});
-	}
 
 	protected static void removeStudyAssetsRootDir() throws IOException {
 		File assetsRoot = new File(Common.STUDY_ASSETS_ROOT_PATH);
-		if (assetsRoot.list() != null && assetsRoot.list().length > 0) {
+		if (assetsRoot.list().length > 0) {
 			Logger.warn(CLASS_NAME
 					+ ".removeStudyAssetsRootDir: Study assets root directory "
 					+ Common.STUDY_ASSETS_ROOT_PATH

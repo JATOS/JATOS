@@ -1,13 +1,9 @@
 package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
-import general.Global;
 import general.common.MessagesStrings;
 import gui.AbstractTest;
+import gui.GuiTestGlobal;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -23,6 +19,10 @@ import org.junit.Test;
 
 import services.gui.ResultRemover;
 import services.gui.ResultService;
+import daos.common.StudyResultDao;
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
 
 /**
  * Tests ResultRemover
@@ -37,9 +37,9 @@ public class ResultRemoverTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		resultService = Global.INJECTOR.getInstance(ResultService.class);
-		resultRemover = Global.INJECTOR.getInstance(ResultRemover.class);
-		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
+		resultService = GuiTestGlobal.INJECTOR.getInstance(ResultService.class);
+		resultRemover = GuiTestGlobal.INJECTOR.getInstance(ResultRemover.class);
+		studyResultDao = GuiTestGlobal.INJECTOR.getInstance(StudyResultDao.class);
 	}
 
 	@Override

@@ -1,10 +1,6 @@
 package publix.services.mt;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
-import general.Global;
-import gui.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -17,9 +13,13 @@ import models.common.workers.MTWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import publix.AbstractTest;
+import publix.PublixTestGlobal;
 import services.publix.PublixErrorMessages;
 import services.publix.mt.MTErrorMessages;
 import services.publix.mt.MTStudyAuthorisation;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -31,8 +31,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		mtErrorMessages = Global.INJECTOR.getInstance(MTErrorMessages.class);
-		studyAuthorisation = Global.INJECTOR
+		mtErrorMessages = PublixTestGlobal.INJECTOR.getInstance(MTErrorMessages.class);
+		studyAuthorisation = PublixTestGlobal.INJECTOR
 				.getInstance(MTStudyAuthorisation.class);
 	}
 

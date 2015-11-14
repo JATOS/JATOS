@@ -1,15 +1,6 @@
 package publix.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import daos.common.StudyResultDao;
-import daos.common.workers.WorkerDao;
-import exceptions.publix.BadRequestPublixException;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.ForbiddenReloadException;
-import exceptions.publix.NotFoundPublixException;
-import exceptions.publix.PublixException;
-import general.Global;
-import gui.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -27,9 +18,18 @@ import models.common.workers.Worker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import publix.AbstractTest;
+import publix.PublixTestGlobal;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import controllers.publix.Publix;
+import daos.common.StudyResultDao;
+import daos.common.worker.WorkerDao;
+import exceptions.publix.BadRequestPublixException;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.NotFoundPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -41,8 +41,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		workerDao = Global.INJECTOR.getInstance(WorkerDao.class);
-		studyResultDao = Global.INJECTOR.getInstance(StudyResultDao.class);
+		workerDao = PublixTestGlobal.INJECTOR.getInstance(WorkerDao.class);
+		studyResultDao = PublixTestGlobal.INJECTOR.getInstance(StudyResultDao.class);
 	}
 
 	@Override
@@ -384,7 +384,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyService.cloneStudy(study, admin);
+		Study clone = studyCloner.clone(study, admin);
 		entityManager.getTransaction().commit();
 
 		entityManager.getTransaction().begin();
@@ -420,7 +420,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyService.cloneStudy(study, admin);
+		Study clone = studyCloner.clone(study, admin);
 		entityManager.getTransaction().commit();
 
 		entityManager.getTransaction().begin();
@@ -589,7 +589,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyService.cloneStudy(study, admin);
+		Study clone = studyCloner.clone(study, admin);
 		entityManager.getTransaction().commit();
 
 		try {
@@ -733,7 +733,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyService.cloneStudy(study, admin);
+		Study clone = studyCloner.clone(study, admin);
 		entityManager.getTransaction().commit();
 
 		try {
@@ -792,7 +792,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyService.cloneStudy(study, admin);
+		Study clone = studyCloner.clone(study, admin);
 		entityManager.getTransaction().commit();
 
 		entityManager.getTransaction().begin();

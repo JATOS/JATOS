@@ -3,15 +3,19 @@ package services.gui;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.ValidationException;
 
 import models.common.Component;
 import models.common.Group;
 import models.common.Study;
 import models.common.User;
 import models.gui.StudyProperties;
+import play.Logger;
+import play.data.validation.ValidationError;
 import utils.common.IOUtils;
 import daos.common.StudyDao;
 import daos.common.UserDao;
@@ -28,67 +32,20 @@ import general.gui.RequestScopeMessaging;
 @Singleton
 public class StudyService {
 
+	private static final String CLASS_NAME = StudyService.class.getSimpleName();
+
 	public static final String COMPONENT_POSITION_DOWN = "down";
 	public static final String COMPONENT_POSITION_UP = "up";
 
-	private final ComponentService componentService;
 	private final GroupService groupService;
 	private final StudyDao studyDao;
 	private final UserDao userDao;
 
 	@Inject
-	StudyService(ComponentService componentService, GroupService groupService,
-			StudyDao studyDao, UserDao userDao) {
-		this.componentService = componentService;
+	StudyService(GroupService groupService, StudyDao studyDao, UserDao userDao) {
 		this.groupService = groupService;
 		this.studyDao = studyDao;
 		this.userDao = userDao;
-	}
-
-	/**
-	 * Clones the given Study and persists it. Copies the corresponding study
-	 * assets.
-	 */
-	public Study cloneStudy(Study study, User loggedInUser) throws IOException {
-		Study clone = new Study();
-		clone.setTitle(cloneTitle(study.getTitle()));
-		clone.setDescription(study.getDescription());
-		clone.setDirName(study.getDirName());
-		clone.setComments(study.getComments());
-		clone.setJsonData(study.getJsonData());
-
-		clone.setLocked(false);
-		study.getAllowedWorkerTypeList().forEach(clone::addAllowedWorkerType);
-
-		// Clone each component
-		for (Component component : study.getComponentList()) {
-			Component componentClone = componentService
-					.cloneComponentEntity(component);
-			componentClone.setStudy(clone);
-			clone.addComponent(componentClone);
-		}
-		
-		// Clone assets directory
-		String destDirName = IOUtils.cloneStudyAssetsDirectory(study
-				.getDirName());
-		clone.setDirName(destDirName);
-
-		createStudy(loggedInUser, clone);
-		return clone;
-	}
-
-	/**
-	 * Generates an title for the cloned study by adding '(clone)' and numbers
-	 * that doesn't exist so far.
-	 */
-	private String cloneTitle(String origTitle) {
-		String cloneTitle = origTitle + " (clone)";
-		int i = 2;
-		while (!studyDao.findByTitle(cloneTitle).isEmpty()) {
-			cloneTitle = origTitle + " (clone " + i + ")";
-			i++;
-		}
-		return cloneTitle;
 	}
 
 	/**
@@ -284,6 +241,22 @@ public class StudyService {
 		studyProperties.setComments(study.getComments());
 		studyProperties.setJsonData(study.getJsonData());
 		return studyProperties;
+	}
+
+	/**
+	 * Validates the study by converting it to StudyProperties and uses its
+	 * validate method. Throws ValidationException in case of an error.
+	 */
+	public void validate(Study study) throws ValidationException {
+		StudyProperties studyProperties = bindToProperties(study);
+		if (studyProperties.validate() != null) {
+			Logger.warn(CLASS_NAME
+					+ ".validate: "
+					+ studyProperties.validate().stream()
+							.map(ValidationError::message)
+							.collect(Collectors.joining(", ")));
+			throw new ValidationException(MessagesStrings.STUDY_INVALID);
+		}
 	}
 
 }

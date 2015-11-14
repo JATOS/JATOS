@@ -3,9 +3,9 @@ package gui.services;
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
-import general.Global;
 import general.common.MessagesStrings;
 import gui.AbstractTest;
+import gui.GuiTestGlobal;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -41,7 +41,7 @@ public class StudyServiceTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		studyService = Global.INJECTOR.getInstance(StudyService.class);
+		studyService = GuiTestGlobal.INJECTOR.getInstance(StudyService.class);
 		mockContext();
 	}
 
@@ -61,7 +61,7 @@ public class StudyServiceTest extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 		entityManager.getTransaction().begin();
-		Study clone = studyService.cloneStudy(study, admin);
+		Study clone = studyCloner.clone(study, admin);
 		entityManager.getTransaction().commit();
 
 		Study cloneInDb = studyDao.findByUuid(clone.getUuid());

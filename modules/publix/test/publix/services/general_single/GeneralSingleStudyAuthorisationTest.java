@@ -1,10 +1,6 @@
 package publix.services.general_single;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
-import general.Global;
-import gui.AbstractTest;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -16,9 +12,13 @@ import models.common.workers.GeneralSingleWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import publix.AbstractTest;
+import publix.PublixTestGlobal;
 import services.publix.PublixErrorMessages;
 import services.publix.general_single.GeneralSingleErrorMessages;
 import services.publix.general_single.GeneralSingleStudyAuthorisation;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -30,9 +30,9 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		generalSingleErrorMessages = Global.INJECTOR
+		generalSingleErrorMessages = PublixTestGlobal.INJECTOR
 				.getInstance(GeneralSingleErrorMessages.class);
-		studyAuthorisation = Global.INJECTOR
+		studyAuthorisation = PublixTestGlobal.INJECTOR
 				.getInstance(GeneralSingleStudyAuthorisation.class);
 	}
 

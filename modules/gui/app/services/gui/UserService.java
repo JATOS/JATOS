@@ -1,7 +1,6 @@
 package services.gui;
 
 import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +10,7 @@ import javax.inject.Singleton;
 
 import models.common.User;
 import play.data.validation.ValidationError;
+import utils.common.HashUtils;
 import controllers.gui.Authentication;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
@@ -70,25 +70,10 @@ public class UserService {
 
 	public User createAdmin() throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
-		String passwordHash = getHashMDFive(ADMIN_PASSWORD);
+		String passwordHash = HashUtils.getHashMDFive(ADMIN_PASSWORD);
 		User adminUser = new User(ADMIN_EMAIL, ADMIN_NAME, passwordHash);
 		userDao.create(adminUser);
 		return adminUser;
-	}
-
-	public String getHashMDFive(String str)
-			throws UnsupportedEncodingException, NoSuchAlgorithmException {
-		byte[] strBytes = str.getBytes("UTF-8");
-		MessageDigest md = MessageDigest.getInstance("MD5");
-		byte[] hashByte = md.digest(strBytes);
-
-		// Convert the byte to hex format
-		StringBuilder sb = new StringBuilder();
-		for (byte aHashByte : hashByte) {
-			sb.append(Integer.toString((aHashByte & 0xff) + 0x100, 16)
-					.substring(1));
-		}
-		return sb.toString();
 	}
 
 	public List<ValidationError> validateNewUser(User newUser, String password,
@@ -131,8 +116,8 @@ public class UserService {
 		}
 
 		// Check that both passwords are the same
-		String passwordHash = getHashMDFive(password);
-		String passwordHashRepeat = getHashMDFive(passwordRepeat);
+		String passwordHash = HashUtils.getHashMDFive(password);
+		String passwordHashRepeat = HashUtils.getHashMDFive(passwordRepeat);
 		if (!passwordHash.equals(passwordHashRepeat)) {
 			errorList.add(new ValidationError(User.PASSWORD,
 					MessagesStrings.PASSWORDS_DONT_MATCH));
@@ -144,7 +129,7 @@ public class UserService {
 	 */
 	public void createUser(User newUser, String password)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
-		String passwordHash = getHashMDFive(password);
+		String passwordHash = HashUtils.getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
 		userDao.create(newUser);
 	}

@@ -3,8 +3,8 @@ package gui.services;
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
-import general.Global;
 import gui.AbstractTest;
+import gui.GuiTestGlobal;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +40,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		importExportService = Global.INJECTOR
+		importExportService = GuiTestGlobal.INJECTOR
 				.getInstance(ImportExportService.class);
 		mockContext();
 	}

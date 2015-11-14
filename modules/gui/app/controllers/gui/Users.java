@@ -20,6 +20,7 @@ import services.gui.BreadcrumbsService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 import utils.common.ControllerUtils;
+import utils.common.HashUtils;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import exceptions.gui.ForbiddenException;
@@ -229,7 +230,7 @@ public class Users extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String newPassword = requestData.get(User.PASSWORD);
 		String newPasswordRepeat = requestData.get(User.PASSWORD_REPEAT);
-		String oldPasswordHash = userService.getHashMDFive(requestData
+		String oldPasswordHash = HashUtils.getHashMDFive(requestData
 				.get(User.OLD_PASSWORD));
 		List<ValidationError> errorList = userService.validateChangePassword(
 				user, newPassword, newPasswordRepeat, oldPasswordHash);
@@ -237,7 +238,7 @@ public class Users extends Controller {
 			return showChangePasswordAfterError(loggedInUser, form, errorList,
 					Http.Status.BAD_REQUEST, loggedInUser);
 		}
-		String newPasswordHash = userService.getHashMDFive(newPassword);
+		String newPasswordHash = HashUtils.getHashMDFive(newPassword);
 		userService.changePasswordHash(user, newPasswordHash);
 
 		return redirect(controllers.gui.routes.Users.profile(email));

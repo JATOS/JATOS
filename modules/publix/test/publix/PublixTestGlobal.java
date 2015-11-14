@@ -1,6 +1,5 @@
-package general;
+package publix;
 
-import general.guice.GuiceConfig;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -18,14 +17,14 @@ import play.mvc.Results;
  * 
  * @author Kristian Lange
  */
-public class Global extends GlobalSettings {
+public class PublixTestGlobal extends GlobalSettings {
 
-	private static final String CLASS_NAME = Global.class.getSimpleName();
+	private static final String CLASS_NAME = PublixTestGlobal.class.getSimpleName();
 
 	public static final Injector INJECTOR = createInjector();
 
 	private static Injector createInjector() {
-		return Guice.createInjector(new GuiceConfig());
+		return Guice.createInjector();
 	}
 
 	@Override
@@ -37,8 +36,6 @@ public class Global extends GlobalSettings {
 	@Override
 	public void onStart(Application app) {
 		Logger.info(CLASS_NAME + ".onStart: JATOS has started");
-		// Do some JATOS specific initialisation
-		INJECTOR.getInstance(Initializer.class).initialize();
 	}
 
 	@Override
@@ -50,24 +47,20 @@ public class Global extends GlobalSettings {
 	public Promise<Result> onError(RequestHeader request, Throwable t) {
 		Logger.info(CLASS_NAME + ".onError: Internal JATOS error", t);
 		return Promise.<Result> pure(Results
-				.internalServerError(views.html.error
-						.render("Internal JATOS error")));
+				.internalServerError());
 	}
 
 	@Override
 	public Promise<Result> onHandlerNotFound(RequestHeader request) {
 		Logger.info(CLASS_NAME + ".onHandlerNotFound: Requested page \""
 				+ request.uri() + "\" doesn't exist.");
-		return Promise.<Result> pure(Results.notFound(views.html.error
-				.render("Requested page \"" + request.uri()
-						+ "\" doesn't exist.")));
+		return Promise.<Result> pure(Results.notFound());
 	}
 
 	@Override
 	public Promise<Result> onBadRequest(RequestHeader request, String error) {
 		Logger.info(CLASS_NAME + ".onBadRequest: " + error);
-		return Promise.<Result> pure(Results.badRequest(views.html.error
-				.render("Bad request")));
+		return Promise.<Result> pure(Results.badRequest());
 	}
 
 }

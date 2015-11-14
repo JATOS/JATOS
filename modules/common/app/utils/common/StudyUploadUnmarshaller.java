@@ -1,37 +1,25 @@
-package services.gui;
+package utils.common;
 
 import general.common.MessagesStrings;
 
 import java.io.IOException;
-import java.util.stream.Collectors;
 
 import models.common.Study;
 import models.common.old.StudyV2;
-import models.gui.StudyProperties;
-import play.Logger;
-import play.data.validation.ValidationError;
-import utils.common.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Unmarshalling of an JSON string without throwing an exception. Instead error
- * message and Exception are stored within the instance.
+ * Unmarshalling of an JSON string to a study. The study's JSON string can be in
+ * different versions of the study to support older JATOS' versions.
  * 
- * @author Kristian Lange
+ * For each unmarshalling a new instance of this unmarshaller has to be created.
+ * 
+ * @author Kristian Lange 2015
  */
 public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 
-	private static final String CLASS_NAME = StudyUploadUnmarshaller.class
-			.getSimpleName();
-
-	private final StudyService studyService;
-
 	public Study study;
-
-	public StudyUploadUnmarshaller(StudyService studyService) {
-		this.studyService = studyService;
-	}
 
 	/**
 	 * Accepts an JSON String and turns the data object within this JSON String
@@ -65,11 +53,12 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		default:
 			throw new IOException(MessagesStrings.UNSUPPORTED_STUDY_VERSION);
 		}
-
-		validate(study);
 		return study;
 	}
 
+	/**
+	 * Binding of study version 2
+	 */
 	private Study bindV2(StudyV2 studyV2) {
 		Study study = new Study();
 		study.setUuid(studyV2.getUuid());
@@ -84,18 +73,6 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		study.setJsonData(studyV2.getJsonData());
 		study.setComponentList(studyV2.getComponentList());
 		return study;
-	}
-
-	private void validate(Study study) throws IOException {
-		StudyProperties studyProperties = studyService.bindToProperties(study);
-		if (studyProperties.validate() != null) {
-			Logger.warn(CLASS_NAME
-					+ ".validate: "
-					+ studyProperties.validate().stream()
-							.map(ValidationError::message)
-							.collect(Collectors.joining(", ")));
-			throw new IOException(MessagesStrings.STUDY_INVALID);
-		}
 	}
 
 }

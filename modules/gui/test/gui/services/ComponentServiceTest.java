@@ -2,9 +2,9 @@ package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
 import exceptions.gui.BadRequestException;
-import general.Global;
 import general.common.MessagesStrings;
 import gui.AbstractTest;
+import gui.GuiTestGlobal;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +17,7 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import services.gui.ComponentService;
+import utils.common.ComponentCloner;
 import utils.common.IOUtils;
 
 /**
@@ -27,10 +28,14 @@ import utils.common.IOUtils;
 public class ComponentServiceTest extends AbstractTest {
 
 	private ComponentService componentService;
+	private ComponentCloner componentCloner;
 
 	@Override
 	public void before() throws Exception {
-		componentService = Global.INJECTOR.getInstance(ComponentService.class);
+		componentService = GuiTestGlobal.INJECTOR
+				.getInstance(ComponentService.class);
+		componentCloner = GuiTestGlobal.INJECTOR
+				.getInstance(ComponentCloner.class);
 	}
 
 	@Override
@@ -42,7 +47,7 @@ public class ComponentServiceTest extends AbstractTest {
 		int a = 1 + 1;
 		assertThat(a).isEqualTo(2);
 	}
-	
+
 	@Test
 	public void checkUpdateComponentAfterEdit()
 			throws NoSuchAlgorithmException, IOException {
@@ -50,7 +55,7 @@ public class ComponentServiceTest extends AbstractTest {
 		addStudy(study);
 
 		Component component = study.getFirstComponent();
-		Component clone = componentService.cloneComponentEntity(component);
+		Component clone = componentCloner.clone(component);
 		clone.setActive(false);
 		clone.setComments("Changed comments");
 		clone.setHtmlFilePath("changed path");
@@ -252,8 +257,8 @@ public class ComponentServiceTest extends AbstractTest {
 		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
 				component.getHtmlFilePath());
 		assertThat(htmlFile.exists());
-		File differentHtmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(), study
-				.getLastComponent().getHtmlFilePath());
+		File differentHtmlFile = IOUtils.getFileInStudyAssetsDir(
+				study.getDirName(), study.getLastComponent().getHtmlFilePath());
 		assertThat(differentHtmlFile.exists());
 
 		// Remove current HTML file
@@ -279,7 +284,7 @@ public class ComponentServiceTest extends AbstractTest {
 		addStudy(study);
 
 		Component original = study.getFirstComponent();
-		Component clone = componentService.cloneComponentEntity(original);
+		Component clone = componentCloner.clone(original);
 
 		// Equal
 		assertThat(clone.getComments()).isEqualTo(original.getComments());

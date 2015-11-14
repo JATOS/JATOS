@@ -15,3 +15,4 @@ libraryDependencies ++= Seq(
 	"org.webjars" % "bootstrap" % "3.3.4"
 )
 
+Keys.fork in Test := false

@@ -1,8 +1,6 @@
 package publix.services.personal_multiple;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.publix.PublixException;
-import general.Global;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -12,9 +10,11 @@ import models.common.workers.PersonalMultipleWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import publix.PublixTestGlobal;
 import publix.services.PublixUtilsTest;
 import services.publix.personal_multiple.PersonalMultipleErrorMessages;
 import services.publix.personal_multiple.PersonalMultiplePublixUtils;
+import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -28,10 +28,10 @@ public class PersonalMultiplePublixUtilsTest extends
 	@Override
 	public void before() throws Exception {
 		super.before();
-		personalMultiplePublixUtils = Global.INJECTOR
+		personalMultiplePublixUtils = PublixTestGlobal.INJECTOR
 				.getInstance(PersonalMultiplePublixUtils.class);
 		publixUtils = personalMultiplePublixUtils;
-		personalMultipleErrorMessages = Global.INJECTOR
+		personalMultipleErrorMessages = PublixTestGlobal.INJECTOR
 				.getInstance(PersonalMultipleErrorMessages.class);
 		errorMessages = personalMultipleErrorMessages;
 	}

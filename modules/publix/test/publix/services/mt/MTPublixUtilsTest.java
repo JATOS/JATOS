@@ -1,8 +1,6 @@
 package publix.services.mt;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.publix.PublixException;
-import general.Global;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -14,9 +12,11 @@ import models.common.workers.MTWorker;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import publix.PublixTestGlobal;
 import publix.services.PublixUtilsTest;
 import services.publix.mt.MTErrorMessages;
 import services.publix.mt.MTPublixUtils;
+import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -29,9 +29,9 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 	@Override
 	public void before() throws Exception {
 		super.before();
-		mtPublixUtils = Global.INJECTOR.getInstance(MTPublixUtils.class);
+		mtPublixUtils = PublixTestGlobal.INJECTOR.getInstance(MTPublixUtils.class);
 		publixUtils = mtPublixUtils;
-		mtErrorMessages = Global.INJECTOR.getInstance(MTErrorMessages.class);
+		mtErrorMessages = PublixTestGlobal.INJECTOR.getInstance(MTErrorMessages.class);
 		errorMessages = mtErrorMessages;
 	}
 
