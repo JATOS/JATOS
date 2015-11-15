@@ -35,8 +35,8 @@ CREATE TABLE `Groupp` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `messaging` tinyint(1) NOT NULL,
   `minActiveMemberSize` int(11) NOT NULL,
-  `maxActiveMemberSize` int(11) NOT NULL,
-  `maxTotalMemberSize` int(11) NOT NULL,
+  `maxActiveMemberSize` int(11) DEFAULT NULL,
+  `maxTotalMemberSize` int(11) DEFAULT NULL,
   `study_id` bigint(20) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -150,7 +150,7 @@ ALTER TABLE `Worker` ADD CONSTRAINT `FK_rvmm2rl58o8ui2tsq774o8rij` FOREIGN KEY (
  
 DROP TABLE IF EXISTS `Component`;
 DROP TABLE IF EXISTS `ComponentResult`;
-DROP TABLE IF EXISTS `Group`;
+DROP TABLE IF EXISTS `Groupp`;
 DROP TABLE IF EXISTS `GroupResult`;
 DROP TABLE IF EXISTS `Study`;
 DROP TABLE IF EXISTS `StudyResult`;
