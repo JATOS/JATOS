@@ -260,7 +260,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
 					+ "workerId " + session(WORKER_ID)
 					+ " isn't member of a group result - can't leave.");
-			return ok().as("text/html");
+			return ok();
 		}
 		groupService.leaveGroupResult(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
@@ -268,7 +268,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID) + " left group result "
 				+ groupResult.getId());
-		return ok().as("text/html");
+		return ok();
 	}
 
 	@Override
@@ -284,7 +284,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				.body());
 		studyResult.setStudySessionData(studySessionData);
 		studyResultDao.update(studyResult);
-		return ok().as("text/html");
+		return ok();
 	}
 
 	@Override
@@ -316,7 +316,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		componentResult.setData(resultData);
 		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
 		componentResultDao.update(componentResult);
-		return ok().as("text/html");
+		return ok();
 	}
 
 	@Override
@@ -352,7 +352,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 			componentResult.setErrorMsg(errorMsg);
 		}
 		componentResultDao.update(componentResult);
-		return ok().as("text/html");
+		return ok();
 	}
 
 	@Override
@@ -376,7 +376,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
-			return ok().as("text/html");
+			return ok();
 		} else {
 			return ok(views.html.publix.abort.render());
 		}
@@ -403,7 +403,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
-			return ok().as("text/html");
+			return ok();
 		} else {
 			if (!successful) {
 				return ok(views.html.publix.error.render(errorMsg));
@@ -422,7 +422,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		Logger.info(CLASS_NAME + " - logging from client: study ID " + studyId
 				+ ", component ID " + componentId + ", worker ID "
 				+ worker.getId() + ", message \"" + msg + "\".");
-		return ok().as("text/html");
+		return ok();
 	}
 
 	/**

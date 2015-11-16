@@ -6,6 +6,7 @@ import java.io.File;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.persistence.Query;
 
 import models.common.GroupResult;
@@ -18,11 +19,12 @@ import daos.common.GroupResultDao;
 import daos.common.UserDao;
 
 /**
- * This Initializer is called once with every start and does some JATOS specific
- * initialisation.
+ * This Initializer is called once with every start of JATOS and does some JATOS
+ * specific initialisation.
  * 
  * @author Kristian Lange
  */
+@Singleton
 public class Initializer {
 
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
@@ -48,6 +50,7 @@ public class Initializer {
 		checkStudyAssetsRootDir();
 		checkWorkerTypes();
 		checkGroupResults();
+		Logger.info(CLASS_NAME + ": JATOS initialized");
 	}
 
 	/**

@@ -20,6 +20,6 @@ POST    /publix/:studyId/:componentId/resultData         @controllers.publix.Pub
 POST    /publix/:studyId/:componentId/log                @controllers.publix.PublixInterceptor.log(studyId: Long, componentId: Long)
 
 # Static resources
-GET     /study_assets/*file                @controllers.publix.StudyAssets.at(file)
-GET     /assets/*file               	   controllers.Assets.at(path = "/public", file)
+GET     /study_assets/*file                @controllers.publix.StudyAssets.versioned(file)
+GET     /public/*file                      controllers.publix.Assets.versioned(path = "/public", file)
 

@@ -70,5 +70,4 @@ GET     /jatos/:studyId/:componentId/clone           @controllers.gui.Components
 GET     /jatos/:studyId/:componentId/export          @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
 
 # Static resources
-GET     /assets/gui/*file             controllers.gui.Assets.at(path = "/public", file)
-GET     /webjars/*file                controllers.WebJarAssets.at(file)
+GET     /public/*file             controllers.gui.Assets.versioned(path = "/public", file)

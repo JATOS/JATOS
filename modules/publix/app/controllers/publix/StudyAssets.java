@@ -3,12 +3,13 @@ package controllers.publix;
 import java.io.File;
 import java.io.IOException;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import models.common.Component;
 import play.Logger;
 import play.libs.F.Promise;
-import play.libs.ws.WS;
+import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Result;
 import utils.common.ControllerUtils;
@@ -37,11 +38,18 @@ public class StudyAssets extends Controller {
 	 */
 	public static final String URL_STUDY_ASSETS = "study_assets";
 
+	private final WSClient ws;
+	
+	@Inject
+	StudyAssets(WSClient ws) {
+		this.ws = ws;
+	}
+	
 	/**
 	 * Action called while routing. Translates the given file path from the URL
 	 * into a file path of the OS's file system and returns the file.
 	 */
-	public Result at(String filePath) {
+	public Result versioned(String filePath) {
 		File file;
 		try {
 			filePath = filePath.replace("/", File.separator);
@@ -99,7 +107,7 @@ public class StudyAssets extends Controller {
 	 * change.
 	 */
 	public Promise<Result> forwardTo(String url) {
-		return WS.url(url).get().map(response -> {
+		return ws.url(url).get().map(response -> {
 			// Prevent browser from caching pages - this would be an
 			// security issue and additionally confuse the study flow
 				response().setHeader("Cache-control", "no-cache, no-store");

@@ -5,15 +5,15 @@
 <html lang="en">
 <head>
 <title>JATOS</title>
-<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.at("images/favicon-196x196.png")" sizes="196x196">
-<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.at("images/favicon-160x160.png")" sizes="160x160">
-<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.at("images/favicon-96x96.png")" sizes="96x96">
-<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.at("images/favicon-16x16.png")" sizes="16x16">
-<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.at("images/favicon-32x32.png")" sizes="32x32">
-<link rel="stylesheet" href="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.css"))">
-<link rel="stylesheet" href="@controllers.gui.routes.Assets.at("gui/stylesheets/login.css")">
-<script src="@controllers.gui.routes.Assets.at("javascripts/jquery-1.11.1.min.js")"></script>
-<script src="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.js"))"></script>
+<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.versioned("images/favicon-196x196.png")" sizes="196x196">
+<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.versioned("images/favicon-160x160.png")" sizes="160x160">
+<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.versioned("images/favicon-96x96.png")" sizes="96x96">
+<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.versioned("images/favicon-16x16.png")" sizes="16x16">
+<link rel="icon" type="image/png" href="@controllers.gui.routes.Assets.versioned("images/favicon-32x32.png")" sizes="32x32">
+<link rel="stylesheet" href="@controllers.gui.routes.Assets.versioned("lib/bootstrap/css/bootstrap.min.css")">
+<link rel="stylesheet" href="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/stylesheets/login.css")">
+<script src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-1.11.1.min.js")"></script>
+<script src="@controllers.gui.routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")"></script>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
@@ -34,7 +34,7 @@
 					class="icon-bar"></span>
 			</button>
 			<a class="navbar-brand" href="@controllers.gui.routes.Home.home">
-				<img src="@controllers.gui.routes.Assets.at("images/jatos_logo_grey.svg")" alt="JATOS logo" height="25pt">
+				<img src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")" alt="JATOS logo" height="25pt">
 			</a>
 			<a class="navbar-brand" href="@controllers.gui.routes.Home.home">JATOS</a>
 		</div>

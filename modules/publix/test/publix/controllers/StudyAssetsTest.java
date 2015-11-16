@@ -66,7 +66,7 @@ public class StudyAssetsTest extends AbstractTest {
 		Study studyClone = cloneAndPersistStudy(studyExample);
 
 		Result result = callAction(controllers.publix.routes.ref.StudyAssets
-				.at("basic_example_study/quit_button.html"));
+				.versioned("basic_example_study/quit_button.html"));
 		assertThat(status(result)).isEqualTo(OK);
 
 		// Clean up
@@ -76,11 +76,11 @@ public class StudyAssetsTest extends AbstractTest {
 	@Test
 	public void testAtNotFound() {
 		Result result = callAction(controllers.publix.routes.ref.StudyAssets
-				.at("non/existend/filepath"));
+				.versioned("non/existend/filepath"));
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 
 		result = callAction(controllers.publix.routes.ref.StudyAssets
-				.at("non/&?/filepath"));
+				.versioned("non/&?/filepath"));
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 	}
 
@@ -90,7 +90,7 @@ public class StudyAssetsTest extends AbstractTest {
 
 		// Although this file exists, it shouldn't be found
 		Result result = callAction(controllers.publix.routes.ref.StudyAssets
-				.at("../../conf/application.conf"));
+				.versioned("../../conf/application.conf"));
 		assertThat(status(result)).isEqualTo(NOT_FOUND);
 
 		// Clean up

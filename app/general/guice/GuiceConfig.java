@@ -1,6 +1,6 @@
 package general.guice;
 
-import general.Global;
+import general.OnStartStop;
 import groupservices.publix.akka.actors.GroupDispatcherRegistry;
 
 import javax.inject.Named;
@@ -40,6 +40,11 @@ public class GuiceConfig extends AbstractModule {
 
 	@Override
 	protected void configure() {
+		// JATOS specific initialisation (eager -> called during JATOS start)
+//		bind(Initializer.class).asEagerSingleton();
+		bind(OnStartStop.class).asEagerSingleton();
+		
+
 		bind(new TypeLiteral<IStudyAuthorisation<GeneralSingleWorker>>() {
 		}).to(GeneralSingleStudyAuthorisation.class);
 		bind(new TypeLiteral<IStudyAuthorisation<JatosWorker>>() {
@@ -66,11 +71,11 @@ public class GuiceConfig extends AbstractModule {
 	/**
 	 * Initialize the guice injector in the Akka Guice Extension
 	 */
-	@Provides
+	// @Provides
 	public ActorSystem actorSystem() {
 		ActorSystem actorSystem = Akka.system();
-		GuiceExtension.GuiceExtProvider.get(actorSystem).initialize(
-				Global.INJECTOR);
+		// GuiceExtension.GuiceExtProvider.get(actorSystem).initialize(
+		// Global.INJECTOR);
 		return actorSystem;
 	}
 

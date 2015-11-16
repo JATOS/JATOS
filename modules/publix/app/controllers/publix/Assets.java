@@ -1,4 +1,4 @@
-package controllers.gui;
+package controllers.publix;
 
 import javax.inject.Inject;
 

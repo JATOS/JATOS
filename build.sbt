@@ -14,9 +14,7 @@ libraryDependencies ++= Seq(
 	javaCore,
 	javaJdbc,
 	javaJpa,
-	javaWs,
-	"com.google.inject" % "guice" % "4.0",
-	"org.webjars" %% "webjars-play" % "2.3.0-2"
+	javaWs
 )
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
@@ -27,6 +25,9 @@ initialize := {
 		sys.error("Java 8 is required for this project.")
 }
 
+EclipseKeys.projectFlavor := EclipseProjectFlavor.Java           // Java project. Don't expect Scala IDE
+EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.ManagedClasses, EclipseCreateSrc.ManagedResources)  // Use .class files instead of generated .scala files for views and routes 
+EclipseKeys.preTasks := Seq(compile in Compile)                  // Compile the project before generating Eclipse files, so that .class files for views and routes are present
 EclipseKeys.skipParents in ThisBuild := false
 
 // JATOS root project with GUI. Container for all the submodules
@@ -46,6 +47,8 @@ lazy val publix = (project in file("modules/publix"))
 // Submodule jatos-gui: responsible for running studies 
 lazy val gui = (project in file("modules/gui"))
 	.enablePlugins(PlayJava).dependsOn(common)
+
+routesGenerator := InjectedRoutesGenerator
 
 mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh")
 

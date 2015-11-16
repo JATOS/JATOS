@@ -47,11 +47,11 @@ rem ### Functions ###
   echo Starting JATOS
   rem # Generate application secret for the Play framework
   rem # If it's the first start, create a new secret, otherwise load it from the file.
-  IF NOT EXIST "%JATOS_HOME%\application.secret" (
+  IF NOT EXIST "%JATOS_HOME%\play.crypto.secret" (
     set rand=%RANDOM%%RANDOM%%RANDOM%
-    echo !rand!>"%JATOS_HOME%\application.secret"
+    echo !rand!>"%JATOS_HOME%\play.crypto.secret"
   )
-  set /p SECRET=<"%JATOS_HOME%\application.secret"
+  set /p SECRET=<"%JATOS_HOME%\play.crypto.secret"
   
   call :checkjava
   if errorlevel 1 (
@@ -59,7 +59,7 @@ rem ### Functions ###
   )
 
   rem # Start JATOS with configuration file and application secret
-  set JATOS_OPTS=-Dconfig.file="%JATOS_HOME%\conf\production.conf" -Dapplication.secret=!SECRET! -Dhttp.port=%port% -Dhttp.address=%address%
+  set JATOS_OPTS=-Dconfig.file="%JATOS_HOME%\conf\production.conf" -Dplay.crypto.secret=!SECRET! -Dhttp.port=%port% -Dhttp.address=%address%
   if defined DOUBLECLICKED (
     set JATOS_OPTS=-Dpidfile.path="NUL" %JATOS_OPTS%
   ) else (

@@ -316,7 +316,7 @@ public class Studies extends Controller {
 			String errorMsg = e.getMessage();
 			return internalServerError(errorMsg);
 		}
-		return ok().as("text/html");
+		return ok();
 	}
 
 	/**
@@ -343,7 +343,7 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e.getMessage(),
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
-		return ok().as("text/html");
+		return ok();
 	}
 
 	@Transactional
@@ -422,7 +422,7 @@ public class Studies extends Controller {
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		return ok().as("text/html");
+		return ok();
 	}
 
 	/**

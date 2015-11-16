@@ -133,7 +133,7 @@ public class ComponentResults extends Controller {
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		return ok().as("text/html");
+		return ok();
 	}
 
 	/**
@@ -163,7 +163,7 @@ public class ComponentResults extends Controller {
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		return ok().as("text/html");
+		return ok();
 	}
 
 	/**

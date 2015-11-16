@@ -10,3 +10,4 @@ libraryDependencies ++= Seq(
 	"org.mockito" % "mockito-core" % "1.9.5" % "test"
 )
 
+routesGenerator := InjectedRoutesGenerator

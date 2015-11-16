@@ -7,6 +7,7 @@ bin
 tmp
 .history
 dist
+/play.crypto.secret
 /.idea
 /*.iml
 /out
@@ -16,7 +17,6 @@ dist
 /RUNNING_PID
 /.settings
 /.sbtserver
-/application.secret
 /study_assets_root/
 /database/
 .DS_Store

@@ -117,7 +117,7 @@ public class Workers extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		workerDao.remove(worker);
-		return ok().as("text/html");
+		return ok();
 	}
 
 	/**

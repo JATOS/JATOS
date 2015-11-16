@@ -21,7 +21,7 @@ function start() {
 
 	# Generate application secret for the Play framework
 	# If it's the first start, create a new secret, otherwise load it from the file.
-	secretfile="$dir/application.secret"
+	secretfile="$dir/play.crypto.secret"
 	if [ ! -f "$secretfile" ]
 	then
 		random="$(LC_CTYPE=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1)"
@@ -39,7 +39,7 @@ function start() {
 	chmod u+x $dir/bin/jatos
 	
 	# Start JATOS with configuration file and application secret
-	jatos -Dconfig.file="$dir/conf/production.conf" -Dapplication.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
+	jatos -Dconfig.file="$dir/conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
 	
 	echo "...started"
 	echo "To use JATOS type $address:$port in your browser's address bar"

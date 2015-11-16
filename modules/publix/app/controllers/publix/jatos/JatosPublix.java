@@ -260,7 +260,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
-			return ok().as("text/html");
+			return ok();
 		} else {
 			if (message != null) {
 				Controller.flash("info", errorMessages
