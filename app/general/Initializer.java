@@ -1,22 +1,20 @@
 package general;
 
-import general.common.Common;
-
 import java.io.File;
 import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.GroupResultDao;
+import daos.common.UserDao;
+import general.common.Common;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
 import models.common.User;
 import play.Logger;
-import play.api.Application;
 import play.db.jpa.JPAApi;
 import services.gui.UserService;
-import daos.common.GroupResultDao;
-import daos.common.UserDao;
 
 /**
  * This Initializer is called once with every start of JATOS and does some JATOS
@@ -29,7 +27,6 @@ public class Initializer {
 
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
 
-	private final Application application;
 	private final JPAApi jpa;
 	private final Common common;
 	private final UserService userService;
@@ -37,10 +34,7 @@ public class Initializer {
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	Initializer(Application application, JPAApi jpa, Common common,
-			UserDao userDao, UserService userService,
-			GroupResultDao groupResultDao) {
-		this.application = application;
+	Initializer(JPAApi jpa, Common common, UserDao userDao, UserService userService, GroupResultDao groupResultDao) {
 		this.jpa = jpa;
 		this.common = common;
 		this.userDao = userDao;
@@ -54,7 +48,6 @@ public class Initializer {
 	 * or DB updates.
 	 */
 	public void initialize() {
-		application.actorSystem();
 		checkAdmin();
 		checkStudyAssetsRootDir();
 		checkGroupResults();
@@ -67,8 +60,7 @@ public class Initializer {
 	private void checkStudyAssetsRootDir() {
 		boolean success = new File(common.getStudyAssetsRootPath()).mkdir();
 		if (success) {
-			Logger.info(CLASS_NAME
-					+ ".checkStudyAssetsRootDir: Created study assets root directory "
+			Logger.info(CLASS_NAME + ".checkStudyAssetsRootDir: Created study assets root directory "
 					+ common.getStudyAssetsRootPath());
 		}
 	}
@@ -91,15 +83,13 @@ public class Initializer {
 	 */
 	private void checkGroupResults() {
 		jpa.withTransaction(() -> {
-			List<GroupResult> groupResultList = groupResultDao
-					.findAllNotFinished();
+			List<GroupResult> groupResultList = groupResultDao.findAllNotFinished();
 			for (GroupResult groupresult : groupResultList) {
 				groupresult.setGroupState(GroupState.FINISHED);
 				groupResultDao.update(groupresult);
-				Logger.info(CLASS_NAME
-						+ ".checkGroupResults: All group results should be "
-						+ "finished when starting, but group result "
-						+ groupresult.getId() + " wasn't. Finish it now.");
+				Logger.info(CLASS_NAME + ".checkGroupResults: All group results should be "
+						+ "finished when starting, but group result " + groupresult.getId()
+						+ " wasn't. Finish it now.");
 			}
 		});
 	}
