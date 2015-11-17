@@ -18,8 +18,10 @@ var jatos = {};
 (function() {
 "use strict";
 	
+/**
+ * jatos.js version
+ */
 jatos.version = "2.1.1";
-	
 /**
  * How long should JATOS wait until to retry the HTTP call. Warning: There is a
  * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
@@ -83,7 +85,7 @@ var onJatosError;
 // a component's jQuery version. Afterwards initialise (jatos.js will always be
 // initialised - even if jatos.onLoad() is never called).
 jatos.jQuery = {};
-getScript('/assets/javascripts/jquery-1.11.1.min.js', function() {
+getScript('/public/lib/jatos-publix/javascripts/jquery-1.11.1.min.js', function() {
 	jatos.jQuery = jQuery.noConflict(true);
 	loadScripts(initJatos);
 });
@@ -116,7 +118,7 @@ function loadScripts(onSuccess) {
 	}
 	// Plugin to retry ajax calls 
 	jatos.jQuery.ajax({
-		url: "/assets/javascripts/jquery.ajax-retry.min.js",
+		url: "/public/lib/jatos-publix/javascripts/jquery.ajax-retry.min.js",
 		dataType: "script",
 		cache: true,
 		error: function(err) {

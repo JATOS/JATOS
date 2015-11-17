@@ -22,4 +22,5 @@ POST    /publix/:studyId/:componentId/log                @controllers.publix.Pub
 # Static resources
 GET     /study_assets/*file                @controllers.publix.StudyAssets.versioned(file)
 GET     /public/*file                      controllers.publix.Assets.versioned(path = "/public", file)
+GET     /assets/javascripts/jatos.js       controllers.publix.Assets.jatosjs(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
 

@@ -13,4 +13,9 @@ public class Assets {
 			controllers.Assets.Asset file) {
 		return assets.versioned(path, file);
 	}
+	
+	public Action<AnyContent> jatosjs(String path,
+			controllers.Assets.Asset file) {
+		return assets.versioned(path, file);
+	}
 }
