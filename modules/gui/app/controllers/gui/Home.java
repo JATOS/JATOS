@@ -35,6 +35,7 @@ public class Home extends Controller {
 
 	private static final String CLASS_NAME = Home.class.getSimpleName();
 
+	private final IOUtils ioUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final JsonUtils jsonUtils;
 	private final UserService userService;
@@ -42,9 +43,10 @@ public class Home extends Controller {
 	private final StudyDao studyDao;
 
 	@Inject
-	Home(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	Home(IOUtils ioUtils, JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			JsonUtils jsonUtils, UserService userService,
 			BreadcrumbsService breadcrumbsService, StudyDao studyDao) {
+		this.ioUtils = ioUtils;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.jsonUtils = jsonUtils;
 		this.userService = userService;
@@ -102,6 +104,6 @@ public class Home extends Controller {
 					MessagesStrings.ONLY_ADMIN_CAN_SEE_LOGS,
 					Http.Status.FORBIDDEN);
 		}
-		return ok(IOUtils.readApplicationLog(lineLimit));
+		return ok(ioUtils.readApplicationLog(lineLimit));
 	}
 }

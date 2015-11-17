@@ -13,11 +13,14 @@ public class StudyCloner {
 
 	private final StudyDao studyDao;
 	private final ComponentCloner componentCloner;
+	private final IOUtils ioUtils;
 
 	@Inject
-	StudyCloner(StudyDao studyDao, ComponentCloner componentCloner) {
+	StudyCloner(StudyDao studyDao, ComponentCloner componentCloner,
+			IOUtils ioUtils) {
 		this.studyDao = studyDao;
 		this.componentCloner = componentCloner;
+		this.ioUtils = ioUtils;
 	}
 
 	/**
@@ -37,14 +40,13 @@ public class StudyCloner {
 
 		// Clone each component
 		for (Component component : study.getComponentList()) {
-			Component componentClone = componentCloner
-					.clone(component);
+			Component componentClone = componentCloner.clone(component);
 			componentClone.setStudy(clone);
 			clone.addComponent(componentClone);
 		}
 
 		// Clone assets directory
-		String destDirName = IOUtils.cloneStudyAssetsDirectory(study
+		String destDirName = ioUtils.cloneStudyAssetsDirectory(study
 				.getDirName());
 		clone.setDirName(destDirName);
 

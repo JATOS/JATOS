@@ -78,6 +78,7 @@ public class Studies extends Controller {
 	private final StudyResultDao studyResultDao;
 	private final ComponentResultDao componentResultDao;
 	private final StudyCloner studyCloner;
+	private final IOUtils ioUtils;
 
 	@Inject
 	Studies(UserDao userDao, JatosGuiExceptionThrower jatosGuiExceptionThrower,
@@ -85,7 +86,9 @@ public class Studies extends Controller {
 			UserService userService, WorkerService workerService,
 			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
 			ComponentDao componentDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, ComponentResultDao componentResultDao, StudyCloner studyCloner) {
+			StudyResultDao studyResultDao,
+			ComponentResultDao componentResultDao, StudyCloner studyCloner,
+			IOUtils ioUtils) {
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
@@ -99,6 +102,7 @@ public class Studies extends Controller {
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
 		this.studyCloner = studyCloner;
+		this.ioUtils = ioUtils;
 	}
 
 	/**
@@ -162,7 +166,7 @@ public class Studies extends Controller {
 		StudyProperties studyProperties = bindToProperties(form);
 
 		try {
-			IOUtils.createStudyAssetsDir(studyProperties.getDirName());
+			ioUtils.createStudyAssetsDir(studyProperties.getDirName());
 		} catch (IOException e) {
 			form.reject(new ValidationError(StudyProperties.DIRNAME, e
 					.getMessage()));
@@ -311,7 +315,7 @@ public class Studies extends Controller {
 
 		studyDao.remove(study);
 		try {
-			IOUtils.removeStudyAssetsDir(study.getDirName());
+			ioUtils.removeStudyAssetsDir(study.getDirName());
 		} catch (IOException e) {
 			String errorMsg = e.getMessage();
 			return internalServerError(errorMsg);

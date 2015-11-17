@@ -2,29 +2,24 @@ package general.common;
 
 import java.io.File;
 
-import play.Logger;
-import play.Play;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
+import play.Configuration;
+import play.Logger;
+import play.api.Application;
+
+@Singleton
 public class Common {
 
 	private static final String CLASS_NAME = Common.class.getSimpleName();
-	
-	/**
-	 * JATOS' absolute base path without trailing '/.'
-	 */
-	public static final String BASEPATH = getBasePath();
 
-	private static String getBasePath() {
-		String tempBasePath = Play.application().path().getAbsolutePath();
-		if (tempBasePath.endsWith(File.separator + ".")) {
-			tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 2);
-		}
-		if (tempBasePath.endsWith(File.separator)) {
-			tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 1);
-		}
-		return tempBasePath;
-	}
-	
+	/**
+	 * JATOS version
+	 */
+	public static final String VERSION = Common.class.getPackage()
+			.getImplementationVersion();
+
 	/**
 	 * Property name in application config for the path in the file system to
 	 * the study assets root directory, the directory where all study assets are
@@ -39,14 +34,43 @@ public class Common {
 	private static final String DEFAULT_STUDY_ASSETS_ROOT_PATH = "study_assets_root";
 
 	/**
+	 * JATOS' absolute base path without trailing '/.'
+	 */
+	private final String basepath;
+
+	/**
 	 * Path in the file system to the study assets root directory. If the
 	 * property is defined in the configuration file then use it as the base
 	 * path. If property isn't defined, try in default study path instead.
 	 */
-	public static final String STUDY_ASSETS_ROOT_PATH = getStudyAssetsRootPath();
+	private final String studyAssetsRootPath;
 
-	private static String getStudyAssetsRootPath() {
-		String tempStudyAssetsRootPath = Play.application().configuration()
+	/**
+	 * Is true if an in-memory database is used.
+	 */
+	private final boolean inMemoryDb;
+
+	@Inject
+	Common(Application application, Configuration configuration) {
+		this.basepath = fillBasePath(application);
+		this.studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
+		this.inMemoryDb = configuration.getString("db.default.url").contains(
+				"jdbc:h2:mem:");
+	}
+
+	private String fillBasePath(Application application) {
+		String tempBasePath = application.path().getAbsolutePath();
+		if (tempBasePath.endsWith(File.separator + ".")) {
+			tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 2);
+		}
+		if (tempBasePath.endsWith(File.separator)) {
+			tempBasePath = tempBasePath.substring(0, tempBasePath.length() - 1);
+		}
+		return tempBasePath;
+	}
+
+	private String fillStudyAssetsRootPath(Configuration configuration) {
+		String tempStudyAssetsRootPath = configuration
 				.getString(PROPERTY_STUDY_ASSETS_ROOT_PATH);
 		if (tempStudyAssetsRootPath != null
 				&& !tempStudyAssetsRootPath.trim().isEmpty()) {
@@ -62,25 +86,24 @@ public class Common {
 
 		// If relative path add JATOS' base path as prefix
 		if (!tempStudyAssetsRootPath.startsWith(File.separator)) {
-			tempStudyAssetsRootPath = Common.BASEPATH + File.separator
+			tempStudyAssetsRootPath = this.basepath + File.separator
 					+ tempStudyAssetsRootPath;
 		}
 		Logger.info(CLASS_NAME + ": Path to study assets directory is "
 				+ tempStudyAssetsRootPath);
 		return tempStudyAssetsRootPath;
 	}
-	
-	/**
-	 * JATOS version
-	 */
-	public static final String VERSION = Common.class.getPackage()
-			.getImplementationVersion();
 
-	/**
-	 * Is true if an in-memory database is used.
-	 */
-	public static final boolean IN_MEMORY_DB = Play.application()
-			.configuration().getString("db.default.url")
-			.contains("jdbc:h2:mem:");
+	public String getBasepath() {
+		return basepath;
+	}
+
+	public String getStudyAssetsRootPath() {
+		return studyAssetsRootPath;
+	}
+
+	public boolean isInMemoryDb() {
+		return inMemoryDb;
+	}
 
 }

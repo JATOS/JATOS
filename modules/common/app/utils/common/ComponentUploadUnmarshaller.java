@@ -4,6 +4,8 @@ import general.common.MessagesStrings;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import models.common.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +22,11 @@ public class ComponentUploadUnmarshaller extends UploadUnmarshaller<Component> {
 
 	private Component component;
 
+	@Inject
+	ComponentUploadUnmarshaller(IOUtils ioUtils) {
+		super(ioUtils);
+	}
+	
 	/**
 	 * Accepts an JSON String and turns the data object within this JSON String
 	 * into an object of type Component. It can handle different versions of the

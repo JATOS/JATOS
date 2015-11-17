@@ -245,10 +245,6 @@ function showMessages(messages) {
 	}
 }
 
-@if(general.common.Common.IN_MEMORY_DB) {
-	showWarning("You are using an in-memory database. This is fine for initial evalution of JATOS. Unfortunately after closing JATOS all changes and results will be lost. If you want to continue working with JATOS, it's strongly recommended to setup a disk-based database.")
-}
-
 function showBreadcrumbs (breadcrumbs) {
 	$.each(breadcrumbs, function(index, breadcrumb) {
 		var breadcrumbHtml;

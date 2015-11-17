@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.apache.commons.io.FileUtils;
@@ -40,10 +41,17 @@ public class IOUtils {
 
 	private static final int MAX_FILENAME_LENGTH = 100;
 
+	private final Common common;
+
+	@Inject
+	IOUtils(Common common) {
+		this.common = common;
+	}
+
 	/**
 	 * Reads the given file and returns the content as String.
 	 */
-	public static String readFile(File file) throws IOException {
+	public String readFile(File file) throws IOException {
 		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
 			StringBuilder sb = new StringBuilder();
 			String content = reader.readLine();
@@ -62,7 +70,7 @@ public class IOUtils {
 	 * traversal attack. path and filePath together build the full path (like
 	 * path/filePath). path must be a directory.
 	 */
-	public static File getFileSecurely(String path, String filePath)
+	public File getFileSecurely(String path, String filePath)
 			throws IOException {
 		path = getExistingDirSecurely(path).getAbsolutePath();
 		String fullPath = filePath.trim().isEmpty() ? path : path
@@ -82,8 +90,7 @@ public class IOUtils {
 	 * Gets the File object of the directory while preventing a path traversal
 	 * attack and checks if the directory actually exists.
 	 */
-	public static File getExistingDirSecurely(String fullPath)
-			throws IOException {
+	public File getExistingDirSecurely(String fullPath) throws IOException {
 		String pureFilename = (new File(fullPath)).getName();
 		String purePath = (new File(fullPath)).getParentFile()
 				.getCanonicalPath();
@@ -98,7 +105,7 @@ public class IOUtils {
 		return file;
 	}
 
-	public static boolean checkStudyAssetsDirExists(String dirName) {
+	public boolean checkStudyAssetsDirExists(String dirName) {
 		File studyAssetsDir = new File(generateStudyAssetsPath(dirName));
 		return studyAssetsDir.exists();
 	}
@@ -107,7 +114,7 @@ public class IOUtils {
 	 * Gets the File object while preventing a path traversal attack and checks
 	 * whether the file exists and is no directory.
 	 */
-	public static File getExistingFileSecurely(String path, String filePath)
+	public File getExistingFileSecurely(String path, String filePath)
 			throws IOException {
 		File file = getFileSecurely(path, filePath);
 		if (file == null || !file.exists() || file.isDirectory()) {
@@ -120,7 +127,7 @@ public class IOUtils {
 	 * Gets the File object which resides under filePath within the study
 	 * assets' directory.
 	 */
-	public static File getFileInStudyAssetsDir(String dirName, String filePath)
+	public File getFileInStudyAssetsDir(String dirName, String filePath)
 			throws IOException {
 		if (filePath == null || filePath.trim().isEmpty()) {
 			throw new IOException(MessagesStrings.FILE_MISSING);
@@ -132,7 +139,7 @@ public class IOUtils {
 	/**
 	 * Gets the study assets with the given directory name.
 	 */
-	public static File getStudyAssetsDir(String dirName) throws IOException {
+	public File getStudyAssetsDir(String dirName) throws IOException {
 		String studyAssetsPath = generateStudyAssetsPath(dirName);
 		return getExistingDirSecurely(studyAssetsPath);
 	}
@@ -142,7 +149,7 @@ public class IOUtils {
 	 * the suffix. If the ID is null it uses the title only. If the suffix is
 	 * null it won't have a file suffix.
 	 */
-	public static String generateFileName(String rawName, Long id, String suffix) {
+	public String generateFileName(String rawName, Long id, String suffix) {
 		String filename = rawName.trim()
 				.replaceAll(REGEX_ILLEGAL_IN_FILENAME, "_").toLowerCase();
 		filename = StringUtils.left(filename, MAX_FILENAME_LENGTH);
@@ -158,7 +165,7 @@ public class IOUtils {
 	/**
 	 * Generates a filename from a name in a specified length.
 	 */
-	public static String generateFileName(String rawName) {
+	public String generateFileName(String rawName) {
 		return generateFileName(rawName, null, null);
 	}
 
@@ -166,22 +173,22 @@ public class IOUtils {
 	 * Generates a filename from a name in a specified length and adds the
 	 * suffix.
 	 */
-	public static String generateFileName(String rawName, String suffix) {
+	public String generateFileName(String rawName, String suffix) {
 		return generateFileName(rawName, null, suffix);
 	}
 
 	/**
 	 * Generates a study assets directory path.
 	 */
-	public static String generateStudyAssetsPath(String dirName) {
-		return Common.STUDY_ASSETS_ROOT_PATH + File.separator + dirName;
+	public String generateStudyAssetsPath(String dirName) {
+		return common.getStudyAssetsRootPath() + File.separator + dirName;
 	}
 
 	/**
 	 * Remove study assets' directory if exists.
 	 */
-	public static void removeStudyAssetsDir(String dirName) throws IOException {
-		File dir = getFileSecurely(Common.STUDY_ASSETS_ROOT_PATH, dirName);
+	public void removeStudyAssetsDir(String dirName) throws IOException {
+		File dir = getFileSecurely(common.getStudyAssetsRootPath(), dirName);
 		if (!dir.exists()) {
 			return;
 		}
@@ -201,7 +208,7 @@ public class IOUtils {
 	 *            sub-directory of the study assets directory.
 	 * @return Name of the new file.
 	 */
-	public synchronized static String cloneComponentHtmlFile(
+	public synchronized String cloneComponentHtmlFile(
 			String studyAssetsDirName, String htmlFilePath) throws IOException {
 		File htmlFile = getFileInStudyAssetsDir(studyAssetsDirName,
 				htmlFilePath);
@@ -221,7 +228,7 @@ public class IOUtils {
 	 * remaining string is only the local path within the study assets
 	 * directory.
 	 */
-	private static String generateLocalFilePathInStudyAssets(File localFile,
+	private String generateLocalFilePathInStudyAssets(File localFile,
 			String studyAssetsDirName) {
 		String studyAssetsPath = generateStudyAssetsPath(studyAssetsDirName)
 				+ File.separator;
@@ -233,9 +240,10 @@ public class IOUtils {
 	 * new assets dir. If a dir with suffix '_clone' already exists it adds '_'
 	 * + number instead.
 	 */
-	public synchronized static String cloneStudyAssetsDirectory(
-			String srcDirName) throws IOException {
-		File srcDir = getFileSecurely(Common.STUDY_ASSETS_ROOT_PATH, srcDirName);
+	public synchronized String cloneStudyAssetsDirectory(String srcDirName)
+			throws IOException {
+		File srcDir = getFileSecurely(common.getStudyAssetsRootPath(),
+				srcDirName);
 		if (!srcDir.isDirectory()) {
 			throw new IOException(MessagesStrings.dirPathIsntDir(srcDir
 					.getName()));
@@ -252,7 +260,7 @@ public class IOUtils {
 	 * to add numbers starting with 1. It works with files or directories. It
 	 * keeps a file extension.
 	 */
-	private static File generateCloneFile(File file) throws IOException {
+	private File generateCloneFile(File file) throws IOException {
 		String fileExtension = "";
 		if (!FilenameUtils.getExtension(file.getName()).isEmpty()) {
 			fileExtension = "." + FilenameUtils.getExtension(file.getName());
@@ -282,9 +290,9 @@ public class IOUtils {
 	 *            Name of the target dir within the assets root dir
 	 * @throws IOException
 	 */
-	public static void moveStudyAssetsDir(File srcDir, String targetDirName)
+	public void moveStudyAssetsDir(File srcDir, String targetDirName)
 			throws IOException {
-		File targetDir = getFileSecurely(Common.STUDY_ASSETS_ROOT_PATH,
+		File targetDir = getFileSecurely(common.getStudyAssetsRootPath(),
 				targetDirName);
 		if (targetDir.exists()) {
 			throw new IOException(
@@ -302,8 +310,8 @@ public class IOUtils {
 	 *            Name of the new study assets dir.
 	 * @throws IOException
 	 */
-	public static void createStudyAssetsDir(String dirName) throws IOException {
-		File dir = getFileSecurely(Common.STUDY_ASSETS_ROOT_PATH, dirName);
+	public void createStudyAssetsDir(String dirName) throws IOException {
+		File dir = getFileSecurely(common.getStudyAssetsRootPath(), dirName);
 		if (dir.exists()) {
 			throw new IOException(
 					MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dir
@@ -320,8 +328,7 @@ public class IOUtils {
 	 * Returns all files within this directory that have the prefix and the
 	 * suffix.
 	 */
-	public static File[] findFiles(File dir, final String prefix,
-			final String suffix) {
+	public File[] findFiles(File dir, final String prefix, final String suffix) {
 		return dir.listFiles((file, name) -> name.startsWith(prefix)
 				&& name.endsWith(suffix));
 	}
@@ -329,7 +336,7 @@ public class IOUtils {
 	/**
 	 * Returns all directories within this directory.
 	 */
-	public static File[] findDirectories(File dir) {
+	public File[] findDirectories(File dir) {
 		return dir.listFiles((file, name) -> {
 			return file.isDirectory();
 		});
@@ -338,10 +345,10 @@ public class IOUtils {
 	/**
 	 * Renames a study assets dir.
 	 */
-	public static void renameStudyAssetsDir(String oldDirName, String newDirName)
+	public void renameStudyAssetsDir(String oldDirName, String newDirName)
 			throws IOException {
-		File oldDir = new File(IOUtils.generateStudyAssetsPath(oldDirName));
-		File newDir = new File(IOUtils.generateStudyAssetsPath(newDirName));
+		File oldDir = new File(generateStudyAssetsPath(oldDirName));
+		File newDir = new File(generateStudyAssetsPath(newDirName));
 		if (oldDir.exists() && oldDirName.equals(newDirName)) {
 			return;
 		}
@@ -372,8 +379,8 @@ public class IOUtils {
 	 * @param studyAssetName
 	 *            The name (not the path) of the study assets
 	 */
-	public static void renameHtmlFile(String oldHtmlFilePath,
-			String newHtmlFilePath, String studyAssetName) throws IOException {
+	public void renameHtmlFile(String oldHtmlFilePath, String newHtmlFilePath,
+			String studyAssetName) throws IOException {
 		File oldHtmlFile = getFileInStudyAssetsDir(studyAssetName,
 				oldHtmlFilePath);
 		File newHtmlFile = getFileInStudyAssetsDir(studyAssetName,
@@ -402,11 +409,11 @@ public class IOUtils {
 	 * Reads logs/application.log file in reverse order and returns it as
 	 * Chunks<String>. It reads maximal to line lineLimit.
 	 */
-	public static Chunks<String> readApplicationLog(final int lineLimit) {
+	public Chunks<String> readApplicationLog(final int lineLimit) {
 		Chunks<String> chunks = new StringChunks() {
 			@Override
 			public void onReady(play.mvc.Results.Chunks.Out<String> out) {
-				File logFile = new File(Common.BASEPATH
+				File logFile = new File(common.getBasepath()
 						+ "/logs/application.log");
 				try (ReversedLinesFileReader reader = new ReversedLinesFileReader(
 						logFile)) {

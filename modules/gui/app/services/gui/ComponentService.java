@@ -1,5 +1,8 @@
 package services.gui;
 
+import general.common.MessagesStrings;
+import general.gui.RequestScopeMessaging;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -17,8 +20,6 @@ import utils.common.IOUtils;
 import utils.common.JsonUtils;
 import daos.common.ComponentDao;
 import exceptions.gui.BadRequestException;
-import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -33,11 +34,14 @@ public class ComponentService {
 
 	private final ComponentDao componentDao;
 	private final ComponentCloner componentCloner;
+	private final IOUtils ioUtils;
 
 	@Inject
-	ComponentService(ComponentDao componentDao, ComponentCloner componentCloner) {
+	ComponentService(ComponentDao componentDao,
+			ComponentCloner componentCloner, IOUtils ioUtils) {
 		this.componentDao = componentDao;
 		this.componentCloner = componentCloner;
+		this.ioUtils = ioUtils;
 	}
 
 	/**
@@ -65,16 +69,16 @@ public class ComponentService {
 		component.setJsonData(updatedComponent.getJsonData());
 		componentDao.update(component);
 	}
-	
+
 	/**
-	 * Does the same as {@link #clone(Component) cloneComponent}
-	 * and additionally clones the HTML file and changes the title.
+	 * Does the same as {@link #clone(Component) cloneComponent} and
+	 * additionally clones the HTML file and changes the title.
 	 */
 	public Component cloneWholeComponent(Component component) {
 		Component clone = componentCloner.clone(component);
 		clone.setTitle(componentCloner.cloneTitle(component.getTitle()));
 		try {
-			String clonedHtmlFileName = IOUtils.cloneComponentHtmlFile(
+			String clonedHtmlFileName = ioUtils.cloneComponentHtmlFile(
 					component.getStudy().getDirName(),
 					component.getHtmlFilePath());
 			clone.setHtmlFilePath(clonedHtmlFileName);
@@ -121,7 +125,7 @@ public class ComponentService {
 		// What if current HTML file doesn't exist
 		File currentFile = null;
 		if (!component.getHtmlFilePath().trim().isEmpty()) {
-			currentFile = IOUtils.getFileInStudyAssetsDir(component.getStudy()
+			currentFile = ioUtils.getFileInStudyAssetsDir(component.getStudy()
 					.getDirName(), component.getHtmlFilePath());
 		}
 		if (currentFile == null || !currentFile.exists()) {
@@ -131,7 +135,7 @@ public class ComponentService {
 		}
 
 		// Rename HTML file
-		IOUtils.renameHtmlFile(component.getHtmlFilePath(), newHtmlFilePath,
+		ioUtils.renameHtmlFile(component.getHtmlFilePath(), newHtmlFilePath,
 				component.getStudy().getDirName());
 		component.setHtmlFilePath(newHtmlFilePath);
 		componentDao.update(component);

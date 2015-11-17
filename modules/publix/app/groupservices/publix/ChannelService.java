@@ -44,7 +44,7 @@ public class ChannelService {
 	 * Akka Actor of the GroupDispatcherRegistry. It exists only one and it's
 	 * created during startup of JATOS.
 	 */
-	@Inject @Named(GroupDispatcherRegistry.ACTOR_NAME)
+	@Inject @Named("group-dispatcher-registry-actor")
 	private ActorRef groupDispatcherRegistry;
 
 	/**

@@ -67,13 +67,14 @@ public class ImportExport extends Controller {
 	private final ImportExportService importExportService;
 	private final ResultDataStringGenerator resultDataStringGenerator;
 	private final WorkerService workerService;
+	private final IOUtils ioUtils;
 	private final JsonUtils jsonUtils;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 	private final WorkerDao workerDao;
 
 	@Inject
-	ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, IOUtils ioUtils,
 			JsonUtils jsonUtils, StudyService studyService,
 			ComponentService componentService, UserService userService,
 			ImportExportService importExportService,
@@ -82,6 +83,7 @@ public class ImportExport extends Controller {
 			ComponentDao componentDao, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.jsonUtils = jsonUtils;
+		this.ioUtils = ioUtils;
 		this.studyService = studyService;
 		this.componentService = componentService;
 		this.userService = userService;
@@ -183,7 +185,7 @@ public class ImportExport extends Controller {
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 
-		String zipFileName = IOUtils.generateFileName(study.getTitle(),
+		String zipFileName = ioUtils.generateFileName(study.getTitle(),
 				IOUtils.ZIP_FILE_SUFFIX);
 		response().setContentType("application/x-download");
 		response().setHeader("Content-disposition",
@@ -224,7 +226,7 @@ public class ImportExport extends Controller {
 		}
 
 		response().setContentType("application/x-download");
-		String filename = IOUtils.generateFileName(component.getTitle(),
+		String filename = ioUtils.generateFileName(component.getTitle(),
 				IOUtils.COMPONENT_FILE_SUFFIX);
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);

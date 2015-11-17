@@ -25,8 +25,6 @@ import daos.common.GroupResultDao;
 @Singleton
 public class GroupDispatcherRegistry extends UntypedActor {
 
-	public static final String ACTOR_NAME = "GroupDispatcherRegistry";
-
 	/**
 	 * Contains the GroupDispatchers that are currently registered. Maps the
 	 * GroupResult's ID to the ActorRef.

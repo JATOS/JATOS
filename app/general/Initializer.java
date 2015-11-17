@@ -7,13 +7,13 @@ import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.persistence.Query;
 
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
 import models.common.User;
 import play.Logger;
-import play.db.jpa.JPA;
+import play.api.Application;
+import play.db.jpa.JPAApi;
 import services.gui.UserService;
 import daos.common.GroupResultDao;
 import daos.common.UserDao;
@@ -29,16 +29,24 @@ public class Initializer {
 
 	private static final String CLASS_NAME = Initializer.class.getSimpleName();
 
+	private final Application application;
+	private final JPAApi jpa;
+	private final Common common;
 	private final UserService userService;
 	private final UserDao userDao;
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	Initializer(UserDao userDao, UserService userService,
+	Initializer(Application application, JPAApi jpa, Common common,
+			UserDao userDao, UserService userService,
 			GroupResultDao groupResultDao) {
+		this.application = application;
+		this.jpa = jpa;
+		this.common = common;
 		this.userDao = userDao;
 		this.userService = userService;
 		this.groupResultDao = groupResultDao;
+		initialize();
 	}
 
 	/**
@@ -46,9 +54,9 @@ public class Initializer {
 	 * or DB updates.
 	 */
 	public void initialize() {
+		application.actorSystem();
 		checkAdmin();
 		checkStudyAssetsRootDir();
-		checkWorkerTypes();
 		checkGroupResults();
 		Logger.info(CLASS_NAME + ": JATOS initialized");
 	}
@@ -57,52 +65,12 @@ public class Initializer {
 	 * Check whether studies assets root directory exists and create if not.
 	 */
 	private void checkStudyAssetsRootDir() {
-		boolean success = new File(Common.STUDY_ASSETS_ROOT_PATH).mkdir();
+		boolean success = new File(common.getStudyAssetsRootPath()).mkdir();
 		if (success) {
 			Logger.info(CLASS_NAME
 					+ ".checkStudyAssetsRootDir: Created study assets root directory "
-					+ Common.STUDY_ASSETS_ROOT_PATH);
+					+ common.getStudyAssetsRootPath());
 		}
-	}
-
-	/**
-	 * Migration from older to DB schema of JATOS version 1.1.11: Change names
-	 * of worker types<br>
-	 * OpenStandalone -> GeneralSingle,<br>
-	 * Tester -> PersonalMultiple<br>
-	 * ClosedStandalone -> PersonalSingle
-	 */
-	private void checkWorkerTypes() {
-		JPA.withTransaction(() -> {
-			// OpenStandalone -> GeneralSingle
-			String queryStr = "UPDATE Worker SET WorkerType='GeneralSingle' WHERE WorkerType='OpenStandalone'";
-			Query query = JPA.em().createQuery(queryStr);
-			int count = query.executeUpdate();
-			if (count > 0) {
-				Logger.info(CLASS_NAME
-						+ ".checkWorkerTypes: Updated "
-						+ count
-						+ " worker of type OpenStandalone to type GeneralSingle.");
-			}
-			// Tester -> PersonalMultiple
-			queryStr = "UPDATE Worker SET WorkerType='PersonalMultiple' WHERE WorkerType='Tester'";
-			query = JPA.em().createQuery(queryStr);
-			count = query.executeUpdate();
-			if (count > 0) {
-				Logger.info(CLASS_NAME + ".checkWorkerTypes: Updated " + count
-						+ " worker of type Tester to type PersonalMultiple.");
-			}
-			// ClosedStandalone -> PersonalSingle
-			queryStr = "UPDATE Worker SET WorkerType='PersonalSingle' WHERE WorkerType='ClosedStandalone'";
-			query = JPA.em().createQuery(queryStr);
-			count = query.executeUpdate();
-			if (count > 0) {
-				Logger.info(CLASS_NAME
-						+ ".checkWorkerTypes: Updated "
-						+ count
-						+ " worker of type ClosedStandalone to type PersonalSingle.");
-			}
-		});
 	}
 
 	/**
@@ -110,7 +78,7 @@ public class Initializer {
 	 * we need an initial user: admin. If admin can't be found, create one.
 	 */
 	private void checkAdmin() {
-		JPA.withTransaction(() -> {
+		jpa.withTransaction(() -> {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			if (admin == null) {
 				userService.createAdmin();
@@ -122,7 +90,7 @@ public class Initializer {
 	 * Check that all group results are in state FINISHED
 	 */
 	private void checkGroupResults() {
-		JPA.withTransaction(() -> {
+		jpa.withTransaction(() -> {
 			List<GroupResult> groupResultList = groupResultDao
 					.findAllNotFinished();
 			for (GroupResult groupresult : groupResultList) {

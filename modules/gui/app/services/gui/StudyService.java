@@ -40,12 +40,15 @@ public class StudyService {
 	private final GroupService groupService;
 	private final StudyDao studyDao;
 	private final UserDao userDao;
+	private final IOUtils ioUtils;
 
 	@Inject
-	StudyService(GroupService groupService, StudyDao studyDao, UserDao userDao) {
+	StudyService(GroupService groupService, StudyDao studyDao, UserDao userDao,
+			IOUtils ioUtils) {
 		this.groupService = groupService;
 		this.studyDao = studyDao;
 		this.userDao = userDao;
+		this.ioUtils = ioUtils;
 	}
 
 	/**
@@ -219,7 +222,7 @@ public class StudyService {
 	 */
 	public void renameStudyAssetsDir(Study study, String newDirName)
 			throws IOException {
-		IOUtils.renameStudyAssetsDir(study.getDirName(), newDirName);
+		ioUtils.renameStudyAssetsDir(study.getDirName(), newDirName);
 		study.setDirName(newDirName);
 		studyDao.update(study);
 	}

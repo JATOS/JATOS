@@ -4,6 +4,10 @@ import general.common.MessagesStrings;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
+import play.Configuration;
+import play.api.Application;
 import models.common.Study;
 import models.common.old.StudyV2;
 
@@ -19,7 +23,12 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 
-	public Study study;
+	private Study study;
+
+	@Inject
+	StudyUploadUnmarshaller(IOUtils ioUtils) {
+		super(ioUtils);
+	}
 
 	/**
 	 * Accepts an JSON String and turns the data object within this JSON String

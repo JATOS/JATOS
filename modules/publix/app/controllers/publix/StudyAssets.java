@@ -39,10 +39,14 @@ public class StudyAssets extends Controller {
 	public static final String URL_STUDY_ASSETS = "study_assets";
 
 	private final WSClient ws;
+	private final IOUtils ioUtils;
+	private final Common common;
 	
 	@Inject
-	StudyAssets(WSClient ws) {
+	StudyAssets(WSClient ws, IOUtils ioUtils, Common common) {
 		this.ws = ws;
+		this.ioUtils = ioUtils;
+		this.common = common;
 	}
 	
 	/**
@@ -53,13 +57,13 @@ public class StudyAssets extends Controller {
 		File file;
 		try {
 			filePath = filePath.replace("/", File.separator);
-			file = IOUtils.getExistingFileSecurely(
-					Common.STUDY_ASSETS_ROOT_PATH, filePath);
+			file = ioUtils.getExistingFileSecurely(
+					common.getStudyAssetsRootPath(), filePath);
 			Logger.info(CLASS_NAME + ".at: loading file " + file.getPath()
 					+ ".");
 		} catch (IOException e) {
 			Logger.info(CLASS_NAME + ".at: failed loading from path "
-					+ Common.STUDY_ASSETS_ROOT_PATH + File.separator + filePath);
+					+ common.getStudyAssetsRootPath() + File.separator + filePath);
 			String errorMsg = "Resource \"" + filePath
 					+ "\" couldn't be found.";
 			if (ControllerUtils.isAjax()) {

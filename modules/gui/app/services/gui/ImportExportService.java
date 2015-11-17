@@ -13,6 +13,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import play.Logger;
+import play.api.Application;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData.FilePart;
 import utils.common.ComponentUploadUnmarshaller;
@@ -54,19 +55,23 @@ public class ImportExportService {
 	public static final String SESSION_UNZIPPED_STUDY_DIR = "tempStudyAssetsDir";
 	public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 
+	private final Application app;
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final JsonUtils jsonUtils;
+	private final IOUtils ioUtils;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 
 	@Inject
-	ImportExportService(StudyService studyService,
+	ImportExportService(Application app, StudyService studyService,
 			ComponentService componentService, JsonUtils jsonUtils,
-			StudyDao studyDao, ComponentDao componentDao) {
+			IOUtils ioUtils, StudyDao studyDao, ComponentDao componentDao) {
+		this.app = app;
 		this.studyService = studyService;
 		this.componentService = componentService;
 		this.jsonUtils = jsonUtils;
+		this.ioUtils = ioUtils;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 	}
@@ -146,7 +151,7 @@ public class ImportExportService {
 
 		Study currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
 		boolean studyExists = currentStudy != null;
-		boolean dirExists = IOUtils.checkStudyAssetsDirExists(uploadedStudy
+		boolean dirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy
 				.getDirName());
 		checkStudyImport(loggedInUser, uploadedStudy, currentStudy,
 				studyExists, dirExists);
@@ -273,13 +278,13 @@ public class ImportExportService {
 	}
 
 	public File createStudyExportZipFile(Study study) throws IOException {
-		String studyFileName = IOUtils.generateFileName(study.getTitle());
+		String studyFileName = ioUtils.generateFileName(study.getTitle());
 		String studyFileSuffix = "." + IOUtils.STUDY_FILE_SUFFIX;
 		File studyAsJsonFile = File.createTempFile(studyFileName,
 				studyFileSuffix);
 		studyAsJsonFile.deleteOnExit();
 		jsonUtils.studyAsJsonForIO(study, studyAsJsonFile);
-		String studyAssetsDirPath = IOUtils.generateStudyAssetsPath(study
+		String studyAssetsDirPath = ioUtils.generateStudyAssetsPath(study
 				.getDirName());
 		File zipFile = ZipUtil.zipStudy(studyAssetsDirPath, study.getDirName(),
 				studyAsJsonFile.getAbsolutePath());
@@ -337,18 +342,18 @@ public class ImportExportService {
 	private void moveStudyAssetsDir(File unzippedStudyDir, Study currentStudy,
 			String studyAssetsDirName) throws IOException {
 		if (currentStudy != null) {
-			IOUtils.removeStudyAssetsDir(currentStudy.getDirName());
+			ioUtils.removeStudyAssetsDir(currentStudy.getDirName());
 		}
 
-		File[] dirArray = IOUtils.findDirectories(unzippedStudyDir);
+		File[] dirArray = ioUtils.findDirectories(unzippedStudyDir);
 		if (dirArray.length == 0) {
 			// If a study assets dir is missing, create a new one.
-			IOUtils.createStudyAssetsDir(studyAssetsDirName);
+			ioUtils.createStudyAssetsDir(studyAssetsDirName);
 			RequestScopeMessaging
 					.warning(MessagesStrings.NO_DIR_IN_ZIP_CREATED_NEW);
 		} else if (dirArray.length == 1) {
 			File studyAssetsDir = dirArray[0];
-			IOUtils.moveStudyAssetsDir(studyAssetsDir, studyAssetsDirName);
+			ioUtils.moveStudyAssetsDir(studyAssetsDir, studyAssetsDirName);
 		} else {
 			throw new IOException(MessagesStrings.MORE_THAN_ONE_DIR_IN_ZIP);
 		}
@@ -395,7 +400,8 @@ public class ImportExportService {
 	}
 
 	private Component unmarshalComponent(File file) throws IOException {
-		UploadUnmarshaller<Component> uploadUnmarshaller = new ComponentUploadUnmarshaller();
+		UploadUnmarshaller<Component> uploadUnmarshaller = app.injector()
+				.instanceOf(ComponentUploadUnmarshaller.class);
 		Component component = uploadUnmarshaller.unmarshalling(file);
 		try {
 			componentService.validate(component);
@@ -407,14 +413,15 @@ public class ImportExportService {
 
 	private Study unmarshalStudy(File tempDir, boolean deleteAfterwards)
 			throws IOException {
-		File[] studyFileList = IOUtils.findFiles(tempDir, "",
+		File[] studyFileList = ioUtils.findFiles(tempDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		if (studyFileList.length != 1) {
 			throw new IOException(MessagesStrings.STUDY_INVALID);
 		}
 		File studyFile = studyFileList[0];
 
-		UploadUnmarshaller<Study> uploadUnmarshaller = new StudyUploadUnmarshaller();
+		UploadUnmarshaller<Study> uploadUnmarshaller = app.injector()
+				.instanceOf(StudyUploadUnmarshaller.class);
 		Study study = uploadUnmarshaller.unmarshalling(studyFile);
 
 		try {

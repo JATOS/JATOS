@@ -12,11 +12,17 @@ import java.io.IOException;
  */
 public abstract class UploadUnmarshaller<T> {
 
+	private final IOUtils ioUtils;
+	
+	UploadUnmarshaller(IOUtils ioUtils) {
+		this.ioUtils = ioUtils;
+	}
+	
 	public T unmarshalling(File file) throws IOException {
 		T object = null;
 		String jsonStr = null;
 		try {
-			jsonStr = IOUtils.readFile(file);
+			jsonStr = ioUtils.readFile(file);
 		} catch (IOException e) {
 			throw new IOException(MessagesStrings.COULDNT_READ_FILE, e);
 		}
