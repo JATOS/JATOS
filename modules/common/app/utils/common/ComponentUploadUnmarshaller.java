@@ -44,6 +44,7 @@ public class ComponentUploadUnmarshaller extends UploadUnmarshaller<Component> {
 		}
 
 		switch (version) {
+		case 0:
 		case 1:
 			// Current version
 			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr).findValue(

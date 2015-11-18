@@ -46,6 +46,7 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 			throw new IOException(MessagesStrings.TOO_NEW_STUDY_VERSION);
 		}
 		switch (version) {
+		case 0:
 		case 2:
 			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr).findValue(
 					JsonUtils.DATA);
