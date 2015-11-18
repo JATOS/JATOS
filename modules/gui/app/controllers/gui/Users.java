@@ -1,7 +1,5 @@
 package controllers.gui;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -85,8 +83,7 @@ public class Users extends Controller {
 	 * Handles post request of user create form.
 	 */
 	@Transactional
-	public Result submit() throws UnsupportedEncodingException,
-			NoSuchAlgorithmException {
+	public Result submit() {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		Form<User> form = Form.form(User.class).bindFromRequest();
@@ -112,9 +109,8 @@ public class Users extends Controller {
 		return redirect(controllers.gui.routes.Home.home());
 	}
 
-	private Result showCreateUserAfterError(User loggedInUser,
-			Form<User> form, List<ValidationError> errorList,
-			int httpStatus) {
+	private Result showCreateUserAfterError(User loggedInUser, Form<User> form,
+			List<ValidationError> errorList, int httpStatus) {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
 		} else {
@@ -122,26 +118,26 @@ public class Users extends Controller {
 				errorList.forEach(form::reject);
 			}
 			String breadcrumbs = breadcrumbsService.generateForHome("New User");
-			return status(httpStatus, views.html.gui.user.create.render(
-					loggedInUser, breadcrumbs, form));
+			return status(httpStatus, views.html.gui.user.create
+					.render(loggedInUser, breadcrumbs, form));
 		}
 	}
 
-	private Result showEditUserAfterError(User loggedInUser,
-			Form<User> form, User user, int httpStatus) {
+	private Result showEditUserAfterError(User loggedInUser, Form<User> form,
+			User user, int httpStatus) {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
 		} else {
 			String breadcrumbs = breadcrumbsService.generateForUser(user,
 					"Edit Profile");
-			return status(httpStatus, views.html.gui.user.editProfile.render(
-					loggedInUser, breadcrumbs, user, form));
+			return status(httpStatus, views.html.gui.user.editProfile
+					.render(loggedInUser, breadcrumbs, user, form));
 		}
 	}
 
 	private Result showChangePasswordAfterError(User loggedInUser,
-			Form<User> form, List<ValidationError> errorList,
-			int httpStatus, User user) {
+			Form<User> form, List<ValidationError> errorList, int httpStatus,
+			User user) {
 		if (ControllerUtils.isAjax()) {
 			return status(httpStatus);
 		} else {
@@ -150,9 +146,8 @@ public class Users extends Controller {
 			}
 			String breadcrumbs = breadcrumbsService.generateForUser(user,
 					"Change Password");
-			return status(httpStatus,
-					views.html.gui.user.changePassword.render(loggedInUser,
-							breadcrumbs, form));
+			return status(httpStatus, views.html.gui.user.changePassword
+					.render(loggedInUser, breadcrumbs, form));
 		}
 	}
 
@@ -218,8 +213,7 @@ public class Users extends Controller {
 	 * Handles post request of change password form.
 	 */
 	@Transactional
-	public Result submitChangedPassword(String email) throws JatosGuiException,
-			UnsupportedEncodingException, NoSuchAlgorithmException {
+	public Result submitChangedPassword(String email) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".submitChangedPassword: " + "email " + email
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
@@ -230,8 +224,8 @@ public class Users extends Controller {
 		DynamicForm requestData = Form.form().bindFromRequest();
 		String newPassword = requestData.get(User.PASSWORD);
 		String newPasswordRepeat = requestData.get(User.PASSWORD_REPEAT);
-		String oldPasswordHash = HashUtils.getHashMDFive(requestData
-				.get(User.OLD_PASSWORD));
+		String oldPasswordHash = HashUtils
+				.getHashMDFive(requestData.get(User.OLD_PASSWORD));
 		List<ValidationError> errorList = userService.validateChangePassword(
 				user, newPassword, newPasswordRepeat, oldPasswordHash);
 		if (!errorList.isEmpty()) {

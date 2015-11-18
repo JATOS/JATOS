@@ -1,7 +1,5 @@
 package services.gui;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,8 +66,7 @@ public class UserService {
 		}
 	}
 
-	public User createAdmin() throws UnsupportedEncodingException,
-			NoSuchAlgorithmException {
+	public User createAdmin() {
 		String passwordHash = HashUtils.getHashMDFive(ADMIN_PASSWORD);
 		User adminUser = new User(ADMIN_EMAIL, ADMIN_NAME, passwordHash);
 		userDao.create(adminUser);
@@ -77,8 +74,7 @@ public class UserService {
 	}
 
 	public List<ValidationError> validateNewUser(User newUser, String password,
-			String passwordRepeat) throws UnsupportedEncodingException,
-			NoSuchAlgorithmException {
+			String passwordRepeat) {
 		List<ValidationError> errorList = new ArrayList<>();
 
 		// Check if user with this email already exists.
@@ -92,11 +88,10 @@ public class UserService {
 	}
 
 	public List<ValidationError> validateChangePassword(User user,
-			String password, String passwordRepeat, String oldPasswordHash)
-			throws UnsupportedEncodingException, NoSuchAlgorithmException {
+			String password, String passwordRepeat, String oldPasswordHash) {
 		List<ValidationError> errorList = new ArrayList<>();
 
-		if (userDao.authenticate(user.getEmail(), oldPasswordHash) == null) {
+		if (!userDao.authenticate(user.getEmail(), oldPasswordHash)) {
 			errorList.add(new ValidationError(User.OLD_PASSWORD,
 					MessagesStrings.WRONG_OLD_PASSWORD));
 		}
@@ -106,8 +101,7 @@ public class UserService {
 	}
 
 	public void checkPasswords(String password, String passwordRepeat,
-			List<ValidationError> errorList)
-			throws UnsupportedEncodingException, NoSuchAlgorithmException {
+			List<ValidationError> errorList) {
 
 		// Check for non empty passwords
 		if (password.trim().isEmpty() || passwordRepeat.trim().isEmpty()) {
@@ -127,8 +121,7 @@ public class UserService {
 	/**
 	 * Creates a user, sets password hash and persists it.
 	 */
-	public void createUser(User newUser, String password)
-			throws UnsupportedEncodingException, NoSuchAlgorithmException {
+	public void createUser(User newUser, String password) {
 		String passwordHash = HashUtils.getHashMDFive(password);
 		newUser.setPasswordHash(passwordHash);
 		userDao.create(newUser);
@@ -146,7 +139,8 @@ public class UserService {
 	 * Changes name and persists user.
 	 */
 	public void updateName(User user, String name) {
-		userDao.updateName(user, name);
+		user.setName(name);
+		userDao.update(user);
 	}
 
 }

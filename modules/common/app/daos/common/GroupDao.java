@@ -5,6 +5,7 @@ import javax.inject.Singleton;
 
 import models.common.Group;
 import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO of Group entity
@@ -17,7 +18,8 @@ public class GroupDao extends AbstractDao {
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	GroupDao(GroupResultDao groupResultDao) {
+	GroupDao(JPAApi jpa, GroupResultDao groupResultDao) {
+		super(jpa);
 		this.groupResultDao = groupResultDao;
 	}
 
@@ -39,7 +41,7 @@ public class GroupDao extends AbstractDao {
 	}
 
 	public Group findById(Long id) {
-		return JPA.em().find(Group.class, id);
+		return em().find(Group.class, id);
 	}
 
 }

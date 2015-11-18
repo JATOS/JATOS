@@ -18,7 +18,7 @@ import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
-import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -67,6 +67,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 	private static final String CLASS_NAME = Publix.class.getSimpleName();
 
+	protected final JPAApi jpa;
 	protected final PublixUtils<T> publixUtils;
 	protected final IStudyAuthorisation<T> studyAuthorisation;
 	protected final GroupService groupService;
@@ -78,12 +79,13 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	protected final StudyResultDao studyResultDao;
 	protected final GroupResultDao groupResultDao;
 
-	public Publix(PublixUtils<T> utils,
+	public Publix(JPAApi jpa, PublixUtils<T> utils,
 			IStudyAuthorisation<T> studyAuthorisation,
 			GroupService groupService, ChannelService channelService,
 			PublixErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+		this.jpa = jpa;
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.groupService = groupService;
@@ -205,7 +207,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		// manually because the PublixAction wouldn't send a rejected WebSocket
 		// but normal HTTP responses.
 		try {
-			return JPA.withTransaction(() -> joinGroup(studyId, workerIdStr));
+			return jpa.withTransaction(() -> joinGroup(studyId, workerIdStr));
 		} catch (NotFoundPublixException e) {
 			Logger.info(CLASS_NAME + ".openGroupChannel: " + e.getMessage());
 			return WebSocketBuilder.reject(notFound());

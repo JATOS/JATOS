@@ -42,8 +42,8 @@ public class PublixAction extends play.mvc.Action.Simple {
 				call = Promise
 						.<Result> pure(internalServerError(e.getMessage()));
 			} else {
-				call = Promise
-						.<Result> pure(internalServerError(views.html.publix.error
+				call = Promise.<Result> pure(
+						internalServerError(views.html.publix.error
 								.render("Internal JATOS error during "
 										+ Controller.request().uri() + ": "
 										+ e.getMessage())));

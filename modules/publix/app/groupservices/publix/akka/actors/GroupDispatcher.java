@@ -1,5 +1,15 @@
 package groupservices.publix.akka.actors;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import akka.actor.ActorRef;
+import akka.actor.PoisonPill;
+import akka.actor.Props;
+import akka.actor.UntypedActor;
+import daos.common.GroupResultDao;
 import groupservices.publix.akka.messages.GroupDispatcherProtocol.GroupMsg;
 import groupservices.publix.akka.messages.GroupDispatcherProtocol.Joined;
 import groupservices.publix.akka.messages.GroupDispatcherProtocol.Left;
@@ -7,22 +17,10 @@ import groupservices.publix.akka.messages.GroupDispatcherProtocol.PoisonChannel;
 import groupservices.publix.akka.messages.GroupDispatcherProtocol.RegisterChannel;
 import groupservices.publix.akka.messages.GroupDispatcherProtocol.UnregisterChannel;
 import groupservices.publix.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import models.common.GroupResult;
 import play.Logger;
-import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 import utils.common.JsonUtils;
-import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
-import akka.actor.Props;
-import akka.actor.UntypedActor;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import daos.common.GroupResultDao;
 
 /**
  * A GroupDispatcher is an Akka Actor responsible for distributing messages
@@ -57,6 +55,7 @@ public class GroupDispatcher extends UntypedActor {
 	 * StudyResult's IDs to ActorRefs.
 	 */
 	private final Map<Long, ActorRef> groupChannelMap = new HashMap<>();
+	private final JPAApi jpa;
 	private final ActorRef groupDispatcherRegistry;
 	private final GroupResultDao groupResultDao;
 	private long groupResultId;
@@ -65,14 +64,15 @@ public class GroupDispatcher extends UntypedActor {
 	 * Akka method to get this Actor started. Changes in props must be done in
 	 * the constructor too.
 	 */
-	public static Props props(ActorRef groupDispatcherRegistry,
+	public static Props props(JPAApi jpa, ActorRef groupDispatcherRegistry,
 			GroupResultDao groupResultDao, long groupResultId) {
-		return Props.create(GroupDispatcher.class, groupDispatcherRegistry,
+		return Props.create(GroupDispatcher.class, jpa, groupDispatcherRegistry,
 				groupResultDao, groupResultId);
 	}
 
-	public GroupDispatcher(ActorRef groupDispatcherRegistry,
+	public GroupDispatcher(JPAApi jpa, ActorRef groupDispatcherRegistry,
 			GroupResultDao groupResultDao, long groupResultId) {
+		this.jpa = jpa;
 		this.groupDispatcherRegistry = groupDispatcherRegistry;
 		this.groupResultDao = groupResultDao;
 		this.groupResultId = groupResultId;
@@ -120,8 +120,8 @@ public class GroupDispatcher extends UntypedActor {
 	private void tellRecipientOnly(Object msg, ObjectNode jsonNode) {
 		Long studyResultId = null;
 		try {
-			studyResultId = Long.valueOf(jsonNode.get(GroupMsg.RECIPIENT)
-					.asText());
+			studyResultId = Long
+					.valueOf(jsonNode.get(GroupMsg.RECIPIENT).asText());
 		} catch (NumberFormatException e) {
 			String errorMsg = "Recipient "
 					+ jsonNode.get(GroupMsg.RECIPIENT).asText()
@@ -233,7 +233,7 @@ public class GroupDispatcher extends UntypedActor {
 
 	private GroupResult getGroupResult(long groupResultId) {
 		try {
-			return JPA.withTransaction(() -> {
+			return jpa.withTransaction(() -> {
 				return groupResultDao.findById(groupResultId);
 			});
 		} catch (Throwable e) {

@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import play.db.jpa.JPAApi;
 import play.libs.Akka;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
@@ -29,11 +30,13 @@ public class GroupDispatcherRegistry extends UntypedActor {
 	 * Contains the GroupDispatchers that are currently registered. Maps the
 	 * GroupResult's ID to the ActorRef.
 	 */
-	private Map<Long, ActorRef> groupDispatcherMap = new HashMap<Long, ActorRef>();
+	private final Map<Long, ActorRef> groupDispatcherMap = new HashMap<Long, ActorRef>();
 	private final GroupResultDao groupResultDao;
+	private final JPAApi jpa;
 
 	@Inject
-	public GroupDispatcherRegistry(GroupResultDao groupResultDao) {
+	public GroupDispatcherRegistry(JPAApi jpa, GroupResultDao groupResultDao) {
+		this.jpa = jpa;
 		this.groupResultDao = groupResultDao;
 	}
 
@@ -66,7 +69,7 @@ public class GroupDispatcherRegistry extends UntypedActor {
 				.get(getOrCreate.groupResultId);
 		if (groupDispatcher == null) {
 			groupDispatcher = Akka.system().actorOf(
-					GroupDispatcher.props(self(), groupResultDao,
+					GroupDispatcher.props(jpa, self(), groupResultDao,
 							getOrCreate.groupResultId));
 			groupDispatcherMap.put(getOrCreate.groupResultId, groupDispatcher);
 		}

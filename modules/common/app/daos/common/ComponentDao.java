@@ -12,7 +12,7 @@ import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
-import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO for Component entity
@@ -25,7 +25,8 @@ public class ComponentDao extends AbstractDao {
 	private final ComponentResultDao componentResultDao;
 
 	@Inject
-	ComponentDao(ComponentResultDao componentResultDao) {
+	ComponentDao(JPAApi jpa, ComponentResultDao componentResultDao) {
+		super(jpa);
 		this.componentResultDao = componentResultDao;
 	}
 
@@ -84,7 +85,7 @@ public class ComponentDao extends AbstractDao {
 	}
 
 	public Component findById(Long id) {
-		return JPA.em().find(Component.class, id);
+		return em().find(Component.class, id);
 	}
 
 	/**
@@ -94,7 +95,7 @@ public class ComponentDao extends AbstractDao {
 	public Component findByUuid(String uuid, Study study) {
 		String queryStr = "SELECT e FROM Component e WHERE "
 				+ "e.uuid=:uuid and e.study=:study";
-		TypedQuery<Component> query = JPA.em().createQuery(queryStr,
+		TypedQuery<Component> query = em().createQuery(queryStr,
 				Component.class);
 		query.setParameter("uuid", uuid);
 		query.setParameter("study", study);
@@ -111,7 +112,7 @@ public class ComponentDao extends AbstractDao {
 	public List<Component> findByTitle(String title) {
 		String queryStr = "SELECT e FROM Component e WHERE "
 				+ "e.title=:title";
-		TypedQuery<Component> query = JPA.em().createQuery(queryStr,
+		TypedQuery<Component> query = em().createQuery(queryStr,
 				Component.class);
 		return query.setParameter("title", title).getResultList();
 	}
@@ -123,7 +124,7 @@ public class ComponentDao extends AbstractDao {
 	public void changePosition(Component component, int newPosition) {
 		String queryStr = "UPDATE Component SET componentList_order = "
 				+ ":newIndex WHERE id = :id";
-		Query query = JPA.em().createQuery(queryStr);
+		Query query = em().createQuery(queryStr);
 		// Index is position - 1
 		query.setParameter("newIndex", newPosition - 1);
 		query.setParameter("id", component.getId());

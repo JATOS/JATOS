@@ -3,15 +3,14 @@ package groupservices.publix;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
+import exceptions.publix.ForbiddenPublixException;
 import models.common.Group;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
 import models.common.StudyResult;
-import play.db.jpa.JPA;
 import services.publix.PublixErrorMessages;
-import daos.common.GroupResultDao;
-import daos.common.StudyResultDao;
-import exceptions.publix.ForbiddenPublixException;
 
 /**
  * Handles groups, e.g. joining or leaving a GroupResult. Members of a
@@ -84,8 +83,9 @@ public class GroupService {
 
 		groupResultDao.update(groupResult);
 		studyResultDao.update(studyResult);
-		JPA.em().getTransaction().commit();
-		JPA.em().getTransaction().begin();
+		// TODO
+		groupResultDao.em().getTransaction().commit();
+		groupResultDao.em().getTransaction().begin();
 		return groupResult;
 	}
 
@@ -101,8 +101,9 @@ public class GroupService {
 		// if (groupResult.getStudyResultList().isEmpty()) {
 		// groupResultDao.remove(groupResult);
 		// }
-		JPA.em().getTransaction().commit();
-		JPA.em().getTransaction().begin();
+		// TODO
+		groupResultDao.em().getTransaction().commit();
+		groupResultDao.em().getTransaction().begin();
 	}
 
 	private void moveStudyResultToHistory(StudyResult studyResult,

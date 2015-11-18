@@ -13,6 +13,7 @@ import models.common.StudyResult;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import play.Logger;
+import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.mt.MTErrorMessages;
 import services.publix.mt.MTPublixUtils;
@@ -60,15 +61,15 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	private final MTWorkerDao mtWorkerDao;
 
 	@Inject
-	MTPublix(MTPublixUtils publixUtils,
+	MTPublix(JPAApi jpa, MTPublixUtils publixUtils,
 			MTStudyAuthorisation studyAuthorisation, GroupService groupService,
 			ChannelService channelService, MTErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
 			MTWorkerDao mtWorkerDao, GroupResultDao groupResultDao) {
-		super(publixUtils, studyAuthorisation, groupService, channelService,
-				errorMessages, studyAssets, componentResultDao, jsonUtils,
-				studyResultDao, groupResultDao);
+		super(jpa, publixUtils, studyAuthorisation, groupService,
+				channelService, errorMessages, studyAssets, componentResultDao,
+				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
@@ -130,8 +131,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		MTWorker worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		String confirmationCode;
 		if (!publixUtils.studyDone(studyResult)) {
 			confirmationCode = publixUtils.finishStudyResult(successful,

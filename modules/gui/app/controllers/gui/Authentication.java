@@ -1,22 +1,18 @@
 package controllers.gui;
 
-import general.common.MessagesStrings;
-import general.gui.FlashScopeMessaging;
-
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import daos.common.UserDao;
+import general.common.MessagesStrings;
+import general.gui.FlashScopeMessaging;
 import play.Logger;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import utils.common.HashUtils;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import daos.common.UserDao;
 
 /**
  * Controller that deals with login/logout.
@@ -44,26 +40,25 @@ public class Authentication extends Controller {
 	 */
 	public Result login() {
 		Logger.info(CLASS_NAME + ".login");
-		return ok(views.html.gui.auth.login.render(Form
-				.form(Authentication.Login.class)));
+		return ok(views.html.gui.auth.login
+				.render(Form.form(Authentication.Login.class)));
 	}
 
 	/**
 	 * Deals with login form post.
 	 */
 	@Transactional
-	public Result authenticate() throws UnsupportedEncodingException,
-			NoSuchAlgorithmException {
+	public Result authenticate() {
 		Form<Login> loginForm = Form.form(Login.class).bindFromRequest();
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");
 		String passwordHash = HashUtils.getHashMDFive(password);
-		if (userDao.authenticate(email, passwordHash) == null) {
-			loginForm.reject("Invalid user or password");
-			return badRequest(views.html.gui.auth.login.render(loginForm));
-		} else {
+		if (userDao.authenticate(email, passwordHash)) {
 			session(Users.SESSION_EMAIL, email);
 			return redirect(controllers.gui.routes.Home.home());
+		} else {
+			loginForm.reject("Invalid user or password");
+			return badRequest(views.html.gui.auth.login.render(loginForm));
 		}
 	}
 

@@ -13,6 +13,7 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.JatosWorker;
 import play.Logger;
+import play.db.jpa.JPAApi;
 import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -83,13 +84,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	private final JatosErrorMessages errorMessages;
 
 	@Inject
-	JatosPublix(JatosPublixUtils publixUtils,
+	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
 			GroupService groupService, ChannelService channelService,
 			JatosErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		super(publixUtils, studyAuthorisation, groupService, channelService,
+		super(jpa, publixUtils, studyAuthorisation, groupService, channelService,
 				errorMessages, studyAssets, componentResultDao, jsonUtils,
 				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;

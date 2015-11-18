@@ -10,6 +10,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
 import play.Logger;
+import play.db.jpa.JPAApi;
 import play.mvc.Http.Cookie;
 import play.mvc.Result;
 import services.publix.general_single.GeneralSingleErrorMessages;
@@ -50,14 +51,14 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 	private final WorkerDao workerDao;
 
 	@Inject
-	GeneralSinglePublix(GeneralSinglePublixUtils publixUtils,
+	GeneralSinglePublix(JPAApi jpa, GeneralSinglePublixUtils publixUtils,
 			GeneralSingleStudyAuthorisation studyAuthorisation,
 			GroupService groupService, ChannelService channelService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, WorkerDao workerDao,
 			GroupResultDao groupResultDao) {
-		super(publixUtils, studyAuthorisation, groupService, channelService,
+		super(jpa, publixUtils, studyAuthorisation, groupService, channelService,
 				errorMessages, studyAssets, componentResultDao, jsonUtils,
 				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;

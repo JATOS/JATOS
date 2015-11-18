@@ -2,6 +2,7 @@ package daos.common;
 
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -11,6 +12,7 @@ import models.common.ComponentResult;
 import models.common.StudyResult;
 import play.Logger;
 import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO for ComponentResult entity
@@ -23,6 +25,11 @@ public class ComponentResultDao extends AbstractDao {
 	private static final String CLASS_NAME = ComponentResultDao.class
 			.getSimpleName();
 
+	@Inject
+	ComponentResultDao(JPAApi jpa) {
+		super(jpa);
+	}
+	
 	/**
 	 * Creates ComponentResult for the given Component and adds it to the given
 	 * StudyResult.
@@ -64,7 +71,7 @@ public class ComponentResultDao extends AbstractDao {
 	}
 
 	public ComponentResult findById(Long id) {
-		return JPA.em().find(ComponentResult.class, id);
+		return em().find(ComponentResult.class, id);
 	}
 
 	/**
@@ -72,7 +79,7 @@ public class ComponentResultDao extends AbstractDao {
 	 */
 	public int countByComponent(Component component) {
 		String queryStr = "SELECT COUNT(e) FROM ComponentResult e WHERE e.component=:componentId";
-		Query query = JPA.em().createQuery(queryStr);
+		Query query = em().createQuery(queryStr);
 		Number result = (Number) query.setParameter("componentId", component)
 				.getSingleResult();
 		return result.intValue();
@@ -81,7 +88,7 @@ public class ComponentResultDao extends AbstractDao {
 	public List<ComponentResult> findAllByComponent(Component component) {
 		String queryStr = "SELECT e FROM ComponentResult e "
 				+ "WHERE e.component=:componentId";
-		TypedQuery<ComponentResult> query = JPA.em().createQuery(queryStr,
+		TypedQuery<ComponentResult> query = em().createQuery(queryStr,
 				ComponentResult.class);
 		return query.setParameter("componentId", component).getResultList();
 	}

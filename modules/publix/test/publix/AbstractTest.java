@@ -5,8 +5,6 @@ import general.common.Common;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
@@ -214,8 +212,7 @@ public abstract class AbstractTest {
 	}
 
 	protected synchronized User createAndPersistUser(String email, String name,
-			String password) throws UnsupportedEncodingException,
-			NoSuchAlgorithmException {
+			String password) {
 		String passwordHash = HashUtils.getHashMDFive(password);
 		User user = new User(email, name, passwordHash);
 		entityManager.getTransaction().begin();

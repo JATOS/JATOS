@@ -2,6 +2,7 @@ package daos.common.worker;
 
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
@@ -10,6 +11,7 @@ import models.common.StudyResult;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO for abstract Worker entity
@@ -19,6 +21,11 @@ import play.db.jpa.JPA;
 @Singleton
 public class WorkerDao extends AbstractDao {
 
+	@Inject
+	WorkerDao(JPAApi jpa) {
+		super(jpa);
+	}
+	
 	public void create(Worker worker) {
 		persist(worker);
 	}
@@ -44,11 +51,11 @@ public class WorkerDao extends AbstractDao {
 	}
 
 	public Worker findById(Long id) {
-		return JPA.em().find(Worker.class, id);
+		return em().find(Worker.class, id);
 	}
 
 	public List<Worker> findAll() {
-		TypedQuery<Worker> query = JPA.em().createQuery(
+		TypedQuery<Worker> query = em().createQuery(
 				"SELECT e FROM Worker e", Worker.class);
 		return query.getResultList();
 	}

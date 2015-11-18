@@ -7,6 +7,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.workers.PersonalSingleWorker;
 import play.Logger;
+import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.personal_single.PersonalSingleErrorMessages;
 import services.publix.personal_single.PersonalSinglePublixUtils;
@@ -42,13 +43,13 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 	private final PersonalSingleStudyAuthorisation studyAuthorisation;
 
 	@Inject
-	PersonalSinglePublix(PersonalSinglePublixUtils publixUtils,
+	PersonalSinglePublix(JPAApi jpa, PersonalSinglePublixUtils publixUtils,
 			PersonalSingleStudyAuthorisation studyAuthorisation,
 			GroupService groupService, ChannelService channelService,
 			PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		super(publixUtils, studyAuthorisation, groupService, channelService,
+		super(jpa, publixUtils, studyAuthorisation, groupService, channelService,
 				errorMessages, studyAssets, componentResultDao, jsonUtils,
 				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;

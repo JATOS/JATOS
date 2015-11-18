@@ -10,6 +10,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.workers.PersonalMultipleWorker;
 import play.Logger;
+import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.personal_multiple.PersonalMultipleErrorMessages;
 import services.publix.personal_multiple.PersonalMultiplePublixUtils;
@@ -42,16 +43,16 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	private final PersonalMultipleStudyAuthorisation studyAuthorisation;
 
 	@Inject
-	PersonalMultiplePublix(PersonalMultiplePublixUtils publixUtils,
+	PersonalMultiplePublix(JPAApi jpa, PersonalMultiplePublixUtils publixUtils,
 			PersonalMultipleStudyAuthorisation studyAuthorisation,
 			GroupService groupService, ChannelService channelService,
 			PersonalMultipleErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
 			GroupResultDao groupResultDao) {
-		super(publixUtils, studyAuthorisation, groupService, channelService,
-				errorMessages, studyAssets, componentResultDao, jsonUtils,
-				studyResultDao, groupResultDao);
+		super(jpa, publixUtils, studyAuthorisation, groupService,
+				channelService, errorMessages, studyAssets, componentResultDao,
+				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 	}

@@ -11,7 +11,7 @@ import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.Worker;
-import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO for StudyResult entity
@@ -24,7 +24,8 @@ public class StudyResultDao extends AbstractDao {
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	StudyResultDao(GroupResultDao groupResultDao) {
+	StudyResultDao(JPAApi jpa, GroupResultDao groupResultDao) {
+		super(jpa);
 		this.groupResultDao = groupResultDao;
 	}
 
@@ -86,7 +87,7 @@ public class StudyResultDao extends AbstractDao {
 	}
 
 	public StudyResult findById(Long id) {
-		return JPA.em().find(StudyResult.class, id);
+		return em().find(StudyResult.class, id);
 	}
 
 	/**
@@ -94,17 +95,14 @@ public class StudyResultDao extends AbstractDao {
 	 */
 	public int countByStudy(Study study) {
 		String queryStr = "SELECT COUNT(e) FROM StudyResult e WHERE e.study=:studyId";
-		Query query = JPA.em().createQuery(queryStr);
-		Number result = (Number) query.setParameter("studyId", study)
-				.getSingleResult();
+		Query query = em().createQuery(queryStr);
+		Number result = (Number) query.setParameter("studyId", study).getSingleResult();
 		return result.intValue();
 	}
 
 	public List<StudyResult> findAllByStudy(Study study) {
-		String queryStr = "SELECT e FROM StudyResult e "
-				+ "WHERE e.study=:studyId";
-		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
-				StudyResult.class);
+		String queryStr = "SELECT e FROM StudyResult e " + "WHERE e.study=:studyId";
+		TypedQuery<StudyResult> query = em().createQuery(queryStr, StudyResult.class);
 		return query.setParameter("studyId", study).getResultList();
 	}
 

@@ -2,12 +2,13 @@ package daos.common;
 
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.common.User;
 import models.common.workers.JatosWorker;
-import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO for User entity
@@ -16,6 +17,11 @@ import play.db.jpa.JPA;
  */
 @Singleton
 public class UserDao extends AbstractDao {
+
+	@Inject
+	UserDao(JPAApi jpa) {
+		super(jpa);
+	}
 
 	/**
 	 * Persist user und creates it's JatosWorker.
@@ -32,34 +38,23 @@ public class UserDao extends AbstractDao {
 		merge(user);
 	}
 
-	/**
-	 * Changes only the name of the given user.
-	 */
-	public void updateName(User user, String name) {
-		user.setName(name);
-		merge(user);
-	}
-
-	public User authenticate(String email, String passwordHash) {
+	public boolean authenticate(String email, String passwordHash) {
 		String queryStr = "SELECT e FROM User e WHERE "
 				+ "e.email=:email and e.passwordHash=:passwordHash";
-		TypedQuery<User> query = JPA.em().createQuery(queryStr,
-				User.class);
-		// There can be only one user with this email
-		query.setMaxResults(1);
-		query.setParameter("email", email);
-		query.setParameter("passwordHash", passwordHash);
-		List<User> userList = query.getResultList();
-		return userList.isEmpty() ? null : userList.get(0);
+		boolean doesNotExist = em.createQuery(queryStr, User.class)
+				.setMaxResults(1).setParameter("email", email)
+				.setParameter("passwordHash", passwordHash).getResultList()
+				.isEmpty();
+		return !doesNotExist;
 	}
 
 	public User findByEmail(String email) {
-		return JPA.em().find(User.class, email);
+		return em.find(User.class, email);
 	}
 
 	public List<User> findAll() {
-		TypedQuery<User> query = JPA.em().createQuery(
-				"SELECT e FROM User e", User.class);
+		TypedQuery<User> query = em().createQuery("SELECT e FROM User e",
+				User.class);
 		return query.getResultList();
 	}
 
