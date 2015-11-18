@@ -8,7 +8,7 @@
 		<file>${application.home}/logs/application.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- Daily rollover with compression -->
-			<fileNamePattern>application-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
+			<fileNamePattern>${application.home}/logs/application-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
 			<!-- keep 30 days worth of history -->
 			<maxHistory>30</maxHistory>
 		</rollingPolicy>
