@@ -30,6 +30,8 @@ EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.ManagedClass
 EclipseKeys.preTasks := Seq(compile in Compile)                  // Compile the project before generating Eclipse files, so that .class files for views and routes are present
 EclipseKeys.skipParents in ThisBuild := false
 
+PlayKeys.externalizeResources := false
+
 // JATOS root project with GUI. Container for all the submodules
 lazy val jatos = (project in file("."))
 	.enablePlugins(PlayJava, SbtWeb)
