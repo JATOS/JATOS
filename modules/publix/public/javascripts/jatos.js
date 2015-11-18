@@ -222,7 +222,7 @@ function initJatos() {
 		
 		// Component properties
 		jatos.componentProperties = initData.componentProperties;
-		if (jatos.studyProperties.jsonData) {
+		if (jatos.componentProperties.jsonData) {
 			jatos.componentJsonInput = jatos.jQuery
 					.parseJSON(jatos.componentProperties.jsonData);
 		} else {
