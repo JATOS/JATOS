@@ -12,18 +12,8 @@ import java.util.TimeZone;
 
 import javax.inject.Singleton;
 
-import models.common.Component;
-import models.common.ComponentResult;
-import models.common.GroupResult;
-import models.common.Study;
-import models.common.StudyResult;
-import models.common.workers.Worker;
-
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
-
-import play.Logger;
-import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,6 +22,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import models.common.Component;
+import models.common.ComponentResult;
+import models.common.GroupResult;
+import models.common.Study;
+import models.common.StudyResult;
+import models.common.workers.Worker;
+import play.Logger;
+import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and
@@ -164,9 +163,9 @@ public class JsonUtils {
 		ObjectNode initData = OBJECTMAPPER.createObjectNode();
 		initData.put("studySession", studySession);
 		// This is ugly: first marshaling, now unmarshaling again
-		initData.put("studyProperties", OBJECTMAPPER.readTree(studyProperties));
-		initData.put("componentList", componentList);
-		initData.put("componentProperties",
+		initData.set("studyProperties", OBJECTMAPPER.readTree(studyProperties));
+		initData.set("componentList", componentList);
+		initData.set("componentProperties",
 				OBJECTMAPPER.readTree(componentProperties));
 		return initData;
 	}
@@ -223,7 +222,7 @@ public class JsonUtils {
 			ObjectNode studyResultNode = studyResultAsJsonNode(studyResult);
 			arrayNode.add(studyResultNode);
 		}
-		allStudyResultsNode.put(DATA, arrayNode);
+		allStudyResultsNode.set(DATA, arrayNode);
 		return OBJECTMAPPER.writeValueAsString(allStudyResultsNode);
 	}
 
@@ -240,7 +239,7 @@ public class JsonUtils {
 			ObjectNode componentResultNode = componentResultAsJsonNode(componentResult);
 			arrayNode.add(componentResultNode);
 		}
-		allComponentResultsNode.put(DATA, arrayNode);
+		allComponentResultsNode.set(DATA, arrayNode);
 		return OBJECTMAPPER.writeValueAsString(allComponentResultsNode);
 	}
 
@@ -254,7 +253,7 @@ public class JsonUtils {
 		// Add worker
 		ObjectNode workerNode = OBJECTMAPPER
 				.valueToTree(initializeAndUnproxy(studyResult.getWorker()));
-		studyResultNode.put("worker", workerNode);
+		studyResultNode.set("worker", workerNode);
 
 		// Add extra variables
 		studyResultNode.put("studyId", studyResult.getStudy().getId());
@@ -273,7 +272,7 @@ public class JsonUtils {
 			ObjectNode componentResultNode = componentResultAsJsonNode(componentResult);
 			arrayNode.add(componentResultNode);
 		}
-		studyResultNode.put("componentResults", arrayNode);
+		studyResultNode.set("componentResults", arrayNode);
 
 		return studyResultNode;
 	}
@@ -414,7 +413,7 @@ public class JsonUtils {
 			arrayNode.add(componentNode);
 		}
 		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
-		componentsNode.put(DATA, arrayNode);
+		componentsNode.set(DATA, arrayNode);
 		return componentsNode;
 	}
 
@@ -432,7 +431,7 @@ public class JsonUtils {
 			arrayNode.add(workerNode);
 		}
 		ObjectNode workersNode = OBJECTMAPPER.createObjectNode();
-		workersNode.put(DATA, arrayNode);
+		workersNode.set(DATA, arrayNode);
 		return OBJECTMAPPER.writeValueAsString(workersNode);
 	}
 
@@ -498,7 +497,7 @@ public class JsonUtils {
 		// Unnecessary conversion into a temporary string - better solution?
 		String objAsJson = OBJECTMAPPER.writerWithView(JsonForIO.class)
 				.writeValueAsString(obj);
-		node.put(DATA, OBJECTMAPPER.readTree(objAsJson));
+		node.set(DATA, OBJECTMAPPER.readTree(objAsJson));
 		return node;
 	}
 
