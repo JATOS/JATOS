@@ -9,7 +9,6 @@ import javax.persistence.TypedQuery;
 import models.common.Group;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
-import play.db.jpa.JPA;
 import play.db.jpa.JPAApi;
 
 /**

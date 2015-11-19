@@ -12,7 +12,6 @@ import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
-import play.db.jpa.JPA;
 import play.db.jpa.JPAApi;
 
 /**

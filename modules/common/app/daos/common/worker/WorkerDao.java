@@ -10,7 +10,6 @@ import daos.common.AbstractDao;
 import models.common.StudyResult;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
-import play.db.jpa.JPA;
 import play.db.jpa.JPAApi;
 
 /**

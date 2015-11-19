@@ -1,29 +1,28 @@
 package groupservices.publix;
 
 import static akka.pattern.Patterns.ask;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+import akka.actor.ActorRef;
+import akka.util.Timeout;
 import exceptions.publix.InternalServerErrorPublixException;
-import groupservices.publix.akka.actors.GroupDispatcherRegistry;
 import groupservices.publix.akka.messages.GroupDispatcherProtocol.Joined;
 import groupservices.publix.akka.messages.GroupDispatcherProtocol.Left;
 import groupservices.publix.akka.messages.GroupDispatcherProtocol.PoisonChannel;
 import groupservices.publix.akka.messages.GroupDispatcherRegistryProtocol.Get;
 import groupservices.publix.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
 import groupservices.publix.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-
 import models.common.GroupResult;
 import models.common.StudyResult;
 import play.mvc.WebSocket;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import akka.actor.ActorRef;
-import akka.util.Timeout;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Service class that handles of opening and closing of group channels with

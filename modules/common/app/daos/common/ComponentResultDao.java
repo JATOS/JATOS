@@ -11,7 +11,6 @@ import models.common.Component;
 import models.common.ComponentResult;
 import models.common.StudyResult;
 import play.Logger;
-import play.db.jpa.JPA;
 import play.db.jpa.JPAApi;
 
 /**

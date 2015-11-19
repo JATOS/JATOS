@@ -1,17 +1,14 @@
 package utils.common;
 
-import general.common.MessagesStrings;
-
 import java.io.IOException;
 
 import javax.inject.Inject;
 
-import play.Configuration;
-import play.api.Application;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.old.StudyV2;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Unmarshalling of an JSON string to a study. The study's JSON string can be in

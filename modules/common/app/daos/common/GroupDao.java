@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import models.common.Group;
-import play.db.jpa.JPA;
 import play.db.jpa.JPAApi;
 
 /**
