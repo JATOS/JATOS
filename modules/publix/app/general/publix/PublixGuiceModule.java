@@ -1,8 +1,8 @@
-package general.guice;
+package general.publix;
 
-import general.Initializer;
-import general.OnStartStop;
-import general.common.Common;
+import com.google.inject.AbstractModule;
+import com.google.inject.TypeLiteral;
+
 import groupservices.publix.akka.actors.GroupDispatcherRegistry;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.JatosWorker;
@@ -23,23 +23,15 @@ import services.publix.personal_multiple.PersonalMultipleStudyAuthorisation;
 import services.publix.personal_single.PersonalSinglePublixUtils;
 import services.publix.personal_single.PersonalSingleStudyAuthorisation;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.TypeLiteral;
-
 /**
- * Initial configuration of Guice dependency injection
+ * Configuration of Guice dependency injection for Publix module
  * 
  * @author Kristian Lange (2015)
  */
-public class GuiceConfig extends AbstractModule implements AkkaGuiceSupport {
+public class PublixGuiceModule extends AbstractModule implements AkkaGuiceSupport {
 
 	@Override
 	protected void configure() {
-		// JATOS startup initialisation (eager -> called during JATOS start)
-		bind(Common.class).asEagerSingleton();
-		bind(Initializer.class).asEagerSingleton();
-		bind(OnStartStop.class).asEagerSingleton();
-
 		// Config Worker generics binding for IStudyAuthorisation
 		bind(new TypeLiteral<IStudyAuthorisation<GeneralSingleWorker>>() {
 		}).to(GeneralSingleStudyAuthorisation.class);
