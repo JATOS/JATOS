@@ -12,6 +12,7 @@ import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
+import play.db.jpa.JPA;
 import play.db.jpa.JPAApi;
 
 /**
@@ -29,7 +30,6 @@ public class StudyDao extends AbstractDao {
 	@Inject
 	StudyDao(JPAApi jpa, StudyResultDao studyResultDao,
 			ComponentResultDao componentResultDao, ComponentDao componentDao) {
-		super(jpa);
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
 		this.componentDao = componentDao;
@@ -76,12 +76,12 @@ public class StudyDao extends AbstractDao {
 	}
 
 	public Study findById(Long id) {
-		return em().find(Study.class, id);
+		return JPA.em().find(Study.class, id);
 	}
 
 	public Study findByUuid(String uuid) {
 		String queryStr = "SELECT e FROM Study e WHERE " + "e.uuid=:uuid";
-		TypedQuery<Study> query = em().createQuery(queryStr, Study.class);
+		TypedQuery<Study> query = JPA.em().createQuery(queryStr, Study.class);
 		query.setParameter("uuid", uuid);
 		// There can be only one study with this UUID
 		query.setMaxResults(1);
@@ -95,18 +95,18 @@ public class StudyDao extends AbstractDao {
 	 */
 	public List<Study> findByTitle(String title) {
 		String queryStr = "SELECT e FROM Study e WHERE e.title=:title";
-		TypedQuery<Study> query = em().createQuery(queryStr, Study.class);
+		TypedQuery<Study> query = JPA.em().createQuery(queryStr, Study.class);
 		return query.setParameter("title", title).getResultList();
 	}
 
 	public List<Study> findAll() {
-		TypedQuery<Study> query = em().createQuery("SELECT e FROM Study e",
+		TypedQuery<Study> query = JPA.em().createQuery("SELECT e FROM Study e",
 				Study.class);
 		return query.getResultList();
 	}
 
 	public List<Study> findAllByUser(String userEmail) {
-		TypedQuery<Study> query = em().createQuery(
+		TypedQuery<Study> query = JPA.em().createQuery(
 				"SELECT DISTINCT g FROM User u LEFT JOIN u.studyList g "
 						+ "WHERE u.email = :user", Study.class);
 		query.setParameter("user", userEmail);

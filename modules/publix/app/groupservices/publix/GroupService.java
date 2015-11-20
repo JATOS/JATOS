@@ -9,6 +9,7 @@ import exceptions.publix.ForbiddenPublixException;
 import models.common.Group;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
+import play.db.jpa.JPA;
 import models.common.StudyResult;
 import services.publix.PublixErrorMessages;
 
@@ -84,8 +85,8 @@ public class GroupService {
 		groupResultDao.update(groupResult);
 		studyResultDao.update(studyResult);
 		// TODO
-		groupResultDao.em().getTransaction().commit();
-		groupResultDao.em().getTransaction().begin();
+		JPA.em().getTransaction().commit();
+		JPA.em().getTransaction().begin();
 		return groupResult;
 	}
 
@@ -102,8 +103,8 @@ public class GroupService {
 		// groupResultDao.remove(groupResult);
 		// }
 		// TODO
-		groupResultDao.em().getTransaction().commit();
-		groupResultDao.em().getTransaction().begin();
+		JPA.em().getTransaction().commit();
+		JPA.em().getTransaction().begin();
 	}
 
 	private void moveStudyResultToHistory(StudyResult studyResult,

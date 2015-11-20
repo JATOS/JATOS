@@ -1,9 +1,8 @@
 package daos.common;
 
 import javax.inject.Singleton;
-import javax.persistence.EntityManager;
 
-import play.db.jpa.JPAApi;
+import play.db.jpa.JPA;
 
 /**
  * Abstract DAO: Of the JPA calls only refresh() is public - persist(), merge()
@@ -15,32 +14,20 @@ import play.db.jpa.JPAApi;
 @Singleton
 public abstract class AbstractDao {
 
-	protected final JPAApi jpa;
-	protected final EntityManager em;
-
-	protected AbstractDao(JPAApi jpa) {
-		this.jpa = jpa;
-		this.em = jpa.em("default");
-	}
-
-	public EntityManager em() {
-		return em;
-	}
-
 	protected void persist(Object entity) {
-		em().persist(entity);
+		JPA.em().persist(entity);
 	}
 
 	protected void merge(Object entity) {
-		em().merge(entity);
+		JPA.em().merge(entity);
 	}
 
 	protected void remove(Object entity) {
-		em().remove(entity);
+		JPA.em().remove(entity);
 	}
 
 	protected void refresh(Object entity) {
-		em().refresh(entity);
+		JPA.em().refresh(entity);
 	}
 
 }

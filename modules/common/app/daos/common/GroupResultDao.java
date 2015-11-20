@@ -2,14 +2,13 @@ package daos.common;
 
 import java.util.List;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.common.Group;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
-import play.db.jpa.JPAApi;
+import play.db.jpa.JPA;
 
 /**
  * DAO for GroupResult
@@ -19,11 +18,6 @@ import play.db.jpa.JPAApi;
 @Singleton
 public class GroupResultDao extends AbstractDao {
 
-	@Inject
-	GroupResultDao(JPAApi jpa) {
-		super(jpa);
-	}
-	
 	public void create(GroupResult groupResult) {
 		persist(groupResult);
 	}
@@ -41,13 +35,13 @@ public class GroupResultDao extends AbstractDao {
 	}
 
 	public GroupResult findById(Long id) {
-		return em().find(GroupResult.class, id);
+		return JPA.em().find(GroupResult.class, id);
 	}
 
 	public List<GroupResult> findAllByGroup(Group group) {
 		String queryStr = "SELECT e FROM GroupResult e "
 				+ "WHERE e.group=:groupId";
-		TypedQuery<GroupResult> query = em().createQuery(queryStr,
+		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
 		return query.setParameter("groupId", group).getResultList();
 	}
@@ -72,7 +66,7 @@ public class GroupResultDao extends AbstractDao {
 				+ "AND size(gr.studyResultList) < g.maxActiveMemberSize "
 				+ "AND (size(gr.studyResultList) + size(gr.studyResultHistory)) "
 				+ "< g.maxTotalMemberSize";
-		TypedQuery<GroupResult> query = em().createQuery(queryStr,
+		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
 		query.setParameter("groupId", group);
 		query.setParameter("groupState", GroupState.STARTED);
@@ -81,7 +75,7 @@ public class GroupResultDao extends AbstractDao {
 
 	public List<GroupResult> findAllNotFinished() {
 		String queryStr = "SELECT e FROM GroupResult e WHERE e.groupState <> :groupState";
-		TypedQuery<GroupResult> query = em().createQuery(queryStr,
+		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
 		query.setParameter("groupState", GroupState.FINISHED);
 		return query.getResultList();
