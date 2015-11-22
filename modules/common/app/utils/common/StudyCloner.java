@@ -6,10 +6,9 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.StudyDao;
 import models.common.Component;
 import models.common.Study;
-import models.common.User;
-import daos.common.StudyDao;
 
 @Singleton
 public class StudyCloner {

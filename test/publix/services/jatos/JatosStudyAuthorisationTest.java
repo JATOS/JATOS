@@ -5,18 +5,16 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.common.Study;
-
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
-import play.mvc.Http;
-import publix.AbstractTest;
-import publix.PublixTestGlobal;
-import services.publix.jatos.JatosErrorMessages;
-import services.publix.jatos.JatosStudyAuthorisation;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
+import gui.AbstractTest;
+import models.common.Study;
+import play.mvc.Http;
+import services.publix.jatos.JatosErrorMessages;
+import services.publix.jatos.JatosStudyAuthorisation;
 
 /**
  * @author Kristian Lange
@@ -28,10 +26,10 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		jatosErrorMessages = PublixTestGlobal.INJECTOR
-				.getInstance(JatosErrorMessages.class);
-		studyAuthorisation = PublixTestGlobal.INJECTOR
-				.getInstance(JatosStudyAuthorisation.class);
+		jatosErrorMessages = application.injector()
+				.instanceOf(JatosErrorMessages.class);
+		studyAuthorisation = application.injector()
+				.instanceOf(JatosStudyAuthorisation.class);
 	}
 
 	@Override
@@ -47,8 +45,8 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		studyAuthorisation
-				.checkWorkerAllowedToDoStudy(admin.getWorker(), study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
+				study);
 
 		// Clean-up
 		removeStudy(study);
@@ -67,9 +65,8 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 					study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					jatosErrorMessages.workerTypeNotAllowed(admin.getWorker()
-							.getUIWorkerType()));
+			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages
+					.workerTypeNotAllowed(admin.getWorker().getUIWorkerType()));
 		}
 
 		// Clean-up
@@ -92,9 +89,8 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 					study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					jatosErrorMessages.workerNotAllowedStudy(admin.getWorker(),
-							study.getId()));
+			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages
+					.workerNotAllowedStudy(admin.getWorker(), study.getId()));
 		}
 
 		// Clean-up
@@ -115,9 +111,8 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 					study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					jatosErrorMessages.workerNotAllowedStudy(admin.getWorker(),
-							study.getId()));
+			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages
+					.workerNotAllowedStudy(admin.getWorker(), study.getId()));
 		}
 
 		// Clean-up

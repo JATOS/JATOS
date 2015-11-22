@@ -15,8 +15,7 @@ libraryDependencies ++= Seq(
 	"org.hibernate" % "hibernate-entitymanager" % "4.3.11.Final",
 	"mysql" % "mysql-connector-java" % "5.1.31",
 	"org.jsoup" % "jsoup" % "1.8.1",
-	"commons-io" % "commons-io" % "2.4",
-	"org.mockito" % "mockito-core" % "1.9.5" % "test"
+	"commons-io" % "commons-io" % "2.4"
 )
 
 EclipseKeys.preTasks := Seq(compile in Compile)

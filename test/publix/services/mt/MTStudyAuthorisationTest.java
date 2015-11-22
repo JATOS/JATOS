@@ -5,21 +5,19 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
+import org.fest.assertions.Fail;
+import org.junit.Test;
+
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
+import gui.AbstractTest;
 import models.common.Study;
 import models.common.StudyResult.StudyState;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
-
-import org.fest.assertions.Fail;
-import org.junit.Test;
-
-import publix.AbstractTest;
-import publix.PublixTestGlobal;
 import services.publix.PublixErrorMessages;
 import services.publix.mt.MTErrorMessages;
 import services.publix.mt.MTStudyAuthorisation;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -31,9 +29,10 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		mtErrorMessages = PublixTestGlobal.INJECTOR.getInstance(MTErrorMessages.class);
-		studyAuthorisation = PublixTestGlobal.INJECTOR
-				.getInstance(MTStudyAuthorisation.class);
+		mtErrorMessages = application.injector()
+				.instanceOf(MTErrorMessages.class);
+		studyAuthorisation = application.injector()
+				.instanceOf(MTStudyAuthorisation.class);
 	}
 
 	@Override
@@ -87,8 +86,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 
 		// MTSandboxWorker is allowed to start again
@@ -141,9 +140,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					mtErrorMessages.workerTypeNotAllowed(mtWorker
-							.getUIWorkerType()));
+			assertThat(e.getMessage()).isEqualTo(mtErrorMessages
+					.workerTypeNotAllowed(mtWorker.getUIWorkerType()));
 		}
 
 		// Study doesn't allow this worker type
@@ -152,9 +150,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 					study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					mtErrorMessages.workerTypeNotAllowed(mtSandboxWorker
-							.getUIWorkerType()));
+			assertThat(e.getMessage()).isEqualTo(mtErrorMessages
+					.workerTypeNotAllowed(mtSandboxWorker.getUIWorkerType()));
 		}
 
 		// Clean-up
@@ -180,24 +177,24 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 		addStudyResult(study, mtWorker, StudyState.FAIL);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 		addStudyResult(study, mtWorker, StudyState.ABORTED);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 
 		// MTSandboxWorkers can repeat the same study

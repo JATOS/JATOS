@@ -7,26 +7,24 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.common.Study;
-import models.common.workers.GeneralSingleWorker;
-
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
+import models.common.Study;
+import models.common.workers.GeneralSingleWorker;
 import play.mvc.Http.Cookie;
-import publix.PublixTestGlobal;
 import publix.services.PublixUtilsTest;
 import services.publix.PublixErrorMessages;
 import services.publix.general_single.GeneralSingleErrorMessages;
 import services.publix.general_single.GeneralSinglePublixUtils;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
  */
-public class GeneralSinglePublixUtilsTest extends
-		PublixUtilsTest<GeneralSingleWorker> {
+public class GeneralSinglePublixUtilsTest
+		extends PublixUtilsTest<GeneralSingleWorker> {
 
 	private GeneralSingleErrorMessages generalSingleErrorMessages;
 	private GeneralSinglePublixUtils generalSinglePublixUtils;
@@ -34,11 +32,11 @@ public class GeneralSinglePublixUtilsTest extends
 	@Override
 	public void before() throws Exception {
 		super.before();
-		generalSinglePublixUtils = PublixTestGlobal.INJECTOR
-				.getInstance(GeneralSinglePublixUtils.class);
+		generalSinglePublixUtils = application.injector()
+				.instanceOf(GeneralSinglePublixUtils.class);
 		publixUtils = generalSinglePublixUtils;
-		generalSingleErrorMessages = PublixTestGlobal.INJECTOR
-				.getInstance(GeneralSingleErrorMessages.class);
+		generalSingleErrorMessages = application.injector()
+				.instanceOf(GeneralSingleErrorMessages.class);
 		errorMessages = generalSingleErrorMessages;
 	}
 
@@ -48,8 +46,8 @@ public class GeneralSinglePublixUtilsTest extends
 	}
 
 	@Test
-	public void checkRetrieveTypedWorker() throws NoSuchAlgorithmException,
-			IOException, PublixException {
+	public void checkRetrieveTypedWorker()
+			throws NoSuchAlgorithmException, IOException, PublixException {
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);
 
@@ -62,13 +60,12 @@ public class GeneralSinglePublixUtilsTest extends
 	public void checkRetrieveTypedWorkerWrongType()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		try {
-			generalSinglePublixUtils.retrieveTypedWorker(admin.getWorker()
-					.getId().toString());
+			generalSinglePublixUtils
+					.retrieveTypedWorker(admin.getWorker().getId().toString());
 			Fail.fail();
 		} catch (ForbiddenPublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					generalSingleErrorMessages.workerNotCorrectType(admin
-							.getWorker().getId()));
+			assertThat(e.getMessage()).isEqualTo(generalSingleErrorMessages
+					.workerNotCorrectType(admin.getWorker().getId()));
 		}
 	}
 
@@ -99,9 +96,8 @@ public class GeneralSinglePublixUtilsTest extends
 	}
 
 	@Test
-	public void checkStudyInCookieAlreadyDone()
-			throws NoSuchAlgorithmException, IOException,
-			ForbiddenPublixException {
+	public void checkStudyInCookieAlreadyDone() throws NoSuchAlgorithmException,
+			IOException, ForbiddenPublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -113,8 +109,8 @@ public class GeneralSinglePublixUtilsTest extends
 			generalSinglePublixUtils.checkStudyInCookie(study, cookie);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 
 		// Clean-up
@@ -122,7 +118,8 @@ public class GeneralSinglePublixUtilsTest extends
 	}
 
 	@Test
-	public void addStudyToCookie() throws NoSuchAlgorithmException, IOException {
+	public void addStudyToCookie()
+			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
 		addStudy(study);
 

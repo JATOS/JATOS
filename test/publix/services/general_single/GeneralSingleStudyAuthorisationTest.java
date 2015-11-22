@@ -5,20 +5,18 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.common.Study;
-import models.common.StudyResult.StudyState;
-import models.common.workers.GeneralSingleWorker;
-
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
-import publix.AbstractTest;
-import publix.PublixTestGlobal;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
+import gui.AbstractTest;
+import models.common.Study;
+import models.common.StudyResult.StudyState;
+import models.common.workers.GeneralSingleWorker;
 import services.publix.PublixErrorMessages;
 import services.publix.general_single.GeneralSingleErrorMessages;
 import services.publix.general_single.GeneralSingleStudyAuthorisation;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -30,10 +28,10 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		generalSingleErrorMessages = PublixTestGlobal.INJECTOR
-				.getInstance(GeneralSingleErrorMessages.class);
-		studyAuthorisation = PublixTestGlobal.INJECTOR
-				.getInstance(GeneralSingleStudyAuthorisation.class);
+		generalSingleErrorMessages = application.injector()
+				.instanceOf(GeneralSingleErrorMessages.class);
+		studyAuthorisation = application.injector()
+				.instanceOf(GeneralSingleStudyAuthorisation.class);
 	}
 
 	@Override
@@ -69,9 +67,8 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					generalSingleErrorMessages.workerTypeNotAllowed(worker
-							.getUIWorkerType()));
+			assertThat(e.getMessage()).isEqualTo(generalSingleErrorMessages
+					.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 
 		// Clean-up
@@ -94,8 +91,8 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 
 		// Clean-up

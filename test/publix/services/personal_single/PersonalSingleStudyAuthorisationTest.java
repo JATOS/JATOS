@@ -5,20 +5,18 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.common.Study;
-import models.common.StudyResult.StudyState;
-import models.common.workers.PersonalSingleWorker;
-
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
-import publix.AbstractTest;
-import publix.PublixTestGlobal;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.PublixException;
+import gui.AbstractTest;
+import models.common.Study;
+import models.common.StudyResult.StudyState;
+import models.common.workers.PersonalSingleWorker;
 import services.publix.PublixErrorMessages;
 import services.publix.personal_single.PersonalSingleErrorMessages;
 import services.publix.personal_single.PersonalSingleStudyAuthorisation;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * @author Kristian Lange
@@ -30,10 +28,10 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
-		personalSingleErrorMessages = PublixTestGlobal.INJECTOR
-				.getInstance(PersonalSingleErrorMessages.class);
-		studyAuthorisation = PublixTestGlobal.INJECTOR
-				.getInstance(PersonalSingleStudyAuthorisation.class);
+		personalSingleErrorMessages = application.injector()
+				.instanceOf(PersonalSingleErrorMessages.class);
+		studyAuthorisation = application.injector()
+				.instanceOf(PersonalSingleStudyAuthorisation.class);
 	}
 
 	@Override
@@ -73,8 +71,8 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 
 		// Clean-up
@@ -110,9 +108,8 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					personalSingleErrorMessages.workerTypeNotAllowed(worker
-							.getUIWorkerType()));
+			assertThat(e.getMessage()).isEqualTo(personalSingleErrorMessages
+					.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 
 		// Clean-up
@@ -136,24 +133,24 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 		addStudyResult(study, worker, StudyState.FAIL);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 		addStudyResult(study, worker, StudyState.ABORTED);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
 
 		// Clean-up
