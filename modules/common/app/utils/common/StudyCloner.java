@@ -1,14 +1,17 @@
 package utils.common;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import daos.common.StudyDao;
 
+@Singleton
 public class StudyCloner {
 
 	private final StudyDao studyDao;
@@ -24,11 +27,14 @@ public class StudyCloner {
 	}
 
 	/**
-	 * Clones the given Study and persists it. Copies the corresponding study
-	 * assets.
+	 * Clones the given Study. Does not clone id, uuid, or date. Generates a new
+	 * UUID for the clone. Copies the corresponding study assets. Does not
+	 * persist the clone.
 	 */
-	public Study clone(Study study, User loggedInUser) throws IOException {
+	public Study clone(Study study) throws IOException {
 		Study clone = new Study();
+		// Generate new UUID for clone
+		clone.setUuid(UUID.randomUUID().toString());
 		clone.setTitle(cloneTitle(study.getTitle()));
 		clone.setDescription(study.getDescription());
 		clone.setDirName(study.getDirName());
@@ -46,8 +52,8 @@ public class StudyCloner {
 		}
 
 		// Clone assets directory
-		String destDirName = ioUtils.cloneStudyAssetsDirectory(study
-				.getDirName());
+		String destDirName = ioUtils
+				.cloneStudyAssetsDirectory(study.getDirName());
 		clone.setDirName(destDirName);
 
 		return clone;

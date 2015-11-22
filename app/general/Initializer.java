@@ -58,10 +58,15 @@ public class Initializer {
 	 * Check whether studies assets root directory exists and create if not.
 	 */
 	private void checkStudyAssetsRootDir() {
-		boolean success = new File(common.getStudyAssetsRootPath()).mkdir();
+		File studyAssetsRoot = new File(common.getStudyAssetsRootPath());
+		boolean success = studyAssetsRoot.mkdirs();
 		if (success) {
 			Logger.info(CLASS_NAME + ".checkStudyAssetsRootDir: Created study assets root directory "
 					+ common.getStudyAssetsRootPath());
+		}
+		if (!studyAssetsRoot.isDirectory()) {
+			Logger.error(CLASS_NAME + ".checkStudyAssetsRootDir: Study assets root directory "
+					+ common.getStudyAssetsRootPath() + " couldn't be created.");
 		}
 	}
 

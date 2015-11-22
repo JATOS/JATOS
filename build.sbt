@@ -11,6 +11,8 @@ organization := "org.jatos"
 scalaVersion := "2.11.6"
 
 libraryDependencies ++= Seq(
+	"org.mockito" % "mockito-core" % "1.9.5" % "test",
+	"org.easytesting" % "fest-assert" % "1.4" % Test,
 	javaCore,
 	javaJdbc,
 	javaJpa,
@@ -31,12 +33,15 @@ EclipseKeys.preTasks := Seq(compile in Compile)                  // Compile the 
 EclipseKeys.skipParents in ThisBuild := false
 
 PlayKeys.externalizeResources := false
-
+	
 // JATOS root project with GUI. Container for all the submodules
-lazy val jatos = (project in file("."))
+lazy val jatos: Project = (project in file("."))
 	.enablePlugins(PlayJava, SbtWeb)
 	.aggregate(publix, common, gui)
 	.dependsOn(publix, common, gui)
+	.settings(
+		aggregateReverseRoutes := Seq(publix, common, gui)
+	)
 
 // Submodule jatos-utils: common utils for JSON, disk IO and such 
 lazy val common = (project in file("modules/common"))

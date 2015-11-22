@@ -13,7 +13,6 @@ import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
 import play.db.jpa.JPA;
-import play.db.jpa.JPAApi;
 
 /**
  * DAO of Study entity
@@ -28,7 +27,7 @@ public class StudyDao extends AbstractDao {
 	private final ComponentDao componentDao;
 
 	@Inject
-	StudyDao(JPAApi jpa, StudyResultDao studyResultDao,
+	StudyDao(StudyResultDao studyResultDao,
 			ComponentResultDao componentResultDao, ComponentDao componentDao) {
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
@@ -108,7 +107,8 @@ public class StudyDao extends AbstractDao {
 	public List<Study> findAllByUser(String userEmail) {
 		TypedQuery<Study> query = JPA.em().createQuery(
 				"SELECT DISTINCT g FROM User u LEFT JOIN u.studyList g "
-						+ "WHERE u.email = :user", Study.class);
+						+ "WHERE u.email = :user",
+				Study.class);
 		query.setParameter("user", userEmail);
 		List<Study> studyList = query.getResultList();
 		// Sometimes the DB returns an element that's just null (bug?). Iterate

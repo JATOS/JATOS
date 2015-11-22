@@ -5,7 +5,6 @@ import javax.inject.Singleton;
 
 import models.common.Group;
 import play.db.jpa.JPA;
-import play.db.jpa.JPAApi;
 
 /**
  * DAO of Group entity
@@ -18,7 +17,7 @@ public class GroupDao extends AbstractDao {
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	GroupDao(JPAApi jpa, GroupResultDao groupResultDao) {
+	GroupDao(GroupResultDao groupResultDao) {
 		this.groupResultDao = groupResultDao;
 	}
 

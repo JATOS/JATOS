@@ -4,30 +4,24 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static play.mvc.Http.Status.OK;
 import static play.mvc.Http.Status.SEE_OTHER;
-import static play.test.Helpers.callAction;
 import static play.test.Helpers.contentAsString;
-import static play.test.Helpers.fakeRequest;
-import static play.test.Helpers.headers;
-import static play.test.Helpers.session;
-import static play.test.Helpers.status;
-import gui.AbstractTest;
+import static play.test.Helpers.route;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import models.common.Component;
-import models.common.Study;
-
 import org.apache.http.HttpHeaders;
 import org.junit.Test;
 
-import play.mvc.Result;
-import play.test.FakeRequest;
-import services.gui.BreadcrumbsService;
-import utils.common.IOUtils;
 import controllers.gui.Components;
 import controllers.gui.Users;
+import gui.AbstractTest;
+import models.common.Component;
+import models.common.Study;
+import play.mvc.Http.RequestBuilder;
+import play.mvc.Result;
+import services.gui.BreadcrumbsService;
 
 /**
  * Testing actions of controller.Components.
@@ -45,7 +39,7 @@ public class ComponentsControllerTest extends AbstractTest {
 
 	@Override
 	public void after() throws Exception {
-		IOUtils.removeStudyAssetsDir(studyTemplate.getDirName());
+		ioUtils.removeStudyAssetsDir(studyTemplate.getDirName());
 	}
 
 	/**
@@ -55,18 +49,22 @@ public class ComponentsControllerTest extends AbstractTest {
 	public void callShowComponent() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
-		Result result = callAction(controllers.gui.routes.ref.Components
-				.showComponent(studyClone.getId(), studyClone.getComponent(1)
-						.getId()),
-				fakeRequest()
-						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
-		assertEquals(SEE_OTHER, status(result));
-		assertThat(session(result).containsKey("jatos_run"));
-		assertThat(session(result).containsValue("single_component_start"));
-		assertThat(session(result).containsKey("run_component_id"));
-		assertThat(session(result).containsValue(studyClone.getId().toString()));
-		assertThat(headers(result).get(HttpHeaders.LOCATION).contains(
-				"jatosWorkerId"));
+		RequestBuilder request = new RequestBuilder().method("GET")
+				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
+						controllers.gui.routes.Components
+								.showComponent(studyClone.getId(),
+										studyClone.getComponent(1).getId())
+								.url());
+		Result result = route(request);
+
+		assertEquals(SEE_OTHER, result.status());
+		assertThat(result.session().containsKey("jatos_run"));
+		assertThat(result.session().containsValue("single_component_start"));
+		assertThat(result.session().containsKey("run_component_id"));
+		assertThat(
+				result.session().containsValue(studyClone.getId().toString()));
+		assertThat(result.headers().get(HttpHeaders.LOCATION)
+				.contains("jatosWorkerId"));
 
 		// Clean up
 		removeStudy(studyClone);
@@ -84,11 +82,14 @@ public class ComponentsControllerTest extends AbstractTest {
 		studyClone.getComponent(1).setHtmlFilePath(null);
 		entityManager.getTransaction().commit();
 
-		Result result = callAction(controllers.gui.routes.ref.Components
-				.showComponent(studyClone.getId(), studyClone.getComponent(1)
-						.getId()),
-				fakeRequest()
-						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
+		RequestBuilder request = new RequestBuilder().method("GET")
+				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
+						controllers.gui.routes.Components
+								.showComponent(studyClone.getId(),
+										studyClone.getComponent(1).getId())
+								.url());
+		Result result = route(request);
+
 		assertThat(contentAsString(result))
 				.contains("HTML file path is empty.");
 
@@ -102,13 +103,15 @@ public class ComponentsControllerTest extends AbstractTest {
 	public void callCreate() throws IOException {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
-		Result result = callAction(
-				controllers.gui.routes.ref.Components.create(studyClone.getId()),
-				fakeRequest()
-						.withSession(Users.SESSION_EMAIL, admin.getEmail()));
-		assertThat(status(result)).isEqualTo(OK);
-		assertThat(contentAsString(result)).contains(
-				BreadcrumbsService.NEW_COMPONENT);
+		RequestBuilder request = new RequestBuilder().method("GET")
+				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.uri(controllers.gui.routes.Components
+						.create(studyClone.getId()).url());
+		Result result = route(request);
+
+		assertThat(result.status()).isEqualTo(OK);
+		assertThat(contentAsString(result))
+				.contains(BreadcrumbsService.NEW_COMPONENT);
 
 		// Clean up
 		removeStudy(studyClone);
@@ -129,13 +132,13 @@ public class ComponentsControllerTest extends AbstractTest {
 		form.put(Component.COMMENTS, "Comments test test.");
 		form.put(Component.JSON_DATA, "{}");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT);
-		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail()).withFormUrlEncodedBody(form);
+		RequestBuilder request = new RequestBuilder().method("POST")
+				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
+				.uri(controllers.gui.routes.Components
+						.submit(studyClone.getId()).url());
+		Result result = route(request);
 
-		Result result = callAction(
-				controllers.gui.routes.ref.Components.submit(studyClone.getId()),
-				request);
-		assertEquals(SEE_OTHER, status(result));
+		assertEquals(SEE_OTHER, result.status());
 
 		// Clean up
 		removeStudy(studyClone);
@@ -156,13 +159,14 @@ public class ComponentsControllerTest extends AbstractTest {
 		form.put(Component.COMMENTS, "Comments test test.");
 		form.put(Component.JSON_DATA, "{}");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
-		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail()).withFormUrlEncodedBody(form);
-		Result result = callAction(
-				controllers.gui.routes.ref.Components.submit(studyClone.getId()),
-				request);
-		assertEquals(SEE_OTHER, status(result));
-		assertThat(headers(result).get(HttpHeaders.LOCATION)).contains("show");
+		RequestBuilder request = new RequestBuilder().method("POST")
+				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
+				.uri(controllers.gui.routes.Components
+						.submit(studyClone.getId()).url());
+		Result result = route(request);
+
+		assertEquals(SEE_OTHER, result.status());
+		assertThat(result.headers().get(HttpHeaders.LOCATION)).contains("show");
 
 		// Clean up
 		removeStudy(studyClone);
@@ -182,11 +186,12 @@ public class ComponentsControllerTest extends AbstractTest {
 		form.put(Component.COMMENTS, "");
 		form.put(Component.JSON_DATA, "{");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
-		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail()).withFormUrlEncodedBody(form);
-		Result result = callAction(
-				controllers.gui.routes.ref.Components.submit(studyClone.getId()),
-				request);
+		RequestBuilder request = new RequestBuilder().method("POST")
+				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
+				.uri(controllers.gui.routes.Components
+						.submit(studyClone.getId()).url());
+		Result result = route(request);
+
 		assertThat(contentAsString(result)).contains(
 				"Problems deserializing JSON data string: invalid JSON format");
 
@@ -196,14 +201,15 @@ public class ComponentsControllerTest extends AbstractTest {
 	@Test
 	public void callChangeProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		RequestBuilder request = new RequestBuilder().method("POST")
+				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.uri(controllers.gui.routes.Components
+						.changeProperty(studyClone.getId(),
+								studyClone.getComponent(1).getId(), true)
+								.url());
+		Result result = route(request);
 
-		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail());
-		Result result = callAction(
-				controllers.gui.routes.ref.Components.changeProperty(
-						studyClone.getId(), studyClone.getComponent(1).getId(),
-						true), request);
-		assertThat(status(result)).isEqualTo(OK);
+		assertThat(result.status()).isEqualTo(OK);
 
 		// Clean up
 		removeStudy(studyClone);
@@ -212,14 +218,15 @@ public class ComponentsControllerTest extends AbstractTest {
 	@Test
 	public void callCloneComponent() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		RequestBuilder request = new RequestBuilder().method("GET")
+				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
+						controllers.gui.routes.Components
+								.cloneComponent(studyClone.getId(),
+										studyClone.getComponent(1).getId())
+								.url());
+		Result result = route(request);
 
-		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail());
-		Result result = callAction(
-				controllers.gui.routes.ref.Components.cloneComponent(
-						studyClone.getId(), studyClone.getComponent(1).getId()),
-				request);
-		assertThat(status(result)).isEqualTo(OK);
+		assertThat(result.status()).isEqualTo(OK);
 
 		// Clean up
 		removeStudy(studyClone);
@@ -228,18 +235,20 @@ public class ComponentsControllerTest extends AbstractTest {
 	@Test
 	public void callRemove() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		RequestBuilder request = new RequestBuilder().method("DELETE")
+				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
+						controllers.gui.routes.Components
+								.remove(studyClone.getId(),
+										studyClone.getComponent(1).getId())
+								.url());
+		Result result = route(request);
 
-		FakeRequest request = fakeRequest().withSession(Users.SESSION_EMAIL,
-				admin.getEmail());
-		Result result = callAction(controllers.gui.routes.ref.Components.remove(
-				studyClone.getId(), studyClone.getComponent(1).getId()),
-				request);
-		assertThat(status(result)).isEqualTo(OK);
+		assertThat(result.status()).isEqualTo(OK);
 
 		// Clean up - can't remove study due to some RollbackException. No idea
 		// why. At least remove study assets dir.
 		// publixremoveStudy(studyClone);
-		IOUtils.removeStudyAssetsDir(studyClone.getDirName());
+		ioUtils.removeStudyAssetsDir(studyClone.getDirName());
 	}
 
 }

@@ -1,27 +1,23 @@
 package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import general.common.MessagesStrings;
-import gui.AbstractTest;
-import gui.GuiTestGlobal;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import org.fest.assertions.Fail;
+import org.junit.Test;
+
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
+import general.common.MessagesStrings;
+import gui.AbstractTest;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
-
-import org.fest.assertions.Fail;
-import org.junit.Test;
-
-import services.gui.ResultService;
-import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 
 /**
  * Tests ResultService
@@ -30,13 +26,8 @@ import exceptions.gui.NotFoundException;
  */
 public class ResultServiceTest extends AbstractTest {
 
-	private ResultService resultService;
-	private StudyResultDao studyResultDao;
-
 	@Override
 	public void before() throws Exception {
-		resultService = GuiTestGlobal.INJECTOR.getInstance(ResultService.class);
-		studyResultDao = GuiTestGlobal.INJECTOR.getInstance(StudyResultDao.class);
 	}
 
 	@Override
@@ -75,8 +66,8 @@ public class ResultServiceTest extends AbstractTest {
 			resultIdList = resultService.extractResultIds("1,b,3");
 			Fail.fail();
 		} catch (BadRequestException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.resultIdMalformed("b"));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.resultIdMalformed("b"));
 		}
 
 		// Not valid due to empty
@@ -84,8 +75,8 @@ public class ResultServiceTest extends AbstractTest {
 			resultIdList = resultService.extractResultIds("");
 			Fail.fail();
 		} catch (BadRequestException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.NO_RESULTS_SELECTED);
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.NO_RESULTS_SELECTED);
 		}
 	}
 
@@ -97,9 +88,9 @@ public class ResultServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkCheckComponentResults() throws NoSuchAlgorithmException,
-			IOException, BadRequestException, NotFoundException,
-			ForbiddenException {
+	public void checkCheckComponentResults()
+			throws NoSuchAlgorithmException, IOException, BadRequestException,
+			NotFoundException, ForbiddenException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
@@ -133,10 +124,9 @@ public class ResultServiceTest extends AbstractTest {
 			resultService.checkComponentResults(componentResultList, testUser,
 					true);
 		} catch (ForbiddenException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyNotUser(testUser.getName(),
-							testUser.getEmail(), study.getId(),
-							study.getTitle()));
+			assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyNotUser(
+					testUser.getName(), testUser.getEmail(), study.getId(),
+					study.getTitle()));
 		}
 
 		// Clean-up
@@ -169,8 +159,8 @@ public class ResultServiceTest extends AbstractTest {
 			resultService.checkComponentResults(componentResultList, admin,
 					true);
 		} catch (ForbiddenException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyLocked(study.getId()));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.studyLocked(study.getId()));
 		}
 
 		// Clean-up
@@ -178,9 +168,9 @@ public class ResultServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkCheckStudyResults() throws NoSuchAlgorithmException,
-			IOException, BadRequestException, NotFoundException,
-			ForbiddenException {
+	public void checkCheckStudyResults()
+			throws NoSuchAlgorithmException, IOException, BadRequestException,
+			NotFoundException, ForbiddenException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -197,9 +187,9 @@ public class ResultServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkCheckStudyResultsLocked() throws NoSuchAlgorithmException,
-			IOException, BadRequestException, NotFoundException,
-			ForbiddenException {
+	public void checkCheckStudyResultsLocked()
+			throws NoSuchAlgorithmException, IOException, BadRequestException,
+			NotFoundException, ForbiddenException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -221,8 +211,8 @@ public class ResultServiceTest extends AbstractTest {
 		try {
 			resultService.checkStudyResults(studyResultList, admin, true);
 		} catch (ForbiddenException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyLocked(study.getId()));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.studyLocked(study.getId()));
 		}
 
 		// Clean-up
@@ -263,8 +253,8 @@ public class ResultServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkGetComponentResultsWrongId() throws IOException,
-			BadRequestException, NoSuchAlgorithmException {
+	public void checkGetComponentResultsWrongId()
+			throws IOException, BadRequestException, NoSuchAlgorithmException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
@@ -275,8 +265,8 @@ public class ResultServiceTest extends AbstractTest {
 			resultService.getComponentResults(idList);
 			Fail.fail();
 		} catch (NotFoundException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.componentResultNotExist(9l));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.componentResultNotExist(9l));
 		}
 
 		// Clean-up
@@ -284,8 +274,8 @@ public class ResultServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkGetComponentResultsNotExist() throws BadRequestException,
-			NoSuchAlgorithmException, IOException {
+	public void checkGetComponentResultsNotExist()
+			throws BadRequestException, NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -295,8 +285,8 @@ public class ResultServiceTest extends AbstractTest {
 			resultService.getComponentResults(idList);
 			Fail.fail();
 		} catch (NotFoundException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.componentResultNotExist(1l));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.componentResultNotExist(1l));
 		}
 
 		// Clean-up
@@ -320,8 +310,8 @@ public class ResultServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkGetStudyResultsNotExist() throws NoSuchAlgorithmException,
-			IOException, BadRequestException {
+	public void checkGetStudyResultsNotExist()
+			throws NoSuchAlgorithmException, IOException, BadRequestException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -331,8 +321,8 @@ public class ResultServiceTest extends AbstractTest {
 			resultService.getStudyResults(idList);
 			Fail.fail();
 		} catch (NotFoundException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyResultNotExist(1l));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.studyResultNotExist(1l));
 		}
 
 		// Clean-up
@@ -380,8 +370,8 @@ public class ResultServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkGetAllowedStudyResultListEmpty() throws IOException,
-			NoSuchAlgorithmException {
+	public void checkGetAllowedStudyResultListEmpty()
+			throws IOException, NoSuchAlgorithmException {
 		Study study = importExampleStudy();
 		addStudy(study);
 

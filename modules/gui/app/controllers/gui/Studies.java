@@ -341,7 +341,7 @@ public class Studies extends Controller {
 		}
 
 		try {
-			Study clone = studyCloner.clone(study, loggedInUser);
+			Study clone = studyCloner.clone(study);
 			studyService.createStudy(loggedInUser, clone);
 		} catch (IOException e) {
 			jatosGuiExceptionThrower.throwAjax(e.getMessage(),

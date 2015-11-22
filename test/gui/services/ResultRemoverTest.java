@@ -1,28 +1,24 @@
 package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import general.common.MessagesStrings;
-import gui.AbstractTest;
-import gui.GuiTestGlobal;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import org.fest.assertions.Fail;
+import org.junit.Test;
+
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
+import general.common.MessagesStrings;
+import gui.AbstractTest;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
-
-import org.fest.assertions.Fail;
-import org.junit.Test;
-
 import services.gui.ResultRemover;
-import services.gui.ResultService;
-import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 
 /**
  * Tests ResultRemover
@@ -31,15 +27,11 @@ import exceptions.gui.NotFoundException;
  */
 public class ResultRemoverTest extends AbstractTest {
 
-	private ResultService resultService;
 	private ResultRemover resultRemover;
-	private StudyResultDao studyResultDao;
 
 	@Override
 	public void before() throws Exception {
-		resultService = GuiTestGlobal.INJECTOR.getInstance(ResultService.class);
-		resultRemover = GuiTestGlobal.INJECTOR.getInstance(ResultRemover.class);
-		studyResultDao = GuiTestGlobal.INJECTOR.getInstance(StudyResultDao.class);
+		resultRemover = application.injector().instanceOf(ResultRemover.class);
 	}
 
 	@Override
@@ -53,9 +45,9 @@ public class ResultRemoverTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkRemoveComponentResults() throws NoSuchAlgorithmException,
-			IOException, BadRequestException, NotFoundException,
-			ForbiddenException {
+	public void checkRemoveComponentResults()
+			throws NoSuchAlgorithmException, IOException, BadRequestException,
+			NotFoundException, ForbiddenException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
@@ -77,8 +69,8 @@ public class ResultRemoverTest extends AbstractTest {
 			componentResultList = resultService.getComponentResults(idList);
 			Fail.fail();
 		} catch (NotFoundException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.componentResultNotExist(1l));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.componentResultNotExist(1l));
 		}
 
 		// Clean-up
@@ -120,8 +112,8 @@ public class ResultRemoverTest extends AbstractTest {
 			resultRemover.removeComponentResults("1, 3", admin);
 			Fail.fail();
 		} catch (NotFoundException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.componentResultNotExist(3l));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.componentResultNotExist(3l));
 		}
 
 		// Check that NO result is removed - not even result 1
@@ -134,9 +126,9 @@ public class ResultRemoverTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkRemoveStudyResults() throws NoSuchAlgorithmException,
-			IOException, BadRequestException, NotFoundException,
-			ForbiddenException {
+	public void checkRemoveStudyResults()
+			throws NoSuchAlgorithmException, IOException, BadRequestException,
+			NotFoundException, ForbiddenException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -217,8 +209,8 @@ public class ResultRemoverTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkRemoveAllStudyResultsWrongUser() throws IOException,
-			NoSuchAlgorithmException, BadRequestException {
+	public void checkRemoveAllStudyResultsWrongUser()
+			throws IOException, NoSuchAlgorithmException, BadRequestException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -234,10 +226,9 @@ public class ResultRemoverTest extends AbstractTest {
 			resultRemover.removeAllStudyResults(study, testUser);
 			Fail.fail();
 		} catch (ForbiddenException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyNotUser(testUser.getName(),
-							testUser.getEmail(), study.getId(),
-							study.getTitle()));
+			assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyNotUser(
+					testUser.getName(), testUser.getEmail(), study.getId(),
+					study.getTitle()));
 		}
 
 		// Check that we still have 2 results
@@ -269,8 +260,8 @@ public class ResultRemoverTest extends AbstractTest {
 			resultRemover.removeAllStudyResults(study, admin);
 			Fail.fail();
 		} catch (ForbiddenException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.studyLocked(study.getId()));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.studyLocked(study.getId()));
 		}
 
 		// Check that we still have 2 results

@@ -13,7 +13,6 @@ import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import play.db.jpa.JPA;
-import play.db.jpa.JPAApi;
 
 /**
  * DAO for Component entity
@@ -26,7 +25,7 @@ public class ComponentDao extends AbstractDao {
 	private final ComponentResultDao componentResultDao;
 
 	@Inject
-	ComponentDao(JPAApi jpa, ComponentResultDao componentResultDao) {
+	ComponentDao(ComponentResultDao componentResultDao) {
 		this.componentResultDao = componentResultDao;
 	}
 

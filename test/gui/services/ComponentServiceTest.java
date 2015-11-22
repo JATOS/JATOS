@@ -1,24 +1,19 @@
 package gui.services;
 
 import static org.fest.assertions.Assertions.assertThat;
-import exceptions.gui.BadRequestException;
-import general.common.MessagesStrings;
-import gui.AbstractTest;
-import gui.GuiTestGlobal;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import models.common.Component;
-import models.common.Study;
-
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
-import services.gui.ComponentService;
-import utils.common.ComponentCloner;
-import utils.common.IOUtils;
+import exceptions.gui.BadRequestException;
+import general.common.MessagesStrings;
+import gui.AbstractTest;
+import models.common.Component;
+import models.common.Study;
 
 /**
  * Tests ComponentService
@@ -27,15 +22,8 @@ import utils.common.IOUtils;
  */
 public class ComponentServiceTest extends AbstractTest {
 
-	private ComponentService componentService;
-	private ComponentCloner componentCloner;
-
 	@Override
 	public void before() throws Exception {
-		componentService = GuiTestGlobal.INJECTOR
-				.getInstance(ComponentService.class);
-		componentCloner = GuiTestGlobal.INJECTOR
-				.getInstance(ComponentCloner.class);
 	}
 
 	@Override
@@ -67,8 +55,8 @@ public class ComponentServiceTest extends AbstractTest {
 		clone.setId(0l);
 
 		componentService.updateComponentAfterEdit(component, clone);
-		Component updatedComponent = componentDao.findByUuid(
-				component.getUuid(), study);
+		Component updatedComponent = componentDao
+				.findByUuid(component.getUuid(), study);
 
 		// Unchanged stuff
 		assertThat(updatedComponent.isActive() == component.isActive())
@@ -78,12 +66,12 @@ public class ComponentServiceTest extends AbstractTest {
 		// assertThat(updatedComponent.getStudy().equals(study)).isTrue();
 		assertThat(updatedComponent.getUuid().equals(component.getUuid()))
 				.isTrue();
-		assertThat(updatedComponent.getHtmlFilePath()).isEqualTo(
-				component.getHtmlFilePath());
+		assertThat(updatedComponent.getHtmlFilePath())
+				.isEqualTo(component.getHtmlFilePath());
 
 		// Changed stuff
-		assertThat(updatedComponent.getComments()).isEqualTo(
-				clone.getComments());
+		assertThat(updatedComponent.getComments())
+				.isEqualTo(clone.getComments());
 		assertThat(updatedComponent.getJsonData()).isEqualTo("{}");
 		assertThat(updatedComponent.getTitle()).isEqualTo(clone.getTitle());
 		assertThat(updatedComponent.isReloadable() == clone.isReloadable())
@@ -94,8 +82,8 @@ public class ComponentServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkRenameHtmlFilePath() throws NoSuchAlgorithmException,
-			IOException {
+	public void checkRenameHtmlFilePath()
+			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -103,13 +91,13 @@ public class ComponentServiceTest extends AbstractTest {
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
-		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				component.getHtmlFilePath());
 		assertThat(htmlFile.exists());
 
 		// Check standard renaming
 		componentService.renameHtmlFilePath(component, "foo.html");
-		htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				"foo.html");
 		assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
 		assertThat(htmlFile.exists());
@@ -128,20 +116,20 @@ public class ComponentServiceTest extends AbstractTest {
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
-		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				component.getHtmlFilePath());
 		assertThat(htmlFile.exists());
 
 		// Try renaming to existing file
 		try {
-			componentService.renameHtmlFilePath(component, study
-					.getLastComponent().getHtmlFilePath());
+			componentService.renameHtmlFilePath(component,
+					study.getLastComponent().getHtmlFilePath());
 			Fail.fail();
 		} catch (IOException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.htmlFileNotRenamedBecauseExists(component
-							.getHtmlFilePath(), study.getLastComponent()
-							.getHtmlFilePath()));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.htmlFileNotRenamedBecauseExists(
+							component.getHtmlFilePath(),
+							study.getLastComponent().getHtmlFilePath()));
 		}
 
 		// Everything is unchanged
@@ -162,19 +150,19 @@ public class ComponentServiceTest extends AbstractTest {
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
-		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				component.getHtmlFilePath());
 		assertThat(htmlFile.exists());
 
 		// Create subfolder
-		File subfolder = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		File subfolder = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				"subfolder");
 		subfolder.mkdir();
 		assertThat(subfolder.exists());
 
 		// Check renaming into a subfolder
 		componentService.renameHtmlFilePath(component, "subfolder/foo.html");
-		htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				"subfolder/foo.html");
 		assertThat(component.getHtmlFilePath()).isEqualTo("subfolder/foo.html");
 		assertThat(htmlFile.exists());
@@ -182,7 +170,7 @@ public class ComponentServiceTest extends AbstractTest {
 
 		// Check renaming back into study assets
 		componentService.renameHtmlFilePath(component, "foo.html");
-		htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				"foo.html");
 		assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
 		assertThat(htmlFile.exists());
@@ -201,7 +189,7 @@ public class ComponentServiceTest extends AbstractTest {
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
-		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				component.getHtmlFilePath());
 		assertThat(htmlFile.exists());
 
@@ -224,7 +212,7 @@ public class ComponentServiceTest extends AbstractTest {
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
-		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				component.getHtmlFilePath());
 		assertThat(htmlFile.exists());
 
@@ -235,7 +223,7 @@ public class ComponentServiceTest extends AbstractTest {
 		// Rename to non-existing file - Current file doesn't exist - new file
 		// name must be set and file still not existing
 		componentService.renameHtmlFilePath(component, "foo.html");
-		htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				"foo.html");
 		assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
 		assertThat(!htmlFile.exists());
@@ -254,10 +242,10 @@ public class ComponentServiceTest extends AbstractTest {
 		// Study not set automatically, weird!
 		component.setStudy(study);
 
-		File htmlFile = IOUtils.getFileInStudyAssetsDir(study.getDirName(),
+		File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(),
 				component.getHtmlFilePath());
 		assertThat(htmlFile.exists());
-		File differentHtmlFile = IOUtils.getFileInStudyAssetsDir(
+		File differentHtmlFile = ioUtils.getFileInStudyAssetsDir(
 				study.getDirName(), study.getLastComponent().getHtmlFilePath());
 		assertThat(differentHtmlFile.exists());
 
@@ -267,10 +255,10 @@ public class ComponentServiceTest extends AbstractTest {
 
 		// Rename to existing file - Current file doesn't exist - new file name
 		// must be set and file still existing
-		componentService.renameHtmlFilePath(component, study.getLastComponent()
-				.getHtmlFilePath());
-		assertThat(component.getHtmlFilePath()).isEqualTo(
+		componentService.renameHtmlFilePath(component,
 				study.getLastComponent().getHtmlFilePath());
+		assertThat(component.getHtmlFilePath())
+				.isEqualTo(study.getLastComponent().getHtmlFilePath());
 		assertThat(differentHtmlFile.exists());
 
 		// Clean-up
@@ -278,8 +266,8 @@ public class ComponentServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void checkCloneComponent() throws NoSuchAlgorithmException,
-			IOException {
+	public void checkCloneComponent()
+			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -288,8 +276,8 @@ public class ComponentServiceTest extends AbstractTest {
 
 		// Equal
 		assertThat(clone.getComments()).isEqualTo(original.getComments());
-		assertThat(clone.getHtmlFilePath()).isEqualTo(
-				original.getHtmlFilePath());
+		assertThat(clone.getHtmlFilePath())
+				.isEqualTo(original.getHtmlFilePath());
 		assertThat(clone.getJsonData()).isEqualTo(original.getJsonData());
 		assertThat(clone.getTitle()).isEqualTo(original.getTitle());
 		assertThat(clone.isActive()).isEqualTo(original.isActive());
@@ -300,7 +288,7 @@ public class ComponentServiceTest extends AbstractTest {
 		assertThat(clone.getUuid()).isNotEqualTo(original.getUuid());
 
 		// Check that cloned HTML file exists
-		File clonedHtmlFile = IOUtils.getFileInStudyAssetsDir(
+		File clonedHtmlFile = ioUtils.getFileInStudyAssetsDir(
 				study.getDirName(), clone.getHtmlFilePath());
 		assertThat(clonedHtmlFile.isFile()).isTrue();
 
@@ -330,8 +318,8 @@ public class ComponentServiceTest extends AbstractTest {
 					component.getId(), component);
 			Fail.fail();
 		} catch (BadRequestException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.componentNotBelongToStudy(
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.componentNotBelongToStudy(
 							nonExistentStudyId, component.getId()));
 		}
 
@@ -351,8 +339,8 @@ public class ComponentServiceTest extends AbstractTest {
 					component);
 			Fail.fail();
 		} catch (BadRequestException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.componentNotExist(null));
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.componentNotExist(null));
 		}
 
 		// Clean-up

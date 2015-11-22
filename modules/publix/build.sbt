@@ -8,7 +8,7 @@ scalaVersion := "2.11.6"
 
 libraryDependencies ++= Seq(
 	"org.mockito" % "mockito-core" % "1.9.5" % "test",
-	"org.easytesting" % "fest-assert" % "1.4" % test
+	"org.easytesting" % "fest-assert" % "1.4" % Test
 )
 
 EclipseKeys.preTasks := Seq(compile in Compile)

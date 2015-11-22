@@ -1,7 +1,6 @@
 package gui;
 
 import static org.mockito.Mockito.mock;
-import general.common.Common;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,12 +10,6 @@ import java.util.Map;
 
 import javax.persistence.EntityManager;
 
-import models.common.Study;
-import models.common.StudyResult;
-import models.common.StudyResult.StudyState;
-import models.common.User;
-import models.common.workers.Worker;
-
 import org.apache.commons.io.FileUtils;
 import org.h2.tools.Server;
 import org.junit.After;
@@ -24,29 +17,41 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
-import play.GlobalSettings;
-import play.Logger;
-import play.api.mvc.RequestHeader;
-import play.db.jpa.JPA;
-import play.db.jpa.JPAPlugin;
-import play.mvc.Http;
-import play.test.FakeApplication;
-import play.test.Helpers;
-import play.test.TestServer;
-import scala.Option;
-import services.gui.StudyService;
-import services.gui.UserService;
-import utils.common.HashUtils;
-import utils.common.IOUtils;
-import utils.common.StudyCloner;
-import utils.common.StudyUploadUnmarshaller;
-import utils.common.ZipUtil;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
+import general.common.Common;
+import models.common.Study;
+import models.common.StudyResult;
+import models.common.StudyResult.StudyState;
+import models.common.User;
+import models.common.workers.Worker;
+import play.Application;
+import play.Environment;
+import play.Logger;
+import play.Mode;
+import play.api.mvc.RequestHeader;
+import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.mvc.Http;
+import play.test.FakeApplication;
+import play.test.Helpers;
+import play.test.TestServer;
+import services.gui.ComponentService;
+import services.gui.ResultService;
+import services.gui.StudyService;
+import services.gui.UserService;
+import utils.common.ComponentCloner;
+import utils.common.HashUtils;
+import utils.common.IOUtils;
+import utils.common.StudyCloner;
+import utils.common.StudyUploadUnmarshaller;
+import utils.common.UploadUnmarshaller;
+import utils.common.ZipUtil;
 
 /**
  * Abstract class for tests. Starts fake application and an in-memory DB.
@@ -60,12 +65,13 @@ public abstract class AbstractTest {
 	private static final String TEST_COMPONENT_JAC_PATH = "test/resources/quit_button.jac";
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "quit_button_bkp.jac";
 
-	private static Server dbH2Server;
-	protected FakeApplication application;
+	// All dependency injected
 	protected TestServer testServer;
-	protected EntityManager entityManager;
+	protected Application application;
 	protected UserService userService;
 	protected StudyService studyService;
+	protected ComponentService componentService;
+	protected ResultService resultService;
 	protected UserDao userDao;
 	protected StudyDao studyDao;
 	protected ComponentDao componentDao;
@@ -73,7 +79,15 @@ public abstract class AbstractTest {
 	protected StudyResultDao studyResultDao;
 	protected ComponentResultDao componentResultDao;
 	protected StudyCloner studyCloner;
+	protected ComponentCloner componentCloner;
+	protected IOUtils ioUtils;
+	protected Common common;
+	protected JPAApi jpa;
+
+	// All not dependency injected
+	private static Server dbH2Server;
 	protected User admin;
+	protected EntityManager entityManager;
 
 	public abstract void before() throws Exception;
 
@@ -81,61 +95,59 @@ public abstract class AbstractTest {
 
 	@Before
 	public void startApp() throws Exception {
-		GlobalSettings global = (GlobalSettings) Class.forName(
-				"gui.GuiTestGlobal").newInstance();
-
-		application = Helpers.fakeApplication(global);
+		ClassLoader classLoader = FakeApplication.class.getClassLoader();
+		application = new GuiceApplicationBuilder().in(
+				new Environment(new File(System.getProperty("java.io.tmpdir")),
+						classLoader, Mode.TEST))
+				.build();
 		Helpers.start(application);
-//		if (testServer != null) {
-//			testServer.stop();
-//		}
-//		testServer = Helpers.testServer(play.api.test.Helpers.testServerPort(),
-//				application);
-//		testServer.start();
 
-		// Use Guice dependency injection
-		userService = GuiTestGlobal.INJECTOR.getInstance(UserService.class);
-		studyService = GuiTestGlobal.INJECTOR.getInstance(StudyService.class);
-		userDao = GuiTestGlobal.INJECTOR.getInstance(UserDao.class);
-		studyDao = GuiTestGlobal.INJECTOR.getInstance(StudyDao.class);
-		componentDao = GuiTestGlobal.INJECTOR.getInstance(ComponentDao.class);
-		workerDao = GuiTestGlobal.INJECTOR.getInstance(WorkerDao.class);
-		studyResultDao = GuiTestGlobal.INJECTOR
-				.getInstance(StudyResultDao.class);
-		componentResultDao = GuiTestGlobal.INJECTOR
-				.getInstance(ComponentResultDao.class);
-		studyCloner = GuiTestGlobal.INJECTOR.getInstance(StudyCloner.class);
+		// Use Guice dependency injection and bind manually
+		jpa = application.injector().instanceOf(JPAApi.class);
+		userService = application.injector().instanceOf(UserService.class);
+		studyService = application.injector().instanceOf(StudyService.class);
+		componentService = application.injector()
+				.instanceOf(ComponentService.class);
+		resultService = application.injector().instanceOf(ResultService.class);
+		userDao = application.injector().instanceOf(UserDao.class);
+		studyDao = application.injector().instanceOf(StudyDao.class);
+		componentDao = application.injector().instanceOf(ComponentDao.class);
+		workerDao = application.injector().instanceOf(WorkerDao.class);
+		studyResultDao = application.injector()
+				.instanceOf(StudyResultDao.class);
+		componentResultDao = application.injector()
+				.instanceOf(ComponentResultDao.class);
+		studyCloner = application.injector().instanceOf(StudyCloner.class);
+		componentCloner = application.injector().instanceOf(ComponentCloner.class);
+		common = application.injector().instanceOf(Common.class);
+		ioUtils = application.injector().instanceOf(IOUtils.class);
 
-		Option<JPAPlugin> jpaPlugin = application.getWrappedApplication()
-				.plugin(JPAPlugin.class);
-		entityManager = jpaPlugin.get().em("default");
-		JPA.bindForCurrentThread(entityManager);
-
+		entityManager = jpa.em("default");
+		mockContext();
 		checkAdmin();
 
+		// before() is implemented in the concrete class
 		before();
+
+		// Have to bind EntityManager again - don't know why
+		JPA.bindForSync(entityManager);
 	}
 
 	@After
 	public void stopApp() throws Exception {
 		after();
-
 		if (entityManager.isOpen()) {
 			entityManager.close();
 		}
-		JPA.bindForCurrentThread(null);
 		removeStudyAssetsRootDir();
-//		if (testServer != null) {
-//			testServer.stop();
-//		}
 		Helpers.stop(application);
 	}
 
 	@BeforeClass
 	public static void startDB() throws SQLException {
 		dbH2Server = Server.createTcpServer().start();
-		System.out.println("URL: jdbc:h2:" + dbH2Server.getURL()
-				+ "/mem:test/jatos");
+		System.out.println(
+				"URL: jdbc:h2:" + dbH2Server.getURL() + "/mem:test/jatos");
 	}
 
 	@AfterClass
@@ -155,26 +167,24 @@ public abstract class AbstractTest {
 		Http.Context context = new Http.Context(id, header, request, flashData,
 				flashData, argData);
 		Http.Context.current.set(context);
-		// Don't know why, but we have to bind entityManager again after mocking
-		// the context
-		JPA.bindForCurrentThread(entityManager);
-	}
-	
-	private void checkAdmin() {
-		JPA.withTransaction(() -> {
-			admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			if (admin == null) {
-				admin = userService.createAdmin();
-			}
-		});
+		JPA.bindForSync(entityManager);
 	}
 
-	protected static void removeStudyAssetsRootDir() throws IOException {
-		File assetsRoot = new File(Common.STUDY_ASSETS_ROOT_PATH);
+	private void checkAdmin() {
+		entityManager.getTransaction().begin();
+		admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+		if (admin == null) {
+			admin = userService.createAdmin();
+		}
+		entityManager.getTransaction().commit();
+	}
+
+	protected void removeStudyAssetsRootDir() throws IOException {
+		File assetsRoot = new File(common.getStudyAssetsRootPath());
 		if (assetsRoot.list() != null && assetsRoot.list().length > 0) {
 			Logger.warn(CLASS_NAME
 					+ ".removeStudyAssetsRootDir: Study assets root directory "
-					+ Common.STUDY_ASSETS_ROOT_PATH
+					+ common.getStudyAssetsRootPath()
 					+ " is not empty after finishing testing. This should not happen.");
 		}
 		FileUtils.deleteDirectory(assetsRoot);
@@ -183,15 +193,16 @@ public abstract class AbstractTest {
 	protected Study importExampleStudy() throws IOException {
 		File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
-		File[] studyFileList = IOUtils.findFiles(tempUnzippedStudyDir, "",
+		File[] studyFileList = ioUtils.findFiles(tempUnzippedStudyDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		File studyFile = studyFileList[0];
-		Study importedStudy = new StudyUploadUnmarshaller()
-				.unmarshalling(studyFile);
+		UploadUnmarshaller<Study> uploadUnmarshaller = application.injector()
+				.instanceOf(StudyUploadUnmarshaller.class);
+		Study importedStudy = uploadUnmarshaller.unmarshalling(studyFile);
 		studyFile.delete();
 
-		File[] dirArray = IOUtils.findDirectories(tempUnzippedStudyDir);
-		IOUtils.moveStudyAssetsDir(dirArray[0], importedStudy.getDirName());
+		File[] dirArray = ioUtils.findDirectories(tempUnzippedStudyDir);
+		ioUtils.moveStudyAssetsDir(dirArray[0], importedStudy.getDirName());
 
 		tempUnzippedStudyDir.delete();
 		return importedStudy;
@@ -219,7 +230,8 @@ public abstract class AbstractTest {
 	protected synchronized Study cloneAndPersistStudy(Study studyToBeCloned)
 			throws IOException {
 		entityManager.getTransaction().begin();
-		Study studyClone = studyCloner.clone(studyToBeCloned, admin);
+		Study studyClone = studyCloner.clone(studyToBeCloned);
+		studyDao.create(studyClone, admin);
 		entityManager.getTransaction().commit();
 		return studyClone;
 	}
@@ -235,7 +247,7 @@ public abstract class AbstractTest {
 	}
 
 	protected synchronized void removeStudy(Study study) throws IOException {
-		IOUtils.removeStudyAssetsDir(study.getDirName());
+		ioUtils.removeStudyAssetsDir(study.getDirName());
 		entityManager.getTransaction().begin();
 		studyDao.remove(study);
 		entityManager.getTransaction().commit();
@@ -265,7 +277,8 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 	}
 
-	protected void addStudyResult(Study study, Worker worker, StudyState state) {
+	protected void addStudyResult(Study study, Worker worker,
+			StudyState state) {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study, worker);
 		studyResult.setStudyState(state);
