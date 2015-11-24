@@ -66,7 +66,7 @@ public abstract class AbstractTest {
 	private static final String TEST_COMPONENT_BKP_JAC_FILENAME = "quit_button_bkp.jac";
 
 	// All dependency injected
-	protected TestServer testServer;
+	protected static TestServer server;
 	protected Application application;
 	protected UserService userService;
 	protected StudyService studyService;
@@ -118,7 +118,8 @@ public abstract class AbstractTest {
 		componentResultDao = application.injector()
 				.instanceOf(ComponentResultDao.class);
 		studyCloner = application.injector().instanceOf(StudyCloner.class);
-		componentCloner = application.injector().instanceOf(ComponentCloner.class);
+		componentCloner = application.injector()
+				.instanceOf(ComponentCloner.class);
 		common = application.injector().instanceOf(Common.class);
 		ioUtils = application.injector().instanceOf(IOUtils.class);
 
@@ -144,14 +145,17 @@ public abstract class AbstractTest {
 	}
 
 	@BeforeClass
-	public static void startDB() throws SQLException {
+	public static void start() throws SQLException {
+		server = Helpers.testServer();
+		Helpers.start(server);
 		dbH2Server = Server.createTcpServer().start();
 		System.out.println(
 				"URL: jdbc:h2:" + dbH2Server.getURL() + "/mem:test/jatos");
 	}
 
 	@AfterClass
-	public static void stopDB() {
+	public static void stop() {
+		Helpers.stop(server);
 		dbH2Server.stop();
 	}
 

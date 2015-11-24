@@ -182,7 +182,7 @@ public class StudyAssetsTest extends AbstractTest {
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(
-				"Requested page &quot;/someNotExistingPath&quot; doesn&#x27;t exist.");
+				"Requested page &quot;/someNotExistingPath&quot; couldn&#x27;t be found.");
 
 		// Clean up
 		removeStudy(studyClone);
