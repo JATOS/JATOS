@@ -5,19 +5,20 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import javax.inject.Inject;
-
 import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
+import exceptions.publix.ForbiddenReloadException;
 import general.common.MessagesStrings;
 import gui.AbstractTest;
+import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import services.gui.ResultDataStringGenerator;
+import services.publix.jatos.JatosPublixUtils;
 
 /**
  * Tests ResultDataStringGenerator
@@ -26,13 +27,15 @@ import services.gui.ResultDataStringGenerator;
  */
 public class ResultDataStringGeneratorTests extends AbstractTest {
 
-	@Inject
 	private ResultDataStringGenerator resultDataStringGenerator;
+	private JatosPublixUtils jatosPublixUtils;
 
 	@Override
 	public void before() throws Exception {
 		resultDataStringGenerator = application.injector()
 				.instanceOf(ResultDataStringGenerator.class);
+		jatosPublixUtils = application.injector()
+				.instanceOf(JatosPublixUtils.class);
 	}
 
 	@Override
@@ -46,8 +49,8 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	}
 
 	@Test
-	public void checkForWorker() throws NoSuchAlgorithmException, IOException,
-			ForbiddenException, BadRequestException {
+	public void checkForWorker() throws IOException, ForbiddenException,
+			BadRequestException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -67,8 +70,8 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	}
 
 	@Test
-	public void checkForStudy() throws NoSuchAlgorithmException, IOException,
-			ForbiddenException, BadRequestException {
+	public void checkForStudy() throws IOException, ForbiddenException,
+			BadRequestException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -87,8 +90,8 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	}
 
 	@Test
-	public void checkForComponent() throws NoSuchAlgorithmException,
-			IOException, ForbiddenException, BadRequestException {
+	public void checkForComponent() throws IOException, ForbiddenException,
+			BadRequestException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -108,7 +111,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	@Test
 	public void checkFromListOfComponentResultIds()
 			throws BadRequestException, ForbiddenException, IOException,
-			NoSuchAlgorithmException, NotFoundException {
+			NotFoundException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResultsWithData(study);
@@ -122,30 +125,30 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoComponentResultsWithData(Study study) {
+	private void createTwoComponentResultsWithData(Study study)
+			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
 				admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
-		// TODO
-		// ComponentResult componentResult1 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult);
-		// componentResult1.setData("Thats a first component result.");
-		// // Have to set study manually in test - don't know why
-		// componentResult1.getComponent().setStudy(study);
-		// ComponentResult componentResult2 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult);
-		// componentResult2.setData("Thats a second component result.");
-		// // Have to set study manually in test - don't know why
-		// componentResult2.getComponent().setStudy(study);
+		ComponentResult componentResult1 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		componentResult1.setData("Thats a first component result.");
+		// Have to set study manually in test - don't know why
+		componentResult1.getComponent().setStudy(study);
+		ComponentResult componentResult2 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		componentResult2.setData("Thats a second component result.");
+		// Have to set study manually in test - don't know why
+		componentResult2.getComponent().setStudy(study);
 		entityManager.getTransaction().commit();
 	}
 
 	@Test
 	public void checkFromListOfComponentResultIdsEmpty()
-			throws BadRequestException, ForbiddenException,
-			NoSuchAlgorithmException, IOException {
+			throws BadRequestException, ForbiddenException, IOException,
+			ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResultsWithoutData(study);
@@ -162,28 +165,28 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoComponentResultsWithoutData(Study study) {
+	private void createTwoComponentResultsWithoutData(Study study)
+			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
 				admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
-		// TODO
-		// ComponentResult componentResult = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult);
-		// // Have to set study manually in test - don't know why
-		// componentResult.getComponent().setStudy(study);
-		// componentResult = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult);
-		// // Have to set study manually in test - don't know why
-		// componentResult.getComponent().setStudy(study);
+		ComponentResult componentResult = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		// Have to set study manually in test - don't know why
+		componentResult.getComponent().setStudy(study);
+		componentResult = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		// Have to set study manually in test - don't know why
+		componentResult.getComponent().setStudy(study);
 		entityManager.getTransaction().commit();
 	}
 
 	@Test
 	public void checkFromListOfStudyResultIds()
-			throws NoSuchAlgorithmException, IOException, BadRequestException,
-			NotFoundException, ForbiddenException {
+			throws IOException, BadRequestException, NotFoundException,
+			ForbiddenException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -207,50 +210,50 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoStudyResults(Study study) {
+	private void createTwoStudyResults(Study study)
+			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = studyResultDao.create(study,
 				admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
-		// TODO
-		// ComponentResult componentResult11 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult1);
-		// componentResult11
-		// .setData("1. StudyResult, 1. Component, 1. ComponentResult");
-		// ComponentResult componentResult12 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult1);
-		// componentResult12
-		// .setData("1. StudyResult, 1. Component, 2. ComponentResult");
-		//
-		// StudyResult studyResult2 = studyResultDao.create(study,
-		// admin.getWorker());
+		ComponentResult componentResult11 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult11
+				.setData("1. StudyResult, 1. Component, 1. ComponentResult");
+		ComponentResult componentResult12 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult12
+				.setData("1. StudyResult, 1. Component, 2. ComponentResult");
+
+		StudyResult studyResult2 = studyResultDao.create(study,
+				admin.getWorker());
 		// // Have to set worker manually in test - don't know why
-		// studyResult2.setWorker(admin.getWorker());
-		// ComponentResult componentResult211 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult2);
-		// componentResult211
-		// .setData("2. StudyResult, 1. Component, 1. ComponentResult");
-		// ComponentResult componentResult212 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult2);
-		// componentResult212
-		// .setData("2. StudyResult, 1. Component, 2. ComponentResult");
-		// ComponentResult componentResult221 = jatosPublixUtils.startComponent(
-		// study.getComponent(2), studyResult2);
-		// componentResult221
-		// .setData("2. StudyResult, 2. Component, 1. ComponentResult");
-		// ComponentResult componentResult222 = jatosPublixUtils.startComponent(
-		// study.getComponent(2), studyResult2);
-		// componentResult222
-		// .setData("2. StudyResult, 2. Component, 2. ComponentResult");
+		studyResult2.setWorker(admin.getWorker());
+		ComponentResult componentResult211 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult2);
+		componentResult211
+				.setData("2. StudyResult, 1. Component, 1. ComponentResult");
+		ComponentResult componentResult212 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult2);
+		componentResult212
+				.setData("2. StudyResult, 1. Component, 2. ComponentResult");
+		ComponentResult componentResult221 = jatosPublixUtils
+				.startComponent(study.getComponent(2), studyResult2);
+		componentResult221
+				.setData("2. StudyResult, 2. Component, 1. ComponentResult");
+		ComponentResult componentResult222 = jatosPublixUtils
+				.startComponent(study.getComponent(2), studyResult2);
+		componentResult222
+				.setData("2. StudyResult, 2. Component, 2. ComponentResult");
 
 		// Have to set study manually in test - don't know why
-		// componentResult11.getComponent().setStudy(study);
-		// componentResult12.getComponent().setStudy(study);
-		// componentResult211.getComponent().setStudy(study);
-		// componentResult212.getComponent().setStudy(study);
-		// componentResult221.getComponent().setStudy(study);
-		// componentResult222.getComponent().setStudy(study);
+		componentResult11.getComponent().setStudy(study);
+		componentResult12.getComponent().setStudy(study);
+		componentResult211.getComponent().setStudy(study);
+		componentResult212.getComponent().setStudy(study);
+		componentResult221.getComponent().setStudy(study);
+		componentResult222.getComponent().setStudy(study);
 		entityManager.getTransaction().commit();
 	}
 

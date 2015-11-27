@@ -12,6 +12,7 @@ import org.junit.Test;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
+import exceptions.publix.ForbiddenReloadException;
 import general.common.MessagesStrings;
 import gui.AbstractTest;
 import models.common.ComponentResult;
@@ -19,6 +20,7 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
 import services.gui.ResultRemover;
+import services.publix.jatos.JatosPublixUtils;
 
 /**
  * Tests ResultRemover
@@ -28,10 +30,13 @@ import services.gui.ResultRemover;
 public class ResultRemoverTest extends AbstractTest {
 
 	private ResultRemover resultRemover;
+	private JatosPublixUtils jatosPublixUtils;
 
 	@Override
 	public void before() throws Exception {
 		resultRemover = application.injector().instanceOf(ResultRemover.class);
+		jatosPublixUtils = application.injector()
+				.instanceOf(JatosPublixUtils.class);
 	}
 
 	@Override
@@ -46,8 +51,8 @@ public class ResultRemoverTest extends AbstractTest {
 
 	@Test
 	public void checkRemoveComponentResults()
-			throws NoSuchAlgorithmException, IOException, BadRequestException,
-			NotFoundException, ForbiddenException {
+			throws IOException, BadRequestException, NotFoundException,
+			ForbiddenException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);
@@ -77,7 +82,8 @@ public class ResultRemoverTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoComponentResults(Study study) {
+	private void createTwoComponentResults(Study study)
+			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = studyResultDao.create(study,
 				admin.getWorker());
@@ -85,18 +91,15 @@ public class ResultRemoverTest extends AbstractTest {
 		studyResult.setWorker(admin.getWorker());
 		// Have to set study manually in test - don't know why
 		study.getFirstComponent().setStudy(study);
-		// TODO
-		// jatosPublixUtils.startComponent(study.getFirstComponent(),
-		// studyResult);
-		// jatosPublixUtils.startComponent(study.getFirstComponent(),
-		// studyResult);
+		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
+		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 	}
 
 	@Test
 	public void checkRemoveComponentResultsNotFound()
-			throws NoSuchAlgorithmException, IOException, BadRequestException,
-			ForbiddenException, NotFoundException {
+			throws IOException, BadRequestException, ForbiddenException,
+			NotFoundException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoComponentResults(study);

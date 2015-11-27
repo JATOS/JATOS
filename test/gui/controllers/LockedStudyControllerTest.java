@@ -10,15 +10,17 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import controllers.gui.Users;
+import exceptions.publix.ForbiddenReloadException;
 import gui.AbstractTest;
 import models.common.Study;
 import models.common.StudyResult;
 import play.mvc.Call;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
-import play.test.Helpers;
 import play.mvc.Result;
+import play.test.Helpers;
 import services.gui.StudyService;
+import services.publix.jatos.JatosPublixUtils;
 
 /**
  * Testing actions if study is locked
@@ -27,6 +29,7 @@ import services.gui.StudyService;
  */
 public class LockedStudyControllerTest extends AbstractTest {
 
+	private JatosPublixUtils jatosPublixUtils;
 	private static Study studyTemplate;
 
 	@Rule
@@ -34,6 +37,8 @@ public class LockedStudyControllerTest extends AbstractTest {
 
 	@Override
 	public void before() throws Exception {
+		jatosPublixUtils = application.injector()
+				.instanceOf(JatosPublixUtils.class);
 		studyTemplate = importExampleStudy();
 	}
 
@@ -42,8 +47,8 @@ public class LockedStudyControllerTest extends AbstractTest {
 		ioUtils.removeStudyAssetsDir(studyTemplate.getDirName());
 	}
 
-	private void checkDenyLocked(Call call, int statusCode,
-			String redirectPath, String method) {
+	private void checkDenyLocked(Call call, int statusCode, String redirectPath,
+			String method) {
 		RequestBuilder request = new RequestBuilder().method(method)
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(call.url());
 		Result result = route(request);
@@ -86,7 +91,8 @@ public class LockedStudyControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callExportComponentResults() throws IOException {
+	public void callExportComponentResults()
+			throws IOException, ForbiddenReloadException {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		lockStudy(studyClone);
 
@@ -98,11 +104,10 @@ public class LockedStudyControllerTest extends AbstractTest {
 		studyResult.setWorker(admin.getWorker());
 		// Have to set study manually in test - don't know why
 		studyClone.getFirstComponent().setStudy(studyClone);
-		// TODO
-		// jatosPublixUtils.startComponent(studyClone.getFirstComponent(),
-		// studyResult);
-		// jatosPublixUtils.startComponent(studyClone.getFirstComponent(),
-		// studyResult);
+		jatosPublixUtils.startComponent(studyClone.getFirstComponent(),
+				studyResult);
+		jatosPublixUtils.startComponent(studyClone.getFirstComponent(),
+				studyResult);
 		entityManager.getTransaction().commit();
 
 		RequestBuilder request = new RequestBuilder().method("GET")
