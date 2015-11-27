@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
-import gui.AbstractTest;
+import general.AbstractTest;
 import models.common.Study;
 import play.mvc.Http;
 import services.publix.jatos.JatosErrorMessages;

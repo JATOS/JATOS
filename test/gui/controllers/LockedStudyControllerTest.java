@@ -11,7 +11,7 @@ import org.junit.rules.ExpectedException;
 
 import controllers.gui.Users;
 import exceptions.publix.ForbiddenReloadException;
-import gui.AbstractTest;
+import general.AbstractTest;
 import models.common.Study;
 import models.common.StudyResult;
 import play.mvc.Call;

@@ -5,7 +5,6 @@ import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
-import gui.AbstractTest;
 import models.common.User;
 
 import org.junit.Test;
@@ -15,6 +14,7 @@ import play.mvc.Result;
 import play.mvc.Http.RequestBuilder;
 import services.gui.BreadcrumbsService;
 import controllers.gui.Users;
+import general.AbstractTest;
 
 /**
  * Testing actions of controller.gui.Home.

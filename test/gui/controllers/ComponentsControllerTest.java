@@ -16,7 +16,7 @@ import org.junit.Test;
 
 import controllers.gui.Components;
 import controllers.gui.Users;
-import gui.AbstractTest;
+import general.AbstractTest;
 import models.common.Component;
 import models.common.Study;
 import play.mvc.Http.RequestBuilder;

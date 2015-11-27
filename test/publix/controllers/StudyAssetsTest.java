@@ -14,8 +14,8 @@ import org.junit.Test;
 
 import controllers.publix.StudyAssets;
 import exceptions.publix.NotFoundPublixException;
+import general.AbstractTest;
 import general.common.MessagesStrings;
-import gui.AbstractTest;
 import models.common.Study;
 import play.mvc.Call;
 import play.mvc.Http.RequestBuilder;

@@ -16,7 +16,7 @@ import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
-import gui.AbstractTest;
+import general.AbstractTest;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;

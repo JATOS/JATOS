@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 
 import controllers.gui.Users;
-import gui.AbstractTest;
+import general.AbstractTest;
 import models.common.Study;
 import models.common.workers.PersonalSingleWorker;
 import models.gui.StudyProperties;

@@ -12,8 +12,8 @@ import org.junit.rules.ExpectedException;
 
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
+import general.AbstractTest;
 import general.common.MessagesStrings;
-import gui.AbstractTest;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;

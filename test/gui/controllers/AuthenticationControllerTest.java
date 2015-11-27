@@ -8,7 +8,6 @@ import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
-import gui.AbstractTest;
 import models.common.User;
 
 import org.junit.Test;
@@ -20,6 +19,7 @@ import services.gui.UserService;
 import com.google.common.collect.ImmutableMap;
 
 import controllers.gui.Users;
+import general.AbstractTest;
 
 /**
  * Testing controller.Authentication

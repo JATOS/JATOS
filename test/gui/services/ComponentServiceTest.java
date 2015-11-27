@@ -10,8 +10,8 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import exceptions.gui.BadRequestException;
+import general.AbstractTest;
 import general.common.MessagesStrings;
-import gui.AbstractTest;
 import models.common.Component;
 import models.common.Study;
 

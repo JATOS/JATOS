@@ -19,7 +19,7 @@ import controllers.gui.Users;
 import controllers.publix.Publix;
 import controllers.publix.PublixInterceptor;
 import controllers.publix.jatos.JatosPublix;
-import gui.AbstractTest;
+import general.AbstractTest;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
 import models.common.Study;

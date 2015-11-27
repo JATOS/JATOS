@@ -9,8 +9,8 @@ import org.junit.Test;
 
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
+import general.AbstractTest;
 import general.common.MessagesStrings;
-import gui.AbstractTest;
 import models.common.User;
 import play.data.validation.ValidationError;
 import utils.common.HashUtils;

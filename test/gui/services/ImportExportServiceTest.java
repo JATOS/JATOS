@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
-import gui.AbstractTest;
+import general.AbstractTest;
 import models.common.Component;
 import models.common.Study;
 import models.common.workers.JatosWorker;

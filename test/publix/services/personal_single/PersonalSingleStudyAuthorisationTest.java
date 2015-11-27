@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
-import gui.AbstractTest;
+import general.AbstractTest;
 import models.common.Study;
 import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalSingleWorker;

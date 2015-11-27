@@ -11,8 +11,8 @@ import java.io.IOException;
 import org.junit.Test;
 
 import controllers.gui.Users;
+import general.AbstractTest;
 import general.gui.FlashScopeMessaging;
-import gui.AbstractTest;
 import models.common.Study;
 import models.common.User;
 import play.api.mvc.Call;

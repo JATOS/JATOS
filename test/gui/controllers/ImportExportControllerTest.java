@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import controllers.gui.Users;
-import gui.AbstractTest;
+import general.AbstractTest;
 import models.common.Study;
 import play.api.libs.Files.TemporaryFile;
 import play.api.mvc.AnyContent;
@@ -303,7 +303,6 @@ public class ImportExportControllerTest extends AbstractTest {
 		File studyZipBkp = new File(TEST_STUDY_BKP_ZIP_PATH);
 		FileUtils.copyFile(studyZip, studyZipBkp);
 
-		// TODO
 		// Result result = callAction(
 		// controllers.gui.routes.ref.ImportExport.importStudy(),
 		// fakeRequest().withSession(Users.SESSION_EMAIL, admin.getEmail())
