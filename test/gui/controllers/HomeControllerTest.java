@@ -56,14 +56,15 @@ public class HomeControllerTest extends AbstractTest {
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(result.charset()).isEqualTo("utf-8");
 		assertThat(result.contentType()).isEqualTo("text/plain");
-		assertThat(contentAsString(result)).contains(".log: lineLimit ");
+		assertThat(contentAsString(result))
+				.contains("JATOS has started");
 
 		User testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 		request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, testUser.getEmail())
 				.uri(controllers.gui.routes.Home.log(1000).url());
 		result = route(request);
-		
+
 		assertThat(result.status()).isEqualTo(Http.Status.FORBIDDEN);
 	}
 

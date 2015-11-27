@@ -149,7 +149,6 @@ public class StudyAssetsTest extends AbstractTest {
 	@Test
 	public void testForwardTo() throws IOException, NotFoundPublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
-		mockContext();
 
 		String urlPath = StudyAssets.getComponentUrlPath(
 				studyClone.getDirName(), studyClone.getFirstComponent());
@@ -173,7 +172,6 @@ public class StudyAssetsTest extends AbstractTest {
 	public void testForwardToNotFound()
 			throws IOException, NotFoundPublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
-		mockContext();
 
 		Result result = studyAssets.forwardTo(
 				"http://localhost:" + play.api.test.Helpers.testServerPort()
