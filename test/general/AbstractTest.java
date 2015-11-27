@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
@@ -31,7 +30,6 @@ import models.common.StudyResult.StudyState;
 import models.common.User;
 import models.common.workers.Worker;
 import play.Application;
-import play.Configuration;
 import play.Environment;
 import play.Logger;
 import play.Mode;
@@ -97,12 +95,11 @@ public abstract class AbstractTest {
 
 	@Before
 	public void startApp() throws Exception {
-		Configuration extraConfig = generateTestConfig();
 		ClassLoader classLoader = FakeApplication.class.getClassLoader();
 		application = new GuiceApplicationBuilder().in(
 				new Environment(new File(System.getProperty("java.io.tmpdir")),
 						classLoader, Mode.TEST))
-				.configure(extraConfig).build();
+				.build();
 		Helpers.start(application);
 
 		// Use Guice dependency injection and bind manually
@@ -135,21 +132,6 @@ public abstract class AbstractTest {
 
 		// Have to bind EntityManager again - don't know why
 		JPA.bindForSync(entityManager);
-	}
-
-	private Configuration generateTestConfig() {
-		Map<String, Object> testConfigMap = new HashMap<>();
-		testConfigMap.put("jatos.studyAssetsRootPath",
-				"/tmp/test/study_assets_root");
-		testConfigMap.put("db.default.username", "test");
-		testConfigMap.put("db.default.password", "test");
-		testConfigMap.put("db.default.url",
-				"jdbc:h2:mem:test/jatos;MODE=MYSQL");
-		testConfigMap.put("play.evolutions.enabled", true);
-		testConfigMap.put("play.crypto.secret",
-				"^^Fqyup0;_2;J<39yA3Q1qkqBlPyZwRe[O0h1MX@vgN_Ee3j8d4B7VAj1M`R=TF?");
-		Configuration extraConfig = new Configuration(testConfigMap);
-		return extraConfig;
 	}
 
 	@After
