@@ -1,9 +1,5 @@
 package controllers.publix;
 
-import groupservices.publix.ChannelService;
-import groupservices.publix.GroupService;
-import groupservices.publix.WebSocketBuilder;
-
 import java.io.IOException;
 
 import javax.inject.Singleton;
@@ -23,9 +19,12 @@ import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
+import services.publix.ChannelService;
+import services.publix.GroupService;
 import services.publix.IStudyAuthorisation;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
+import services.publix.WebSocketBuilder;
 import utils.common.ControllerUtils;
 import utils.common.JsonUtils;
 

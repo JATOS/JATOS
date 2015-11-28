@@ -3,7 +3,6 @@ package general.publix;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 
-import groupservices.publix.akka.actors.GroupDispatcherRegistry;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.JatosWorker;
 import models.common.workers.MTWorker;
@@ -12,16 +11,17 @@ import models.common.workers.PersonalSingleWorker;
 import play.libs.akka.AkkaGuiceSupport;
 import services.publix.IStudyAuthorisation;
 import services.publix.PublixUtils;
-import services.publix.general_single.GeneralSinglePublixUtils;
-import services.publix.general_single.GeneralSingleStudyAuthorisation;
-import services.publix.jatos.JatosPublixUtils;
-import services.publix.jatos.JatosStudyAuthorisation;
-import services.publix.mt.MTPublixUtils;
-import services.publix.mt.MTStudyAuthorisation;
-import services.publix.personal_multiple.PersonalMultiplePublixUtils;
-import services.publix.personal_multiple.PersonalMultipleStudyAuthorisation;
-import services.publix.personal_single.PersonalSinglePublixUtils;
-import services.publix.personal_single.PersonalSingleStudyAuthorisation;
+import services.publix.akka.actors.GroupDispatcherRegistry;
+import services.publix.workers.GeneralSinglePublixUtils;
+import services.publix.workers.GeneralSingleStudyAuthorisation;
+import services.publix.workers.JatosPublixUtils;
+import services.publix.workers.JatosStudyAuthorisation;
+import services.publix.workers.MTPublixUtils;
+import services.publix.workers.MTStudyAuthorisation;
+import services.publix.workers.PersonalMultiplePublixUtils;
+import services.publix.workers.PersonalMultipleStudyAuthorisation;
+import services.publix.workers.PersonalSinglePublixUtils;
+import services.publix.workers.PersonalSingleStudyAuthorisation;
 
 /**
  * Configuration of Guice dependency injection for Publix module
