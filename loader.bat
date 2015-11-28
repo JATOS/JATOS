@@ -59,7 +59,7 @@ rem ### Functions ###
   )
 
   rem # Start JATOS with configuration file and application secret
-  set JATOS_OPTS=-Dconfig.file="%JATOS_HOME%\conf\production.conf" -Dplay.crypto.secret=!SECRET! -Dhttp.port=%port% -Dhttp.address=%address%
+  set JATOS_OPTS=-Dconfig.resource="production.conf" -Dplay.crypto.secret=!SECRET! -Dhttp.port=%port% -Dhttp.address=%address%
   if defined DOUBLECLICKED (
     set JATOS_OPTS=-Dpidfile.path="NUL" %JATOS_OPTS%
   ) else (

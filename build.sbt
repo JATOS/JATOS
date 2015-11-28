@@ -76,19 +76,24 @@ mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh
 // Add loader.sh to distribution
 mappings in Universal += file(baseDirectory.value + "/loader.bat") -> ("loader.bat")
 
-// Don't add dev config to distribution
+// Don't include dev config to distribution
 mappings in Universal := (mappings in Universal).value filter { 
 	case (file, path) => ! path.endsWith("development.conf")
 }
 
-// Don't add test config to distribution
+// Don't include test config to distribution
 mappings in Universal := (mappings in Universal).value filter { 
 	case (file, path) => ! path.endsWith("testing.conf")
 }
 
-// Don't add jatos.bat to distribution
+// Don't include jatos.bat to distribution
 mappings in Universal := (mappings in Universal).value filter { 
 	case (file, path) => ! path.endsWith("jatos.bat")
+}
+
+// Don't include Java docs to distribution
+mappings in Universal := (mappings in Universal).value filter { 
+	case (file, path) => ! path.contains("share/doc")
 }
 
 Keys.fork in Test := false

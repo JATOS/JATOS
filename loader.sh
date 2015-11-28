@@ -39,7 +39,7 @@ function start() {
 	chmod u+x $dir/bin/jatos
 	
 	# Start JATOS with configuration file and application secret
-	jatos -Dconfig.file="$dir/conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
+	jatos -Dconfig.resource="production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
 	
 	echo "...started"
 	echo "To use JATOS type $address:$port in your browser's address bar"
