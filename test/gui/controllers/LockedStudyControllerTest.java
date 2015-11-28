@@ -20,7 +20,7 @@ import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.StudyService;
-import services.publix.jatos.JatosPublixUtils;
+import services.publix.workers.JatosPublixUtils;
 
 /**
  * Testing actions if study is locked

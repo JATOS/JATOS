@@ -18,7 +18,7 @@ import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import services.gui.ResultDataStringGenerator;
-import services.publix.jatos.JatosPublixUtils;
+import services.publix.workers.JatosPublixUtils;
 
 /**
  * Tests ResultDataStringGenerator

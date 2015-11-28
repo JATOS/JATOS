@@ -22,11 +22,11 @@ import services.publix.PublixErrorMessages;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import controllers.publix.general_single.GeneralSinglePublix;
-import controllers.publix.jatos.JatosPublix;
-import controllers.publix.mt.MTPublix;
-import controllers.publix.personal_multiple.PersonalMultiplePublix;
-import controllers.publix.personal_single.PersonalSinglePublix;
+import controllers.publix.workers.GeneralSinglePublix;
+import controllers.publix.workers.JatosPublix;
+import controllers.publix.workers.MTPublix;
+import controllers.publix.workers.PersonalMultiplePublix;
+import controllers.publix.workers.PersonalSinglePublix;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.InternalServerErrorPublixException;

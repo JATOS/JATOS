@@ -19,7 +19,7 @@ import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
-import services.publix.jatos.JatosPublixUtils;
+import services.publix.workers.JatosPublixUtils;
 
 /**
  * Tests ResultService

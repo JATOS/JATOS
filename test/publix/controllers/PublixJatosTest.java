@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import controllers.gui.Users;
 import controllers.publix.Publix;
 import controllers.publix.PublixInterceptor;
-import controllers.publix.jatos.JatosPublix;
+import controllers.publix.workers.JatosPublix;
 import general.AbstractTest;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
