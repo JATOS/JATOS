@@ -3,7 +3,6 @@ package gui.services;
 import static org.fest.assertions.Assertions.assertThat;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.fest.assertions.Fail;
@@ -130,8 +129,8 @@ public class ResultRemoverTest extends AbstractTest {
 
 	@Test
 	public void checkRemoveStudyResults()
-			throws NoSuchAlgorithmException, IOException, BadRequestException,
-			NotFoundException, ForbiddenException {
+			throws IOException, BadRequestException, NotFoundException,
+			ForbiddenException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -154,41 +153,40 @@ public class ResultRemoverTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private void createTwoStudyResults(Study study) {
+	private void createTwoStudyResults(Study study)
+			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = studyResultDao.create(study,
 				admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
-		// TODO
-		// ComponentResult componentResult11 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult1);
-		// componentResult11
-		// .setData("First ComponentResult's data of the first StudyResult.");
-		// ComponentResult componentResult12 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult1);
-		// componentResult12
-		// .setData("Second ComponentResult's data of the first StudyResult.");
+		ComponentResult componentResult11 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult11.setData(
+				"First ComponentResult's data of the first StudyResult.");
+		ComponentResult componentResult12 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult12.setData(
+				"Second ComponentResult's data of the first StudyResult.");
 
 		StudyResult studyResult2 = studyResultDao.create(study,
 				admin.getWorker());
 		// Have to set worker manually in test - don't know why
-		// TODO
 		studyResult2.setWorker(admin.getWorker());
-		// ComponentResult componentResult21 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult1);
-		// componentResult21
-		// .setData("First ComponentResult's data of the second StudyResult.");
-		// ComponentResult componentResult22 = jatosPublixUtils.startComponent(
-		// study.getFirstComponent(), studyResult1);
-		// componentResult22
-		// .setData("Second ComponentResult's data of the second StudyResult.");
+		ComponentResult componentResult21 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult21.setData(
+				"First ComponentResult's data of the second StudyResult.");
+		ComponentResult componentResult22 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult22.setData(
+				"Second ComponentResult's data of the second StudyResult.");
 		entityManager.getTransaction().commit();
 	}
 
 	@Test
-	public void checkRemoveAllStudyResults() throws NoSuchAlgorithmException,
-			IOException, ForbiddenException, BadRequestException {
+	public void checkRemoveAllStudyResults() throws IOException,
+			ForbiddenException, BadRequestException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -213,7 +211,7 @@ public class ResultRemoverTest extends AbstractTest {
 
 	@Test
 	public void checkRemoveAllStudyResultsWrongUser()
-			throws IOException, NoSuchAlgorithmException, BadRequestException {
+			throws IOException, BadRequestException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);
@@ -244,7 +242,7 @@ public class ResultRemoverTest extends AbstractTest {
 
 	@Test
 	public void checkRemoveAllStudyResultsStudyLocked()
-			throws BadRequestException, NoSuchAlgorithmException, IOException {
+			throws BadRequestException, IOException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 		createTwoStudyResults(study);

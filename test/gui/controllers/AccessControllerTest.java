@@ -382,7 +382,6 @@ public class AccessControllerTest extends AbstractTest {
 		Call call = controllers.gui.routes.ImportExport
 				.exportDataOfComponentResults("1");
 		checkDeniedAccess(call, Helpers.GET);
-		// TODO check whether result's study has appropriate user
 	}
 
 	@Test
@@ -399,7 +398,6 @@ public class AccessControllerTest extends AbstractTest {
 	public void callStudyResultsRemove() throws Exception {
 		Call call = controllers.gui.routes.StudyResults.remove("1");
 		checkDeniedAccess(call, Helpers.GET);
-		// TODO check whether result's study has appropriate user
 	}
 
 	@Test
@@ -416,7 +414,6 @@ public class AccessControllerTest extends AbstractTest {
 	public void callStudyResultsTableDataByWorker() throws Exception {
 		Call call = controllers.gui.routes.StudyResults.tableDataByWorker(1l);
 		checkDeniedAccess(call, Helpers.GET);
-		// TODO check whether result's study has appropriate user
 	}
 
 	@Test
@@ -424,7 +421,6 @@ public class AccessControllerTest extends AbstractTest {
 		Call call = controllers.gui.routes.ImportExport
 				.exportDataOfStudyResults("1");
 		checkDeniedAccess(call, Helpers.GET);
-		// TODO check whether result's study has appropriate user
 	}
 
 	@Test

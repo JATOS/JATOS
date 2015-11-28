@@ -201,6 +201,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 		// TODO It would be nice to test the edited study here (somehow can't
 		// find edited study in DB)
+		// Study study = studyDao.findById(studyClone.getId());
 
 		// Clean up
 		// Weird: Can't get the edited study from DB but the edited assets dir
