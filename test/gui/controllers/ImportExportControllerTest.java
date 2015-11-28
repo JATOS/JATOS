@@ -194,9 +194,9 @@ public class ImportExportControllerTest extends AbstractTest {
 		study.removeComponent(study.getFirstComponent());
 		addStudy(study);
 
-//		File componentFile = getExampleComponentFile();
-//		assertThat(study.getFirstComponent().getTitle())
-//				.doesNotContain("Show JSON input ");
+		// File componentFile = getExampleComponentFile();
+		// assertThat(study.getFirstComponent().getTitle())
+		// .doesNotContain("Show JSON input ");
 
 		// First call: ImportExport.importComponent()
 		// TODO doesn't work due to the same reason as in callImportStudy()
