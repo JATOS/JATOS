@@ -8,7 +8,7 @@ name := "JATOS"
 
 organization := "org.jatos"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq(
 	"org.mockito" % "mockito-core" % "1.9.5" % "test",
@@ -27,10 +27,16 @@ initialize := {
 		sys.error("Java 8 is required for this project.")
 }
 
-EclipseKeys.projectFlavor := EclipseProjectFlavor.Java           // Java project. Don't expect Scala IDE
-EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.ManagedClasses, EclipseCreateSrc.ManagedResources)  // Use .class files instead of generated .scala files for views and routes 
-EclipseKeys.preTasks := Seq(compile in Compile)                  // Compile the project before generating Eclipse files, so that .class files for views and routes are present
 EclipseKeys.skipParents in ThisBuild := false
+
+// Compile the project before generating Eclipse files, so that .class files for views and routes are present
+EclipseKeys.preTasks := Seq(compile in Compile)
+
+// Java project. Don't expect Scala IDE
+EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
+
+// Use .class files instead of generated .scala files for views and routes 
+EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.ManagedClasses, EclipseCreateSrc.ManagedResources)
 
 PlayKeys.externalizeResources := false
 	
@@ -55,26 +61,34 @@ lazy val publix = (project in file("modules/publix"))
 lazy val gui = (project in file("modules/gui"))
 	.enablePlugins(PlayJava).dependsOn(common)
 
+// Routes from submodules
 routesGenerator := InjectedRoutesGenerator
 
+// No source docs in distribution 
+sources in (Compile, doc) := Seq.empty
+
+// No source docs in distribution 
+publishArtifact in (Compile, packageDoc) := false
+
+// Add loader.sh to distribution
 mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh")
 
+// Add loader.sh to distribution
 mappings in Universal += file(baseDirectory.value + "/loader.bat") -> ("loader.bat")
 
+// Don't add dev config to distribution
 mappings in Universal := (mappings in Universal).value filter { 
-	case (file, path) => ! path.endsWith(".development.conf")
+	case (file, path) => ! path.endsWith("development.conf")
 }
 
+// Don't add test config to distribution
 mappings in Universal := (mappings in Universal).value filter { 
-	case (file, path) => ! path.endsWith(".testing.conf")
+	case (file, path) => ! path.endsWith("testing.conf")
 }
 
+// Don't add jatos.bat to distribution
 mappings in Universal := (mappings in Universal).value filter { 
 	case (file, path) => ! path.endsWith("jatos.bat")
-}
-
-mappings in Universal := (mappings in Universal).value filter { 
-	case (file, path) => ! path.contains("share/doc")
 }
 
 Keys.fork in Test := false

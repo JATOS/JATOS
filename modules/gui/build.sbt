@@ -4,7 +4,7 @@ name := "jatos-gui"
 
 version := "2.1.1-beta"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 includeFilter in (Assets, LessKeys.less) := "*.less"
 
@@ -15,10 +15,20 @@ libraryDependencies ++= Seq(
 	"org.webjars" % "jquery" % "1.11.1"
 )
 
+// Compile the project before generating Eclipse files, so that .class files for views and routes are present
 EclipseKeys.preTasks := Seq(compile in Compile)
-EclipseKeys.projectFlavor := EclipseProjectFlavor.Java           // Java project. Don't expect Scala IDE
-EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.ManagedClasses, EclipseCreateSrc.ManagedResources)  // Use .class files instead of generated .scala files for views and routes 
 
+// Java project. Don't expect Scala IDE
+EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
+
+// Use .class files instead of generated .scala files for views and routes 
+EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.ManagedClasses, EclipseCreateSrc.ManagedResources)
+
+// Routes from submodules
 routesGenerator := InjectedRoutesGenerator
 
-Keys.fork in Test := false
+// No source docs in distribution 
+sources in (Compile, doc) := Seq.empty
+
+// No source docs in distribution 
+publishArtifact in (Compile, packageDoc) := false
