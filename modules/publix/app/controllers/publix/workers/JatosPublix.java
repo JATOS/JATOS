@@ -15,7 +15,7 @@ import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.publix.ChannelService;
-import services.publix.GroupService;
+import services.publix.GroupMessagingService;
 import services.publix.workers.JatosErrorMessages;
 import services.publix.workers.JatosPublixUtils;
 import services.publix.workers.JatosStudyAuthorisation;
@@ -73,7 +73,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	 * session together with JATOS_RUN. It uses this name.
 	 */
 	public static final String RUN_COMPONENT_ID = "run_component_id";
-	
+
 	public static final String SESSION_EMAIL = "email";
 
 	private static final String CLASS_NAME = JatosPublix.class.getSimpleName();
@@ -85,13 +85,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Inject
 	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
-			GroupService groupService, ChannelService channelService,
-			JatosErrorMessages errorMessages, StudyAssets studyAssets,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupService, channelService,
-				errorMessages, studyAssets, componentResultDao, jsonUtils,
-				studyResultDao, groupResultDao);
+			GroupMessagingService groupMessagingService,
+			ChannelService channelService, JatosErrorMessages errorMessages,
+			StudyAssets studyAssets, ComponentResultDao componentResultDao,
+			JsonUtils jsonUtils, StudyResultDao studyResultDao,
+			GroupResultDao groupResultDao) {
+		super(jpa, publixUtils, studyAuthorisation, groupMessagingService,
+				channelService, errorMessages, studyAssets, componentResultDao,
+				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.errorMessages = errorMessages;
@@ -140,15 +141,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		Study study = publixUtils.retrieveStudy(studyId);
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
-		Component component = publixUtils.retrieveComponent(study,
-				componentId);
+		Component component = publixUtils.retrieveComponent(study, componentId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
 		// Check if it's a single component show or a whole study show
 		String jatosShow = publixUtils.retrieveJatosShowFromSession();
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		switch (jatosShow) {
 		case RUN_STUDY:
 			break;
@@ -162,8 +162,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				// It's already the second component (first is finished and it
 				// isn't a reload of the same one). Finish study after first
 				// component.
-				return Promise
-						.pure(redirect(controllers.publix.routes.PublixInterceptor
+				return Promise.pure(
+						redirect(controllers.publix.routes.PublixInterceptor
 								.finishStudy(studyId, true, null)));
 			}
 			break;
@@ -171,22 +171,21 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 		ComponentResult componentResult = null;
 		try {
-			componentResult = publixUtils
-					.startComponent(component, studyResult);
+			componentResult = publixUtils.startComponent(component,
+					studyResult);
 		} catch (ForbiddenReloadException e) {
 			return Promise
 					.pure(redirect(controllers.publix.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		response().setCookie(
-				Publix.ID_COOKIE_NAME,
+		response().setCookie(Publix.ID_COOKIE_NAME,
 				publixUtils.generateIdCookieValue(studyResult, componentResult,
 						worker, groupResult));
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
-		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(request()
-				.uri(), request().host(), urlPath);
+		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(
+				request().uri(), request().host(), urlPath);
 		return studyAssets.forwardTo(urlWithQueryStr);
 	}
 
@@ -200,8 +199,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 
 		// Check if it's a single component show or a whole study show
 		String jatosShow = publixUtils.retrieveJatosShowFromSession();
@@ -231,8 +230,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		}
 		String startComponentUrlPath = controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, nextComponent.getId()).url();
-		String urlWithQueryString = StudyAssets.getUrlWithQueryString(request()
-				.uri(), request().host(), startComponentUrlPath);
+		String urlWithQueryString = StudyAssets.getUrlWithQueryString(
+				request().uri(), request().host(), startComponentUrlPath);
 		return redirect(urlWithQueryString);
 	}
 
@@ -248,14 +247,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupService.leaveGroupResult(studyResult);
+		groupMessagingService.leaveGroupResult(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
@@ -263,8 +262,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			return ok();
 		} else {
 			if (message != null) {
-				Controller.flash("info", errorMessages
-						.studyFinishedWithMessage(message));
+				Controller.flash("info",
+						errorMessages.studyFinishedWithMessage(message));
 			}
 			return redirect("/jatos/" + study.getId());
 		}
@@ -283,14 +282,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupService.leaveGroupResult(studyResult);
+		groupMessagingService.leaveGroupResult(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
@@ -298,8 +297,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			return ok(errorMsg);
 		} else {
 			if (errorMsg != null) {
-				Controller.flash("info", errorMessages
-						.studyFinishedWithMessage(errorMsg));
+				Controller.flash("info",
+						errorMessages.studyFinishedWithMessage(errorMsg));
 			}
 			return redirect("/jatos/" + study.getId());
 		}

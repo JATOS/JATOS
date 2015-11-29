@@ -20,7 +20,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.publix.ChannelService;
-import services.publix.GroupService;
+import services.publix.GroupMessagingService;
 import services.publix.IStudyAuthorisation;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
@@ -46,8 +46,8 @@ import exceptions.publix.PublixException;
  * @author Kristian Lange
  */
 @Singleton
-public abstract class Publix<T extends Worker> extends Controller implements
-		IPublix {
+public abstract class Publix<T extends Worker> extends Controller
+		implements IPublix {
 
 	/**
 	 * ID cookie name and value names. The ID cookie is set by JATOS to let the
@@ -69,7 +69,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	protected final JPAApi jpa;
 	protected final PublixUtils<T> publixUtils;
 	protected final IStudyAuthorisation<T> studyAuthorisation;
-	protected final GroupService groupService;
+	protected final GroupMessagingService groupMessagingService;
 	protected final ChannelService channelService;
 	protected final PublixErrorMessages errorMessages;
 	protected final StudyAssets studyAssets;
@@ -80,14 +80,15 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 	public Publix(JPAApi jpa, PublixUtils<T> utils,
 			IStudyAuthorisation<T> studyAuthorisation,
-			GroupService groupService, ChannelService channelService,
-			PublixErrorMessages errorMessages, StudyAssets studyAssets,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+			GroupMessagingService groupMessagingService,
+			ChannelService channelService, PublixErrorMessages errorMessages,
+			StudyAssets studyAssets, ComponentResultDao componentResultDao,
+			JsonUtils jsonUtils, StudyResultDao studyResultDao,
+			GroupResultDao groupResultDao) {
 		this.jpa = jpa;
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
-		this.groupService = groupService;
+		this.groupMessagingService = groupMessagingService;
 		this.channelService = channelService;
 		this.errorMessages = errorMessages;
 		this.studyAssets = studyAssets;
@@ -106,14 +107,13 @@ public abstract class Publix<T extends Worker> extends Controller implements
 
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
-		Component component = publixUtils.retrieveComponent(study,
-				componentId);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		Component component = publixUtils.retrieveComponent(study, componentId);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		ComponentResult componentResult = null;
 		try {
-			componentResult = publixUtils
-					.startComponent(component, studyResult);
+			componentResult = publixUtils.startComponent(component,
+					studyResult);
 		} catch (ForbiddenReloadException e) {
 			return Promise
 					.pure(redirect(controllers.publix.routes.PublixInterceptor
@@ -125,19 +125,19 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		response().setCookie(Publix.ID_COOKIE_NAME, cookieValue);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
-		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(request()
-				.uri(), request().host(), urlPath);
+		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(
+				request().uri(), request().host(), urlPath);
 		return studyAssets.forwardTo(urlWithQueryStr);
 	}
 
 	@Override
 	public Promise<Result> startComponentByPosition(Long studyId,
 			Integer position) throws PublixException {
-		Logger.info(CLASS_NAME + ".startComponentByPosition: studyId "
-				+ studyId + ", " + "position " + position + ", " + ", "
-				+ "workerId " + session(WORKER_ID));
-		Component component = publixUtils.retrieveComponentByPosition(
-				studyId, position);
+		Logger.info(CLASS_NAME + ".startComponentByPosition: studyId " + studyId
+				+ ", " + "position " + position + ", " + ", " + "workerId "
+				+ session(WORKER_ID));
+		Component component = publixUtils.retrieveComponentByPosition(studyId,
+				position);
 		return startComponent(studyId, component.getId());
 	}
 
@@ -147,8 +147,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ ", " + "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 
 		Component nextComponent = publixUtils
 				.retrieveNextActiveComponent(studyResult);
@@ -159,8 +159,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		}
 		String startComponentUrlPath = controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, nextComponent.getId()).url();
-		String urlWithQueryString = StudyAssets.getUrlWithQueryString(request()
-				.uri(), request().host(), startComponentUrlPath);
+		String urlWithQueryString = StudyAssets.getUrlWithQueryString(
+				request().uri(), request().host(), startComponentUrlPath);
 		return redirect(urlWithQueryString);
 	}
 
@@ -172,16 +172,15 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
-		Component component = publixUtils.retrieveComponent(study,
-				componentId);
+		Component component = publixUtils.retrieveComponent(study, componentId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		ComponentResult componentResult;
 		try {
-			componentResult = publixUtils.retrieveStartedComponentResult(
-					component, studyResult);
+			componentResult = publixUtils
+					.retrieveStartedComponentResult(component, studyResult);
 		} catch (ForbiddenReloadException e) {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, e.getMessage()));
@@ -225,24 +224,24 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
 		Study study = publixUtils.retrieveStudy(studyId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		GroupResult groupResult;
-		if (groupService.hasUnfinishedGroupResult(studyResult)) {
+		if (groupMessagingService.hasUnfinishedGroupResult(studyResult)) {
 			groupResult = studyResult.getGroupResult();
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr
 					+ " already member of group result " + groupResult.getId());
 		} else {
-			// TODO 
+			// TODO
 			Group group = study.getGroupList().get(0);
-			groupResult = groupService.joinGroup(studyResult, group);
+			groupResult = groupMessagingService.joinGroup(studyResult, group);
 			channelService.sendJoinedMsg(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " joined group result "
 					+ groupResult.getId());
 		}
-		groupService.checkGroupAllowsMessaging(groupResult.getGroup());
+		groupMessagingService.checkGroupAllowsMessaging(groupResult.getGroup());
 		return channelService.openGroupChannel(studyResult);
 	}
 
@@ -254,8 +253,8 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		T worker = publixUtils.retrieveTypedWorker(session(Publix.WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		GroupResult groupResult = studyResult.getGroupResult();
 		if (groupResult == null) {
 			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
@@ -263,7 +262,7 @@ public abstract class Publix<T extends Worker> extends Controller implements
 					+ " isn't member of a group result - can't leave.");
 			return ok();
 		}
-		groupService.leaveGroupResult(studyResult);
+		groupMessagingService.leaveGroupResult(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
@@ -279,10 +278,10 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
-		String studySessionData = publixUtils.getDataFromRequestBody(request()
-				.body());
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
+		String studySessionData = publixUtils
+				.getDataFromRequestBody(request().body());
 		studyResult.setStudySessionData(studySessionData);
 		studyResultDao.update(studyResult);
 		return ok();
@@ -296,13 +295,12 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		Component component = publixUtils.retrieveComponent(study,
-				componentId);
+		Component component = publixUtils.retrieveComponent(study, componentId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		ComponentResult componentResult = publixUtils
 				.retrieveCurrentComponentResult(studyResult);
 		if (componentResult == null) {
@@ -329,13 +327,12 @@ public abstract class Publix<T extends Worker> extends Controller implements
 				+ "errorMsg \"" + errorMsg + "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		Component component = publixUtils.retrieveComponent(study,
-				componentId);
+		Component component = publixUtils.retrieveComponent(study, componentId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		ComponentResult componentResult = publixUtils
 				.retrieveCurrentComponentResult(studyResult);
 		if (componentResult == null) {
@@ -359,20 +356,20 @@ public abstract class Publix<T extends Worker> extends Controller implements
 	@Override
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
-		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
-				+ ", " + "workerId " + session(WORKER_ID) + ", " + "message \""
+		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", " + ", "
+				+ "workerId " + session(WORKER_ID) + ", " + "message \""
 				+ message + "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupService.leaveGroupResult(studyResult);
+		groupMessagingService.leaveGroupResult(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
@@ -393,13 +390,13 @@ public abstract class Publix<T extends Worker> extends Controller implements
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersLastStudyResult(
-				worker, study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupService.leaveGroupResult(studyResult);
+		groupMessagingService.leaveGroupResult(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);

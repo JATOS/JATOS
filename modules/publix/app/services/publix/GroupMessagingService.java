@@ -23,14 +23,14 @@ import models.common.StudyResult;
  * @author Kristian Lange (2015)
  */
 @Singleton
-public class GroupService {
+public class GroupMessagingService {
 
 	private final PublixErrorMessages errorMessages;
 	private final StudyResultDao studyResultDao;
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	GroupService(PublixErrorMessages errorMessages,
+	GroupMessagingService(PublixErrorMessages errorMessages,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		this.errorMessages = errorMessages;
 		this.studyResultDao = studyResultDao;

@@ -6,9 +6,12 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * Model of a DB entity of a group with all properties of a group but not the
- * results. The results are stored in GroupResults. Default values, where
+ * Model of a DB entity of a group with all properties of a group (without the
+ * results). The results are stored in GroupResults. Default values, where
  * necessary, are at the fields or the constructor.
+ * 
+ * We can't use 'Group' for the database table name, since it's a keyword in
+ * some databases (therfore the 'Groupp').
  * 
  * @author Kristian Lange (2015)
  */
@@ -22,6 +25,9 @@ public class Group {
 
 	private String title;
 
+	/**
+	 * Is this group allowed to send messages between each other.
+	 */
 	private boolean messaging = false;
 
 	/**
@@ -59,7 +65,7 @@ public class Group {
 	public String getTitle() {
 		return this.title;
 	}
-	
+
 	public boolean isMessaging() {
 		return messaging;
 	}

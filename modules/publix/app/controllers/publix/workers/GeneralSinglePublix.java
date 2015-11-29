@@ -10,7 +10,7 @@ import play.Logger;
 import play.db.jpa.JPAApi;
 import play.mvc.Http.Cookie;
 import services.publix.ChannelService;
-import services.publix.GroupService;
+import services.publix.GroupMessagingService;
 import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
@@ -32,8 +32,8 @@ import exceptions.publix.PublixException;
  * @author Kristian Lange
  */
 @Singleton
-public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
-		IPublix {
+public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
+		implements IPublix {
 
 	/**
 	 * Cookie name where all study's UUIDs are stored.
@@ -52,14 +52,15 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements
 	@Inject
 	GeneralSinglePublix(JPAApi jpa, GeneralSinglePublixUtils publixUtils,
 			GeneralSingleStudyAuthorisation studyAuthorisation,
-			GroupService groupService, ChannelService channelService,
+			GroupMessagingService groupMessagingService,
+			ChannelService channelService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, WorkerDao workerDao,
 			GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupService, channelService,
-				errorMessages, studyAssets, componentResultDao, jsonUtils,
-				studyResultDao, groupResultDao);
+		super(jpa, publixUtils, studyAuthorisation, groupMessagingService,
+				channelService, errorMessages, studyAssets, componentResultDao,
+				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.workerDao = workerDao;
