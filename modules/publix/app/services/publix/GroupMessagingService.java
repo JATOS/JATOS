@@ -63,7 +63,7 @@ public class GroupMessagingService {
 	 * reached yet and returns it. If such doesn't exist it creates a new one
 	 * and persists it.
 	 */
-	public GroupResult joinGroup(StudyResult studyResult, Group group) {
+	public GroupResult join(StudyResult studyResult, Group group) {
 		// If we already have a GroupResult just return it
 		if (hasUnfinishedGroupResult(studyResult)) {
 			return studyResult.getGroupResult();
@@ -89,7 +89,7 @@ public class GroupMessagingService {
 		return groupResult;
 	}
 
-	public void leaveGroupResult(StudyResult studyResult) {
+	public void leave(StudyResult studyResult) {
 		GroupResult groupResult = studyResult.getGroupResult();
 		if (groupResult == null) {
 			return;

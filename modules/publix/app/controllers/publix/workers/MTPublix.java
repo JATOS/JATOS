@@ -141,7 +141,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupMessagingService.leaveGroupResult(studyResult);
+		groupMessagingService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);

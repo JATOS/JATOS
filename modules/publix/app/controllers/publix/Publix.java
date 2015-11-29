@@ -235,7 +235,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		} else {
 			// TODO
 			Group group = study.getGroupList().get(0);
-			groupResult = groupMessagingService.joinGroup(studyResult, group);
+			groupResult = groupMessagingService.join(studyResult, group);
 			channelService.sendJoinedMsg(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " joined group result "
@@ -262,7 +262,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ " isn't member of a group result - can't leave.");
 			return ok();
 		}
-		groupMessagingService.leaveGroupResult(studyResult);
+		groupMessagingService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
@@ -369,7 +369,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			publixUtils.abortStudy(message, studyResult);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupMessagingService.leaveGroupResult(studyResult);
+		groupMessagingService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
@@ -396,7 +396,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupMessagingService.leaveGroupResult(studyResult);
+		groupMessagingService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);

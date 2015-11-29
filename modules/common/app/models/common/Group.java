@@ -26,7 +26,8 @@ public class Group {
 	private String title;
 
 	/**
-	 * Is this group allowed to send messages between each other.
+	 * Is this group allowed to send messages between each other with the
+	 * GroupMessagingService.
 	 */
 	private boolean messaging = false;
 
