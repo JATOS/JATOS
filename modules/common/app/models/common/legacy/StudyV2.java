@@ -1,4 +1,4 @@
-package models.common.old;
+package models.common.legacy;
 
 import general.common.MessagesStrings;
 

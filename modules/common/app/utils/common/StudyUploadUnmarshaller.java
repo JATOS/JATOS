@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import general.common.MessagesStrings;
 import models.common.Study;
-import models.common.old.StudyV2;
+import models.common.legacy.StudyV2;
 
 /**
  * Unmarshalling of an JSON string to a study. The study's JSON string can be in
