@@ -378,7 +378,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyCloner.clone(study);
+		Study clone = studyService.clone(study);
 		studyService.createStudy(admin, clone);
 		entityManager.getTransaction().commit();
 
@@ -415,7 +415,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyCloner.clone(study);
+		Study clone = studyService.clone(study);
 		studyService.createStudy(admin, clone);
 		entityManager.getTransaction().commit();
 
@@ -582,7 +582,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyCloner.clone(study);
+		Study clone = studyService.clone(study);
 		studyService.createStudy(admin, clone);
 		entityManager.getTransaction().commit();
 
@@ -727,7 +727,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyCloner.clone(study);
+		Study clone = studyService.clone(study);
 		studyService.createStudy(admin, clone);
 		entityManager.getTransaction().commit();
 
@@ -787,7 +787,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
-		Study clone = studyCloner.clone(study);
+		Study clone = studyService.clone(study);
 		studyService.createStudy(admin, clone);
 		entityManager.getTransaction().commit();
 

@@ -43,7 +43,7 @@ public class ComponentServiceTest extends AbstractTest {
 		addStudy(study);
 
 		Component component = study.getFirstComponent();
-		Component clone = componentCloner.clone(component);
+		Component clone = componentService.clone(component);
 		clone.setActive(false);
 		clone.setComments("Changed comments");
 		clone.setHtmlFilePath("changed path");
@@ -272,7 +272,7 @@ public class ComponentServiceTest extends AbstractTest {
 		addStudy(study);
 
 		Component original = study.getFirstComponent();
-		Component clone = componentCloner.clone(original);
+		Component clone = componentService.clone(original);
 
 		// Equal
 		assertThat(clone.getComments()).isEqualTo(original.getComments());

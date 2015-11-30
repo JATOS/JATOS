@@ -52,7 +52,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
 		Study study = importExampleStudy();
-		study.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+		study.getGroupList().get(0).addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
 		studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study);
@@ -76,7 +76,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
 		Study study = importExampleStudy();
-		study.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+		study.getGroupList().get(0).addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
 		// MTWorker is not allowed to start an already started study regardless
@@ -110,7 +110,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
 		Study study = importExampleStudy();
-		study.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+		study.getGroupList().get(0).addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
 		addStudyResult(study, mtWorker, StudyState.STARTED);
@@ -131,8 +131,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		addWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
 		addWorker(mtSandboxWorker);
-		study.removeAllowedWorkerType(MTWorker.WORKER_TYPE);
-		study.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
+		study.getGroupList().get(0).removeAllowedWorkerType(MTWorker.WORKER_TYPE);
+		study.getGroupList().get(0).removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
 		addStudy(study);
 
 		// Study doesn't allow this worker type
@@ -166,8 +166,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		MTWorker mtWorker = new MTWorker();
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
 		addWorker(mtWorker);
-		study.addAllowedWorkerType(MTWorker.WORKER_TYPE);
-		study.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
+		study.getGroupList().get(0).addAllowedWorkerType(MTWorker.WORKER_TYPE);
+		study.getGroupList().get(0).removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
 		addStudy(study);
 
 		// MTWorkers cannot repeat the same study (StudyState in FINISHED, FAIL,

@@ -45,10 +45,8 @@ import services.gui.ComponentService;
 import services.gui.ResultService;
 import services.gui.StudyService;
 import services.gui.UserService;
-import utils.common.ComponentCloner;
 import utils.common.HashUtils;
 import utils.common.IOUtils;
-import utils.common.StudyCloner;
 import utils.common.StudyUploadUnmarshaller;
 import utils.common.UploadUnmarshaller;
 import utils.common.ZipUtil;
@@ -78,8 +76,6 @@ public abstract class AbstractTest {
 	protected WorkerDao workerDao;
 	protected StudyResultDao studyResultDao;
 	protected ComponentResultDao componentResultDao;
-	protected StudyCloner studyCloner;
-	protected ComponentCloner componentCloner;
 	protected IOUtils ioUtils;
 	protected Common common;
 	protected JPAApi jpa;
@@ -117,9 +113,6 @@ public abstract class AbstractTest {
 				.instanceOf(StudyResultDao.class);
 		componentResultDao = application.injector()
 				.instanceOf(ComponentResultDao.class);
-		studyCloner = application.injector().instanceOf(StudyCloner.class);
-		componentCloner = application.injector()
-				.instanceOf(ComponentCloner.class);
 		common = application.injector().instanceOf(Common.class);
 		ioUtils = application.injector().instanceOf(IOUtils.class);
 
@@ -234,7 +227,7 @@ public abstract class AbstractTest {
 	protected synchronized Study cloneAndPersistStudy(Study studyToBeCloned)
 			throws IOException {
 		entityManager.getTransaction().begin();
-		Study studyClone = studyCloner.clone(studyToBeCloned);
+		Study studyClone = studyService.clone(studyToBeCloned);
 		studyDao.create(studyClone, admin);
 		entityManager.getTransaction().commit();
 		return studyClone;

@@ -43,7 +43,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		study.getGroupList().get(0).addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
@@ -59,7 +59,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		study.getGroupList().get(0).addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
@@ -83,7 +83,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		study.getGroupList().get(0).addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
@@ -99,7 +99,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		study.getGroupList().get(0).removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
@@ -121,7 +121,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		study.getGroupList().get(0).addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
