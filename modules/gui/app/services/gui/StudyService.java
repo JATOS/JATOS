@@ -3,6 +3,7 @@ package services.gui;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -38,17 +39,69 @@ public class StudyService {
 	public static final String COMPONENT_POSITION_UP = "up";
 
 	private final GroupService groupService;
+	private final ComponentService componentService;
 	private final StudyDao studyDao;
 	private final UserDao userDao;
 	private final IOUtils ioUtils;
 
 	@Inject
-	StudyService(GroupService groupService, StudyDao studyDao, UserDao userDao,
+	StudyService(GroupService groupService, ComponentService componentService, StudyDao studyDao, UserDao userDao,
 			IOUtils ioUtils) {
 		this.groupService = groupService;
+		this.componentService = componentService;
 		this.studyDao = studyDao;
 		this.userDao = userDao;
 		this.ioUtils = ioUtils;
+	}
+	
+	/**
+	 * Clones the given Study. Does not clone id, uuid, or date. Generates a new
+	 * UUID for the clone. Copies the corresponding study assets. Does not
+	 * persist the clone.
+	 */
+	public Study clone(Study study) throws IOException {
+		Study clone = new Study();
+		// Generate new UUID for clone
+		clone.setUuid(UUID.randomUUID().toString());
+		clone.setTitle(cloneTitle(study.getTitle()));
+		clone.setDescription(study.getDescription());
+		clone.setDirName(study.getDirName());
+		clone.setComments(study.getComments());
+		clone.setJsonData(study.getJsonData());
+		clone.setLocked(false);
+		
+		// Clone each Group
+		for (Group group : study.getGroupList()) {
+			clone.addGroup(groupService.clone(group));
+		}
+
+		// Clone each component
+		for (Component component : study.getComponentList()) {
+			Component componentClone = componentService.clone(component);
+			componentClone.setStudy(clone);
+			clone.addComponent(componentClone);
+		}
+
+		// Clone assets directory
+		String destDirName = ioUtils
+				.cloneStudyAssetsDirectory(study.getDirName());
+		clone.setDirName(destDirName);
+
+		return clone;
+	}
+
+	/**
+	 * Generates an title for the cloned study by adding '(clone)' and numbers
+	 * that doesn't exist so far.
+	 */
+	private String cloneTitle(String origTitle) {
+		String cloneTitle = origTitle + " (clone)";
+		int i = 2;
+		while (!studyDao.findByTitle(cloneTitle).isEmpty()) {
+			cloneTitle = origTitle + " (clone " + i + ")";
+			i++;
+		}
+		return cloneTitle;
 	}
 
 	/**
@@ -155,11 +208,11 @@ public class StudyService {
 	}
 
 	/**
-	 * Persist the given Study and create the default Group.
+	 * Persist the given Study and create the Group.
 	 */
 	public Study createStudy(User loggedInUser, Study study) {
-		Group defaultGroup = groupService.createDefaultGroup();
-		study.addGroup(defaultGroup);
+		Group group = groupService.createGroup();
+		study.addGroup(group);
 		studyDao.create(study, loggedInUser);
 		return study;
 	}
@@ -187,9 +240,6 @@ public class StudyService {
 		study.setDescription(updatedStudy.getDescription());
 		study.setComments(updatedStudy.getComments());
 		study.setJsonData(updatedStudy.getJsonData());
-		study.getAllowedWorkerTypeList().clear();
-		updatedStudy.getAllowedWorkerTypeList().forEach(
-				study::addAllowedWorkerType);
 	}
 
 	/**
@@ -211,9 +261,6 @@ public class StudyService {
 		study.setDescription(studyProperties.getDescription());
 		study.setComments(studyProperties.getComments());
 		study.setJsonData(studyProperties.getJsonData());
-		study.getAllowedWorkerTypeList().clear();
-		studyProperties.getAllowedWorkerTypeList().forEach(
-				study::addAllowedWorkerType);
 	}
 
 	/**
@@ -238,8 +285,6 @@ public class StudyService {
 		studyProperties.setDescription(study.getDescription());
 		studyProperties.setDate(study.getDate());
 		studyProperties.setLocked(study.isLocked());
-		study.getAllowedWorkerTypeList().forEach(
-				studyProperties::addAllowedWorkerType);
 		studyProperties.setDirName(study.getDirName());
 		studyProperties.setComments(study.getComments());
 		studyProperties.setJsonData(study.getJsonData());

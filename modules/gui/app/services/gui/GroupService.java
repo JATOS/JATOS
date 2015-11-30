@@ -3,8 +3,8 @@ package services.gui;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.common.Group;
 import daos.common.GroupDao;
+import models.common.Group;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -29,17 +29,12 @@ public class GroupService {
 		clone.setMinActiveMemberSize(group.getMinActiveMemberSize());
 		clone.setMaxActiveMemberSize(group.getMaxActiveMemberSize());
 		clone.setMaxTotalMemberSize(group.getMaxTotalMemberSize());
-		groupDao.create(clone);
+		group.getAllowedWorkerTypes().forEach(clone::addAllowedWorkerType);
 		return clone;
 	}
 	
-	public Group createDefaultGroup() {
+	public Group createGroup() {
 		Group defaultGroup = new Group();
-		defaultGroup.setTitle("Default");
-		defaultGroup.setMessaging(false);
-		defaultGroup.setMinActiveMemberSize(1);
-		defaultGroup.setMaxActiveMemberSize(null);
-		defaultGroup.setMaxTotalMemberSize(null);
 		groupDao.create(defaultGroup);
 		return defaultGroup;
 	}

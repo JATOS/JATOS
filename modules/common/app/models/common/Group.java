@@ -1,9 +1,17 @@
 package models.common;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import models.common.workers.JatosWorker;
+import models.common.workers.PersonalMultipleWorker;
+import models.common.workers.PersonalSingleWorker;
 
 /**
  * Model of a DB entity of a group with all properties of a group (without the
@@ -19,11 +27,15 @@ import javax.persistence.Table;
 @Table(name = "Groupp")
 public class Group {
 
+	public static final String MIN_ACTIVE_MEMBER_SIZE = "minActiveMemberSize";
+	public static final String MAX_ACTIVE_MEMBER_SIZE = "maxActiveMemberSize";
+	public static final String MAX_TOTAL_MEMBER_SIZE = "maxTotalMemberSize";
+	public static final String MESSAGING = "messaging";
+	public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
+
 	@Id
 	@GeneratedValue
 	private Long id;
-
-	private String title;
 
 	/**
 	 * Is this group allowed to send messages between each other with the
@@ -48,6 +60,13 @@ public class Group {
 	 */
 	private Integer maxTotalMemberSize = null;
 
+	/**
+	 * List of worker types that are allowed to run this study. If the worker
+	 * type is not in this list, it has no permission to run this study.
+	 */
+	@ElementCollection
+	private Set<String> allowedWorkerTypes = new HashSet<>();
+
 	public Group() {
 	}
 
@@ -57,14 +76,6 @@ public class Group {
 
 	public Long getId() {
 		return this.id;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public String getTitle() {
-		return this.title;
 	}
 
 	public boolean isMessaging() {
@@ -97,6 +108,35 @@ public class Group {
 
 	public void setMaxTotalMemberSize(Integer maxTotalMemberSize) {
 		this.maxTotalMemberSize = maxTotalMemberSize;
+	}
+
+	public void setAllowedWorkerTypes(Set<String> allowedWorkerTypes) {
+		this.allowedWorkerTypes = allowedWorkerTypes;
+	}
+
+	public Set<String> getAllowedWorkerTypes() {
+		return this.allowedWorkerTypes;
+	}
+
+	public void addAllowedWorkerType(String workerType) {
+		allowedWorkerTypes.add(workerType);
+	}
+
+	public void removeAllowedWorkerType(String workerType) {
+		allowedWorkerTypes.remove(workerType);
+	}
+
+	public boolean hasAllowedWorkerType(String workerType) {
+		return allowedWorkerTypes.contains(workerType);
+	}
+
+	/**
+	 * Add default allowed workers
+	 */
+	public void initStudyProperties() {
+		addAllowedWorkerType(JatosWorker.WORKER_TYPE);
+		addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+		addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 	}
 
 	@Override

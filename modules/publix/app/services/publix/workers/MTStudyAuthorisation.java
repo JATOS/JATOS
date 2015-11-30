@@ -42,9 +42,10 @@ public class MTStudyAuthorisation implements IStudyAuthorisation<MTWorker> {
 	@Override
 	public void checkWorkerAllowedToDoStudy(MTWorker worker, Study study)
 			throws ForbiddenPublixException {
-		if (!study.hasAllowedWorkerType(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
+		if (!study.getGroupList().get(0)
+				.hasAllowedWorkerType(worker.getWorkerType())) {
+			throw new ForbiddenPublixException(errorMessages
+					.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 		// Sandbox workers can repeat studies
 		if (worker instanceof MTSandboxWorker) {

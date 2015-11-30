@@ -55,44 +55,8 @@ form: Form[models.gui.StudyProperties], studyIsLocked: Boolean)
 </div>
 
 <div class="form-group">
-	<label class="control-label col-xs-2" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
-	<div class="col-xs-10" id="allowedWorkerTypes">
-		<label class="checkbox-inline">
-			<input type="checkbox" name="@models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@common.workers.JatosWorker.WORKER_TYPE"
-					@if(form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(common.workers.JatosWorker.WORKER_TYPE)) {checked}
-					>@common.workers.JatosWorker.UI_WORKER_TYPE
-					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
-		</label>
-		<label class="checkbox-inline">
-			<input type="checkbox" name="@models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE"
-					@if(form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(common.workers.PersonalMultipleWorker.WORKER_TYPE)) {checked}
-					>@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
-					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
-		</label>
-		<label class="checkbox-inline">
-			<input type="checkbox" name="@models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@common.workers.PersonalSingleWorker.WORKER_TYPE"
-					@if(form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(common.workers.PersonalSingleWorker.WORKER_TYPE)) {checked}
-					>@common.workers.PersonalSingleWorker.UI_WORKER_TYPE
-					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
-		</label>
-		<label class="checkbox-inline">
-			<input type="checkbox" name="@models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@common.workers.GeneralSingleWorker.WORKER_TYPE"
-					@if(form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(common.workers.GeneralSingleWorker.WORKER_TYPE)) {checked}
-					>@common.workers.GeneralSingleWorker.UI_WORKER_TYPE
-					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
-		</label>
-		<label class="checkbox-inline">
-			<input type="checkbox" name="@models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST" value="@common.workers.MTWorker.WORKER_TYPE"
-					@if(form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value != null && form(models.gui.StudyProperties.ALLOWED_WORKER_TYPE_LIST).value.contains(common.workers.MTWorker.WORKER_TYPE)) {checked}
-					>@common.workers.MTWorker.UI_WORKER_TYPE
-					<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
-		</label>
-	</div>
-</div>
-
-<div class="form-group">
 	<div class="col-xs-offset-2 col-xs-10">
-		<input type="submit" class="btn btn-primary" value="Submit">
+		<input type="submit" class="btn btn-primary" value="Save">
 	</div>
 </div>
 

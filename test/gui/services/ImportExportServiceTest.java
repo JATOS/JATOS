@@ -19,9 +19,6 @@ import exceptions.gui.ForbiddenException;
 import general.AbstractTest;
 import models.common.Component;
 import models.common.Study;
-import models.common.workers.JatosWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import services.gui.ImportExportService;
@@ -230,9 +227,6 @@ public class ImportExportServiceTest extends AbstractTest {
 	}
 
 	private void checkPropertiesOfBasicExampleStudy(Study study) {
-		assertThat(study.getAllowedWorkerTypeList()).containsOnly(
-				JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE,
-				PersonalMultipleWorker.WORKER_TYPE);
 		assertThat(study.getComponentList().size()).isEqualTo(7);
 		assertThat(study.getComponent(1).getTitle())
 				.isEqualTo("Show JSON input ");
@@ -404,8 +398,6 @@ public class ImportExportServiceTest extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		// Check Properties (should not have changed)
-		assertThat(study.getAllowedWorkerTypeList())
-				.containsOnly(JatosWorker.WORKER_TYPE);
 		assertThat(study.getComponentList().size()).isEqualTo(6);
 		assertThat(study.getComponent(1).getTitle())
 				.isEqualTo("Task instructions ");
@@ -428,8 +420,6 @@ public class ImportExportServiceTest extends AbstractTest {
 	}
 
 	private void alterStudy(Study study) {
-		study.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-		study.removeAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		study.getComponentList().remove(0);
 		study.getLastComponent().setTitle("Changed title");
 		study.setDescription("Changed description");

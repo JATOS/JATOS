@@ -17,9 +17,6 @@ import general.common.MessagesStrings;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.JatosWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
 import models.gui.StudyProperties;
 
 /**
@@ -54,9 +51,6 @@ public class StudyServiceTest extends AbstractTest {
 		Study cloneInDb = studyDao.findByUuid(clone.getUuid());
 
 		// Equal
-		assertThat(cloneInDb.getAllowedWorkerTypeList()).containsOnly(
-				JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE,
-				PersonalMultipleWorker.WORKER_TYPE);
 		assertThat(cloneInDb.getComponentList().size())
 				.isEqualTo(study.getComponentList().size());
 		assertThat(cloneInDb.getFirstComponent().getTitle())
@@ -96,7 +90,6 @@ public class StudyServiceTest extends AbstractTest {
 		addStudy(study);
 
 		StudyProperties updatedProps = new StudyProperties();
-		updatedProps.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
 		updatedProps.setDescription("Changed description");
 		updatedProps.setComments("Changed comments");
 		updatedProps.setJsonData("{}");
@@ -112,8 +105,6 @@ public class StudyServiceTest extends AbstractTest {
 				.isEqualTo(updatedProps.getDescription());
 		assertThat(study.getComments()).isEqualTo(updatedProps.getComments());
 		assertThat(study.getJsonData()).isEqualTo(updatedProps.getJsonData());
-		assertThat(study.getAllowedWorkerTypeList())
-				.containsOnly(JatosWorker.WORKER_TYPE);
 
 		// Unchanged
 		assertThat(study.getComponentList().size()).isEqualTo(7);

@@ -68,6 +68,8 @@ DELETE  /jatos/:studyId/:componentId/allResults      @controllers.gui.ComponentR
 GET     /jatos/:studyId/:componentId/show            @controllers.gui.Components.showComponent(studyId: Long, componentId: Long)
 GET     /jatos/:studyId/:componentId/clone           @controllers.gui.Components.cloneComponent(studyId: Long, componentId: Long)
 GET     /jatos/:studyId/:componentId/export          @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
+GET     /jatos/:studyId/runManager                   @controllers.gui.Groups.runManager(studyId: Long)
+POST    /jatos/:studyId/group                        @controllers.gui.Groups.submit(studyId: Long)
 
 # Static resources
 GET     /public/*file             controllers.gui.Assets.versioned(path = "/public", file)

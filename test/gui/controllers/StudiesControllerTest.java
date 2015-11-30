@@ -85,7 +85,6 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, "dirName_submit");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
-		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -107,7 +106,6 @@ public class StudiesControllerTest extends AbstractTest {
 		assertThat((study.getComponentList().isEmpty()));
 		assertThat((study.getUserList().contains(admin)));
 		assertThat((!study.isLocked()));
-		assertThat((study.getAllowedWorkerTypeList().isEmpty()));
 
 		// Clean up
 		removeStudy(study);
@@ -122,7 +120,6 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test <i>.");
 		formMap.put(StudyProperties.DIRNAME, "%.test");
 		formMap.put(StudyProperties.JSON_DATA, "{");
-		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "WrongWorker");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -144,7 +141,6 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, studyClone.getDirName());
 		formMap.put(StudyProperties.JSON_DATA, "{}");
-		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -190,7 +186,6 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, "dirName_submitEdited");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
-		formMap.put(StudyProperties.ALLOWED_WORKER_TYPE_LIST, "");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies

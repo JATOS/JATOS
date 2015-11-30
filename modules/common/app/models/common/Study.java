@@ -8,7 +8,6 @@ import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -21,10 +20,10 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 
-import utils.common.JsonUtils;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+
+import utils.common.JsonUtils;
 
 /**
  * Model for a DB entity of a study with all properties of a study but not the
@@ -81,14 +80,6 @@ public class Study {
 	private boolean locked = false;
 
 	/**
-	 * List of worker types that are allowed to run this study. If the worker
-	 * type is not in this list, it has no permission to run this study.
-	 */
-	@JsonView(JsonUtils.JsonForIO.class)
-	@ElementCollection
-	private Set<String> allowedWorkerTypeList = new HashSet<>();
-
-	/**
 	 * Study assets directory name
 	 */
 	@JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
@@ -114,7 +105,9 @@ public class Study {
 	 */
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "StudyUserMap", joinColumns = { @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "user_email", referencedColumnName = "email") })
+	@JoinTable(name = "StudyUserMap", joinColumns = {
+			@JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = {
+					@JoinColumn(name = "user_email", referencedColumnName = "email") })
 	private Set<User> userList = new HashSet<>();
 
 	/**
@@ -125,7 +118,7 @@ public class Study {
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
 	private List<Component> componentList = new ArrayList<>();
-	
+
 	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "study_id")
@@ -204,26 +197,6 @@ public class Study {
 
 	public void setJsonData(String jsonData) {
 		this.jsonData = jsonData;
-	}
-
-	public void setAllowedWorkerTypeList(Set<String> allowedWorkerTypeList) {
-		this.allowedWorkerTypeList = allowedWorkerTypeList;
-	}
-
-	public Set<String> getAllowedWorkerTypeList() {
-		return this.allowedWorkerTypeList;
-	}
-
-	public void addAllowedWorkerType(String workerType) {
-		allowedWorkerTypeList.add(workerType);
-	}
-
-	public void removeAllowedWorkerType(String workerType) {
-		allowedWorkerTypeList.remove(workerType);
-	}
-
-	public boolean hasAllowedWorkerType(String workerType) {
-		return allowedWorkerTypeList.contains(workerType);
 	}
 
 	public void setUserList(Set<User> userList) {
@@ -311,7 +284,7 @@ public class Study {
 		}
 		return null;
 	}
-	
+
 	public void setGroupList(List<Group> groupList) {
 		this.groupList = groupList;
 	}
@@ -319,7 +292,7 @@ public class Study {
 	public List<Group> getGroupList() {
 		return this.groupList;
 	}
-	
+
 	public void addGroup(Group group) {
 		groupList.add(group);
 	}

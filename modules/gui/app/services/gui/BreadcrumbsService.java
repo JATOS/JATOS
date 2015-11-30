@@ -36,6 +36,7 @@ public class BreadcrumbsService {
 	public static final String CHANGE_PASSWORD = "Change Password";
 	public static final String EDIT_PROFILE = "Edit Profile";
 	public static final String NEW_USER = "New User";
+	public static final String RUN_MANAGER = "Run Manager";
 
 	public String generateForHome() {
 		return generateForHome(null);

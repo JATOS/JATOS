@@ -73,8 +73,6 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		study.setDescription(studyV2.getDescription());
 		study.setDate(studyV2.getDate());
 		study.setLocked(studyV2.isLocked());
-		studyV2.getAllowedWorkerList().stream()
-				.forEach(study::addAllowedWorkerType);
 		study.setDirName(studyV2.getDirName());
 		study.setComments(studyV2.getComments());
 		study.setJsonData(studyV2.getJsonData());

@@ -38,7 +38,6 @@ CREATE TABLE `Groupp` (
   `maxActiveMemberSize` int(11) DEFAULT NULL,
   `maxTotalMemberSize` int(11) DEFAULT NULL,
   `study_id` bigint(20) DEFAULT NULL,
-  `title` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 
@@ -87,9 +86,9 @@ CREATE TABLE `StudyUserMap` (
   PRIMARY KEY (`study_id`,`user_email`)
 ) DEFAULT CHARSET=utf8;
 
-CREATE TABLE `Study_allowedWorkerTypeList` (
-  `Study_id` bigint(20) NOT NULL,
-  `allowedWorkerTypeList` varchar(255) DEFAULT NULL
+CREATE TABLE `Groupp_allowedWorkerTypes` (
+  `group_id` bigint(20) NOT NULL,
+  `allowedWorkerTypes` varchar(255) DEFAULT NULL
 ) DEFAULT CHARSET=utf8;
 
 CREATE TABLE `User` (
@@ -139,8 +138,8 @@ ALTER TABLE `StudyUserMap` ADD KEY `FK_povwnfi99xfcfiyloh0ufv7hb` (`study_id`);
 ALTER TABLE `StudyUserMap` ADD CONSTRAINT `FK_povwnfi99xfcfiyloh0ufv7hb` FOREIGN KEY (`study_id`) REFERENCES `Study` (`id`);
 ALTER TABLE `StudyUserMap` ADD CONSTRAINT `FK_d3uknug3vjrsetf527b7uplcd` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`);
   
-ALTER TABLE `Study_allowedWorkerTypeList` ADD KEY `FK_kwj5qdspmur6iqdgtb7kjvdg2` (`Study_id`);
-ALTER TABLE `Study_allowedWorkerTypeList` ADD CONSTRAINT `FK_kwj5qdspmur6iqdgtb7kjvdg2` FOREIGN KEY (`Study_id`) REFERENCES `Study` (`id`);
+ALTER TABLE `Groupp_allowedWorkerTypes` ADD KEY `FK_kwj5qdspmur6iqdgtb7kjvdg2` (`group_id`);
+ALTER TABLE `Groupp_allowedWorkerTypes` ADD CONSTRAINT `FK_kwj5qdspmur6iqdgtb7kjvdg2` FOREIGN KEY (`group_id`) REFERENCES `Groupp` (`id`);
 
 ALTER TABLE `Worker` ADD KEY `FK_rvmm2rl58o8ui2tsq774o8rij` (`user_email`);
 ALTER TABLE `Worker` ADD CONSTRAINT `FK_rvmm2rl58o8ui2tsq774o8rij` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`);
@@ -155,7 +154,7 @@ DROP TABLE IF EXISTS `GroupResult`;
 DROP TABLE IF EXISTS `Study`;
 DROP TABLE IF EXISTS `StudyResult`;
 DROP TABLE IF EXISTS `StudyUserMap`;
-DROP TABLE IF EXISTS `Study_allowedWorkerTypeList`;
+DROP TABLE IF EXISTS `Groupp_allowedWorkerTypes`;
 DROP TABLE IF EXISTS `User`;
 DROP TABLE IF EXISTS `Worker`;
 

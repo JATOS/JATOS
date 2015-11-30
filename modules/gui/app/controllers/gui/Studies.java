@@ -4,17 +4,29 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import daos.common.ComponentDao;
+import daos.common.ComponentResultDao;
+import daos.common.StudyDao;
+import daos.common.StudyResultDao;
+import daos.common.UserDao;
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.JatosGuiException;
+import general.common.MessagesStrings;
+import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
@@ -36,22 +48,6 @@ import services.gui.WorkerService;
 import utils.common.ControllerUtils;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
-import utils.common.StudyCloner;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import daos.common.ComponentDao;
-import daos.common.ComponentResultDao;
-import daos.common.StudyDao;
-import daos.common.StudyResultDao;
-import daos.common.UserDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.JatosGuiException;
-import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
@@ -77,7 +73,6 @@ public class Studies extends Controller {
 	private final ComponentDao componentDao;
 	private final StudyResultDao studyResultDao;
 	private final ComponentResultDao componentResultDao;
-	private final StudyCloner studyCloner;
 	private final IOUtils ioUtils;
 
 	@Inject
@@ -87,8 +82,7 @@ public class Studies extends Controller {
 			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
 			ComponentDao componentDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao,
-			ComponentResultDao componentResultDao, StudyCloner studyCloner,
-			IOUtils ioUtils) {
+			ComponentResultDao componentResultDao, IOUtils ioUtils) {
 		this.userDao = userDao;
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
@@ -101,7 +95,6 @@ public class Studies extends Controller {
 		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
-		this.studyCloner = studyCloner;
 		this.ioUtils = ioUtils;
 	}
 
@@ -120,9 +113,9 @@ public class Studies extends Controller {
 		String breadcrumbs = breadcrumbsService.generateForStudy(study);
 		String baseUrl = ControllerUtils.getReferer();
 		int studyResultCount = studyResultDao.countByStudy(study);
-		return status(httpStatus, views.html.gui.study.index.render(
-				loggedInUser, breadcrumbs, study, workerSet, baseUrl,
-				studyResultCount));
+		return status(httpStatus,
+				views.html.gui.study.index.render(loggedInUser, breadcrumbs,
+						study, workerSet, baseUrl, studyResultCount));
 	}
 
 	@Transactional
@@ -138,8 +131,8 @@ public class Studies extends Controller {
 		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		User loggedInUser = userService.retrieveLoggedInUser();
-		Form<StudyProperties> form = Form.form(StudyProperties.class).fill(
-				new StudyProperties().initStudyProperties());
+		Form<StudyProperties> form = Form.form(StudyProperties.class)
+				.fill(new StudyProperties());
 		// It's a generic template for editing a study. We have to tell it the
 		// submit action.
 		Call submitAction = controllers.gui.routes.Studies.submit();
@@ -163,13 +156,13 @@ public class Studies extends Controller {
 		if (form.hasErrors()) {
 			return failStudyCreate(loggedInUser, form);
 		}
-		StudyProperties studyProperties = bindToProperties(form);
+		StudyProperties studyProperties = form.get();
 
 		try {
 			ioUtils.createStudyAssetsDir(studyProperties.getDirName());
 		} catch (IOException e) {
-			form.reject(new ValidationError(StudyProperties.DIRNAME, e
-					.getMessage()));
+			form.reject(new ValidationError(StudyProperties.DIRNAME,
+					e.getMessage()));
 			return failStudyCreate(loggedInUser, form);
 		}
 
@@ -177,26 +170,13 @@ public class Studies extends Controller {
 		return redirect(controllers.gui.routes.Studies.index(study.getId()));
 	}
 
-	private Result failStudyCreate(User loggedInUser, Form<StudyProperties> form) {
+	private Result failStudyCreate(User loggedInUser,
+			Form<StudyProperties> form) {
 		String breadcrumbs = breadcrumbsService
 				.generateForHome(BreadcrumbsService.NEW_STUDY);
 		Call submitAction = controllers.gui.routes.Studies.submit();
-		return status(Http.Status.BAD_REQUEST,
-				views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
-						submitAction, form, false));
-	}
-
-	private StudyProperties bindToProperties(Form<StudyProperties> form) {
-		StudyProperties studyProperties = form.get();
-		// Have to bind list of ALLOWED_WORKER_TYPE by hand from checkboxes
-		String[] allowedWorkerArray = Controller.request().body()
-				.asFormUrlEncoded()
-				.get(StudyProperties.ALLOWED_WORKER_TYPE_LIST);
-		if (allowedWorkerArray != null) {
-			Arrays.stream(allowedWorkerArray).forEach(
-					studyProperties::addAllowedWorkerType);
-		}
-		return studyProperties;
+		return status(Http.Status.BAD_REQUEST, views.html.gui.study.edit
+				.render(loggedInUser, breadcrumbs, submitAction, form, false));
 	}
 
 	/**
@@ -214,10 +194,10 @@ public class Studies extends Controller {
 			RequestScopeMessaging.warning(MessagesStrings.STUDY_IS_LOCKED);
 		}
 
-		Form<StudyProperties> form = Form.form(StudyProperties.class).fill(
-				studyService.bindToProperties(study));
-		Call submitAction = controllers.gui.routes.Studies.submitEdited(study
-				.getId());
+		Form<StudyProperties> form = Form.form(StudyProperties.class)
+				.fill(studyService.bindToProperties(study));
+		Call submitAction = controllers.gui.routes.Studies
+				.submitEdited(study.getId());
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.EDIT_PROPERTIES);
 		return ok(views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
@@ -251,14 +231,14 @@ public class Studies extends Controller {
 		if (form.hasErrors()) {
 			return failStudyEdit(form, study, loggedInUser);
 		}
-		StudyProperties studyProperties = bindToProperties(form);
+		StudyProperties studyProperties = form.get();
 
 		try {
 			studyService.renameStudyAssetsDir(study,
 					studyProperties.getDirName());
 		} catch (IOException e) {
-			form.reject(new ValidationError(StudyProperties.DIRNAME, e
-					.getMessage()));
+			form.reject(new ValidationError(StudyProperties.DIRNAME,
+					e.getMessage()));
 			return failStudyEdit(form, study, loggedInUser);
 		}
 
@@ -270,8 +250,8 @@ public class Studies extends Controller {
 			User loggedInUser) {
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.EDIT_PROPERTIES);
-		Call submitAction = controllers.gui.routes.Studies.submitEdited(study
-				.getId());
+		Call submitAction = controllers.gui.routes.Studies
+				.submitEdited(study.getId());
 		return status(Http.Status.BAD_REQUEST,
 				views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
 						submitAction, form, study.isLocked()));
@@ -341,7 +321,7 @@ public class Studies extends Controller {
 		}
 
 		try {
-			Study clone = studyCloner.clone(study);
+			Study clone = studyService.clone(study);
 			studyService.createStudy(loggedInUser, clone);
 		} catch (IOException e) {
 			jatosGuiExceptionThrower.throwAjax(e.getMessage(),
@@ -370,8 +350,8 @@ public class Studies extends Controller {
 		List<User> userList = userDao.findAll();
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.CHANGE_USERS);
-		return status(httpStatus, views.html.gui.study.changeUsers.render(
-				loggedInUser, breadcrumbs, study, userList));
+		return status(httpStatus, views.html.gui.study.changeUsers
+				.render(loggedInUser, breadcrumbs, study, userList));
 	}
 
 	/**
@@ -379,9 +359,8 @@ public class Studies extends Controller {
 	 */
 	@Transactional
 	public Result submitChangedUsers(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".submitChangedUser: studyId " + studyId
-				+ ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		Logger.info(CLASS_NAME + ".submitChangedUser: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -548,10 +527,6 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwStudyIndex(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		if (!study.hasAllowedWorkerType(MTWorker.WORKER_TYPE)) {
-			RequestScopeMessaging
-					.warning(MessagesStrings.MTWORKER_ALLOWANCE_MISSING);
-		}
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
 		return ok(views.html.gui.study.mTurkSourceCode.render(loggedInUser,
@@ -575,8 +550,8 @@ public class Studies extends Controller {
 		List<Integer> resultCountList = new ArrayList<>();
 		componentList.forEach(component -> resultCountList
 				.add(componentResultDao.countByComponent(component)));
-		JsonNode dataAsJson = jsonUtils.allComponentsForUI(
-				study.getComponentList(), resultCountList);
+		JsonNode dataAsJson = jsonUtils
+				.allComponentsForUI(study.getComponentList(), resultCountList);
 		return ok(dataAsJson);
 	}
 
@@ -595,8 +570,8 @@ public class Studies extends Controller {
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.WORKERS);
-		return status(httpStatus, views.html.gui.study.studysWorkers.render(
-				loggedInUser, breadcrumbs, study));
+		return status(httpStatus, views.html.gui.study.studysWorkers
+				.render(loggedInUser, breadcrumbs, study));
 	}
 
 	@Transactional

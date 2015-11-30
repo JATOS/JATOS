@@ -14,14 +14,14 @@ import exceptions.publix.ForbiddenPublixException;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalMultipleStudyAuthorisation implements
-		IStudyAuthorisation<PersonalMultipleWorker> {
+public class PersonalMultipleStudyAuthorisation
+		implements IStudyAuthorisation<PersonalMultipleWorker> {
 
 	private final PersonalMultipleErrorMessages errorMessages;
 
 	@Inject
 	PersonalMultipleStudyAuthorisation(
-			PersonalMultipleErrorMessages errorMessages) {	
+			PersonalMultipleErrorMessages errorMessages) {
 		this.errorMessages = errorMessages;
 	}
 
@@ -34,9 +34,10 @@ public class PersonalMultipleStudyAuthorisation implements
 	@Override
 	public void checkWorkerAllowedToDoStudy(PersonalMultipleWorker worker,
 			Study study) throws ForbiddenPublixException {
-		if (!study.hasAllowedWorkerType(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
+		if (!study.getGroupList().get(0)
+				.hasAllowedWorkerType(worker.getWorkerType())) {
+			throw new ForbiddenPublixException(errorMessages
+					.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 	}
 

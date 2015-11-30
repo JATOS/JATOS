@@ -15,8 +15,8 @@ import exceptions.publix.ForbiddenPublixException;
  * @author Kristian Lange
  */
 @Singleton
-public class GeneralSingleStudyAuthorisation implements
-		IStudyAuthorisation<GeneralSingleWorker> {
+public class GeneralSingleStudyAuthorisation
+		implements IStudyAuthorisation<GeneralSingleWorker> {
 
 	private final GeneralSingleErrorMessages errorMessages;
 	private final GeneralSinglePublixUtils publixUtils;
@@ -37,9 +37,10 @@ public class GeneralSingleStudyAuthorisation implements
 	@Override
 	public void checkWorkerAllowedToDoStudy(GeneralSingleWorker worker,
 			Study study) throws ForbiddenPublixException {
-		if (!study.hasAllowedWorkerType(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
+		if (!study.getGroupList().get(0)
+				.hasAllowedWorkerType(worker.getWorkerType())) {
+			throw new ForbiddenPublixException(errorMessages
+					.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 		// General single workers can't repeat the same study
 		if (publixUtils.finishedStudyAlready(worker, study)) {

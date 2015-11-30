@@ -1,22 +1,15 @@
 package models.gui;
 
-import general.common.MessagesStrings;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import models.common.workers.JatosWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
 
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
+import general.common.MessagesStrings;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -35,7 +28,6 @@ public class StudyProperties {
 	public static final String DESCRIPTION = "description";
 	public static final String DIRNAME = "dirName";
 	public static final String COMMENTS = "comments";
-	public static final String ALLOWED_WORKER_TYPE_LIST = "allowedWorkerTypeList";
 
 	private Long studyId;
 
@@ -59,12 +51,6 @@ public class StudyProperties {
 	 * If a study is locked, it can't be changed.
 	 */
 	private boolean locked = false;
-
-	/**
-	 * List of worker types that are allowed to run this study. If the worker
-	 * type is not in this list, it has no permission to run this study.
-	 */
-	private Set<String> allowedWorkerTypeList = new HashSet<>();
 
 	/**
 	 * Study assets directory name
@@ -154,41 +140,11 @@ public class StudyProperties {
 		this.jsonData = jsonData;
 	}
 
-	public void setAllowedWorkerTypeList(Set<String> allowedWorkerTypeList) {
-		this.allowedWorkerTypeList = allowedWorkerTypeList;
-	}
-
-	public Set<String> getAllowedWorkerTypeList() {
-		return this.allowedWorkerTypeList;
-	}
-
-	public void addAllowedWorkerType(String workerType) {
-		allowedWorkerTypeList.add(workerType);
-	}
-
-	public void removeAllowedWorkerType(String workerType) {
-		allowedWorkerTypeList.remove(workerType);
-	}
-
-	public boolean hasAllowedWorkerType(String workerType) {
-		return allowedWorkerTypeList.contains(workerType);
-	}
-
-	/**
-	 * Add default allowed workers
-	 */
-	public StudyProperties initStudyProperties() {
-		addAllowedWorkerType(JatosWorker.WORKER_TYPE);
-		addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
-		addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-		return this;
-	}
-
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
 		if (title == null || title.trim().isEmpty()) {
-			errorList.add(new ValidationError(TITLE,
-					MessagesStrings.MISSING_TITLE));
+			errorList.add(
+					new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
 		}
 		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
