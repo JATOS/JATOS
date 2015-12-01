@@ -1,4 +1,4 @@
-package utils.common;
+package services.gui;
 
 import java.io.IOException;
 
@@ -7,8 +7,11 @@ import javax.inject.Inject;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import general.common.MessagesStrings;
+import models.common.Group;
 import models.common.Study;
 import models.common.legacy.StudyV2;
+import utils.common.IOUtils;
+import utils.common.JsonUtils;
 
 /**
  * Unmarshalling of an JSON string to a study. The study's JSON string can be in
@@ -21,10 +24,12 @@ import models.common.legacy.StudyV2;
 public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 
 	private Study study;
+	private GroupService groupService;
 
 	@Inject
-	StudyUploadUnmarshaller(IOUtils ioUtils) {
+	StudyUploadUnmarshaller(IOUtils ioUtils, GroupService groupService) {
 		super(ioUtils);
+		this.groupService = groupService;
 	}
 
 	/**
@@ -77,6 +82,9 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		study.setComments(studyV2.getComments());
 		study.setJsonData(studyV2.getJsonData());
 		study.setComponentList(studyV2.getComponentList());
+		Group group = new Group();
+		groupService.initGroup(group);
+		study.addGroup(group);
 		return study;
 	}
 

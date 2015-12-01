@@ -211,7 +211,8 @@ public class StudyService {
 	 * Persist the given Study and create the Group.
 	 */
 	public Study createStudy(User loggedInUser, Study study) {
-		Group group = groupService.createGroup();
+		Group group = new Group();
+		groupService.initGroup(group);
 		study.addGroup(group);
 		studyDao.create(study, loggedInUser);
 		return study;

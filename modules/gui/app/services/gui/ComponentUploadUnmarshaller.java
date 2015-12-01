@@ -1,4 +1,4 @@
-package utils.common;
+package services.gui;
 
 import general.common.MessagesStrings;
 
@@ -7,6 +7,8 @@ import java.io.IOException;
 import javax.inject.Inject;
 
 import models.common.Component;
+import utils.common.IOUtils;
+import utils.common.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 

@@ -10,6 +10,8 @@ import javax.persistence.TypedQuery;
 
 import models.common.Component;
 import models.common.ComponentResult;
+import models.common.Group;
+import models.common.GroupResult;
 import models.common.Study;
 import models.common.User;
 import play.db.jpa.JPA;
@@ -25,23 +27,29 @@ public class StudyDao extends AbstractDao {
 	private final StudyResultDao studyResultDao;
 	private final ComponentResultDao componentResultDao;
 	private final ComponentDao componentDao;
+	private final GroupDao groupDao;
+	private final GroupResultDao groupResultDao;
 
 	@Inject
 	StudyDao(StudyResultDao studyResultDao,
-			ComponentResultDao componentResultDao, ComponentDao componentDao) {
+			ComponentResultDao componentResultDao, ComponentDao componentDao,
+			GroupDao groupDao, GroupResultDao groupResultDao) {
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
 		this.componentDao = componentDao;
+		this.groupDao = groupDao;
+		this.groupResultDao = groupResultDao;
 	}
 
 	/**
-	 * Persist study and it's components and add user.
+	 * Persist study, it's components, it's groups and add user.
 	 */
 	public void create(Study study, User user) {
 		if (study.getUuid() == null) {
 			study.setUuid(UUID.randomUUID().toString());
 		}
 		study.getComponentList().forEach(componentDao::create);
+		study.getGroupList().forEach(groupDao::create);
 		persist(study);
 		addUser(study, user);
 	}
@@ -59,7 +67,7 @@ public class StudyDao extends AbstractDao {
 	}
 
 	/**
-	 * Remove study and its components
+	 * Remove study, its components and groups
 	 */
 	public void remove(Study study) {
 		// Remove all study's components and their ComponentResults
@@ -68,6 +76,13 @@ public class StudyDao extends AbstractDao {
 					.findAllByComponent(component);
 			componentResultList.forEach(componentResultDao::remove);
 			remove(component);
+		}
+		// Remove all study's groups and their ComponentResults
+		for (Group group : study.getGroupList()) {
+			List<GroupResult> groupResultList = groupResultDao
+					.findAllByGroup(group);
+			groupResultList.forEach(groupResultDao::remove);
+			remove(group);
 		}
 		// Remove study's StudyResults
 		studyResultDao.findAllByStudy(study).forEach(studyResultDao::remove);

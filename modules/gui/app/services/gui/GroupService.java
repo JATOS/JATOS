@@ -5,6 +5,9 @@ import javax.inject.Singleton;
 
 import daos.common.GroupDao;
 import models.common.Group;
+import models.common.workers.JatosWorker;
+import models.common.workers.PersonalMultipleWorker;
+import models.common.workers.PersonalSingleWorker;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -32,11 +35,14 @@ public class GroupService {
 		group.getAllowedWorkerTypes().forEach(clone::addAllowedWorkerType);
 		return clone;
 	}
-	
-	public Group createGroup() {
-		Group defaultGroup = new Group();
-		groupDao.create(defaultGroup);
-		return defaultGroup;
+
+	/**
+	 * Add default allowed workers
+	 */
+	public void initGroup(Group group) {
+		group.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
+		group.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+		group.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 	}
 
 	// /**

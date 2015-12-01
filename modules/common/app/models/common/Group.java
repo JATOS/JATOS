@@ -9,10 +9,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import models.common.workers.JatosWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
-
 /**
  * Model of a DB entity of a group with all properties of a group (without the
  * results). The results are stored in GroupResults. Default values, where
@@ -128,15 +124,6 @@ public class Group {
 
 	public boolean hasAllowedWorkerType(String workerType) {
 		return allowedWorkerTypes.contains(workerType);
-	}
-
-	/**
-	 * Add default allowed workers
-	 */
-	public void initStudyProperties() {
-		addAllowedWorkerType(JatosWorker.WORKER_TYPE);
-		addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
-		addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 	}
 
 	@Override

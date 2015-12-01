@@ -31,14 +31,11 @@ public class ComponentService {
 			.getSimpleName();
 
 	private final ComponentDao componentDao;
-	private final ComponentService componentService;
 	private final IOUtils ioUtils;
 
 	@Inject
-	ComponentService(ComponentDao componentDao,
-			ComponentService componentService, IOUtils ioUtils) {
+	ComponentService(ComponentDao componentDao, IOUtils ioUtils) {
 		this.componentDao = componentDao;
-		this.componentService = componentService;
 		this.ioUtils = ioUtils;
 	}
 
@@ -103,8 +100,8 @@ public class ComponentService {
 	 * additionally clones the HTML file and changes the title.
 	 */
 	public Component cloneWholeComponent(Component component) {
-		Component clone = componentService.clone(component);
-		clone.setTitle(componentService.cloneTitle(component.getTitle()));
+		Component clone = clone(component);
+		clone.setTitle(cloneTitle(component.getTitle()));
 		try {
 			String clonedHtmlFileName = ioUtils.cloneComponentHtmlFile(
 					component.getStudy().getDirName(),

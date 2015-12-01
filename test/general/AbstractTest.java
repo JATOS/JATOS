@@ -30,7 +30,6 @@ import models.common.StudyResult.StudyState;
 import models.common.User;
 import models.common.workers.Worker;
 import play.Application;
-import play.Environment;
 import play.Logger;
 import play.Mode;
 import play.api.mvc.RequestHeader;
@@ -44,11 +43,11 @@ import play.test.TestServer;
 import services.gui.ComponentService;
 import services.gui.ResultService;
 import services.gui.StudyService;
+import services.gui.StudyUploadUnmarshaller;
+import services.gui.UploadUnmarshaller;
 import services.gui.UserService;
 import utils.common.HashUtils;
 import utils.common.IOUtils;
-import utils.common.StudyUploadUnmarshaller;
-import utils.common.UploadUnmarshaller;
 import utils.common.ZipUtil;
 
 /**
@@ -92,10 +91,8 @@ public abstract class AbstractTest {
 	@Before
 	public void startApp() throws Exception {
 		ClassLoader classLoader = FakeApplication.class.getClassLoader();
-		application = new GuiceApplicationBuilder().in(
-				new Environment(new File(System.getProperty("java.io.tmpdir")),
-						classLoader, Mode.TEST))
-				.build();
+		application = new GuiceApplicationBuilder().in(classLoader)
+				.in(Mode.TEST).build();
 		Helpers.start(application);
 
 		// Use Guice dependency injection and bind manually
