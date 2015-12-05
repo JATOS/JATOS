@@ -23,12 +23,6 @@ import javax.persistence.Table;
 @Table(name = "Groupp")
 public class Group {
 
-	public static final String MIN_ACTIVE_MEMBER_SIZE = "minActiveMemberSize";
-	public static final String MAX_ACTIVE_MEMBER_SIZE = "maxActiveMemberSize";
-	public static final String MAX_TOTAL_MEMBER_SIZE = "maxTotalMemberSize";
-	public static final String MESSAGING = "messaging";
-	public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
-
 	@Id
 	@GeneratedValue
 	private Long id;
@@ -160,5 +154,5 @@ public class Group {
 		}
 		return true;
 	}
-
+	
 }

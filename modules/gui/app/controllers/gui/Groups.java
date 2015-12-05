@@ -1,5 +1,7 @@
 package controllers.gui;
 
+import java.util.Arrays;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -12,18 +14,21 @@ import exceptions.gui.JatosGuiException;
 import models.common.Group;
 import models.common.Study;
 import models.common.User;
+import models.gui.GroupProperties;
 import play.Logger;
+import play.api.mvc.Call;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
+import services.gui.GroupService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.StudyService;
 import services.gui.UserService;
 
 /**
- * Controller for all actions regarding studies within the JATOS GUI.
+ * Controller for all actions regarding groups and runs within the JATOS GUI.
  * 
  * @author Kristian Lange
  */
@@ -37,24 +42,23 @@ public class Groups extends Controller {
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final UserService userService;
+	private final GroupService groupService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final StudyDao studyDao;
 
 	@Inject
 	Groups(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
-			BreadcrumbsService breadcrumbsService, StudyDao studyDao) {
+			GroupService groupService, BreadcrumbsService breadcrumbsService,
+			StudyDao studyDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
+		this.groupService = groupService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 	}
 
-	/**
-	 * Shows a view with the run manager that includes a form with group
-	 * properties.
-	 */
 	@Transactional
 	public Result runManager(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".runManager: studyId " + studyId + ", "
@@ -67,40 +71,58 @@ public class Groups extends Controller {
 			jatosGuiExceptionThrower.throwHome(e);
 		}
 
-		Form<Group> form = Form.form(Group.class);
+		Group group = study.getGroupList().get(0);
+		GroupProperties groupProperties = groupService
+				.bindToGroupProperties(group);
+		Form<GroupProperties> form = Form.form(GroupProperties.class)
+				.fill(groupProperties);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.RUN_MANAGER);
-		return ok(views.html.gui.study.runManager.render(loggedInUser, breadcrumbs,
-				form, studyId, false));
+		return ok(views.html.gui.study.runManager.render(loggedInUser,
+				breadcrumbs, group.getId(), form, studyId, study.isLocked()));
 	}
 
 	/**
-	 * POST request of the form to create a new study.
-	 * 
-	 * @throws JatosGuiException
+	 * POST request
 	 */
 	@Transactional
-	public Result submit(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".runManager: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+	public Result submit(Long studyId, Long groupId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".submit: studyId " + studyId + ", groupId "
+				+ groupId + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
+		Group currentGroup = study.getGroupList().get(0);
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			studyService.checkStudyLocked(study);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
+			Call call = controllers.gui.routes.Home.home();
+			jatosGuiExceptionThrower.throwRedirect(e, call);
 		}
 
-		return redirect(controllers.gui.routes.Studies.index(study.getId()));
+		Form<GroupProperties> form = Form.form(GroupProperties.class)
+				.bindFromRequest();
+		if (form.hasErrors()) {
+			String breadcrumbs = breadcrumbsService.generateForStudy(study,
+					BreadcrumbsService.RUN_MANAGER);
+			return badRequest(views.html.gui.study.runManager.render(
+					loggedInUser, breadcrumbs, currentGroup.getId(), form,
+					studyId, study.isLocked()));
+		}
+		GroupProperties groupProperties = form.get();
+		// Have to bind ALLOWED_WORKER_TYPES by hand from checkboxes
+		String[] allowedWorkerArray = Controller.request().body()
+				.asFormUrlEncoded().get(GroupProperties.ALLOWED_WORKER_TYPES);
+		if (allowedWorkerArray != null) {
+			Arrays.stream(allowedWorkerArray)
+			.forEach(groupProperties::addAllowedWorkerType);
+		}
+
+		Group updatedGroup = groupService.bindToGroup(groupProperties);
+		groupService.updateGroup(currentGroup, updatedGroup);
+
+		return redirect(controllers.gui.routes.Groups.runManager(studyId));
 	}
-	
-//	// Have to bind list of ALLOWED_WORKER_TYPE by hand from checkboxes
-//	String[] allowedWorkerArray = Controller.request().body()
-//			.asFormUrlEncoded()
-//			.get(StudyProperties.ALLOWED_WORKER_TYPE_LIST);
-//	if (allowedWorkerArray != null) {
-//		Arrays.stream(allowedWorkerArray).forEach(
-//				studyProperties::addAllowedWorkerType);
-//	}
 
 }

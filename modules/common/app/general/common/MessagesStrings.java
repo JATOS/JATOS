@@ -36,11 +36,14 @@ public class MessagesStrings {
 	public static final String STUDY_AT_LEAST_ONE_USER = "An study should have at least one user.";
 	public static final String STUDY_IS_LOCKED = "Study is locked. It's not possible to edit.";
 	public static final String STUDY_WASNT_SAVED = "Study wasn't saved";
-	public static final String GROUP_WASNT_SAVED = "Data weren't saved";
-	public static final String GROUP_MEMBER_SIZE = "Group's member size must be at least 2.";
-	public static final String GROUP_MAX_ACTIVE_MEMBER_SIZE = "Group's max active member size must be greater or equal than the min one.";
-	public static final String GROUP_MAX_TOTAL_MEMBER_SIZE = "Group's max total members size must be greater or equal than the maxactive member size.";
 	public static final String COMPONENT_WASNT_SAVED = "Component wasn't saved";
+	public static final String GROUP_WASNT_SAVED = "Data weren't saved";
+	public static final String GROUP_MIN_ACTIVE_MEMBER_SIZE = "Group's min active member size must be at least 1.";
+	public static final String GROUP_MAX_ACTIVE_MEMBER_SIZE_SET = "Group's max acitive members size must be set if you want to limit it.";
+	public static final String GROUP_MAX_ACTIVE_MEMBER_SIZE = "Group's max active member size must be greater or equal than the min one.";
+	public static final String GROUP_MAX_TOTAL_MEMBER_SIZE_SET = "Group's max total members size must be set if you want to limit it.";
+	public static final String GROUP_MAX_TOTAL_MEMBER_SIZE = "Group's max total members size must be greater or equal than the max active member size.";
+
 
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
