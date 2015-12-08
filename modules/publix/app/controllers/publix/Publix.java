@@ -119,9 +119,8 @@ public abstract class Publix<T extends Worker> extends Controller
 					.pure(redirect(controllers.publix.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		GroupResult groupResult = studyResult.getGroupResult();
 		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
-				componentResult, worker, groupResult);
+				componentResult, worker);
 		response().setCookie(Publix.ID_COOKIE_NAME, cookieValue);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
@@ -233,7 +232,6 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ "workerId " + workerIdStr
 					+ " already member of group result " + groupResult.getId());
 		} else {
-			// TODO
 			Group group = study.getGroupList().get(0);
 			groupResult = groupMessagingService.join(studyResult, group);
 			channelService.sendJoinedMsg(studyResult);

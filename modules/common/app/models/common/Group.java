@@ -9,6 +9,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+
+import utils.common.JsonUtils;
+
 /**
  * Model of a DB entity of a group with all properties of a group (without the
  * results). The results are stored in GroupResults. Default values, where
@@ -25,29 +30,34 @@ public class Group {
 
 	@Id
 	@GeneratedValue
+	@JsonView({ JsonUtils.JsonForPublix.class })
 	private Long id;
 
 	/**
 	 * Is this group allowed to send messages between each other with the
 	 * GroupMessagingService.
 	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
 	private boolean messaging = false;
 
 	/**
 	 * Minimum number of workers in the group that are active at the same time.
 	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
 	private int minActiveMemberSize = 2;
 
 	/**
 	 * Maximum number of workers in the group that are active at the same time.
 	 * If there is no limit in active members the value is null.
 	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
 	private Integer maxActiveMemberSize = null;
 
 	/**
 	 * Maximum number of workers in total. If there is no limit in active
 	 * members the value is null.
 	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
 	private Integer maxTotalMemberSize = null;
 
 	/**
@@ -55,6 +65,7 @@ public class Group {
 	 * type is not in this list, it has no permission to run this study.
 	 */
 	@ElementCollection
+	@JsonIgnore
 	private Set<String> allowedWorkerTypes = new HashSet<>();
 
 	public Group() {

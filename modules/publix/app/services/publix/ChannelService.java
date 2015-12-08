@@ -34,7 +34,7 @@ import services.publix.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
 public class ChannelService {
 
 	/**
-	 * Time to wait for an answer after asking a Akka actor
+	 * Time to wait for an answer after asking an Akka actor
 	 */
 	private static final Timeout TIMEOUT = new Timeout(Duration.create(5000l,
 			"millis"));

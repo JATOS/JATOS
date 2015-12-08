@@ -157,6 +157,7 @@ public class JsonUtils {
 	public ObjectNode initData(StudyResult studyResult, Study study,
 			Component component) throws IOException {
 		String studyProperties = asJsonForPublix(study);
+		String groupProperties = asJsonForPublix(study.getGroupList().get(0));
 		ArrayNode componentList = getComponentListForInitData(study);
 		String componentProperties = asJsonForPublix(component);
 		String studySession = studyResult.getStudySessionData();
@@ -164,6 +165,7 @@ public class JsonUtils {
 		initData.put("studySession", studySession);
 		// This is ugly: first marshaling, now unmarshaling again
 		initData.set("studyProperties", OBJECTMAPPER.readTree(studyProperties));
+		initData.set("groupProperties", OBJECTMAPPER.readTree(groupProperties));
 		initData.set("componentList", componentList);
 		initData.set("componentProperties",
 				OBJECTMAPPER.readTree(componentProperties));

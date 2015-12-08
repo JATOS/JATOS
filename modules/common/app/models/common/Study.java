@@ -119,6 +119,10 @@ public class Study {
 	@JoinColumn(name = "study_id")
 	private List<Component> componentList = new ArrayList<>();
 
+	/**
+	 * In future it's planed to allow more than one Group per Study but for now
+	 * we have only one.
+	 */
 	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "study_id")
@@ -285,18 +289,34 @@ public class Study {
 		return null;
 	}
 
+	/**
+	 * In future it's planed to allow more than one Group per Study but for now
+	 * we have only one.
+	 */
 	public void setGroupList(List<Group> groupList) {
 		this.groupList = groupList;
 	}
 
+	/**
+	 * In future it's planed to allow more than one Group per Study but for now
+	 * we have only one.
+	 */
 	public List<Group> getGroupList() {
 		return this.groupList;
 	}
 
+	/**
+	 * In future it's planed to allow more than one Group per Study but for now
+	 * we have only one.
+	 */
 	public void addGroup(Group group) {
 		groupList.add(group);
 	}
 
+	/**
+	 * In future it's planed to allow more than one Group per Study but for now
+	 * we have only one.
+	 */
 	public void removeGroup(Group group) {
 		groupList.remove(group);
 	}

@@ -47,13 +47,13 @@ form: Form[models.gui.GroupProperties], studyId: Long, studyIsLocked: Boolean)
 		<div class="input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" id="maxTotalMemberLimited" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED" value="true"
-						@if(form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED).value == "true") {checked="checked"}>
+						@if("true".equals(form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED).value)) {checked="checked"}>
 				<!-- We need a hidden input field.
 				http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
 				<input type="hidden" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED" value="false" />
 			</span>
 			<input type="number" class="form-control" id="maxTotalMemberSize" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE" value="@form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE).value" min="1"
-					@if(form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED).value == "false") {disabled}>
+					@if("false".equals(form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED).value)) {disabled}>
 		</div>
 	</div>
 </div>
@@ -71,13 +71,13 @@ form: Form[models.gui.GroupProperties], studyId: Long, studyIsLocked: Boolean)
 		<div class="input-group">
 			<span class="input-group-addon">
 				<input type="checkbox" id="maxActiveMemberLimited" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED" value="true"
-						@if(form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED).value == "true") {checked="checked"}>
+						@if("true".equals(form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED).value)) {checked="checked"}>
 				<!-- We need a hidden input field.
 				http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
 				<input type="hidden" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED" value="false" />
 			</span>
 			<input type="number" class="form-control" id="maxActiveMemberSize" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE" value="@form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE).value" min="1"
-					@if(form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED).value == "false") {disabled}>
+					@if("false".equals(form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED).value)) {disabled}>
 		</div>
 	</div>
 </div>

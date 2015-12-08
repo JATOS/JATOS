@@ -8,19 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import models.common.Component;
-import models.common.ComponentResult;
-import models.common.ComponentResult.ComponentState;
-import models.common.GroupResult;
-import models.common.Study;
-import models.common.StudyResult;
-import models.common.StudyResult.StudyState;
-import models.common.workers.Worker;
-
 import org.w3c.dom.Document;
-
-import play.mvc.Http.RequestBody;
-import utils.common.XMLUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -36,6 +24,17 @@ import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import exceptions.publix.UnsupportedMediaTypePublixException;
+import models.common.Component;
+import models.common.ComponentResult;
+import models.common.ComponentResult.ComponentState;
+import models.common.Group;
+import models.common.GroupResult;
+import models.common.Study;
+import models.common.StudyResult;
+import models.common.StudyResult.StudyState;
+import models.common.workers.Worker;
+import play.mvc.Http.RequestBody;
+import utils.common.XMLUtils;
 
 /**
  * Service class with functions that are common for all classes that extend
@@ -144,20 +143,18 @@ public abstract class PublixUtils<T extends Worker> {
 	 * null), component ID, component result ID and component position.
 	 */
 	public String generateIdCookieValue(StudyResult studyResult,
-			ComponentResult componentResult, Worker worker,
-			GroupResult groupResult) {
+			ComponentResult componentResult, Worker worker) {
 		Study study = studyResult.getStudy();
-//		Group group = groupResult.getGroup();
+		Group group = study.getGroupList().get(0);
+		GroupResult groupResult = studyResult.getGroupResult();
 		Component component = componentResult.getComponent();
 		Map<String, String> cookieMap = new HashMap<>();
 		cookieMap.put(Publix.WORKER_ID, String.valueOf(worker.getId()));
 		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
 		cookieMap.put(Publix.STUDY_RESULT_ID,
 				String.valueOf(studyResult.getId()));
-		// TODO
-//		String groupId = (group != null) ? String.valueOf(group.getId())
-//				: "null";
-//		cookieMap.put(Publix.GROUP_ID, groupId);
+		String groupId = String.valueOf(group.getId());
+		cookieMap.put(Publix.GROUP_ID, groupId);
 		String groupResultId = (groupResult != null) ? String
 				.valueOf(groupResult.getId()) : "null";
 		cookieMap.put(Publix.GROUP_RESULT_ID, groupResultId);

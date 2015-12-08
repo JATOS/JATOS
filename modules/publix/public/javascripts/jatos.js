@@ -213,8 +213,7 @@ function initJatos() {
 		delete jatos.studyProperties.jsonData;
 		
 		// Group properties
-		jatos.groupProperties = jatos.studyProperties.group;
-		delete jatos.studyProperties.group;
+		jatos.groupProperties = initData.groupProperties;
 		
 		// Study's component list and study length
 		jatos.componentList = initData.componentList;
@@ -569,6 +568,7 @@ jatos.joinGroup = function(callbacks) {
 	};
 	groupChannel.onclose = function() {
 		joiningGroup = false;
+		jatos.groupResultId = null;
 		jatos.groupMemberId = null;
 		jatos.groupMembers = [];
 		jatos.groupChannels = [];
@@ -664,7 +664,11 @@ jatos.isMinActiveMemberOpen = function() {
  *         channel.
  */
 jatos.isMaxActiveMemberReached = function() {
-	return jatos.groupMembers.length >= jatos.groupProperties.maxActiveMemberSize;
+	if (jatos.groupProperties.maxActiveMemberSize == null) {
+		return false;
+	} else {
+		return jatos.groupMembers.length >= jatos.groupProperties.maxActiveMemberSize;
+	}
 };
 
 /**
@@ -672,7 +676,11 @@ jatos.isMaxActiveMemberReached = function() {
  *         members and each member has an open group channel.
  */
 jatos.isMaxActiveMemberOpen = function() {
-	return jatos.groupChannels.length >= jatos.groupProperties.maxActiveMemberSize;
+	if (jatos.groupProperties.maxActiveMemberSize == null) {
+		return false;
+	} else {
+		return jatos.groupChannels.length >= jatos.groupProperties.maxActiveMemberSize;
+	}
 };
 
 /**

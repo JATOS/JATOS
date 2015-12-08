@@ -46,7 +46,7 @@ import general.gui.RequestScopeMessaging;
 public class Components extends Controller {
 
 	public static final String EDIT_SUBMIT_NAME = "action";
-	public static final String EDIT_SUBMIT = "Create";
+	public static final String EDIT_SUBMIT = "Save";
 	public static final String EDIT_SUBMIT_AND_SHOW = "Save & Show";
 	private static final String CLASS_NAME = Components.class.getSimpleName();
 
