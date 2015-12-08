@@ -689,7 +689,11 @@ jatos.isMaxActiveMemberOpen = function() {
  *         or maximum active member size.
  */
 jatos.isGroupOpen = function() {
-	return jatos.groupMembers.length == jatos.groupChannels.length;
+	if (groupChannel && groupChannel.readyState == 1) {
+		return jatos.groupMembers.length == jatos.groupChannels.length;
+	} else {
+		return false;
+	}
 };
 
 /**

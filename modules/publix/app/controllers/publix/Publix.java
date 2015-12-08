@@ -4,6 +4,16 @@ import java.io.IOException;
 
 import javax.inject.Singleton;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import daos.common.ComponentResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.InternalServerErrorPublixException;
+import exceptions.publix.NotFoundPublixException;
+import exceptions.publix.PublixException;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
@@ -27,17 +37,6 @@ import services.publix.PublixUtils;
 import services.publix.WebSocketBuilder;
 import utils.common.ControllerUtils;
 import utils.common.JsonUtils;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
-import daos.common.StudyResultDao;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.ForbiddenReloadException;
-import exceptions.publix.InternalServerErrorPublixException;
-import exceptions.publix.NotFoundPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * Abstract controller class for all controllers that implement the IPublix
@@ -204,7 +203,10 @@ public abstract class Publix<T extends Worker> extends Controller
 		// manually because the PublixAction wouldn't send a rejected WebSocket
 		// but normal HTTP responses.
 		try {
-			return jpa.withTransaction(() -> joinGroup(studyId, workerIdStr));
+			StudyResult studyResult = jpa.withTransaction(() -> {
+				return joinGroup(studyId, workerIdStr);
+			});
+			return channelService.openGroupChannel(studyResult);
 		} catch (NotFoundPublixException e) {
 			Logger.info(CLASS_NAME + ".openGroupChannel: " + e.getMessage());
 			return WebSocketBuilder.reject(notFound());
@@ -217,7 +219,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		}
 	}
 
-	private WebSocket<JsonNode> joinGroup(Long studyId, String workerIdStr)
+	private StudyResult joinGroup(Long studyId, String workerIdStr)
 			throws ForbiddenPublixException, NotFoundPublixException,
 			InternalServerErrorPublixException {
 		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
@@ -240,7 +242,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ groupResult.getId());
 		}
 		groupMessagingService.checkGroupAllowsMessaging(groupResult.getGroup());
-		return channelService.openGroupChannel(studyResult);
+		return studyResult;
 	}
 
 	@Override
