@@ -69,6 +69,7 @@ public class StudyService {
 		clone.setComments(study.getComments());
 		clone.setJsonData(study.getJsonData());
 		clone.setLocked(false);
+		clone.setGroupStudy(study.isGroupStudy());
 		
 		// Clone each Group
 		for (Group group : study.getGroupList()) {
@@ -262,6 +263,7 @@ public class StudyService {
 		study.setDescription(studyProperties.getDescription());
 		study.setComments(studyProperties.getComments());
 		study.setJsonData(studyProperties.getJsonData());
+		study.setGroupStudy(studyProperties.isGroupStudy());
 	}
 
 	/**
@@ -286,6 +288,7 @@ public class StudyService {
 		studyProperties.setDescription(study.getDescription());
 		studyProperties.setDate(study.getDate());
 		studyProperties.setLocked(study.isLocked());
+		studyProperties.setGroupStudy(study.isGroupStudy());
 		studyProperties.setDirName(study.getDirName());
 		studyProperties.setComments(study.getComments());
 		studyProperties.setJsonData(study.getJsonData());

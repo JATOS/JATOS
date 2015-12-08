@@ -28,6 +28,7 @@ public class StudyProperties {
 	public static final String DESCRIPTION = "description";
 	public static final String DIRNAME = "dirName";
 	public static final String COMMENTS = "comments";
+	public static final String GROUP_STUDY = "groupStudy";
 
 	private Long studyId;
 
@@ -52,6 +53,12 @@ public class StudyProperties {
 	 */
 	private boolean locked = false;
 
+	/**
+	 * Is this study a group study, e.g. worker scripts can send messages
+	 * between each other with the GroupMessagingService.
+	 */
+	private boolean groupStudy = false;
+	
 	/**
 	 * Study assets directory name
 	 */
@@ -130,6 +137,14 @@ public class StudyProperties {
 
 	public boolean isLocked() {
 		return this.locked;
+	}
+	
+	public boolean isGroupStudy() {
+		return groupStudy;
+	}
+
+	public void setGroupStudy(boolean groupStudy) {
+		this.groupStudy = groupStudy;
 	}
 
 	public String getJsonData() {

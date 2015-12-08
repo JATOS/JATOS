@@ -56,6 +56,19 @@ form: Form[models.gui.StudyProperties], studyIsLocked: Boolean)
 
 <div class="form-group">
 	<div class="col-xs-offset-2 col-xs-10">
+		<label class="checkbox-inline">
+			<input type="checkbox" name="@models.gui.StudyProperties.GROUP_STUDY" value="true"
+					@if("true".equals(form(models.gui.StudyProperties.GROUP_STUDY).value)) {checked="checked"}
+					>Group study <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this a group study?" aria-hidden="true"></span>
+			<!-- We need a hidden input field.
+			http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+			<input type="hidden" name="@models.gui.StudyProperties.GROUP_STUDY" value="false" />
+		</label>
+	</div>
+</div>
+
+<div class="form-group">
+	<div class="col-xs-offset-2 col-xs-10">
 		<input type="submit" class="btn btn-primary" value="Save">
 	</div>
 </div>

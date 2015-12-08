@@ -50,7 +50,6 @@ public class GroupService {
 		group.setMinActiveMemberSize(updatedGroup.getMinActiveMemberSize());
 		group.setMaxActiveMemberSize(updatedGroup.getMaxActiveMemberSize());
 		group.setMaxTotalMemberSize(updatedGroup.getMaxTotalMemberSize());
-		group.setMessaging(updatedGroup.isMessaging());
 		group.getAllowedWorkerTypes().clear();
 		updatedGroup.getAllowedWorkerTypes()
 				.forEach(group::addAllowedWorkerType);
@@ -66,7 +65,6 @@ public class GroupService {
 		props.setMaxTotalMemberSize(group.getMaxTotalMemberSize());
 		props.setMaxTotalMemberLimited(group.getMaxTotalMemberSize() != null);
 		props.setMinActiveMemberSize(group.getMinActiveMemberSize());
-		props.setMessaging(group.isMessaging());
 		return props;
 	}
 
@@ -84,7 +82,6 @@ public class GroupService {
 			group.setMaxTotalMemberSize(null);
 		}
 		group.setMinActiveMemberSize(props.getMinActiveMemberSize());
-		group.setMessaging(props.isMessaging());
 		return group;
 	}
 

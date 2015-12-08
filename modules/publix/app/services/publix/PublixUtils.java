@@ -502,6 +502,17 @@ public abstract class PublixUtils<T extends Worker> {
 							component.getId()));
 		}
 	}
+	
+	/**
+	 * Throws ForbiddenPublixException if group doesn't allow messaging.
+	 */
+	public void checkStudyIsGroupStudy(Study study)
+			throws ForbiddenPublixException {
+		if (!study.isGroupStudy()) {
+			throw new ForbiddenPublixException(
+					errorMessages.studyNotGroupStudy(study.getId()));
+		}
+	}
 
 	/**
 	 * Checks if the worker finished this study already. 'Finished' includes

@@ -225,6 +225,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
 		Study study = publixUtils.retrieveStudy(studyId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		publixUtils.checkStudyIsGroupStudy(study);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
 		GroupResult groupResult;
@@ -241,7 +242,6 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ "workerId " + workerIdStr + " joined group result "
 					+ groupResult.getId());
 		}
-		groupMessagingService.checkGroupAllowsMessaging(groupResult.getGroup());
 		return studyResult;
 	}
 

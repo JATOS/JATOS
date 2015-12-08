@@ -33,7 +33,6 @@ CREATE TABLE `ComponentResult` (
 
 CREATE TABLE `Groupp` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `messaging` tinyint(1) NOT NULL,
   `minActiveMemberSize` int(11) NOT NULL,
   `maxActiveMemberSize` int(11) DEFAULT NULL,
   `maxTotalMemberSize` int(11) DEFAULT NULL,
@@ -58,6 +57,7 @@ CREATE TABLE `Study` (
   `dirName` varchar(255) DEFAULT NULL,
   `jsonData` longtext ,
   `locked` tinyint(1) NOT NULL,
+  `groupStudy` tinyint(1) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `uuid` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)

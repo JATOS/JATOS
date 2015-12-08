@@ -80,6 +80,13 @@ public class Study {
 	private boolean locked = false;
 
 	/**
+	 * Is this study a group study, e.g. worker scripts can send messages
+	 * between each other with the GroupMessagingService.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
+	private boolean groupStudy = false;
+
+	/**
 	 * Study assets directory name
 	 */
 	@JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
@@ -193,6 +200,14 @@ public class Study {
 
 	public boolean isLocked() {
 		return this.locked;
+	}
+	
+	public boolean isGroupStudy() {
+		return groupStudy;
+	}
+
+	public void setGroupStudy(boolean groupStudy) {
+		this.groupStudy = groupStudy;
 	}
 
 	public String getJsonData() {

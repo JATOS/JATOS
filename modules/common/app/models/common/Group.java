@@ -34,13 +34,6 @@ public class Group {
 	private Long id;
 
 	/**
-	 * Is this group allowed to send messages between each other with the
-	 * GroupMessagingService.
-	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
-	private boolean messaging = false;
-
-	/**
 	 * Minimum number of workers in the group that are active at the same time.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
@@ -77,14 +70,6 @@ public class Group {
 
 	public Long getId() {
 		return this.id;
-	}
-
-	public boolean isMessaging() {
-		return messaging;
-	}
-
-	public void setMessaging(boolean messaging) {
-		this.messaging = messaging;
 	}
 
 	public int getMinActiveMemberSize() {

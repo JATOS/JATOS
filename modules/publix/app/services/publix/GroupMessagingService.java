@@ -5,7 +5,6 @@ import javax.inject.Singleton;
 
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
-import exceptions.publix.ForbiddenPublixException;
 import models.common.Group;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
@@ -24,27 +23,14 @@ import models.common.StudyResult;
 @Singleton
 public class GroupMessagingService {
 
-	private final PublixErrorMessages errorMessages;
 	private final StudyResultDao studyResultDao;
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	GroupMessagingService(PublixErrorMessages errorMessages,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		this.errorMessages = errorMessages;
+	GroupMessagingService(StudyResultDao studyResultDao,
+			GroupResultDao groupResultDao) {
 		this.studyResultDao = studyResultDao;
 		this.groupResultDao = groupResultDao;
-	}
-
-	/**
-	 * Throws ForbiddenPublixException if group doesn't allow messaging.
-	 */
-	public void checkGroupAllowsMessaging(Group group)
-			throws ForbiddenPublixException {
-		if (!group.isMessaging()) {
-			throw new ForbiddenPublixException(
-					errorMessages.groupNotAllowMessaging(group.getId()));
-		}
 	}
 
 	/**

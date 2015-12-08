@@ -54,8 +54,6 @@ import exceptions.publix.PublixException;
  * 5. Requests coming from an General Single run will be forwarded to
  * GeneralSinglePublix. They use the GeneralSingleWorker.<br>
  * 
- * TODO: Move @Transactional out of controller.
- * 
  * @author Kristian Lange
  */
 @Singleton
