@@ -3,92 +3,107 @@ form: Form[models.gui.GroupProperties], studyId: Long, studyIsLocked: Boolean)
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-<form id="groupPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
+<button id="groupPropertiesButton" type="button" class="btn btn-primary">Properties</button>
 
-	<div class="form-group">
-		<label class="control-label col-xs-2" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
-		<div class="col-xs-10" id="allowedWorkerTypes">
-			<label class="checkbox-inline">
-				<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE"
-						@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.JatosWorker.WORKER_TYPE)) {checked}
-						>@common.workers.JatosWorker.UI_WORKER_TYPE
-						<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
-			</label>
-			<label class="checkbox-inline">
-				<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE"
-						@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.PersonalMultipleWorker.WORKER_TYPE)) {checked}
-						>@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
-						<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
-			</label>
-			<label class="checkbox-inline">
-				<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE"
-						@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.PersonalSingleWorker.WORKER_TYPE)) {checked}
-						>@common.workers.PersonalSingleWorker.UI_WORKER_TYPE
-						<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
-			</label>
-			<label class="checkbox-inline">
-				<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE"
-						@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.GeneralSingleWorker.WORKER_TYPE)) {checked}
-						>@common.workers.GeneralSingleWorker.UI_WORKER_TYPE
-						<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
-			</label>
-			<label class="checkbox-inline">
-				<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE"
-						@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.MTWorker.WORKER_TYPE)) {checked}
-						>@common.workers.MTWorker.UI_WORKER_TYPE
-						<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
-			</label>
-		</div>
-	</div>
-	
-	<div class="form-group">
-		<label class="control-label col-xs-2" for="maxTotalMemberLimited">Max total worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of workers that can do this study altogether." aria-hidden="true"></span></label>
-		<div class="col-xs-2" id="maxTotalMemberDiv">
-			<div class="input-group">
-				<span class="input-group-addon">
-					<input type="checkbox" id="maxTotalMemberLimited" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED" value="true"
-							@if("true".equals(form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED).value)) {checked="checked"}>
-					<!-- We need a hidden input field.
-					http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-					<input type="hidden" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED" value="false" />
-				</span>
-				<input type="number" class="form-control" id="maxTotalMemberSize" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE" value="@form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE).value" min="1"
-						@if("false".equals(form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED).value)) {disabled}>
-			</div>
-		</div>
-	</div>
-	
-	<div class="form-group">
-		<label class="control-label col-xs-2" for="minActiveMemberSize">Min active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the min number of workers that can do this study at the same time." aria-hidden="true"></span></label>
-		<div class="col-xs-2">
-			<input type="number" class="form-control" id="minActiveMemberSize" name="@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE" value="@form(models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE).value" min="1">
-		</div>
-	</div>
-	
-	<div class="form-group">
-		<label class="control-label col-xs-2" for="maxActiveMemberLimited">Max active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of workers that can do this study at the same time." aria-hidden="true"></span></label>
-		<div class="col-xs-2" id="maxActiveMemberDiv">
-			<div class="input-group">
-				<span class="input-group-addon">
-					<input type="checkbox" id="maxActiveMemberLimited" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED" value="true"
-							@if("true".equals(form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED).value)) {checked="checked"}>
-					<!-- We need a hidden input field.
-					http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-					<input type="hidden" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED" value="false" />
-				</span>
-				<input type="number" class="form-control" id="maxActiveMemberSize" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE" value="@form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE).value" min="1"
-						@if("false".equals(form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED).value)) {disabled}>
-			</div>
-		</div>
-	</div>
-	
-	<div class="form-group">
-		<div class="col-xs-offset-2 col-xs-10">
-			<input type="submit" class="btn btn-primary" value="Save">
-		</div>
-	</div>
+<!-- Group Properties Modal -->
+<div class="modal fade" id="groupPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<form id="groupPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">Group Properties</h4>
+				</div>
+				<div class="modal-body">
+					<div class="container col-md-12">
 
-</form>
+						<div class="form-group">
+							<label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
+							<div class="col-xs-9" id="allowedWorkerTypes">
+								<label class="checkbox-inline">
+									<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE"
+											@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.JatosWorker.WORKER_TYPE)) {checked}
+											>@common.workers.JatosWorker.UI_WORKER_TYPE
+											<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
+								</label>
+								<label class="checkbox-inline">
+									<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE"
+											@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.PersonalMultipleWorker.WORKER_TYPE)) {checked}
+											>@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
+											<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
+								</label>
+								<label class="checkbox-inline">
+									<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE"
+											@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.PersonalSingleWorker.WORKER_TYPE)) {checked}
+											>@common.workers.PersonalSingleWorker.UI_WORKER_TYPE
+											<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
+								</label>
+								<label class="checkbox-inline">
+									<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE"
+											@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.GeneralSingleWorker.WORKER_TYPE)) {checked}
+											>@common.workers.GeneralSingleWorker.UI_WORKER_TYPE
+											<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
+								</label>
+								<label class="checkbox-inline">
+									<input type="checkbox" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE"
+											@if(form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value != null && form(models.gui.GroupProperties.ALLOWED_WORKER_TYPES).value.contains(common.workers.MTWorker.WORKER_TYPE)) {checked}
+											>@common.workers.MTWorker.UI_WORKER_TYPE
+											<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
+								</label>
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label class="control-label col-xs-3" for="maxTotalMemberLimited">Max total worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of workers that can do this study altogether." aria-hidden="true"></span></label>
+							<div class="col-xs-3" id="maxTotalMemberDiv">
+								<div class="input-group">
+									<span class="input-group-addon">
+										<input type="checkbox" id="maxTotalMemberLimited" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED" value="true"
+												@if("true".equals(form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED).value)) {checked="checked"}>
+										<!-- We need a hidden input field.
+										http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+										<input type="hidden" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED" value="false" />
+									</span>
+									<input type="number" class="form-control" id="maxTotalMemberSize" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE" value="@form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE).value" min="1"
+											@if("false".equals(form(models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED).value)) {disabled}>
+								</div>
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label class="control-label col-xs-3" for="minActiveMemberSize">Min active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the min number of workers that can do this study at the same time." aria-hidden="true"></span></label>
+							<div class="col-xs-3">
+								<input type="number" class="form-control" id="minActiveMemberSize" name="@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE" value="@form(models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE).value" min="1">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label class="control-label col-xs-3" for="maxActiveMemberLimited">Max active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of workers that can do this study at the same time." aria-hidden="true"></span></label>
+							<div class="col-xs-3" id="maxActiveMemberDiv">
+								<div class="input-group">
+									<span class="input-group-addon">
+										<input type="checkbox" id="maxActiveMemberLimited" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED" value="true"
+												@if("true".equals(form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED).value)) {checked="checked"}>
+										<!-- We need a hidden input field.
+										http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+										<input type="hidden" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED" value="false" />
+									</span>
+									<input type="number" class="form-control" id="maxActiveMemberSize" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE" value="@form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE).value" min="1"
+											@if("false".equals(form(models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED).value)) {disabled}>
+								</div>
+							</div>
+						</div>
+						
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<input type="submit" class="confirmed btn btn-primary" value="Save">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
 
 <div class="panel panel-default">
 	<div class="panel-heading">
@@ -168,15 +183,19 @@ $('#maxActiveMemberLimited').change(function() {
 	$('#maxActiveMemberSize').prop("disabled", !this.checked);
 });
 
+$('#groupPropertiesButton').click(function(event) {
+	$('#groupPropertiesModal').modal('show');
+});
+
 $("#groupPropertiesForm").submit(function(event) {
 	event.preventDefault();
-	
 	$.ajax({
 		type: 'POST',
 		url: "@controllers.gui.routes.Groups.submitProperties(studyId, groupId)",
 		data: $('#groupPropertiesForm').serialize(), 
 		success: function(response) {
 			removeFormErrors()
+			$('#groupPropertiesModal').modal('hide');
 		},
 		error: function(response) {
 			removeFormErrors();
@@ -186,7 +205,7 @@ $("#groupPropertiesForm").submit(function(event) {
 });
 
 function removeFormErrors() {
-	removeWarnings();
+	removeWarnings("#groupPropertiesModal .modal-header");
 	$('#minActiveMemberSize').closest(".form-group").removeClass("has-error");
 	$('#minActiveMemberSize').nextAll('.help-block').remove();
 	$('#maxActiveMemberSize').closest(".form-group").removeClass("has-error");
@@ -196,7 +215,7 @@ function removeFormErrors() {
 }
 
 function showFormErrors(errors) {
-	showWarning("@general.common.MessagesStrings.GROUP_WASNT_SAVED");
+	showWarning("@general.common.MessagesStrings.GROUP_WASNT_SAVED", "#groupPropertiesModal .modal-header");
 	if (errors['@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE']) {
 		$.each(errors['@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE'], function(index, msg) {
 			$('#minActiveMemberSize').closest(".form-group").addClass("has-error");

@@ -34,7 +34,7 @@
 
 <body>
 <script>
-function showSuccess(msg) {
+function showSuccess(msg, insertAfterElem) {
 	var html = '<div class="alert alert-success alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span aria-hidden="true">&times;</span>'
@@ -42,10 +42,14 @@ function showSuccess(msg) {
 		+ '<i class="glyphicon glyphicon-ok-circle" aria-hidden="true"></i>'
 		+ '<span>' + msg + '</span>'
 		+ '</div>';
-	$(html).insertAfter( "#breadcrumbs" );
+	if (insertAfterElem) {
+		$(html).insertAfter(insertAfterElem);
+	} else {
+		$(html).insertAfter("#breadcrumbs");
+	}
 }
 
-function showInfo(msg) {
+function showInfo(msg, insertAfterElem) {
 	var html = '<div class="alert alert-info alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span aria-hidden="true">&times;</span>'
@@ -53,10 +57,14 @@ function showInfo(msg) {
 		+ '<i class="glyphicon glyphicon-eye-open" aria-hidden="true"></i>'
 		+ '<span>' + msg + '</span>'
 		+ '</div>';
-	$(html).insertAfter( "#breadcrumbs" );
+		if (insertAfterElem) {
+			$(html).insertAfter(insertAfterElem);
+		} else {
+			$(html).insertAfter("#breadcrumbs");
+		}
 }
 
-function showWarning(msg) {
+function showWarning(msg, insertAfterElem) {
 	var html = '<div class="alert alert-warning alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span aria-hidden="true">&times;</span>'
@@ -64,10 +72,14 @@ function showWarning(msg) {
 		+ '<i class="glyphicon glyphicon-warning-sign" aria-hidden="true"></i>'
 		+ '<span>' + msg + '</span>'
 		+ '</div>';
-	$(html).insertAfter( "#breadcrumbs" );
+		if (insertAfterElem) {
+			$(html).insertAfter(insertAfterElem);
+		} else {
+			$(html).insertAfter("#breadcrumbs");
+		}
 }
 
-function showError(msg) {
+function showError(msg, insertAfterElem) {
 	var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
 		+ '<button type="button" class="close" data-dismiss="alert">'
 		+ '<span aria-hidden="true">&times;</span>'
@@ -75,20 +87,45 @@ function showError(msg) {
 		+ '<i class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></i>'
 		+ '<span>' + msg + '</span>'
 		+ '</div>';
-	$(html).insertAfter( "#breadcrumbs" );
+		if (insertAfterElem) {
+			$(html).insertAfter(insertAfterElem);
+		} else {
+			$(html).insertAfter("#breadcrumbs");
+		}
 }
 
-function removeErrors() {
-	$('#breadcrumbs').nextAll('.alert-info').remove();
+function removeSuccess(removeAfterElem) {
+	if (removeAfterElem) {
+		$(removeAfterElem).nextAll('.alert-success').remove();
+	} else {
+		$('#breadcrumbs').nextAll('.alert-success').remove();
+	}
 }
 
-function removeErrors() {
-	$('#breadcrumbs').nextAll('.alert-danger').remove();
+function removeInfo(removeAfterElem) {
+	if (removeAfterElem) {
+		$(removeAfterElem).nextAll('.alert-info').remove();
+	} else {
+		$('#breadcrumbs').nextAll('.alert-info').remove();
+	}
 }
 
-function removeWarnings() {
-	$('#breadcrumbs').nextAll('.alert-warning').remove();
+function removeWarnings(removeAfterElem) {
+	if (removeAfterElem) {
+		$(removeAfterElem).nextAll('.alert-warning').remove();
+	} else {
+		$('#breadcrumbs').nextAll('.alert-warning').remove();
+	}
 }
+
+function removeErrors(removeAfterElem) {
+	if (removeAfterElem) {
+		$(removeAfterElem).nextAll('.alert-danger').remove();
+	} else {
+		$('#breadcrumbs').nextAll('.alert-danger').remove();
+	}
+}
+
 </script>
 
 <nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top"
