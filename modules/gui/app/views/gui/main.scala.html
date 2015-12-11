@@ -77,6 +77,18 @@ function showError(msg) {
 		+ '</div>';
 	$(html).insertAfter( "#breadcrumbs" );
 }
+
+function removeErrors() {
+	$('#breadcrumbs').nextAll('.alert-info').remove();
+}
+
+function removeErrors() {
+	$('#breadcrumbs').nextAll('.alert-danger').remove();
+}
+
+function removeWarnings() {
+	$('#breadcrumbs').nextAll('.alert-warning').remove();
+}
 </script>
 
 <nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top"
