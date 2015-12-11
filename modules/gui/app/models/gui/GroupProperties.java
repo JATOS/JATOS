@@ -34,7 +34,7 @@ public class GroupProperties {
 	/**
 	 * Minimum number of workers in the group that are active at the same time.
 	 */
-	private int minActiveMemberSize = 2;
+	private Integer minActiveMemberSize = 2;
 
 	private boolean maxActiveMemberLimited = true;
 
@@ -74,11 +74,11 @@ public class GroupProperties {
 		this.messaging = messaging;
 	}
 
-	public int getMinActiveMemberSize() {
+	public Integer getMinActiveMemberSize() {
 		return minActiveMemberSize;
 	}
 
-	public void setMinActiveMemberSize(int minActiveMemberSize) {
+	public void setMinActiveMemberSize(Integer minActiveMemberSize) {
 		this.minActiveMemberSize = minActiveMemberSize;
 	}
 
@@ -141,7 +141,7 @@ public class GroupProperties {
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
-		if (minActiveMemberSize < 1) {
+		if (minActiveMemberSize == null || minActiveMemberSize < 1) {
 			errorList.add(new ValidationError(MIN_ACTIVE_MEMBER_SIZE,
 					MessagesStrings.GROUP_MIN_ACTIVE_MEMBER_SIZE));
 		}
@@ -150,6 +150,7 @@ public class GroupProperties {
 					MessagesStrings.GROUP_MAX_ACTIVE_MEMBER_SIZE_SET));
 		}
 		if (maxActiveMemberLimited && maxActiveMemberSize != null
+				&& minActiveMemberSize != null
 				&& maxActiveMemberSize < minActiveMemberSize) {
 			errorList.add(new ValidationError(MAX_ACTIVE_MEMBER_SIZE,
 					MessagesStrings.GROUP_MAX_ACTIVE_MEMBER_SIZE));

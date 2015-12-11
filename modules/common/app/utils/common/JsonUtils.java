@@ -125,8 +125,8 @@ public class JsonUtils {
 		try {
 			// Parse the string. If an exception occurs return false and true
 			// otherwise.
-			final JsonParser parser = OBJECTMAPPER.getFactory().createParser(
-					jsonDataStr);
+			final JsonParser parser = OBJECTMAPPER.getFactory()
+					.createParser(jsonDataStr);
 			while (parser.nextToken() != null) {
 			}
 			valid = true;
@@ -200,8 +200,8 @@ public class JsonUtils {
 		String data = componentResult.getData();
 		if (data != null) {
 			// Escape HTML tags and &
-			data = data.replace("&", "&amp").replace("<", "&lt;")
-					.replace(">", "&gt;");
+			data = data.replace("&", "&amp").replace("<", "&lt;").replace(">",
+					"&gt;");
 			if (data.length() < MAX_CHAR_PER_RESULT) {
 				return data;
 			} else {
@@ -234,11 +234,12 @@ public class JsonUtils {
 	 */
 	public String allComponentResultsForUI(
 			List<ComponentResult> componentResultList)
-			throws JsonProcessingException {
+					throws JsonProcessingException {
 		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allComponentResultsNode.arrayNode();
 		for (ComponentResult componentResult : componentResultList) {
-			ObjectNode componentResultNode = componentResultAsJsonNode(componentResult);
+			ObjectNode componentResultNode = componentResultAsJsonNode(
+					componentResult);
 			arrayNode.add(componentResultNode);
 		}
 		allComponentResultsNode.set(DATA, arrayNode);
@@ -262,16 +263,16 @@ public class JsonUtils {
 		studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
 		studyResultNode.put("duration", getDurationPretty(
 				studyResult.getStartDate(), studyResult.getEndDate()));
-		String groupResultId = studyResult.getGroupResult() != null ? studyResult
-				.getGroupResult().getId().toString()
-				: null;
+		String groupResultId = studyResult.getGroupResult() != null
+				? studyResult.getGroupResult().getId().toString() : null;
 		studyResultNode.put("groupResultId", groupResultId);
 
 		// Add all componentResults
 		ArrayNode arrayNode = studyResultNode.arrayNode();
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
-			ObjectNode componentResultNode = componentResultAsJsonNode(componentResult);
+			ObjectNode componentResultNode = componentResultAsJsonNode(
+					componentResult);
 			arrayNode.add(componentResultNode);
 		}
 		studyResultNode.set("componentResults", arrayNode);
@@ -283,32 +284,33 @@ public class JsonUtils {
 	 * Returns an ObjectNode of the given ComponentResult. It contains the study
 	 * ID, component ID and component title.
 	 */
-	private ObjectNode componentResultAsJsonNode(ComponentResult componentResult) {
+	private ObjectNode componentResultAsJsonNode(
+			ComponentResult componentResult) {
 		ObjectNode componentResultNode = OBJECTMAPPER
 				.valueToTree(componentResult);
 
 		// Add extra variables
-		componentResultNode.put("studyId", componentResult.getComponent()
-				.getStudy().getId());
-		componentResultNode.put("componentId", componentResult.getComponent()
-				.getId());
-		componentResultNode.put("componentTitle", componentResult
-				.getComponent().getTitle());
+		componentResultNode.put("studyId",
+				componentResult.getComponent().getStudy().getId());
+		componentResultNode.put("componentId",
+				componentResult.getComponent().getId());
+		componentResultNode.put("componentTitle",
+				componentResult.getComponent().getTitle());
 		componentResultNode.put("duration", getDurationPretty(
 				componentResult.getStartDate(), componentResult.getEndDate()));
 		GroupResult groupResult = componentResult.getStudyResult()
 				.getGroupResult();
-		String groupResultId = groupResult != null ? groupResult.getId()
-				.toString() : null;
+		String groupResultId = groupResult != null
+				? groupResult.getId().toString() : null;
 		componentResultNode.put("groupResultId", groupResultId);
 
 		// Add componentResult's data
-		componentResultNode
-				.put(DATA, componentResultDataForUI(componentResult));
+		componentResultNode.put(DATA,
+				componentResultDataForUI(componentResult));
 
 		return componentResultNode;
 	}
-	
+
 	private static String getDurationPretty(Timestamp startDate,
 			Timestamp endDate) {
 		if (endDate != null) {
@@ -406,8 +408,8 @@ public class JsonUtils {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
 		// int i = 1;
 		for (int i = 0; i < componentList.size(); i++) {
-			ObjectNode componentNode = OBJECTMAPPER.valueToTree(componentList
-					.get(i));
+			ObjectNode componentNode = OBJECTMAPPER
+					.valueToTree(componentList.get(i));
 			// Add count of component's results
 			componentNode.put("resultCount", resultCountList.get(i));
 			int position = i + 1;

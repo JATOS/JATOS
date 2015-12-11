@@ -16,7 +16,6 @@ import models.common.Study;
 import models.common.User;
 import models.gui.GroupProperties;
 import play.Logger;
-import play.api.mvc.Call;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -83,12 +82,13 @@ public class Groups extends Controller {
 	}
 
 	/**
-	 * POST request
+	 * Ajax POST request
 	 */
 	@Transactional
-	public Result submit(Long studyId, Long groupId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".submit: studyId " + studyId + ", groupId "
-				+ groupId + ", " + "logged-in user's email "
+	public Result submitProperties(Long studyId, Long groupId)
+			throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".submitProperties: studyId " + studyId
+				+ ", groupId " + groupId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -97,18 +97,13 @@ public class Groups extends Controller {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			studyService.checkStudyLocked(study);
 		} catch (ForbiddenException | BadRequestException e) {
-			Call call = controllers.gui.routes.Home.home();
-			jatosGuiExceptionThrower.throwRedirect(e, call);
+			return badRequest(e.getMessage());
 		}
 
 		Form<GroupProperties> form = Form.form(GroupProperties.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			String breadcrumbs = breadcrumbsService.generateForStudy(study,
-					BreadcrumbsService.RUN_MANAGER);
-			return badRequest(views.html.gui.study.runManager.render(
-					loggedInUser, breadcrumbs, currentGroup.getId(), form,
-					studyId, study.isLocked()));
+			return badRequest(form.errorsAsJson());
 		}
 		GroupProperties groupProperties = form.get();
 		// Have to bind ALLOWED_WORKER_TYPES by hand from checkboxes
@@ -116,13 +111,12 @@ public class Groups extends Controller {
 				.asFormUrlEncoded().get(GroupProperties.ALLOWED_WORKER_TYPES);
 		if (allowedWorkerArray != null) {
 			Arrays.stream(allowedWorkerArray)
-			.forEach(groupProperties::addAllowedWorkerType);
+					.forEach(groupProperties::addAllowedWorkerType);
 		}
 
 		Group updatedGroup = groupService.bindToGroup(groupProperties);
 		groupService.updateGroup(currentGroup, updatedGroup);
-
-		return redirect(controllers.gui.routes.Groups.runManager(studyId));
+		return ok();
 	}
 
 }
