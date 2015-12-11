@@ -57,6 +57,8 @@ GET     /jatos/:studyId/component/create             @controllers.gui.Components
 POST    /jatos/:studyId/component                    @controllers.gui.Components.submit(studyId: Long)
 POST    /jatos/:studyId/import/component             @controllers.gui.ImportExport.importComponent(studyId: Long)
 POST    /jatos/:studyId/import/componentConfirmed    @controllers.gui.ImportExport.importComponentConfirmed(studyId: Long)
+GET     /jatos/:studyId/runManager                   @controllers.gui.Groups.runManager(studyId: Long)
+POST    /jatos/:studyId/group/:groupId/properties    @controllers.gui.Groups.submitProperties(studyId: Long, groupId: Long)
 GET     /jatos/:studyId/:componentId/edit            @controllers.gui.Components.edit(studyId: Long, componentId: Long)
 POST    /jatos/:studyId/:componentId                 @controllers.gui.Components.submitEdited(studyId: Long, componentId: Long)
 POST    /jatos/:studyId/:componentId/property        @controllers.gui.Components.changeProperty(studyId: Long, componentId: Long, active: Boolean)
@@ -68,8 +70,6 @@ DELETE  /jatos/:studyId/:componentId/allResults      @controllers.gui.ComponentR
 GET     /jatos/:studyId/:componentId/show            @controllers.gui.Components.showComponent(studyId: Long, componentId: Long)
 GET     /jatos/:studyId/:componentId/clone           @controllers.gui.Components.cloneComponent(studyId: Long, componentId: Long)
 GET     /jatos/:studyId/:componentId/export          @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
-GET     /jatos/:studyId/runManager                   @controllers.gui.Groups.runManager(studyId: Long)
-POST    /jatos/:studyId/group/:groupId               @controllers.gui.Groups.submit(studyId: Long, groupId: Long)
 
 # Static resources
 GET     /public/*file             controllers.gui.Assets.versioned(path = "/public", file)
