@@ -94,36 +94,42 @@ function showError(msg, insertAfterElem) {
 		}
 }
 
-function removeSuccess(removeAfterElem) {
-	if (removeAfterElem) {
-		$(removeAfterElem).nextAll('.alert-success').remove();
+function removeSuccess(elem) {
+	if (elem) {
+		$(elem).find(".alert-success").remove();
 	} else {
 		$('#breadcrumbs').nextAll('.alert-success').remove();
 	}
 }
 
-function removeInfo(removeAfterElem) {
-	if (removeAfterElem) {
-		$(removeAfterElem).nextAll('.alert-info').remove();
+function removeInfo(elem) {
+	if (elem) {
+		$(elem).find(".alert-info").remove();
 	} else {
 		$('#breadcrumbs').nextAll('.alert-info').remove();
 	}
 }
 
-function removeWarnings(removeAfterElem) {
-	if (removeAfterElem) {
-		$(removeAfterElem).nextAll('.alert-warning').remove();
+function removeWarnings(elem) {
+	if (elem) {
+		$(elem).find(".alert-warning").remove();
 	} else {
 		$('#breadcrumbs').nextAll('.alert-warning').remove();
 	}
 }
 
-function removeErrors(removeAfterElem) {
-	if (removeAfterElem) {
-		$(removeAfterElem).nextAll('.alert-danger').remove();
+function removeErrors(elem) {
+	if (elem) {
+		$(elem).find(".alert-danger").remove();
 	} else {
 		$('#breadcrumbs').nextAll('.alert-danger').remove();
 	}
+}
+
+function removeFormErrors(elem) {
+	removeWarnings(elem);
+	$(elem).find("*").removeClass("has-error");
+	$(elem).find(".help-block").remove();
 }
 
 </script>
@@ -161,7 +167,7 @@ function removeErrors(removeAfterElem) {
 					</a>
 				</li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Create a new user">
-					<a href="@controllers.gui.routes.Users.create()">
+					<a id="createUserLink" href="#">
 						<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
 						New User
 					</a>
@@ -197,7 +203,7 @@ function removeErrors(removeAfterElem) {
 		</div>
 	</div>
 </div>
-	
+
 <!-- Confirmation  Modal -->
 <div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
@@ -256,6 +262,50 @@ function removeErrors(removeAfterElem) {
 			<div class="modal-body">
 				 ... might take a while depending on your internet connection ... please be patient.
 			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<form id="createUserForm" method="post" action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">New User</h4>
+				</div>
+				<div class="modal-body">
+					<div class="container col-md-12">
+						<div class="form-group">
+							<label class="control-label col-xs-2" for="email">Email address</label>
+							<div class="col-xs-10">
+								<input type="email" class="form-control email" name="@common.User.EMAIL">
+								<span class="help-block">This will be the username.</span>
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label class="control-label col-xs-2" for="name">Name</label>
+							<div class="col-xs-10">
+								<input type="text" class="form-control name" name="@common.User.NAME">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label class="control-label col-xs-2" for="password">Password</label>
+							<div class="col-xs-10">
+								<input type="password" class="form-control password" name="@common.User.PASSWORD" placeholder="Password">
+								<input type="password" class="form-control repeatPassword" name="@common.User.PASSWORD_REPEAT" placeholder="Repeat password">
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<input type="submit" class="confirmed btn btn-primary" value="Create">
+				</div>
+			</form>
 		</div>
 	</div>
 </div>
@@ -332,6 +382,56 @@ function askConfirmation(title, preText, html, postText, buttonText, action) {
 $('#jatosHeader').on('click', '#importStudyLink', function() {
 	$('#importStudyBrowser').trigger("click");
 });
+
+$('#jatosHeader').on('click', '#createUserLink', function() {
+	$('#createUserModal').modal('show');
+});
+
+$("#createUserForm").submit(function(event) {
+	event.preventDefault();
+	$.ajax({
+		type: 'POST',
+		url: "@controllers.gui.routes.Users.submit()",
+		data: $('#createUserForm').serialize(), 
+		success: function(response) {
+			removeFormErrors("#createUserModal");
+			$('#createUserModal').modal('hide');
+		},
+		error: function(response) {
+			removeFormErrors("#createUserModal");
+			showCreateUserFormErrors(response.responseJSON);
+		}
+	});
+});
+
+function showCreateUserFormErrors(errors) {
+	showWarning("User wasn't created", "#createUserModal .modal-header");
+	
+	if (errors['@common.User.NAME']) {
+		$.each(errors['@common.User.NAME'], function(index, msg) {
+			$('#createUserModal .name').closest(".form-group").addClass("has-error");
+			$('#createUserModal .name').after('<span class="help-block">' + msg + '</span>');
+		});
+	}
+	if (errors['@common.User.EMAIL']) {
+		$.each(errors['@common.User.EMAIL'], function(index, msg) {
+			$('#createUserModal .email').closest(".form-group").addClass("has-error");
+			$('#createUserModal .email').after('<span class="help-block">' + msg + '</span>');
+		});
+	}
+	if (errors['@common.User.PASSWORD']) {
+		$.each(errors['@common.User.PASSWORD'], function(index, msg) {
+			$('#createUserModal .password').closest(".form-group").addClass("has-error");
+			$('#createUserModal .password').after('<span class="help-block">' + msg + '</span>');
+		});
+	}
+	if (errors['@common.User.PASSWORD_REPEAT']) {
+		$.each(errors['@common.User.PASSWORD_REPEAT'], function(index, msg) {
+			$('#createUserModal .repeatPassword').closest(".form-group").addClass("has-error");
+			$('#createUserModal .repeatPassword').after('<span class="help-block">' + msg + '</span>');
+		});
+	}
+}
 
 $('#jatosHeader').on('change', '#importStudyBrowser', function() {
 	var data = new FormData();

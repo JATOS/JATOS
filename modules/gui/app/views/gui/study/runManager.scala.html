@@ -194,27 +194,17 @@ $("#groupPropertiesForm").submit(function(event) {
 		url: "@controllers.gui.routes.Groups.submitProperties(studyId, groupId)",
 		data: $('#groupPropertiesForm').serialize(), 
 		success: function(response) {
-			removeFormErrors()
+			removeFormErrors('#groupPropertiesModal')
 			$('#groupPropertiesModal').modal('hide');
 		},
 		error: function(response) {
-			removeFormErrors();
-			showFormErrors(response.responseJSON);
+			removeFormErrors('#groupPropertiesModal');
+			showGroupPropertiesFormErrors(response.responseJSON);
 		}
 	});
 });
 
-function removeFormErrors() {
-	removeWarnings("#groupPropertiesModal .modal-header");
-	$('#minActiveMemberSize').closest(".form-group").removeClass("has-error");
-	$('#minActiveMemberSize').nextAll('.help-block').remove();
-	$('#maxActiveMemberSize').closest(".form-group").removeClass("has-error");
-	$('#maxActiveMemberDiv').nextAll('.help-block').remove();
-	$('#maxTotalMemberSize').closest(".form-group").removeClass("has-error");
-	$('#maxTotalMemberDiv').nextAll('.help-block').remove();
-}
-
-function showFormErrors(errors) {
+function showGroupPropertiesFormErrors(errors) {
 	showWarning("@general.common.MessagesStrings.GROUP_WASNT_SAVED", "#groupPropertiesModal .modal-header");
 	if (errors['@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE']) {
 		$.each(errors['@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE'], function(index, msg) {

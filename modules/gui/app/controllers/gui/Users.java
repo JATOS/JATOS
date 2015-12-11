@@ -87,11 +87,9 @@ public class Users extends Controller {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		Form<User> form = Form.form(User.class).bindFromRequest();
-		User loggedInUser = userService.retrieveLoggedInUser();
 
 		if (form.hasErrors()) {
-			return showCreateUserAfterError(loggedInUser, form, null,
-					Http.Status.BAD_REQUEST);
+			return badRequest(form.errorsAsJson());
 		}
 
 		User newUser = form.get();
@@ -101,12 +99,12 @@ public class Users extends Controller {
 		List<ValidationError> errorList = userService.validateNewUser(newUser,
 				password, passwordRepeat);
 		if (!errorList.isEmpty()) {
-			return showCreateUserAfterError(loggedInUser, form, errorList,
-					Http.Status.BAD_REQUEST);
+			errorList.forEach(form::reject);
+			return badRequest(form.errorsAsJson());
 		}
 
 		userService.createUser(newUser, password);
-		return redirect(controllers.gui.routes.Home.home());
+		return ok();
 	}
 
 	private Result showCreateUserAfterError(User loggedInUser, Form<User> form,
