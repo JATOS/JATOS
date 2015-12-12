@@ -107,20 +107,6 @@ public class Users extends Controller {
 		return ok();
 	}
 
-	private Result showCreateUserAfterError(User loggedInUser, Form<User> form,
-			List<ValidationError> errorList, int httpStatus) {
-		if (ControllerUtils.isAjax()) {
-			return status(httpStatus);
-		} else {
-			if (errorList != null) {
-				errorList.forEach(form::reject);
-			}
-			String breadcrumbs = breadcrumbsService.generateForHome("New User");
-			return status(httpStatus, views.html.gui.user.create
-					.render(loggedInUser, breadcrumbs, form));
-		}
-	}
-
 	private Result showEditUserAfterError(User loggedInUser, Form<User> form,
 			User user, int httpStatus) {
 		if (ControllerUtils.isAjax()) {
