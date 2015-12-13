@@ -1,4 +1,4 @@
-@(user: common.User, breadcrumbs: String)(body: Html)
+@(loggedInUser: common.User, breadcrumbs: String)(body: Html)
 
 <!DOCTYPE html>
 
@@ -182,9 +182,9 @@ function removeFormErrors(elem) {
 				</li>
 			</ul>
 			<ul class="nav navbar-nav navbar-right">
-				<li><a href="@controllers.gui.routes.Users.profile(user.getEmail())">
+				<li><a href="@controllers.gui.routes.Users.profile(loggedInUser.getEmail())">
 					<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
-					@user.getName() (@user.getEmail())
+					<span id="navUserText"> @loggedInUser.getName() (@loggedInUser.getEmail())</span>
 				</a></li>
 				<li><a href="@controllers.gui.routes.Authentication.logout()">
 					<span class="glyphicon glyphicon-off" aria-hidden="true"></span>
@@ -276,36 +276,34 @@ function removeFormErrors(elem) {
 
 <!-- Create User Modal -->
 <div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
+	<div class="modal-dialog">
 		<div class="modal-content">
 			<form id="createUserForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">New User</h4>
 				</div>
-				<div class="modal-body">
-					<div class="container col-md-12">
-						<div class="form-group">
-							<label class="control-label col-xs-2" for="createUserEmail">Email address</label>
-							<div class="col-xs-10">
-								<input type="email" class="form-control @common.User.EMAIL" id="createUserEmail" name="@common.User.EMAIL">
-								<span class="help-block">This will be the username.</span>
-							</div>
+				<div class="modal-body row">
+					<div class="form-group">
+						<label class="control-label col-xs-4" for="createUserEmail">Email address</label>
+						<div class="col-xs-7">
+							<input type="email" class="form-control @common.User.EMAIL" id="createUserEmail" name="@common.User.EMAIL">
+							<span class="help-block">This will be the username.</span>
 						</div>
-						
-						<div class="form-group">
-							<label class="control-label col-xs-2" for="createUserName">Name</label>
-							<div class="col-xs-10">
-								<input type="text" class="form-control @common.User.NAME" id="createUserName" name="@common.User.NAME">
-							</div>
+					</div>
+					
+					<div class="form-group">
+						<label class="control-label col-xs-4" for="createUserName">Name</label>
+						<div class="col-xs-7">
+							<input type="text" class="form-control @common.User.NAME" id="createUserName" name="@common.User.NAME">
 						</div>
-						
-						<div class="form-group">
-							<label class="control-label col-xs-2" for="createUserPassword">Password</label>
-							<div class="col-xs-10">
-								<input type="password" class="form-control @common.User.PASSWORD" id="createUserPassword" name="@common.User.PASSWORD" placeholder="Password">
-								<input type="password" class="form-control @common.User.PASSWORD_REPEAT" name="@common.User.PASSWORD_REPEAT" placeholder="Repeat password">
-							</div>
+					</div>
+					
+					<div class="form-group">
+						<label class="control-label col-xs-4" for="createUserPassword">Password</label>
+						<div class="col-xs-7">
+							<input type="password" class="form-control @common.User.PASSWORD" id="createUserPassword" name="@common.User.PASSWORD" placeholder="Password">
+							<input type="password" class="form-control @common.User.PASSWORD_REPEAT" name="@common.User.PASSWORD_REPEAT" placeholder="Repeat password">
 						</div>
 					</div>
 				</div>
@@ -392,6 +390,12 @@ $('#jatosHeader').on('click', '#importStudyLink', function() {
 });
 
 $('#jatosHeader').on('click', '#createUserLink', function() {
+	removeWarnings("#createUserModal");
+	removeFormErrors("#createUserModal");
+	$('#createUserModal .@common.User.EMAIL').val('');
+	$('#createUserModal .@common.User.NAME').val('');
+	$('#createUserModal .@common.User.PASSWORD').val('');
+	$('#createUserModal .@common.User.PASSWORD_REPEAT').val('');
 	$('#createUserModal').modal('show');
 });
 

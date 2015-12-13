@@ -431,23 +431,9 @@ public class AccessControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callUsersCreate() throws Exception {
-		Call call = controllers.gui.routes.Users.create();
-		checkDeniedAccess(call, Helpers.GET);
-	}
-
-	@Test
 	public void callUsersSubmit() throws Exception {
 		Call call = controllers.gui.routes.Users.submit();
 		checkDeniedAccess(call, Helpers.GET);
-	}
-
-	@Test
-	public void callUsersEditProfile() throws Exception {
-		Call call = controllers.gui.routes.Users
-				.editProfile(testUser.getEmail());
-		checkDeniedAccess(call, Helpers.GET);
-		checkRightUserWithRedirect(call, Helpers.GET);
 	}
 
 	@Test
@@ -456,14 +442,6 @@ public class AccessControllerTest extends AbstractTest {
 				.submitEditedProfile(testUser.getEmail());
 		checkDeniedAccess(call, Helpers.POST);
 		checkRightUserWithRedirect(call, Helpers.POST);
-	}
-
-	@Test
-	public void callUsersChangePassword() throws Exception {
-		Call call = controllers.gui.routes.Users
-				.changePassword(testUser.getEmail());
-		checkDeniedAccess(call, Helpers.GET);
-		checkRightUserWithRedirect(call, Helpers.GET);
 	}
 
 	@Test

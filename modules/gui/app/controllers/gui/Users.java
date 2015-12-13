@@ -5,6 +5,11 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.JatosGuiException;
+import exceptions.gui.NotFoundException;
 import models.common.User;
 import play.Logger;
 import play.data.DynamicForm;
@@ -12,18 +17,11 @@ import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
-import utils.common.ControllerUtils;
 import utils.common.HashUtils;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.JatosGuiException;
-import exceptions.gui.NotFoundException;
 
 /**
  * Controller with actions concerning users
@@ -64,21 +62,7 @@ public class Users extends Controller {
 		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
 				user));
 	}
-
-	/**
-	 * Shows a view with a form to create a new user.
-	 */
-	@Transactional
-	public Result create() {
-		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		User loggedInUser = userService.retrieveLoggedInUser();
-		String breadcrumbs = breadcrumbsService
-				.generateForHome(BreadcrumbsService.NEW_USER);
-		return ok(views.html.gui.user.create.render(loggedInUser, breadcrumbs,
-				Form.form(User.class)));
-	}
-
+	
 	/**
 	 * Handles post request of user create form.
 	 */
@@ -107,50 +91,6 @@ public class Users extends Controller {
 		return ok();
 	}
 
-	private Result showEditUserAfterError(User loggedInUser, Form<User> form,
-			User user, int httpStatus) {
-		if (ControllerUtils.isAjax()) {
-			return status(httpStatus);
-		} else {
-			String breadcrumbs = breadcrumbsService.generateForUser(user,
-					"Edit Profile");
-			return status(httpStatus, views.html.gui.user.editProfile
-					.render(loggedInUser, breadcrumbs, user, form));
-		}
-	}
-
-	private Result showChangePasswordAfterError(User loggedInUser,
-			Form<User> form, List<ValidationError> errorList, int httpStatus,
-			User user) {
-		if (ControllerUtils.isAjax()) {
-			return status(httpStatus);
-		} else {
-			if (errorList != null) {
-				errorList.forEach(form::reject);
-			}
-			String breadcrumbs = breadcrumbsService.generateForUser(user,
-					"Change Password");
-			return status(httpStatus, views.html.gui.user.changePassword
-					.render(loggedInUser, breadcrumbs, form));
-		}
-	}
-
-	/**
-	 * Shows view with form to edit a user profile.
-	 */
-	@Transactional
-	public Result editProfile(String email) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".editProfile: " + "email " + email + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		User loggedInUser = userService.retrieveLoggedInUser();
-		User user = checkStandard(email, loggedInUser);
-		Form<User> form = Form.form(User.class).fill(user);
-		String breadcrumbs = breadcrumbsService.generateForUser(user,
-				BreadcrumbsService.EDIT_PROFILE);
-		return ok(views.html.gui.user.editProfile.render(loggedInUser,
-				breadcrumbs, user, form));
-	}
-
 	/**
 	 * Handles post request of user edit profile form.
 	 */
@@ -164,8 +104,7 @@ public class Users extends Controller {
 
 		Form<User> form = Form.form(User.class).bindFromRequest();
 		if (form.hasErrors()) {
-			return showEditUserAfterError(loggedInUser, form, loggedInUser,
-					Http.Status.BAD_REQUEST);
+			return badRequest(form.errorsAsJson());
 		}
 		// Update user in database
 		// Do not update 'email' since it's the ID and should stay
@@ -174,23 +113,6 @@ public class Users extends Controller {
 		String name = requestData.get(User.NAME);
 		userService.updateName(user, name);
 		return redirect(controllers.gui.routes.Users.profile(email));
-	}
-
-	/**
-	 * Shows view to change the password of a user.
-	 */
-	@Transactional
-	public Result changePassword(String email) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".changePassword: " + "email " + email + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		User loggedInUser = userService.retrieveLoggedInUser();
-		User user = checkStandard(email, loggedInUser);
-
-		Form<User> form = Form.form(User.class).fill(user);
-		String breadcrumbs = breadcrumbsService.generateForUser(user,
-				BreadcrumbsService.CHANGE_PASSWORD);
-		return ok(views.html.gui.user.changePassword.render(loggedInUser,
-				breadcrumbs, form));
 	}
 
 	/**
@@ -213,8 +135,8 @@ public class Users extends Controller {
 		List<ValidationError> errorList = userService.validateChangePassword(
 				user, newPassword, newPasswordRepeat, oldPasswordHash);
 		if (!errorList.isEmpty()) {
-			return showChangePasswordAfterError(loggedInUser, form, errorList,
-					Http.Status.BAD_REQUEST, loggedInUser);
+			errorList.forEach(form::reject);
+			return badRequest(form.errorsAsJson());
 		}
 		String newPasswordHash = HashUtils.getHashMDFive(newPassword);
 		userService.changePasswordHash(user, newPasswordHash);

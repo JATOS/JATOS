@@ -25,6 +25,7 @@ import services.gui.GroupService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.StudyService;
 import services.gui.UserService;
+import utils.common.JsonUtils;
 
 /**
  * Controller for all actions regarding groups and runs within the JATOS GUI.
@@ -58,6 +59,9 @@ public class Groups extends Controller {
 		this.studyDao = studyDao;
 	}
 
+	/**
+	 * GET request to get the runManager page
+	 */
 	@Transactional
 	public Result runManager(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".runManager: studyId " + studyId + ", "
@@ -71,18 +75,37 @@ public class Groups extends Controller {
 		}
 
 		Group group = study.getGroupList().get(0);
-		GroupProperties groupProperties = groupService
-				.bindToGroupProperties(group);
-		Form<GroupProperties> form = Form.form(GroupProperties.class)
-				.fill(groupProperties);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.RUN_MANAGER);
 		return ok(views.html.gui.study.runManager.render(loggedInUser,
-				breadcrumbs, group.getId(), form, studyId, study.isLocked()));
+				breadcrumbs, group.getId(), studyId, study.isLocked()));
+	}
+	
+	/**
+	 * Ajax GET request to get GroupProperties as JSON
+	 */
+	@Transactional
+	public Result properties(Long studyId, Long groupId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".properties: studyId " + studyId
+				+ ", groupId " + groupId + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			studyService.checkStudyLocked(study);
+		} catch (ForbiddenException | BadRequestException e) {
+			return badRequest(e.getMessage());
+		}
+		
+		Group group = study.getGroupList().get(0);
+		GroupProperties groupProperties = groupService
+				.bindToGroupProperties(group);
+		return ok(JsonUtils.asJsonNode(groupProperties));
 	}
 
 	/**
-	 * Ajax POST request
+	 * Ajax POST request to submit changed GroupProperties
 	 */
 	@Transactional
 	public Result submitProperties(Long studyId, Long groupId)

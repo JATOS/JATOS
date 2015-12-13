@@ -20,16 +20,9 @@ public class GroupProperties {
 	public static final String MAX_ACTIVE_MEMBER_LIMITED = "maxActiveMemberLimited";
 	public static final String MAX_TOTAL_MEMBER_SIZE = "maxTotalMemberSize";
 	public static final String MAX_TOTAL_MEMBER_LIMITED = "maxTotalMemberLimited";
-	public static final String MESSAGING = "messaging";
 	public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
 
 	private Long id;
-
-	/**
-	 * Is this group allowed to send messages between each other with the
-	 * GroupMessagingService.
-	 */
-	private boolean messaging = false;
 
 	/**
 	 * Minimum number of workers in the group that are active at the same time.
@@ -64,14 +57,6 @@ public class GroupProperties {
 
 	public Long getId() {
 		return this.id;
-	}
-
-	public boolean isMessaging() {
-		return messaging;
-	}
-
-	public void setMessaging(boolean messaging) {
-		this.messaging = messaging;
 	}
 
 	public Integer getMinActiveMemberSize() {
