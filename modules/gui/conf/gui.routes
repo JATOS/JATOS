@@ -28,7 +28,7 @@ GET     /jatos/study/create                          @controllers.gui.Studies.cr
 POST    /jatos/study                                 @controllers.gui.Studies.submit()
 POST    /jatos/import/study                          @controllers.gui.ImportExport.importStudy()
 POST    /jatos/import/studyConfirmed                 @controllers.gui.ImportExport.importStudyConfirmed()
-GET     /jatos/:studyId/edit                         @controllers.gui.Studies.edit(studyId: Long)
+GET     /jatos/:studyId/properties                   @controllers.gui.Studies.properties(studyId: Long)
 POST    /jatos/:studyId                              @controllers.gui.Studies.submitEdited(studyId: Long)
 GET     /jatos/:studyId/users/change                 @controllers.gui.Studies.changeUsers(studyId: Long)
 POST    /jatos/:studyId/users                        @controllers.gui.Studies.submitChangedUsers(studyId: Long)

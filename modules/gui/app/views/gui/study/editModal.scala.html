@@ -1,0 +1,153 @@
+@(studyId: Long, studyIsLocked: Boolean)
+
+<div class="modal fade" id="editStudyPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<form id="editStudyPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">Study Properties</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group row">
+						<div class="col-xs-2"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance" aria-hidden="true"></span></p></div>
+						<div class="col-xs-10">
+							<p class="@models.gui.StudyProperties.STUDY_ID"></p>
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<div class="col-xs-2"><p class="text-right"><strong>UUID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Universally unique identifier - used to keep track of studies between different JATOS instances" aria-hidden="true"></span></p></div>
+						<div class="col-xs-10">
+							<p class="@models.gui.StudyProperties.UUID"></p>
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.TITLE">Title</label>
+						<div class="col-xs-10">
+							<input type="text" class="form-control @models.gui.StudyProperties.TITLE" name="@models.gui.StudyProperties.TITLE" placeholder="Your title">
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.DESCRIPTION">Description&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Explain what your study is doing. In case you want to use the Mechanical Turk, this description will be shown to the participants." aria-hidden="true"></span></label>
+						<div class="col-xs-10">
+							<textarea rows="3" class="form-control @models.gui.StudyProperties.DESCRIPTION" name="@models.gui.StudyProperties.DESCRIPTION" placeholder="Your description"></textarea>
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.DIRNAME">Study assets' directory name&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the name of the directory of your study assets in the file system of the JATOS server. All HTML, JavaScript, CSS, and images goes in there." aria-hidden="true"></span></label>
+						<div class="col-xs-10">
+							<input type="text" class="form-control @models.gui.StudyProperties.DIRNAME" name="@models.gui.StudyProperties.DIRNAME" placeholder="Study assets' directory name">
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.COMMENTS">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?" aria-hidden="true"></span></label>
+						<div class="col-xs-10">
+							<textarea rows="3" class="form-control @models.gui.StudyProperties.COMMENTS" name="@models.gui.StudyProperties.COMMENTS" placeholder="Your comments"></textarea>
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.JSON_DATA">
+								JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed." aria-hidden="true"></span>
+								<button id="prettyButton" type="button" class="btn btn-default btn-sm">Pretty</button>
+						</label>
+						<div class="col-xs-10">
+							<textarea rows="6" class="form-control @models.gui.StudyProperties.JSON_DATA" name="@models.gui.StudyProperties.JSON_DATA" placeholder="Put your JSON string here"></textarea>
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<div class="col-xs-offset-2 col-xs-10">
+							<label class="checkbox-inline">
+								<input type="checkbox" class="@models.gui.StudyProperties.GROUP_STUDY" name="@models.gui.StudyProperties.GROUP_STUDY">
+								Group study <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this a group study?" aria-hidden="true"></span>
+								<!-- We need a hidden input field.
+								http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+								<input type="hidden" name="@models.gui.StudyProperties.GROUP_STUDY" value="false" />
+							</label>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<input type="submit" class="confirmed btn btn-primary" value="Save">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+
+@if(studyIsLocked) {
+	$(':input').attr("disabled", true);
+}
+
+$('#studyToolbar').on('click', '#editStudyPropertiesButton', function() {
+	$.ajax({
+		type: 'GET',
+		url: "@controllers.gui.routes.Studies.properties(studyId)",
+		success: function(response) {
+			removeWarnings("#editStudyPropertiesModal");
+			removeFormErrors("#editStudyPropertiesModal");
+			fillStudyPropertiesForm(response);
+			$('#editStudyPropertiesModal').modal('show');
+		},
+		error: function(response) {
+			showError("Couldn't load study properties.");
+		}
+	});
+});
+
+function fillStudyPropertiesForm(properties) {
+	var studyId = (properties['@models.gui.StudyProperties.STUDY_ID']) ? properties['@models.gui.StudyProperties.STUDY_ID'] : "-";
+	$('#editStudyPropertiesModal .@models.gui.StudyProperties.STUDY_ID').text(studyId);
+	var uuid = (properties['@models.gui.StudyProperties.UUID']) ? properties['@models.gui.StudyProperties.UUID'] : "-";
+	$('#editStudyPropertiesModal .@models.gui.StudyProperties.UUID').text(uuid);
+	$('#editStudyPropertiesModal .@models.gui.StudyProperties.TITLE').val(properties['@models.gui.StudyProperties.TITLE']);
+	var description = (properties['@models.gui.StudyProperties.DESCRIPTION']) ? properties['@models.gui.StudyProperties.DESCRIPTION'] : "";
+	$('#editStudyPropertiesModal .@models.gui.StudyProperties.DESCRIPTION').text(description);
+	$('#editStudyPropertiesModal .@models.gui.StudyProperties.DIRNAME').val(properties['@models.gui.StudyProperties.DIRNAME']);
+	var comments = (properties['@models.gui.StudyProperties.COMMENTS']) ? properties['@models.gui.StudyProperties.COMMENTS'] : "";
+	$('#editStudyPropertiesModal .@models.gui.StudyProperties.COMMENTS').text(comments);
+	var jsonInput = (properties['@models.gui.StudyProperties.JSON_DATA']) ? properties['@models.gui.StudyProperties.JSON_DATA'] : "";
+	var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+	$('#editStudyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val(jsonInputPretty);
+	$('#editStudyPropertiesModal .@models.gui.StudyProperties.GROUP_STUDY').prop('checked', properties['@models.gui.StudyProperties.GROUP_STUDY']);
+}
+
+$("#editStudyPropertiesForm #prettyButton").click(function(event) {
+	var jsonInput = $('#editStudyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val();
+	var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+	$('#editStudyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val(jsonInputPretty);
+})
+
+$("#editStudyPropertiesForm").submit(function(event) {
+	event.preventDefault();
+	$.ajax({
+		type : 'POST',
+		url : "@controllers.gui.routes.Studies.submitEdited(studyId)",
+		data : $('#editStudyPropertiesForm').serialize(),
+		success : function(response) {
+			removeWarnings("#editStudyPropertiesModal");
+			removeFormErrors("#editStudyPropertiesModal");
+			$('#editStudyPropertiesModal').modal('hide');
+			fillSidebar();
+			var title = $('#editStudyPropertiesModal .@models.gui.StudyProperties.TITLE').val();
+			$('#breadcrumbs li:last-child').text(title);
+		},
+		error : function(response) {
+			removeWarnings("#editStudyPropertiesModal");
+			removeFormErrors("#editStudyPropertiesModal");
+			showWarning("@general.common.MessagesStrings.STUDY_WASNT_SAVED", "#editStudyPropertiesModal .modal-header");
+			showFormErrors("#editStudyPropertiesModal", response.responseJSON);
+		}
+	});
+});
+</script>
+

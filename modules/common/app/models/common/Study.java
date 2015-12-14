@@ -215,7 +215,7 @@ public class Study {
 	}
 
 	public void setJsonData(String jsonData) {
-		this.jsonData = jsonData;
+		this.jsonData = JsonUtils.asStringForDB(jsonData);
 	}
 
 	public void setUserList(Set<User> userList) {

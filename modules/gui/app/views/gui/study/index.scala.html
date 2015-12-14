@@ -22,7 +22,7 @@ studyResultsCount: Integer)
 			title="Shows workers who participated">
 			Workers <span class="badge">@workerSet.size()</span>
 		</button>
-		<button id="editStudy" type="button" class="btn btn-primary"
+		<button id="editStudyPropertiesButton" type="button" class="btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Study's properties">
 			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
@@ -218,6 +218,8 @@ studyResultsCount: Integer)
 		</div>
 	</div>
 </div>
+
+@views.html.gui.study.editModal(study.getId(), study.isLocked())
 
 <script type="text/javascript">
 $(document).ready(setLockButton(@study.isLocked()));
@@ -505,10 +507,6 @@ $('#studyToolbar').on('click', '#studyResults', function() {
 
 $('#studyToolbar').on('click', '#workers', function() {
 	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
-});
-
-$('#studyToolbar').on('click', '#editStudy', function() {
-	window.location.href = "@controllers.gui.routes.Studies.edit(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#personalSingleRun', function() {

@@ -69,33 +69,8 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Turns a JSON string into a 'pretty' formatted JSON string suitable for
-	 * presentation in the UI. The JSON itself (semantics) aren't changed. If
-	 * the JSON string isn't valid it returns null.
-	 */
-	public static String makePretty(String jsonData) {
-		if (jsonData == null) {
-			return null;
-		}
-		// Don't make pretty if JSON is invalid. It screws everything.
-		if (!JsonUtils.isValidJSON(jsonData)) {
-			return jsonData;
-		}
-		String jsonDataPretty = null;
-		try {
-			Object json = OBJECTMAPPER.readValue(jsonData, Object.class);
-			jsonDataPretty = OBJECTMAPPER.writerWithDefaultPrettyPrinter()
-					.writeValueAsString(json);
-		} catch (Exception e) {
-			Logger.info(CLASS_NAME
-					+ ".makePretty: error probably due to invalid JSON");
-		}
-		return jsonDataPretty;
-	}
-
-	/**
 	 * Formats a JSON string into a standardised form suitable for storing into
-	 * a DB. If the JSON string isn't valid it returns null.
+	 * a DB.
 	 */
 	public static String asStringForDB(String jsonData) {
 		if (jsonData == null) {
@@ -332,14 +307,12 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Returns JSON string of the given study. It includes the 'resultCount',
-	 * the number of StudyResults of the study so far. This JSON is intended for
+	 * Returns JSON string of the given study. This JSON is intended for
 	 * JATOS' GUI.
 	 */
 	public String studyForUI(Study study, int resultCount)
 			throws JsonProcessingException {
 		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
-		// studyResultDao.countByStudy(study)
 		studyNode.put("resultCount", resultCount);
 		return OBJECTMAPPER.writeValueAsString(studyNode);
 	}

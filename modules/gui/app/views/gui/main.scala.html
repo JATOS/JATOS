@@ -207,6 +207,8 @@ function removeFormErrors(elem) {
 		<!-- Main -->
 		<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
 			<ol id="breadcrumbs" class="breadcrumb"></ol>
+			
+			<!-- *********** Here goes the actual page template *********** -->
 			@body
 		</div>
 	</div>
@@ -283,25 +285,25 @@ function removeFormErrors(elem) {
 					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">New User</h4>
 				</div>
-				<div class="modal-body row">
-					<div class="form-group">
+				<div class="modal-body">
+					<div class="form-group row">
 						<label class="control-label col-xs-4" for="createUserEmail">Email address</label>
-						<div class="col-xs-7">
+						<div class="col-xs-8">
 							<input type="email" class="form-control @common.User.EMAIL" id="createUserEmail" name="@common.User.EMAIL">
 							<span class="help-block">This will be the username.</span>
 						</div>
 					</div>
 					
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="control-label col-xs-4" for="createUserName">Name</label>
-						<div class="col-xs-7">
+						<div class="col-xs-8">
 							<input type="text" class="form-control @common.User.NAME" id="createUserName" name="@common.User.NAME">
 						</div>
 					</div>
 					
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="control-label col-xs-4" for="createUserPassword">Password</label>
-						<div class="col-xs-7">
+						<div class="col-xs-8">
 							<input type="password" class="form-control @common.User.PASSWORD" id="createUserPassword" name="@common.User.PASSWORD" placeholder="Password">
 							<input type="password" class="form-control @common.User.PASSWORD_REPEAT" name="@common.User.PASSWORD_REPEAT" placeholder="Repeat password">
 						</div>

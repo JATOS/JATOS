@@ -178,34 +178,24 @@ public class Studies extends Controller {
 		return status(Http.Status.BAD_REQUEST, views.html.gui.study.edit
 				.render(loggedInUser, breadcrumbs, submitAction, form, false));
 	}
-
+	
 	/**
-	 * Shows a form to edit the study properties.
+	 * Ajax GET request that gets the study properties as JSON.
 	 */
 	@Transactional
-	public Result edit(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".edit: studyId " + studyId + ", "
+	public Result properties(Long studyId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".properties: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
-
-		if (study.isLocked()) {
-			RequestScopeMessaging.warning(MessagesStrings.STUDY_IS_LOCKED);
-		}
-
-		Form<StudyProperties> form = Form.form(StudyProperties.class)
-				.fill(studyService.bindToProperties(study));
-		Call submitAction = controllers.gui.routes.Studies
-				.submitEdited(study.getId());
-		String breadcrumbs = breadcrumbsService.generateForStudy(study,
-				BreadcrumbsService.EDIT_PROPERTIES);
-		return ok(views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
-				submitAction, form, study.isLocked()));
+		
+		StudyProperties studyProperties = studyService.bindToProperties(study);
+		return ok(JsonUtils.asJsonNode(studyProperties));
 	}
 
 	/**
-	 * POST request of the edit form to change the properties of a study.
+	 * Ajax POST request of the edit form to change the properties of a study.
 	 */
 	@Transactional
 	public Result submitEdited(Long studyId) throws JatosGuiException {
@@ -215,46 +205,28 @@ public class Studies extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			Call call = controllers.gui.routes.Home.home();
-			jatosGuiExceptionThrower.throwRedirect(e, call);
-		}
-		try {
 			studyService.checkStudyLocked(study);
-		} catch (ForbiddenException e) {
-			Call call = controllers.gui.routes.Studies.index(studyId);
-			jatosGuiExceptionThrower.throwRedirect(e, call);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		Form<StudyProperties> form = Form.form(StudyProperties.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			return failStudyEdit(form, study, loggedInUser);
+			return badRequest(form.errorsAsJson());
 		}
 		StudyProperties studyProperties = form.get();
-
 		try {
 			studyService.renameStudyAssetsDir(study,
 					studyProperties.getDirName());
 		} catch (IOException e) {
 			form.reject(new ValidationError(StudyProperties.DIRNAME,
 					e.getMessage()));
-			return failStudyEdit(form, study, loggedInUser);
+			return badRequest(form.errorsAsJson());
 		}
 
 		studyService.updateStudy(study, studyProperties);
-		return redirect(controllers.gui.routes.Studies.index(studyId));
-	}
-
-	private Result failStudyEdit(Form<StudyProperties> form, Study study,
-			User loggedInUser) {
-		String breadcrumbs = breadcrumbsService.generateForStudy(study,
-				BreadcrumbsService.EDIT_PROPERTIES);
-		Call submitAction = controllers.gui.routes.Studies
-				.submitEdited(study.getId());
-		return status(Http.Status.BAD_REQUEST,
-				views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
-						submitAction, form, study.isLocked()));
+		return ok();
 	}
 
 	/**
