@@ -85,21 +85,15 @@ public class AccessControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callStudiesCreate() {
-		Call call = controllers.gui.routes.Studies.create();
+	public void callStudiesSubmitCreated() throws Exception {
+		Call call = controllers.gui.routes.Studies.submitCreated();
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
 	@Test
-	public void callStudiesSubmit() throws Exception {
-		Call call = controllers.gui.routes.Studies.submit();
-		checkDeniedAccess(call, Helpers.GET);
-	}
-
-	@Test
-	public void callStudiesEdit() throws Exception {
+	public void callProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Studies.edit(studyClone.getId());
+		Call call = controllers.gui.routes.Studies.properties(studyClone.getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
@@ -111,15 +105,7 @@ public class AccessControllerTest extends AbstractTest {
 		Call call = controllers.gui.routes.Studies
 				.submitEdited(studyClone.getId());
 		checkDeniedAccess(call, Helpers.POST);
-		removeUser(studyClone, admin);
-
-		RequestBuilder request = new RequestBuilder().method(Helpers.POST)
-				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(call.url());
-		Result result = route(request);
-
-		assertThat(result.status()).isEqualTo(SEE_OTHER);
-		assertThat(result.flash().get(FlashScopeMessaging.ERROR))
-				.contains("isn't user of study");
+		checkNotUser(call, studyClone, Helpers.POST);
 		removeStudy(studyClone);
 	}
 

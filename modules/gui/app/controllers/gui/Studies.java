@@ -147,8 +147,8 @@ public class Studies extends Controller {
 			return badRequest(form.errorsAsJson());
 		}
 
-		studyService.createStudy(loggedInUser, studyProperties);
-		return ok();
+		Study study = studyService.createStudy(loggedInUser, studyProperties);
+		return ok(study.getId().toString());
 	}
 
 	/**

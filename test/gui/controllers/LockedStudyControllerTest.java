@@ -65,8 +65,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 		lockStudy(studyClone);
 		Call call = controllers.gui.routes.Studies
 				.submitEdited(studyClone.getId());
-		checkDenyLocked(call, Http.Status.SEE_OTHER,
-				"/jatos/" + studyClone.getId(), Helpers.POST);
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
 		removeStudy(studyClone);
 	}
 

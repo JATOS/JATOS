@@ -10,7 +10,6 @@ import static play.test.Helpers.route;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.http.HttpHeaders;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -64,21 +63,7 @@ public class StudiesControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callCreate() {
-		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.create().url());
-		Result result = route(request);
-
-		assertThat(result.status()).isEqualTo(OK);
-		assertThat(result.charset()).isEqualTo("utf-8");
-		assertThat(result.contentType()).isEqualTo("text/html");
-		assertThat(contentAsString(result))
-				.contains(BreadcrumbsService.NEW_STUDY);
-	}
-
-	@Test
-	public void callSubmit() throws Exception {
+	public void callSubmitCreated() throws Exception {
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
 		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
@@ -88,15 +73,14 @@ public class StudiesControllerTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.submit().url());
+				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
-		assertEquals(SEE_OTHER, result.status());
+		assertEquals(OK, result.status());
 
 		// Get study ID of created study from response's header
-		String[] locationArray = result.headers().get(HttpHeaders.LOCATION)
-				.split("/");
-		Long studyId = Long.valueOf(locationArray[locationArray.length - 1]);
+		assertThat(contentAsString(result)).isNotEmpty();
+		Long studyId = Long.valueOf(contentAsString(result));
 
 		Study study = studyDao.findById(studyId);
 		assertEquals("Title Test", study.getTitle());
@@ -112,7 +96,7 @@ public class StudiesControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callSubmitValidationError() {
+	public void callSubmitCreatedValidationError() {
 		// Fill with non-valid values
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(StudyProperties.TITLE, " ");
@@ -123,17 +107,16 @@ public class StudiesControllerTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.submit().url());
+				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
-		assertThat(contentAsString(result))
-				.contains(BreadcrumbsService.NEW_STUDY);
+		assertThat(result.contentType()).isEqualTo("application/json");
 		assertThat(contentAsString(result)).contains(
 				"Problems deserializing JSON data string: invalid JSON format");
 	}
 
 	@Test
-	public void callSubmitStudyAssetsDirExists() throws Exception {
+	public void callSubmitCreatedStudyAssetsDirExists() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
@@ -144,33 +127,29 @@ public class StudiesControllerTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.submit().url());
+				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
-		assertThat(contentAsString(result))
-				.contains(BreadcrumbsService.NEW_STUDY);
 		assertThat(contentAsString(result)).contains(
-				"couldn&#x27;t be created because it already exists.");
+				"{\"dirName\":[\"Study assets' directory (basic_example_study_clone) couldn't be created because it already exists.\"]}");
 
 		// Cleanup
 		removeStudy(studyClone);
 	}
 
 	@Test
-	public void callEdit() throws Exception {
+	public void callProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.edit(studyClone.getId())
+				.uri(controllers.gui.routes.Studies.properties(studyClone.getId())
 						.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(result.charset()).isEqualTo("utf-8");
-		assertThat(result.contentType()).isEqualTo("text/html");
-		assertThat(contentAsString(result))
-				.contains(BreadcrumbsService.EDIT_PROPERTIES);
+		assertThat(result.contentType()).isEqualTo("application/json");
 
 		// Clean up
 		removeStudy(studyClone);
@@ -187,12 +166,13 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.DIRNAME, "dirName_submitEdited");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
 						.submitEdited(studyClone.getId()).url());
 		Result result = route(request);
 
-		assertEquals(SEE_OTHER, result.status());
+		assertEquals(OK, result.status());
 
 		// TODO It would be nice to test the edited study here (somehow can't
 		// find edited study in DB)
