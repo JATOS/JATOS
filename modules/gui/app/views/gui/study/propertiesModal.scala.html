@@ -1,9 +1,7 @@
-@(studyId: Long, studyIsLocked: Boolean)
-
-<div class="modal fade" id="editStudyPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="studyPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
-			<form id="editStudyPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="studyPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
 					<h4 class="modal-title">Study Properties</h4>
@@ -54,7 +52,7 @@
 					<div class="form-group row">
 						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.JSON_DATA">
 								JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed." aria-hidden="true"></span>
-								<button id="prettyButton" type="button" class="btn btn-default btn-sm">Pretty</button>
+								<button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
 						</label>
 						<div class="col-xs-10">
 							<textarea rows="6" class="form-control @models.gui.StudyProperties.JSON_DATA" name="@models.gui.StudyProperties.JSON_DATA" placeholder="Put your JSON string here"></textarea>
@@ -64,7 +62,7 @@
 					<div class="form-group row">
 						<div class="col-xs-offset-2 col-xs-10">
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@models.gui.StudyProperties.GROUP_STUDY" name="@models.gui.StudyProperties.GROUP_STUDY">
+								<input type="checkbox" class="@models.gui.StudyProperties.GROUP_STUDY" name="@models.gui.StudyProperties.GROUP_STUDY" value="true">
 								Group study <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this a group study?" aria-hidden="true"></span>
 								<!-- We need a hidden input field.
 								http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
@@ -84,19 +82,28 @@
 
 <script>
 
-@if(studyIsLocked) {
-	$(':input').attr("disabled", true);
-}
+$('#jatosHeader').on('click', '#createStudyLink', function() {
+	removeWarnings("#studyPropertiesModal");
+	removeFormErrors("#studyPropertiesModal");
+	clearForm("#studyPropertiesForm");
+	$('#studyPropertiesModal .modal-title').text("Create Study");
+	$('#studyPropertiesModal .@models.gui.StudyProperties.STUDY_ID').closest('.form-group').hide();
+	$('#studyPropertiesModal .@models.gui.StudyProperties.UUID').closest('.form-group').hide();
+	$('#studyPropertiesModal .confirmed').val("Create");
+	$('#studyPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
+	$("#studyPropertiesForm").attr("action", "@controllers.gui.routes.Studies.submitCreated()");
+	$('#studyPropertiesModal').modal('show');
+});
 
-$('#studyToolbar').on('click', '#editStudyPropertiesButton', function() {
+$('#studyToolbar').on('click', '#studyPropertiesButton', function() {
 	$.ajax({
 		type: 'GET',
-		url: "@controllers.gui.routes.Studies.properties(studyId)",
+		url: "/jatos/" + studyId + "/properties",
 		success: function(response) {
-			removeWarnings("#editStudyPropertiesModal");
-			removeFormErrors("#editStudyPropertiesModal");
+			removeWarnings("#studyPropertiesModal");
+			removeFormErrors("#studyPropertiesModal");
 			fillStudyPropertiesForm(response);
-			$('#editStudyPropertiesModal').modal('show');
+			$('#studyPropertiesModal').modal('show');
 		},
 		error: function(response) {
 			showError("Couldn't load study properties.");
@@ -105,47 +112,57 @@ $('#studyToolbar').on('click', '#editStudyPropertiesButton', function() {
 });
 
 function fillStudyPropertiesForm(properties) {
-	var studyId = (properties['@models.gui.StudyProperties.STUDY_ID']) ? properties['@models.gui.StudyProperties.STUDY_ID'] : "-";
-	$('#editStudyPropertiesModal .@models.gui.StudyProperties.STUDY_ID').text(studyId);
+	$('#studyPropertiesModal .modal-title').text("Edit Study Properties");
+	$('#studyPropertiesModal .@models.gui.StudyProperties.STUDY_ID').text(studyId);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.STUDY_ID').closest('.form-group').show();
 	var uuid = (properties['@models.gui.StudyProperties.UUID']) ? properties['@models.gui.StudyProperties.UUID'] : "-";
-	$('#editStudyPropertiesModal .@models.gui.StudyProperties.UUID').text(uuid);
-	$('#editStudyPropertiesModal .@models.gui.StudyProperties.TITLE').val(properties['@models.gui.StudyProperties.TITLE']);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.UUID').text(uuid);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.UUID').closest('.form-group').show();
+	$('#studyPropertiesModal .@models.gui.StudyProperties.TITLE').val(properties['@models.gui.StudyProperties.TITLE']);
 	var description = (properties['@models.gui.StudyProperties.DESCRIPTION']) ? properties['@models.gui.StudyProperties.DESCRIPTION'] : "";
-	$('#editStudyPropertiesModal .@models.gui.StudyProperties.DESCRIPTION').text(description);
-	$('#editStudyPropertiesModal .@models.gui.StudyProperties.DIRNAME').val(properties['@models.gui.StudyProperties.DIRNAME']);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.DESCRIPTION').text(description);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.DIRNAME').val(properties['@models.gui.StudyProperties.DIRNAME']);
 	var comments = (properties['@models.gui.StudyProperties.COMMENTS']) ? properties['@models.gui.StudyProperties.COMMENTS'] : "";
-	$('#editStudyPropertiesModal .@models.gui.StudyProperties.COMMENTS').text(comments);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.COMMENTS').text(comments);
 	var jsonInput = (properties['@models.gui.StudyProperties.JSON_DATA']) ? properties['@models.gui.StudyProperties.JSON_DATA'] : "";
 	var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-	$('#editStudyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val(jsonInputPretty);
-	$('#editStudyPropertiesModal .@models.gui.StudyProperties.GROUP_STUDY').prop('checked', properties['@models.gui.StudyProperties.GROUP_STUDY']);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val(jsonInputPretty);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.GROUP_STUDY').prop('checked', properties['@models.gui.StudyProperties.GROUP_STUDY']);
+	$('#studyPropertiesModal .confirmed').val("Save");
+	$('#studyPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", properties['@models.gui.StudyProperties.LOCKED']);
+	$("#studyPropertiesForm").attr("action", "/jatos/" + studyId);
 }
 
-$("#editStudyPropertiesForm #prettyButton").click(function(event) {
-	var jsonInput = $('#editStudyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val();
-	var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-	$('#editStudyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val(jsonInputPretty);
+$("#studyPropertiesForm .prettyButton").click(function(event) {
+	var jsonInput = $('#studyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val();
+	removeSingleFormError('#studyPropertiesModal .@models.gui.StudyProperties.JSON_DATA');
+	try {
+		var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+		$('#studyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val(jsonInputPretty);
+	} catch (e) {
+		showSingleFormError('#studyPropertiesModal .@models.gui.StudyProperties.JSON_DATA', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
+	}
 })
 
-$("#editStudyPropertiesForm").submit(function(event) {
+$("#studyPropertiesForm").submit(function(event) {
 	event.preventDefault();
 	$.ajax({
 		type : 'POST',
-		url : "@controllers.gui.routes.Studies.submitEdited(studyId)",
-		data : $('#editStudyPropertiesForm').serialize(),
+		url : $("#studyPropertiesForm").attr("action"),
+		data : $('#studyPropertiesForm').serialize(),
 		success : function(response) {
-			removeWarnings("#editStudyPropertiesModal");
-			removeFormErrors("#editStudyPropertiesModal");
-			$('#editStudyPropertiesModal').modal('hide');
+			removeWarnings("#studyPropertiesModal");
+			removeFormErrors("#studyPropertiesModal");
+			$('#studyPropertiesModal').modal('hide');
 			fillSidebar();
-			var title = $('#editStudyPropertiesModal .@models.gui.StudyProperties.TITLE').val();
+			var title = $('#studyPropertiesModal .@models.gui.StudyProperties.TITLE').val();
 			$('#breadcrumbs li:last-child').text(title);
 		},
 		error : function(response) {
-			removeWarnings("#editStudyPropertiesModal");
-			removeFormErrors("#editStudyPropertiesModal");
-			showWarning("@general.common.MessagesStrings.STUDY_WASNT_SAVED", "#editStudyPropertiesModal .modal-header");
-			showFormErrors("#editStudyPropertiesModal", response.responseJSON);
+			removeWarnings("#studyPropertiesModal");
+			removeFormErrors("#studyPropertiesModal");
+			showWarning("@general.common.MessagesStrings.STUDY_WASNT_SAVED", "#studyPropertiesModal .modal-header");
+			showFormErrors("#studyPropertiesModal", response.responseJSON);
 		}
 	});
 });

@@ -22,7 +22,7 @@ studyResultsCount: Integer)
 			title="Shows workers who participated">
 			Workers <span class="badge">@workerSet.size()</span>
 		</button>
-		<button id="editStudyPropertiesButton" type="button" class="btn btn-primary"
+		<button id="studyPropertiesButton" type="button" class="btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Study's properties">
 			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
@@ -219,10 +219,9 @@ studyResultsCount: Integer)
 	</div>
 </div>
 
-@views.html.gui.study.editModal(study.getId(), study.isLocked())
-
 <script type="text/javascript">
 $(document).ready(setLockButton(@study.isLocked()));
+
 var studyId = @study.getId();
 
 var componentsTable;

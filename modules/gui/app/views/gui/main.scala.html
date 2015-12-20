@@ -129,15 +129,30 @@ function removeErrors(elem) {
 function showFormErrors(formElem, errors) {
 	$.each(errors, function(key, errorArray) {
 		$.each(errorArray, function(index, msg) {
-			$(formElem + " ." + key).closest(".form-group").addClass("has-error");
-			$(formElem + " ." + key).after('<span class="help-block">' + msg + '</span>');
+			showSingleFormError(formElem + " ." + key, msg)
 		});
 	});
+}
+
+function showSingleFormError(selector, msg) {
+	$(selector).closest(".form-group").addClass("has-error");
+	$(selector).after('<span class="help-block">' + msg + '</span>');
 }
 
 function removeFormErrors(elem) {
 	$(elem).find("*").removeClass("has-error");
 	$(elem).find(".help-block").remove();
+}
+
+function removeSingleFormError(selector) {
+	$(selector).closest(".form-group").removeClass("has-error");
+	$(selector).nextAll(".help-block").remove();
+}
+
+function clearForm(formElem) {
+	$(formElem + " input[type=text], input[type=password], textarea").val("");
+	$(formElem + " input[type=checkbox]").removeAttr('checked');
+	$(formElem + " input[type=radio]").removeAttr('selected');
 }
 
 </script>
@@ -161,7 +176,7 @@ function removeFormErrors(elem) {
 		<div class="navbar-collapse collapse" id="jatos-navbar-collapse">
 			<ul class="nav navbar-nav navbar-left">
 				<li data-toggle="tooltip" data-placement="bottom" title="Create a new study">
-					<a href="@controllers.gui.routes.Studies.create()">
+					<a id="createStudyLink" href="#">
 						<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
 						New Study
 					</a>
@@ -317,6 +332,8 @@ function removeFormErrors(elem) {
 		</div>
 	</div>
 </div>
+
+@views.html.gui.study.propertiesModal()
 
 <script>
 var messagesRequestScope = @Html(general.gui.RequestScopeMessaging.getAsJson());

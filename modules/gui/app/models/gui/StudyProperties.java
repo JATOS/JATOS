@@ -29,6 +29,7 @@ public class StudyProperties {
 	public static final String DIRNAME = "dirName";
 	public static final String COMMENTS = "comments";
 	public static final String GROUP_STUDY = "groupStudy";
+	public static final String LOCKED = "locked";
 
 	private Long studyId;
 

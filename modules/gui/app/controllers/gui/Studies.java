@@ -124,29 +124,10 @@ public class Studies extends Controller {
 	}
 
 	/**
-	 * Shows a view with a form to create a new study.
+	 * Ajax POST request of the form to create a new study.
 	 */
 	@Transactional
-	public Result create() {
-		Logger.info(CLASS_NAME + ".create: " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		User loggedInUser = userService.retrieveLoggedInUser();
-		Form<StudyProperties> form = Form.form(StudyProperties.class)
-				.fill(new StudyProperties());
-		// It's a generic template for editing a study. We have to tell it the
-		// submit action.
-		Call submitAction = controllers.gui.routes.Studies.submit();
-		String breadcrumbs = breadcrumbsService
-				.generateForHome(BreadcrumbsService.NEW_STUDY);
-		return ok(views.html.gui.study.edit.render(loggedInUser, breadcrumbs,
-				submitAction, form, false));
-	}
-
-	/**
-	 * POST request of the form to create a new study.
-	 */
-	@Transactional
-	public Result submit() {
+	public Result submitCreated() {
 		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -154,7 +135,7 @@ public class Studies extends Controller {
 		Form<StudyProperties> form = Form.form(StudyProperties.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
-			return failStudyCreate(loggedInUser, form);
+			return badRequest(form.errorsAsJson());
 		}
 		StudyProperties studyProperties = form.get();
 
@@ -163,22 +144,13 @@ public class Studies extends Controller {
 		} catch (IOException e) {
 			form.reject(new ValidationError(StudyProperties.DIRNAME,
 					e.getMessage()));
-			return failStudyCreate(loggedInUser, form);
+			return badRequest(form.errorsAsJson());
 		}
 
-		Study study = studyService.createStudy(loggedInUser, studyProperties);
-		return redirect(controllers.gui.routes.Studies.index(study.getId()));
+		studyService.createStudy(loggedInUser, studyProperties);
+		return ok();
 	}
 
-	private Result failStudyCreate(User loggedInUser,
-			Form<StudyProperties> form) {
-		String breadcrumbs = breadcrumbsService
-				.generateForHome(BreadcrumbsService.NEW_STUDY);
-		Call submitAction = controllers.gui.routes.Studies.submit();
-		return status(Http.Status.BAD_REQUEST, views.html.gui.study.edit
-				.render(loggedInUser, breadcrumbs, submitAction, form, false));
-	}
-	
 	/**
 	 * Ajax GET request that gets the study properties as JSON.
 	 */
