@@ -32,7 +32,6 @@ import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.Logger;
-import play.api.mvc.Call;
 import play.data.Form;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
@@ -161,7 +160,7 @@ public class Studies extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
-		
+
 		StudyProperties studyProperties = studyService.bindToProperties(study);
 		return ok(JsonUtils.asJsonNode(studyProperties));
 	}
@@ -274,32 +273,23 @@ public class Studies extends Controller {
 		return ok();
 	}
 
-	@Transactional
-	public Result changeUsers(Long studyId) throws JatosGuiException {
-		return changeUsers(studyId, Http.Status.OK);
-	}
-
 	/**
-	 * Shows a view with a form to change users of a study.
+	 * Ajax GET request that gets all users and whether they are admin of this
+	 * study as a JSON array.
 	 */
 	@Transactional
-	public Result changeUsers(Long studyId, int httpStatus)
-			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".changeUsers: studyId " + studyId + ", "
+	public Result users(Long studyId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".adminUserList: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
-
 		List<User> userList = userDao.findAll();
-		String breadcrumbs = breadcrumbsService.generateForStudy(study,
-				BreadcrumbsService.CHANGE_USERS);
-		return status(httpStatus, views.html.gui.study.changeUsers
-				.render(loggedInUser, breadcrumbs, study, userList));
+		return ok(jsonUtils.usersForStudyUI(userList, study));
 	}
 
 	/**
-	 * POST request that handles changed users of a study.
+	 * Ajax POST request that handles changed users of a study.
 	 */
 	@Transactional
 	public Result submitChangedUsers(Long studyId) throws JatosGuiException {
@@ -310,20 +300,17 @@ public class Studies extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			Call call = controllers.gui.routes.Home.home();
-			jatosGuiExceptionThrower.throwRedirect(e, call);
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		String[] checkedUsers = request().body().asFormUrlEncoded()
-				.get(Study.USERS);
+		String[] checkedUsers = (request().body().asFormUrlEncoded() != null)
+				? request().body().asFormUrlEncoded().get(Study.USERS) : null;
 		try {
 			studyService.exchangeUsers(study, checkedUsers);
 		} catch (BadRequestException e) {
-			RequestScopeMessaging.error(e.getMessage());
-			Result result = changeUsers(study.getId(), Http.Status.BAD_REQUEST);
-			throw new JatosGuiException(result, e.getMessage());
+			return badRequest(e.getMessage());
 		}
-		return redirect(controllers.gui.routes.Studies.index(studyId));
+		return ok();
 	}
 
 	/**

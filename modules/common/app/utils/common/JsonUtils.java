@@ -28,6 +28,7 @@ import models.common.ComponentResult;
 import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
+import models.common.User;
 import models.common.workers.Worker;
 import play.Logger;
 import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
@@ -315,6 +316,23 @@ public class JsonUtils {
 		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
 		studyNode.put("resultCount", resultCount);
 		return OBJECTMAPPER.writeValueAsString(studyNode);
+	}
+	
+	/**
+	 * Returns JsonNode of the given user list for use in the change-user-form.
+	 * This JSON is intended for JATOS' GUI.
+	 */
+	public JsonNode usersForStudyUI(List<User> userList, Study study) {
+		ArrayNode userArrayNode = OBJECTMAPPER.createArrayNode();
+		for (User user : userList) {
+			ObjectNode userNode = OBJECTMAPPER.createObjectNode();
+			userNode.put("name", user.getName());
+			userNode.put("email", user.getEmail());
+			// Is this user admin of the study - NOT is it the admin user
+			userNode.put("admin", study.hasUser(user));
+			userArrayNode.add(userNode);
+		}
+		return userArrayNode;
 	}
 
 	/**

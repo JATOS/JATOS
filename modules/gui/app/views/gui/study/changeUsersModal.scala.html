@@ -1,0 +1,72 @@
+<div class="modal fade" id="changeUsersModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form id="changeUsersForm" method="post" action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">Change who can admin this study</h4>
+				</div>
+				<div class="modal-body">
+				<!-- Users are added in JS -->
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<input type="submit" class="confirmed btn btn-primary" value="Save">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+
+$('#studyToolbar').on('click', '#changeUsersLink', function() {
+	$.ajax({
+		type: 'GET',
+		url: "/jatos/" + studyId + "/users",
+		success: function(response) {
+			removeWarnings("#changeUsersModal");
+			removeFormErrors("#changeUsersModal");
+			fillChangeUsersForm(response);
+			$('#changeUsersModal').modal('show');
+		},
+		error: function(response) {
+			showError("Couldn't load study's users.");
+		}
+	});
+});
+
+function fillChangeUsersForm(userArray) {
+	$("#changeUsersModal .form-group").remove();
+	$.each(userArray, function(index, user) {
+		var checked = (user.admin ? 'checked' : '');
+		var inputHtml = '<div class="form-group"><div class="col-lg-offset-2 col-lg-10"><label class="checkbox-inline">'
+				+ '<input type="checkbox" name="@common.Study.USERS" value="'
+				+ user.email + '" ' + checked + '/>'
+				+ user.name + ' (' + user.email + ')' + '\n'
+				+ '</label></div></div>';
+		$('#changeUsersModal .modal-body').append(inputHtml);
+	});
+}
+
+$("#changeUsersForm").submit(function(event) {
+	event.preventDefault();
+	var data = $('#changeUsersForm').serialize();
+	$.ajax({
+		type : 'POST',
+		url : '/jatos/' + studyId + '/users ',
+		data : $('#changeUsersForm').serialize(),
+		success : function(response) {
+			removeWarnings("#changeUsersModal");
+			removeFormErrors("#changeUsersModal");
+			$('#changeUsersModal').modal('hide');
+		},
+		error : function(response) {
+			removeWarnings("#changeUsersModal");
+			removeFormErrors("#changeUsersModal");
+			showWarning(response.responseText, "#changeUsersModal .modal-header");;
+		}
+	});
+});
+
+</script>

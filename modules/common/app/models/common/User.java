@@ -49,6 +49,7 @@ public class User {
 	private JatosWorker worker;
 
 	// Password is stored as a hash
+	@JsonIgnore
 	private String passwordHash;
 
 	@ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)

@@ -67,14 +67,14 @@ studyResultsCount: Integer)
 						MT&nbsp;Source&nbsp;Code
 					</a>
 				</li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Change users of this study">
-					<a href="@controllers.gui.routes.Studies.changeUsers(study.getId())">
+				<li data-toggle="tooltip" data-placement="bottom" title="Change who can admin this study">
+					<a id="changeUsersLink" href="#">
 						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
 						Change&nbsp;Users
 					</a>
 				</li>
 				<li class="divider"></li>
-				<li  data-toggle="tooltip" data-placement="bottom" title="Delete this study including its components, assets and results">
+				<li data-toggle="tooltip" data-placement="bottom" title="Delete this study including its components, assets and results">
 					<a id="removeStudy" href="#">
 						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
 						Delete
@@ -218,6 +218,8 @@ studyResultsCount: Integer)
 		</div>
 	</div>
 </div>
+
+@views.html.gui.study.changeUsersModal()
 
 <script type="text/javascript">
 $(document).ready(setLockButton(@study.isLocked()));
