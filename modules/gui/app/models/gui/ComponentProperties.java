@@ -1,21 +1,18 @@
-package models.common;
+package models.gui;
 
 import java.io.File;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonView;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
 
+import general.common.MessagesStrings;
+import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
 
 /**
@@ -25,16 +22,25 @@ import utils.common.JsonUtils;
  */
 @Entity
 @Table(name = "Component")
-public class Component {
+public class ComponentProperties {
 
 	/**
 	 * Version of this model used for serialisation (e.g. JSON marshaling)
 	 */
 	public static final int SERIAL_VERSION = 1;
 	
-	@Id
-	@GeneratedValue
-	@JsonView(JsonUtils.JsonForPublix.class)
+	public static final String ID = "id";
+	public static final String UUID = "uuid";
+	public static final String TITLE = "title";
+	public static final String HTML_FILE_PATH = "htmlFilePath";
+	public static final String JSON_DATA = "jsonData";
+	public static final String RESULT = "result";
+	public static final String POSITION = "";
+	public static final String RELOADABLE = "reloadable";
+	public static final String ACTIVE = "active";
+	public static final String COMMENTS = "comments";
+	public static final String COMPONENT = "component";
+
 	private Long id;
 
 	/**
@@ -43,33 +49,23 @@ public class Component {
 	 * same UUID, although it is allowed to have other studies that have this
 	 * component with this UUID.
 	 */
-	@Column(unique = false, nullable = false)
-	@JsonView(JsonUtils.JsonForIO.class)
 	private String uuid;
 
-	@JsonIgnore
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "study_id")
-	private Study study;
+	private Long studyId;
 
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String title;
 
 	/**
 	 * Timestamp of the creation or the last update of this component
 	 */
-	@JsonIgnore
 	private Timestamp date;
 
 	/**
 	 * Local path to component's HTML file in the study assets' dir. File
 	 * separators are persisted as '/'.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	@JoinColumn(name = "viewUrl")
 	private String htmlFilePath;
 
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private boolean reloadable = false;
 
 	/**
@@ -77,22 +73,17 @@ public class Component {
 	 * error message if one try. Further it's skipped if one uses
 	 * startNextComponent from the public API.
 	 */
-	@JsonView(JsonUtils.JsonForIO.class)
 	private boolean active = true;
 
 	/**
 	 * User comments, reminders, something to share with others. They have no
 	 * further meaning.
 	 */
-	@Lob
-	@JsonView({ JsonUtils.JsonForIO.class })
 	private String comments;
 
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	@Lob
 	private String jsonData;
 
-	public Component() {
+	public ComponentProperties() {
 	}
 
 	public void setId(Long id) {
@@ -111,12 +102,12 @@ public class Component {
 		return this.uuid;
 	}
 
-	public void setStudy(Study study) {
-		this.study = study;
+	public void setStudyId(Long studyId) {
+		this.studyId = studyId;
 	}
 
-	public Study getStudy() {
-		return this.study;
+	public Long getStudyId() {
+		return this.studyId;
 	}
 
 	public void setTitle(String title) {
@@ -179,39 +170,41 @@ public class Component {
 		this.active = active;
 	}
 
+	public List<ValidationError> validate() {
+		List<ValidationError> errorList = new ArrayList<>();
+		if (title == null || title.trim().isEmpty()) {
+			errorList.add(new ValidationError(TITLE,
+					MessagesStrings.MISSING_TITLE));
+		}
+		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
+			errorList.add(new ValidationError(TITLE,
+					MessagesStrings.NO_HTML_ALLOWED));
+		}
+		if (htmlFilePath != null && !htmlFilePath.trim().isEmpty()) {
+			// This regular expression defines how a file path should look like
+			String pathRegEx = "^[\\w\\d_-][\\w\\d\\/_-]*\\.[\\w\\d_-]+$";
+			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.trim()
+					.isEmpty())) {
+				errorList
+						.add(new ValidationError(
+								HTML_FILE_PATH,
+								MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+			}
+		}
+		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
+			errorList.add(new ValidationError(COMMENTS,
+					MessagesStrings.NO_HTML_ALLOWED));
+		}
+		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
+			errorList.add(new ValidationError(JSON_DATA,
+					MessagesStrings.INVALID_JSON_FORMAT));
+		}
+		return errorList.isEmpty() ? null : errorList;
+	}
+
 	@Override
 	public String toString() {
 		return id + " " + title;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((id == null) ? 0 : id.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (!(obj instanceof Component)) {
-			return false;
-		}
-		Component other = (Component) obj;
-		if (id == null) {
-			if (other.getId() != null) {
-				return false;
-			}
-		} else if (!id.equals(other.getId())) {
-			return false;
-		}
-		return true;
 	}
 
 }

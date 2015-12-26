@@ -157,10 +157,10 @@ public class JsonUtils {
 		ArrayNode componentList = OBJECTMAPPER.createArrayNode();
 		for (Component tempComponent : study.getComponentList()) {
 			ObjectNode componentNode = OBJECTMAPPER.createObjectNode();
-			componentNode.put(Component.ID, tempComponent.getId());
-			componentNode.put(Component.TITLE, tempComponent.getTitle());
-			componentNode.put(Component.ACTIVE, tempComponent.isActive());
-			componentNode.put(Component.RELOADABLE,
+			componentNode.put("id", tempComponent.getId());
+			componentNode.put("title", tempComponent.getTitle());
+			componentNode.put("active", tempComponent.isActive());
+			componentNode.put("reloadable",
 					tempComponent.isReloadable());
 			componentList.add(componentNode);
 		}
@@ -404,7 +404,7 @@ public class JsonUtils {
 			// Add count of component's results
 			componentNode.put("resultCount", resultCountList.get(i));
 			int position = i + 1;
-			componentNode.put(Component.POSITION, position);
+			componentNode.put("position", position);
 			arrayNode.add(componentNode);
 		}
 		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();

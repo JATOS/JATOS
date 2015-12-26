@@ -98,13 +98,13 @@ studyResultsCount: Integer)
 		</button>
 		<ul class="dropdown-menu" role="menu">
 			<li data-toggle="tooltip" data-placement="bottom" title="Create a new component">
-				<a href="@controllers.gui.routes.Components.create(study.getId())">
+				<a id="createComponentLink" href="#">
 					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
 					New
 				</a>
 			</li>
 			<input id="importComponentBrowser" type="file"
-				name="@common.Component.COMPONENT" style="display: none;">
+				name="@models.gui.ComponentProperties.COMPONENT" style="display: none;">
 			<li data-toggle="tooltip" data-placement="bottom" title="Import a component from the local file system">
 				<a id="importComponentButton" href="#">
 					<span class="glyphicon glyphicon-import" aria-hidden="true"></span>
@@ -159,7 +159,7 @@ studyResultsCount: Integer)
 			title="Shows only the results of this component">
 			Results <span class="resultsBadge badge"></span>
 		</button>
-		<button type="button" class="editComponent btn btn-info"
+		<button type="button" class="componentPropertiesButton btn btn-info"
 			data-toggle="tooltip" data-placement="bottom"
 			title="This component's properties">
 			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
@@ -220,11 +220,12 @@ studyResultsCount: Integer)
 </div>
 
 @views.html.gui.study.changeUsersModal()
+@views.html.gui.study.componentPropertiesModal(study)
 
 <script type="text/javascript">
-$(document).ready(setLockButton(@study.isLocked()));
-
 var studyId = @study.getId();
+var studyLocked = @study.isLocked();
+$(document).ready(setLockButton(studyLocked));
 
 var componentsTable;
 $(document).ready(function() {
@@ -315,11 +316,6 @@ $(document).ready(function() {
 	$('#componentsTable tbody').on('click', '.componentResults', function() {
 		window.location.href = "/jatos/" + @study.getId() +"/"
 			+ getComponentId(this) + "/results";
-	});
-	
-	$('#componentsTable tbody').on('click', '.editComponent', function() {
-		window.location.href = "/jatos/" + @study.getId() +"/"
-			+ getComponentId(this) + "/edit";
 	});
 	
 	$('#componentsTable tbody').on('click', '.exportComponent', function() {
@@ -475,7 +471,8 @@ $('#studyToolbar').on('click', '#lockStudy', function() {
 		url : "@controllers.gui.routes.Studies.swapLock(study.getId())",
 		type : "POST",
 		success : function(response) {
-			setLockButton(response === 'true');
+			studyLocked = response === 'true';
+			setLockButton(studyLocked);
 			fillSidebar();
 		},
 		error : function(err) {
@@ -623,7 +620,7 @@ $('#studyToolbar').on('change', '#importComponentBrowser', function() {
 	var data = new FormData();
 	var files = $('#importComponentBrowser').prop('files');
 	$.each(files , function(index, value){
-		data.append('@common.Component.COMPONENT', value);
+		data.append('@models.gui.ComponentProperties.COMPONENT', value);
 	});
 	$.ajax({
 		url: '@controllers.gui.routes.ImportExport.importComponent(study.getId())',

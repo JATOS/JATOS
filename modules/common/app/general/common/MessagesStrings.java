@@ -29,7 +29,7 @@ public class MessagesStrings {
 	public static final String STUDY_INVALID = "Study is invalid";
 
 	// Edit HTML forms
-	public static final String INVALID_JSON_FORMAT = "Problems deserializing JSON data string: invalid JSON format";
+	public static final String INVALID_JSON_FORMAT = "Invalid JSON format";
 	public static final String NO_HTML_ALLOWED = "No HTML allowed";
 	public static final String NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a valid path or filename. Remember to use '/' as folder separator, and to include the file extension. You can leave it empty for now.";
 	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format";

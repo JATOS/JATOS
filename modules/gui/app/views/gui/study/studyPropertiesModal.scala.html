@@ -24,38 +24,37 @@
 					<div class="form-group row">
 						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.TITLE">Title</label>
 						<div class="col-xs-10">
-							<input type="text" class="form-control @models.gui.StudyProperties.TITLE" name="@models.gui.StudyProperties.TITLE" placeholder="Your title">
+							<input type="text" class="form-control @models.gui.StudyProperties.TITLE" id="@models.gui.StudyProperties.TITLE" name="@models.gui.StudyProperties.TITLE" placeholder="Your title">
 						</div>
 					</div>
 					
 					<div class="form-group row">
 						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.DESCRIPTION">Description&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Explain what your study is doing. In case you want to use the Mechanical Turk, this description will be shown to the participants." aria-hidden="true"></span></label>
 						<div class="col-xs-10">
-							<textarea rows="3" class="form-control @models.gui.StudyProperties.DESCRIPTION" name="@models.gui.StudyProperties.DESCRIPTION" placeholder="Your description"></textarea>
+							<textarea rows="3" class="form-control @models.gui.StudyProperties.DESCRIPTION" id="@models.gui.StudyProperties.DESCRIPTION" name="@models.gui.StudyProperties.DESCRIPTION" placeholder="Your description"></textarea>
 						</div>
 					</div>
 					
 					<div class="form-group row">
 						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.DIRNAME">Study assets' directory name&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the name of the directory of your study assets in the file system of the JATOS server. All HTML, JavaScript, CSS, and images goes in there." aria-hidden="true"></span></label>
 						<div class="col-xs-10">
-							<input type="text" class="form-control @models.gui.StudyProperties.DIRNAME" name="@models.gui.StudyProperties.DIRNAME" placeholder="Study assets' directory name">
+							<input type="text" class="form-control @models.gui.StudyProperties.DIRNAME" id="@models.gui.StudyProperties.DIRNAME" name="@models.gui.StudyProperties.DIRNAME" placeholder="Study assets' directory name">
 						</div>
 					</div>
 					
 					<div class="form-group row">
 						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.COMMENTS">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?" aria-hidden="true"></span></label>
 						<div class="col-xs-10">
-							<textarea rows="3" class="form-control @models.gui.StudyProperties.COMMENTS" name="@models.gui.StudyProperties.COMMENTS" placeholder="Your comments"></textarea>
+							<textarea rows="3" class="form-control @models.gui.StudyProperties.COMMENTS" id="@models.gui.StudyProperties.COMMENTS" name="@models.gui.StudyProperties.COMMENTS" placeholder="Your comments"></textarea>
 						</div>
 					</div>
 					
 					<div class="form-group row">
-						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.JSON_DATA">
-								JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed." aria-hidden="true"></span>
-								<button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
+						<label class="control-label col-xs-2" for="@models.gui.StudyProperties.JSON_DATA">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed." aria-hidden="true"></span>
+							<button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
 						</label>
 						<div class="col-xs-10">
-							<textarea rows="6" class="form-control @models.gui.StudyProperties.JSON_DATA" name="@models.gui.StudyProperties.JSON_DATA" placeholder="Put your JSON string here"></textarea>
+							<textarea rows="6" class="form-control @models.gui.StudyProperties.JSON_DATA" id="@models.gui.StudyProperties.JSON_DATA" name="@models.gui.StudyProperties.JSON_DATA" placeholder="Put your JSON string here"></textarea>
 						</div>
 					</div>
 					
@@ -83,6 +82,7 @@
 <script>
 
 $('#jatosHeader').on('click', '#createStudyLink', function() {
+	removeInfo("#studyPropertiesModal");
 	removeWarnings("#studyPropertiesModal");
 	removeFormErrors("#studyPropertiesModal");
 	clearForm("#studyPropertiesForm");
@@ -100,6 +100,7 @@ $('#studyToolbar').on('click', '#studyPropertiesButton', function() {
 		type: 'GET',
 		url: "/jatos/" + studyId + "/properties",
 		success: function(response) {
+			removeInfo("#studyPropertiesModal");
 			removeWarnings("#studyPropertiesModal");
 			removeFormErrors("#studyPropertiesModal");
 			fillStudyPropertiesForm(response);
@@ -124,13 +125,20 @@ function fillStudyPropertiesForm(properties) {
 	$('#studyPropertiesModal .@models.gui.StudyProperties.DIRNAME').val(properties['@models.gui.StudyProperties.DIRNAME']);
 	var comments = (properties['@models.gui.StudyProperties.COMMENTS']) ? properties['@models.gui.StudyProperties.COMMENTS'] : "";
 	$('#studyPropertiesModal .@models.gui.StudyProperties.COMMENTS').text(comments);
-	var jsonInput = (properties['@models.gui.StudyProperties.JSON_DATA']) ? properties['@models.gui.StudyProperties.JSON_DATA'] : "";
-	var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
-	$('#studyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val(jsonInputPretty);
+	try {
+		var jsonInput = (properties['@models.gui.StudyProperties.JSON_DATA']) ? properties['@models.gui.StudyProperties.JSON_DATA'] : "";
+		var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+		$('#studyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val(jsonInputPretty);
+	} catch (e) {
+		$('#studyPropertiesModal .@models.gui.StudyProperties.JSON_DATA').val("");
+	}
 	$('#studyPropertiesModal .@models.gui.StudyProperties.GROUP_STUDY').prop('checked', properties['@models.gui.StudyProperties.GROUP_STUDY']);
 	$('#studyPropertiesModal .confirmed').val("Save");
 	$('#studyPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", properties['@models.gui.StudyProperties.LOCKED']);
-	$("#studyPropertiesForm").attr("action", "/jatos/" + studyId);
+	if (properties['@models.gui.StudyProperties.LOCKED']) {
+		showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#studyPropertiesModal .modal-header");
+	}
+	$("#studyPropertiesForm").attr("action", "/jatos/" + studyId + "/properties");
 }
 
 $("#studyPropertiesForm .prettyButton").click(function(event) {
@@ -142,7 +150,7 @@ $("#studyPropertiesForm .prettyButton").click(function(event) {
 	} catch (e) {
 		showSingleFormError('#studyPropertiesModal .@models.gui.StudyProperties.JSON_DATA', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
 	}
-})
+});
 
 $("#studyPropertiesForm").submit(function(event) {
 	event.preventDefault();
@@ -151,6 +159,7 @@ $("#studyPropertiesForm").submit(function(event) {
 		url : $("#studyPropertiesForm").attr("action"),
 		data : $('#studyPropertiesForm').serialize(),
 		success : function(response) {
+			removeInfo("#studyPropertiesModal");
 			removeWarnings("#studyPropertiesModal");
 			removeFormErrors("#studyPropertiesModal");
 			$('#studyPropertiesModal').modal('hide');
@@ -159,6 +168,7 @@ $("#studyPropertiesForm").submit(function(event) {
 			$('#breadcrumbs li:last-child').text(title);
 		},
 		error : function(response) {
+			removeInfo("#studyPropertiesModal");
 			removeWarnings("#studyPropertiesModal");
 			removeFormErrors("#studyPropertiesModal");
 			showWarning("@general.common.MessagesStrings.STUDY_WASNT_SAVED", "#studyPropertiesModal .modal-header");

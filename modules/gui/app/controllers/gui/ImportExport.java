@@ -12,6 +12,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
+import models.gui.ComponentProperties;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -251,7 +252,7 @@ public class ImportExport extends Controller {
 			studyService.checkStudyLocked(study);
 
 			FilePart filePart = request().body().asMultipartFormData()
-					.getFile(Component.COMPONENT);
+					.getFile(ComponentProperties.COMPONENT);
 			json = importExportService.importComponent(study, filePart);
 		} catch (ForbiddenException | BadRequestException | IOException e) {
 			importExportService.cleanupAfterComponentImport();

@@ -127,7 +127,7 @@ public class Studies extends Controller {
 	 */
 	@Transactional
 	public Result submitCreated() {
-		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
+		Logger.info(CLASS_NAME + ".submitCreated: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		User loggedInUser = userService.retrieveLoggedInUser();
 

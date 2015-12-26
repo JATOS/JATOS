@@ -200,8 +200,7 @@ public class StudyService {
 	}
 
 	/**
-	 * Create and persist a Study with given properties and greate the default
-	 * Group.
+	 * Create and persist a Study with given properties.
 	 */
 	public Study createStudy(User loggedInUser, StudyProperties studyProperties) {
 		Study study = bindToStudy(studyProperties);

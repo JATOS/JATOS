@@ -2,7 +2,6 @@ package services.gui;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -14,10 +13,11 @@ import exceptions.gui.BadRequestException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
+import models.common.Study;
+import models.gui.ComponentProperties;
 import play.Logger;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -87,11 +87,11 @@ public class ComponentService {
 	 * not htmlFilePath and not active.
 	 */
 	public void updateComponentAfterEdit(Component component,
-			Component updatedComponent) {
-		component.setTitle(updatedComponent.getTitle());
-		component.setReloadable(updatedComponent.isReloadable());
-		component.setComments(updatedComponent.getComments());
-		component.setJsonData(updatedComponent.getJsonData());
+			ComponentProperties updatedProps) {
+		component.setTitle(updatedProps.getTitle());
+		component.setReloadable(updatedProps.isReloadable());
+		component.setComments(updatedProps.getComments());
+		component.setJsonData(updatedProps.getJsonData());
 		componentDao.update(component);
 	}
 
@@ -117,19 +117,42 @@ public class ComponentService {
 		return clone;
 	}
 
+	public ComponentProperties bindToProperties(Component component) {
+		ComponentProperties props = new ComponentProperties();
+		props.setActive(component.isActive());
+		props.setComments(component.getComments());
+		props.setDate(component.getDate());
+		props.setHtmlFilePath(component.getHtmlFilePath());
+		props.setId(component.getId());
+		props.setJsonData(component.getJsonData());
+		props.setReloadable(component.isReloadable());
+		props.setStudyId(component.getStudy().getId());
+		props.setTitle(component.getTitle());
+		props.setUuid(component.getUuid());
+		return props;
+	}
+
+	/**
+	 * Create and persist a Component with given properties.
+	 */
+	public Component createComponent(Study study,
+			ComponentProperties componentProperties) {
+		Component component = bindToComponent(componentProperties);
+		componentDao.create(study, component);
+		return component;
+	}
+
 	/**
 	 * Binds component data from a edit/create component request onto a
 	 * Component. Play's default form binder doesn't work here.
 	 */
-	public Component bindComponentFromRequest(Map<String, String[]> formMap) {
+	public Component bindToComponent(ComponentProperties props) {
 		Component component = new Component();
-		component.setTitle(formMap.get(Component.TITLE)[0]);
-		component.setHtmlFilePath(formMap.get(Component.HTML_FILE_PATH)[0]);
-		component.setReloadable(
-				Boolean.parseBoolean(formMap.get(Component.RELOADABLE)[0]));
-		component.setComments(formMap.get(Component.COMMENTS)[0]);
-		component.setJsonData(
-				JsonUtils.asStringForDB(formMap.get(Component.JSON_DATA)[0]));
+		component.setTitle(props.getTitle());
+		component.setHtmlFilePath(props.getHtmlFilePath());
+		component.setReloadable(props.isReloadable());
+		component.setComments(props.getComments());
+		component.setJsonData(props.getJsonData());
 		return component;
 	}
 
@@ -193,11 +216,13 @@ public class ComponentService {
 	 * Throws ValidationException in case of an error.
 	 */
 	public void validate(Component component) throws ValidationException {
-		if (component.validate() != null) {
-			Logger.warn(CLASS_NAME + ".validate: "
-					+ component.validate().stream()
-							.map(ValidationError::message)
-							.collect(Collectors.joining(", ")));
+		ComponentProperties props = bindToProperties(component);
+		if (props.validate() != null) {
+			Logger.warn(
+					CLASS_NAME + ".validate: "
+							+ props.validate().stream()
+									.map(ValidationError::message)
+									.collect(Collectors.joining(", ")));
 			throw new ValidationException(MessagesStrings.COMPONENT_INVALID);
 		}
 	}

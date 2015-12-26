@@ -12,6 +12,7 @@ import javax.validation.ValidationException;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
+import models.gui.ComponentProperties;
 import play.Logger;
 import play.api.Application;
 import play.mvc.Controller;
@@ -83,7 +84,7 @@ public class ImportExportService {
 				filePart.getFile().getName());
 
 		// If wrong key the upload comes from the wrong form
-		if (!filePart.getKey().equals(Component.COMPONENT)) {
+		if (!filePart.getKey().equals(ComponentProperties.COMPONENT)) {
 			throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
 		}
 
