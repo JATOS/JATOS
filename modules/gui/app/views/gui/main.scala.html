@@ -291,49 +291,8 @@ function clearForm(formElem) {
 	</div>
 </div>
 
-<!-- Create User Modal -->
-<div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<form id="createUserForm" method="post" action="/" class="form-horizontal" role="form">
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-					<h4 class="modal-title">New User</h4>
-				</div>
-				<div class="modal-body">
-					<div class="form-group row">
-						<label class="control-label col-xs-4" for="createUserEmail">Email address</label>
-						<div class="col-xs-8">
-							<input type="email" class="form-control @common.User.EMAIL" id="createUserEmail" name="@common.User.EMAIL">
-							<span class="help-block">This will be the username.</span>
-						</div>
-					</div>
-					
-					<div class="form-group row">
-						<label class="control-label col-xs-4" for="createUserName">Name</label>
-						<div class="col-xs-8">
-							<input type="text" class="form-control @common.User.NAME" id="createUserName" name="@common.User.NAME">
-						</div>
-					</div>
-					
-					<div class="form-group row">
-						<label class="control-label col-xs-4" for="createUserPassword">Password</label>
-						<div class="col-xs-8">
-							<input type="password" class="form-control @common.User.PASSWORD" id="createUserPassword" name="@common.User.PASSWORD" placeholder="Password">
-							<input type="password" class="form-control @common.User.PASSWORD_REPEAT" name="@common.User.PASSWORD_REPEAT" placeholder="Repeat password">
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					<input type="submit" class="confirmed btn btn-primary" value="Create">
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
-
 @views.html.gui.study.studyPropertiesModal()
+@views.html.gui.user.createUserModal()
 
 <script>
 var messagesRequestScope = @Html(general.gui.RequestScopeMessaging.getAsJson());
@@ -406,36 +365,6 @@ function askConfirmation(title, preText, html, postText, buttonText, action) {
 
 $('#jatosHeader').on('click', '#importStudyLink', function() {
 	$('#importStudyBrowser').trigger("click");
-});
-
-$('#jatosHeader').on('click', '#createUserLink', function() {
-	removeWarnings("#createUserModal");
-	removeFormErrors("#createUserModal");
-	$('#createUserModal .@common.User.EMAIL').val('');
-	$('#createUserModal .@common.User.NAME').val('');
-	$('#createUserModal .@common.User.PASSWORD').val('');
-	$('#createUserModal .@common.User.PASSWORD_REPEAT').val('');
-	$('#createUserModal').modal('show');
-});
-
-$("#createUserForm").submit(function(event) {
-	event.preventDefault();
-	$.ajax({
-		type: 'POST',
-		url: "@controllers.gui.routes.Users.submit()",
-		data: $('#createUserForm').serialize(), 
-		success: function(response) {
-			removeWarnings("#createUserModal");
-			removeFormErrors("#createUserModal");
-			$('#createUserModal').modal('hide');
-		},
-		error: function(response) {
-			removeWarnings("#createUserModal");
-			removeFormErrors("#createUserModal");
-			showWarning("User wasn't created", "#createUserModal .modal-header");
-			showFormErrors("#createUserModal", response.responseJSON);
-		}
-	});
 });
 
 $('#jatosHeader').on('change', '#importStudyBrowser', function() {
