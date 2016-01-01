@@ -160,7 +160,7 @@ public class Component {
 	}
 
 	public void setJsonData(String jsonData) {
-		this.jsonData = jsonData;
+		this.jsonData = JsonUtils.asStringForDB(jsonData);
 	}
 
 	public boolean isReloadable() {
