@@ -194,7 +194,7 @@ public class StudyProperties {
 
 	@Override
 	public String toString() {
-		return studyId + " " + title;
+		return String.valueOf(studyId) + " " + title;
 	}
 
 }

@@ -177,7 +177,7 @@ public class ComponentResult {
 
 	@Override
 	public String toString() {
-		return id + ", " + startDate + ", " + component.getId();
+		return String.valueOf(id) + ", " + startDate + ", " + component.getId();
 	}
 
 	@Override

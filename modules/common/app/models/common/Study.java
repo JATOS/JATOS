@@ -338,7 +338,7 @@ public class Study {
 
 	@Override
 	public String toString() {
-		return id + " " + title;
+		return String.valueOf(id) + " " + title;
 	}
 
 	@Override
