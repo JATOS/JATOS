@@ -42,7 +42,7 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getGroupList().get(0).addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+		study.getBatchList().get(0).addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);
@@ -79,7 +79,7 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyFinishedStudy()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
-		study.getGroupList().get(0).addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+		study.getBatchList().get(0).addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);

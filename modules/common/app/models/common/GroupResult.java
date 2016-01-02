@@ -47,8 +47,8 @@ public class GroupResult {
 	private GroupState groupState;
 
 	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "group_id")
-	private Group group;
+	@JoinColumn(name = "batch_id")
+	private Batch batch;
 
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	@JoinColumn(name = "groupResult_id")
@@ -73,9 +73,9 @@ public class GroupResult {
 	public GroupResult() {
 	}
 
-	public GroupResult(Group group) {
+	public GroupResult(Batch batch) {
 		this.startDate = new Timestamp(new Date().getTime());
-		this.group = group;
+		this.batch = batch;
 		this.groupState = GroupState.STARTED;
 	}
 
@@ -95,12 +95,12 @@ public class GroupResult {
 		this.groupState = groupState;
 	}
 
-	public Group getGroup() {
-		return group;
+	public Batch getBatch() {
+		return batch;
 	}
 
-	public void setGroup(Group group) {
-		this.group = group;
+	public void setBatch(Batch batch) {
+		this.batch = batch;
 	}
 
 	public void setStartDate(Timestamp startDate) {

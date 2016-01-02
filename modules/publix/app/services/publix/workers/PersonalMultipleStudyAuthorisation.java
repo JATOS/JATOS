@@ -34,7 +34,7 @@ public class PersonalMultipleStudyAuthorisation
 	@Override
 	public void checkWorkerAllowedToDoStudy(PersonalMultipleWorker worker,
 			Study study) throws ForbiddenPublixException {
-		if (!study.getGroupList().get(0)
+		if (!study.getBatchList().get(0)
 				.hasAllowedWorkerType(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(errorMessages
 					.workerTypeNotAllowed(worker.getUIWorkerType()));

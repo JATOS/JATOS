@@ -1,44 +1,44 @@
-@(loggedInUser: common.User, breadcrumbs: String, groupId: Long, studyId: Long, studyIsLocked: Boolean)
+@(loggedInUser: common.User, breadcrumbs: String, batchId: Long, studyId: Long, studyIsLocked: Boolean)
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-<button id="groupPropertiesButton" type="button" class="btn btn-primary">Properties</button>
+<button id="batchPropertiesButton" type="button" class="btn btn-primary">Properties</button>
 
-<!-- Group Properties Modal -->
-<div class="modal fade" id="groupPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<!-- Batch Properties Modal -->
+<div class="modal fade" id="batchPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
-			<form id="groupPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="batchPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-					<h4 class="modal-title">Group Properties</h4>
+					<h4 class="modal-title">Batch Properties</h4>
 				</div>
 				<div class="modal-body">
 					<div class="form-group row">
 						<label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
 						<div class="col-xs-9" id="allowedWorkerTypes">
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.JatosWorker.WORKER_TYPE" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE"
+								<input type="checkbox" class="@common.workers.JatosWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE"
 										>@common.workers.JatosWorker.UI_WORKER_TYPE
 										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
 							</label>
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.PersonalMultipleWorker.WORKER_TYPE" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE"
+								<input type="checkbox" class="@common.workers.PersonalMultipleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE"
 										>@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
 										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
 							</label>
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.PersonalSingleWorker.WORKER_TYPE" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE"
+								<input type="checkbox" class="@common.workers.PersonalSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE"
 										>@common.workers.PersonalSingleWorker.UI_WORKER_TYPE
 										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
 							</label>
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE"
+								<input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE"
 										>@common.workers.GeneralSingleWorker.UI_WORKER_TYPE
 										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
 							</label>
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.GroupProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE"
+								<input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE"
 										>@common.workers.MTWorker.UI_WORKER_TYPE
 										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
 							</label>
@@ -46,38 +46,38 @@
 					</div>
 					
 					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED">Max total worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of workers that can do this study altogether." aria-hidden="true"></span></label>
+						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">Max total worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of workers that can do this study altogether." aria-hidden="true"></span></label>
 						<div class="col-xs-3">
 							<div class="input-group">
 								<span class="input-group-addon">
-									<input type="checkbox" class="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED">
+									<input type="checkbox" class="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">
 									<!-- We need a hidden input field.
 									http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-									<input type="hidden" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED" value="false" />
+									<input type="hidden" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED" value="false" />
 								</span>
-								<input type="number" class="form-control @models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE" name="@models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE" min="1">
+								<input type="number" class="form-control @models.gui.BatchProperties.MAX_TOTAL_MEMBER_SIZE" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_SIZE" min="1">
 							</div>
 						</div>
 					</div>
 					
 					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE">Min active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the min number of workers that can do this study at the same time." aria-hidden="true"></span></label>
-						<div class="col-xs-3 @models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE">
-							<input type="number" class="form-control @models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE" name="@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE" min="1">
+						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE">Min active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the min number of workers that can do this study at the same time." aria-hidden="true"></span></label>
+						<div class="col-xs-3 @models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE">
+							<input type="number" class="form-control @models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE" name="@models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE" min="1">
 						</div>
 					</div>
 					
 					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED">Max active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of workers that can do this study at the same time." aria-hidden="true"></span></label>
+						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">Max active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of workers that can do this study at the same time." aria-hidden="true"></span></label>
 						<div class="col-xs-3">
 							<div class="input-group">
 								<span class="input-group-addon">
-									<input type="checkbox" class="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED">
+									<input type="checkbox" class="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">
 									<!-- We need a hidden input field.
 									http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-									<input type="hidden" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED" value="false" />
+									<input type="hidden" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED" value="false" />
 								</span>
-								<input type="number" class="form-control @models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE" name="@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE" min="1">
+								<input type="number" class="form-control @models.gui.BatchProperties.MAX_ACTIVE_MEMBER_SIZE" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_SIZE" min="1">
 							</div>
 						</div>
 					</div>
@@ -161,42 +161,42 @@
 	$(':input').attr("disabled", true);
 }
 
-$('#groupPropertiesModal .@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED').change(function() {
-	$('#groupPropertiesModal .@models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE').prop("disabled", !this.checked);
+$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED').change(function() {
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_MEMBER_SIZE').prop("disabled", !this.checked);
 });
 
-$('#groupPropertiesModal .@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED').change(function() {
-	$('#groupPropertiesModal .@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE').prop("disabled", !this.checked);
+$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED').change(function() {
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_SIZE').prop("disabled", !this.checked);
 });
 
-$('#groupPropertiesButton').click(function(event) {
+$('#batchPropertiesButton').click(function(event) {
 	$.ajax({
 		type: 'GET',
-		url: "@controllers.gui.routes.Groups.properties(studyId, groupId)",
+		url: "@controllers.gui.routes.Batches.properties(studyId, batchId)",
 		success: function(properties) {
-			removeWarnings('#groupPropertiesModal');
-			removeFormErrors('#groupPropertiesModal')
-			fillGroupPropertiesForm(properties);
-			$('#groupPropertiesModal').modal('show');
+			removeWarnings('#batchPropertiesModal');
+			removeFormErrors('#batchPropertiesModal')
+			fillbatchPropertiesForm(properties);
+			$('#batchPropertiesModal').modal('show');
 		},
 		error: function(response) {
-			showError("Couldn't load group properties.");
+			showError("Couldn't load batch properties.");
 		}
 	});
 });
 
-function fillGroupPropertiesForm(properties) {
-	$('#groupPropertiesModal .@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE').val(properties['@models.gui.GroupProperties.MIN_ACTIVE_MEMBER_SIZE']);
-	setInputGroupWithCheckbox('groupPropertiesModal',
-			'@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_LIMITED',
-			'@models.gui.GroupProperties.MAX_ACTIVE_MEMBER_SIZE',
+function fillbatchPropertiesForm(properties) {
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE').val(properties['@models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE']);
+	setInputGroupWithCheckbox('batchPropertiesModal',
+			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED',
+			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_SIZE',
 			properties);
-	setInputGroupWithCheckbox('groupPropertiesModal',
-			'@models.gui.GroupProperties.MAX_TOTAL_MEMBER_LIMITED',
-			'@models.gui.GroupProperties.MAX_TOTAL_MEMBER_SIZE',
+	setInputGroupWithCheckbox('batchPropertiesModal',
+			'@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED',
+			'@models.gui.BatchProperties.MAX_TOTAL_MEMBER_SIZE',
 			properties);
 	$.each(properties['allowedWorkerTypes'], function(index, workerType) {
-		$('#groupPropertiesModal' + '.' + workerType).prop('checked', true);
+		$('#batchPropertiesModal' + '.' + workerType).prop('checked', true);
 	});
 }
 
@@ -212,22 +212,22 @@ function setInputGroupWithCheckbox(modal, checkbox, input, properties) {
 	}
 }
 
-$("#groupPropertiesForm").submit(function(event) {
+$("#batchPropertiesForm").submit(function(event) {
 	event.preventDefault();
 	$.ajax({
 		type: 'POST',
-		url: "@controllers.gui.routes.Groups.submitProperties(studyId, groupId)",
-		data: $('#groupPropertiesForm').serialize(), 
+		url: "@controllers.gui.routes.Batches.submitProperties(studyId, batchId)",
+		data: $('#batchPropertiesForm').serialize(), 
 		success: function(response) {
-			removeWarnings('#groupPropertiesModal');
-			removeFormErrors('#groupPropertiesModal')
-			$('#groupPropertiesModal').modal('hide');
+			removeWarnings('#batchPropertiesModal');
+			removeFormErrors('#batchPropertiesModal')
+			$('#batchPropertiesModal').modal('hide');
 		},
 		error: function(response) {
-			removeWarnings('#groupPropertiesModal');
-			removeFormErrors('#groupPropertiesModal');
-			showWarning("@general.common.MessagesStrings.GROUP_WASNT_SAVED", "#groupPropertiesModal .modal-header");
-			showFormErrors('#groupPropertiesModal', response.responseJSON)
+			removeWarnings('#batchPropertiesModal');
+			removeFormErrors('#batchPropertiesModal');
+			showWarning("@general.common.MessagesStrings.BATCH_WASNT_SAVED", "#batchPropertiesModal .modal-header");
+			showFormErrors('#batchPropertiesModal', response.responseJSON)
 		}
 	});
 });

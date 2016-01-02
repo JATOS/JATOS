@@ -14,10 +14,10 @@ import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.InternalServerErrorPublixException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
+import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
-import models.common.Group;
 import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
@@ -55,7 +55,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	 */
 	public static final String ID_COOKIE_NAME = "JATOS_IDS";
 	public static final String WORKER_ID = "workerId";
-	public static final String GROUP_ID = "groupId";
+	public static final String BATCH_ID = "batch";
 	public static final String GROUP_RESULT_ID = "groupResultId";
 	public static final String STUDY_ID = "studyId";
 	public static final String STUDY_RESULT_ID = "studyResultId";
@@ -235,8 +235,8 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ "workerId " + workerIdStr
 					+ " already member of group result " + groupResult.getId());
 		} else {
-			Group group = study.getGroupList().get(0);
-			groupResult = groupMessagingService.join(studyResult, group);
+			Batch batch = study.getBatchList().get(0);
+			groupResult = groupMessagingService.join(studyResult, batch);
 			channelService.sendJoinedMsg(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " joined group result "

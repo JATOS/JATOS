@@ -33,7 +33,7 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getGroupList().get(0).addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+		study.getBatchList().get(0).addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
 		addWorker(worker);
@@ -49,7 +49,7 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getGroupList().get(0).addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+		study.getBatchList().get(0).addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
 		addWorker(worker);

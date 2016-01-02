@@ -5,7 +5,7 @@ import javax.inject.Singleton;
 
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
-import models.common.Group;
+import models.common.Batch;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
 import models.common.StudyResult;
@@ -48,7 +48,7 @@ public class GroupMessagingService {
 	 * reached yet and returns it. If such doesn't exist it creates a new one
 	 * and persists it.
 	 */
-	public GroupResult join(StudyResult studyResult, Group group) {
+	public GroupResult join(StudyResult studyResult, Batch batch) {
 		// If we already have a GroupResult just return it
 		if (hasUnfinishedGroupResult(studyResult)) {
 			return studyResult.getGroupResult();
@@ -56,9 +56,9 @@ public class GroupMessagingService {
 
 		// Look in the DB if we have an incomplete GroupResult. If not create
 		// new one.
-		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(group);
+		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(batch);
 		if (groupResult == null) {
-			groupResult = new GroupResult(group);
+			groupResult = new GroupResult(batch);
 			groupResultDao.create(groupResult);
 		}
 

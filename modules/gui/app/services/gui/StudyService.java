@@ -10,20 +10,20 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
 
-import models.common.Component;
-import models.common.Group;
-import models.common.Study;
-import models.common.User;
-import models.gui.StudyProperties;
-import play.Logger;
-import play.data.validation.ValidationError;
-import utils.common.IOUtils;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
+import models.common.Batch;
+import models.common.Component;
+import models.common.Study;
+import models.common.User;
+import models.gui.StudyProperties;
+import play.Logger;
+import play.data.validation.ValidationError;
+import utils.common.IOUtils;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -38,16 +38,16 @@ public class StudyService {
 	public static final String COMPONENT_POSITION_DOWN = "down";
 	public static final String COMPONENT_POSITION_UP = "up";
 
-	private final GroupService groupService;
+	private final BatchService batchService;
 	private final ComponentService componentService;
 	private final StudyDao studyDao;
 	private final UserDao userDao;
 	private final IOUtils ioUtils;
 
 	@Inject
-	StudyService(GroupService groupService, ComponentService componentService, StudyDao studyDao, UserDao userDao,
+	StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao, UserDao userDao,
 			IOUtils ioUtils) {
-		this.groupService = groupService;
+		this.batchService = batchService;
 		this.componentService = componentService;
 		this.studyDao = studyDao;
 		this.userDao = userDao;
@@ -71,9 +71,9 @@ public class StudyService {
 		clone.setLocked(false);
 		clone.setGroupStudy(study.isGroupStudy());
 		
-		// Clone each Group
-		for (Group group : study.getGroupList()) {
-			clone.addGroup(groupService.clone(group));
+		// Clone each batch
+		for (Batch batch : study.getBatchList()) {
+			clone.addBatch(batchService.clone(batch));
 		}
 
 		// Clone each component
@@ -189,7 +189,7 @@ public class StudyService {
 	}
 
 	/**
-	 * Binds study and group properties from a edit/create study request onto a
+	 * Binds study properties from a edit/create study request onto a
 	 * Study.
 	 */
 	public Study bindToStudy(StudyProperties studyProperties) {
@@ -208,12 +208,12 @@ public class StudyService {
 	}
 
 	/**
-	 * Persist the given Study and create the Group.
+	 * Persist the given Study and create the Batch.
 	 */
 	public Study createStudy(User loggedInUser, Study study) {
-		Group group = new Group();
-		groupService.initGroup(group);
-		study.addGroup(group);
+		Batch batch = new Batch();
+		batchService.initBatch(batch);
+		study.addBatch(batch);
 		studyDao.create(study, loggedInUser);
 		return study;
 	}

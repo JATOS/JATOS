@@ -212,8 +212,8 @@ function initJatos() {
 		}
 		delete jatos.studyProperties.jsonData;
 		
-		// Group properties
-		jatos.groupProperties = initData.groupProperties;
+		// Batch properties
+		jatos.batchProperties = initData.batchProperties;
 		
 		// Study's component list and study length
 		jatos.componentList = initData.componentList;
@@ -647,7 +647,7 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
  *         channel.
  */
 jatos.isMinActiveMemberReached = function() {
-	return jatos.groupMembers.length >= jatos.groupProperties.minActiveMemberSize;
+	return jatos.groupMembers.length >= jatos.batchProperties.minActiveMemberSize;
 };
 
 /**
@@ -655,7 +655,7 @@ jatos.isMinActiveMemberReached = function() {
  *         members and each member has an open group channel.
  */
 jatos.isMinActiveMemberOpen = function() {
-	return jatos.groupChannels.length >= jatos.groupProperties.minActiveMemberSize;
+	return jatos.groupChannels.length >= jatos.batchProperties.minActiveMemberSize;
 };
 
 /**
@@ -664,10 +664,10 @@ jatos.isMinActiveMemberOpen = function() {
  *         channel.
  */
 jatos.isMaxActiveMemberReached = function() {
-	if (jatos.groupProperties.maxActiveMemberSize == null) {
+	if (jatos.batchProperties.maxActiveMemberSize == null) {
 		return false;
 	} else {
-		return jatos.groupMembers.length >= jatos.groupProperties.maxActiveMemberSize;
+		return jatos.groupMembers.length >= jatos.batchProperties.maxActiveMemberSize;
 	}
 };
 
@@ -676,10 +676,10 @@ jatos.isMaxActiveMemberReached = function() {
  *         members and each member has an open group channel.
  */
 jatos.isMaxActiveMemberOpen = function() {
-	if (jatos.groupProperties.maxActiveMemberSize == null) {
+	if (jatos.batchProperties.maxActiveMemberSize == null) {
 		return false;
 	} else {
-		return jatos.groupChannels.length >= jatos.groupProperties.maxActiveMemberSize;
+		return jatos.groupChannels.length >= jatos.batchProperties.maxActiveMemberSize;
 	}
 };
 

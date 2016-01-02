@@ -42,7 +42,7 @@ public class MTStudyAuthorisation implements IStudyAuthorisation<MTWorker> {
 	@Override
 	public void checkWorkerAllowedToDoStudy(MTWorker worker, Study study)
 			throws ForbiddenPublixException {
-		if (!study.getGroupList().get(0)
+		if (!study.getBatchList().get(0)
 				.hasAllowedWorkerType(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(errorMessages
 					.workerTypeNotAllowed(worker.getUIWorkerType()));

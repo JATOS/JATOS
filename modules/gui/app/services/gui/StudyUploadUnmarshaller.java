@@ -7,7 +7,7 @@ import javax.inject.Inject;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import general.common.MessagesStrings;
-import models.common.Group;
+import models.common.Batch;
 import models.common.Study;
 import models.common.legacy.StudyV2;
 import utils.common.IOUtils;
@@ -24,12 +24,12 @@ import utils.common.JsonUtils;
 public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 
 	private Study study;
-	private GroupService groupService;
+	private BatchService batchService;
 
 	@Inject
-	StudyUploadUnmarshaller(IOUtils ioUtils, GroupService groupService) {
+	StudyUploadUnmarshaller(IOUtils ioUtils, BatchService batchService) {
 		super(ioUtils);
-		this.groupService = groupService;
+		this.batchService = batchService;
 	}
 
 	/**
@@ -82,9 +82,9 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		study.setComments(studyV2.getComments());
 		study.setJsonData(studyV2.getJsonData());
 		study.setComponentList(studyV2.getComponentList());
-		Group group = new Group();
-		groupService.initGroup(group);
-		study.addGroup(group);
+		Batch batch = new Batch();
+		batchService.initBatch(batch);
+		study.addBatch(batch);
 		return study;
 	}
 

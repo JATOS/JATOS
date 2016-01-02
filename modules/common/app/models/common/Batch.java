@@ -15,18 +15,14 @@ import com.fasterxml.jackson.annotation.JsonView;
 import utils.common.JsonUtils;
 
 /**
- * Model of a DB entity of a group with all properties of a group (without the
- * results). The results are stored in GroupResults. Default values, where
+ * Model of a DB entity of a batch. Default values, where
  * necessary, are at the fields or the constructor.
- * 
- * We can't use 'Group' for the database table name, since it's a keyword in
- * some databases (therfore the 'Groupp').
  * 
  * @author Kristian Lange (2015)
  */
 @Entity
-@Table(name = "Groupp")
-public class Group {
+@Table(name = "Batch")
+public class Batch {
 
 	@Id
 	@GeneratedValue
@@ -34,13 +30,13 @@ public class Group {
 	private Long id;
 
 	/**
-	 * Minimum number of workers in the group that are active at the same time.
+	 * Minimum number of workers in the batch that are active at the same time.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
 	private int minActiveMemberSize = 2;
 
 	/**
-	 * Maximum number of workers in the group that are active at the same time.
+	 * Maximum number of workers in the batch that are active at the same time.
 	 * If there is no limit in active members the value is null.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
@@ -54,14 +50,14 @@ public class Group {
 	private Integer maxTotalMemberSize = null;
 
 	/**
-	 * List of worker types that are allowed to run this study. If the worker
+	 * List of worker types that are allowed to run in this batch. If the worker
 	 * type is not in this list, it has no permission to run this study.
 	 */
 	@ElementCollection
 	@JsonIgnore
 	private Set<String> allowedWorkerTypes = new HashSet<>();
 
-	public Group() {
+	public Batch() {
 	}
 
 	public void setId(Long id) {
@@ -137,10 +133,10 @@ public class Group {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof Group)) {
+		if (!(obj instanceof Batch)) {
 			return false;
 		}
-		Group other = (Group) obj;
+		Batch other = (Batch) obj;
 		if (id == null) {
 			if (other.getId() != null) {
 				return false;

@@ -5,7 +5,7 @@ import java.util.List;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
-import models.common.Group;
+import models.common.Batch;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
 import play.db.jpa.JPA;
@@ -38,37 +38,36 @@ public class GroupResultDao extends AbstractDao {
 		return JPA.em().find(GroupResult.class, id);
 	}
 
-	public List<GroupResult> findAllByGroup(Group group) {
-		String queryStr = "SELECT e FROM GroupResult e "
-				+ "WHERE e.group=:groupId";
+	public List<GroupResult> findAllByBatch(Batch batch) {
+		String queryStr = "SELECT e FROM GroupResult e WHERE e.batch=:batchId";
 		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
-		return query.setParameter("groupId", group).getResultList();
+		return query.setParameter("batchId", batch).getResultList();
 	}
 
 	/**
 	 * Searches the DB for the first GroupResult of this group where the
 	 * maximum group size is not reached yet and that is in state STARTED.
 	 */
-	public GroupResult findFirstMaxNotReached(Group group) {
+	public GroupResult findFirstMaxNotReached(Batch group) {
 		List<GroupResult> groupResultList = findAllMaxNotReached(group);
 		return !groupResultList.isEmpty() ? groupResultList.get(0) : null;
 	}
 
 	/**
-	 * Searches the DB for all GroupResults of this group where the maximum
+	 * Searches the DB for all GroupResults of this batch where the maximum
 	 * group size is not reached yet and that are in state STARTED.
 	 */
-	public List<GroupResult> findAllMaxNotReached(Group group) {
-		String queryStr = "SELECT gr FROM GroupResult gr, Group g "
-				+ "WHERE gr.group=:groupId AND g.id=:groupId "
+	public List<GroupResult> findAllMaxNotReached(Batch batch) {
+		String queryStr = "SELECT gr FROM GroupResult gr, Batch b "
+				+ "WHERE gr.batch=:batchId AND b.id=:batchId "
 				+ "AND gr.groupState=:groupState "
-				+ "AND (g.maxActiveMemberSize is null OR size(gr.studyResultList) < g.maxActiveMemberSize)"
+				+ "AND (b.maxActiveMemberSize is null OR size(gr.studyResultList) < b.maxActiveMemberSize)"
 				+ "AND (size(gr.studyResultList) + size(gr.studyResultHistory)) "
-				+ "< g.maxTotalMemberSize";
+				+ "< b.maxTotalMemberSize";
 		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
-		query.setParameter("groupId", group);
+		query.setParameter("batchId", batch);
 		query.setParameter("groupState", GroupState.STARTED);
 		return query.getResultList();
 	}

@@ -30,7 +30,7 @@ import utils.common.JsonUtils;
  * the actual joining of a GroupResult. This is done prior to creating a
  * GroupDispatcher by the GroupService which persists all data in a GroupResult.
  * 
- * A GroupChannel is only be opened after a StudyResult joined a GroupResult,
+ * A GroupChannel is only opened after a StudyResult joined a GroupResult,
  * which is done in the GroupService. Group data (e.g. who's member) are
  * persisted in a GroupResult entity. A GroupChannel is closed after the
  * StudyResult left the group.

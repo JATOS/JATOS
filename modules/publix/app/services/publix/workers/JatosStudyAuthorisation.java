@@ -35,7 +35,7 @@ public class JatosStudyAuthorisation implements IStudyAuthorisation<JatosWorker>
 	@Override
 	public void checkWorkerAllowedToDoStudy(JatosWorker worker, Study study)
 			throws ForbiddenPublixException {
-		if (!study.getGroupList().get(0).hasAllowedWorkerType(worker.getWorkerType())) {
+		if (!study.getBatchList().get(0).hasAllowedWorkerType(worker.getWorkerType())) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}

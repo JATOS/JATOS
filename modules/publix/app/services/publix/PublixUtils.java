@@ -24,10 +24,10 @@ import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import exceptions.publix.UnsupportedMediaTypePublixException;
+import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
-import models.common.Group;
 import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
@@ -145,7 +145,7 @@ public abstract class PublixUtils<T extends Worker> {
 	public String generateIdCookieValue(StudyResult studyResult,
 			ComponentResult componentResult, Worker worker) {
 		Study study = studyResult.getStudy();
-		Group group = study.getGroupList().get(0);
+		Batch batch = study.getBatchList().get(0);
 		GroupResult groupResult = studyResult.getGroupResult();
 		Component component = componentResult.getComponent();
 		Map<String, String> cookieMap = new HashMap<>();
@@ -153,8 +153,8 @@ public abstract class PublixUtils<T extends Worker> {
 		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
 		cookieMap.put(Publix.STUDY_RESULT_ID,
 				String.valueOf(studyResult.getId()));
-		String groupId = String.valueOf(group.getId());
-		cookieMap.put(Publix.GROUP_ID, groupId);
+		String batchId = String.valueOf(batch.getId());
+		cookieMap.put(Publix.BATCH_ID, batchId);
 		String groupResultId = (groupResult != null) ? String
 				.valueOf(groupResult.getId()) : "null";
 		cookieMap.put(Publix.GROUP_RESULT_ID, groupResultId);

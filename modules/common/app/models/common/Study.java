@@ -127,13 +127,13 @@ public class Study {
 	private List<Component> componentList = new ArrayList<>();
 
 	/**
-	 * In future it's planed to allow more than one Group per Study but for now
+	 * In future it's planed to allow more than one Batch per Study but for now
 	 * we have only one.
 	 */
 	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "study_id")
-	private List<Group> groupList = new ArrayList<>();
+	private List<Batch> batchList = new ArrayList<>();
 
 	public Study() {
 	}
@@ -305,35 +305,35 @@ public class Study {
 	}
 
 	/**
-	 * In future it's planed to allow more than one Group per Study but for now
+	 * In future it's planed to allow more than one Batch per Study but for now
 	 * we have only one.
 	 */
-	public void setGroupList(List<Group> groupList) {
-		this.groupList = groupList;
+	public void setBatchList(List<Batch> batchList) {
+		this.batchList = batchList;
 	}
 
 	/**
-	 * In future it's planed to allow more than one Group per Study but for now
+	 * In future it's planed to allow more than one Batch per Study but for now
 	 * we have only one.
 	 */
-	public List<Group> getGroupList() {
-		return this.groupList;
+	public List<Batch> getBatchList() {
+		return this.batchList;
 	}
 
 	/**
-	 * In future it's planed to allow more than one Group per Study but for now
+	 * In future it's planed to allow more than one Batch per Study but for now
 	 * we have only one.
 	 */
-	public void addGroup(Group group) {
-		groupList.add(group);
+	public void addBatch(Batch batch) {
+		batchList.add(batch);
 	}
 
 	/**
-	 * In future it's planed to allow more than one Group per Study but for now
+	 * In future it's planed to allow more than one Batch per Study but for now
 	 * we have only one.
 	 */
-	public void removeGroup(Group group) {
-		groupList.remove(group);
+	public void removeBatch(Batch batch) {
+		batchList.remove(batch);
 	}
 
 	@Override

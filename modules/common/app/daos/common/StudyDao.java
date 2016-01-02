@@ -10,7 +10,7 @@ import javax.persistence.TypedQuery;
 
 import models.common.Component;
 import models.common.ComponentResult;
-import models.common.Group;
+import models.common.Batch;
 import models.common.GroupResult;
 import models.common.Study;
 import models.common.User;
@@ -27,29 +27,29 @@ public class StudyDao extends AbstractDao {
 	private final StudyResultDao studyResultDao;
 	private final ComponentResultDao componentResultDao;
 	private final ComponentDao componentDao;
-	private final GroupDao groupDao;
+	private final BatchDao batchDao;
 	private final GroupResultDao groupResultDao;
 
 	@Inject
 	StudyDao(StudyResultDao studyResultDao,
 			ComponentResultDao componentResultDao, ComponentDao componentDao,
-			GroupDao groupDao, GroupResultDao groupResultDao) {
+			BatchDao batchDao, GroupResultDao groupResultDao) {
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
 		this.componentDao = componentDao;
-		this.groupDao = groupDao;
+		this.batchDao = batchDao;
 		this.groupResultDao = groupResultDao;
 	}
 
 	/**
-	 * Persist study, it's components, it's groups and add user.
+	 * Persist study, it's components, it's batches and add the given user.
 	 */
 	public void create(Study study, User user) {
 		if (study.getUuid() == null) {
 			study.setUuid(UUID.randomUUID().toString());
 		}
 		study.getComponentList().forEach(componentDao::create);
-		study.getGroupList().forEach(groupDao::create);
+		study.getBatchList().forEach(batchDao::create);
 		persist(study);
 		addUser(study, user);
 	}
@@ -67,7 +67,7 @@ public class StudyDao extends AbstractDao {
 	}
 
 	/**
-	 * Remove study, its components and groups
+	 * Remove study, its components and batches
 	 */
 	public void remove(Study study) {
 		// Remove all study's components and their ComponentResults
@@ -77,10 +77,10 @@ public class StudyDao extends AbstractDao {
 			componentResultList.forEach(componentResultDao::remove);
 			remove(component);
 		}
-		// Remove all study's groups and their ComponentResults
-		for (Group group : study.getGroupList()) {
+		// Remove all study's batches and their ComponentResults
+		for (Batch group : study.getBatchList()) {
 			List<GroupResult> groupResultList = groupResultDao
-					.findAllByGroup(group);
+					.findAllByBatch(group);
 			groupResultList.forEach(groupResultDao::remove);
 			remove(group);
 		}

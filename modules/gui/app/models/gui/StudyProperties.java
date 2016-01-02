@@ -15,7 +15,7 @@ import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 /**
- * Model of study and group properties for UI (not persisted in DB)
+ * Model of study properties for UI (not persisted in DB)
  * 
  * @author Kristian Lange
  */
