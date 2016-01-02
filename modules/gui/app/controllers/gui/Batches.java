@@ -129,7 +129,7 @@ public class Batches extends Controller {
 			return badRequest(form.errorsAsJson());
 		}
 		BatchProperties batchProperties = form.get();
-		// Have to bind ALLOWED_WORKER_TYPES by hand from checkboxes
+		// Have to bind ALLOWED_WORKER_TYPES from checkboxes by hand
 		String[] allowedWorkerArray = Controller.request().body()
 				.asFormUrlEncoded().get(BatchProperties.ALLOWED_WORKER_TYPES);
 		if (allowedWorkerArray != null) {

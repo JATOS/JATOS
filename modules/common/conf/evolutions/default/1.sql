@@ -16,7 +16,6 @@ CREATE TABLE `Component` (
   `componentList_order` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
- 
 
 CREATE TABLE `ComponentResult` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -32,11 +31,13 @@ CREATE TABLE `ComponentResult` (
 ) DEFAULT CHARSET=utf8;
 
 CREATE TABLE `Batch` (
+  `active` tinyint(1) NOT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `minActiveMemberSize` int(11) NOT NULL,
   `maxActiveMemberSize` int(11) DEFAULT NULL,
   `maxTotalMemberSize` int(11) DEFAULT NULL,
   `study_id` bigint(20) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 

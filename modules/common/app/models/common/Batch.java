@@ -15,8 +15,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import utils.common.JsonUtils;
 
 /**
- * Model of a DB entity of a batch. Default values, where
- * necessary, are at the fields or the constructor.
+ * Model of a DB entity of a batch. Default values, where necessary, are at the
+ * fields or the constructor.
  * 
  * @author Kristian Lange (2015)
  */
@@ -28,6 +28,18 @@ public class Batch {
 	@GeneratedValue
 	@JsonView({ JsonUtils.JsonForPublix.class })
 	private Long id;
+	
+	/**
+	 * Title of the batch
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
+	private String title;
+
+	/**
+	 * Only active (if true) batches can be used.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
+	private boolean active;
 
 	/**
 	 * Minimum number of workers in the batch that are active at the same time.
@@ -66,6 +78,22 @@ public class Batch {
 
 	public Long getId() {
 		return this.id;
+	}
+	
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
 	public int getMinActiveMemberSize() {
@@ -146,5 +174,5 @@ public class Batch {
 		}
 		return true;
 	}
-	
+
 }

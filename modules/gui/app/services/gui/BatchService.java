@@ -34,6 +34,8 @@ public class BatchService {
 		clone.setMaxActiveMemberSize(batch.getMaxActiveMemberSize());
 		clone.setMaxTotalMemberSize(batch.getMaxTotalMemberSize());
 		batch.getAllowedWorkerTypes().forEach(clone::addAllowedWorkerType);
+		clone.setTitle(batch.getTitle());
+		clone.setActive(batch.isActive());
 		return clone;
 	}
 
@@ -53,6 +55,8 @@ public class BatchService {
 		batch.getAllowedWorkerTypes().clear();
 		updatedBatch.getAllowedWorkerTypes()
 				.forEach(batch::addAllowedWorkerType);
+		batch.setTitle(updatedBatch.getTitle());
+		batch.setActive(updatedBatch.isActive());
 		batchDao.update(batch);
 	}
 
@@ -65,6 +69,8 @@ public class BatchService {
 		props.setMaxTotalMemberSize(batch.getMaxTotalMemberSize());
 		props.setMaxTotalMemberLimited(batch.getMaxTotalMemberSize() != null);
 		props.setMinActiveMemberSize(batch.getMinActiveMemberSize());
+		props.setTitle(batch.getTitle());
+		props.setActive(batch.isActive());
 		return props;
 	}
 
@@ -82,6 +88,8 @@ public class BatchService {
 			batch.setMaxTotalMemberSize(null);
 		}
 		batch.setMinActiveMemberSize(props.getMinActiveMemberSize());
+		batch.setTitle(props.getTitle());
+		batch.setActive(props.isActive());
 		return batch;
 	}
 

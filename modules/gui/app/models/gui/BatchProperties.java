@@ -5,6 +5,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+
 import general.common.MessagesStrings;
 import play.data.validation.ValidationError;
 
@@ -21,8 +24,20 @@ public class BatchProperties {
 	public static final String MAX_TOTAL_MEMBER_SIZE = "maxTotalMemberSize";
 	public static final String MAX_TOTAL_MEMBER_LIMITED = "maxTotalMemberLimited";
 	public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
+	public static final String TITLE = "title";
+	public static final String ACTIVE = "active";
 
 	private Long id;
+	
+	/**
+	 * Title of the batch
+	 */
+	private String title;
+
+	/**
+	 * Only active (if true) batches can be used.
+	 */
+	private boolean active = true;
 
 	/**
 	 * Minimum number of workers in the batch that are active at the same time.
@@ -59,6 +74,22 @@ public class BatchProperties {
 		return this.id;
 	}
 
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
+	}
+	
 	public Integer getMinActiveMemberSize() {
 		return minActiveMemberSize;
 	}
@@ -121,11 +152,19 @@ public class BatchProperties {
 
 	@Override
 	public String toString() {
-		return String.valueOf(id);
+		return String.valueOf(id) + " " + title;
 	}
 
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
+		if (title == null || title.trim().isEmpty()) {
+			errorList.add(
+					new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
+		}
+		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
+			errorList.add(new ValidationError(TITLE,
+					MessagesStrings.NO_HTML_ALLOWED));
+		}
 		if (minActiveMemberSize == null || minActiveMemberSize < 1) {
 			errorList.add(new ValidationError(MIN_ACTIVE_MEMBER_SIZE,
 					MessagesStrings.BATCH_MIN_ACTIVE_MEMBER_SIZE));
