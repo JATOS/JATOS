@@ -30,7 +30,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.publix.ChannelService;
-import services.publix.GroupMessagingService;
+import services.publix.GroupService;
 import services.publix.IStudyAuthorisation;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
@@ -68,7 +68,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	protected final JPAApi jpa;
 	protected final PublixUtils<T> publixUtils;
 	protected final IStudyAuthorisation<T> studyAuthorisation;
-	protected final GroupMessagingService groupMessagingService;
+	protected final GroupService groupService;
 	protected final ChannelService channelService;
 	protected final PublixErrorMessages errorMessages;
 	protected final StudyAssets studyAssets;
@@ -79,7 +79,7 @@ public abstract class Publix<T extends Worker> extends Controller
 
 	public Publix(JPAApi jpa, PublixUtils<T> utils,
 			IStudyAuthorisation<T> studyAuthorisation,
-			GroupMessagingService groupMessagingService,
+			GroupService groupService,
 			ChannelService channelService, PublixErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
@@ -87,7 +87,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		this.jpa = jpa;
 		this.publixUtils = utils;
 		this.studyAuthorisation = studyAuthorisation;
-		this.groupMessagingService = groupMessagingService;
+		this.groupService = groupService;
 		this.channelService = channelService;
 		this.errorMessages = errorMessages;
 		this.studyAssets = studyAssets;
@@ -229,14 +229,14 @@ public abstract class Publix<T extends Worker> extends Controller
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
 		GroupResult groupResult;
-		if (groupMessagingService.hasUnfinishedGroupResult(studyResult)) {
+		if (groupService.hasUnfinishedGroupResult(studyResult)) {
 			groupResult = studyResult.getGroupResult();
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr
 					+ " already member of group result " + groupResult.getId());
 		} else {
 			Batch batch = study.getBatchList().get(0);
-			groupResult = groupMessagingService.join(studyResult, batch);
+			groupResult = groupService.join(studyResult, batch);
 			channelService.sendJoinedMsg(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " joined group result "
@@ -262,7 +262,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ " isn't member of a group result - can't leave.");
 			return ok();
 		}
-		groupMessagingService.leave(studyResult);
+		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
@@ -369,7 +369,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			publixUtils.abortStudy(message, studyResult);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupMessagingService.leave(studyResult);
+		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
@@ -396,7 +396,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupMessagingService.leave(studyResult);
+		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);

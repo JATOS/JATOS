@@ -15,7 +15,7 @@ import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.publix.ChannelService;
-import services.publix.GroupMessagingService;
+import services.publix.GroupService;
 import services.publix.workers.JatosErrorMessages;
 import services.publix.workers.JatosPublixUtils;
 import services.publix.workers.JatosStudyAuthorisation;
@@ -85,12 +85,12 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Inject
 	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
-			GroupMessagingService groupMessagingService,
+			GroupService groupService,
 			ChannelService channelService, JatosErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
 			GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupMessagingService,
+		super(jpa, publixUtils, studyAuthorisation, groupService,
 				channelService, errorMessages, studyAssets, componentResultDao,
 				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
@@ -253,7 +253,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupMessagingService.leave(studyResult);
+		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
@@ -288,7 +288,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupMessagingService.leave(studyResult);
+		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);

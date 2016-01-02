@@ -81,7 +81,7 @@ public class Study {
 
 	/**
 	 * Is this study a group study, e.g. worker scripts can send messages
-	 * between each other with the GroupMessagingService.
+	 * between each other.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
 	private boolean groupStudy = false;

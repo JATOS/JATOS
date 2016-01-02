@@ -21,13 +21,13 @@ import models.common.StudyResult;
  * @author Kristian Lange (2015)
  */
 @Singleton
-public class GroupMessagingService {
+public class GroupService {
 
 	private final StudyResultDao studyResultDao;
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	GroupMessagingService(StudyResultDao studyResultDao,
+	GroupService(StudyResultDao studyResultDao,
 			GroupResultDao groupResultDao) {
 		this.studyResultDao = studyResultDao;
 		this.groupResultDao = groupResultDao;

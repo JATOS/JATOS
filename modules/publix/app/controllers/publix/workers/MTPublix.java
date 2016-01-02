@@ -13,7 +13,7 @@ import play.Logger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ChannelService;
-import services.publix.GroupMessagingService;
+import services.publix.GroupService;
 import services.publix.workers.MTErrorMessages;
 import services.publix.workers.MTPublixUtils;
 import services.publix.workers.MTStudyAuthorisation;
@@ -61,13 +61,12 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	@Inject
 	MTPublix(JPAApi jpa, MTPublixUtils publixUtils,
-			MTStudyAuthorisation studyAuthorisation,
-			GroupMessagingService groupMessagingService,
+			MTStudyAuthorisation studyAuthorisation, GroupService groupService,
 			ChannelService channelService, MTErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
 			MTWorkerDao mtWorkerDao, GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupMessagingService,
+		super(jpa, publixUtils, studyAuthorisation, groupService,
 				channelService, errorMessages, studyAssets, componentResultDao,
 				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
@@ -141,7 +140,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
 		GroupResult groupResult = studyResult.getGroupResult();
-		groupMessagingService.leave(studyResult);
+		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
