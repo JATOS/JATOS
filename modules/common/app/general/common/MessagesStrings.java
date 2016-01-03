@@ -44,7 +44,6 @@ public class MessagesStrings {
 	public static final String BATCH_MAX_TOTAL_MEMBER_SIZE_SET = "Batch's max total members size must be set if you want to limit it.";
 	public static final String BATCH_MAX_TOTAL_MEMBER_SIZE = "Batch's max total members size must be greater or equal than the max active member size.";
 
-
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
@@ -101,6 +100,7 @@ public class MessagesStrings {
 	public static final String COULDNT_CHANGE_POSITION_OF_COMPONENT = "Couldn't change position of componet.";
 	public static final String COMPONENT_DELETED_BUT_FILES_NOT = "Component deleted, but all files (e.g. its HTML file) in study assets remain untouched.";
 	public static final String PROBLEM_GENERATING_BREADCRUMBS = "Problem generating breadcrumbs";
+	public static final String BATCH_DELETED = "Batch successfully deleted";
 
 	public static String workerNotExist(Long workerId) {
 		return workerNotExist(String.valueOf(workerId));
@@ -125,9 +125,8 @@ public class MessagesStrings {
 
 	public static String studyReorderUnknownPosition(String position,
 			Long studyId) {
-		String errorMsg = "Unknown position " + position
-				+ ". Couldn't reorder " + "components in study with ID "
-				+ studyId + ".";
+		String errorMsg = "Unknown position " + position + ". Couldn't reorder "
+				+ "components in study with ID " + studyId + ".";
 		return errorMsg;
 	}
 
@@ -139,8 +138,8 @@ public class MessagesStrings {
 
 	public static String studyAssetsOverwritten(String studyAssetsName,
 			Long studyId) {
-		String errorMsg = "Assets \"" + studyAssetsName
-				+ "\" of study with ID " + studyId + " were overwritten.";
+		String errorMsg = "Assets \"" + studyAssetsName + "\" of study with ID "
+				+ studyId + " were overwritten.";
 		return errorMsg;
 	}
 
@@ -150,7 +149,8 @@ public class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String importedNewStudy(String studyAssetsName, Long studyId) {
+	public static String importedNewStudy(String studyAssetsName,
+			Long studyId) {
 		String errorMsg = "New study imported: ID " + studyId
 				+ " and study assets \"" + studyAssetsName + "\".";
 		return errorMsg;
@@ -286,7 +286,8 @@ public class MessagesStrings {
 				+ " failed.";
 	}
 
-	public static String studyCreationOfPersonalMultipleRunFailed(Long studyId) {
+	public static String studyCreationOfPersonalMultipleRunFailed(
+			Long studyId) {
 		return "The creation of a Personal Multiple Run for study " + studyId
 				+ " failed.";
 	}
@@ -352,6 +353,17 @@ public class MessagesStrings {
 
 	public static String fileNotUploaded(String fileName) {
 		return "Couldn't upload file \"" + fileName + "\".";
+	}
+
+	public static String batchNotExist(Long batchId) {
+		String errorMsg = "A batch with ID " + batchId + " doesn't exist.";
+		return errorMsg;
+	}
+
+	public static String batchNotInStudy(Long batchId, Long studyId) {
+		String errorMsg = "A batch with ID " + batchId
+				+ " is not a batch of the study with ID " + studyId + ".";
+		return errorMsg;
 	}
 
 }

@@ -341,10 +341,11 @@ function showBreadcrumbs (breadcrumbs) {
 }
 
 function askConfirmation(title, preText, html, postText, buttonText, action) {
-		$('#confirmationModal').find('.modal-title').html(title);
+		$('#confirmationModal').find('.modal-title').text(title);
 	if (preText) {
-		$('#confirmationModal').find('.modalText').html(preText);
+		$('#confirmationModal').find('.modalText').text(preText);
 	}
+	// html and preText share the same <p>, use an additional <p> in html if you need one
 	if (html) {
 		if ($('#confirmationModal').find('.modalText').next().is('.modalPostText')) {
 			$('#confirmationModal').find('.modalText').after(html);
@@ -353,7 +354,7 @@ function askConfirmation(title, preText, html, postText, buttonText, action) {
 		}
 	}
 	if (postText) {
-		$('#confirmationModal').find('.modalPostText').html(postText);
+		$('#confirmationModal').find('.modalPostText').text(postText);
 	}
 	$('#confirmationModal').find('.confirmed').text(buttonText);
 	$('#confirmationModal').modal('show');
@@ -429,12 +430,12 @@ function askConfirmationForStudyExists(response) {
 
 function askConfirmationForStudyNotExistsDirExists(response) {
 	var title = "Study import - but study assets' directory already exists";
-	var preText = "You are about to import the study \"" + response.studyTitle 
+	var html = "You are about to import the study \"" + response.studyTitle 
 		+ "\" and its directory \"" + response.dirPath
 		+ "\". There already exist a directory with the same name. "
 		+ "If you proceed the <b>current directory will be overridden</b>.";
 	var postText = "Do you want to proceed?";
-	askConfirmation(title, preText, null, postText, 'Import', function() {
+	askConfirmation(title, null, html, postText, 'Import', function() {
 		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
 			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);
@@ -443,11 +444,10 @@ function askConfirmationForStudyNotExistsDirExists(response) {
 
 function askConfirmationForStudyNotExistsDirNotExists(response) {
 	var title = "Study import";
-	var preText = "You are about to import the study \"" + response.studyTitle 
-		+ "\" and its directory \"" + response.dirPath
-		+ "\".";
+	var html = "You are about to import the study \"" + response.studyTitle 
+		+ "\" and its directory \"" + response.dirPath + "\".";
 	var postText = "Do you want to proceed?"
-	askConfirmation(title, preText, null, postText, 'Import', function() {
+	askConfirmation(title, null, html, postText, 'Import', function() {
 		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
 			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);

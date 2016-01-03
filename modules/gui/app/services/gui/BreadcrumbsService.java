@@ -1,18 +1,18 @@
 package services.gui;
 
-import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
-
 import javax.inject.Singleton;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import general.common.MessagesStrings;
+import general.gui.RequestScopeMessaging;
+import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
 import models.gui.Breadcrumbs;
 import play.Logger;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * Provides breadcrumbs for different views of JATOS' GUI.
@@ -100,6 +100,32 @@ public class BreadcrumbsService {
 			breadcrumbs.addBreadcrumb(last, "");
 		} else {
 			breadcrumbs.addBreadcrumb(study.getTitle(), "");
+		}
+		String breadcrumbsStr = "";
+		try {
+			breadcrumbsStr = breadcrumbs.asJson();
+		} catch (JsonProcessingException e) {
+			Logger.error(CLASS_NAME + ".generateForStudy", e);
+			RequestScopeMessaging
+					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
+		}
+		return breadcrumbsStr;
+	}
+	public String generateForRunManager(Study study) {
+		return generateForRunManager(study, null);
+	}
+	
+	public String generateForRunManager(Study study, Batch batch) {
+		Breadcrumbs breadcrumbs = new Breadcrumbs();
+		breadcrumbs.addBreadcrumb(HOME, controllers.gui.routes.Home.home().url());
+		breadcrumbs.addBreadcrumb(study.getTitle(),
+				controllers.gui.routes.Studies.index(study.getId()).url());
+		if (batch != null) {
+			breadcrumbs.addBreadcrumb(RUN_MANAGER,
+					controllers.gui.routes.Batches.runManager(study.getId()).url());
+			breadcrumbs.addBreadcrumb("Batch " + batch.getTitle(), "");
+		} else {
+			breadcrumbs.addBreadcrumb(RUN_MANAGER, "");
 		}
 		String breadcrumbsStr = "";
 		try {

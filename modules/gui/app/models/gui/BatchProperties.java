@@ -12,7 +12,8 @@ import general.common.MessagesStrings;
 import play.data.validation.ValidationError;
 
 /**
- * Model of batch properties for UI (not persisted in DB)
+ * Model of batch properties for UI (not persisted in DB). Only used together
+ * with an HTML form that creates a new Batch or updates one.
  * 
  * @author Kristian Lange
  */
@@ -28,7 +29,7 @@ public class BatchProperties {
 	public static final String ACTIVE = "active";
 
 	private Long id;
-	
+
 	/**
 	 * Title of the batch
 	 */
@@ -42,9 +43,9 @@ public class BatchProperties {
 	/**
 	 * Minimum number of workers in the batch that are active at the same time.
 	 */
-	private Integer minActiveMemberSize = 2;
+	private Integer minActiveMemberSize = 1;
 
-	private boolean maxActiveMemberLimited = true;
+	private boolean maxActiveMemberLimited = false;
 
 	/**
 	 * Maximum number of workers in the batch that are active at the same time.
@@ -52,7 +53,7 @@ public class BatchProperties {
 	 */
 	private Integer maxActiveMemberSize = null;
 
-	private boolean maxTotalMemberLimited = true;
+	private boolean maxTotalMemberLimited = false;
 
 	/**
 	 * Maximum number of workers in total. If there is no limit in active
@@ -89,7 +90,7 @@ public class BatchProperties {
 	public void setActive(boolean active) {
 		this.active = active;
 	}
-	
+
 	public Integer getMinActiveMemberSize() {
 		return minActiveMemberSize;
 	}

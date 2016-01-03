@@ -56,7 +56,7 @@ public class StudyService {
 	
 	/**
 	 * Clones the given Study. Does not clone id, uuid, or date. Generates a new
-	 * UUID for the clone. Copies the corresponding study assets. Does not
+	 * UUID for the clone. Copies the corresponding study assets. Does NOT
 	 * persist the clone.
 	 */
 	public Study clone(Study study) throws IOException {
@@ -211,8 +211,7 @@ public class StudyService {
 	 * Persist the given Study and create the Batch.
 	 */
 	public Study createStudy(User loggedInUser, Study study) {
-		Batch batch = new Batch();
-		batchService.initBatch(batch);
+		Batch batch = batchService.createDefaultBatch();
 		study.addBatch(batch);
 		studyDao.create(study, loggedInUser);
 		return study;

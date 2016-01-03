@@ -15,7 +15,8 @@ import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 /**
- * Model of study properties for UI (not persisted in DB)
+ * Model of study properties for UI (not persisted in DB). Only used together
+ * with an HTML form that creates a new Study or updates one.
  * 
  * @author Kristian Lange
  */

@@ -304,34 +304,22 @@ public class Study {
 		return null;
 	}
 
-	/**
-	 * In future it's planed to allow more than one Batch per Study but for now
-	 * we have only one.
-	 */
 	public void setBatchList(List<Batch> batchList) {
 		this.batchList = batchList;
 	}
 
-	/**
-	 * In future it's planed to allow more than one Batch per Study but for now
-	 * we have only one.
-	 */
 	public List<Batch> getBatchList() {
 		return this.batchList;
 	}
+	
+	public boolean hasBatch(Batch batch) {
+		return batchList.contains(batch);
+	}
 
-	/**
-	 * In future it's planed to allow more than one Batch per Study but for now
-	 * we have only one.
-	 */
 	public void addBatch(Batch batch) {
 		batchList.add(batch);
 	}
 
-	/**
-	 * In future it's planed to allow more than one Batch per Study but for now
-	 * we have only one.
-	 */
 	public void removeBatch(Batch batch) {
 		batchList.remove(batch);
 	}

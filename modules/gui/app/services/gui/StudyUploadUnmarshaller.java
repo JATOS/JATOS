@@ -82,8 +82,7 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		study.setComments(studyV2.getComments());
 		study.setJsonData(studyV2.getJsonData());
 		study.setComponentList(studyV2.getComponentList());
-		Batch batch = new Batch();
-		batchService.initBatch(batch);
+		Batch batch = batchService.createDefaultBatch();
 		study.addBatch(batch);
 		return study;
 	}

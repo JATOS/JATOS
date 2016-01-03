@@ -228,11 +228,11 @@ $('#resultsToolbar').on('click', '.remove', function() {
 		return;
 	}
 	var title = "Confirm Delete";
-	var preText = "You are about to delete the study results "
+	var html = "You are about to delete the study results "
 		+ "(ID " + ids.join(", ") + ") " 
 		+ "<b>with all their component results</b>.";
 	var postText = "Do you want to proceed?";
-	askConfirmation(title, preText, null, postText, 'Delete', function() {
+	askConfirmation(title, null, html, postText, 'Delete', function() {
 		var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
 		$.ajax({
 			url : url,
@@ -251,10 +251,10 @@ $('#resultsToolbar').on('click', '.remove', function() {
 
 $('#resultsToolbar').on('click', '.removeAll', function() {
 	var title = "Confirm Delete";
-	var preText = "You are about to delete <b>ALL</b> study results "
+	var html = "You are about to delete <b>ALL</b> study results "
 		+ "<b>with all their component results</b>.";
 	var postText = "Do you want to proceed?";
-	askConfirmation(title, preText, null, postText, 'Delete', function() {
+	askConfirmation(title, null, html, postText, 'Delete', function() {
 		var url = "@controllers.gui.routes.StudyResults.removeAllOfStudy(study.getId())";
 		$.ajax({
 			url : url,

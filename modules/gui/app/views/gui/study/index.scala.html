@@ -344,10 +344,10 @@ $(document).ready(function() {
 		if (!componentId) {return} // should never happen
 		var componentTitle = getComponentTitle(this);
 		var title = "Confirm Delete";
-		var preText = "You are about to delete component \"" + componentTitle 
+		var html = "You are about to delete component \"" + componentTitle 
 			+ "\" (ID " + componentId + ") <b>with all its results</b>.";
 		var postText = "Do you want to proceed?";
-		askConfirmation(title, preText, null, postText, 'Delete', function() {
+		askConfirmation(title, null, html, postText, 'Delete', function() {
 			$.ajax({
 				url : "/jatos/" + @study.getId() +"/" + componentId,
 				type : 'DELETE',
@@ -580,12 +580,12 @@ $('#studyToolbar').on('click', '#personalMultipleRun', function() {
 
 $('#studyToolbar').on('click', '#removeStudy', function() {
 	var title = "Confirm Delete";
-	var preText = "You are about to delete study \"@study.getTitle()\" " 
+	var html = "You are about to delete study \"@study.getTitle()\" " 
 		+ "(ID @study.getId()) "
 		+ "<b>with all its components, results, and the entire study assets directory, "
 		+ "including the HTML files</b>.";
 	var postText = "Do you want to proceed?";
-	askConfirmation(title, preText, null, postText, 'Delete', function() {
+	askConfirmation(title, null, html, postText, 'Delete', function() {
 		$.ajax({
 			url : '@controllers.gui.routes.Studies.remove(study.getId())',
 			type : 'DELETE',
@@ -639,18 +639,18 @@ $('#studyToolbar').on('change', '#importComponentBrowser', function() {
 function importComponentConfirm(response) {
 	if (response.componentExists) {
 		var title = "Component already exists";
-		var preText = "It seems a component \"" + response.componentTitle 
+		var html = "It seems a component \"" + response.componentTitle 
 			+ "\" already exist in this study.";
 		var postText = "Do you want to overwrite this component?";
-		askConfirmation(title, preText, null, postText, 'Overwrite', function() {
+		askConfirmation(title, null, html, postText, 'Overwrite', function() {
 			postComponentImportConfirm();
 		});
 	} else {
 		var title = "Import component";
-		var preText = "You are about to import the component \""
+		var html = "You are about to import the component \""
 			+ response.componentTitle + "\".";
 		var postText = "Do you want to proceed?";
-		askConfirmation(title, preText, null, postText, 'Import', function() {
+		askConfirmation(title, null, html, postText, 'Import', function() {
 			postComponentImportConfirm();
 		});
 	}
