@@ -16,7 +16,8 @@ import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
 
 /**
- * Model and DB entity of a component.
+ * Model of component properties for UI (not persisted in DB). Only used
+ * together with an HTML form that creates a new Component or updates one.
  * 
  * @author Kristian Lange
  */
@@ -28,7 +29,7 @@ public class ComponentProperties {
 	 * Version of this model used for serialisation (e.g. JSON marshaling)
 	 */
 	public static final int SERIAL_VERSION = 1;
-	
+
 	public static final String ID = "id";
 	public static final String UUID = "uuid";
 	public static final String TITLE = "title";
@@ -173,8 +174,8 @@ public class ComponentProperties {
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
 		if (title == null || title.trim().isEmpty()) {
-			errorList.add(new ValidationError(TITLE,
-					MessagesStrings.MISSING_TITLE));
+			errorList.add(
+					new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
 		}
 		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
@@ -183,12 +184,10 @@ public class ComponentProperties {
 		if (htmlFilePath != null && !htmlFilePath.trim().isEmpty()) {
 			// This regular expression defines how a file path should look like
 			String pathRegEx = "^[\\w\\d_-][\\w\\d\\/_-]*\\.[\\w\\d_-]+$";
-			if (!(htmlFilePath.matches(pathRegEx) || htmlFilePath.trim()
-					.isEmpty())) {
-				errorList
-						.add(new ValidationError(
-								HTML_FILE_PATH,
-								MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+			if (!(htmlFilePath.matches(pathRegEx)
+					|| htmlFilePath.trim().isEmpty())) {
+				errorList.add(new ValidationError(HTML_FILE_PATH,
+						MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
 			}
 		}
 		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
