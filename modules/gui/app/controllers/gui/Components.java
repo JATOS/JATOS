@@ -191,8 +191,8 @@ public class Components extends Controller {
 	/**
 	 * Ajax POST
 	 * 
-	 * Request to change the property 'active' of a component. In future this
-	 * action is intended for other properties too.
+	 * Request to change the property 'active' of a component. If needed this
+	 * method can be extended for other properties.
 	 */
 	@Transactional
 	public Result changeProperty(Long studyId, Long componentId, Boolean active)

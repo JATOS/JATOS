@@ -33,6 +33,9 @@ studyResultsCount: Integer)
 				<span class="glyphicon glyphicon-globe" aria-hidden="true"></span> External Runs <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
+				<li data-toggle="tooltip" data-placement="bottom" title="">
+					<a id="runManagerLink" href="#">Run Manager <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
+				</li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used multiple times and always assigns the results to the same worker.">
 					<a id="personalMultipleRun" href="#">Personal Multiple Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
 				</li>
@@ -365,7 +368,6 @@ $(document).ready(function() {
 	
 	$('#componentsTable tbody').on('click', '.activeButton', function() {
 		var button = this;
-		var checkbox = this;
 		var tr = $(this).closest('tr');
 		var componentId = getComponentId(this);
 		var active = $(this).hasClass('activeComponent');
@@ -505,6 +507,10 @@ $('#studyToolbar').on('click', '#studyResults', function() {
 
 $('#studyToolbar').on('click', '#workers', function() {
 	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
+});
+
+$('#studyToolbar').on('click', '#runManagerLink', function() {
+	window.location.href = "@controllers.gui.routes.Batches.runManager(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#personalSingleRun', function() {

@@ -218,6 +218,33 @@ public class Batches extends Controller {
 	}
 
 	/**
+	 * Ajax POST request: Request to change the property 'active' of the given
+	 * batch. If needed this method can be extended for other properties.
+	 */
+	@Transactional
+	public Result changeProperty(Long studyId, Long batchId, Boolean active)
+			throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".changeProperty: studyId " + studyId + ", "
+				+ "batchId " + batchId + ", " + "active " + active + ", "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Batch batch = batchDao.findById(batchId);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			batchService.checkStandardForBatch(batch, study, batchId);
+		} catch (ForbiddenException | BadRequestException e) {
+			return badRequest(e.getMessage());
+		}
+
+		if (active != null) {
+			batch.setActive(active);
+			batchDao.update(batch);
+		}
+		return ok(String.valueOf(batch.isActive()));
+	}
+
+	/**
 	 * Ajax POST request to remove a Batch
 	 */
 	@Transactional
@@ -234,7 +261,7 @@ public class Batches extends Controller {
 		} catch (ForbiddenException | BadRequestException e) {
 			return badRequest(e.getMessage());
 		}
-		
+
 		batchService.removeBatch(batch, study);
 		RequestScopeMessaging.success(MessagesStrings.BATCH_DELETED);
 		return ok(RequestScopeMessaging.getAsJson());

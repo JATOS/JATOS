@@ -2,7 +2,7 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-<button id="createBatchButton" type="button" class="btn btn-primary">New</button>
+<button id="createBatchButton" type="button" class="btn btn-primary">New Batch</button>
 
 <div class="list-group" id="batchList">
 </div>
@@ -35,6 +35,10 @@
 
 <!-- Template for batch's row -->
 <div id="batchRowTemplateDiv" class="list-group-item" style="display: none">
+	<button type="button" class="btn btn-sm btn-default activeButton"
+		data-toggle="tooltip" data-placement="bottom" title="">
+		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+	</button>
 	<a class="batchLink" href=""></a>
 	<div class="batchBtnGroup btn-group" aria-hidden="true">
 		<button type="button" class="batchResults btn btn-info"
@@ -80,7 +84,9 @@ function fillBatchList(batchList) {
 	$("#batchList").empty();
 	$.each(batchList, function(index, batch) {
 		var toolbar = $('#batchRowTemplateDiv').clone().show();
+		// Write batch object into toolbar's data attribute so we can use it later on 
 		$(toolbar).data(batch);
+		setButtonActive($(toolbar).find('.activeButton'), batch.active);
 		$(toolbar).find('.batchLink').text(batch.title);
 		var url = "/jatos/@study.getId()/batch/" + batch.id;
 		$(toolbar).find('.batchLink').attr("href", url)
@@ -115,6 +121,44 @@ $("#createBatchForm").submit(function(event) {
 		}
 	});
 });
+
+$('#batchList').on('click', '.activeButton', function() {
+	var button = this;
+	var batch = getBatchData(this);
+	if (!batch) {return} // should never happen
+	var active = $(this).hasClass('activeBatch');
+	$.ajax({
+		url : "/jatos/" + @study.getId() +"/batch/" + batch.id
+				+ "/property?active=" + !active,
+		type : "POST",
+		success: function(response) {
+			setButtonActive($(button), response === 'true');
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+});
+
+function setButtonActive(button, active) {
+	if (active) {
+		button.addClass('activeBatch');
+		button.removeClass('btn-warning');
+		button.addClass('btn-info');
+		button.attr('title', "Click to deactivate this batch");
+		button.html($(button.html())
+				.removeClass('glyphicon-remove')
+				.addClass('glyphicon-ok').prop('outerHTML'));
+	} else {
+		button.removeClass('activeBatch');
+		button.removeClass('btn-info');
+		button.addClass('btn-warning');
+		button.attr('title', "Click to activate this batch");
+		button.html($(button.html())
+				.removeClass('glyphicon-ok')
+				.addClass('glyphicon-remove').prop('outerHTML'));
+	}
+}
 
 $('#batchList').on('click', '.removeBatch', function() {
 	var element = this;
