@@ -37,9 +37,9 @@ public class BatchService {
 	 */
 	public Batch clone(Batch batch) {
 		Batch clone = new Batch();
-		clone.setMinActiveMemberSize(batch.getMinActiveMemberSize());
-		clone.setMaxActiveMemberSize(batch.getMaxActiveMemberSize());
-		clone.setMaxTotalMemberSize(batch.getMaxTotalMemberSize());
+		clone.setMinActiveMembers(batch.getMinActiveMembers());
+		clone.setMaxActiveMembers(batch.getMaxActiveMembers());
+		clone.setMaxTotalMembers(batch.getMaxTotalMembers());
 		batch.getAllowedWorkerTypes().forEach(clone::addAllowedWorkerType);
 		clone.setTitle(batch.getTitle());
 		clone.setActive(batch.isActive());
@@ -74,9 +74,9 @@ public class BatchService {
 	}
 
 	public void updateBatch(Batch batch, Batch updatedBatch) {
-		batch.setMinActiveMemberSize(updatedBatch.getMinActiveMemberSize());
-		batch.setMaxActiveMemberSize(updatedBatch.getMaxActiveMemberSize());
-		batch.setMaxTotalMemberSize(updatedBatch.getMaxTotalMemberSize());
+		batch.setMinActiveMembers(updatedBatch.getMinActiveMembers());
+		batch.setMaxActiveMembers(updatedBatch.getMaxActiveMembers());
+		batch.setMaxTotalMembers(updatedBatch.getMaxTotalMembers());
 		batch.getAllowedWorkerTypes().clear();
 		updatedBatch.getAllowedWorkerTypes()
 				.forEach(batch::addAllowedWorkerType);
@@ -89,11 +89,11 @@ public class BatchService {
 		BatchProperties props = new BatchProperties();
 		batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
 		props.setId(batch.getId());
-		props.setMaxActiveMemberSize(batch.getMaxActiveMemberSize());
-		props.setMaxActiveMemberLimited(batch.getMaxActiveMemberSize() != null);
-		props.setMaxTotalMemberSize(batch.getMaxTotalMemberSize());
-		props.setMaxTotalMemberLimited(batch.getMaxTotalMemberSize() != null);
-		props.setMinActiveMemberSize(batch.getMinActiveMemberSize());
+		props.setMaxActiveMembers(batch.getMaxActiveMembers());
+		props.setMaxActiveMemberLimited(batch.getMaxActiveMembers() != null);
+		props.setMaxTotalMembers(batch.getMaxTotalMembers());
+		props.setMaxTotalMemberLimited(batch.getMaxTotalMembers() != null);
+		props.setMinActiveMembers(batch.getMinActiveMembers());
 		props.setTitle(batch.getTitle());
 		props.setActive(batch.isActive());
 		return props;
@@ -103,16 +103,16 @@ public class BatchService {
 		Batch batch = new Batch();
 		props.getAllowedWorkerTypes().forEach(batch::addAllowedWorkerType);
 		if (props.isMaxActiveMemberLimited()) {
-			batch.setMaxActiveMemberSize(props.getMaxActiveMemberSize());
+			batch.setMaxActiveMembers(props.getMaxActiveMembers());
 		} else {
-			batch.setMaxActiveMemberSize(null);
+			batch.setMaxActiveMembers(null);
 		}
 		if (props.isMaxTotalMemberLimited()) {
-			batch.setMaxTotalMemberSize(props.getMaxTotalMemberSize());
+			batch.setMaxTotalMembers(props.getMaxTotalMembers());
 		} else {
-			batch.setMaxTotalMemberSize(null);
+			batch.setMaxTotalMembers(null);
 		}
-		batch.setMinActiveMemberSize(props.getMinActiveMemberSize());
+		batch.setMinActiveMembers(props.getMinActiveMembers());
 		batch.setTitle(props.getTitle());
 		batch.setActive(props.isActive());
 		return batch;

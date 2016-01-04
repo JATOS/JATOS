@@ -152,7 +152,7 @@ public class Batches extends Controller {
 		String breadcrumbs = breadcrumbsService.generateForRunManager(study,
 				batch);
 		return ok(views.html.gui.study.batch.render(loggedInUser, breadcrumbs,
-				batch.getId(), studyId, study.isLocked()));
+				batch.getId(), study));
 	}
 
 	/**

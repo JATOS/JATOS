@@ -1,4 +1,4 @@
-@(loggedInUser: common.User, breadcrumbs: String, batchId: Long, studyId: Long, studyIsLocked: Boolean)
+@(loggedInUser: common.User, breadcrumbs: String, batchId: Long, study: common.Study)
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
@@ -53,38 +53,56 @@
 					</div>
 					
 					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">Max total worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the maximal number of workers that can do this study altogether." aria-hidden="true"></span></label>
+						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED">Max total workers &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of workers this batch is allowed to have." aria-hidden="true"></span></label>
 						<div class="col-xs-3">
 							<div class="input-group">
 								<span class="input-group-addon">
-									<input type="checkbox" class="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">
+									<input type="checkbox" class="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED" name="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED">
 									<!-- We need a hidden input field.
 									http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-									<input type="hidden" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED" value="false" />
+									<input type="hidden" name="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED" value="false" />
 								</span>
-								<input type="number" class="form-control @models.gui.BatchProperties.MAX_TOTAL_MEMBER_SIZE" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_SIZE" min="1">
+								<input type="number" class="form-control @models.gui.BatchProperties.MAX_TOTAL_WORKERS" name="@models.gui.BatchProperties.MAX_TOTAL_WORKERS" min="1">
 							</div>
 						</div>
 					</div>
-					
-					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE">Min active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the min number of workers that can do this study at the same time." aria-hidden="true"></span></label>
-						<div class="col-xs-3 @models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE">
-							<input type="number" class="form-control @models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE" name="@models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE" min="1">
+				
+					<div class="well groupProperties">
+						<h4>Group Properties</h4>
+						<div class="form-group row">
+							<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">Max total members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of members a group can have, active or inactive." aria-hidden="true"></span></label>
+							<div class="col-xs-3">
+								<div class="input-group">
+									<span class="input-group-addon">
+										<input type="checkbox" class="groupProperty @models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">
+										<!-- We need a hidden input field.
+										http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+										<input type="hidden" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED" value="false" />
+									</span>
+									<input type="number" class="form-control @models.gui.BatchProperties.MAX_TOTAL_MEMBERS" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBERS" min="1">
+								</div>
+							</div>
 						</div>
-					</div>
-					
-					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">Max active worker &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of workers that can do this study at the same time." aria-hidden="true"></span></label>
-						<div class="col-xs-3">
-							<div class="input-group">
-								<span class="input-group-addon">
-									<input type="checkbox" class="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">
-									<!-- We need a hidden input field.
-									http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
-									<input type="hidden" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED" value="false" />
-								</span>
-								<input type="number" class="form-control @models.gui.BatchProperties.MAX_ACTIVE_MEMBER_SIZE" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_SIZE" min="1">
+						
+						<div class="form-group row">
+							<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MIN_ACTIVE_MEMBERS">Min active members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the min number of active members a group can have at the same time." aria-hidden="true"></span></label>
+							<div class="col-xs-3 @models.gui.BatchProperties.MIN_ACTIVE_MEMBERS">
+								<input type="number" class="form-control groupProperty @models.gui.BatchProperties.MIN_ACTIVE_MEMBERS" name="@models.gui.BatchProperties.MIN_ACTIVE_MEMBERS" min="1">
+							</div>
+						</div>
+						
+						<div class="form-group row">
+							<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">Max active members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of active members a group can have at the same time." aria-hidden="true"></span></label>
+							<div class="col-xs-3">
+								<div class="input-group">
+									<span class="input-group-addon">
+										<input type="checkbox" class="groupProperty @models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">
+										<!-- We need a hidden input field.
+										http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+										<input type="hidden" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED" value="false" />
+									</span>
+									<input type="number" class="form-control @models.gui.BatchProperties.MAX_ACTIVE_MEMBERS" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS" min="1">
+								</div>
 							</div>
 						</div>
 					</div>
@@ -164,22 +182,22 @@
 
 <script>
 
-@if(studyIsLocked) {
-	$(':input').attr("disabled", true);
+@if(!study.isGroupStudy) {
+$('#batchPropertiesModal .groupProperties').fadeTo(0, 0.5)
 }
 
 $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED').change(function() {
-	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_MEMBER_SIZE').prop("disabled", !this.checked);
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_MEMBERS').prop("disabled", !this.checked);
 });
 
 $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED').change(function() {
-	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_SIZE').prop("disabled", !this.checked);
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS').prop("disabled", !this.checked);
 });
 
 $('#batchPropertiesButton').click(function(event) {
 	$.ajax({
 		type: 'GET',
-		url: "@controllers.gui.routes.Batches.properties(studyId, batchId)",
+		url: "@controllers.gui.routes.Batches.properties(study.getId(), batchId)",
 		success: function(properties) {
 			removeWarnings('#batchPropertiesModal');
 			removeFormErrors('#batchPropertiesModal')
@@ -193,19 +211,21 @@ $('#batchPropertiesButton').click(function(event) {
 });
 
 function fillbatchPropertiesForm(properties) {
-	$('#batchPropertiesModal .@models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE').val(properties['@models.gui.BatchProperties.MIN_ACTIVE_MEMBER_SIZE']);
 	$('#batchPropertiesModal .@models.gui.BatchProperties.TITLE').val(properties['@models.gui.BatchProperties.TITLE']);
 	setInputGroupWithCheckbox('batchPropertiesModal',
-			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED',
-			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_SIZE',
-			properties);
-	setInputGroupWithCheckbox('batchPropertiesModal',
-			'@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED',
-			'@models.gui.BatchProperties.MAX_TOTAL_MEMBER_SIZE',
-			properties);
+			'@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED',
+			'@models.gui.BatchProperties.MAX_TOTAL_WORKERS', properties);
 	$.each(properties['allowedWorkerTypes'], function(index, workerType) {
 		$('#batchPropertiesModal' + ' .' + workerType).prop('checked', true);
 	});
+	// Group properties
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MIN_ACTIVE_MEMBERS').val(properties['@models.gui.BatchProperties.MIN_ACTIVE_MEMBERS']);
+	setInputGroupWithCheckbox('batchPropertiesModal',
+			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED',
+			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS', properties);
+	setInputGroupWithCheckbox('batchPropertiesModal',
+			'@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED',
+			'@models.gui.BatchProperties.MAX_TOTAL_MEMBERS', properties);
 }
 
 function setInputGroupWithCheckbox(modal, checkbox, input, properties) {
@@ -224,7 +244,7 @@ $("#batchPropertiesForm").submit(function(event) {
 	event.preventDefault();
 	$.ajax({
 		type: 'POST',
-		url: "@controllers.gui.routes.Batches.submitEditedProperties(studyId, batchId)",
+		url: "@controllers.gui.routes.Batches.submitEditedProperties(study.getId(), batchId)",
 		data: $('#batchPropertiesForm').serialize(), 
 		success: function(response) {
 			removeWarnings('#batchPropertiesModal');

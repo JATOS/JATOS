@@ -30,7 +30,7 @@ import utils.common.JsonUtils;
  * results of a study. The results of a study are stored in StudyResults and
  * ComponentResult. A study consists of a list components and their model is
  * Component. Default values, where necessary, are at the fields or in the
- * constructor. For the GUI model StudyProperties is used.
+ * constructor. As the GUI model {@link models.gui.StudyProperties} is used.
  * 
  * @author Kristian Lange (2014)
  */

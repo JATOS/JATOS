@@ -38,12 +38,14 @@ public class MessagesStrings {
 	public static final String STUDY_WASNT_SAVED = "Study wasn't saved";
 	public static final String COMPONENT_WASNT_SAVED = "Component wasn't saved";
 	public static final String BATCH_WASNT_SAVED = "Data weren't saved";
-	public static final String BATCH_MIN_ACTIVE_MEMBER_SIZE = "Batch's min active member size must be at least 1.";
-	public static final String BATCH_MAX_ACTIVE_MEMBER_SIZE_SET = "Batch's max acitive members size must be set if you want to limit it.";
-	public static final String BATCH_MAX_ACTIVE_MEMBER_SIZE = "Batch's max active member size must be greater or equal than the min one.";
-	public static final String BATCH_MAX_TOTAL_MEMBER_SIZE_SET = "Batch's max total members size must be set if you want to limit it.";
-	public static final String BATCH_MAX_TOTAL_MEMBER_SIZE = "Batch's max total members size must be greater or equal than the max active member size.";
-
+	public static final String BATCH_MIN_ACTIVE_MEMBERS = "Group's min active member size must be at least 1.";
+	public static final String BATCH_MAX_ACTIVE_MEMBERS_SET = "Group's max acitive members size must be set if you want to limit it.";
+	public static final String BATCH_MAX_ACTIVE_MEMBERS = "Group's max active member size must be greater or equal than the min one.";
+	public static final String BATCH_MAX_TOTAL_MEMBERS_SET = "Group's max total members size must be set if you want to limit it.";
+	public static final String BATCH_MAX_TOTAL_MEMBERS = "Group's max total members size must be greater or equal than the max active member size.";
+	public static final String BATCH_MAX_TOTAL_WORKER_SET = "Batch's max total worker size must be set if you want to limit it.";
+	public static final String BATCH_MAX_TOTAL_WORKERS = "Batch's max total worker size must be at least 1.";
+	
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";

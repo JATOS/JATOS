@@ -33,9 +33,10 @@ CREATE TABLE `ComponentResult` (
 CREATE TABLE `Batch` (
   `active` tinyint(1) NOT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `minActiveMemberSize` int(11) NOT NULL,
-  `maxActiveMemberSize` int(11) DEFAULT NULL,
-  `maxTotalMemberSize` int(11) DEFAULT NULL,
+  `minActiveMembers` int(11) NOT NULL,
+  `maxActiveMembers` int(11) DEFAULT NULL,
+  `maxTotalMembers` int(11) DEFAULT NULL,
+  `maxTotalWorkers` int(11) DEFAULT NULL,
   `study_id` bigint(20) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -100,6 +101,7 @@ CREATE TABLE `User` (
 ) DEFAULT CHARSET=utf8;
 
 CREATE TABLE `Worker` (
+  `batch_id` bigint(20) NOT NULL,
   `workerType` varchar(31) NOT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `mtWorkerId` varchar(255) DEFAULT NULL,
@@ -144,6 +146,8 @@ ALTER TABLE `Batch_allowedWorkerTypes` ADD CONSTRAINT `FK_kwj5qdspmur6iqdgtb7kjv
 
 ALTER TABLE `Worker` ADD KEY `FK_rvmm2rl58o8ui2tsq774o8rij` (`user_email`);
 ALTER TABLE `Worker` ADD CONSTRAINT `FK_rvmm2rl58o8ui2tsq774o8rij` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`);
+ALTER TABLE `Worker` ADD KEY `FK_iyprj4xbhmjbf2q0ykqnlon1x` (`batch_id`);
+ALTER TABLE `Worker` ADD CONSTRAINT `FK_iyprj4xbhmjbf2q0ykqnlon1x` FOREIGN KEY (`batch_id`) REFERENCES `Batch` (`id`);
 
 
 # --- !Downs

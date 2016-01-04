@@ -19,7 +19,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import utils.common.JsonUtils;
 
 /**
- * Model and DB entity of a component.
+ * DB entity of a component. The corresponding UI model is
+ * {@link models.gui.ComponentProperties}.
  * 
  * @author Kristian Lange
  */
@@ -31,7 +32,7 @@ public class Component {
 	 * Version of this model used for serialisation (e.g. JSON marshaling)
 	 */
 	public static final int SERIAL_VERSION = 1;
-	
+
 	@Id
 	@GeneratedValue
 	@JsonView(JsonUtils.JsonForPublix.class)

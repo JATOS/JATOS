@@ -9,22 +9,32 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import general.common.MessagesStrings;
+import models.common.workers.Worker;
 import play.data.validation.ValidationError;
 
 /**
  * Model of batch properties for UI (not persisted in DB). Only used together
- * with an HTML form that creates a new Batch or updates one.
+ * with an HTML form that creates a new Batch or updates one. Default values,
+ * where necessary, are at the fields or in the constructor. The corresponding
+ * database entity is {@link models.common.Batch}.
  * 
- * @author Kristian Lange
+ * An active member is a member who joined a group and is still member of this
+ * group. minActiveMembers, maxActiveMemberLimited, maxActiveMembers,
+ * maxTotalMemberLimited and maxTotalMembers are properties for groups.
+ * 
+ * @author Kristian Lange (2015)
  */
 public class BatchProperties {
 
-	public static final String MIN_ACTIVE_MEMBER_SIZE = "minActiveMemberSize";
-	public static final String MAX_ACTIVE_MEMBER_SIZE = "maxActiveMemberSize";
+	public static final String MIN_ACTIVE_MEMBERS = "minActiveMembers";
+	public static final String MAX_ACTIVE_MEMBERS = "maxActiveMembers";
 	public static final String MAX_ACTIVE_MEMBER_LIMITED = "maxActiveMemberLimited";
-	public static final String MAX_TOTAL_MEMBER_SIZE = "maxTotalMemberSize";
+	public static final String MAX_TOTAL_MEMBERS = "maxTotalMembers";
 	public static final String MAX_TOTAL_MEMBER_LIMITED = "maxTotalMemberLimited";
+	public static final String MAX_TOTAL_WORKERS = "maxTotalWorkers";
+	public static final String MAX_TOTAL_WORKER_LIMITED = "maxTotalWorkerLimited";
 	public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
+	public static final String ALLOWED_WORKERS = "allowedWorkers";
 	public static final String TITLE = "title";
 	public static final String ACTIVE = "active";
 
@@ -36,33 +46,60 @@ public class BatchProperties {
 	private String title;
 
 	/**
-	 * Only active (if true) batches can be used.
+	 * True if batch can be used.
 	 */
 	private boolean active = true;
 
 	/**
-	 * Minimum number of workers in the batch that are active at the same time.
+	 * Minimum number of workers/members in one group of this batch that are
+	 * active at the same time. This property is only used if this batch belongs
+	 * to a group study.
 	 */
-	private Integer minActiveMemberSize = 1;
+	private Integer minActiveMembers = 2;
 
+	/**
+	 * Set to true if the maxActiveMembers are limited (= groups have an limited
+	 * number of active members). False otherwise.
+	 */
 	private boolean maxActiveMemberLimited = false;
 
 	/**
-	 * Maximum number of workers in the batch that are active at the same time.
-	 * If there is no limit in active members the value is null.
+	 * Maximum number of workers/members in one group of this batch that are
+	 * active at the same time.
 	 */
-	private Integer maxActiveMemberSize = null;
+	private Integer maxActiveMembers = null;
 
+	/**
+	 * Set to true if the maxTotalMembers are limited (= groups have a limited
+	 * number of members). False otherwise.
+	 */
 	private boolean maxTotalMemberLimited = false;
 
 	/**
-	 * Maximum number of workers in total. If there is no limit in active
-	 * members the value is null.
+	 * Maximum number of workers/members active or inactive in one group of this
+	 * batch in total.
 	 */
-	private Integer maxTotalMemberSize = null;
+	private Integer maxTotalMembers = null;
 
 	/**
-	 * List of worker types that are allowed to run this study. If the worker
+	 * Set to true if the maxTotalWorkers are limited (= the whole batch has a
+	 * limited number of workers). False otherwise.
+	 */
+	private boolean maxTotalWorkerLimited = false;
+
+	/**
+	 * Maximum number of workers in this batch in total independent of its
+	 * groups.
+	 */
+	private Integer maxTotalWorkers = null;
+
+	/**
+	 * Set of workers that are allowed to run in this batch.
+	 */
+	private Set<Worker> allowedWorkers = new HashSet<>();
+
+	/**
+	 * Set of worker types that are allowed to run in this batch. If the worker
 	 * type is not in this list, it has no permission to run this study.
 	 */
 	private Set<String> allowedWorkerTypes = new HashSet<>();
@@ -91,12 +128,12 @@ public class BatchProperties {
 		this.active = active;
 	}
 
-	public Integer getMinActiveMemberSize() {
-		return minActiveMemberSize;
+	public Integer getMinActiveMembers() {
+		return minActiveMembers;
 	}
 
-	public void setMinActiveMemberSize(Integer minActiveMemberSize) {
-		this.minActiveMemberSize = minActiveMemberSize;
+	public void setMinActiveMembers(Integer minActiveMembers) {
+		this.minActiveMembers = minActiveMembers;
 	}
 
 	public boolean isMaxActiveMemberLimited() {
@@ -107,12 +144,12 @@ public class BatchProperties {
 		this.maxActiveMemberLimited = maxActiveMemberLimited;
 	}
 
-	public Integer getMaxActiveMemberSize() {
-		return maxActiveMemberSize;
+	public Integer getMaxActiveMembers() {
+		return maxActiveMembers;
 	}
 
-	public void setMaxActiveMemberSize(Integer maxActiveMemberSize) {
-		this.maxActiveMemberSize = maxActiveMemberSize;
+	public void setMaxActiveMembers(Integer maxActiveMembers) {
+		this.maxActiveMembers = maxActiveMembers;
 	}
 
 	public boolean isMaxTotalMemberLimited() {
@@ -123,12 +160,28 @@ public class BatchProperties {
 		this.maxTotalMemberLimited = maxTotalMemberLimited;
 	}
 
-	public Integer getMaxTotalMemberSize() {
-		return maxTotalMemberSize;
+	public Integer getMaxTotalMembers() {
+		return maxTotalMembers;
 	}
 
-	public void setMaxTotalMemberSize(Integer maxTotalMemberSize) {
-		this.maxTotalMemberSize = maxTotalMemberSize;
+	public void setMaxTotalMembers(Integer maxTotalMembers) {
+		this.maxTotalMembers = maxTotalMembers;
+	}
+
+	public boolean isMaxTotalWorkerLimited() {
+		return maxTotalWorkerLimited;
+	}
+
+	public void setMaxTotalWorkerLimited(boolean maxTotalWorkerLimited) {
+		this.maxTotalWorkerLimited = maxTotalWorkerLimited;
+	}
+
+	public Integer getMaxTotalWorkers() {
+		return maxTotalWorkers;
+	}
+
+	public void setMaxTotalWorkers(Integer maxTotalWorkers) {
+		this.maxTotalWorkers = maxTotalWorkers;
 	}
 
 	public void setAllowedWorkerTypes(Set<String> allowedWorkerTypes) {
@@ -151,6 +204,26 @@ public class BatchProperties {
 		return allowedWorkerTypes.contains(workerType);
 	}
 
+	public void setAllowedWorkers(Set<Worker> allowedWorkers) {
+		this.allowedWorkers = allowedWorkers;
+	}
+
+	public Set<Worker> getAllowedWorkers() {
+		return this.allowedWorkers;
+	}
+
+	public void addAllowedWorker(Worker worker) {
+		allowedWorkers.add(worker);
+	}
+
+	public void removeAllowedWorker(Worker worker) {
+		allowedWorkers.remove(worker);
+	}
+
+	public boolean hasAllowedWorker(Worker worker) {
+		return allowedWorkers.contains(worker);
+	}
+
 	@Override
 	public String toString() {
 		return String.valueOf(id) + " " + title;
@@ -166,30 +239,39 @@ public class BatchProperties {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (minActiveMemberSize == null || minActiveMemberSize < 1) {
-			errorList.add(new ValidationError(MIN_ACTIVE_MEMBER_SIZE,
-					MessagesStrings.BATCH_MIN_ACTIVE_MEMBER_SIZE));
+		if (minActiveMembers == null || minActiveMembers < 1) {
+			errorList.add(new ValidationError(MIN_ACTIVE_MEMBERS,
+					MessagesStrings.BATCH_MIN_ACTIVE_MEMBERS));
 		}
-		if (maxActiveMemberLimited && maxActiveMemberSize == null) {
-			errorList.add(new ValidationError(MAX_ACTIVE_MEMBER_SIZE,
-					MessagesStrings.BATCH_MAX_ACTIVE_MEMBER_SIZE_SET));
+		if (maxActiveMemberLimited && maxActiveMembers == null) {
+			errorList.add(new ValidationError(MAX_ACTIVE_MEMBERS,
+					MessagesStrings.BATCH_MAX_ACTIVE_MEMBERS_SET));
 		}
-		if (maxActiveMemberLimited && maxActiveMemberSize != null
-				&& minActiveMemberSize != null
-				&& maxActiveMemberSize < minActiveMemberSize) {
-			errorList.add(new ValidationError(MAX_ACTIVE_MEMBER_SIZE,
-					MessagesStrings.BATCH_MAX_ACTIVE_MEMBER_SIZE));
+		if (maxActiveMemberLimited && maxActiveMembers != null
+				&& minActiveMembers != null
+				&& maxActiveMembers < minActiveMembers) {
+			errorList.add(new ValidationError(MAX_ACTIVE_MEMBERS,
+					MessagesStrings.BATCH_MAX_ACTIVE_MEMBERS));
 		}
-		if (maxTotalMemberLimited && maxTotalMemberSize == null) {
-			errorList.add(new ValidationError(MAX_TOTAL_MEMBER_SIZE,
-					MessagesStrings.BATCH_MAX_TOTAL_MEMBER_SIZE_SET));
+		if (maxTotalMemberLimited && maxTotalMembers == null) {
+			errorList.add(new ValidationError(MAX_TOTAL_MEMBERS,
+					MessagesStrings.BATCH_MAX_TOTAL_MEMBERS_SET));
 		}
-		if (maxTotalMemberLimited && maxTotalMemberSize != null
-				&& maxActiveMemberSize != null
-				&& maxTotalMemberSize < maxActiveMemberSize) {
-			errorList.add(new ValidationError(MAX_TOTAL_MEMBER_SIZE,
-					MessagesStrings.BATCH_MAX_TOTAL_MEMBER_SIZE));
+		if (maxTotalMemberLimited && maxTotalMembers != null
+				&& maxActiveMembers != null
+				&& maxTotalMembers < maxActiveMembers) {
+			errorList.add(new ValidationError(MAX_TOTAL_MEMBERS,
+					MessagesStrings.BATCH_MAX_TOTAL_MEMBERS));
 		}
+		if (maxTotalWorkers != null && maxTotalWorkers < 1) {
+			errorList.add(new ValidationError(MAX_TOTAL_WORKERS,
+					MessagesStrings.BATCH_MAX_TOTAL_WORKERS));
+		}
+		if (maxTotalWorkerLimited && maxTotalWorkers == null) {
+			errorList.add(new ValidationError(MAX_TOTAL_WORKERS,
+					MessagesStrings.BATCH_MAX_TOTAL_WORKER_SET));
+		}
+		
 		return errorList.isEmpty() ? null : errorList;
 	}
 

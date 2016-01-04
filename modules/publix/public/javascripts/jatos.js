@@ -647,7 +647,7 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
  *         channel.
  */
 jatos.isMinActiveMemberReached = function() {
-	return jatos.groupMembers.length >= jatos.batchProperties.minActiveMemberSize;
+	return jatos.groupMembers.length >= jatos.batchProperties.minActiveMembers;
 };
 
 /**
@@ -655,7 +655,7 @@ jatos.isMinActiveMemberReached = function() {
  *         members and each member has an open group channel.
  */
 jatos.isMinActiveMemberOpen = function() {
-	return jatos.groupChannels.length >= jatos.batchProperties.minActiveMemberSize;
+	return jatos.groupChannels.length >= jatos.batchProperties.minActiveMembers;
 };
 
 /**
@@ -664,10 +664,10 @@ jatos.isMinActiveMemberOpen = function() {
  *         channel.
  */
 jatos.isMaxActiveMemberReached = function() {
-	if (jatos.batchProperties.maxActiveMemberSize == null) {
+	if (jatos.batchProperties.maxActiveMembers == null) {
 		return false;
 	} else {
-		return jatos.groupMembers.length >= jatos.batchProperties.maxActiveMemberSize;
+		return jatos.groupMembers.length >= jatos.batchProperties.maxActiveMembers;
 	}
 };
 
@@ -676,10 +676,10 @@ jatos.isMaxActiveMemberReached = function() {
  *         members and each member has an open group channel.
  */
 jatos.isMaxActiveMemberOpen = function() {
-	if (jatos.batchProperties.maxActiveMemberSize == null) {
+	if (jatos.batchProperties.maxActiveMembers == null) {
 		return false;
 	} else {
-		return jatos.groupChannels.length >= jatos.batchProperties.maxActiveMemberSize;
+		return jatos.groupChannels.length >= jatos.batchProperties.maxActiveMembers;
 	}
 };
 

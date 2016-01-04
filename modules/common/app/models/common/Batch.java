@@ -3,20 +3,28 @@ package models.common;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
+import models.common.workers.Worker;
 import utils.common.JsonUtils;
 
 /**
- * Model of a DB entity of a batch. Default values, where necessary, are at the
- * fields or the constructor.
+ * Model of a DB entity of a batch. The corresponding UI model is
+ * {@link models.gui.BatchProperties}.
+ * 
+ * An active member is a member who joined a group and is still member of this
+ * group. minActiveMembers, maxActiveMemberLimited, maxActiveMembers,
+ * maxTotalMemberLimited and maxTotalMembers are properties for groups.
  * 
  * @author Kristian Lange (2015)
  */
@@ -28,7 +36,7 @@ public class Batch {
 	@GeneratedValue
 	@JsonView({ JsonUtils.JsonForPublix.class })
 	private Long id;
-	
+
 	/**
 	 * Title of the batch
 	 */
@@ -42,31 +50,51 @@ public class Batch {
 	private boolean active;
 
 	/**
-	 * Minimum number of workers in the batch that are active at the same time.
+	 * Minimum number of workers/members in one group of this batch that are
+	 * active at the same time. This property is only used if this batch belongs
+	 * to a group study.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
-	private int minActiveMemberSize = 2;
+	private int minActiveMembers = 2;
 
 	/**
-	 * Maximum number of workers in the batch that are active at the same time.
-	 * If there is no limit in active members the value is null.
+	 * Maximum number of workers/members in one group of this batch that are
+	 * active at the same time. If there is no limit in active members the value
+	 * is null. This property is only used if this batch belongs to a group
+	 * study.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
-	private Integer maxActiveMemberSize = null;
+	private Integer maxActiveMembers = null;
 
 	/**
-	 * Maximum number of workers in total. If there is no limit in active
-	 * members the value is null.
+	 * Maximum number of workers/members in one group of this batch in total. If
+	 * there is no limit in active members the value is null. This property is
+	 * only used if this batch belongs to a group study.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
-	private Integer maxTotalMemberSize = null;
+	private Integer maxTotalMembers = null;
 
 	/**
-	 * List of worker types that are allowed to run in this batch. If the worker
+	 * Maximum number of workers in this batch in total independent of its
+	 * groups. If there is no limit in active members the value is null.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
+	private Integer maxTotalWorkers = null;
+
+	/**
+	 * Set of workers that are allowed to run in this batch.
+	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
+	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "batch_id")
+	private Set<Worker> allowedWorkers = new HashSet<>();
+
+	/**
+	 * Set of worker types that are allowed to run in this batch. If the worker
 	 * type is not in this list, it has no permission to run this study.
 	 */
+	@JsonView({ JsonUtils.JsonForPublix.class })
 	@ElementCollection
-	@JsonIgnore
 	private Set<String> allowedWorkerTypes = new HashSet<>();
 
 	public Batch() {
@@ -79,7 +107,7 @@ public class Batch {
 	public Long getId() {
 		return this.id;
 	}
-	
+
 	public String getTitle() {
 		return title;
 	}
@@ -96,28 +124,36 @@ public class Batch {
 		this.active = active;
 	}
 
-	public int getMinActiveMemberSize() {
-		return minActiveMemberSize;
+	public int getMinActiveMembers() {
+		return minActiveMembers;
 	}
 
-	public void setMinActiveMemberSize(int minActiveMemberSize) {
-		this.minActiveMemberSize = minActiveMemberSize;
+	public void setMinActiveMembers(int minActiveMembers) {
+		this.minActiveMembers = minActiveMembers;
 	}
 
-	public Integer getMaxActiveMemberSize() {
-		return maxActiveMemberSize;
+	public Integer getMaxActiveMembers() {
+		return maxActiveMembers;
 	}
 
-	public void setMaxActiveMemberSize(Integer maxActiveMemberSize) {
-		this.maxActiveMemberSize = maxActiveMemberSize;
+	public void setMaxActiveMembers(Integer maxActiveMembers) {
+		this.maxActiveMembers = maxActiveMembers;
 	}
 
-	public Integer getMaxTotalMemberSize() {
-		return maxTotalMemberSize;
+	public Integer getMaxTotalMembers() {
+		return maxTotalMembers;
 	}
 
-	public void setMaxTotalMemberSize(Integer maxTotalMemberSize) {
-		this.maxTotalMemberSize = maxTotalMemberSize;
+	public void setMaxTotalMembers(Integer maxTotalMembers) {
+		this.maxTotalMembers = maxTotalMembers;
+	}
+
+	public Integer getMaxTotalWorkers() {
+		return maxTotalWorkers;
+	}
+
+	public void setMaxTotalWorkers(Integer maxTotalWorkers) {
+		this.maxTotalWorkers = maxTotalWorkers;
 	}
 
 	public void setAllowedWorkerTypes(Set<String> allowedWorkerTypes) {
@@ -140,9 +176,29 @@ public class Batch {
 		return allowedWorkerTypes.contains(workerType);
 	}
 
+	public void setAllowedWorkers(Set<Worker> allowedWorkers) {
+		this.allowedWorkers = allowedWorkers;
+	}
+
+	public Set<Worker> getAllowedWorkers() {
+		return this.allowedWorkers;
+	}
+
+	public void addAllowedWorker(Worker worker) {
+		allowedWorkers.add(worker);
+	}
+
+	public void removeAllowedWorker(Worker worker) {
+		allowedWorkers.remove(worker);
+	}
+
+	public boolean hasAllowedWorker(Worker worker) {
+		return allowedWorkers.contains(worker);
+	}
+
 	@Override
 	public String toString() {
-		return String.valueOf(id);
+		return String.valueOf(id) + " " + title;
 	}
 
 	@Override

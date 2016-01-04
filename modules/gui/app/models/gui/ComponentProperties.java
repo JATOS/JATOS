@@ -17,7 +17,8 @@ import utils.common.JsonUtils;
 
 /**
  * Model of component properties for UI (not persisted in DB). Only used
- * together with an HTML form that creates a new Component or updates one.
+ * together with an HTML form that creates a new Component or updates one. The
+ * corresponding database entity is {@link models.common.Component}.
  * 
  * @author Kristian Lange
  */
