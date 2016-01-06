@@ -26,6 +26,8 @@ import play.data.validation.ValidationError;
  */
 public class BatchProperties {
 
+	public static final String TITLE = "title";
+	public static final String ACTIVE = "active";
 	public static final String MIN_ACTIVE_MEMBERS = "minActiveMembers";
 	public static final String MAX_ACTIVE_MEMBERS = "maxActiveMembers";
 	public static final String MAX_ACTIVE_MEMBER_LIMITED = "maxActiveMemberLimited";
@@ -35,8 +37,6 @@ public class BatchProperties {
 	public static final String MAX_TOTAL_WORKER_LIMITED = "maxTotalWorkerLimited";
 	public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
 	public static final String ALLOWED_WORKERS = "allowedWorkers";
-	public static final String TITLE = "title";
-	public static final String ACTIVE = "active";
 
 	private Long id;
 

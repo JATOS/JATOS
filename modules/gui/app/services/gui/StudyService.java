@@ -211,7 +211,7 @@ public class StudyService {
 	 * Persist the given Study and create the Batch.
 	 */
 	public Study createStudy(User loggedInUser, Study study) {
-		Batch batch = batchService.createDefaultBatch();
+		Batch batch = batchService.createDefaultBatch(loggedInUser);
 		study.addBatch(batch);
 		studyDao.create(study, loggedInUser);
 		return study;

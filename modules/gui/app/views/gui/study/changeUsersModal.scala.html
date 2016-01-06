@@ -27,6 +27,7 @@ $('#studyToolbar').on('click', '#changeUsersLink', function() {
 		success: function(response) {
 			removeWarnings("#changeUsersModal");
 			removeFormErrors("#changeUsersModal");
+			clearForm("#changeUsersForm");
 			fillChangeUsersForm(response);
 			$('#changeUsersModal').modal('show');
 		},
@@ -37,7 +38,6 @@ $('#studyToolbar').on('click', '#changeUsersLink', function() {
 });
 
 function fillChangeUsersForm(userArray) {
-	$("#changeUsersModal .form-group").remove();
 	$.each(userArray, function(index, user) {
 		var checked = (user.admin ? 'checked' : '');
 		var inputHtml = '<div class="form-group"><div class="col-lg-offset-2 col-lg-10"><label class="checkbox-inline">'

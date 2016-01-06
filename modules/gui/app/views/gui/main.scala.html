@@ -150,7 +150,7 @@ function removeSingleFormError(selector) {
 }
 
 function clearForm(formElem) {
-	$(formElem + " input[type=text], input[type=password], textarea").val("");
+	$(formElem + " input[type=text], input[type=number], input[type=password], textarea").val("");
 	$(formElem + " input[type=checkbox]").removeAttr('checked');
 	$(formElem + " input[type=radio]").removeAttr('selected');
 }

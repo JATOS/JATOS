@@ -6,9 +6,12 @@ import javax.inject.Inject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import controllers.gui.Authentication;
 import general.common.MessagesStrings;
+import general.gui.RequestScope;
 import models.common.Batch;
 import models.common.Study;
+import models.common.User;
 import models.common.legacy.StudyV2;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -41,8 +44,8 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 	 */
 	@Override
 	protected Study concreteUnmarshaling(String jsonStr) throws IOException {
-		JsonNode node = JsonUtils.OBJECTMAPPER.readTree(jsonStr).findValue(
-				JsonUtils.VERSION);
+		JsonNode node = JsonUtils.OBJECTMAPPER.readTree(jsonStr)
+				.findValue(JsonUtils.VERSION);
 		int version = node.asInt();
 		if (version > Study.SERIAL_VERSION) {
 			throw new IOException(MessagesStrings.TOO_NEW_STUDY_VERSION);
@@ -50,16 +53,16 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		switch (version) {
 		case 0:
 		case 2:
-			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr).findValue(
-					JsonUtils.DATA);
+			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr)
+					.findValue(JsonUtils.DATA);
 			StudyV2 studyV2 = JsonUtils.OBJECTMAPPER.treeToValue(node,
 					StudyV2.class);
 			study = bindV2(studyV2);
 			break;
 		case 3:
 			// Current version
-			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr).findValue(
-					JsonUtils.DATA);
+			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr)
+					.findValue(JsonUtils.DATA);
 			study = JsonUtils.OBJECTMAPPER.treeToValue(node, Study.class);
 			break;
 		default:
@@ -82,7 +85,9 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		study.setComments(studyV2.getComments());
 		study.setJsonData(studyV2.getJsonData());
 		study.setComponentList(studyV2.getComponentList());
-		Batch batch = batchService.createDefaultBatch();
+		User loggedInUser = (User) RequestScope
+				.get(Authentication.LOGGED_IN_USER);
+		Batch batch = batchService.createDefaultBatch(loggedInUser);
 		study.addBatch(batch);
 		return study;
 	}

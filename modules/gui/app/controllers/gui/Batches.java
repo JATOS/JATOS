@@ -127,7 +127,7 @@ public class Batches extends Controller {
 		BatchProperties batchProperties = form.get();
 		Batch batch = batchService.bindToBatch(batchProperties);
 
-		batchService.createBatch(batch, study);
+		batchService.createBatch(batch, study, loggedInUser);
 		return ok(batch.getId().toString());
 	}
 
@@ -175,7 +175,7 @@ public class Batches extends Controller {
 		}
 
 		BatchProperties batchProperties = batchService
-				.bindToBatchProperties(batch);
+				.bindToProperties(batch);
 		return ok(JsonUtils.asJsonNode(batchProperties));
 	}
 
