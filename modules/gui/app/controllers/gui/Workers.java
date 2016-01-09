@@ -69,7 +69,8 @@ public class Workers extends Controller {
 	 * Shows view with worker details.
 	 */
 	@Transactional
-	public Result index(Long workerId, int httpStatus) throws JatosGuiException {
+	public Result index(Long workerId, int httpStatus)
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -83,9 +84,8 @@ public class Workers extends Controller {
 
 		String breadcrumbs = breadcrumbsService.generateForWorker(worker,
 				BreadcrumbsService.RESULTS);
-		return status(httpStatus,
-				views.html.gui.result.workersStudyResults.render(loggedInUser,
-						breadcrumbs, worker));
+		return status(httpStatus, views.html.gui.result.workersStudyResults
+				.render(loggedInUser, breadcrumbs, worker));
 	}
 
 	@Transactional

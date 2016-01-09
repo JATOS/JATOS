@@ -3,7 +3,7 @@
 # ~~~~
 
 # Publix
-GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long)
+GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long, batchId: Long ?= -1)
 GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
 GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null)
 GET     /publix/:studyId/group/join                      @controllers.publix.PublixInterceptor.joinGroup(studyId: Long)

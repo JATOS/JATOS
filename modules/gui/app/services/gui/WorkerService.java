@@ -7,6 +7,13 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.BatchDao;
+import daos.common.StudyResultDao;
+import daos.common.worker.WorkerDao;
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import general.common.MessagesStrings;
+import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
@@ -15,11 +22,6 @@ import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import play.data.validation.ValidationError;
-import daos.common.StudyResultDao;
-import daos.common.worker.WorkerDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import general.common.MessagesStrings;
 
 /**
  * Service class for JATOS Controllers (not Publix)..
@@ -32,13 +34,15 @@ public class WorkerService {
 	private final StudyService studyService;
 	private final StudyResultDao studyResultDao;
 	private final WorkerDao workerDao;
+	private final BatchDao batchDao;
 
 	@Inject
 	WorkerService(StudyService studyService, StudyResultDao studyResultDao,
-			WorkerDao workerDao) {
+			WorkerDao workerDao, BatchDao batchDao) {
 		this.studyService = studyService;
 		this.studyResultDao = studyResultDao;
 		this.workerDao = workerDao;
+		this.batchDao = batchDao;
 	}
 
 	/**
@@ -65,8 +69,8 @@ public class WorkerService {
 		if (worker instanceof JatosWorker) {
 			JatosWorker maWorker = (JatosWorker) worker;
 			String errorMsg = MessagesStrings.removeJatosWorkerNotAllowed(
-					worker.getId(), maWorker.getUser().getName(), maWorker
-							.getUser().getEmail());
+					worker.getId(), maWorker.getUser().getName(),
+					maWorker.getUser().getEmail());
 			throw new ForbiddenException(errorMsg);
 		}
 
@@ -92,11 +96,13 @@ public class WorkerService {
 	/**
 	 * Creates, validates and persists a PersonalSingleWorker.
 	 */
-	public PersonalSingleWorker createPersonalSingleWorker(String comment)
-			throws BadRequestException {
+	public PersonalSingleWorker createPersonalSingleWorker(String comment,
+			Batch batch) throws BadRequestException {
 		PersonalSingleWorker worker = new PersonalSingleWorker(comment);
 		validateWorker(worker);
 		workerDao.create(worker);
+		batch.addAllowedWorker(worker);
+		batchDao.update(batch);
 		return worker;
 	}
 
@@ -104,11 +110,13 @@ public class WorkerService {
 	 * Creates, validates and persists a PersonalMultipleWorker (worker for a
 	 * Personal Multiple Run).
 	 */
-	public PersonalMultipleWorker createPersonalMultipleWorker(String comment)
-			throws BadRequestException {
+	public PersonalMultipleWorker createPersonalMultipleWorker(String comment,
+			Batch batch) throws BadRequestException {
 		PersonalMultipleWorker worker = new PersonalMultipleWorker(comment);
 		validateWorker(worker);
 		workerDao.create(worker);
+		batch.addAllowedWorker(worker);
+		batchDao.update(batch);
 		return worker;
 	}
 

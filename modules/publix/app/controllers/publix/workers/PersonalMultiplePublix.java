@@ -3,6 +3,14 @@ package controllers.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.publix.IPublix;
+import controllers.publix.Publix;
+import controllers.publix.StudyAssets;
+import daos.common.ComponentResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
+import exceptions.publix.PublixException;
+import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
 import models.common.workers.PersonalMultipleWorker;
@@ -15,13 +23,6 @@ import services.publix.workers.PersonalMultipleErrorMessages;
 import services.publix.workers.PersonalMultiplePublixUtils;
 import services.publix.workers.PersonalMultipleStudyAuthorisation;
 import utils.common.JsonUtils;
-import controllers.publix.IPublix;
-import controllers.publix.Publix;
-import controllers.publix.StudyAssets;
-import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
-import daos.common.StudyResultDao;
-import exceptions.publix.PublixException;
 
 /**
  * Implementation of JATOS' public API for studies run by
@@ -57,19 +58,21 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	}
 
 	@Override
-	public Result startStudy(Long studyId) throws PublixException {
+	public Result startStudy(Long studyId, Long batchId)
+			throws PublixException {
 		String workerId = getQueryString(PERSONAL_MULTIPLE_ID);
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "workerId " + workerId);
+				+ "batchId " + batchId + ", " + "workerId " + workerId);
 		Study study = publixUtils.retrieveStudy(studyId);
-
+		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		PersonalMultipleWorker worker = publixUtils
 				.retrieveTypedWorker(workerId);
-		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, workerId);
+		session(BATCH_ID, batch.getId().toString());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		studyResultDao.create(study, worker);
+		studyResultDao.create(study, batch, worker);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

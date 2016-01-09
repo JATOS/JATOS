@@ -27,8 +27,6 @@ import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.Logger;
@@ -110,11 +108,9 @@ public class Studies extends Controller {
 
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study);
-		String baseUrl = ControllerUtils.getReferer();
 		int studyResultCount = studyResultDao.countByStudy(study);
-		return status(httpStatus,
-				views.html.gui.study.index.render(loggedInUser, breadcrumbs,
-						study, workerSet, baseUrl, studyResultCount));
+		return status(httpStatus, views.html.gui.study.index.render(
+				loggedInUser, breadcrumbs, study, workerSet, studyResultCount));
 	}
 
 	@Transactional
@@ -340,101 +336,25 @@ public class Studies extends Controller {
 	}
 
 	/**
-	 * Actually shows the study. Uses JatosWorker. It redirects to
+	 * Actually runs the study with the given study ID, in the batch with the
+	 * given batch ID while using a JatosWorker. It redirects to
 	 * Publix.startStudy() action.
 	 */
 	@Transactional
-	public Result showStudy(Long studyId) throws JatosGuiException {
+	public Result runStudy(Long studyId, Long batchId)
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".showStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+				+ "batch " + batchId + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		session("jatos_run", "full_study");
 		String startStudyUrl = "/publix/" + study.getId() + "/start?"
-				+ "jatosWorkerId" + "=" + loggedInUser.getWorker().getId();
+				+ "batchId" + "=" + batchId + "&" + "jatosWorkerId" + "="
+				+ loggedInUser.getWorker().getId();
 		return redirect(startStudyUrl);
-	}
-
-	/**
-	 * Ajax request
-	 * 
-	 * Creates a PersonalSingleWorker and the URL that can be used for this kind
-	 * of run.
-	 */
-	@Transactional
-	public Result createPersonalSingleRun(Long studyId)
-			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".createPersonalSingleRun: studyId " + studyId
-				+ ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwAjax(e);
-		}
-
-		JsonNode json = request().body().asJson();
-		if (json == null) {
-			String errorMsg = MessagesStrings
-					.studyCreationOfPersonalSingleRunFailed(studyId);
-			return badRequest(errorMsg);
-		}
-		String comment = json.findPath(PersonalSingleWorker.COMMENT).asText()
-				.trim();
-		PersonalSingleWorker worker;
-		try {
-			worker = workerService.createPersonalSingleWorker(comment);
-		} catch (BadRequestException e) {
-			return badRequest(e.getMessage());
-		}
-
-		String url = ControllerUtils.getReferer() + "/publix/" + study.getId()
-				+ "/start?" + "personalSingleWorkerId" + "=" + worker.getId();
-		return ok(url);
-	}
-
-	/**
-	 * Ajax request
-	 * 
-	 * Creates a PersonalMultipleWorker and returns the URL that can be used for
-	 * a personal multiple run.
-	 */
-	@Transactional
-	public Result createPersonalMultipleRun(Long studyId)
-			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".createPersonalMultipleRun: studyId "
-				+ studyId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwAjax(e);
-		}
-
-		JsonNode json = request().body().asJson();
-		if (json == null) {
-			String errorMsg = MessagesStrings
-					.studyCreationOfPersonalMultipleRunFailed(studyId);
-			return badRequest(errorMsg);
-		}
-		String comment = json.findPath(PersonalMultipleWorker.COMMENT).asText()
-				.trim();
-		PersonalMultipleWorker worker;
-		try {
-			worker = workerService.createPersonalMultipleWorker(comment);
-		} catch (BadRequestException e) {
-			return badRequest(e.getMessage());
-		}
-
-		String url = ControllerUtils.getReferer() + "/publix/" + study.getId()
-				+ "/start?" + "personalMultipleId" + "=" + worker.getId();
-		return ok(url);
 	}
 
 	/**

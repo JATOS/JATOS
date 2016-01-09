@@ -11,6 +11,7 @@ public class PublixErrorMessages {
 
 	public static final String STUDY_NEVER_FINSHED = "Study not completed, but new study started by the same worker";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
+	public static final String NO_BATCHID_IN_SESSION = "No batch ID in session. Was the study started?";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
 	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
@@ -47,6 +48,23 @@ public class PublixErrorMessages {
 	public String workerTypeNotAllowed(String workerType) {
 		return "It's not allowed to run this study with a worker of type \""
 				+ workerType + "\".";
+	}
+
+	public String batchNotExist(Long batchId) {
+		return workerNotExist(String.valueOf(batchId));
+	}
+	
+	public String batchNotExist(String batchIdStr) {
+		return "A batch with ID " + batchIdStr + " doesn't exist.";
+	}
+	
+	public String batchMaxTotalWorkerReached(Long batchId) {
+		return "For the batch (ID: " + batchId
+				+ ") the maximum number of workers is already reached.";
+	}
+	
+	public String batchInactive(Long batchId) {
+		return "The batch (ID: " + batchId + ") is inactive.";
 	}
 
 	public String componentNotAllowedToReload(Long studyId, Long componentId) {
@@ -98,5 +116,5 @@ public class PublixErrorMessages {
 	public String studyFinishedWithMessage(String message) {
 		return "Study finished with message: " + message;
 	}
-	
+
 }

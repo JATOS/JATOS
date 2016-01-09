@@ -1,6 +1,7 @@
 package services.publix;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -13,6 +14,7 @@ import org.w3c.dom.Document;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.publix.Publix;
+import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
@@ -50,16 +52,19 @@ public abstract class PublixUtils<T extends Worker> {
 	private final ComponentDao componentDao;
 	private final ComponentResultDao componentResultDao;
 	private final WorkerDao workerDao;
+	private final BatchDao batchDao;
 
 	public PublixUtils(PublixErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, WorkerDao workerDao) {
+			ComponentResultDao componentResultDao, WorkerDao workerDao,
+			BatchDao batchDao) {
 		this.errorMessages = errorMessages;
 		this.studyDao = studyDao;
 		this.studyResultDao = studyResultDao;
 		this.componentDao = componentDao;
 		this.componentResultDao = componentResultDao;
 		this.workerDao = workerDao;
+		this.batchDao = batchDao;
 	}
 
 	/**
@@ -101,7 +106,8 @@ public abstract class PublixUtils<T extends Worker> {
 	public ComponentResult startComponent(Component component,
 			StudyResult studyResult) throws ForbiddenReloadException {
 		// Deal with the last component
-		ComponentResult lastComponentResult = retrieveLastComponentResult(studyResult);
+		ComponentResult lastComponentResult = retrieveLastComponentResult(
+				studyResult);
 		if (lastComponentResult != null) {
 			if (lastComponentResult.getComponent().equals(component)) {
 				// The component to be started is the same as the last one
@@ -114,9 +120,8 @@ public abstract class PublixUtils<T extends Worker> {
 					// component and study with FAIL
 					finishComponentResult(lastComponentResult,
 							ComponentState.FAIL);
-					String errorMsg = errorMessages
-							.componentNotAllowedToReload(studyResult.getStudy()
-									.getId(), component.getId());
+					String errorMsg = errorMessages.componentNotAllowedToReload(
+							studyResult.getStudy().getId(), component.getId());
 					// exceptionalFinishStudy(studyResult, errorMsg);
 					throw new ForbiddenReloadException(errorMsg);
 				}
@@ -155,8 +160,8 @@ public abstract class PublixUtils<T extends Worker> {
 				String.valueOf(studyResult.getId()));
 		String batchId = String.valueOf(batch.getId());
 		cookieMap.put(Publix.BATCH_ID, batchId);
-		String groupResultId = (groupResult != null) ? String
-				.valueOf(groupResult.getId()) : "null";
+		String groupResultId = (groupResult != null)
+				? String.valueOf(groupResult.getId()) : "null";
 		cookieMap.put(Publix.GROUP_RESULT_ID, groupResultId);
 		cookieMap.put(Publix.COMPONENT_ID, String.valueOf(component.getId()));
 		cookieMap.put(Publix.COMPONENT_RESULT_ID,
@@ -194,7 +199,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public void abortStudy(String message, StudyResult studyResult) {
 		// Put current ComponentResult into state ABORTED
-		ComponentResult currentComponentResult = retrieveCurrentComponentResult(studyResult);
+		ComponentResult currentComponentResult = retrieveCurrentComponentResult(
+				studyResult);
 		finishComponentResult(currentComponentResult, ComponentState.ABORTED);
 
 		// Finish the other ComponentResults
@@ -254,13 +260,10 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	private void finishAllComponentResults(StudyResult studyResult) {
-		studyResult
-				.getComponentResultList()
-				.stream()
+		studyResult.getComponentResultList().stream()
 				.filter(componentResult -> !componentDone(componentResult))
-				.forEach(
-						componentResult -> finishComponentResult(
-								componentResult, ComponentState.FINISHED));
+				.forEach(componentResult -> finishComponentResult(
+						componentResult, ComponentState.FINISHED));
 	}
 
 	/**
@@ -317,31 +320,31 @@ public abstract class PublixUtils<T extends Worker> {
 	 * worker never started a StudyResult of this study. It either returns a
 	 * StudyResult or throws an exception but never returns null.
 	 */
-	public StudyResult retrieveWorkersLastStudyResult(Worker worker, Study study)
-			throws ForbiddenPublixException {
+	public StudyResult retrieveWorkersLastStudyResult(Worker worker,
+			Study study) throws ForbiddenPublixException {
 		int studyResultListSize = worker.getStudyResultList().size();
 		for (int i = (studyResultListSize - 1); i >= 0; i--) {
 			StudyResult studyResult = worker.getStudyResultList().get(i);
 			if (studyResult.getStudy().getId().equals(study.getId())) {
 				if (studyDone(studyResult)) {
-					throw new ForbiddenPublixException(
-							errorMessages.workerFinishedStudyAlready(worker,
-									study.getId()));
+					throw new ForbiddenPublixException(errorMessages
+							.workerFinishedStudyAlready(worker, study.getId()));
 				} else {
 					return studyResult;
 				}
 			}
 		}
 		// This worker never started a StudyResult of this study
-		throw new ForbiddenPublixException(errorMessages.workerNeverDidStudy(
-				worker, study.getId()));
+		throw new ForbiddenPublixException(
+				errorMessages.workerNeverDidStudy(worker, study.getId()));
 	}
 
 	/**
 	 * Returns the last ComponentResult in the given StudyResult (not study!) or
 	 * null if it doesn't exist.
 	 */
-	public ComponentResult retrieveLastComponentResult(StudyResult studyResult) {
+	public ComponentResult retrieveLastComponentResult(
+			StudyResult studyResult) {
 		List<ComponentResult> componentResultList = studyResult
 				.getComponentResultList();
 		if (!componentResultList.isEmpty()) {
@@ -356,7 +359,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 * or null if it doesn't exist.
 	 */
 	public Component retrieveLastComponent(StudyResult studyResult) {
-		ComponentResult componentResult = retrieveLastComponentResult(studyResult);
+		ComponentResult componentResult = retrieveLastComponentResult(
+				studyResult);
 		return (componentResult != null) ? componentResult.getComponent()
 				: null;
 	}
@@ -367,7 +371,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public ComponentResult retrieveCurrentComponentResult(
 			StudyResult studyResult) {
-		ComponentResult componentResult = retrieveLastComponentResult(studyResult);
+		ComponentResult componentResult = retrieveLastComponentResult(
+				studyResult);
 		if (componentDone(componentResult)) {
 			return null;
 		}
@@ -380,7 +385,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public ComponentResult retrieveStartedComponentResult(Component component,
 			StudyResult studyResult) throws ForbiddenReloadException {
-		ComponentResult componentResult = retrieveCurrentComponentResult(studyResult);
+		ComponentResult componentResult = retrieveCurrentComponentResult(
+				studyResult);
 		// Start the component if it was never started (== null) or if it's
 		// a reload of the component
 		if (componentResult == null) {
@@ -414,12 +420,12 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public Component retrieveNextActiveComponent(StudyResult studyResult) {
 		Component currentComponent = retrieveLastComponent(studyResult);
-		Component nextComponent = studyResult.getStudy().getNextComponent(
-				currentComponent);
+		Component nextComponent = studyResult.getStudy()
+				.getNextComponent(currentComponent);
 		// Find next active component or null if study has no more components
 		while (nextComponent != null && !nextComponent.isActive()) {
-			nextComponent = studyResult.getStudy().getNextComponent(
-					nextComponent);
+			nextComponent = studyResult.getStudy()
+					.getNextComponent(nextComponent);
 		}
 		return nextComponent;
 	}
@@ -445,17 +451,16 @@ public abstract class PublixUtils<T extends Worker> {
 			ForbiddenPublixException {
 		Component component = componentDao.findById(componentId);
 		if (component == null) {
-			throw new NotFoundPublixException(errorMessages.componentNotExist(
-					study.getId(), componentId));
+			throw new NotFoundPublixException(errorMessages
+					.componentNotExist(study.getId(), componentId));
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
-			throw new BadRequestPublixException(
-					errorMessages.componentNotBelongToStudy(study.getId(),
-							componentId));
+			throw new BadRequestPublixException(errorMessages
+					.componentNotBelongToStudy(study.getId(), componentId));
 		}
 		if (!component.isActive()) {
-			throw new ForbiddenPublixException(
-					errorMessages.componentNotActive(study.getId(), componentId));
+			throw new ForbiddenPublixException(errorMessages
+					.componentNotActive(study.getId(), componentId));
 		}
 		return component;
 	}
@@ -471,8 +476,8 @@ public abstract class PublixUtils<T extends Worker> {
 		try {
 			component = study.getComponent(position);
 		} catch (IndexOutOfBoundsException e) {
-			throw new NotFoundPublixException(
-					errorMessages.noComponentAtPosition(study.getId(), position));
+			throw new NotFoundPublixException(errorMessages
+					.noComponentAtPosition(study.getId(), position));
 		}
 		return component;
 	}
@@ -502,7 +507,7 @@ public abstract class PublixUtils<T extends Worker> {
 							component.getId()));
 		}
 	}
-	
+
 	/**
 	 * Throws ForbiddenPublixException if group doesn't allow messaging.
 	 */
@@ -520,7 +525,8 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public boolean finishedStudyAlready(Worker worker, Study study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().equals(study) && studyDone(studyResult)) {
+			if (studyResult.getStudy().equals(study)
+					&& studyDone(studyResult)) {
 				return true;
 			}
 		}
@@ -560,6 +566,59 @@ public abstract class PublixUtils<T extends Worker> {
 				|| ComponentState.ABORTED == state
 				|| ComponentState.FAIL == state
 				|| ComponentState.RELOADED == state;
+	}
+
+	/**
+	 * Gets the batch with given ID from the database or if the batchId is null
+	 * returns the default batch in this study.
+	 */
+	public Batch retrieveBatchByIdOrDefault(Long batchId, Study study) {
+		if (batchId == -1) {
+			// The default batch is the one with the lowest ID (= earliest
+			// created)
+			return study.getBatchList().stream()
+					.sorted((s1, s2) -> Long.compare(s1.getId(), s2.getId()))
+					.findFirst().get();
+		} else {
+			return batchDao.findById(batchId);
+		}
+	}
+
+	/**
+	 * Retrieves batch from database. If the given batch ID is null or the batch
+	 * doesn't exist it throws an ForbiddenPublixException.
+	 */
+	public Batch retrieveBatch(String batchIdStr)
+			throws ForbiddenPublixException {
+		if (batchIdStr == null) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.NO_BATCHID_IN_SESSION);
+		}
+		long batchId;
+		try {
+			batchId = Long.parseLong(batchIdStr);
+		} catch (NumberFormatException e) {
+			throw new ForbiddenPublixException(
+					errorMessages.batchNotExist(batchIdStr));
+		}
+
+		Batch batch = batchDao.findById(batchId);
+		if (batch == null) {
+			throw new ForbiddenPublixException(
+					errorMessages.batchNotExist(batchId));
+		}
+		return batch;
+	}
+
+	/**
+	 * Returns the number of workers who run (at least started) in this batch.
+	 */
+	public int retrieveCurrentWorkerNumber(Batch batch) {
+		List<StudyResult> studyResultList = studyResultDao
+				.findAllByBatch(batch);
+		List<Worker> workerList = new ArrayList<>();
+		studyResultList.stream().map(sr -> workerList.add(sr.getWorker()));
+		return workerList.size();
 	}
 
 }

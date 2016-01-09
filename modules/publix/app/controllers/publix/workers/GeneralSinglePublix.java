@@ -3,19 +3,6 @@ package controllers.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.common.Component;
-import models.common.Study;
-import models.common.workers.GeneralSingleWorker;
-import play.Logger;
-import play.db.jpa.JPAApi;
-import play.mvc.Http.Cookie;
-import services.publix.ChannelService;
-import services.publix.GroupService;
-import services.publix.workers.GeneralSingleErrorMessages;
-import services.publix.workers.GeneralSinglePublixUtils;
-import services.publix.workers.GeneralSingleStudyAuthorisation;
-import play.mvc.Result;
-import utils.common.JsonUtils;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
@@ -24,6 +11,20 @@ import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.PublixException;
+import models.common.Batch;
+import models.common.Component;
+import models.common.Study;
+import models.common.workers.GeneralSingleWorker;
+import play.Logger;
+import play.db.jpa.JPAApi;
+import play.mvc.Http.Cookie;
+import play.mvc.Result;
+import services.publix.ChannelService;
+import services.publix.GroupService;
+import services.publix.workers.GeneralSingleErrorMessages;
+import services.publix.workers.GeneralSinglePublixUtils;
+import services.publix.workers.GeneralSingleStudyAuthorisation;
+import utils.common.JsonUtils;
 
 /**
  * Implementation of JATOS' public API for general single study runs (open to
@@ -52,8 +53,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 	@Inject
 	GeneralSinglePublix(JPAApi jpa, GeneralSinglePublixUtils publixUtils,
 			GeneralSingleStudyAuthorisation studyAuthorisation,
-			GroupService groupService,
-			ChannelService channelService,
+			GroupService groupService, ChannelService channelService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, WorkerDao workerDao,
@@ -67,21 +67,26 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 	}
 
 	@Override
-	public Result startStudy(Long studyId) throws PublixException {
-		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId);
+	public Result startStudy(Long studyId, Long batchId)
+			throws PublixException {
+		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
+				+ "batchId " + batchId);
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		Cookie cookie = Publix.request().cookie(GeneralSinglePublix.COOKIE);
 		publixUtils.checkStudyInCookie(study, cookie);
 
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		workerDao.create(worker);
-		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, worker.getId().toString());
-		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
-				+ "assigned to worker with ID " + worker.getId());
+		session(BATCH_ID, batch.getId().toString());
+		Logger.info(CLASS_NAME + ".startStudy: study (study ID " + studyId
+				+ ", batch ID " + batchId + ") " + "assigned to worker with ID "
+				+ worker.getId());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		studyResultDao.create(study, worker);
+		studyResultDao.create(study, batch, worker);
 
 		String cookieValue = publixUtils.addStudyToCookie(study, cookie);
 		Publix.response().setCookie(GeneralSinglePublix.COOKIE, cookieValue);

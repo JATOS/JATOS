@@ -1,5 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String,
-study: common.Study, workerSet: Set[common.workers.Worker], baseUrl: String,
+study: common.Study, workerSet: Set[common.workers.Worker],
 studyResultsCount: Integer)
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
@@ -7,7 +7,7 @@ studyResultsCount: Integer)
 <!-- Toolbar -->
 <div id="studyToolbar" class="btn-toolbar" role="toolbar">
 	<div class="btn-group">
-		<button id="showStudy" type="button" class="btn btn-primary"
+		<button id="runStudy" type="button" class="btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Runs the study as a JATOS worker">
 			Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
@@ -27,26 +27,11 @@ studyResultsCount: Integer)
 			title="Study's properties">
 			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
 		</button>
-		<div class="btn-group">
-			<button type="button" class="btn btn-primary dropdown-toggle"
-				data-toggle="dropdown">
-				<span class="glyphicon glyphicon-globe" aria-hidden="true"></span> External Runs <span class="caret"></span>
-			</button>
-			<ul class="dropdown-menu" role="menu">
-				<li data-toggle="tooltip" data-placement="bottom" title="">
-					<a id="runManagerLink" href="#">Run Manager <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
-				</li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used multiple times and always assigns the results to the same worker.">
-					<a id="personalMultipleRun" href="#">Personal Multiple Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
-				</li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used only once and always assigns the results to the same worker.">
-					<a id="personalSingleRun" href="#">Personal Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
-				</li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Creates a link to a run that can be used only once and creates a new worker with each run. Warning: If a worker deletes their browser’s cookies, or uses a different browser or computer, JATOS will not realise that the worker already ran the study. This way workers can potentially run the same study several times.">
-					<a id="generalSingleRun" href="#">General Single Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span></a>
-				</li>
-			</ul>
-		</div>
+		<button id="runManagerButton" type="button" class="btn btn-primary"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Open Run Manager to manage your batches and runs or create workers">
+			Run Manager <span class="glyphicon glyphicon-globe" aria-hidden="true"></span></span>
+		</button>
 		<div class="btn-group">
 			<button type="button" class="btn btn-primary dropdown-toggle"
 				data-toggle="dropdown">
@@ -152,7 +137,7 @@ studyResultsCount: Integer)
 <!-- Template for button toolbar in Component's row -->
 <div id="componentToolbarDiv" style="display: none">
 	<div class="componentBtnGroup btn-group" aria-hidden="true">
-		<button type="button" class="showComponent btn btn-info"
+		<button type="button" class="runComponent btn btn-info"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Runs only this component as a JATOS worker">
 			Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
@@ -193,31 +178,6 @@ studyResultsCount: Integer)
 					</a>
 				</li>
 			</ul>
-		</div>
-	</div>
-</div>
-
-<!-- Confirmation Modal - run Personal Single or General Single or Personal Multiple -->
-<div class="modal fade" id="confirmModalRun" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal">
-					<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
-				</button>
-				<h4 class="modal-title">Create run</h4>
-			</div>
-			<div class="modal-body">
-				<p class="modalText">You're about to create a worker.</p>
-				<div class="input-group">
-					<input type="text" class="comment form-control"
-						placeholder="Comment">
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button type="button" class="confirmed btn btn-primary">Create</button>
-			</div>
 		</div>
 	</div>
 </div>
@@ -311,9 +271,9 @@ $(document).ready(function() {
 		});
 	});
 	
-	$('#componentsTable tbody').on('click', '.showComponent', function() {
+	$('#componentsTable tbody').on('click', '.runComponent', function() {
 		window.location.href = "/jatos/" + @study.getId() +"/"
-			+ getComponentId(this) + "/show";
+			+ getComponentId(this) + "/run";
 	});
 	
 	$('#componentsTable tbody').on('click', '.componentResults', function() {
@@ -497,8 +457,8 @@ function setLockButton(locked) {
 	}
 }
 
-$('#studyToolbar').on('click', '#showStudy', function() {
-	window.location.href = "@controllers.gui.routes.Studies.showStudy(study.getId())";
+$('#studyToolbar').on('click', '#runStudy', function() {
+	window.location.href = "@controllers.gui.routes.Studies.runStudy(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#studyResults', function() {
@@ -509,79 +469,8 @@ $('#studyToolbar').on('click', '#workers', function() {
 	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
 });
 
-$('#studyToolbar').on('click', '#runManagerLink', function() {
+$('#studyToolbar').on('click', '#runManagerButton', function() {
 	window.location.href = "@controllers.gui.routes.Batches.runManager(study.getId())";
-});
-
-$('#studyToolbar').on('click', '#personalSingleRun', function() {
-	$('#confirmModalRun').find('.modal-title').html("Create Personal Single Run");
-	$('#confirmModalRun').find('.modalText').html("You're about to create a worker for a Personal Single Run.");
-	$('#confirmModalRun').modal('show');
-	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
-		$('#confirmModalRun').modal('hide');
-		var comment = $('#confirmModalRun').find('.comment').val();
-		var jsonData = JSON.stringify({ @common.workers.PersonalSingleWorker.COMMENT: comment });
-		$.ajax({
-			type: 'POST',
-			url: '@controllers.gui.routes.Studies.createPersonalSingleRun(study.getId())',
-			contentType: "application/json; charset=utf-8",
-			dataType: 'text',
-			data: jsonData,
-			success: function(result) {
-				var title = "Personal Single Run";
-				var preText = "Use this link";
-				var html = "<p>" + result + "</p>"; 
-				var postText = "or press \"Run\" to start it right away.";
-				askConfirmation(title, preText, html, postText, 'Run', function() {
-					window.location.href = result;
-				});
-			},
-			error : function(err) {
-				showError(err.responseText);
-			}
-		});
-	});
-});
-
-$('#studyToolbar').on('click', '#generalSingleRun', function() {
-	var title = "General Single Run";
-	var preText = "Use this link";
-	var url = "@baseUrl" + "/publix/@study.getId()/start?generalSingle";
-	var html = "<p>" + url + "</p>"; 
-	var postText = "or press \"Run\" to start one right away. Remember to allow General Single Workers in your study's properties.";
-	askConfirmation(title, preText, html, postText, 'Run', function() {
-		window.location.href = url;
-	});
-});
-
-$('#studyToolbar').on('click', '#personalMultipleRun', function() {
-	$('#confirmModalRun').find('.modal-title').html("Create Personal Multiple Run");
-	$('#confirmModalRun').find('.modalText').html("You're about to create a Personal Multiple Worker. Use a comment to distinguish this worker from others.");
-	$('#confirmModalRun').modal('show');
-	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
-		$('#confirmModalRun').modal('hide');
-		var comment = $('#confirmModalRun').find('.comment').val();
-		var jsonData = JSON.stringify({ @common.workers.PersonalMultipleWorker.COMMENT: comment });
-		$.ajax({
-			type: 'POST',
-			url: '@controllers.gui.routes.Studies.createPersonalMultipleRun(study.getId())',
-			contentType: "application/json; charset=utf-8",
-			dataType: 'text',
-			data: jsonData,
-			success: function(result) {
-				var title = "Personal Multiple Run";
-				var preText = "Use this link";
-				var html = "<p>" + result + "</p>"; 
-				var postText = "or press \"Run\" to start it right away.";
-				askConfirmation(title, preText, html, postText, 'Run', function() {
-					window.location.href = result;
-				});
-			},
-			error : function(err) {
-				showError(err.responseText);
-			}
-		});
-	});
 });
 
 $('#studyToolbar').on('click', '#removeStudy', function() {

@@ -3,6 +3,14 @@ package controllers.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.publix.IPublix;
+import controllers.publix.Publix;
+import controllers.publix.StudyAssets;
+import daos.common.ComponentResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
+import exceptions.publix.PublixException;
+import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
 import models.common.workers.PersonalSingleWorker;
@@ -15,13 +23,6 @@ import services.publix.workers.PersonalSingleErrorMessages;
 import services.publix.workers.PersonalSinglePublixUtils;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
 import utils.common.JsonUtils;
-import controllers.publix.IPublix;
-import controllers.publix.Publix;
-import controllers.publix.StudyAssets;
-import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
-import daos.common.StudyResultDao;
-import exceptions.publix.PublixException;
 
 /**
  * Implementation of JATOS' public API for personal single study runs (runs with
@@ -45,8 +46,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 	@Inject
 	PersonalSinglePublix(JPAApi jpa, PersonalSinglePublixUtils publixUtils,
 			PersonalSingleStudyAuthorisation studyAuthorisation,
-			GroupService groupService,
-			ChannelService channelService,
+			GroupService groupService, ChannelService channelService,
 			PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
@@ -58,19 +58,22 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 	}
 
 	@Override
-	public Result startStudy(Long studyId) throws PublixException {
+	public Result startStudy(Long studyId, Long batchId)
+			throws PublixException {
 		String workerIdStr = getQueryString(PERSONALSINGLE_WORKER_ID);
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ PERSONALSINGLE_WORKER_ID + " " + workerIdStr);
+				+ "batchId " + batchId + ", " + PERSONALSINGLE_WORKER_ID + " "
+				+ workerIdStr);
 		Study study = publixUtils.retrieveStudy(studyId);
-
+		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		PersonalSingleWorker worker = publixUtils
 				.retrieveTypedWorker(workerIdStr);
-		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, workerIdStr);
+		session(BATCH_ID, batch.getId().toString());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		studyResultDao.create(study, worker);
+		studyResultDao.create(study, batch, worker);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

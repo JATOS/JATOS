@@ -2,9 +2,12 @@ package controllers.gui;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
@@ -18,6 +21,9 @@ import general.gui.RequestScopeMessaging;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
+import models.common.workers.PersonalMultipleWorker;
+import models.common.workers.PersonalSingleWorker;
+import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import play.Logger;
 import play.data.Form;
@@ -29,6 +35,8 @@ import services.gui.BreadcrumbsService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.StudyService;
 import services.gui.UserService;
+import services.gui.WorkerService;
+import utils.common.ControllerUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -46,6 +54,7 @@ public class Batches extends Controller {
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final StudyService studyService;
 	private final UserService userService;
+	private final WorkerService workerService;
 	private final BatchService batchService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final StudyDao studyDao;
@@ -54,11 +63,13 @@ public class Batches extends Controller {
 	@Inject
 	Batches(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			StudyService studyService, UserService userService,
-			BatchService batchService, BreadcrumbsService breadcrumbsService,
-			StudyDao studyDao, BatchDao batchDao) {
+			WorkerService workerService, BatchService batchService,
+			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
+			BatchDao batchDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.studyService = studyService;
 		this.userService = userService;
+		this.workerService = workerService;
 		this.batchService = batchService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
@@ -77,7 +88,7 @@ public class Batches extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
+			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
 
 		String breadcrumbs = breadcrumbsService.generateForRunManager(study);
@@ -97,7 +108,7 @@ public class Batches extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			return badRequest(e.getMessage());
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		List<Batch> batchList = study.getBatchList();
@@ -105,7 +116,33 @@ public class Batches extends Controller {
 	}
 
 	/**
+	 * Ajax GET request: Returns a list of workers as JSON that did the
+	 * specified study and belongs to the specified batch.
+	 */
+	@Transactional
+	public Result allowedWorkers(Long studyId, Long batchId)
+			throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".allowedWorkers: studyId " + studyId + ", "
+				+ "batchId " + batchId + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Batch batch = batchDao.findById(batchId);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			batchService.checkStandardForBatch(batch, study, batchId);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+
+		Set<Worker> workerList = batch.getAllowedWorkers();
+		return ok(JsonUtils.asJsonNode(workerList));
+	}
+
+	/**
 	 * Ajax POST request to submit created Batch
+	 * 
+	 * @throws JatosGuiException
 	 */
 	@Transactional
 	public Result submitCreated(Long studyId) throws JatosGuiException {
@@ -116,7 +153,7 @@ public class Batches extends Controller {
 		try {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			return badRequest(e.getMessage());
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		Form<BatchProperties> form = Form.form(BatchProperties.class)
@@ -146,17 +183,20 @@ public class Batches extends Controller {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			batchService.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
+			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
 
+		String baseUrl = ControllerUtils.getReferer();
 		String breadcrumbs = breadcrumbsService.generateForRunManager(study,
 				batch);
 		return ok(views.html.gui.study.batch.render(loggedInUser, breadcrumbs,
-				batch.getId(), study));
+				batch.getId(), study, baseUrl));
 	}
 
 	/**
 	 * Ajax GET request to get BatchProperties as JSON
+	 * 
+	 * @throws JatosGuiException
 	 */
 	@Transactional
 	public Result properties(Long studyId, Long batchId)
@@ -171,16 +211,17 @@ public class Batches extends Controller {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			batchService.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
-			return badRequest(e.getMessage());
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		BatchProperties batchProperties = batchService
-				.bindToProperties(batch);
+		BatchProperties batchProperties = batchService.bindToProperties(batch);
 		return ok(JsonUtils.asJsonNode(batchProperties));
 	}
 
 	/**
 	 * Ajax POST request to submit changed BatchProperties
+	 * 
+	 * @throws JatosGuiException
 	 */
 	@Transactional
 	public Result submitEditedProperties(Long studyId, Long batchId)
@@ -195,7 +236,7 @@ public class Batches extends Controller {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			batchService.checkStandardForBatch(currentBatch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
-			return badRequest(e.getMessage());
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		Form<BatchProperties> form = Form.form(BatchProperties.class)
@@ -220,6 +261,8 @@ public class Batches extends Controller {
 	/**
 	 * Ajax POST request: Request to change the property 'active' of the given
 	 * batch. If needed this method can be extended for other properties.
+	 * 
+	 * @throws JatosGuiException
 	 */
 	@Transactional
 	public Result changeProperty(Long studyId, Long batchId, Boolean active)
@@ -234,7 +277,7 @@ public class Batches extends Controller {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			batchService.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
-			return badRequest(e.getMessage());
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		if (active != null) {
@@ -246,6 +289,8 @@ public class Batches extends Controller {
 
 	/**
 	 * Ajax POST request to remove a Batch
+	 * 
+	 * @throws JatosGuiException
 	 */
 	@Transactional
 	public Result remove(Long studyId, Long batchId) throws JatosGuiException {
@@ -259,11 +304,94 @@ public class Batches extends Controller {
 			studyService.checkStandardForStudy(study, studyId, loggedInUser);
 			batchService.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
-			return badRequest(e.getMessage());
+			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		batchService.removeBatch(batch, study);
 		RequestScopeMessaging.success(MessagesStrings.BATCH_DELETED);
 		return ok(RequestScopeMessaging.getAsJson());
 	}
+
+	/**
+	 * Ajax POST request: Creates a PersonalSingleWorker and the URL that can be
+	 * used for this kind of run.
+	 */
+	@Transactional
+	public Result createPersonalSingleRun(Long studyId, Long batchId)
+			throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".createPersonalSingleRun: studyId " + studyId
+				+ ", " + "batchId " + batchId + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Batch batch = batchDao.findById(batchId);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			batchService.checkStandardForBatch(batch, study, batchId);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+
+		JsonNode json = request().body().asJson();
+		if (json == null) {
+			String errorMsg = MessagesStrings
+					.studyCreationOfPersonalSingleRunFailed(studyId);
+			return badRequest(errorMsg);
+		}
+		String comment = json.findPath(PersonalSingleWorker.COMMENT).asText()
+				.trim();
+		PersonalSingleWorker worker;
+		try {
+			worker = workerService.createPersonalSingleWorker(comment, batch);
+		} catch (BadRequestException e) {
+			return badRequest(e.getMessage());
+		}
+
+		String url = ControllerUtils.getReferer() + "/publix/" + study.getId()
+				+ "/start?" + "batchId=" + batchId + "&"
+				+ "personalSingleWorkerId" + "=" + worker.getId();
+		return ok(url);
+	}
+
+	/**
+	 * Ajax POST request: Creates a PersonalMultipleWorker and returns the URL
+	 * that can be used for a personal multiple run.
+	 */
+	@Transactional
+	public Result createPersonalMultipleRun(Long studyId, Long batchId)
+			throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".createPersonalMultipleRun: studyId "
+				+ studyId + ", " + "batchId " + batchId + ", "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Batch batch = batchDao.findById(batchId);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			batchService.checkStandardForBatch(batch, study, batchId);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+
+		JsonNode json = request().body().asJson();
+		if (json == null) {
+			String errorMsg = MessagesStrings
+					.studyCreationOfPersonalMultipleRunFailed(studyId);
+			return badRequest(errorMsg);
+		}
+		String comment = json.findPath(PersonalMultipleWorker.COMMENT).asText()
+				.trim();
+		PersonalMultipleWorker worker;
+		try {
+			worker = workerService.createPersonalMultipleWorker(comment, batch);
+		} catch (BadRequestException e) {
+			return badRequest(e.getMessage());
+		}
+
+		String url = ControllerUtils.getReferer() + "/publix/" + study.getId()
+				+ "/start?" + "batchId=" + batchId + "&" + "personalMultipleId"
+				+ "=" + worker.getId();
+		return ok(url);
+	}
+
 }

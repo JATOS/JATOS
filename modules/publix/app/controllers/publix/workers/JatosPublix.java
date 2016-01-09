@@ -3,6 +3,16 @@ package controllers.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.publix.IPublix;
+import controllers.publix.Publix;
+import controllers.publix.StudyAssets;
+import daos.common.ComponentResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.PublixException;
+import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.GroupResult;
@@ -21,15 +31,6 @@ import services.publix.workers.JatosPublixUtils;
 import services.publix.workers.JatosStudyAuthorisation;
 import utils.common.ControllerUtils;
 import utils.common.JsonUtils;
-import controllers.publix.IPublix;
-import controllers.publix.Publix;
-import controllers.publix.StudyAssets;
-import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
-import daos.common.StudyResultDao;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.ForbiddenReloadException;
-import exceptions.publix.PublixException;
 
 /**
  * Implementation of JATOS' public API for studies and components that are
@@ -85,11 +86,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Inject
 	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
-			GroupService groupService,
-			ChannelService channelService, JatosErrorMessages errorMessages,
-			StudyAssets studyAssets, ComponentResultDao componentResultDao,
-			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			GroupResultDao groupResultDao) {
+			GroupService groupService, ChannelService channelService,
+			JatosErrorMessages errorMessages, StudyAssets studyAssets,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
 				channelService, errorMessages, studyAssets, componentResultDao,
 				jsonUtils, studyResultDao, groupResultDao);
@@ -99,16 +99,20 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	}
 
 	@Override
-	public Result startStudy(Long studyId) throws PublixException {
+	public Result startStudy(Long studyId, Long batchId)
+			throws PublixException {
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(SESSION_EMAIL));
+				+ "batchId " + batchId + ", " + "logged-in user's email "
+				+ session(SESSION_EMAIL));
 		Study study = publixUtils.retrieveStudy(studyId);
-
+		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		JatosWorker worker = publixUtils.retrieveLoggedInUser().getWorker();
-		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, worker.getId().toString());
-		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
-				+ "assigned to worker with ID " + worker.getId());
+		session(BATCH_ID, batch.getId().toString());
+		Logger.info(CLASS_NAME + ".startStudy: study (study ID " + studyId
+				+ ", batch ID " + batchId + ") " + "assigned to worker with ID "
+				+ worker.getId());
 
 		Long componentId = null;
 		String jatosShow = publixUtils.retrieveJatosShowFromSession();
@@ -126,7 +130,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		studyResultDao.create(study, worker);
+		studyResultDao.create(study, batch, worker);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, componentId));
 	}
@@ -139,10 +143,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ session(WORKER_ID) + ", " + "logged-in user's email "
 				+ session(SESSION_EMAIL));
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
 		Component component = publixUtils.retrieveComponent(study, componentId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
 		// Check if it's a single component show or a whole study show
@@ -178,9 +183,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					.pure(redirect(controllers.publix.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		response().setCookie(Publix.ID_COOKIE_NAME,
-				publixUtils.generateIdCookieValue(studyResult, componentResult,
-						worker));
+		response().setCookie(Publix.ID_COOKIE_NAME, publixUtils
+				.generateIdCookieValue(studyResult, componentResult, worker));
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
 		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(
@@ -194,9 +198,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ ", " + "workerId " + session(WORKER_ID) + ", "
 				+ "logged-in user's email " + session(SESSION_EMAIL));
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
@@ -242,9 +247,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ "logged-in user email " + session(SESSION_EMAIL) + ", "
 				+ "message \"" + message + "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
@@ -277,9 +283,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ "successful " + successful + ", " + "errorMsg \"" + errorMsg
 				+ "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		JatosWorker worker = publixUtils
 				.retrieveTypedWorker(session(WORKER_ID));
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);

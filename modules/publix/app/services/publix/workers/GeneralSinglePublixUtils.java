@@ -3,18 +3,19 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.common.Study;
-import models.common.workers.GeneralSingleWorker;
-import models.common.workers.Worker;
-import play.mvc.Http.Cookie;
-import services.publix.PublixErrorMessages;
-import services.publix.PublixUtils;
+import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
+import models.common.Study;
+import models.common.workers.GeneralSingleWorker;
+import models.common.workers.Worker;
+import play.mvc.Http.Cookie;
+import services.publix.PublixErrorMessages;
+import services.publix.PublixUtils;
 
 /**
  * GeneralSinglePublix' implementation of PublixUtils
@@ -28,9 +29,9 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	GeneralSinglePublixUtils(GeneralSingleErrorMessages errorMessages,
 			StudyDao studyDao, StudyResultDao studyResultDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao) {
+			WorkerDao workerDao, BatchDao batchDao) {
 		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao);
+				componentResultDao, workerDao, batchDao);
 	}
 
 	@Override

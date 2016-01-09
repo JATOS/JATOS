@@ -9,7 +9,7 @@ import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import play.libs.akka.AkkaGuiceSupport;
-import services.publix.IStudyAuthorisation;
+import services.publix.StudyAuthorisation;
 import services.publix.PublixUtils;
 import services.publix.akka.actors.GroupDispatcherRegistry;
 import services.publix.workers.GeneralSinglePublixUtils;
@@ -33,15 +33,15 @@ public class PublixGuiceModule extends AbstractModule implements AkkaGuiceSuppor
 	@Override
 	protected void configure() {
 		// Config Worker generics binding for IStudyAuthorisation
-		bind(new TypeLiteral<IStudyAuthorisation<GeneralSingleWorker>>() {
+		bind(new TypeLiteral<StudyAuthorisation<GeneralSingleWorker>>() {
 		}).to(GeneralSingleStudyAuthorisation.class);
-		bind(new TypeLiteral<IStudyAuthorisation<JatosWorker>>() {
+		bind(new TypeLiteral<StudyAuthorisation<JatosWorker>>() {
 		}).to(JatosStudyAuthorisation.class);
-		bind(new TypeLiteral<IStudyAuthorisation<MTWorker>>() {
+		bind(new TypeLiteral<StudyAuthorisation<MTWorker>>() {
 		}).to(MTStudyAuthorisation.class);
-		bind(new TypeLiteral<IStudyAuthorisation<PersonalMultipleWorker>>() {
+		bind(new TypeLiteral<StudyAuthorisation<PersonalMultipleWorker>>() {
 		}).to(PersonalMultipleStudyAuthorisation.class);
-		bind(new TypeLiteral<IStudyAuthorisation<PersonalSingleWorker>>() {
+		bind(new TypeLiteral<StudyAuthorisation<PersonalSingleWorker>>() {
 		}).to(PersonalSingleStudyAuthorisation.class);
 
 		// Config Worker generics binding for PublixUtils

@@ -7,6 +7,7 @@ import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
+import models.common.Batch;
 import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
@@ -31,8 +32,8 @@ public class StudyResultDao extends AbstractDao {
 	/**
 	 * Creates StudyResult and adds it to the given Worker.
 	 */
-	public StudyResult create(Study study, Worker worker) {
-		StudyResult studyResult = new StudyResult(study);
+	public StudyResult create(Study study, Batch batch, Worker worker) {
+		StudyResult studyResult = new StudyResult(study, batch);
 		persist(studyResult);
 		worker.addStudyResult(studyResult);
 		merge(worker);
@@ -106,6 +107,14 @@ public class StudyResultDao extends AbstractDao {
 		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
 				StudyResult.class);
 		return query.setParameter("studyId", study).getResultList();
+	}
+	
+	public List<StudyResult> findAllByBatch(Batch batch) {
+		String queryStr = "SELECT e FROM StudyResult e "
+				+ "WHERE e.batch=:batchId";
+		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
+				StudyResult.class);
+		return query.setParameter("batchId", batch).getResultList();
 	}
 
 }

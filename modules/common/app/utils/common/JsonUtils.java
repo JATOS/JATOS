@@ -160,8 +160,7 @@ public class JsonUtils {
 			componentNode.put("id", tempComponent.getId());
 			componentNode.put("title", tempComponent.getTitle());
 			componentNode.put("active", tempComponent.isActive());
-			componentNode.put("reloadable",
-					tempComponent.isReloadable());
+			componentNode.put("reloadable", tempComponent.isReloadable());
 			componentList.add(componentNode);
 		}
 		return componentList;
@@ -308,8 +307,8 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Returns JSON string of the given study. This JSON is intended for
-	 * JATOS' GUI.
+	 * Returns JSON string of the given study. This JSON is intended for JATOS'
+	 * GUI.
 	 */
 	public String studyForUI(Study study, int resultCount)
 			throws JsonProcessingException {
@@ -317,7 +316,7 @@ public class JsonUtils {
 		studyNode.put("resultCount", resultCount);
 		return OBJECTMAPPER.writeValueAsString(studyNode);
 	}
-	
+
 	/**
 	 * Returns JsonNode of the given user list for use in the change-user-form.
 	 * This JSON is intended for JATOS' GUI.
@@ -413,8 +412,8 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Returns a JSON string for the given set of workers. Intended for use in
-	 * JATOS' GUI.
+	 * Returns a JSON string with the given set of workers wrapped in a data
+	 * object. Intended for use in JATOS' GUI / datatables plugin.
 	 */
 	public String allWorkersForUI(Set<Worker> workerSet)
 			throws JsonProcessingException {

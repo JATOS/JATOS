@@ -2,31 +2,42 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-<button id="createBatchButton" type="button" class="btn btn-primary">New Batch</button>
+<button id="createBatchButton" type="button" class="btn btn-primary">New
+	Batch</button>
 
-<div class="list-group" id="batchList">
-</div>
+<div class="list-group" id="batchList"></div>
 
 <!-- Create Batch Modal -->
-<div class="modal fade" id="createBatchModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="createBatchModal" data-backdrop="static"
+	data-keyboard="false" tabindex="-1" role="dialog"
+	aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<form id="createBatchForm" method="post" action="/" class="form-horizontal" role="form">
+			<form id="createBatchForm" method="post" action="/"
+				class="form-horizontal" role="form">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+					</button>
 					<h4 class="modal-title">Create Batch</h4>
 				</div>
 				<div class="modal-body">
 					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.TITLE">Title</label>
+						<label class="control-label col-xs-3"
+							for="@models.gui.BatchProperties.TITLE">Title</label>
 						<div class="col-xs-9">
-							<input type="text" class="form-control @models.gui.BatchProperties.TITLE" id="@models.gui.BatchProperties.TITLE" name="@models.gui.BatchProperties.TITLE" placeholder="Your batch title">
+							<input type="text"
+								class="form-control @models.gui.BatchProperties.TITLE"
+								id="@models.gui.BatchProperties.TITLE"
+								name="@models.gui.BatchProperties.TITLE"
+								placeholder="Your batch title">
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					<input type="submit" class="confirmed btn btn-primary" value="Create">
+					<input type="submit" class="confirmed btn btn-primary"
+						value="Create">
 				</div>
 			</form>
 		</div>
@@ -34,9 +45,11 @@
 </div>
 
 <!-- Template for batch's row -->
-<div id="batchRowTemplateDiv" class="list-group-item" style="display: none">
+<div id="batchRowTemplateDiv" class="list-group-item"
+	style="display: none">
 	<button type="button" class="btn btn-sm btn-default activeButton"
-		data-toggle="tooltip" data-placement="bottom" title="">
+		data-toggle="tooltip" data-placement="bottom"
+		title="Activates or inactivates this batch: Only in an activated batch a study can be run. An already started study can be finished regardless of this batch was inactivated after the start.">
 		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
 	</button>
 	<a class="batchLink" href=""></a>
@@ -52,12 +65,12 @@
 				More <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
-				<li data-toggle="tooltip" data-placement="bottom" title="Deletes this batch but doesn't delete any results">
-					<a class="removeBatch" href="#">
-						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+				<li data-toggle="tooltip" data-placement="bottom"
+					title="Deletes this batch but doesn't delete any results"><a
+					class="removeBatch" href="#"> <span
+						class="glyphicon glyphicon-remove" aria-hidden="true"></span>
 						Delete
-					</a>
-				</li>
+				</a></li>
 			</ul>
 		</div>
 	</div>

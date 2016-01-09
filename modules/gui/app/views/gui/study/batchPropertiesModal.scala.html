@@ -1,0 +1,201 @@
+@(batchId: Long, study: common.Study)
+
+<!-- Batch Properties Modal -->
+<div class="modal fade" id="batchPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<form id="batchPropertiesForm" method="post" action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">Batch Properties</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group row">
+						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.TITLE">Title</label>
+						<div class="col-xs-9">
+							<input type="text" class="form-control @models.gui.BatchProperties.TITLE" id="@models.gui.BatchProperties.TITLE" name="@models.gui.BatchProperties.TITLE" placeholder="Your batch title">
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
+						<div class="col-xs-9" id="allowedWorkerTypes">
+							<label class="checkbox-inline">
+								<input type="checkbox" class="@common.workers.JatosWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE"
+										>@common.workers.JatosWorker.UI_WORKER_TYPE
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
+							</label>
+							<label class="checkbox-inline">
+								<input type="checkbox" class="@common.workers.PersonalMultipleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE"
+										>@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
+							</label>
+							<label class="checkbox-inline">
+								<input type="checkbox" class="@common.workers.PersonalSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE"
+										>@common.workers.PersonalSingleWorker.UI_WORKER_TYPE
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
+							</label>
+							<label class="checkbox-inline">
+								<input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE"
+										>@common.workers.GeneralSingleWorker.UI_WORKER_TYPE
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
+							</label>
+							<label class="checkbox-inline">
+								<input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE"
+										>@common.workers.MTWorker.UI_WORKER_TYPE
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
+							</label>
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED">Max total workers &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of workers this batch is allowed to have." aria-hidden="true"></span></label>
+						<div class="col-xs-3">
+							<div class="input-group">
+								<span class="input-group-addon">
+									<input type="checkbox" class="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED" name="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED">
+									<!-- We need a hidden input field.
+									http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+									<input type="hidden" name="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED" value="false" />
+								</span>
+								<input type="number" class="form-control @models.gui.BatchProperties.MAX_TOTAL_WORKERS" name="@models.gui.BatchProperties.MAX_TOTAL_WORKERS" min="1">
+							</div>
+						</div>
+					</div>
+				
+					<div class="well groupProperties">
+						<h4>Group Properties</h4>
+						<div class="form-group row">
+							<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">Max total members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of members a group can have, active or inactive." aria-hidden="true"></span></label>
+							<div class="col-xs-3">
+								<div class="input-group">
+									<span class="input-group-addon">
+										<input type="checkbox" class="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">
+										<!-- We need a hidden input field.
+										http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+										<input type="hidden" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED" value="false" />
+									</span>
+									<input type="number" class="form-control @models.gui.BatchProperties.MAX_TOTAL_MEMBERS" name="@models.gui.BatchProperties.MAX_TOTAL_MEMBERS" min="1">
+								</div>
+							</div>
+						</div>
+						
+						<div class="form-group row">
+							<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MIN_ACTIVE_MEMBERS">Min active members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the min number of active members a group can have at the same time." aria-hidden="true"></span></label>
+							<div class="col-xs-3 @models.gui.BatchProperties.MIN_ACTIVE_MEMBERS">
+								<input type="number" class="form-control @models.gui.BatchProperties.MIN_ACTIVE_MEMBERS" name="@models.gui.BatchProperties.MIN_ACTIVE_MEMBERS" min="1">
+							</div>
+						</div>
+						
+						<div class="form-group row">
+							<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">Max active members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of active members a group can have at the same time." aria-hidden="true"></span></label>
+							<div class="col-xs-3">
+								<div class="input-group">
+									<span class="input-group-addon">
+										<input type="checkbox" class="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">
+										<!-- We need a hidden input field.
+										http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+										<input type="hidden" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED" value="false" />
+									</span>
+									<input type="number" class="form-control @models.gui.BatchProperties.MAX_ACTIVE_MEMBERS" name="@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS" min="1">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<input type="submit" class="confirmed btn btn-primary" value="Save">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+
+@if(!study.isGroupStudy) {
+$('#batchPropertiesModal .groupProperties').fadeTo(0, 0.5)
+}
+
+$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED').change(function() {
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_WORKERS').prop("disabled", !this.checked);
+});
+
+$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED').change(function() {
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_MEMBERS').prop("disabled", !this.checked);
+});
+
+$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED').change(function() {
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS').prop("disabled", !this.checked);
+});
+
+$('#batchPropertiesButton').click(function(event) {
+	$.ajax({
+		type: 'GET',
+		url: "@controllers.gui.routes.Batches.properties(study.getId(), batchId)",
+		success: function(properties) {
+			removeWarnings('#batchPropertiesModal');
+			removeFormErrors('#batchPropertiesModal')
+			clearForm("#batchPropertiesForm");
+			fillbatchPropertiesForm(properties);
+			$('#batchPropertiesModal').modal('show');
+		},
+		error: function(response) {
+			showError("Couldn't load batch properties.");
+		}
+	});
+});
+
+function fillbatchPropertiesForm(properties) {
+	$('#batchPropertiesModal .@models.gui.BatchProperties.TITLE').val(properties['@models.gui.BatchProperties.TITLE']);
+	setInputGroupWithCheckbox('batchPropertiesModal',
+			'@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED',
+			'@models.gui.BatchProperties.MAX_TOTAL_WORKERS', properties);
+	$.each(properties['allowedWorkerTypes'], function(index, workerType) {
+		$('#batchPropertiesModal' + ' .' + workerType).prop('checked', true);
+	});
+	// Group properties
+	$('#batchPropertiesModal .@models.gui.BatchProperties.MIN_ACTIVE_MEMBERS').val(properties['@models.gui.BatchProperties.MIN_ACTIVE_MEMBERS']);
+	setInputGroupWithCheckbox('batchPropertiesModal',
+			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED',
+			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS', properties);
+	setInputGroupWithCheckbox('batchPropertiesModal',
+			'@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED',
+			'@models.gui.BatchProperties.MAX_TOTAL_MEMBERS', properties);
+}
+
+function setInputGroupWithCheckbox(modal, checkbox, input, properties) {
+	// Don't remove the space in the ' .'!
+	if (properties[checkbox]) {
+		$('#' + modal + ' .' + checkbox).prop('checked', true);
+		$('#' + modal + ' .' + input).prop('disabled', false);
+		$('#' + modal + ' .' + input).val(properties[input]);
+	} else {
+		$('#' + modal + ' .' + checkbox).prop('checked', false);
+		$('#' + modal + ' .' + input).prop('disabled', true);
+		$('#' + modal + ' .' + input).val('');
+	}
+}
+
+$("#batchPropertiesForm").submit(function(event) {
+	event.preventDefault();
+	$.ajax({
+		type: 'POST',
+		url: "@controllers.gui.routes.Batches.submitEditedProperties(study.getId(), batchId)",
+		data: $('#batchPropertiesForm').serialize(), 
+		success: function(response) {
+			removeWarnings('#batchPropertiesModal');
+			removeFormErrors('#batchPropertiesModal')
+			$('#batchPropertiesModal').modal('hide');
+		},
+		error: function(response) {
+			removeWarnings('#batchPropertiesModal');
+			removeFormErrors('#batchPropertiesModal');
+			showWarning("@general.common.MessagesStrings.BATCH_WASNT_SAVED", "#batchPropertiesModal .modal-header");
+			showFormErrors('#batchPropertiesModal', response.responseJSON)
+		}
+	});
+});
+
+</script>

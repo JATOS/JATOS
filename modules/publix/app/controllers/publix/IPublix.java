@@ -26,10 +26,10 @@ public interface IPublix {
 
 	/**
 	 * HTTP type: Normal GET request<br>
-	 * Starts the study with the given ID, then automatically starts it's first
+	 * Starts the study within a batch. Then automatically starts it's first
 	 * component.
 	 */
-	Result startStudy(Long studyId) throws PublixException;
+	Result startStudy(Long studyId, Long batchId) throws PublixException;
 
 	/**
 	 * HTTP type: Normal GET request

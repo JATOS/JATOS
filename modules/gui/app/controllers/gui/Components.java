@@ -72,7 +72,7 @@ public class Components extends Controller {
 	 * Publix.startStudy().
 	 */
 	@Transactional
-	public Result showComponent(Long studyId, Long componentId)
+	public Result runComponent(Long studyId, Long componentId, Long batchId)
 			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".showComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
@@ -102,7 +102,8 @@ public class Components extends Controller {
 		session("run_component_id", componentId.toString());
 		// Redirect to jatos-publix: start study
 		String startComponentUrl = "/publix/" + study.getId() + "/start?"
-				+ "jatosWorkerId" + "=" + loggedInUser.getWorker().getId();
+				+ "batchId" + "=" + batchId + "&" + "jatosWorkerId" + "="
+				+ loggedInUser.getWorker().getId();
 		return redirect(startComponentUrl);
 	}
 

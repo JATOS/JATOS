@@ -22,6 +22,10 @@ import utils.common.JsonUtils;
  * Model of a DB entity of a batch. The corresponding UI model is
  * {@link models.gui.BatchProperties}.
  * 
+ * Defines the constrains regarding workers for a batch of a study, e.g. which
+ * workers are allowed, how many etc.
+ * 
+ * @TODO
  * An active member is a member who joined a group and is still member of this
  * group. minActiveMembers, maxActiveMemberLimited, maxActiveMembers,
  * maxTotalMemberLimited and maxTotalMembers are properties for groups.

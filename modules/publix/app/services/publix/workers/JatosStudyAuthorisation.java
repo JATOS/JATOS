@@ -3,41 +3,50 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.common.Study;
-import models.common.User;
-import models.common.workers.JatosWorker;
-import services.publix.IStudyAuthorisation;
 import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix;
 import exceptions.publix.ForbiddenPublixException;
+import models.common.Batch;
+import models.common.Study;
+import models.common.User;
+import models.common.workers.JatosWorker;
+import services.publix.StudyAuthorisation;
 
 /**
- * JatosPublix's Implementation of IStudyAuthorization
+ * JatosPublix's implementation of StudyAuthorization
  * 
  * @author Kristian Lange
  */
 @Singleton
-public class JatosStudyAuthorisation implements IStudyAuthorisation<JatosWorker> {
+public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
 
 	private final JatosErrorMessages errorMessages;
 
 	@Inject
-	JatosStudyAuthorisation(JatosErrorMessages errorMessages) {
+	JatosStudyAuthorisation(JatosPublixUtils publixUtils,
+			JatosErrorMessages errorMessages) {
+		super(publixUtils, errorMessages);
 		this.errorMessages = errorMessages;
 	}
 
 	@Override
-	public void checkWorkerAllowedToStartStudy(JatosWorker worker,
-			Study study) throws ForbiddenPublixException {
-		checkWorkerAllowedToDoStudy(worker, study);
+	public void checkWorkerAllowedToStartStudy(JatosWorker worker, Study study,
+			Batch batch) throws ForbiddenPublixException {
+		if (!batch.isActive()) {
+			throw new ForbiddenPublixException(errorMessages
+					.batchInactive(batch.getId()));
+		}
+		checkMaxTotalWorkers(batch);
+		checkWorkerAllowedToDoStudy(worker, study, batch);
 	}
 
 	@Override
-	public void checkWorkerAllowedToDoStudy(JatosWorker worker, Study study)
-			throws ForbiddenPublixException {
-		if (!study.getBatchList().get(0).hasAllowedWorkerType(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType()));
+	public void checkWorkerAllowedToDoStudy(JatosWorker worker, Study study,
+			Batch batch) throws ForbiddenPublixException {
+		// Check if worker type is allowed
+		if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {
+			throw new ForbiddenPublixException(errorMessages
+					.workerTypeNotAllowed(worker.getUIWorkerType()));
 		}
 		User user = worker.getUser();
 		// User has to be a user of this study

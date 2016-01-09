@@ -85,7 +85,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result startStudy(Long studyId) throws PublixException {
+	public Result startStudy(Long studyId, Long batchId) throws PublixException {
 		Result result = null;
 		String workerType = getWorkerTypeFromQuery();
 		// Put worker type into session so later Publix calls of this study
@@ -94,19 +94,19 @@ public class PublixInterceptor extends Controller implements IPublix {
 		switch (workerType) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
-			result = mtPublix.startStudy(studyId);
+			result = mtPublix.startStudy(studyId, batchId);
 			break;
 		case JatosWorker.WORKER_TYPE:
-			result = jatosPublix.startStudy(studyId);
+			result = jatosPublix.startStudy(studyId, batchId);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
-			result = pmPublix.startStudy(studyId);
+			result = pmPublix.startStudy(studyId, batchId);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
-			result = personalSinglePublix.startStudy(studyId);
+			result = personalSinglePublix.startStudy(studyId, batchId);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
-			result = generalSinglePublix.startStudy(studyId);
+			result = generalSinglePublix.startStudy(studyId, batchId);
 			break;
 		default:
 			throw new BadRequestPublixException(

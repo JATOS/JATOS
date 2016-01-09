@@ -2,30 +2,38 @@
 # This file defines all routes for JATOS' GUI (Higher priority routes first)
 # ~~~~
 
-# JATOS
+# Authentication controller
 GET     /jatos/login                                 @controllers.gui.Authentication.login()
 POST    /jatos/login                                 @controllers.gui.Authentication.authenticate()
 GET     /jatos/logout                                @controllers.gui.Authentication.logout()
+
+# Home controller
 GET     /jatos/sidebarStudyList                      @controllers.gui.Home.sidebarStudyList()
 GET     /jatos                                       @controllers.gui.Home.home()
 GET     /jatos/                                      @controllers.gui.Home.home()
 GET     /                                            @controllers.gui.Home.home()
 GET     /jatos/admin/log                             @controllers.gui.Home.log(limit: Integer ?= 1000)
+
+# Users controller
 POST    /jatos/user                                  @controllers.gui.Users.submit()
 POST    /jatos/user/:email/profile                   @controllers.gui.Users.submitEditedProfile(email: String)
 POST    /jatos/user/:email/password                  @controllers.gui.Users.submitChangedPassword(email: String)
 GET     /jatos/user/:email                           @controllers.gui.Users.profile(email: String)
-GET     /jatos/worker/:workerId                      @controllers.gui.Workers.index(workerId: Long)
-DELETE  /jatos/worker/:workerId                      @controllers.gui.Workers.remove(workerId: Long)
-GET     /jatos/worker/:workerId/export/allResultData @controllers.gui.ImportExport.exportAllResultDataOfWorker(workerId: Long)
+
+# StudyResults controller
 DELETE  /jatos/worker/:workerId/allResultData        @controllers.gui.StudyResults.removeAllOfWorker(workerId: Long)
 GET     /jatos/worker/:workerId/tableData            @controllers.gui.StudyResults.tableDataByWorker(workerId: Long)
-GET     /jatos/studyResult/export/resultData         @controllers.gui.ImportExport.exportDataOfStudyResults(studyResultIds: String)
 DELETE  /jatos/studyResult                           @controllers.gui.StudyResults.remove(studyResultIds: String)
-GET     /jatos/componentResult/export/resultData     @controllers.gui.ImportExport.exportDataOfComponentResults(componentResultIds: String)
-DELETE  /jatos/componentResult                       @controllers.gui.ComponentResults.remove(componentResultIds: String)
-POST    /jatos/import/study                          @controllers.gui.ImportExport.importStudy()
-POST    /jatos/import/studyConfirmed                 @controllers.gui.ImportExport.importStudyConfirmed()
+GET     /jatos/:studyId/results                      @controllers.gui.StudyResults.index(studyId: Long)
+GET     /jatos/:studyId/resultsTableData             @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
+DELETE  /jatos/:studyId/allResults                   @controllers.gui.StudyResults.removeAllOfStudy(studyId: Long)
+
+# Workers controller
+GET     /jatos/worker/:workerId                      @controllers.gui.Workers.index(workerId: Long)
+DELETE  /jatos/worker/:workerId                      @controllers.gui.Workers.remove(workerId: Long)
+GET     /jatos/:studyId/workersTableData             @controllers.gui.Workers.tableDataByStudy(studyId: Long)
+
+# Studies controller
 POST    /jatos/study                                 @controllers.gui.Studies.submitCreated()
 GET     /jatos/:studyId/properties                   @controllers.gui.Studies.properties(studyId: Long)
 POST    /jatos/:studyId/properties                   @controllers.gui.Studies.submitEdited(studyId: Long)
@@ -34,43 +42,54 @@ POST    /jatos/:studyId/users                        @controllers.gui.Studies.su
 DELETE  /jatos/:studyId                              @controllers.gui.Studies.remove(studyId: Long)
 POST    /jatos/:studyId/componentOrder               @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, newPosition: String)
 GET     /jatos/:studyId/mturk                        @controllers.gui.Studies.showMTurkSourceCode(studyId: Long)
-GET     /jatos/:studyId/show                         @controllers.gui.Studies.showStudy(studyId: Long)
-POST    /jatos/:studyId/personalSingleRun            @controllers.gui.Studies.createPersonalSingleRun(studyId: Long)
-POST    /jatos/:studyId/personalMultipleRun          @controllers.gui.Studies.createPersonalMultipleRun(studyId: Long)
+GET     /jatos/:studyId/run                          @controllers.gui.Studies.runStudy(studyId: Long, batchId: Long ?= -1)
 GET     /jatos/:studyId/clone                        @controllers.gui.Studies.cloneStudy(studyId: Long)
-GET     /jatos/:studyId/export                       @controllers.gui.ImportExport.exportStudy(studyId: Long)
 POST    /jatos/:studyId/lock/swap                    @controllers.gui.Studies.swapLock(studyId: Long)
-GET     /jatos/:studyId/results                      @controllers.gui.StudyResults.index(studyId: Long)
-GET     /jatos/:studyId/resultsTableData             @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
-GET     /jatos/:studyId/export/allResultData         @controllers.gui.ImportExport.exportDataOfAllStudyResults(studyId: Long)
-DELETE  /jatos/:studyId/allResults                   @controllers.gui.StudyResults.removeAllOfStudy(studyId: Long)
 GET     /jatos/:studyId/componentsTableData          @controllers.gui.Studies.tableDataByStudy(studyId: Long)
-GET     /jatos/:studyId/workersTableData             @controllers.gui.Workers.tableDataByStudy(studyId: Long)
 GET     /jatos/:studyId/workers                      @controllers.gui.Studies.workers(studyId: Long)
 GET     /jatos/:studyId                              @controllers.gui.Studies.index(studyId: Long)
 GET     /jatos/:studyId/                             @controllers.gui.Studies.index(studyId: Long)
+
+# ImportExport controller
+GET     /jatos/worker/:workerId/export/allResultData       @controllers.gui.ImportExport.exportAllResultDataOfWorker(workerId: Long)
+GET     /jatos/studyResult/export/resultData               @controllers.gui.ImportExport.exportDataOfStudyResults(studyResultIds: String)
+GET     /jatos/componentResult/export/resultData           @controllers.gui.ImportExport.exportDataOfComponentResults(componentResultIds: String)
+POST    /jatos/import/study                                @controllers.gui.ImportExport.importStudy()
+POST    /jatos/import/studyConfirmed                       @controllers.gui.ImportExport.importStudyConfirmed()
+GET     /jatos/:studyId/export                             @controllers.gui.ImportExport.exportStudy(studyId: Long)
+GET     /jatos/:studyId/export/allResultData               @controllers.gui.ImportExport.exportDataOfAllStudyResults(studyId: Long)
+POST    /jatos/:studyId/import/component                   @controllers.gui.ImportExport.importComponent(studyId: Long)
+POST    /jatos/:studyId/import/componentConfirmed          @controllers.gui.ImportExport.importComponentConfirmed(studyId: Long)
+GET     /jatos/:studyId/:componentId/export/allResultData  @controllers.gui.ImportExport.exportDataOfAllComponentResults(studyId: Long, componentId: Long)
+GET     /jatos/:studyId/:componentId/export                @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
+
+# Batches controller
+GET     /jatos/:studyId/runManager                           @controllers.gui.Batches.runManager(studyId: Long)
+POST    /jatos/:studyId/batch                                @controllers.gui.Batches.submitCreated(studyId: Long)
+GET     /jatos/:studyId/batch/:batchId/properties            @controllers.gui.Batches.properties(studyId: Long, batchId: Long)
+POST    /jatos/:studyId/batch/:batchId/properties            @controllers.gui.Batches.submitEditedProperties(studyId: Long, batchId: Long)
+GET     /jatos/:studyId/batch/:batchId/allowedWorkers        @controllers.gui.Batches.allowedWorkers(studyId: Long, batchId: Long)
+POST    /jatos/:studyId/batch/:batchId/property              @controllers.gui.Batches.changeProperty(studyId: Long, batchId: Long, active: Boolean)
+POST    /jatos/:studyId/batch/:batchId/personalSingleRun     @controllers.gui.Batches.createPersonalSingleRun(studyId: Long, batchId: Long)
+POST    /jatos/:studyId/batch/:batchId/personalMultipleRun   @controllers.gui.Batches.createPersonalMultipleRun(studyId: Long, batchId: Long)
+GET     /jatos/:studyId/batch/:batchId                       @controllers.gui.Batches.batch(studyId: Long, batchId: Long)
+DELETE  /jatos/:studyId/batch/:batchId                       @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
+GET     /jatos/:studyId/batches                              @controllers.gui.Batches.batchesByStudy(studyId: Long)
+
+# Components controller
 POST    /jatos/:studyId/component                    @controllers.gui.Components.submitCreated(studyId: Long)
-POST    /jatos/:studyId/import/component             @controllers.gui.ImportExport.importComponent(studyId: Long)
-POST    /jatos/:studyId/import/componentConfirmed    @controllers.gui.ImportExport.importComponentConfirmed(studyId: Long)
-GET     /jatos/:studyId/runManager                   @controllers.gui.Batches.runManager(studyId: Long)
-POST    /jatos/:studyId/batch                        @controllers.gui.Batches.submitCreated(studyId: Long)
-GET     /jatos/:studyId/batch/:batchId/properties    @controllers.gui.Batches.properties(studyId: Long, batchId: Long)
-POST    /jatos/:studyId/batch/:batchId/properties    @controllers.gui.Batches.submitEditedProperties(studyId: Long, batchId: Long)
-POST    /jatos/:studyId/batch/:batchId/property      @controllers.gui.Batches.changeProperty(studyId: Long, batchId: Long, active: Boolean)
-GET     /jatos/:studyId/batch/:batchId               @controllers.gui.Batches.batch(studyId: Long, batchId: Long)
-DELETE  /jatos/:studyId/batch/:batchId               @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
-GET     /jatos/:studyId/batches                      @controllers.gui.Batches.batchesByStudy(studyId: Long)
 GET     /jatos/:studyId/:componentId/properties      @controllers.gui.Components.properties(studyId: Long, componentId: Long)
 POST    /jatos/:studyId/:componentId/properties      @controllers.gui.Components.submitEdited(studyId: Long, componentId: Long)
 POST    /jatos/:studyId/:componentId/property        @controllers.gui.Components.changeProperty(studyId: Long, componentId: Long, active: Boolean)
 DELETE  /jatos/:studyId/:componentId                 @controllers.gui.Components.remove(studyId: Long, componentId: Long)
+GET     /jatos/:studyId/:componentId/run             @controllers.gui.Components.runComponent(studyId: Long, componentId: Long, batchId: Long ?= -1)
+GET     /jatos/:studyId/:componentId/clone           @controllers.gui.Components.cloneComponent(studyId: Long, componentId: Long)
+
+# ComponentResults controller
+DELETE  /jatos/componentResult                       @controllers.gui.ComponentResults.remove(componentResultIds: String)
 GET     /jatos/:studyId/:componentId/results         @controllers.gui.ComponentResults.index(studyId: Long, componentId: Long)
 GET     /jatos/:studyId/:componentId/tableData       @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long)
-GET     /jatos/:studyId/:componentId/export/allResultData  @controllers.gui.ImportExport.exportDataOfAllComponentResults(studyId: Long, componentId: Long)
 DELETE  /jatos/:studyId/:componentId/allResults      @controllers.gui.ComponentResults.removeAllOfComponent(studyId: Long, componentId: Long)
-GET     /jatos/:studyId/:componentId/show            @controllers.gui.Components.showComponent(studyId: Long, componentId: Long)
-GET     /jatos/:studyId/:componentId/clone           @controllers.gui.Components.cloneComponent(studyId: Long, componentId: Long)
-GET     /jatos/:studyId/:componentId/export          @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
 
 # Static resources
 GET     /public/*file             controllers.gui.Assets.versioned(path = "/public", file)

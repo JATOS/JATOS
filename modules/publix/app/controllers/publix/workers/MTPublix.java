@@ -3,6 +3,17 @@ package controllers.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.publix.IPublix;
+import controllers.publix.Publix;
+import controllers.publix.PublixInterceptor;
+import controllers.publix.StudyAssets;
+import daos.common.ComponentResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
+import daos.common.worker.MTWorkerDao;
+import exceptions.publix.BadRequestPublixException;
+import exceptions.publix.PublixException;
+import models.common.Batch;
 import models.common.Component;
 import models.common.GroupResult;
 import models.common.Study;
@@ -19,16 +30,6 @@ import services.publix.workers.MTPublixUtils;
 import services.publix.workers.MTStudyAuthorisation;
 import utils.common.ControllerUtils;
 import utils.common.JsonUtils;
-import controllers.publix.IPublix;
-import controllers.publix.Publix;
-import controllers.publix.PublixInterceptor;
-import controllers.publix.StudyAssets;
-import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
-import daos.common.StudyResultDao;
-import daos.common.worker.MTWorkerDao;
-import exceptions.publix.BadRequestPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * Implementation of JATOS' public API for studies that are started via MTurk. A
@@ -76,15 +77,17 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	}
 
 	@Override
-	public Result startStudy(Long studyId) throws PublixException {
+	public Result startStudy(Long studyId, Long batchId)
+			throws PublixException {
 		// Get MTurk query parameters
 		String mtWorkerId = getQueryString(MT_WORKER_ID);
 		String mtAssignmentId = getQueryString(ASSIGNMENT_ID);
 		// String mtHitId = getQueryString(HIT_ID);
-		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId);
+		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
+				+ "batchId " + batchId);
 
 		Study study = publixUtils.retrieveStudy(studyId);
-
+		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		// Check if it's just a preview coming from MTurk. We don't allow
 		// previews.
 		if (mtAssignmentId != null
@@ -106,13 +109,15 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 					.equals(MTSandboxWorker.WORKER_TYPE);
 			worker = mtWorkerDao.create(mtWorkerId, isRequestFromMTurkSandbox);
 		}
-		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, String.valueOf(worker.getId()));
-		Logger.info(CLASS_NAME + ".startStudy: study (ID " + studyId + ") "
-				+ "assigned to worker with ID " + worker.getId());
+		session(BATCH_ID, batch.getId().toString());
+		Logger.info(CLASS_NAME + ".startStudy: study (study ID " + studyId
+				+ ", batch ID " + batchId + ") " + "assigned to worker with ID "
+				+ worker.getId());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		studyResultDao.create(study, worker);
+		studyResultDao.create(study, batch, worker);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
@@ -127,8 +132,9 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ "workerId " + session(WORKER_ID) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		MTWorker worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);

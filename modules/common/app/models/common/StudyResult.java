@@ -86,6 +86,11 @@ public class StudyResult {
 	private Study study;
 
 	@JsonIgnore
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "batch_id")
+	private Batch batch;
+	
+	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentResultList_order")
 	@JoinColumn(name = "studyResult_id")
@@ -118,9 +123,10 @@ public class StudyResult {
 	public StudyResult() {
 	}
 
-	public StudyResult(Study study) {
+	public StudyResult(Study study, Batch batch) {
 		this.startDate = new Timestamp(new Date().getTime());
 		this.study = study;
+		this.batch = batch;
 		this.studyState = StudyState.STARTED;
 	}
 
@@ -180,6 +186,14 @@ public class StudyResult {
 
 	public Study getStudy() {
 		return this.study;
+	}
+	
+	public void setBatch(Batch batch) {
+		this.batch = batch;
+	}
+
+	public Batch getBatch() {
+		return this.batch;
 	}
 
 	public void setErrorMsg(String errorMsg) {

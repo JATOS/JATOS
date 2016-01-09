@@ -31,7 +31,7 @@ import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.publix.ChannelService;
 import services.publix.GroupService;
-import services.publix.IStudyAuthorisation;
+import services.publix.StudyAuthorisation;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.WebSocketBuilder;
@@ -67,7 +67,7 @@ public abstract class Publix<T extends Worker> extends Controller
 
 	protected final JPAApi jpa;
 	protected final PublixUtils<T> publixUtils;
-	protected final IStudyAuthorisation<T> studyAuthorisation;
+	protected final StudyAuthorisation<T> studyAuthorisation;
 	protected final GroupService groupService;
 	protected final ChannelService channelService;
 	protected final PublixErrorMessages errorMessages;
@@ -78,7 +78,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	protected final GroupResultDao groupResultDao;
 
 	public Publix(JPAApi jpa, PublixUtils<T> utils,
-			IStudyAuthorisation<T> studyAuthorisation,
+			StudyAuthorisation<T> studyAuthorisation,
 			GroupService groupService,
 			ChannelService channelService, PublixErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
@@ -170,8 +170,9 @@ public abstract class Publix<T extends Worker> extends Controller
 				+ session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		Component component = publixUtils.retrieveComponent(study, componentId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
@@ -224,7 +225,8 @@ public abstract class Publix<T extends Worker> extends Controller
 			InternalServerErrorPublixException {
 		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
 		Study study = publixUtils.retrieveStudy(studyId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkStudyIsGroupStudy(study);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
@@ -235,7 +237,6 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ "workerId " + workerIdStr
 					+ " already member of group result " + groupResult.getId());
 		} else {
-			Batch batch = study.getBatchList().get(0);
 			groupResult = groupService.join(studyResult, batch);
 			channelService.sendJoinedMsg(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
@@ -252,7 +253,8 @@ public abstract class Publix<T extends Worker> extends Controller
 				+ "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(Publix.WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
 		GroupResult groupResult = studyResult.getGroupResult();
@@ -277,7 +279,8 @@ public abstract class Publix<T extends Worker> extends Controller
 				+ ", " + "workerId " + session(WORKER_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
 		String studySessionData = publixUtils
@@ -294,9 +297,10 @@ public abstract class Publix<T extends Worker> extends Controller
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Component component = publixUtils.retrieveComponent(study, componentId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
 		StudyResult studyResult = publixUtils
@@ -326,9 +330,10 @@ public abstract class Publix<T extends Worker> extends Controller
 				+ session(WORKER_ID) + ", " + "successful " + successful + ", "
 				+ "errorMsg \"" + errorMsg + "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Component component = publixUtils.retrieveComponent(study, componentId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
 		StudyResult studyResult = publixUtils
@@ -360,8 +365,9 @@ public abstract class Publix<T extends Worker> extends Controller
 				+ "workerId " + session(WORKER_ID) + ", " + "message \""
 				+ message + "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
@@ -387,8 +393,9 @@ public abstract class Publix<T extends Worker> extends Controller
 				+ "workerId " + session(WORKER_ID) + ", " + "successful "
 				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
@@ -414,8 +421,9 @@ public abstract class Publix<T extends Worker> extends Controller
 	@Override
 	public Result log(Long studyId, Long componentId) throws PublixException {
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		String msg = request().body().asText();
 		Logger.info(CLASS_NAME + " - logging from client: study ID " + studyId
 				+ ", component ID " + componentId + ", worker ID "

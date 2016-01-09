@@ -3,12 +3,9 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.common.User;
-import models.common.workers.JatosWorker;
-import models.common.workers.Worker;
-import services.publix.PublixUtils;
 import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix;
+import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
@@ -16,6 +13,10 @@ import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
+import models.common.User;
+import models.common.workers.JatosWorker;
+import models.common.workers.Worker;
+import services.publix.PublixUtils;
 
 /**
  * JatosPublix' implementation of PublixUtils (studies or components started via
@@ -33,9 +34,9 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	JatosPublixUtils(JatosErrorMessages errorMessages, UserDao userDao,
 			StudyDao studyDao, StudyResultDao studyResultDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao) {
-		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao);
+			WorkerDao workerDao, BatchDao batchDao) {
+		super(	errorMessages, studyDao, studyResultDao, componentDao,
+				componentResultDao, workerDao, batchDao);
 		this.errorMessages = errorMessages;
 		this.userDao = userDao;
 	}
