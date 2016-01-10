@@ -116,7 +116,7 @@ public class ComponentResults extends Controller {
 	}
 
 	/**
-	 * Ajax request
+	 * Ajax DELETE request
 	 * 
 	 * Removes all ComponentResults specified in the parameter. The parameter is
 	 * a comma separated list of of ComponentResult IDs as a String.
@@ -128,6 +128,7 @@ public class ComponentResults extends Controller {
 				+ session(Users.SESSION_EMAIL));
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
+			// Permission check is done in service for each result individually
 			resultRemover.removeComponentResults(componentResultIds,
 					loggedInUser);
 		} catch (ForbiddenException | BadRequestException | NotFoundException e) {

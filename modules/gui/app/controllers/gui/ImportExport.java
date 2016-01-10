@@ -8,11 +8,24 @@ import java.util.Date;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import daos.common.ComponentDao;
+import daos.common.StudyDao;
+import daos.common.worker.WorkerDao;
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.JatosGuiException;
+import exceptions.gui.NotFoundException;
+import general.common.MessagesStrings;
+import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
-import models.gui.ComponentProperties;
 import play.Logger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -28,21 +41,6 @@ import services.gui.UserService;
 import services.gui.WorkerService;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import daos.common.ComponentDao;
-import daos.common.StudyDao;
-import daos.common.worker.WorkerDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.JatosGuiException;
-import exceptions.gui.NotFoundException;
-import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
 
 /**
  * Controller that cares for import/export of components and studies.
@@ -252,7 +250,7 @@ public class ImportExport extends Controller {
 			studyService.checkStudyLocked(study);
 
 			FilePart filePart = request().body().asMultipartFormData()
-					.getFile(ComponentProperties.COMPONENT);
+					.getFile(Component.COMPONENT);
 			json = importExportService.importComponent(study, filePart);
 		} catch (ForbiddenException | BadRequestException | IOException e) {
 			importExportService.cleanupAfterComponentImport();

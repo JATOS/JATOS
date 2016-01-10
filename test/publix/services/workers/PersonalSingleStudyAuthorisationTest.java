@@ -11,6 +11,7 @@ import org.junit.Test;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 import general.AbstractTest;
+import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalSingleWorker;
@@ -43,12 +44,13 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		Batch batch = study.getBatchList().get(0);
+		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
 
-		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
 		// Clean-up
 		removeStudy(study);
@@ -59,16 +61,18 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		Batch batch = study.getBatchList().get(0);
+		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
 
 		// Doesn't start if there is an StudyResult already
-		addStudyResult(study, worker, StudyState.FINISHED);
+		addStudyResult(study, batch, worker, StudyState.FINISHED);
 
 		try {
-			studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study,
+					batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage())
@@ -83,12 +87,13 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		Batch batch = study.getBatchList().get(0);
+		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
 
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		// Clean-up
 		removeStudy(study);
@@ -99,13 +104,15 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		Batch batch = study.getBatchList().get(0);
+		batch.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
 
 		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
+					batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(personalSingleErrorMessages
@@ -121,32 +128,36 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+		Batch batch = study.getBatchList().get(0);
+		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		addWorker(worker);
 
 		// PersonalSingleWorker cannot repeat the same study (StudyState in
 		// FINISHED, FAIL, ABORTED
-		addStudyResult(study, worker, StudyState.FINISHED);
+		addStudyResult(study, batch, worker, StudyState.FINISHED);
 		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
+					batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage())
 					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
-		addStudyResult(study, worker, StudyState.FAIL);
+		addStudyResult(study, batch, worker, StudyState.FAIL);
 		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
+					batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage())
 					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
-		addStudyResult(study, worker, StudyState.ABORTED);
+		addStudyResult(study, batch, worker, StudyState.ABORTED);
 		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
+					batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage())

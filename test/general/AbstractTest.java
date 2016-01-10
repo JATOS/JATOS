@@ -24,6 +24,7 @@ import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import general.common.Common;
+import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
@@ -271,10 +272,10 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 	}
 
-	protected void addStudyResult(Study study, Worker worker,
+	protected void addStudyResult(Study study, Batch batch, Worker worker,
 			StudyState state) {
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study, worker);
+		StudyResult studyResult = studyResultDao.create(study, batch, worker);
 		studyResult.setStudyState(state);
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(worker);

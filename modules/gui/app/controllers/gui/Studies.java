@@ -279,7 +279,11 @@ public class Studies extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
-		checkStandardForStudy(studyId, study, loggedInUser);
+		try {
+			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
 		List<User> userList = userDao.findAll();
 		return ok(jsonUtils.usersForStudyUI(userList, study));
 	}

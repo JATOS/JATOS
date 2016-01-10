@@ -12,18 +12,15 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 
 import controllers.gui.Users;
 import general.AbstractTest;
 import models.common.Study;
-import models.common.workers.PersonalSingleWorker;
 import models.gui.StudyProperties;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
-import utils.common.JsonUtils;
 
 /**
  * Testing actions of controller.Studies.
@@ -239,7 +236,7 @@ public class StudiesControllerTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
-						.changeUsers(studyClone.getId()).url());
+						.submitChangedUsers(studyClone.getId()).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
@@ -327,48 +324,10 @@ public class StudiesControllerTest extends AbstractTest {
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
-						.showStudy(studyClone.getId()).url());
+						.runStudy(studyClone.getId(), -1l).url());
 		Result result = route(request);
 
 		assertEquals(SEE_OTHER, result.status());
-
-		// Clean up
-		removeStudy(studyClone);
-	}
-
-	@Test
-	public void callCreatePersonalSingleRun() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
-		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
-				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
-		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyJson(jsonNode)
-				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies
-						.createPersonalSingleRun(studyClone.getId()).url());
-		Result result = route(request);
-
-		assertThat(result.status()).isEqualTo(OK);
-
-		// Clean up
-		removeStudy(studyClone);
-	}
-
-	@Test
-	public void callCreatePersonalMultipleRun() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
-		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
-				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
-		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyJson(jsonNode)
-				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies
-						.createPersonalMultipleRun(studyClone.getId()).url());
-		Result result = route(request);
-
-		assertThat(result.status()).isEqualTo(OK);
 
 		// Clean up
 		removeStudy(studyClone);

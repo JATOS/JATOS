@@ -9,18 +9,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
 
-import models.common.Component;
-import models.common.Study;
-import models.common.User;
-import models.gui.ComponentProperties;
-import play.Logger;
-import play.api.Application;
-import play.mvc.Controller;
-import play.mvc.Http.MultipartFormData.FilePart;
-import utils.common.IOUtils;
-import utils.common.JsonUtils;
-import utils.common.ZipUtil;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -30,6 +18,16 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
+import models.common.Component;
+import models.common.Study;
+import models.common.User;
+import play.Logger;
+import play.api.Application;
+import play.mvc.Controller;
+import play.mvc.Http.MultipartFormData.FilePart;
+import utils.common.IOUtils;
+import utils.common.JsonUtils;
+import utils.common.ZipUtil;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -84,7 +82,7 @@ public class ImportExportService {
 				filePart.getFile().getName());
 
 		// If wrong key the upload comes from the wrong form
-		if (!filePart.getKey().equals(ComponentProperties.COMPONENT)) {
+		if (!filePart.getKey().equals(Component.COMPONENT)) {
 			throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
 		}
 

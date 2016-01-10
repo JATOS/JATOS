@@ -11,6 +11,7 @@ import org.junit.Test;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 import general.AbstractTest;
+import models.common.Batch;
 import models.common.Study;
 import play.mvc.Http;
 import services.publix.workers.JatosErrorMessages;
@@ -43,10 +44,11 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 		Http.Context.current().session().put("email", admin.getEmail());
 
 		Study study = importExampleStudy();
+		Batch batch = study.getBatchList().get(0);
 		addStudy(study);
 
-		studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-				study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study,
+				batch);
 
 		// Clean-up
 		removeStudy(study);
@@ -56,13 +58,14 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).removeAllowedWorkerType(admin.getWorker().getWorkerType());
+		Batch batch = study.getBatchList().get(0);
+		batch.removeAllowedWorkerType(admin.getWorker().getWorkerType());
 		addStudy(study);
 
 		// Study doesn't allow this worker type
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-					study);
+					study, batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages
@@ -77,6 +80,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyNotUser()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
+		Batch batch = study.getBatchList().get(0);
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -86,7 +90,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 		// User has to be a user of this study
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-					study);
+					study, batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages
@@ -103,12 +107,13 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 		mockContext();
 
 		Study study = importExampleStudy();
+		Batch batch = study.getBatchList().get(0);
 		addStudy(study);
 
 		// User has to be logged in
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(),
-					study);
+					study, batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages

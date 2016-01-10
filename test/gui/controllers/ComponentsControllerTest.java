@@ -17,8 +17,8 @@ import org.junit.Test;
 import controllers.gui.Components;
 import controllers.gui.Users;
 import general.AbstractTest;
-import models.common.Component;
 import models.common.Study;
+import models.gui.ComponentProperties;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
@@ -46,13 +46,13 @@ public class ComponentsControllerTest extends AbstractTest {
 	 * Checks action with route Components.showComponent.
 	 */
 	@Test
-	public void callShowComponent() throws Exception {
+	public void callRunComponent() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
 						controllers.gui.routes.Components
-								.showComponent(studyClone.getId(),
+								.runComponent(studyClone.getId(), -1l,
 										studyClone.getComponent(1).getId())
 								.url());
 		Result result = route(request);
@@ -75,7 +75,7 @@ public class ComponentsControllerTest extends AbstractTest {
 	 * within the Component.
 	 */
 	@Test
-	public void callShowComponentNoHtml() throws Exception {
+	public void callRunComponentNoHtml() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		entityManager.getTransaction().begin();
@@ -85,7 +85,7 @@ public class ComponentsControllerTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
 						controllers.gui.routes.Components
-								.showComponent(studyClone.getId(),
+								.runComponent(studyClone.getId(), -1l,
 										studyClone.getComponent(1).getId())
 								.url());
 		Result result = route(request);
@@ -100,14 +100,17 @@ public class ComponentsControllerTest extends AbstractTest {
 	 * Checks action with route Components.create.
 	 */
 	@Test
-	public void callCreate() throws IOException {
+	public void callProperties() throws IOException {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Components
-						.create(studyClone.getId()).url());
+				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
+						controllers.gui.routes.Components
+								.properties(studyClone.getId(),
+										studyClone.getFirstComponent().getId())
+								.url());
 		Result result = route(request);
+		// TODO check JSON
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(contentAsString(result))
@@ -122,20 +125,20 @@ public class ComponentsControllerTest extends AbstractTest {
 	 * page should be shown.
 	 */
 	@Test
-	public void callSubmit() throws Exception {
+	public void callSubmitCreated() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
-		form.put(Component.TITLE, "Title Test");
-		form.put(Component.RELOADABLE, "true");
-		form.put(Component.HTML_FILE_PATH, "html_file_path_test.html");
-		form.put(Component.COMMENTS, "Comments test test.");
-		form.put(Component.JSON_DATA, "{}");
-		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT);
+		form.put(ComponentProperties.TITLE, "Title Test");
+		form.put(ComponentProperties.RELOADABLE, "true");
+		form.put(ComponentProperties.HTML_FILE_PATH, "html_file_path_test.html");
+		form.put(ComponentProperties.COMMENTS, "Comments test test.");
+		form.put(ComponentProperties.JSON_DATA, "{}");
+		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE);
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Components
-						.submit(studyClone.getId()).url());
+						.submitCreated(studyClone.getId()).url());
 		Result result = route(request);
 
 		assertEquals(SEE_OTHER, result.status());
@@ -143,26 +146,28 @@ public class ComponentsControllerTest extends AbstractTest {
 		// Clean up
 		removeStudy(studyClone);
 	}
+	
+	//TODO callSubmitEdited
 
 	/**
 	 * Checks action with route Components.submit. After the call the component
 	 * itself should be shown.
 	 */
 	@Test
-	public void callSubmitAndShow() throws Exception {
+	public void callSubmitAndRun() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
-		form.put(Component.TITLE, "Title Test");
-		form.put(Component.RELOADABLE, "true");
-		form.put(Component.HTML_FILE_PATH, "html_file_path_test.html");
-		form.put(Component.COMMENTS, "Comments test test.");
-		form.put(Component.JSON_DATA, "{}");
-		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
+		form.put(ComponentProperties.TITLE, "Title Test");
+		form.put(ComponentProperties.RELOADABLE, "true");
+		form.put(ComponentProperties.HTML_FILE_PATH, "html_file_path_test.html");
+		form.put(ComponentProperties.COMMENTS, "Comments test test.");
+		form.put(ComponentProperties.JSON_DATA, "{}");
+		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE_AND_RUN);
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Components
-						.submit(studyClone.getId()).url());
+						.submitCreated(studyClone.getId()).url());
 		Result result = route(request);
 
 		assertEquals(SEE_OTHER, result.status());
@@ -180,16 +185,16 @@ public class ComponentsControllerTest extends AbstractTest {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
-		form.put(Component.TITLE, "");
-		form.put(Component.RELOADABLE, "true");
-		form.put(Component.HTML_FILE_PATH, "");
-		form.put(Component.COMMENTS, "");
-		form.put(Component.JSON_DATA, "{");
-		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SUBMIT_AND_SHOW);
+		form.put(ComponentProperties.TITLE, "");
+		form.put(ComponentProperties.RELOADABLE, "true");
+		form.put(ComponentProperties.HTML_FILE_PATH, "");
+		form.put(ComponentProperties.COMMENTS, "");
+		form.put(ComponentProperties.JSON_DATA, "{");
+		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE_AND_RUN);
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Components
-						.submit(studyClone.getId()).url());
+						.submitCreated(studyClone.getId()).url());
 		Result result = route(request);
 
 		assertThat(contentAsString(result)).contains(
@@ -199,7 +204,7 @@ public class ComponentsControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callChangeProperties() throws Exception {
+	public void callChangeProperty() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.session(Users.SESSION_EMAIL, admin.getEmail())

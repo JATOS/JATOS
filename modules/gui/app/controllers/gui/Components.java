@@ -44,7 +44,7 @@ public class Components extends Controller {
 
 	public static final String EDIT_SUBMIT_NAME = "action";
 	public static final String EDIT_SAVE = "save";
-	public static final String EDIT_SAVE_AND_SHOW = "saveAndShow";
+	public static final String EDIT_SAVE_AND_RUN = "saveAndRun";
 	private static final String CLASS_NAME = Components.class.getSimpleName();
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;

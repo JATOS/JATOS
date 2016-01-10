@@ -16,6 +16,7 @@ import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
+import utils.common.ControllerUtils;
 import controllers.gui.Authentication;
 import controllers.gui.Users;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
@@ -24,8 +25,8 @@ import daos.common.UserDao;
 /**
  * For all actions in a controller that are annotated with @Authenticated check
  * authentication. An action is authenticated if there is an email in the
- * session that correspondents to a valid user. If successful the User is
- * stored in the RequestScope.
+ * session that correspondents to a valid user. If successful the User is stored
+ * in the RequestScope.
  *
  * @author Kristian Lange
  */
@@ -52,8 +53,12 @@ public class AuthenticationAction extends Action<Authenticated> {
 			loggedInUser = userDao.findByEmail(email);
 		}
 		if (loggedInUser == null) {
-			call = Promise.pure(redirect(controllers.gui.routes.Authentication
-					.login()));
+			if (ControllerUtils.isAjax()) {
+				call = Promise.pure(forbidden("Not logged in"));
+			} else {
+				call = Promise.pure(redirect(
+						controllers.gui.routes.Authentication.login()));
+			}
 		} else {
 			RequestScope.put(Authentication.LOGGED_IN_USER, loggedInUser);
 			call = delegate.call(ctx);

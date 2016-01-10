@@ -32,6 +32,7 @@ public class Component {
 	 * Version of this model used for serialisation (e.g. JSON marshaling)
 	 */
 	public static final int SERIAL_VERSION = 1;
+	public static final String COMPONENT = "component";
 
 	@Id
 	@GeneratedValue

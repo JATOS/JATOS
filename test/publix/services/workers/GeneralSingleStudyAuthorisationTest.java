@@ -11,6 +11,7 @@ import org.junit.Test;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 import general.AbstractTest;
+import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult.StudyState;
 import models.common.workers.GeneralSingleWorker;
@@ -42,14 +43,14 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+		Batch batch = study.getBatchList().get(0);
+		batch.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);
+		addStudyResult(study, batch, worker, StudyState.STARTED);
 
-		addStudyResult(study, worker, StudyState.STARTED);
-
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		// Clean-up
 		removeStudy(study);
@@ -59,12 +60,14 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
+		Batch batch = study.getBatchList().get(0);
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 
 		// Study doesn't allow this worker type
 		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
+					batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(generalSingleErrorMessages
@@ -79,16 +82,19 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyFinishedStudy()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
+		Batch batch = study.getBatchList().get(0);
+		study.getBatchList().get(0)
+				.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 		addWorker(worker);
 
-		addStudyResult(study, worker, StudyState.FINISHED);
+		addStudyResult(study, batch, worker, StudyState.FINISHED);
 
 		// General single workers can't repeat the same study
 		try {
-			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
+					batch);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage())

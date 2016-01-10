@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import exceptions.publix.ForbiddenPublixException;
 import general.AbstractTest;
+import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalMultipleWorker;
@@ -33,12 +34,13 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+		Batch batch = study.getBatchList().get(0);
+		batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
 		addWorker(worker);
 
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		// Clean-up
 		removeStudy(study);
@@ -49,17 +51,18 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		study.getBatchList().get(0).addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
+		Batch batch = study.getBatchList().get(0);
+		batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
 		addWorker(worker);
 
 		// State of study has no influence. Personal multiple workers can do
 		// studies multiple times
-		addStudyResult(study, worker, StudyState.FINISHED);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study);
+		addStudyResult(study, batch, worker, StudyState.FINISHED);
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-		addStudyResult(study, worker, StudyState.FINISHED);
+		addStudyResult(study, batch, worker, StudyState.FINISHED);
 
 		// Clean-up
 		removeStudy(study);

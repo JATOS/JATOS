@@ -10,16 +10,22 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import controllers.gui.Authentication;
 import controllers.gui.Users;
+import exceptions.publix.ForbiddenReloadException;
 import general.AbstractTest;
 import general.gui.FlashScopeMessaging;
+import general.gui.RequestScope;
+import models.common.ComponentResult;
 import models.common.Study;
+import models.common.StudyResult;
 import models.common.User;
 import play.api.mvc.Call;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.StudyService;
+import services.publix.workers.JatosPublixUtils;
 
 /**
  * Testing whether actions do proper access control
@@ -28,13 +34,17 @@ import services.gui.StudyService;
  */
 public class AccessControllerTest extends AbstractTest {
 
-	private static Study studyTemplate;
-	private static User testUser;
+	private Study studyTemplate;
+	private User testUser;
+	private JatosPublixUtils jatosPublixUtils;
 
 	@Override
 	public void before() throws Exception {
-		studyTemplate = importExampleStudy();
+		jatosPublixUtils = application.injector()
+				.instanceOf(JatosPublixUtils.class);
 		testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
+		RequestScope.put(Authentication.LOGGED_IN_USER, testUser);
+		studyTemplate = importExampleStudy();
 	}
 
 	@Override
@@ -42,13 +52,23 @@ public class AccessControllerTest extends AbstractTest {
 		ioUtils.removeStudyAssetsDir(studyTemplate.getDirName());
 	}
 
+	/**
+	 * Call action without testUser in session: nobody is logged in. This should
+	 * trigger a redirect to the logged in page. This is never an Ajax request.
+	 * Even if it's an Ajax request in the application, here it's a normal
+	 * request.
+	 */
 	private void checkDeniedAccess(Call call, String method) {
-		// Call action without testUser in session
 		Result result = route(call);
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 		assertThat(result.redirectLocation()).contains("/jatos/login");
 	}
 
+	/**
+	 * Removes the admin user from the users who have permission in this study.
+	 * Then calls the action with the admin user logged-in (in the session).
+	 * This should trigger an response with a 403 return code.
+	 */
 	private void checkNotUser(Call call, Study study, String method) {
 		removeUser(study, admin);
 		RequestBuilder request = new RequestBuilder().method(method)
@@ -85,6 +105,16 @@ public class AccessControllerTest extends AbstractTest {
 	}
 
 	@Test
+	public void callStudiesProperties() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Studies
+				.properties(studyClone.getId());
+		checkDeniedAccess(call, Helpers.GET);
+		checkNotUser(call, studyClone, Helpers.GET);
+		removeStudy(studyClone);
+	}
+
+	@Test
 	public void callStudiesSubmitCreated() throws Exception {
 		Call call = controllers.gui.routes.Studies.submitCreated();
 		checkDeniedAccess(call, Helpers.GET);
@@ -93,7 +123,8 @@ public class AccessControllerTest extends AbstractTest {
 	@Test
 	public void callProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Studies.properties(studyClone.getId());
+		Call call = controllers.gui.routes.Studies
+				.properties(studyClone.getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
@@ -113,7 +144,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callStudiesSwapLock() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.swapLock(studyClone.getId());
-		checkDeniedAccess(call, Helpers.GET);
+		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
 		removeStudy(studyClone);
 	}
@@ -122,7 +153,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callStudiesRemove() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.remove(studyClone.getId());
-		checkDeniedAccess(call, Helpers.GET);
+		checkDeniedAccess(call, Helpers.DELETE);
 		checkNotUser(call, studyClone, Helpers.DELETE);
 		removeStudy(studyClone);
 	}
@@ -138,10 +169,18 @@ public class AccessControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callStudiesChangeUser() throws Exception {
+	public void callStudiesUsers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Studies
-				.changeUsers(studyClone.getId());
+		Call call = controllers.gui.routes.Studies.users(studyClone.getId());
+		checkDeniedAccess(call, Helpers.GET);
+		checkNotUser(call, studyClone, Helpers.GET);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callUsers() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Studies.users(studyClone.getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
@@ -153,16 +192,17 @@ public class AccessControllerTest extends AbstractTest {
 		Call call = controllers.gui.routes.Studies
 				.submitChangedUsers(studyClone.getId());
 		checkDeniedAccess(call, Helpers.POST);
-		// Check not user of study
-		removeUser(studyClone, admin);
+		checkNotUser(call, studyClone, Helpers.POST);
+		removeStudy(studyClone);
+	}
 
-		RequestBuilder request = new RequestBuilder().method(Helpers.POST)
-				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(call.url());
-		Result result = route(request);
-
-		assertThat(result.status()).isEqualTo(SEE_OTHER);
-		assertThat(result.flash().get(FlashScopeMessaging.ERROR))
-				.contains("isn't user of study");
+	@Test
+	public void callStudiesTableDataByStudy() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Studies
+				.tableDataByStudy(studyClone.getId());
+		checkDeniedAccess(call, Helpers.GET);
+		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
 	}
 
@@ -173,38 +213,18 @@ public class AccessControllerTest extends AbstractTest {
 				studyClone.getId(),
 				studyClone.getComponentList().get(0).getId(),
 				StudyService.COMPONENT_POSITION_DOWN);
-		checkDeniedAccess(call, Helpers.GET);
+		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
 		removeStudy(studyClone);
 	}
 
 	@Test
-	public void callStudiesShowStudy() throws Exception {
+	public void callStudiesRunStudy() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Studies
-				.showStudy(studyClone.getId());
+		Call call = controllers.gui.routes.Studies.runStudy(studyClone.getId(),
+				-1l);
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
-		removeStudy(studyClone);
-	}
-
-	@Test
-	public void callStudiesCreatePersonalSingleRun() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Studies
-				.createPersonalSingleRun(studyClone.getId());
-		checkDeniedAccess(call, Helpers.GET);
-		checkNotUser(call, studyClone, Helpers.POST);
-		removeStudy(studyClone);
-	}
-
-	@Test
-	public void callStudiesCreatePersonalMultipleRun() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Studies
-				.createPersonalMultipleRun(studyClone.getId());
-		checkDeniedAccess(call, Helpers.GET);
-		checkNotUser(call, studyClone, Helpers.POST);
 		removeStudy(studyClone);
 	}
 
@@ -228,9 +248,39 @@ public class AccessControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callComponentsShowComponent() throws Exception {
+	public void callComponentsRunComponent() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Components.showComponent(
+		Call call = controllers.gui.routes.Components.runComponent(
+				studyClone.getId(), studyClone.getComponent(1).getId(), -1l);
+		checkDeniedAccess(call, Helpers.GET);
+		checkNotUser(call, studyClone, Helpers.GET);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callComponentsSubmitCreated() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Components
+				.submitCreated(studyClone.getId());
+		checkDeniedAccess(call, Helpers.POST);
+		checkNotUser(call, studyClone, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callComponentsSubmitEdited() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Components.submitEdited(
+				studyClone.getId(), studyClone.getComponent(1).getId());
+		checkDeniedAccess(call, Helpers.POST);
+		checkNotUser(call, studyClone, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callComponentsProperties() throws IOException {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Components.properties(
 				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
@@ -238,31 +288,11 @@ public class AccessControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callComponentsCreate() throws IOException {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Components
-				.create(studyClone.getId());
-		checkDeniedAccess(call, Helpers.GET);
-		checkNotUser(call, studyClone, Helpers.GET);
-		removeStudy(studyClone);
-	}
-
-	@Test
-	public void callComponentsSubmit() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Components
-				.submit(studyClone.getId());
-		checkDeniedAccess(call, Helpers.GET);
-		checkNotUser(call, studyClone, Helpers.POST);
-		removeStudy(studyClone);
-	}
-
-	@Test
-	public void callComponentsChangeProperties() throws Exception {
+	public void callComponentsChangeProperty() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Components.changeProperty(
 				studyClone.getId(), studyClone.getComponent(1).getId(), true);
-		checkDeniedAccess(call, Helpers.GET);
+		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
 		removeStudy(studyClone);
 	}
@@ -282,7 +312,7 @@ public class AccessControllerTest extends AbstractTest {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Components.remove(studyClone.getId(),
 				studyClone.getComponent(1).getId());
-		checkDeniedAccess(call, Helpers.GET);
+		checkDeniedAccess(call, Helpers.DELETE);
 		checkNotUser(call, studyClone, Helpers.DELETE);
 		removeStudy(studyClone);
 	}
@@ -310,7 +340,7 @@ public class AccessControllerTest extends AbstractTest {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.ImportExport
 				.importComponent(studyClone.getId());
-		checkDeniedAccess(call, Helpers.GET);
+		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
 		removeStudy(studyClone);
 	}
@@ -347,9 +377,50 @@ public class AccessControllerTest extends AbstractTest {
 
 	@Test
 	public void callComponentResultsRemove() throws Exception {
-		Call call = controllers.gui.routes.ComponentResults.remove("1");
-		checkDeniedAccess(call, Helpers.GET);
-		// TODO check whether result's study has appropriate user
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		StudyResult studyResult = createTwoComponentResults(studyClone);
+		ComponentResult componentResult = studyResult.getComponentResultList()
+				.get(0);
+		Call call = controllers.gui.routes.ComponentResults
+				.remove(componentResult.getId().toString());
+		checkDeniedAccess(call, Helpers.DELETE);
+
+		// Logged-in user must be an user of the study to which the
+		// ComponentResult belongs that is to be deleted - if not an HTTP 403
+		// response is expected
+		RequestBuilder request = new RequestBuilder().method(Helpers.DELETE)
+				.session(Users.SESSION_EMAIL, testUser.getEmail())
+				.uri(call.url());
+		Result result = route(request);
+		assertThat(result.status()).isEqualTo(FORBIDDEN);
+		assertThat(contentAsString(result)).contains("isn't user of study");
+		removeStudy(studyClone);
+	}
+
+	private StudyResult createTwoComponentResults(Study study)
+			throws ForbiddenReloadException {
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = studyResultDao.create(study,
+				study.getBatchList().get(0), admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		// Have to set study manually in test - don't know why
+		study.getFirstComponent().setStudy(study);
+		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
+		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
+		entityManager.getTransaction().commit();
+		return studyResult;
+	}
+
+	@Test
+	public void callComponentResultsRemoveAllOfComponent() throws IOException {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.ComponentResults
+				.removeAllOfComponent(studyClone.getId(),
+						studyClone.getComponent(1).getId());
+		checkDeniedAccess(call, Helpers.DELETE);
+		checkNotUser(call, studyClone, Helpers.DELETE);
+		removeStudy(studyClone);
 	}
 
 	@Test
@@ -451,6 +522,117 @@ public class AccessControllerTest extends AbstractTest {
 				.remove(admin.getWorker().getId());
 		checkDeniedAccess(call, Helpers.DELETE);
 		checkRemoveJatosWorker(call, Helpers.DELETE);
+	}
+
+	@Test
+	public void callBatchesRunManager() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches
+				.runManager(studyClone.getId());
+		checkDeniedAccess(call, Helpers.GET);
+		checkNotUser(call, studyClone, Helpers.GET);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callBatchesBatchesByStudy() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches
+				.batchesByStudy(studyClone.getId());
+		checkDeniedAccess(call, Helpers.GET);
+		checkNotUser(call, studyClone, Helpers.GET);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callBatchesAllowedWorkers() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches.allowedWorkers(
+				studyClone.getId(), studyClone.getBatchList().get(0).getId());
+		checkDeniedAccess(call, Helpers.GET);
+		checkNotUser(call, studyClone, Helpers.GET);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callBatchesSubmitCreated() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches
+				.submitCreated(studyClone.getId());
+		checkDeniedAccess(call, Helpers.POST);
+		checkNotUser(call, studyClone, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callBatchesBatch() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches.batch(studyClone.getId(),
+				studyClone.getBatchList().get(0).getId());
+		checkDeniedAccess(call, Helpers.GET);
+		checkNotUser(call, studyClone, Helpers.GET);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callBatchesProperties() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches.properties(
+				studyClone.getId(), studyClone.getBatchList().get(0).getId());
+		checkDeniedAccess(call, Helpers.GET);
+		checkNotUser(call, studyClone, Helpers.GET);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callBatchesSubmitEditedProperties() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches.submitEditedProperties(
+				studyClone.getId(), studyClone.getBatchList().get(0).getId());
+		checkDeniedAccess(call, Helpers.POST);
+		checkNotUser(call, studyClone, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callBatchesChangeProperty() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches.changeProperty(
+				studyClone.getId(), studyClone.getBatchList().get(0).getId(),
+				true);
+		checkDeniedAccess(call, Helpers.POST);
+		checkNotUser(call, studyClone, Helpers.POST);
+		removeStudy(studyClone);
+	}
+	
+	@Test
+	public void callBatchesRemove() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches.remove(
+				studyClone.getId(), studyClone.getBatchList().get(0).getId());
+		checkDeniedAccess(call, Helpers.DELETE);
+		checkNotUser(call, studyClone, Helpers.DELETE);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callBatchesCreatePersonalSingleRun() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches
+				.createPersonalSingleRun(studyClone.getId(), -1l);
+		checkDeniedAccess(call, Helpers.POST);
+		checkNotUser(call, studyClone, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void callBatchesCreatePersonalMultipleRun() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Call call = controllers.gui.routes.Batches
+				.createPersonalMultipleRun(studyClone.getId(), -1l);
+		checkDeniedAccess(call, Helpers.POST);
+		checkNotUser(call, studyClone, Helpers.POST);
+		removeStudy(studyClone);
 	}
 
 }

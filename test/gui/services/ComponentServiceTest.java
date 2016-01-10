@@ -14,6 +14,7 @@ import general.AbstractTest;
 import general.common.MessagesStrings;
 import models.common.Component;
 import models.common.Study;
+import models.gui.ComponentProperties;
 
 /**
  * Tests ComponentService
@@ -43,18 +44,18 @@ public class ComponentServiceTest extends AbstractTest {
 		addStudy(study);
 
 		Component component = study.getFirstComponent();
-		Component clone = componentService.clone(component);
-		clone.setActive(false);
-		clone.setComments("Changed comments");
-		clone.setHtmlFilePath("changed path");
-		clone.setJsonData("{}");
-		clone.setReloadable(false);
-		clone.setTitle("Changed title");
-		clone.setUuid("UUID should never be changed");
-		clone.setStudy(null);
-		clone.setId(0l);
+		ComponentProperties updatedProps = new ComponentProperties();
+		updatedProps.setActive(false);
+		updatedProps.setComments("Changed comments");
+		updatedProps.setHtmlFilePath("changed path");
+		updatedProps.setJsonData("{}");
+		updatedProps.setReloadable(false);
+		updatedProps.setTitle("Changed title");
+		updatedProps.setUuid("UUID should never be changed");
+		updatedProps.setStudyId(1234l);
+		updatedProps.setId(4321l);
 
-		componentService.updateComponentAfterEdit(component, clone);
+		componentService.updateComponentAfterEdit(component, updatedProps);
 		Component updatedComponent = componentDao
 				.findByUuid(component.getUuid(), study);
 
@@ -63,18 +64,20 @@ public class ComponentServiceTest extends AbstractTest {
 				.isTrue();
 		assertThat(updatedComponent.getId().equals(component.getId())).isTrue();
 		// TODO study always null: weird!
+		// TODO we shouldn'T be able to overwrite IDs
 		// assertThat(updatedComponent.getStudy().equals(study)).isTrue();
 		assertThat(updatedComponent.getUuid().equals(component.getUuid()))
 				.isTrue();
 		assertThat(updatedComponent.getHtmlFilePath())
 				.isEqualTo(component.getHtmlFilePath());
-
+		// TODO check study ID
+		
 		// Changed stuff
 		assertThat(updatedComponent.getComments())
-				.isEqualTo(clone.getComments());
+				.isEqualTo(updatedProps.getComments());
 		assertThat(updatedComponent.getJsonData()).isEqualTo("{}");
-		assertThat(updatedComponent.getTitle()).isEqualTo(clone.getTitle());
-		assertThat(updatedComponent.isReloadable() == clone.isReloadable())
+		assertThat(updatedComponent.getTitle()).isEqualTo(updatedProps.getTitle());
+		assertThat(updatedComponent.isReloadable() == updatedProps.isReloadable())
 				.isTrue();
 
 		// Clean-up

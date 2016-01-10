@@ -1,5 +1,6 @@
 # Routes
 # This file defines all routes for JATOS' GUI (Higher priority routes first)
+# Order is important!
 # ~~~~
 
 # Authentication controller
@@ -20,9 +21,13 @@ POST    /jatos/user/:email/profile                   @controllers.gui.Users.subm
 POST    /jatos/user/:email/password                  @controllers.gui.Users.submitChangedPassword(email: String)
 GET     /jatos/user/:email                           @controllers.gui.Users.profile(email: String)
 
-# StudyResults controller
-DELETE  /jatos/worker/:workerId/allResultData        @controllers.gui.StudyResults.removeAllOfWorker(workerId: Long)
+# ComponentResults & StudyResults controller
 GET     /jatos/worker/:workerId/tableData            @controllers.gui.StudyResults.tableDataByWorker(workerId: Long)
+DELETE  /jatos/componentResult                       @controllers.gui.ComponentResults.remove(componentResultIds: String)
+GET     /jatos/:studyId/:componentId/results         @controllers.gui.ComponentResults.index(studyId: Long, componentId: Long)
+GET     /jatos/:studyId/:componentId/tableData       @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long)
+DELETE  /jatos/:studyId/:componentId/allResults      @controllers.gui.ComponentResults.removeAllOfComponent(studyId: Long, componentId: Long)
+DELETE  /jatos/worker/:workerId/allResultData        @controllers.gui.StudyResults.removeAllOfWorker(workerId: Long)
 DELETE  /jatos/studyResult                           @controllers.gui.StudyResults.remove(studyResultIds: String)
 GET     /jatos/:studyId/results                      @controllers.gui.StudyResults.index(studyId: Long)
 GET     /jatos/:studyId/resultsTableData             @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
@@ -50,19 +55,6 @@ GET     /jatos/:studyId/workers                      @controllers.gui.Studies.wo
 GET     /jatos/:studyId                              @controllers.gui.Studies.index(studyId: Long)
 GET     /jatos/:studyId/                             @controllers.gui.Studies.index(studyId: Long)
 
-# ImportExport controller
-GET     /jatos/worker/:workerId/export/allResultData       @controllers.gui.ImportExport.exportAllResultDataOfWorker(workerId: Long)
-GET     /jatos/studyResult/export/resultData               @controllers.gui.ImportExport.exportDataOfStudyResults(studyResultIds: String)
-GET     /jatos/componentResult/export/resultData           @controllers.gui.ImportExport.exportDataOfComponentResults(componentResultIds: String)
-POST    /jatos/import/study                                @controllers.gui.ImportExport.importStudy()
-POST    /jatos/import/studyConfirmed                       @controllers.gui.ImportExport.importStudyConfirmed()
-GET     /jatos/:studyId/export                             @controllers.gui.ImportExport.exportStudy(studyId: Long)
-GET     /jatos/:studyId/export/allResultData               @controllers.gui.ImportExport.exportDataOfAllStudyResults(studyId: Long)
-POST    /jatos/:studyId/import/component                   @controllers.gui.ImportExport.importComponent(studyId: Long)
-POST    /jatos/:studyId/import/componentConfirmed          @controllers.gui.ImportExport.importComponentConfirmed(studyId: Long)
-GET     /jatos/:studyId/:componentId/export/allResultData  @controllers.gui.ImportExport.exportDataOfAllComponentResults(studyId: Long, componentId: Long)
-GET     /jatos/:studyId/:componentId/export                @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
-
 # Batches controller
 GET     /jatos/:studyId/runManager                           @controllers.gui.Batches.runManager(studyId: Long)
 POST    /jatos/:studyId/batch                                @controllers.gui.Batches.submitCreated(studyId: Long)
@@ -85,11 +77,19 @@ DELETE  /jatos/:studyId/:componentId                 @controllers.gui.Components
 GET     /jatos/:studyId/:componentId/run             @controllers.gui.Components.runComponent(studyId: Long, componentId: Long, batchId: Long ?= -1)
 GET     /jatos/:studyId/:componentId/clone           @controllers.gui.Components.cloneComponent(studyId: Long, componentId: Long)
 
-# ComponentResults controller
-DELETE  /jatos/componentResult                       @controllers.gui.ComponentResults.remove(componentResultIds: String)
-GET     /jatos/:studyId/:componentId/results         @controllers.gui.ComponentResults.index(studyId: Long, componentId: Long)
-GET     /jatos/:studyId/:componentId/tableData       @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long)
-DELETE  /jatos/:studyId/:componentId/allResults      @controllers.gui.ComponentResults.removeAllOfComponent(studyId: Long, componentId: Long)
+# ImportExport controller
+GET     /jatos/worker/:workerId/export/allResultData       @controllers.gui.ImportExport.exportAllResultDataOfWorker(workerId: Long)
+GET     /jatos/studyResult/export/resultData               @controllers.gui.ImportExport.exportDataOfStudyResults(studyResultIds: String)
+GET     /jatos/componentResult/export/resultData           @controllers.gui.ImportExport.exportDataOfComponentResults(componentResultIds: String)
+POST    /jatos/import/study                                @controllers.gui.ImportExport.importStudy()
+POST    /jatos/import/studyConfirmed                       @controllers.gui.ImportExport.importStudyConfirmed()
+GET     /jatos/:studyId/export                             @controllers.gui.ImportExport.exportStudy(studyId: Long)
+GET     /jatos/:studyId/export/allResultData               @controllers.gui.ImportExport.exportDataOfAllStudyResults(studyId: Long)
+POST    /jatos/:studyId/import/component                   @controllers.gui.ImportExport.importComponent(studyId: Long)
+POST    /jatos/:studyId/import/componentConfirmed          @controllers.gui.ImportExport.importComponentConfirmed(studyId: Long)
+GET     /jatos/:studyId/:componentId/export/allResultData  @controllers.gui.ImportExport.exportDataOfAllComponentResults(studyId: Long, componentId: Long)
+GET     /jatos/:studyId/:componentId/export                @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
+
 
 # Static resources
 GET     /public/*file             controllers.gui.Assets.versioned(path = "/public", file)

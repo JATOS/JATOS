@@ -65,7 +65,7 @@
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
 					<input type="submit" name="@controllers.gui.Components.EDIT_SUBMIT_NAME" class="confirmed btn btn-primary @controllers.gui.Components.EDIT_SAVE" value="@controllers.gui.Components.EDIT_SAVE">
-					<button type="button" class="confirmed btn btn-primary @controllers.gui.Components.EDIT_SAVE_AND_SHOW">@controllers.gui.Components.EDIT_SAVE_AND_SHOW</button>
+					<button type="button" class="confirmed btn btn-primary @controllers.gui.Components.EDIT_SAVE_AND_RUN">@controllers.gui.Components.EDIT_SAVE_AND_RUN</button>
 				</div>
 			</form>
 		</div>
@@ -83,7 +83,7 @@ $('#studyToolbar').on('click', '#createComponentLink', function() {
 	$('#componentPropertiesModal .@models.gui.ComponentProperties.ID').closest('.form-group').hide();
 	$('#componentPropertiesModal .@models.gui.ComponentProperties.UUID').closest('.form-group').hide();
 	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Create");
-	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_SHOW').text("Create & Show");
+	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Create & Run");
 	$('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", false);
 	$("#componentPropertiesForm").attr("action", "/jatos/" + studyId + "/component");
 	$('#componentPropertiesModal').modal('show');
@@ -110,9 +110,9 @@ function fillComponentPropertiesForm(properties) {
 		$('#componentPropertiesModal .@models.gui.ComponentProperties.JSON_DATA').val("");
 	}
 	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE').val("Save");
-	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_SHOW').text("Save & Show");
+	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').text("Save & Run");
 	$('#componentPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", studyLocked);
-	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_SHOW').attr("disabled", studyLocked);
+	$('#componentPropertiesModal .@controllers.gui.Components.EDIT_SAVE_AND_RUN').attr("disabled", studyLocked);
 	if (studyLocked) {
 		showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#componentPropertiesModal .modal-header");
 	}
@@ -171,13 +171,13 @@ $("#componentPropertiesForm").submit(function(event) {
 	});
 });
 
-$("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAVE_AND_SHOW', function() {
+$("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAVE_AND_RUN', function() {
 	$.ajax({
 		type : 'POST',
 		url : $("#componentPropertiesForm").attr("action"),
 		data : $('#componentPropertiesForm').serialize(),
 		success : function(componentId) {
-			window.location.href = "/jatos/" + studyId + "/" + componentId + "/show";
+			window.location.href = "/jatos/" + studyId + "/" + componentId + "/run";
 		},
 		error : function(response) {
 			removeInfo("#componentPropertiesModal");
