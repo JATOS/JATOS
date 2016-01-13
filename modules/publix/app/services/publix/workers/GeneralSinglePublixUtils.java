@@ -25,6 +25,8 @@ import services.publix.PublixUtils;
 @Singleton
 public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 
+	private static final String COOKIE_DELIMITER = ":";
+
 	@Inject
 	GeneralSinglePublixUtils(GeneralSingleErrorMessages errorMessages,
 			StudyDao studyDao, StudyResultDao studyResultDao,
@@ -52,7 +54,7 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	public void checkStudyInCookie(Study study, Cookie cookie)
 			throws ForbiddenPublixException {
 		if (cookie != null) {
-			String[] studyUuidArray = cookie.value().split(",");
+			String[] studyUuidArray = cookie.value().split(COOKIE_DELIMITER);
 			for (String uuidStr : studyUuidArray) {
 				if (study.getUuid().equals(uuidStr)) {
 					throw new ForbiddenPublixException(
@@ -68,7 +70,7 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	public String addStudyToCookie(Study study, Cookie cookie) {
 		String value;
 		if (cookie != null) {
-			value = cookie.value() + "," + study.getUuid();
+			value = cookie.value() + COOKIE_DELIMITER + study.getUuid();
 		} else {
 			value = study.getUuid();
 		}
