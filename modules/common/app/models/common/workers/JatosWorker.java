@@ -61,7 +61,7 @@ public class JatosWorker extends Worker {
 
 	@Override
 	public String toString() {
-		return user.getEmail() + ", " + super.toString();
+		return user.getEmail() + ":" + super.toString();
 	}
 	
 	@Override
