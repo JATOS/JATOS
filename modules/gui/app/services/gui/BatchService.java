@@ -1,19 +1,25 @@
 package services.gui;
 
+import java.util.Set;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import daos.common.BatchDao;
 import daos.common.StudyDao;
+import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
+import models.common.workers.GeneralSingleWorker;
 import models.common.workers.JatosWorker;
+import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
+import models.common.workers.Worker;
 import models.gui.BatchProperties;
 
 /**
@@ -26,11 +32,14 @@ public class BatchService {
 
 	private final BatchDao batchDao;
 	private final StudyDao studyDao;
+	private final StudyResultDao studyResultDao;
 
 	@Inject
-	BatchService(BatchDao batchDao, StudyDao studyDao) {
+	BatchService(BatchDao batchDao, StudyDao studyDao,
+			StudyResultDao studyResultDao) {
 		this.batchDao = batchDao;
 		this.studyDao = studyDao;
+		this.studyResultDao = studyResultDao;
 	}
 
 	/**
@@ -155,6 +164,34 @@ public class BatchService {
 					study.getId());
 			throw new ForbiddenException(errorMsg);
 		}
+	}
+
+	/**
+	 * Get all workers (personal single, personal multiple, Jatos, general
+	 * single, MTurk worker) that belong to the given batch. In case of personal
+	 * single and personal multiple workers they must be in the batch's allowed
+	 * worker list. The Jatos workers are the study's users. The general single
+	 * and MTurk workers are retrieved via the StudyResults.
+	 */
+	public Set<Worker> retrieveAllWorkers(Study study, Batch batch) {
+		// Put personal single worker & personal multiple workers in a list.
+		// They are created prior to the run and are in the allowed workers
+		Set<Worker> workerSet = batch.getAllowedWorkers();
+
+		// Add Jatos workers of this study. They are the users of the batch's
+		// study.
+		study.getUserList().stream().map(u -> u.getWorker())
+				.forEachOrdered(workerSet::add);
+
+		// Add general single worker & MTurk workers. They are created
+		// on-the-fly during the study run and we can get them via the
+		// StudyResults.
+		studyResultDao.findAllByBatch(batch).stream().map(sr -> sr.getWorker())
+				.filter(w -> GeneralSingleWorker.WORKER_TYPE
+						.equals(w.getWorkerType())
+						|| MTWorker.WORKER_TYPE.equals(w.getWorkerType()))
+				.forEachOrdered(workerSet::add);
+		return workerSet;
 	}
 
 }

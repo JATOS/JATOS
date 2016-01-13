@@ -4,7 +4,7 @@
 
 <button id="batchPropertiesButton" type="button" class="btn btn-primary">Properties</button>
 
-<div class="panel panel-default">
+<div class="panel panel-default" id="jatosWorkerPanel">
 	<div class="panel-heading">
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")" style="visibility: hidden"></a>
 		<b class="panel-title">@common.workers.JatosWorker.UI_WORKER_TYPE Worker</b>
@@ -14,6 +14,8 @@
 			Results <span class="resultsBadge badge">10</span>
 		</button>
 	</div>
+	<div class="list-group workerList">
+	</div>
 </div>
 
 <div class="panel panel-default" id="generalSingleWorkerPanel">
@@ -22,8 +24,7 @@
 		<b class="panel-title">@common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker</b>
 		<button type="button" class="btn btn-primary linkButton">Link</button>
 	</div>
-	<div class="panel-body">
-		Panel content
+	<div class="list-group workerList">
 	</div>
 </div>
 
@@ -57,8 +58,7 @@
 			Source Code
 		</button>
 	</div>
-	<div class="panel-body">
-		Panel content
+	<div class="list-group workerList">
 	</div>
 </div>
 
@@ -90,29 +90,38 @@
 @views.html.gui.study.batchPropertiesModal(batchId, study)
 
 <script>
-loadAllowedWorkers();
+loadWorkers();
 
-function loadAllowedWorkers() {
+function loadWorkers() {
 	$.ajax({
 		type: 'GET',
-		url: "@controllers.gui.routes.Batches.allowedWorkers(study.getId(), batchId)",
+		url: "@controllers.gui.routes.Batches.workers(study.getId(), batchId)",
 		success: function(response) {
-			fillAllowedWorkers(response);
+			fillWorkers(response);
 		},
 		error: function(response) {
-			showError("Couldn't load allowed workers.");
+			showError("Couldn't load workers.");
 		}
 	});
 }
 
-function fillAllowedWorkers(workerList) {
+function fillWorkers(workerList) {
+	$('#jatosWorkerPanel .workerList').empty();
+	$('#generalSingleWorkerPanel .workerList').empty();
 	$('#personalSingleWorkerPanel .workerList').empty();
 	$('#personalMultipleWorkerPanel .workerList').empty();
+	$('#mtWorkerPanel .workerList').empty();
 	$.each(workerList, function(index, worker) {
-		if (worker.workerType == '@common.workers.PersonalSingleWorker.WORKER_TYPE') {
+		if (worker.workerType == '@common.workers.JatosWorker.WORKER_TYPE') {
+			$("#jatosWorkerPanel .workerList").append('<li  class="list-group-item">' + worker.id + '</li>');
+		} else if (worker.workerType == '@common.workers.GeneralSingleWorker.WORKER_TYPE') {
+			$("#generalSingleWorkerPanel .workerList").append('<li  class="list-group-item">' + worker.id + '</li>');
+		} else if (worker.workerType == '@common.workers.PersonalSingleWorker.WORKER_TYPE') {
 			$("#personalSingleWorkerPanel .workerList").append('<li  class="list-group-item">' + worker.id + '</li>');
 		} else if (worker.workerType == '@common.workers.PersonalMultipleWorker.WORKER_TYPE') {
 			$("#personalMultipleWorkerPanel .workerList").append('<li  class="list-group-item">' + worker.id + '</li>');
+		} else if (worker.workerType == '@common.workers.MTWorker.WORKER_TYPE') {
+			$("#mtWorkerPanel .workerList").append('<li  class="list-group-item">' + worker.id + '</li>');
 		}
 	});
 }
@@ -139,7 +148,7 @@ $('#personalSingleWorkerPanel').on('click', '.addButton', function() {
 				askConfirmation(title, preText, html, postText, 'Run', function() {
 					window.location.href = result;
 				});
-				loadAllowedWorkers();
+				loadWorkers();
 			},
 			error : function(err) {
 				showError(err.responseText);
@@ -170,7 +179,7 @@ $('#personalMultipleWorkerPanel').on('click', '.addButton', function() {
 				askConfirmation(title, preText, html, postText, 'Run', function() {
 					window.location.href = result;
 				});
-				loadAllowedWorkers();
+				loadWorkers();
 			},
 			error : function(err) {
 				showError(err.responseText);

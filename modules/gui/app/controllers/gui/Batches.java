@@ -116,12 +116,10 @@ public class Batches extends Controller {
 	}
 
 	/**
-	 * Ajax GET request: Returns a list of workers as JSON that did the
-	 * specified study and belongs to the specified batch.
+	 * Ajax GET request: Returns a list of workers as JSON
 	 */
 	@Transactional
-	public Result allowedWorkers(Long studyId, Long batchId)
-			throws JatosGuiException {
+	public Result workers(Long studyId, Long batchId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".allowedWorkers: studyId " + studyId + ", "
 				+ "batchId " + batchId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
@@ -135,7 +133,7 @@ public class Batches extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		Set<Worker> workerList = batch.getAllowedWorkers();
+		Set<Worker> workerList = batchService.retrieveAllWorkers(study, batch);
 		return ok(JsonUtils.asJsonNode(workerList));
 	}
 
