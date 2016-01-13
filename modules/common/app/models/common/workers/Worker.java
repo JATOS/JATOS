@@ -91,7 +91,7 @@ public abstract class Worker {
 
 	@Override
 	public String toString() {
-		return String.valueOf(id);
+		return getWorkerType() + ":" + String.valueOf(id);
 	}
 
 	@Override

@@ -58,11 +58,6 @@ public class PersonalSingleWorker extends Worker {
 	}
 
 	@Override
-	public String toString() {
-		return comment + ", " + super.toString();
-	}
-
-	@Override
 	public String generateConfirmationCode() {
 		return null;
 	}

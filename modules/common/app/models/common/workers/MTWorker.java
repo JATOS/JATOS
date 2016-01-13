@@ -54,11 +54,6 @@ public class MTWorker extends Worker {
 	}
 
 	@Override
-	public String toString() {
-		return mtWorkerId + ", " + super.toString();
-	}
-
-	@Override
 	public String generateConfirmationCode() {
 		return UUID.randomUUID().toString();
 	}

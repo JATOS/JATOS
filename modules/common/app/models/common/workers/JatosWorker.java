@@ -60,11 +60,6 @@ public class JatosWorker extends Worker {
 	}
 
 	@Override
-	public String toString() {
-		return user.getEmail() + ":" + super.toString();
-	}
-	
-	@Override
 	public String generateConfirmationCode() {
 		return null;
 	}
