@@ -547,7 +547,7 @@ public class AccessControllerTest extends AbstractTest {
 	@Test
 	public void callBatchesAllowedWorkers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Batches.allowedWorkers(
+		Call call = controllers.gui.routes.Batches.workers(
 				studyClone.getId(), studyClone.getBatchList().get(0).getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);

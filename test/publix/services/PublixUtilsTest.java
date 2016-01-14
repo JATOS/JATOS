@@ -238,8 +238,9 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 				.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
-		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
-				componentResult, admin.getWorker());
+		String cookieValue = publixUtils.generateIdCookieValue(
+				study.getBatchList().get(0), studyResult, componentResult,
+				admin.getWorker());
 
 		// Check IDs in cookie value String
 		Map<String, String> cookieMap = new HashMap<>();
@@ -251,6 +252,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		assertThat(cookieMap.get(Publix.WORKER_ID)).isEqualTo("1");
 		assertThat(cookieMap.get(Publix.STUDY_ID)).isEqualTo("1");
 		assertThat(cookieMap.get(Publix.STUDY_RESULT_ID)).isEqualTo("1");
+		// TODO batch ID
 		assertThat(cookieMap.get(Publix.COMPONENT_ID)).isEqualTo("1");
 		assertThat(cookieMap.get(Publix.COMPONENT_RESULT_ID)).isEqualTo("1");
 		assertThat(cookieMap.get(Publix.COMPONENT_POSITION)).isEqualTo("1");
