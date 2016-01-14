@@ -44,13 +44,13 @@ public class Batch {
 	/**
 	 * Title of the batch
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String title;
 
 	/**
 	 * Only active (if true) batches can be used.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private boolean active;
 
 	/**
@@ -58,7 +58,7 @@ public class Batch {
 	 * active at the same time. This property is only used if this batch belongs
 	 * to a group study.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private int minActiveMembers = 2;
 
 	/**
@@ -67,7 +67,7 @@ public class Batch {
 	 * is null. This property is only used if this batch belongs to a group
 	 * study.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private Integer maxActiveMembers = null;
 
 	/**
@@ -75,14 +75,14 @@ public class Batch {
 	 * there is no limit in active members the value is null. This property is
 	 * only used if this batch belongs to a group study.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private Integer maxTotalMembers = null;
 
 	/**
 	 * Maximum number of workers in this batch in total independent of its
 	 * groups. If there is no limit in active members the value is null.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private Integer maxTotalWorkers = null;
 
 	/**
@@ -97,7 +97,7 @@ public class Batch {
 	 * Set of worker types that are allowed to run in this batch. If the worker
 	 * type is not in this list, it has no permission to run this study.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	@ElementCollection
 	private Set<String> allowedWorkerTypes = new HashSet<>();
 

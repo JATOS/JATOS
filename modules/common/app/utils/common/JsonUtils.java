@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.GroupResult;
@@ -67,6 +68,16 @@ public class JsonUtils {
 	 * Intended use: import/export between different instances of JATOS.
 	 */
 	public static class JsonForIO {
+	}
+
+	/**
+	 * Marshalling an Object into an JSON string. It only considers fields that
+	 * are annotated with 'JsonForPublix'.
+	 */
+	public String asJsonForPublix(Object obj) throws JsonProcessingException {
+		ObjectWriter objectWriter = OBJECTMAPPER
+				.writerWithView(JsonForPublix.class);
+		return objectWriter.writeValueAsString(obj);
 	}
 
 	/**
@@ -115,25 +126,15 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Marshalling an Object into an JSON string. It only considers fields that
-	 * are annotated with 'JsonForPublix'.
-	 */
-	public String asJsonForPublix(Object obj) throws JsonProcessingException {
-		ObjectWriter objectWriter = OBJECTMAPPER
-				.writerWithView(JsonForPublix.class);
-		return objectWriter.writeValueAsString(obj);
-	}
-
-	/**
 	 * Returns init data that are requested during initialisation of each
 	 * component run: Marshals the study properties and the component properties
 	 * and puts them together with the session data (stored in StudyResult) into
 	 * a new JSON object.
 	 */
-	public ObjectNode initData(StudyResult studyResult, Study study,
+	public ObjectNode initData(Batch batch, StudyResult studyResult, Study study,
 			Component component) throws IOException {
 		String studyProperties = asJsonForPublix(study);
-		String batchProperties = asJsonForPublix(study.getBatchList().get(0));
+		String batchProperties = asJsonForPublix(batch);
 		ArrayNode componentList = getComponentListForInitData(study);
 		String componentProperties = asJsonForPublix(component);
 		String studySession = studyResult.getStudySessionData();

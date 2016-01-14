@@ -147,10 +147,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 * worker ID, study ID, study result ID, group result ID (if not exist:
 	 * null), component ID, component result ID and component position.
 	 */
-	public String generateIdCookieValue(StudyResult studyResult,
+	public String generateIdCookieValue(Batch batch, StudyResult studyResult,
 			ComponentResult componentResult, Worker worker) {
 		Study study = studyResult.getStudy();
-		Batch batch = study.getBatchList().get(0);
 		GroupResult groupResult = studyResult.getGroupResult();
 		Component component = componentResult.getComponent();
 		Map<String, String> cookieMap = new HashMap<>();

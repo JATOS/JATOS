@@ -78,8 +78,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	protected final GroupResultDao groupResultDao;
 
 	public Publix(JPAApi jpa, PublixUtils<T> utils,
-			StudyAuthorisation<T> studyAuthorisation,
-			GroupService groupService,
+			StudyAuthorisation<T> studyAuthorisation, GroupService groupService,
 			ChannelService channelService, PublixErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
@@ -106,6 +105,7 @@ public abstract class Publix<T extends Worker> extends Controller
 
 		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		Component component = publixUtils.retrieveComponent(study, componentId);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
@@ -118,8 +118,8 @@ public abstract class Publix<T extends Worker> extends Controller
 					.pure(redirect(controllers.publix.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		String cookieValue = publixUtils.generateIdCookieValue(studyResult,
-				componentResult, worker);
+		String cookieValue = publixUtils.generateIdCookieValue(batch,
+				studyResult, componentResult, worker);
 		response().setCookie(Publix.ID_COOKIE_NAME, cookieValue);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
@@ -189,7 +189,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
 		componentResultDao.update(componentResult);
 
-		return ok(jsonUtils.initData(studyResult, study, component));
+		return ok(jsonUtils.initData(batch, studyResult, study, component));
 	}
 
 	@Override

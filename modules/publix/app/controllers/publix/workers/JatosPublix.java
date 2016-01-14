@@ -183,8 +183,9 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					.pure(redirect(controllers.publix.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		response().setCookie(Publix.ID_COOKIE_NAME, publixUtils
-				.generateIdCookieValue(studyResult, componentResult, worker));
+		response().setCookie(Publix.ID_COOKIE_NAME,
+				publixUtils.generateIdCookieValue(batch, studyResult,
+						componentResult, worker));
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
 		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(
