@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -41,6 +42,13 @@ public class Batch {
 	@JsonView({ JsonUtils.JsonForPublix.class })
 	private Long id;
 
+	/**
+	 * Universally (world-wide) unique ID.
+	 */
+	@Column(unique = false, nullable = false)
+	@JsonView(JsonUtils.JsonForIO.class)
+	private String uuid;
+	
 	/**
 	 * Title of the batch
 	 */
@@ -110,6 +118,14 @@ public class Batch {
 
 	public Long getId() {
 		return this.id;
+	}
+	
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+
+	public String getUuid() {
+		return this.uuid;
 	}
 
 	public String getTitle() {

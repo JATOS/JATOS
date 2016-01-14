@@ -1,6 +1,7 @@
 package services.gui;
 
 import java.util.Set;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -47,6 +48,8 @@ public class BatchService {
 	 */
 	public Batch clone(Batch batch) {
 		Batch clone = new Batch();
+		// Generate new UUID for clone
+		clone.setUuid(UUID.randomUUID().toString());
 		clone.setTitle(batch.getTitle());
 		clone.setActive(batch.isActive());
 		clone.setMinActiveMembers(batch.getMinActiveMembers());

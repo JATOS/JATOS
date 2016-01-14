@@ -11,6 +11,7 @@ CREATE TABLE `Batch` (
   `maxTotalWorkers` int(11) DEFAULT NULL,
   `study_id` bigint(20) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
+  `uuid` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 
