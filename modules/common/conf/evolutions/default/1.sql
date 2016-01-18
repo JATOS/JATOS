@@ -21,6 +21,12 @@ CREATE TABLE `Batch_allowedWorkerTypes` (
   `allowedWorkerTypes` varchar(255) DEFAULT NULL
 ) DEFAULT CHARSET=utf8;
 
+CREATE TABLE `BatchWorkerMap` (
+  `batch_id` bigint(20) NOT NULL,
+  `worker_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`batch_id`,`worker_id`)
+) DEFAULT CHARSET=utf8;
+
 CREATE TABLE `Component` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `active` tinyint(1) NOT NULL,
@@ -50,6 +56,7 @@ CREATE TABLE `ComponentResult` (
 ) DEFAULT CHARSET=utf8;
 
 CREATE TABLE `GroupResult` (
+  `batch_id` bigint(20) DEFAULT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `endDate` datetime DEFAULT NULL,
   `groupState` int(11) DEFAULT NULL,
@@ -108,7 +115,6 @@ CREATE TABLE `Worker` (
   `mtWorkerId` varchar(255) DEFAULT NULL,
   `comment` varchar(255) DEFAULT NULL,
   `user_email` varchar(255) DEFAULT NULL,
-  `batch_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 
@@ -119,6 +125,10 @@ ALTER TABLE `Batch` ADD CONSTRAINT `FK_80kwrl4v39mbxsw13mg09vnbi` FOREIGN KEY (`
 ALTER TABLE `Batch_allowedWorkerTypes` ADD KEY `FK_kwj5qdspmur6iqdgtb7kjvdg2` (`batch_id`);
 ALTER TABLE `Batch_allowedWorkerTypes` ADD CONSTRAINT `FK_kwj5qdspmur6iqdgtb7kjvdg2` FOREIGN KEY (`batch_id`) REFERENCES `Batch` (`id`);
 
+ALTER TABLE `BatchWorkerMap` ADD KEY `FK_mbcbdskuq79ml24uipmioxu3s` (`worker_id`);
+ALTER TABLE `BatchWorkerMap` ADD CONSTRAINT `FK_suo6v5gv8gpvgwdvi6tbshtrj` FOREIGN KEY (`batch_id`) REFERENCES `Batch` (`id`);
+ALTER TABLE `BatchWorkerMap` ADD CONSTRAINT `FK_mbcbdskuq79ml24uipmioxu3s` FOREIGN KEY (`worker_id`) REFERENCES `Worker` (`id`);
+
 ALTER TABLE `Component` ADD KEY `FK_hv7ffe3qq68l092inojua2sxa` (`study_id`);
 ALTER TABLE `Component` ADD CONSTRAINT `FK_hv7ffe3qq68l092inojua2sxa` FOREIGN KEY (`study_id`) REFERENCES `Study` (`id`);
 
@@ -126,6 +136,9 @@ ALTER TABLE `ComponentResult` ADD KEY `FK_eevh468dxdqmcwsu8cqm4i2et` (`studyResu
 ALTER TABLE `ComponentResult` ADD KEY `FK_qxb7hfq7d4vaf9r5vjvnxpuwm` (`component_id`);
 ALTER TABLE `ComponentResult` ADD CONSTRAINT `FK_eevh468dxdqmcwsu8cqm4i2et` FOREIGN KEY (`studyResult_id`) REFERENCES `StudyResult` (`id`);
 ALTER TABLE `ComponentResult` ADD CONSTRAINT `FK_qxb7hfq7d4vaf9r5vjvnxpuwm` FOREIGN KEY (`component_id`) REFERENCES `Component` (`id`);
+
+ALTER TABLE `GroupResult` ADD KEY `FK_g1hsnkt6f7jp8ulpne7h87pi1` (`batch_id`);
+ALTER TABLE `GroupResult` ADD CONSTRAINT `FK_g1hsnkt6f7jp8ulpne7h87pi1` FOREIGN KEY (`batch_id`) REFERENCES `Batch` (`id`);
 
 ALTER TABLE `Study` ADD UNIQUE KEY `UK_k65c7qp8ndhaqllkeeianjrpc` (`uuid`);
 
@@ -146,9 +159,7 @@ ALTER TABLE `StudyUserMap` ADD CONSTRAINT `FK_povwnfi99xfcfiyloh0ufv7hb` FOREIGN
 ALTER TABLE `StudyUserMap` ADD CONSTRAINT `FK_d3uknug3vjrsetf527b7uplcd` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`);
 
 ALTER TABLE `Worker` ADD KEY `FK_rvmm2rl58o8ui2tsq774o8rij` (`user_email`);
-ALTER TABLE `Worker` ADD KEY `FK_iyprj4xbhmjbf2q0ykqnlon1x` (`batch_id`);
 ALTER TABLE `Worker` ADD CONSTRAINT `FK_rvmm2rl58o8ui2tsq774o8rij` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`);
-ALTER TABLE `Worker` ADD CONSTRAINT `FK_iyprj4xbhmjbf2q0ykqnlon1x` FOREIGN KEY (`batch_id`) REFERENCES `Batch` (`id`);
 
 
 # --- !Downs

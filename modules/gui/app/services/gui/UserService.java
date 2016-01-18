@@ -117,10 +117,9 @@ public class UserService {
 		String passwordHash = HashUtils.getHashMDFive(password);
 		user.setPasswordHash(passwordHash);
 		JatosWorker worker = new JatosWorker(user);
-		workerDao.create(worker);
 		user.setWorker(worker);
+		workerDao.create(worker);
 		userDao.create(user);
-		workerDao.update(worker);
 	}
 
 	/**

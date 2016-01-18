@@ -84,9 +84,9 @@ public class BatchService {
 		batch.setStudy(study);
 		if (!study.hasBatch(batch)) {
 			study.addBatch(batch);
-			studyDao.update(study);
 		}
 		batchDao.create(batch);
+		studyDao.update(study);
 	}
 
 	/**

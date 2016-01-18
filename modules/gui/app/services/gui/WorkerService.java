@@ -56,8 +56,8 @@ public class WorkerService {
 			String comment, Batch batch) throws BadRequestException {
 		PersonalSingleWorker worker = new PersonalSingleWorker(comment);
 		validateWorker(worker);
-		workerDao.create(worker);
 		batch.addWorker(worker);
+		workerDao.create(worker);
 		batchDao.update(batch);
 		return worker;
 	}
@@ -70,8 +70,8 @@ public class WorkerService {
 			String comment, Batch batch) throws BadRequestException {
 		PersonalMultipleWorker worker = new PersonalMultipleWorker(comment);
 		validateWorker(worker);
-		workerDao.create(worker);
 		batch.addWorker(worker);
+		workerDao.create(worker);
 		batchDao.update(batch);
 		return worker;
 	}

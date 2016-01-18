@@ -44,8 +44,8 @@ public class ResultCreator {
 	public StudyResult createStudyResult(Study study, Batch batch,
 			Worker worker) {
 		StudyResult studyResult = new StudyResult(study, batch);
-		studyResultDao.create(studyResult);
 		worker.addStudyResult(studyResult);
+		studyResultDao.create(studyResult);
 		workerDao.update(worker);
 		return studyResult;
 	}
@@ -54,14 +54,14 @@ public class ResultCreator {
 			Component component) {
 		ComponentResult componentResult = new ComponentResult(component);
 		componentResult.setStudyResult(studyResult);
-		componentResultDao.create(componentResult);
 		studyResult.addComponentResult(componentResult);
+		componentResultDao.create(componentResult);
 		studyResultDao.update(studyResult);
 		return componentResult;
 	}
 
-	public GroupResult createGroupResult(StudyResult studyResult) {
-		GroupResult groupResult = new GroupResult(studyResult);
+	public GroupResult createGroupResult(Batch batch) {
+		GroupResult groupResult = new GroupResult(batch);
 		groupResultDao.create(groupResult);
 		return groupResult;
 	}

@@ -13,6 +13,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -44,6 +45,10 @@ public class GroupResult {
 	 * but hey, it's so much nice this way.)
 	 */
 	private GroupState groupState;
+
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "batch_id")
+	private Batch batch;
 
 	/**
 	 * StudyResult that this GroupResult belongs to as long as this study run is
@@ -80,8 +85,8 @@ public class GroupResult {
 	 * Creates a new GroupResult and adds the given StudyResult as the first
 	 * group member.
 	 */
-	public GroupResult(StudyResult studyResult) {
-		this.studyResultList.add(studyResult);
+	public GroupResult(Batch batch) {
+		this.batch = batch;
 		this.startDate = new Timestamp(new Date().getTime());
 		this.groupState = GroupState.STARTED;
 	}
@@ -100,6 +105,14 @@ public class GroupResult {
 
 	public void setGroupState(GroupState groupState) {
 		this.groupState = groupState;
+	}
+
+	public Batch getBatch() {
+		return batch;
+	}
+
+	public void setBatch(Batch batch) {
+		this.batch = batch;
 	}
 
 	public void setStartDate(Timestamp startDate) {

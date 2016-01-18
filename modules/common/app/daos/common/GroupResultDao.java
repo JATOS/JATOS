@@ -63,8 +63,7 @@ public class GroupResultDao extends AbstractDao {
 				+ "WHERE gr.batch=:batchId AND b.id=:batchId "
 				+ "AND gr.groupState=:groupState "
 				+ "AND (b.maxActiveMembers is null OR size(gr.studyResultList) < b.maxActiveMembers)"
-				+ "AND (size(gr.studyResultList) + size(gr.studyResultHistory)) "
-				+ "< b.maxTotalMembers";
+				+ "AND (size(gr.studyResultList) + size(gr.studyResultHistory)) < b.maxTotalMembers";
 		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
 		query.setParameter("batchId", batch);
