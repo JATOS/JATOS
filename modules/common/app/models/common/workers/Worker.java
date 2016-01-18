@@ -30,13 +30,16 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
  * Abstract model and DB entity of a worker. Workers are doing studies (and
  * their components) and produce study results (and their component results).
  * 
- * @author Kristian Lange
+ * All worker entities are stored in the same database table. Inheritance is
+ * established with an discriminator column.
+ * 
+ * @author Kristian Lange (2015)
  */
 @Entity
 @Table(name = "Worker")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = Worker.DISCRIMINATOR)
-@AttributeOverride(name = Worker.DISCRIMINATOR, column = @Column(name = Worker.DISCRIMINATOR, nullable = false, insertable = false, updatable = false))
+@AttributeOverride(name = Worker.DISCRIMINATOR, column = @Column(name = Worker.DISCRIMINATOR, nullable = false, insertable = false, updatable = false) )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, include = As.WRAPPER_OBJECT, property = "type")
 public abstract class Worker {
 
@@ -47,6 +50,10 @@ public abstract class Worker {
 	@GeneratedValue
 	private Long id;
 
+	/**
+	 * Ordered list of StudyResults this worker has produces while running
+	 * studies. This relationship is bidirectional.
+	 */
 	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "studyResultList_order")

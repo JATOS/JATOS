@@ -54,7 +54,6 @@ CREATE TABLE `GroupResult` (
   `endDate` datetime DEFAULT NULL,
   `groupState` int(11) DEFAULT NULL,
   `startDate` datetime DEFAULT NULL,
-  `batch_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 
@@ -127,9 +126,6 @@ ALTER TABLE `ComponentResult` ADD KEY `FK_eevh468dxdqmcwsu8cqm4i2et` (`studyResu
 ALTER TABLE `ComponentResult` ADD KEY `FK_qxb7hfq7d4vaf9r5vjvnxpuwm` (`component_id`);
 ALTER TABLE `ComponentResult` ADD CONSTRAINT `FK_eevh468dxdqmcwsu8cqm4i2et` FOREIGN KEY (`studyResult_id`) REFERENCES `StudyResult` (`id`);
 ALTER TABLE `ComponentResult` ADD CONSTRAINT `FK_qxb7hfq7d4vaf9r5vjvnxpuwm` FOREIGN KEY (`component_id`) REFERENCES `Component` (`id`);
-
-ALTER TABLE `GroupResult` ADD KEY `FK_g1hsnkt6f7jp8ulpne7h87pi1` (`batch_id`);
-ALTER TABLE `GroupResult` ADD CONSTRAINT `FK_g1hsnkt6f7jp8ulpne7h87pi1` FOREIGN KEY (`batch_id`) REFERENCES `Batch` (`id`);
 
 ALTER TABLE `Study` ADD UNIQUE KEY `UK_k65c7qp8ndhaqllkeeianjrpc` (`uuid`);
 

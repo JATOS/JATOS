@@ -13,7 +13,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -46,14 +45,18 @@ public class GroupResult {
 	 */
 	private GroupState groupState;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "batch_id")
-	private Batch batch;
-
+	/**
+	 * StudyResult that this GroupResult belongs to as long as this study run is
+	 * not finished. This relationship is bidirectional.
+	 */
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	@JoinColumn(name = "groupResult_id")
 	private Set<StudyResult> studyResultList = new HashSet<>();
 
+	/**
+	 * StudyResult that this GroupResult belongs to after this study run is
+	 * finished. This relationship is bidirectional.
+	 */
 	@OneToMany(cascade = CascadeType.ALL)
 	@JoinColumn(name = "groupResultHistory_id")
 	private Set<StudyResult> studyResultHistory = new HashSet<>();
@@ -73,9 +76,13 @@ public class GroupResult {
 	public GroupResult() {
 	}
 
-	public GroupResult(Batch batch) {
+	/**
+	 * Creates a new GroupResult and adds the given StudyResult as the first
+	 * group member.
+	 */
+	public GroupResult(StudyResult studyResult) {
+		this.studyResultList.add(studyResult);
 		this.startDate = new Timestamp(new Date().getTime());
-		this.batch = batch;
 		this.groupState = GroupState.STARTED;
 	}
 
@@ -93,14 +100,6 @@ public class GroupResult {
 
 	public void setGroupState(GroupState groupState) {
 		this.groupState = groupState;
-	}
-
-	public Batch getBatch() {
-		return batch;
-	}
-
-	public void setBatch(Batch batch) {
-		this.batch = batch;
 	}
 
 	public void setStartDate(Timestamp startDate) {

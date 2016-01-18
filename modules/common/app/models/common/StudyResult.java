@@ -80,16 +80,26 @@ public class StudyResult {
 	@Lob
 	private String studySessionData = "{}";
 
+	/**
+	 * Study this StudyResult belongs to. This relationship is unidirectional.
+	 */
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "study_id")
 	private Study study;
 
+	/**
+	 * Batch this StudyResult belongs to. This relationship is unidirectional.
+	 */
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "batch_id")
 	private Batch batch;
-	
+
+	/**
+	 * List of ComponentResults that belongs to this StudyResult. This
+	 * relationship is bidirectional.
+	 */
 	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentResultList_order")
@@ -103,6 +113,10 @@ public class StudyResult {
 	@JoinColumn(name = "worker_id")
 	private Worker worker;
 
+	/**
+	 * GroupResults this StudyResult belongs to if the corresponding study is a
+	 * group study. This relationship is bidirectional.
+	 */
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "groupResult_id")
@@ -189,7 +203,7 @@ public class StudyResult {
 	public Study getStudy() {
 		return this.study;
 	}
-	
+
 	public void setBatch(Batch batch) {
 		this.batch = batch;
 	}
@@ -222,7 +236,8 @@ public class StudyResult {
 		return this.confirmationCode;
 	}
 
-	public void setComponentResultList(List<ComponentResult> componentResultList) {
+	public void setComponentResultList(
+			List<ComponentResult> componentResultList) {
 		this.componentResultList = componentResultList;
 	}
 

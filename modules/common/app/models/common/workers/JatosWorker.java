@@ -22,10 +22,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Entity
 @DiscriminatorValue(JatosWorker.WORKER_TYPE)
 public class JatosWorker extends Worker {
-	
+
 	public static final String WORKER_TYPE = "Jatos";
 	public static final String UI_WORKER_TYPE = "Jatos";
 
+	/**
+	 * Corresponding User. This relationship is bidirectional.
+	 */
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_email")
@@ -33,7 +36,7 @@ public class JatosWorker extends Worker {
 
 	public JatosWorker() {
 	}
-	
+
 	public JatosWorker(User user) {
 		this.user = user;
 	}
@@ -45,16 +48,16 @@ public class JatosWorker extends Worker {
 	public User getUser() {
 		return this.user;
 	}
-	
+
 	@JsonProperty("userEmail")
 	public String getUserEmail() {
 		return this.user.getEmail();
 	}
-	
+
 	public String getWorkerType() {
 		return WORKER_TYPE;
 	}
-	
+
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}
@@ -63,10 +66,10 @@ public class JatosWorker extends Worker {
 	public String generateConfirmationCode() {
 		return null;
 	}
-	
+
 	@Override
 	public List<ValidationError> validate() {
 		return null;
 	}
-	
+
 }

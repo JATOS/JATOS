@@ -68,11 +68,19 @@ public class ComponentResult {
 	 */
 	private ComponentState componentState;
 
+	/**
+	 * The Component corresponding to this ComponentResult. This
+	 * relationship is unidirectional.
+	 */
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "component_id")
 	private Component component;
 
+	/**
+	 * StudyResult that this ComponentResult belongs to. This
+	 * relationship is bidirectional.
+	 */
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "studyResult_id")

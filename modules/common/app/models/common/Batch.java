@@ -51,7 +51,7 @@ public class Batch {
 	private String uuid;
 
 	/**
-	 * Study this batch belongs to
+	 * Study this batch belongs to. This relationship is bidirectional.
 	 */
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -105,7 +105,8 @@ public class Batch {
 	/**
 	 * Set of workers that created in this batch. Workers can be created before
 	 * the study starts (Jatos, PM or PS) or created on-the-fly after the study
-	 * started (MT, GS) - but all appear in this list.
+	 * started (MT, GS) - but all appear in this list. This relationship is
+	 * unidirectional.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)

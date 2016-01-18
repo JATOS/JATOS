@@ -108,7 +108,8 @@ public class Study {
 	private String jsonData;
 
 	/**
-	 * List of users that are users of this study (have access rights).
+	 * List of users that are users of this study (have access rights). The
+	 * relationship is bidirectional.
 	 */
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
@@ -118,7 +119,8 @@ public class Study {
 	private Set<User> userList = new HashSet<>();
 
 	/**
-	 * Ordered list of component of this study
+	 * Ordered list of component of this study. The relationship is
+	 * bidirectional.
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -129,7 +131,7 @@ public class Study {
 	private List<Component> componentList = new ArrayList<>();
 
 	/**
-	 * Ordered list of batches of this study
+	 * Ordered list of batches of this study. The relationship is bidirectional.
 	 */
 	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)

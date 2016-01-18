@@ -39,11 +39,17 @@ public class User {
 	public static final String PASSWORD_REPEAT = "passwordRepeat";
 	public static final String OLD_PASSWORD = "oldPassword";
 
+	/**
+	 * Email address is used as ID.
+	 */
 	@Id
 	private String email;
 
 	private String name;
 
+	/**
+	 * Corresponding JatosWorker. This relationship is bidirectional.
+	 */
 	@JsonIgnore
 	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	private JatosWorker worker;
@@ -52,6 +58,10 @@ public class User {
 	@JsonIgnore
 	private String passwordHash;
 
+	/**
+	 * List of studies this user has access rights to. This relationship is
+	 * bidirectional.
+	 */
 	@ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
 	private Set<Study> studyList = new HashSet<>();
 
@@ -60,7 +70,7 @@ public class User {
 		this.name = name;
 		this.passwordHash = passwordHash;
 	}
-	
+
 	public User(String email, String name) {
 		this.email = email;
 		this.name = name;
@@ -155,20 +165,20 @@ public class User {
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
 		if (email == null || email.trim().isEmpty()) {
-			errorList.add(new ValidationError(EMAIL,
-					MessagesStrings.MISSING_EMAIL));
+			errorList.add(
+					new ValidationError(EMAIL, MessagesStrings.MISSING_EMAIL));
 		}
 		if (email != null && !Jsoup.isValid(email, Whitelist.none())) {
 			errorList.add(new ValidationError(EMAIL,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (name == null || name.trim().isEmpty()) {
-			errorList
-					.add(new ValidationError(NAME, MessagesStrings.MISSING_NAME));
+			errorList.add(
+					new ValidationError(NAME, MessagesStrings.MISSING_NAME));
 		}
 		if (name != null && !Jsoup.isValid(name, Whitelist.none())) {
-			errorList.add(new ValidationError(NAME,
-					MessagesStrings.NO_HTML_ALLOWED));
+			errorList.add(
+					new ValidationError(NAME, MessagesStrings.NO_HTML_ALLOWED));
 		}
 		return errorList.isEmpty() ? null : errorList;
 	}
