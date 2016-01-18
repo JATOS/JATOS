@@ -154,9 +154,9 @@ public class ComponentService {
 		component.setStudy(study);
 		if (!study.hasComponent(component)) {
 			study.addComponent(component);
+			studyDao.update(study);
 		}
 		componentDao.create(component);
-		studyDao.update(study);
 		return component;
 	}
 
