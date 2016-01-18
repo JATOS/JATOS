@@ -5,6 +5,7 @@ import javax.inject.Singleton;
 
 import daos.common.BatchDao;
 import daos.common.worker.WorkerDao;
+import models.common.Batch;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
@@ -30,23 +31,27 @@ public class WorkerCreator {
 	 * Creates and persists a MTWorker or a MTSandboxWorker.
 	 */
 	public MTWorker createAndPersistMTWorker(String mtWorkerId,
-			boolean mTurkSandbox) {
+			boolean mTurkSandbox, Batch batch) {
 		MTWorker worker;
 		if (mTurkSandbox) {
 			worker = new MTSandboxWorker(mtWorkerId);
 		} else {
 			worker = new MTWorker(mtWorkerId);
 		}
+		batch.addWorker(worker);
 		workerDao.create(worker);
+		batchDao.update(batch);
 		return worker;
 	}
 	
 	/**
 	 * Create and persist a GeneralSingleWorker
 	 */
-	public GeneralSingleWorker createAndPersistGeneralSingleWorker() {
+	public GeneralSingleWorker createAndPersistGeneralSingleWorker(Batch batch) {
 		GeneralSingleWorker worker = new GeneralSingleWorker();
+		batch.addWorker(worker);
 		workerDao.create(worker);
+		batchDao.update(batch);
 		return worker;
 	}
 

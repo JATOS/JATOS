@@ -80,7 +80,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 		publixUtils.checkStudyInCookie(study, cookie);
 
 		GeneralSingleWorker worker = workerCreator
-				.createAndPersistGeneralSingleWorker();
+				.createAndPersistGeneralSingleWorker(batch);
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, worker.getId().toString());
 		session(BATCH_ID, batch.getId().toString());

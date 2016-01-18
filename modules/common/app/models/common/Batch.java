@@ -103,10 +103,11 @@ public class Batch {
 	private Integer maxTotalWorkers = null;
 
 	/**
-	 * Set of workers that created in this batch. Workers can be created before
-	 * the study starts (Jatos, PM or PS) or created on-the-fly after the study
-	 * started (MT, GS) - but all appear in this list. This relationship is
-	 * unidirectional.
+	 * Set of workers that is created in this batch. Workers can be created
+	 * before the study starts (PersonalMultipleWorker or PersonalSingleWorker)
+	 * or created on-the-fly after the study started (MTWorker,
+	 * GeneralSingleWorker) - but all appear in this list - with the exception
+	 * of JatosWorkers. This relationship is unidirectional.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
 	@ManyToMany(fetch = FetchType.LAZY)

@@ -13,9 +13,7 @@ import daos.common.StudyResultDao;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.GeneralSingleWorker;
 import models.common.workers.JatosWorker;
-import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
@@ -176,29 +174,17 @@ public class BatchService {
 	}
 
 	/**
-	 * Get all workers (personal single, personal multiple, Jatos, general
-	 * single, MTurk worker) that belong to the given batch. In case of personal
-	 * single and personal multiple workers they must be in the batch's allowed
-	 * worker list. The Jatos workers are the study's users. The general single
-	 * and MTurk workers are retrieved via the StudyResults.
+	 * Get all workers (PersonalSingleWorker, PersonalMultipleWorker,
+	 * GeneralSingle, MTWorker, MTSandboxWorker and JatosWorker) that belong to
+	 * the given batch.
 	 */
 	public Set<Worker> retrieveAllWorkers(Study study, Batch batch) {
 		// Put personal single worker & personal multiple workers in a list.
 		// They are created prior to the run and are in the allowed workers
 		Set<Worker> workerSet = batch.getWorkerList();
 
-		// Add Jatos workers of this study. They are the users of the batch's
-		// study.
+		// Add Jatos workers of this study.
 		study.getUserList().stream().map(u -> u.getWorker())
-				.forEachOrdered(workerSet::add);
-
-		// Add general single worker & MTurk workers. They are created
-		// on-the-fly during the study run and we can get them via the
-		// StudyResults.
-		studyResultDao.findAllByBatch(batch).stream().map(sr -> sr.getWorker())
-				.filter(w -> GeneralSingleWorker.WORKER_TYPE
-						.equals(w.getWorkerType())
-						|| MTWorker.WORKER_TYPE.equals(w.getWorkerType()))
 				.forEachOrdered(workerSet::add);
 		return workerSet;
 	}

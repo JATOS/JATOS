@@ -115,7 +115,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			boolean isRequestFromMTurkSandbox = workerType
 					.equals(MTSandboxWorker.WORKER_TYPE);
 			worker = workerCreator.createAndPersistMTWorker(mtWorkerId,
-					isRequestFromMTurkSandbox);
+					isRequestFromMTurkSandbox, batch);
 		}
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, String.valueOf(worker.getId()));
