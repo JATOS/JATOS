@@ -94,6 +94,8 @@ public class StudyResult {
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentResultList_order")
 	@JoinColumn(name = "studyResult_id")
+	// Not using mappedBy because of
+	// http://stackoverflow.com/questions/2956171/jpa-2-0-ordercolumn-annotation-in-hibernate-3-5
 	private List<ComponentResult> componentResultList = new ArrayList<>();
 
 	@JsonIgnore

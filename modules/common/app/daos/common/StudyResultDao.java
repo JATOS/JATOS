@@ -2,16 +2,13 @@ package daos.common;
 
 import java.util.List;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import models.common.Batch;
-import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
-import models.common.workers.Worker;
 import play.db.jpa.JPA;
 
 /**
@@ -22,68 +19,20 @@ import play.db.jpa.JPA;
 @Singleton
 public class StudyResultDao extends AbstractDao {
 
-	private final GroupResultDao groupResultDao;
-
-	@Inject
-	StudyResultDao(GroupResultDao groupResultDao) {
-		this.groupResultDao = groupResultDao;
-	}
-
-	/**
-	 * Creates StudyResult and adds it to the given Worker.
-	 */
-	public StudyResult create(Study study, Batch batch, Worker worker) {
-		StudyResult studyResult = new StudyResult(study, batch);
-		persist(studyResult);
-		worker.addStudyResult(studyResult);
-		merge(worker);
-		return studyResult;
+	public void create(StudyResult studyResult) {
+		super.persist(studyResult);
 	}
 
 	public void update(StudyResult studyResult) {
 		merge(studyResult);
 	}
 
-	/**
-	 * Remove all ComponentResults of the given StudyResult, remove StudyResult
-	 * from the given worker, and remove StudyResult itself.
-	 */
 	public void remove(StudyResult studyResult) {
-		// Remove all component results of this study result
-		studyResult.getComponentResultList().forEach(this::remove);
-
-		// Remove study result from worker
-		Worker worker = studyResult.getWorker();
-		worker.removeStudyResult(studyResult);
-		merge(worker);
-
-		// Remove studyResult from group result
-		GroupResult groupResult = studyResult.getGroupResult();
-		if (groupResult != null) {
-			groupResult.removeStudyResult(studyResult);
-			if (groupResult.getStudyResultList().isEmpty()) {
-				// Remove group result if it has no StudyResults
-				groupResultDao.remove(groupResult);
-			} else {
-				merge(groupResult);
-			}
-		}
-
-		// Remove studyResult
 		super.remove(studyResult);
 	}
 
 	public void refresh(StudyResult studyResult) {
 		super.refresh(studyResult);
-	}
-
-	/**
-	 * Removes ALL StudyResults including their ComponentResult of the specified
-	 * study.
-	 */
-	public void removeAllOfStudy(Study study) {
-		List<StudyResult> studyResultList = findAllByStudy(study);
-		studyResultList.forEach(this::remove);
 	}
 
 	public StudyResult findById(Long id) {
@@ -108,7 +57,7 @@ public class StudyResultDao extends AbstractDao {
 				StudyResult.class);
 		return query.setParameter("studyId", study).getResultList();
 	}
-	
+
 	public List<StudyResult> findAllByBatch(Batch batch) {
 		String queryStr = "SELECT e FROM StudyResult e "
 				+ "WHERE e.batch=:batchId";

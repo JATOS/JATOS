@@ -103,6 +103,7 @@ $('#studyToolbar').on('click', '#studyPropertiesButton', function() {
 			removeInfo("#studyPropertiesModal");
 			removeWarnings("#studyPropertiesModal");
 			removeFormErrors("#studyPropertiesModal");
+			clearForm("#studyPropertiesForm");
 			fillStudyPropertiesForm(response);
 			$('#studyPropertiesModal').modal('show');
 		},

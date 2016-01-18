@@ -43,9 +43,9 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 	public void checkRetrieveTypedWorker()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		MTWorker mtWorker = new MTWorker();
-		addWorker(mtWorker);
+		persistWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		addWorker(mtSandboxWorker);
+		persistWorker(mtSandboxWorker);
 
 		MTWorker retrievedWorker = publixUtils
 				.retrieveTypedWorker(mtWorker.getId().toString());
@@ -60,7 +60,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 	public void checkRetrieveTypedWorkerWrongType()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		GeneralSingleWorker generalSingleWorker = new GeneralSingleWorker();
-		addWorker(generalSingleWorker);
+		persistWorker(generalSingleWorker);
 
 		try {
 			publixUtils.retrieveTypedWorker(

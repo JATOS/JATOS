@@ -128,7 +128,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	private void createTwoComponentResultsWithData(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
+		StudyResult studyResult = resultCreator.createStudyResult(study,
 				study.getBatchList().get(0), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
@@ -168,7 +168,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	private void createTwoComponentResultsWithoutData(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
+		StudyResult studyResult = resultCreator.createStudyResult(study,
 				study.getBatchList().get(0), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
@@ -213,7 +213,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 	private void createTwoStudyResults(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = studyResultDao.create(study,
+		StudyResult studyResult1 = resultCreator.createStudyResult(study,
 				study.getBatchList().get(0), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
@@ -226,7 +226,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		componentResult12
 				.setData("1. StudyResult, 1. Component, 2. ComponentResult");
 
-		StudyResult studyResult2 = studyResultDao.create(study,
+		StudyResult studyResult2 = resultCreator.createStudyResult(study,
 				study.getBatchList().get(0), admin.getWorker());
 		// // Have to set worker manually in test - don't know why
 		studyResult2.setWorker(admin.getWorker());

@@ -6,12 +6,8 @@ import javax.inject.Inject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import controllers.gui.Authentication;
 import general.common.MessagesStrings;
-import general.gui.RequestScope;
-import models.common.Batch;
 import models.common.Study;
-import models.common.User;
 import models.common.legacy.StudyV2;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
@@ -27,12 +23,10 @@ import utils.common.JsonUtils;
 public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 
 	private Study study;
-	private BatchService batchService;
 
 	@Inject
-	StudyUploadUnmarshaller(IOUtils ioUtils, BatchService batchService) {
+	StudyUploadUnmarshaller(IOUtils ioUtils) {
 		super(ioUtils);
-		this.batchService = batchService;
 	}
 
 	/**
@@ -85,10 +79,6 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		study.setComments(studyV2.getComments());
 		study.setJsonData(studyV2.getJsonData());
 		study.setComponentList(studyV2.getComponentList());
-		User loggedInUser = (User) RequestScope
-				.get(Authentication.LOGGED_IN_USER);
-		Batch batch = batchService.createDefaultBatch(loggedInUser);
-		study.addBatch(batch);
 		return study;
 	}
 

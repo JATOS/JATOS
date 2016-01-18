@@ -26,6 +26,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import services.publix.ChannelService;
 import services.publix.GroupService;
+import services.publix.ResultCreator;
 import services.publix.workers.JatosErrorMessages;
 import services.publix.workers.JatosPublixUtils;
 import services.publix.workers.JatosStudyAuthorisation;
@@ -81,11 +82,12 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	private final JatosPublixUtils publixUtils;
 	private final JatosStudyAuthorisation studyAuthorisation;
+	private final ResultCreator resultCreator;
 	private final JatosErrorMessages errorMessages;
 
 	@Inject
 	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
-			JatosStudyAuthorisation studyAuthorisation,
+			JatosStudyAuthorisation studyAuthorisation, ResultCreator resultCreator,
 			GroupService groupService, ChannelService channelService,
 			JatosErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
@@ -95,6 +97,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
+		this.resultCreator = resultCreator;
 		this.errorMessages = errorMessages;
 	}
 
@@ -130,7 +133,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		studyResultDao.create(study, batch, worker);
+		resultCreator.createStudyResult(study, batch, worker);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, componentId));
 	}

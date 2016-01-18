@@ -19,6 +19,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
+import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 import utils.common.HashUtils;
@@ -38,13 +39,15 @@ public class Users extends Controller {
 	public static final String SESSION_EMAIL = "email";
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final Checker checker;
 	private final UserService userService;
 	private final BreadcrumbsService breadcrumbsService;
 
 	@Inject
-	Users(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+	Users(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
 			UserService userService, BreadcrumbsService breadcrumbsService) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.checker = checker;
 		this.userService = userService;
 		this.breadcrumbsService = breadcrumbsService;
 	}
@@ -62,7 +65,7 @@ public class Users extends Controller {
 		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
 				user));
 	}
-	
+
 	/**
 	 * Handles post request of user create form.
 	 */
@@ -87,7 +90,7 @@ public class Users extends Controller {
 			return badRequest(form.errorsAsJson());
 		}
 
-		userService.createUser(newUser, password);
+		userService.createAndPersistUser(newUser, password);
 		return ok();
 	}
 
@@ -139,7 +142,7 @@ public class Users extends Controller {
 			return badRequest(form.errorsAsJson());
 		}
 		String newPasswordHash = HashUtils.getHashMDFive(newPassword);
-		userService.changePasswordHash(user, newPasswordHash);
+		userService.updatePasswordHash(user, newPasswordHash);
 
 		return redirect(controllers.gui.routes.Users.profile(email));
 	}
@@ -149,7 +152,7 @@ public class Users extends Controller {
 		User user = null;
 		try {
 			user = userService.retrieveUser(email);
-			userService.checkUserLoggedIn(user, loggedInUser);
+			checker.checkUserLoggedIn(user, loggedInUser);
 		} catch (ForbiddenException | NotFoundException e) {
 			jatosGuiExceptionThrower.throwRedirect(e,
 					controllers.gui.routes.Home.home());

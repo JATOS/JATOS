@@ -48,7 +48,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
@@ -65,7 +65,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		// Doesn't start if there is an StudyResult already
 		addStudyResult(study, batch, worker, StudyState.FINISHED);
@@ -91,7 +91,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
@@ -108,7 +108,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 		batch.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
@@ -132,7 +132,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		// PersonalSingleWorker cannot repeat the same study (StudyState in
 		// FINISHED, FAIL, ABORTED

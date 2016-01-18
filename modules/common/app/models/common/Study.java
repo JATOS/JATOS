@@ -124,15 +124,19 @@ public class Study {
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
+	// Not using mappedBy because of
+	// http://stackoverflow.com/questions/2956171/jpa-2-0-ordercolumn-annotation-in-hibernate-3-5
 	private List<Component> componentList = new ArrayList<>();
 
 	/**
-	 * In future it's planed to allow more than one Batch per Study but for now
-	 * we have only one.
+	 * Ordered list of batches of this study
 	 */
 	@JsonIgnore
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OrderColumn(name = "batchList_order")
 	@JoinColumn(name = "study_id")
+	// Not using mappedBy because of
+	// http://stackoverflow.com/questions/2956171/jpa-2-0-ordercolumn-annotation-in-hibernate-3-5
 	private List<Batch> batchList = new ArrayList<>();
 
 	public Study() {
@@ -201,7 +205,7 @@ public class Study {
 	public boolean isLocked() {
 		return this.locked;
 	}
-	
+
 	public boolean isGroupStudy() {
 		return groupStudy;
 	}
@@ -311,7 +315,7 @@ public class Study {
 	public List<Batch> getBatchList() {
 		return this.batchList;
 	}
-	
+
 	public boolean hasBatch(Batch batch) {
 		return batchList.contains(batch);
 	}

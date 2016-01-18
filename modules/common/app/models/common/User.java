@@ -60,6 +60,11 @@ public class User {
 		this.name = name;
 		this.passwordHash = passwordHash;
 	}
+	
+	public User(String email, String name) {
+		this.email = email;
+		this.name = name;
+	}
 
 	public User() {
 	}
@@ -94,6 +99,10 @@ public class User {
 
 	public Set<Study> getStudyList() {
 		return this.studyList;
+	}
+
+	public void addStudy(Study study) {
+		this.studyList.add(study);
 	}
 
 	public void setWorker(JatosWorker worker) {

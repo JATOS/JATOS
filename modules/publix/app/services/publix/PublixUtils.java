@@ -46,6 +46,7 @@ import utils.common.XMLUtils;
  */
 public abstract class PublixUtils<T extends Worker> {
 
+	private final ResultCreator resultCreator;
 	protected final PublixErrorMessages errorMessages;
 	private final StudyDao studyDao;
 	private final StudyResultDao studyResultDao;
@@ -54,10 +55,11 @@ public abstract class PublixUtils<T extends Worker> {
 	private final WorkerDao workerDao;
 	private final BatchDao batchDao;
 
-	public PublixUtils(PublixErrorMessages errorMessages, StudyDao studyDao,
+	public PublixUtils(ResultCreator resultCreator, PublixErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
 			ComponentResultDao componentResultDao, WorkerDao workerDao,
 			BatchDao batchDao) {
+		this.resultCreator = resultCreator;
 		this.errorMessages = errorMessages;
 		this.studyDao = studyDao;
 		this.studyResultDao = studyResultDao;
@@ -132,7 +134,7 @@ public abstract class PublixUtils<T extends Worker> {
 						ComponentState.FINISHED);
 			}
 		}
-		return componentResultDao.create(studyResult, component);
+		return resultCreator.createComponentResult(studyResult, component);
 	}
 
 	private void finishComponentResult(ComponentResult componentResult,

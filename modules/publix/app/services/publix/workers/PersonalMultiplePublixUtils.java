@@ -13,6 +13,7 @@ import exceptions.publix.ForbiddenPublixException;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.Worker;
 import services.publix.PublixUtils;
+import services.publix.ResultCreator;
 
 /**
  * PersonalMultiplePublix' implementation of PublixUtils
@@ -20,16 +21,17 @@ import services.publix.PublixUtils;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalMultiplePublixUtils extends
-		PublixUtils<PersonalMultipleWorker> {
+public class PersonalMultiplePublixUtils
+		extends PublixUtils<PersonalMultipleWorker> {
 
 	@Inject
-	PersonalMultiplePublixUtils(PersonalMultipleErrorMessages errorMessages,
-			StudyDao studyDao, StudyResultDao studyResultDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao, BatchDao batchDao) {
-		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao, batchDao);
+	PersonalMultiplePublixUtils(ResultCreator resultCreator,
+			PersonalMultipleErrorMessages errorMessages, StudyDao studyDao,
+			StudyResultDao studyResultDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, WorkerDao workerDao,
+			BatchDao batchDao) {
+		super(resultCreator, errorMessages, studyDao, studyResultDao,
+				componentDao, componentResultDao, workerDao, batchDao);
 	}
 
 	@Override

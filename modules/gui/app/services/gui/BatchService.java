@@ -7,11 +7,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import daos.common.BatchDao;
+import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import general.common.MessagesStrings;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
@@ -31,20 +29,25 @@ import models.gui.BatchProperties;
 @Singleton
 public class BatchService {
 
+	private final ResultRemover resultRemover;
 	private final BatchDao batchDao;
 	private final StudyDao studyDao;
 	private final StudyResultDao studyResultDao;
+	private final GroupResultDao groupResultDao;
 
 	@Inject
-	BatchService(BatchDao batchDao, StudyDao studyDao,
-			StudyResultDao studyResultDao) {
+	BatchService(ResultRemover resultRemover, BatchDao batchDao,
+			StudyDao studyDao, StudyResultDao studyResultDao,
+			GroupResultDao groupResultDao) {
+		this.resultRemover = resultRemover;
 		this.batchDao = batchDao;
 		this.studyDao = studyDao;
 		this.studyResultDao = studyResultDao;
+		this.groupResultDao = groupResultDao;
 	}
 
 	/**
-	 * Clones a Batch and persists
+	 * Clones a Batch but does not persists
 	 */
 	public Batch clone(Batch batch) {
 		Batch clone = new Batch();
@@ -56,37 +59,47 @@ public class BatchService {
 		clone.setMaxActiveMembers(batch.getMaxActiveMembers());
 		clone.setMaxTotalMembers(batch.getMaxTotalMembers());
 		clone.setMaxTotalWorkers(batch.getMaxTotalWorkers());
-		batch.getAllowedWorkers().forEach(clone::addAllowedWorker);
+		batch.getWorkerList().forEach(clone::addWorker);
 		batch.getAllowedWorkerTypes().forEach(clone::addAllowedWorkerType);
 		return clone;
 	}
 
 	/**
-	 * Create, init and persist default Batch. Each Study has a default batch.
+	 * Create and init default Batch. Each Study has a default batch. Does NOT
+	 * persist.
 	 */
-	public Batch createDefaultBatch(User loggedInUser) {
+	public Batch createDefaultBatch(Study study, User loggedInUser) {
 		Batch batch = new Batch();
-		initBatch(batch, loggedInUser);
 		batch.setTitle("Default");
-		batchDao.create(batch);
+		initBatch(batch, loggedInUser);
 		return batch;
 	}
 
-	public void createBatch(Batch batch, Study study, User loggedInUser) {
+	/**
+	 * Creates batch, inits it and persists it. Updates study with new batch.
+	 */
+	public void createAndPersistBatch(Batch batch, Study study,
+			User loggedInUser) {
 		initBatch(batch, loggedInUser);
+		batch.setStudy(study);
+		if (!study.hasBatch(batch)) {
+			study.addBatch(batch);
+			studyDao.update(study);
+		}
 		batchDao.create(batch);
-		study.addBatch(batch);
-		studyDao.update(study);
 	}
 
 	/**
-	 * Add default allowed worker types and the Jatos worker
+	 * Add default allowed worker types and the Jatos worker. Generates UUID.
 	 */
 	private void initBatch(Batch batch, User loggedInUser) {
+		if (batch.getUuid() == null) {
+			batch.setUuid(UUID.randomUUID().toString());
+		}
 		batch.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
 		batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-		batch.addAllowedWorker(loggedInUser.getWorker());
+		batch.addWorker(loggedInUser.getWorker());
 	}
 
 	public void updateBatch(Batch batch, Batch updatedBatch) {
@@ -96,8 +109,8 @@ public class BatchService {
 		batch.setMaxActiveMembers(updatedBatch.getMaxActiveMembers());
 		batch.setMaxTotalMembers(updatedBatch.getMaxTotalMembers());
 		batch.setMaxTotalWorkers(updatedBatch.getMaxTotalWorkers());
-		batch.getAllowedWorkers().clear();
-		updatedBatch.getAllowedWorkers().forEach(batch::addAllowedWorker);
+		batch.getWorkerList().clear();
+		updatedBatch.getWorkerList().forEach(batch::addWorker);
 		batch.getAllowedWorkerTypes().clear();
 		updatedBatch.getAllowedWorkerTypes()
 				.forEach(batch::addAllowedWorkerType);
@@ -117,7 +130,7 @@ public class BatchService {
 		props.setMaxTotalWorkerLimited(batch.getMaxTotalWorkers() != null);
 		props.setMaxTotalWorkers(batch.getMaxTotalWorkers());
 		batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
-		batch.getAllowedWorkers().forEach(props::addAllowedWorker);
+		batch.getWorkerList().forEach(props::addWorker);
 		return props;
 	}
 
@@ -142,31 +155,24 @@ public class BatchService {
 			batch.setMaxTotalWorkers(null);
 		}
 		props.getAllowedWorkerTypes().forEach(batch::addAllowedWorkerType);
-		props.getAllowedWorkers().forEach(batch::addAllowedWorker);
+		props.getWorkers().forEach(batch::addWorker);
 		return batch;
 	}
 
-	public void removeBatch(Batch batch, Study study) {
+	public void remove(Batch batch) {
+		// Update Study
+		Study study = batch.getStudy();
 		study.removeBatch(batch);
 		studyDao.update(study);
-		batchDao.remove(batch);
-	}
 
-	/**
-	 * Checks the batch and throws an Exception in case of a problem.
-	 */
-	public void checkStandardForBatch(Batch batch, Study study, Long batchId)
-			throws ForbiddenException, BadRequestException {
-		if (batch == null) {
-			String errorMsg = MessagesStrings.batchNotExist(batchId);
-			throw new BadRequestException(errorMsg);
-		}
-		// Check that the study has this batch
-		if (!study.hasBatch(batch)) {
-			String errorMsg = MessagesStrings.batchNotInStudy(batchId,
-					study.getId());
-			throw new ForbiddenException(errorMsg);
-		}
+		// Delete all StudyResults and all ComponentResults
+		studyResultDao.findAllByBatch(batch)
+				.forEach(resultRemover::removeStudyResult);
+
+		// Delete all GroupResults
+		groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);
+
+		batchDao.remove(batch);
 	}
 
 	/**
@@ -179,7 +185,7 @@ public class BatchService {
 	public Set<Worker> retrieveAllWorkers(Study study, Batch batch) {
 		// Put personal single worker & personal multiple workers in a list.
 		// They are created prior to the run and are in the allowed workers
-		Set<Worker> workerSet = batch.getAllowedWorkers();
+		Set<Worker> workerSet = batch.getWorkerList();
 
 		// Add Jatos workers of this study. They are the users of the batch's
 		// study.

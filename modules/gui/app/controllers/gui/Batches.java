@@ -32,8 +32,8 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import services.gui.BatchService;
 import services.gui.BreadcrumbsService;
+import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
-import services.gui.StudyService;
 import services.gui.UserService;
 import services.gui.WorkerService;
 import utils.common.ControllerUtils;
@@ -52,7 +52,7 @@ public class Batches extends Controller {
 	private static final String CLASS_NAME = Batches.class.getSimpleName();
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final StudyService studyService;
+	private final Checker checker;
 	private final UserService userService;
 	private final WorkerService workerService;
 	private final BatchService batchService;
@@ -61,13 +61,12 @@ public class Batches extends Controller {
 	private final BatchDao batchDao;
 
 	@Inject
-	Batches(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService, UserService userService,
-			WorkerService workerService, BatchService batchService,
-			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-			BatchDao batchDao) {
+	Batches(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
+			UserService userService, WorkerService workerService,
+			BatchService batchService, BreadcrumbsService breadcrumbsService,
+			StudyDao studyDao, BatchDao batchDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-		this.studyService = studyService;
+		this.checker = checker;
 		this.userService = userService;
 		this.workerService = workerService;
 		this.batchService = batchService;
@@ -86,7 +85,7 @@ public class Batches extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
@@ -106,7 +105,7 @@ public class Batches extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -120,15 +119,15 @@ public class Batches extends Controller {
 	 */
 	@Transactional
 	public Result workers(Long studyId, Long batchId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".allowedWorkers: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
 				+ "batchId " + batchId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			batchService.checkStandardForBatch(batch, study, batchId);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -149,7 +148,7 @@ public class Batches extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -162,7 +161,7 @@ public class Batches extends Controller {
 		BatchProperties batchProperties = form.get();
 		Batch batch = batchService.bindToBatch(batchProperties);
 
-		batchService.createBatch(batch, study, loggedInUser);
+		batchService.createAndPersistBatch(batch, study, loggedInUser);
 		return ok(batch.getId().toString());
 	}
 
@@ -178,8 +177,8 @@ public class Batches extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			batchService.checkStandardForBatch(batch, study, batchId);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
@@ -206,8 +205,8 @@ public class Batches extends Controller {
 		Batch batch = batchDao.findById(batchId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			batchService.checkStandardForBatch(batch, study, batchId);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -231,8 +230,8 @@ public class Batches extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch currentBatch = batchDao.findById(batchId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			batchService.checkStandardForBatch(currentBatch, study, batchId);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(currentBatch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -272,8 +271,8 @@ public class Batches extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			batchService.checkStandardForBatch(batch, study, batchId);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -299,13 +298,13 @@ public class Batches extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			batchService.checkStandardForBatch(batch, study, batchId);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		batchService.removeBatch(batch, study);
+		batchService.remove(batch);
 		RequestScopeMessaging.success(MessagesStrings.BATCH_DELETED);
 		return ok(RequestScopeMessaging.getAsJson());
 	}
@@ -324,8 +323,8 @@ public class Batches extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			batchService.checkStandardForBatch(batch, study, batchId);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -340,7 +339,8 @@ public class Batches extends Controller {
 				.trim();
 		PersonalSingleWorker worker;
 		try {
-			worker = workerService.createPersonalSingleWorker(comment, batch);
+			worker = workerService.createAndPersistPersonalSingleWorker(comment,
+					batch);
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}
@@ -365,8 +365,8 @@ public class Batches extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			batchService.checkStandardForBatch(batch, study, batchId);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -381,7 +381,8 @@ public class Batches extends Controller {
 				.trim();
 		PersonalMultipleWorker worker;
 		try {
-			worker = workerService.createPersonalMultipleWorker(comment, batch);
+			worker = workerService
+					.createAndPersistPersonalMultipleWorker(comment, batch);
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}

@@ -9,7 +9,6 @@ import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
-import daos.common.worker.WorkerDao;
 import exceptions.publix.PublixException;
 import models.common.Batch;
 import models.common.Component;
@@ -21,6 +20,8 @@ import play.mvc.Http.Cookie;
 import play.mvc.Result;
 import services.publix.ChannelService;
 import services.publix.GroupService;
+import services.publix.ResultCreator;
+import services.publix.WorkerCreator;
 import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
@@ -48,22 +49,24 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 
 	private final GeneralSinglePublixUtils publixUtils;
 	private final GeneralSingleStudyAuthorisation studyAuthorisation;
-	private final WorkerDao workerDao;
+	private final ResultCreator resultCreator;
+	private final WorkerCreator workerCreator;
 
 	@Inject
 	GeneralSinglePublix(JPAApi jpa, GeneralSinglePublixUtils publixUtils,
 			GeneralSingleStudyAuthorisation studyAuthorisation,
+			ResultCreator resultCreator, WorkerCreator workerCreator,
 			GroupService groupService, ChannelService channelService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, WorkerDao workerDao,
-			GroupResultDao groupResultDao) {
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
 				channelService, errorMessages, studyAssets, componentResultDao,
 				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
-		this.workerDao = workerDao;
+		this.resultCreator = resultCreator;
+		this.workerCreator = workerCreator;
 	}
 
 	@Override
@@ -76,8 +79,8 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 		Cookie cookie = Publix.request().cookie(GeneralSinglePublix.COOKIE);
 		publixUtils.checkStudyInCookie(study, cookie);
 
-		GeneralSingleWorker worker = new GeneralSingleWorker();
-		workerDao.create(worker);
+		GeneralSingleWorker worker = workerCreator
+				.createAndPersistGeneralSingleWorker();
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, worker.getId().toString());
 		session(BATCH_ID, batch.getId().toString());
@@ -86,7 +89,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 				+ worker.getId());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		studyResultDao.create(study, batch, worker);
+		resultCreator.createStudyResult(study, batch, worker);
 
 		String cookieValue = publixUtils.addStudyToCookie(study, cookie);
 		Publix.response().setCookie(GeneralSinglePublix.COOKIE, cookieValue);

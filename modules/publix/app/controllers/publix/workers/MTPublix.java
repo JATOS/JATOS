@@ -25,6 +25,8 @@ import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ChannelService;
 import services.publix.GroupService;
+import services.publix.ResultCreator;
+import services.publix.WorkerCreator;
 import services.publix.workers.MTErrorMessages;
 import services.publix.workers.MTPublixUtils;
 import services.publix.workers.MTStudyAuthorisation;
@@ -57,12 +59,15 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	private final MTPublixUtils publixUtils;
 	private final MTStudyAuthorisation studyAuthorisation;
+	private final ResultCreator resultCreator;
+	private final WorkerCreator workerCreator;
 	private final MTErrorMessages errorMessages;
 	private final MTWorkerDao mtWorkerDao;
 
 	@Inject
 	MTPublix(JPAApi jpa, MTPublixUtils publixUtils,
-			MTStudyAuthorisation studyAuthorisation, GroupService groupService,
+			MTStudyAuthorisation studyAuthorisation,
+			ResultCreator resultCreator, WorkerCreator workerCreator, GroupService groupService,
 			ChannelService channelService, MTErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
@@ -72,6 +77,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
+		this.resultCreator = resultCreator;
+		this.workerCreator = workerCreator;
 		this.errorMessages = errorMessages;
 		this.mtWorkerDao = mtWorkerDao;
 	}
@@ -107,7 +114,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			String workerType = session(PublixInterceptor.WORKER_TYPE);
 			boolean isRequestFromMTurkSandbox = workerType
 					.equals(MTSandboxWorker.WORKER_TYPE);
-			worker = mtWorkerDao.create(mtWorkerId, isRequestFromMTurkSandbox);
+			worker = workerCreator.createAndPersistMTWorker(mtWorkerId,
+					isRequestFromMTurkSandbox);
 		}
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, String.valueOf(worker.getId()));
@@ -117,7 +125,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ worker.getId());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		studyResultDao.create(study, batch, worker);
+		resultCreator.createStudyResult(study, batch, worker);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

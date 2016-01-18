@@ -6,7 +6,6 @@ import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.common.User;
-import models.common.workers.JatosWorker;
 import play.db.jpa.JPA;
 
 /**
@@ -21,11 +20,7 @@ public class UserDao extends AbstractDao {
 	 * Persist user und creates it's JatosWorker.
 	 */
 	public void create(User user) {
-		JatosWorker worker = new JatosWorker(user);
-		persist(worker);
-		user.setWorker(worker);
 		persist(user);
-		merge(worker);
 	}
 
 	public void update(User user) {

@@ -2,6 +2,7 @@ package services.gui;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -9,7 +10,8 @@ import javax.inject.Singleton;
 import javax.validation.ValidationException;
 
 import daos.common.ComponentDao;
-import exceptions.gui.BadRequestException;
+import daos.common.ComponentResultDao;
+import daos.common.StudyDao;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
@@ -30,12 +32,20 @@ public class ComponentService {
 	private static final String CLASS_NAME = ComponentService.class
 			.getSimpleName();
 
+	private final ResultRemover resultRemover;
+	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
+	private final ComponentResultDao componentResultDao;
 	private final IOUtils ioUtils;
 
 	@Inject
-	ComponentService(ComponentDao componentDao, IOUtils ioUtils) {
+	ComponentService(ResultRemover resultRemover, StudyDao studyDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			IOUtils ioUtils) {
+		this.resultRemover = resultRemover;
+		this.studyDao = studyDao;
 		this.componentDao = componentDao;
+		this.componentResultDao = componentResultDao;
 		this.ioUtils = ioUtils;
 	}
 
@@ -133,13 +143,31 @@ public class ComponentService {
 	}
 
 	/**
-	 * Create and persist a Component with given properties.
+	 * Create and persist the given Component. Generates UUID. Updates its
+	 * study.
 	 */
-	public Component createComponent(Study study,
+	public Component createAndPersistComponent(Study study,
+			Component component) {
+		if (component.getUuid() == null) {
+			component.setUuid(UUID.randomUUID().toString());
+		}
+		component.setStudy(study);
+		if (!study.hasComponent(component)) {
+			study.addComponent(component);
+			studyDao.update(study);
+		}
+		componentDao.create(component);
+		return component;
+	}
+
+	/**
+	 * Create and persist a Component with given properties. Generates UUID.
+	 * Updates its study.
+	 */
+	public Component createAndPersistComponent(Study study,
 			ComponentProperties componentProperties) {
 		Component component = bindToComponent(componentProperties);
-		componentDao.create(study, component);
-		return component;
+		return createAndPersistComponent(study, component);
 	}
 
 	/**
@@ -191,27 +219,6 @@ public class ComponentService {
 	}
 
 	/**
-	 * Checks the component of this study and throws an Exception in case of a
-	 * problem.
-	 */
-	public void checkStandardForComponents(Long studyId, Long componentId,
-			Component component) throws BadRequestException {
-		if (component == null) {
-			throw new BadRequestException(
-					MessagesStrings.componentNotExist(componentId));
-		}
-		if (component.getStudy() == null) {
-			throw new BadRequestException(
-					MessagesStrings.componentHasNoStudy(componentId));
-		}
-		// Check component belongs to the study
-		if (!component.getStudy().getId().equals(studyId)) {
-			throw new BadRequestException(MessagesStrings
-					.componentNotBelongToStudy(studyId, componentId));
-		}
-	}
-
-	/**
 	 * Validates the component by using the Component's model validation method.
 	 * Throws ValidationException in case of an error.
 	 */
@@ -225,6 +232,21 @@ public class ComponentService {
 									.collect(Collectors.joining(", ")));
 			throw new ValidationException(MessagesStrings.COMPONENT_INVALID);
 		}
+	}
+
+	/**
+	 * Remove Component: Remove it from the given study, remove all its
+	 * ComponentResults, and remove the component itself.
+	 */
+	public void remove(Component component) {
+		Study study = component.getStudy();
+		// Remove component from study
+		study.removeComponent(component);
+		studyDao.update(study);
+		// Remove component's ComponentResults
+		componentResultDao.findAllByComponent(component)
+				.forEach(resultRemover::removeComponentResult);
+		componentDao.remove(component);
 	}
 
 }

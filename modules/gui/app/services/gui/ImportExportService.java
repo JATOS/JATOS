@@ -52,6 +52,7 @@ public class ImportExportService {
 	public static final String SESSION_TEMP_COMPONENT_FILE = "tempComponentFile";
 
 	private final Application app;
+	private final Checker checker;
 	private final StudyService studyService;
 	private final ComponentService componentService;
 	private final JsonUtils jsonUtils;
@@ -60,10 +61,12 @@ public class ImportExportService {
 	private final ComponentDao componentDao;
 
 	@Inject
-	ImportExportService(Application app, StudyService studyService,
-			ComponentService componentService, JsonUtils jsonUtils,
-			IOUtils ioUtils, StudyDao studyDao, ComponentDao componentDao) {
+	ImportExportService(Application app, Checker checker,
+			StudyService studyService, ComponentService componentService,
+			JsonUtils jsonUtils, IOUtils ioUtils, StudyDao studyDao,
+			ComponentDao componentDao) {
 		this.app = app;
+		this.checker = checker;
 		this.studyService = studyService;
 		this.componentService = componentService;
 		this.jsonUtils = jsonUtils;
@@ -87,8 +90,8 @@ public class ImportExportService {
 		}
 
 		Component uploadedComponent = unmarshalComponent(filePart.getFile());
-		boolean componentExists = componentDao.findByUuid(
-				uploadedComponent.getUuid(), study) != null;
+		boolean componentExists = componentDao
+				.findByUuid(uploadedComponent.getUuid(), study) != null;
 
 		// Create JSON response
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
@@ -101,14 +104,14 @@ public class ImportExportService {
 			String tempComponentFileName) throws IOException {
 		File componentFile = getTempComponentFile(tempComponentFileName);
 		if (componentFile == null) {
-			Logger.warn(CLASS_NAME
-					+ ".importComponentConfirmed: unzipping failed, "
-					+ "couldn't find component file in temp directory");
+			Logger.warn(
+					CLASS_NAME + ".importComponentConfirmed: unzipping failed, "
+							+ "couldn't find component file in temp directory");
 			throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
 		}
 		Component uploadedComponent = unmarshalComponent(componentFile);
-		Component currentComponent = componentDao.findByUuid(
-				uploadedComponent.getUuid(), study);
+		Component currentComponent = componentDao
+				.findByUuid(uploadedComponent.getUuid(), study);
 		boolean componentExistsInStudy = (currentComponent != null);
 		if (componentExistsInStudy) {
 			componentService.updateProperties(currentComponent,
@@ -117,7 +120,8 @@ public class ImportExportService {
 					.componentsPropertiesOverwritten(currentComponent.getId(),
 							uploadedComponent.getTitle()));
 		} else {
-			componentDao.create(study, uploadedComponent);
+			componentService.createAndPersistComponent(study,
+					uploadedComponent);
 			RequestScopeMessaging.success(MessagesStrings.importedNewComponent(
 					uploadedComponent.getId(), uploadedComponent.getTitle()));
 		}
@@ -131,8 +135,8 @@ public class ImportExportService {
 			if (componentFile != null) {
 				componentFile.delete();
 			}
-			Controller.session().remove(
-					ImportExportService.SESSION_TEMP_COMPONENT_FILE);
+			Controller.session()
+					.remove(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
 		}
 	}
 
@@ -147,10 +151,10 @@ public class ImportExportService {
 
 		Study currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
 		boolean studyExists = currentStudy != null;
-		boolean dirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy
-				.getDirName());
-		checkStudyImport(loggedInUser, uploadedStudy, currentStudy,
-				studyExists, dirExists);
+		boolean dirExists = ioUtils
+				.checkStudyAssetsDirExists(uploadedStudy.getDirName());
+		checkStudyImport(loggedInUser, uploadedStudy, currentStudy, studyExists,
+				dirExists);
 
 		// Create JSON response
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
@@ -158,8 +162,8 @@ public class ImportExportService {
 		objectNode.put(ImportExportService.STUDY_TITLE,
 				uploadedStudy.getTitle());
 		objectNode.put(ImportExportService.DIR_EXISTS, dirExists);
-		objectNode
-				.put(ImportExportService.DIR_PATH, uploadedStudy.getDirName());
+		objectNode.put(ImportExportService.DIR_PATH,
+				uploadedStudy.getDirName());
 		return objectNode;
 	}
 
@@ -205,24 +209,23 @@ public class ImportExportService {
 		if (tempUnzippedStudyDir != null) {
 			tempUnzippedStudyDir.delete();
 		}
-		Controller.session().remove(
-				ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
+		Controller.session()
+				.remove(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
 	}
 
 	private void checkStudyImport(User loggedInUser, Study uploadedStudy,
 			Study currentStudy, boolean studyExists, boolean dirExists)
-			throws ForbiddenException {
+					throws ForbiddenException {
 		if (studyExists && !currentStudy.hasUser(loggedInUser)) {
-			String errorMsg = MessagesStrings.studyImportNotUser(currentStudy
-					.getTitle());
+			String errorMsg = MessagesStrings
+					.studyImportNotUser(currentStudy.getTitle());
 			throw new ForbiddenException(errorMsg);
 		}
-		if (dirExists
-				&& (currentStudy == null || !currentStudy.getDirName().equals(
-						uploadedStudy.getDirName()))) {
+		if (dirExists && (currentStudy == null || !currentStudy.getDirName()
+				.equals(uploadedStudy.getDirName()))) {
 			String errorMsg = MessagesStrings
-					.studyAssetsDirExistsBelongsToDifferentStudy(uploadedStudy
-							.getDirName());
+					.studyAssetsDirExistsBelongsToDifferentStudy(
+							uploadedStudy.getDirName());
 			throw new ForbiddenException(errorMsg);
 		}
 	}
@@ -230,10 +233,11 @@ public class ImportExportService {
 	private void overwriteExistingStudy(User loggedInUser,
 			Boolean studyEntityConfirm, Boolean studysDirConfirm,
 			File tempUnzippedStudyDir, Study importedStudy, Study currentStudy)
-			throws IOException, ForbiddenException, BadRequestException {
-		studyService.checkStandardForStudy(currentStudy, currentStudy.getId(),
+					throws IOException, ForbiddenException,
+					BadRequestException {
+		checker.checkStandardForStudy(currentStudy, currentStudy.getId(),
 				loggedInUser);
-		studyService.checkStudyLocked(currentStudy);
+		checker.checkStudyLocked(currentStudy);
 		if (studysDirConfirm) {
 			if (studyEntityConfirm) {
 				moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy,
@@ -244,9 +248,9 @@ public class ImportExportService {
 				moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy,
 						currentStudy.getDirName());
 			}
-			RequestScopeMessaging.success(MessagesStrings
-					.studyAssetsOverwritten(importedStudy.getDirName(),
-							currentStudy.getId()));
+			RequestScopeMessaging
+					.success(MessagesStrings.studyAssetsOverwritten(
+							importedStudy.getDirName(), currentStudy.getId()));
 		}
 		if (studyEntityConfirm) {
 			if (studysDirConfirm) {
@@ -268,7 +272,7 @@ public class ImportExportService {
 			Study importedStudy) throws IOException {
 		moveStudyAssetsDir(tempUnzippedStudyDir, null,
 				importedStudy.getDirName());
-		studyService.createStudy(loggedInUser, importedStudy);
+		studyService.createAndPersistStudy(loggedInUser, importedStudy);
 		RequestScopeMessaging.success(MessagesStrings.importedNewStudy(
 				importedStudy.getDirName(), importedStudy.getId()));
 	}
@@ -280,8 +284,8 @@ public class ImportExportService {
 				studyFileSuffix);
 		studyAsJsonFile.deleteOnExit();
 		jsonUtils.studyAsJsonForIO(study, studyAsJsonFile);
-		String studyAssetsDirPath = ioUtils.generateStudyAssetsPath(study
-				.getDirName());
+		String studyAssetsDirPath = ioUtils
+				.generateStudyAssetsPath(study.getDirName());
 		File zipFile = ZipUtil.zipStudy(studyAssetsDirPath, study.getDirName(),
 				studyAsJsonFile.getAbsolutePath());
 		studyAsJsonFile.delete();
@@ -292,7 +296,8 @@ public class ImportExportService {
 	 * Update the components of the current study with the one of the imported
 	 * study.
 	 */
-	private void updateStudysComponents(Study currentStudy, Study updatedStudy) {
+	private void updateStudysComponents(Study currentStudy,
+			Study updatedStudy) {
 		// Clear list and rebuild it from updated study
 		List<Component> currentComponentList = new ArrayList<>(
 				currentStudy.getComponentList());
@@ -302,7 +307,8 @@ public class ImportExportService {
 			Component currentComponent = null;
 			// Find both matching components with the same UUID
 			for (Component tempComponent : currentComponentList) {
-				if (tempComponent.getUuid().equals(updatedComponent.getUuid())) {
+				if (tempComponent.getUuid()
+						.equals(updatedComponent.getUuid())) {
 					currentComponent = tempComponent;
 					break;
 				}
@@ -315,7 +321,8 @@ public class ImportExportService {
 			} else {
 				// If the updated component doesn't exist in the current study
 				// add it.
-				componentDao.create(currentStudy, updatedComponent);
+				componentService.createAndPersistComponent(currentStudy,
+						updatedComponent);
 			}
 		}
 

@@ -7,20 +7,25 @@ import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 
 import controllers.gui.Users;
 import general.AbstractTest;
+import general.common.MessagesStrings;
 import models.common.Study;
 import models.gui.StudyProperties;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
+import utils.common.JsonUtils;
 
 /**
  * Testing actions of controller.Studies.
@@ -93,7 +98,8 @@ public class StudiesControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callSubmitCreatedValidationError() {
+	public void callSubmitCreatedValidationError()
+			throws JsonProcessingException, IOException {
 		// Fill with non-valid values
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(StudyProperties.TITLE, " ");
@@ -108,8 +114,18 @@ public class StudiesControllerTest extends AbstractTest {
 		Result result = route(request);
 
 		assertThat(result.contentType()).isEqualTo("application/json");
-		assertThat(contentAsString(result)).contains(
-				"Problems deserializing JSON data string: invalid JSON format");
+		JsonNode node = JsonUtils.OBJECTMAPPER
+				.readTree(contentAsString(result));
+		assertThat(node.get(StudyProperties.TITLE).toString())
+				.isEqualTo("[\"" + MessagesStrings.MISSING_TITLE + "\"]");
+		assertThat(node.get(StudyProperties.DESCRIPTION).toString())
+				.isEqualTo("[\"" + MessagesStrings.NO_HTML_ALLOWED + "\"]");
+		assertThat(node.get(StudyProperties.COMMENTS).toString())
+				.isEqualTo("[\"" + MessagesStrings.NO_HTML_ALLOWED + "\"]");
+		assertThat(node.get(StudyProperties.DIRNAME).toString())
+				.isEqualTo("[\"" + MessagesStrings.INVALID_DIR_NAME + "\"]");
+		assertThat(node.get(StudyProperties.JSON_DATA).toString())
+				.isEqualTo("[\"" + MessagesStrings.INVALID_JSON_FORMAT + "\"]");
 	}
 
 	@Test
@@ -140,13 +156,33 @@ public class StudiesControllerTest extends AbstractTest {
 
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.properties(studyClone.getId())
-						.url());
+				.uri(controllers.gui.routes.Studies
+						.properties(studyClone.getId()).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(result.charset()).isEqualTo("utf-8");
 		assertThat(result.contentType()).isEqualTo("application/json");
+
+		// Check properties in JSON
+		JsonNode node = JsonUtils.OBJECTMAPPER
+				.readTree(contentAsString(result));
+		assertThat(node.get(StudyProperties.TITLE).toString())
+				.isEqualTo("\"" + studyClone.getTitle() + "\"");
+		assertThat(node.get(StudyProperties.COMMENTS).toString())
+				.isEqualTo("null");
+		assertThat(node.get(StudyProperties.DESCRIPTION).toString())
+				.isEqualTo("\"" + studyClone.getDescription() + "\"");
+		assertThat(node.get(StudyProperties.DIRNAME).toString())
+				.isEqualTo("\"" + studyClone.getDirName() + "\"");
+		assertThat(node.get(StudyProperties.UUID).toString())
+				.isEqualTo("\"" + studyClone.getUuid() + "\"");
+		assertThat(node.get(StudyProperties.JSON_DATA).toString())
+				.isEqualTo("\"{\\\"totalStudySlides\\\":17}\"");
+		assertThat(node.get(StudyProperties.LOCKED).toString())
+				.isEqualTo(String.valueOf(studyClone.isLocked()));
+		assertThat(node.get(StudyProperties.GROUP_STUDY).toString())
+				.isEqualTo(String.valueOf(studyClone.isGroupStudy()));
 
 		// Clean up
 		removeStudy(studyClone);
@@ -256,7 +292,7 @@ public class StudiesControllerTest extends AbstractTest {
 						.submitChangedUsers(studyClone.getId()).url());
 		Result result = route(request);
 
-		assertEquals(SEE_OTHER, result.status());
+		assertEquals(OK, result.status());
 
 		// Clean up
 		removeStudy(studyClone);

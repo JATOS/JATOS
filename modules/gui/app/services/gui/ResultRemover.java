@@ -5,17 +5,21 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.ComponentResultDao;
+import daos.common.GroupResultDao;
+import daos.common.StudyResultDao;
+import daos.common.worker.WorkerDao;
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
 import models.common.Component;
 import models.common.ComponentResult;
+import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
 import models.common.workers.Worker;
-import daos.common.ComponentResultDao;
-import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import play.Logger;
 
 /**
  * Service class that removes ComponentResults or StudyResults. It's used by
@@ -26,16 +30,27 @@ import exceptions.gui.NotFoundException;
 @Singleton
 public class ResultRemover {
 
+	private static final String CLASS_NAME = ResultRemover.class
+			.getSimpleName();
+
+	private final Checker checker;
 	private final ResultService resultService;
 	private final ComponentResultDao componentResultDao;
 	private final StudyResultDao studyResultDao;
+	private final GroupResultDao groupResultDao;
+	private final WorkerDao workerDao;
 
 	@Inject
-	ResultRemover(ResultService resultService,
-			ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
+	ResultRemover(Checker checker, ResultService resultService,
+			ComponentResultDao componentResultDao,
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
+			WorkerDao workerDao) {
+		this.checker = checker;
 		this.resultService = resultService;
 		this.componentResultDao = componentResultDao;
 		this.studyResultDao = studyResultDao;
+		this.groupResultDao = groupResultDao;
+		this.workerDao = workerDao;
 	}
 
 	/**
@@ -58,8 +73,8 @@ public class ResultRemover {
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = resultService
 				.getComponentResults(componentResultIdList);
-		resultService.checkComponentResults(componentResultList, user, true);
-		componentResultList.forEach(componentResultDao::remove);
+		checker.checkComponentResults(componentResultList, user, true);
+		componentResultList.forEach(this::removeComponentResult);
 	}
 
 	/**
@@ -82,8 +97,8 @@ public class ResultRemover {
 				.extractResultIds(studyResultIds);
 		List<StudyResult> studyResultList = resultService
 				.getStudyResults(studyResultIdList);
-		resultService.checkStudyResults(studyResultList, user, true);
-		studyResultList.forEach(studyResultDao::remove);
+		checker.checkStudyResults(studyResultList, user, true);
+		studyResultList.forEach(this::removeStudyResult);
 	}
 
 	/**
@@ -91,12 +106,12 @@ public class ResultRemover {
 	 * Retrieves all ComponentResults of the given component, checks if the
 	 * given user is allowed to remove them and if yes, removes them.
 	 */
-	public void removeAllComponentResults(Component component,
-			User user) throws ForbiddenException, BadRequestException {
+	public void removeAllComponentResults(Component component, User user)
+			throws ForbiddenException, BadRequestException {
 		List<ComponentResult> componentResultList = componentResultDao
 				.findAllByComponent(component);
-		resultService.checkComponentResults(componentResultList, user, true);
-		componentResultList.forEach(componentResultDao::remove);
+		checker.checkComponentResults(componentResultList, user, true);
+		componentResultList.forEach(this::removeComponentResult);
 	}
 
 	/**
@@ -108,8 +123,8 @@ public class ResultRemover {
 			throws ForbiddenException, BadRequestException {
 		List<StudyResult> studyResultList = studyResultDao
 				.findAllByStudy(study);
-		resultService.checkStudyResults(studyResultList, user, true);
-		studyResultList.forEach(studyResultDao::remove);
+		checker.checkStudyResults(studyResultList, user, true);
+		studyResultList.forEach(this::removeStudyResult);
 	}
 
 	/**
@@ -121,8 +136,51 @@ public class ResultRemover {
 			throws ForbiddenException, BadRequestException {
 		List<StudyResult> allowedStudyResultList = resultService
 				.getAllowedStudyResultList(user, worker);
-		resultService.checkStudyResults(allowedStudyResultList, user, true);
-		allowedStudyResultList.forEach(studyResultDao::remove);
+		checker.checkStudyResults(allowedStudyResultList, user, true);
+		allowedStudyResultList.forEach(this::removeStudyResult);
+	}
+
+	/**
+	 * Remove ComponentResult from its StudyResult and then remove itself.
+	 */
+	public void removeComponentResult(ComponentResult componentResult) {
+		StudyResult studyResult = componentResult.getStudyResult();
+		if (studyResult != null) {
+			studyResult.removeComponentResult(componentResult);
+			studyResultDao.update(studyResult);
+		} else {
+			Logger.error(CLASS_NAME + ".remove: StudyResult is null - "
+					+ "but a ComponentResult always belongs to a StudyResult "
+					+ "(ComponentResult's ID is " + componentResult.getId()
+					+ ")");
+		}
+		componentResultDao.remove(componentResult);
+	}
+
+	/**
+	 * Removes all ComponentResults of the given StudyResult, removes this
+	 * StudyResult from the given worker, removes this StudyResult from the
+	 * GroupResult and then remove StudyResult itself.
+	 */
+	public void removeStudyResult(StudyResult studyResult) {
+		// Remove all component results of this study result
+		studyResult.getComponentResultList()
+				.forEach(componentResultDao::remove);
+
+		// Remove study result from worker
+		Worker worker = studyResult.getWorker();
+		worker.removeStudyResult(studyResult);
+		workerDao.update(worker);
+
+		// Remove studyResult from group result
+		GroupResult groupResult = studyResult.getGroupResult();
+		if (groupResult != null) {
+			groupResult.removeStudyResult(studyResult);
+			groupResultDao.update(groupResult);
+		}
+
+		// Remove studyResult
+		studyResultDao.remove(studyResult);
 	}
 
 }

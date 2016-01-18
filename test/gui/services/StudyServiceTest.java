@@ -179,14 +179,14 @@ public class StudyServiceTest extends AbstractTest {
 		addStudy(study);
 
 		try {
-			studyService.checkStudyLocked(study);
+			checker.checkStudyLocked(study);
 		} catch (ForbiddenException e) {
 			Fail.fail();
 		}
 
 		study.setLocked(true);
 		try {
-			studyService.checkStudyLocked(study);
+			checker.checkStudyLocked(study);
 			Fail.fail();
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage())
@@ -201,7 +201,7 @@ public class StudyServiceTest extends AbstractTest {
 	public void testCheckStandardForStudy()
 			throws NoSuchAlgorithmException, IOException {
 		try {
-			studyService.checkStandardForStudy(null, 1l, admin);
+			checker.checkStandardForStudy(null, 1l, admin);
 			Fail.fail();
 		} catch (ForbiddenException e) {
 			Fail.fail();
@@ -213,7 +213,7 @@ public class StudyServiceTest extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 		try {
-			studyService.checkStandardForStudy(study, study.getId(), admin);
+			checker.checkStandardForStudy(study, study.getId(), admin);
 		} catch (ForbiddenException e) {
 			Fail.fail();
 		} catch (BadRequestException e) {
@@ -222,7 +222,7 @@ public class StudyServiceTest extends AbstractTest {
 
 		study.getUserList().remove(admin);
 		try {
-			studyService.checkStandardForStudy(study, study.getId(), admin);
+			checker.checkStandardForStudy(study, study.getId(), admin);
 			Fail.fail();
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage())

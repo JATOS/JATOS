@@ -41,13 +41,14 @@ import play.mvc.Http;
 import play.test.FakeApplication;
 import play.test.Helpers;
 import play.test.TestServer;
+import services.gui.Checker;
 import services.gui.ComponentService;
 import services.gui.ResultService;
 import services.gui.StudyService;
 import services.gui.StudyUploadUnmarshaller;
 import services.gui.UploadUnmarshaller;
 import services.gui.UserService;
-import utils.common.HashUtils;
+import services.publix.ResultCreator;
 import utils.common.IOUtils;
 import utils.common.ZipUtil;
 
@@ -66,10 +67,12 @@ public abstract class AbstractTest {
 	// All dependency injected
 	protected static TestServer server;
 	protected Application application;
+	protected Checker checker;
 	protected UserService userService;
 	protected StudyService studyService;
 	protected ComponentService componentService;
 	protected ResultService resultService;
+	protected ResultCreator resultCreator;
 	protected UserDao userDao;
 	protected StudyDao studyDao;
 	protected ComponentDao componentDao;
@@ -98,11 +101,13 @@ public abstract class AbstractTest {
 
 		// Use Guice dependency injection and bind manually
 		jpa = application.injector().instanceOf(JPAApi.class);
+		checker = application.injector().instanceOf(Checker.class);
 		userService = application.injector().instanceOf(UserService.class);
 		studyService = application.injector().instanceOf(StudyService.class);
 		componentService = application.injector()
 				.instanceOf(ComponentService.class);
 		resultService = application.injector().instanceOf(ResultService.class);
+		resultCreator = application.injector().instanceOf(ResultCreator.class);
 		userDao = application.injector().instanceOf(UserDao.class);
 		studyDao = application.injector().instanceOf(StudyDao.class);
 		componentDao = application.injector().instanceOf(ComponentDao.class);
@@ -169,7 +174,7 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().begin();
 		admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 		if (admin == null) {
-			admin = userService.createAdmin();
+			admin = userService.createAndPersistAdmin();
 		}
 		entityManager.getTransaction().commit();
 	}
@@ -226,17 +231,16 @@ public abstract class AbstractTest {
 			throws IOException {
 		entityManager.getTransaction().begin();
 		Study studyClone = studyService.clone(studyToBeCloned);
-		studyDao.create(studyClone, admin);
+		studyService.createAndPersistStudy(admin, studyClone);
 		entityManager.getTransaction().commit();
 		return studyClone;
 	}
 
 	protected synchronized User createAndPersistUser(String email, String name,
 			String password) {
-		String passwordHash = HashUtils.getHashMDFive(password);
-		User user = new User(email, name, passwordHash);
+		User user = new User(email, name);
 		entityManager.getTransaction().begin();
-		userDao.create(user);
+		userService.createAndPersistUser(user, password);
 		entityManager.getTransaction().commit();
 		return user;
 	}
@@ -244,13 +248,13 @@ public abstract class AbstractTest {
 	protected synchronized void removeStudy(Study study) throws IOException {
 		ioUtils.removeStudyAssetsDir(study.getDirName());
 		entityManager.getTransaction().begin();
-		studyDao.remove(study);
+		studyService.remove(study);
 		entityManager.getTransaction().commit();
 	}
 
 	protected synchronized void addStudy(Study study) {
 		entityManager.getTransaction().begin();
-		studyDao.create(study, admin);
+		studyService.createAndPersistStudy(admin, study);
 		entityManager.getTransaction().commit();
 	}
 
@@ -266,7 +270,7 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 	}
 
-	protected void addWorker(Worker worker) {
+	protected void persistWorker(Worker worker) {
 		entityManager.getTransaction().begin();
 		workerDao.create(worker);
 		entityManager.getTransaction().commit();
@@ -275,7 +279,8 @@ public abstract class AbstractTest {
 	protected void addStudyResult(Study study, Batch batch, Worker worker,
 			StudyState state) {
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study, batch, worker);
+		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
+				worker);
 		studyResult.setStudyState(state);
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(worker);

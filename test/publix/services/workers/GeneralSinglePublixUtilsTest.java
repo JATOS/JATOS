@@ -49,7 +49,7 @@ public class GeneralSinglePublixUtilsTest
 	public void checkRetrieveTypedWorker()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		GeneralSingleWorker worker = new GeneralSingleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		GeneralSingleWorker retrievedWorker = publixUtils
 				.retrieveTypedWorker(worker.getId().toString());

@@ -8,8 +8,6 @@ import javax.persistence.TypedQuery;
 
 import models.common.Component;
 import models.common.ComponentResult;
-import models.common.StudyResult;
-import play.Logger;
 import play.db.jpa.JPA;
 
 /**
@@ -20,42 +18,15 @@ import play.db.jpa.JPA;
 @Singleton
 public class ComponentResultDao extends AbstractDao {
 
-	private static final String CLASS_NAME = ComponentResultDao.class
-			.getSimpleName();
-
-	/**
-	 * Creates ComponentResult for the given Component and adds it to the given
-	 * StudyResult.
-	 */
-	public ComponentResult create(StudyResult studyResult,
-			Component component) {
-		ComponentResult componentResult = new ComponentResult(component);
-		componentResult.setStudyResult(studyResult);
+	public void create(ComponentResult componentResult) {
 		persist(componentResult);
-		studyResult.addComponentResult(componentResult);
-		merge(studyResult);
-		merge(componentResult);
-		return componentResult;
 	}
 
 	public void update(ComponentResult componentResult) {
 		merge(componentResult);
 	}
 
-	/**
-	 * Remove ComponentResult form its StudyResult and then remove itself.
-	 */
 	public void remove(ComponentResult componentResult) {
-		StudyResult studyResult = componentResult.getStudyResult();
-		if (studyResult != null) {
-			studyResult.removeComponentResult(componentResult);
-			merge(studyResult);
-		} else {
-			Logger.error(CLASS_NAME + ".remove: StudyResult is null - "
-					+ "but a ComponentResult always belongs to a StudyResult "
-					+ "(ComponentResult's ID is " + componentResult.getId()
-					+ ")");
-		}
 		super.remove(componentResult);
 	}
 

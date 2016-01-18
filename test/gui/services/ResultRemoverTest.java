@@ -42,6 +42,51 @@ public class ResultRemoverTest extends AbstractTest {
 	public void after() throws Exception {
 	}
 
+	private void createTwoStudyResults(Study study)
+			throws ForbiddenReloadException {
+		entityManager.getTransaction().begin();
+		StudyResult studyResult1 = resultCreator.createStudyResult(study,
+				study.getBatchList().get(0), admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult1.setWorker(admin.getWorker());
+		ComponentResult componentResult11 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult11.setData(
+				"First ComponentResult's data of the first StudyResult.");
+		ComponentResult componentResult12 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult12.setData(
+				"Second ComponentResult's data of the first StudyResult.");
+
+		StudyResult studyResult2 = resultCreator.createStudyResult(study,
+				study.getBatchList().get(0), admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult2.setWorker(admin.getWorker());
+		ComponentResult componentResult21 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult21.setData(
+				"First ComponentResult's data of the second StudyResult.");
+		ComponentResult componentResult22 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult1);
+		componentResult22.setData(
+				"Second ComponentResult's data of the second StudyResult.");
+		entityManager.getTransaction().commit();
+	}
+
+	private void createTwoComponentResults(Study study)
+			throws ForbiddenReloadException {
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = resultCreator.createStudyResult(study,
+				study.getBatchList().get(0), admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		// Have to set study manually in test - don't know why
+		study.getFirstComponent().setStudy(study);
+		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
+		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
+		entityManager.getTransaction().commit();
+	}
+
 	@Test
 	public void simpleCheck() {
 		int a = 1 + 1;
@@ -79,20 +124,6 @@ public class ResultRemoverTest extends AbstractTest {
 
 		// Clean-up
 		removeStudy(study);
-	}
-
-	private void createTwoComponentResults(Study study)
-			throws ForbiddenReloadException {
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
-				study.getBatchList().get(0), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		// Have to set study manually in test - don't know why
-		study.getFirstComponent().setStudy(study);
-		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
-		jatosPublixUtils.startComponent(study.getFirstComponent(), studyResult);
-		entityManager.getTransaction().commit();
 	}
 
 	@Test
@@ -151,37 +182,6 @@ public class ResultRemoverTest extends AbstractTest {
 
 		// Clean-up
 		removeStudy(study);
-	}
-
-	private void createTwoStudyResults(Study study)
-			throws ForbiddenReloadException {
-		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = studyResultDao.create(study,
-				study.getBatchList().get(0), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult1.setWorker(admin.getWorker());
-		ComponentResult componentResult11 = jatosPublixUtils
-				.startComponent(study.getFirstComponent(), studyResult1);
-		componentResult11.setData(
-				"First ComponentResult's data of the first StudyResult.");
-		ComponentResult componentResult12 = jatosPublixUtils
-				.startComponent(study.getFirstComponent(), studyResult1);
-		componentResult12.setData(
-				"Second ComponentResult's data of the first StudyResult.");
-
-		StudyResult studyResult2 = studyResultDao.create(study,
-				study.getBatchList().get(0), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult2.setWorker(admin.getWorker());
-		ComponentResult componentResult21 = jatosPublixUtils
-				.startComponent(study.getFirstComponent(), studyResult1);
-		componentResult21.setData(
-				"First ComponentResult's data of the second StudyResult.");
-		ComponentResult componentResult22 = jatosPublixUtils
-				.startComponent(study.getFirstComponent(), studyResult1);
-		componentResult22.setData(
-				"Second ComponentResult's data of the second StudyResult.");
-		entityManager.getTransaction().commit();
 	}
 
 	@Test

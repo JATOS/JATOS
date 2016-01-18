@@ -136,7 +136,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Remove the last component (so we can import it again later on)
 		entityManager.getTransaction().begin();
-		componentDao.remove(study, study.getLastComponent());
+		componentService.remove(study.getLastComponent());
 		entityManager.getTransaction().commit();
 
 		// Check that the last component is removed

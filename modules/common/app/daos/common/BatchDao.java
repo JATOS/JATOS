@@ -1,7 +1,5 @@
 package daos.common;
 
-import java.util.UUID;
-
 import javax.inject.Singleton;
 
 import models.common.Batch;
@@ -16,9 +14,6 @@ import play.db.jpa.JPA;
 public class BatchDao extends AbstractDao {
 
 	public void create(Batch batch) {
-		if (batch.getUuid() == null) {
-			batch.setUuid(UUID.randomUUID().toString());
-		}
 		persist(batch);
 	}
 

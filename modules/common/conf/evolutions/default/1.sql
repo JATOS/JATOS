@@ -12,6 +12,7 @@ CREATE TABLE `Batch` (
   `study_id` bigint(20) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `uuid` varchar(255) NOT NULL,
+  `batchList_order` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 
@@ -74,6 +75,7 @@ CREATE TABLE `Study` (
 CREATE TABLE `StudyResult` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `abortMsg` varchar(255) DEFAULT NULL,
+  `batch_id` bigint(20) DEFAULT NULL,
   `confirmationCode` varchar(255) DEFAULT NULL,
   `endDate` datetime DEFAULT NULL,
   `errorMsg` varchar(255) DEFAULT NULL,
@@ -85,7 +87,6 @@ CREATE TABLE `StudyResult` (
   `worker_id` bigint(20) DEFAULT NULL,
   `groupResultHistory_id` bigint(20) DEFAULT NULL,
   `studyResultList_order` int(11) DEFAULT NULL,
-   `batch_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 
@@ -133,15 +134,15 @@ ALTER TABLE `GroupResult` ADD CONSTRAINT `FK_g1hsnkt6f7jp8ulpne7h87pi1` FOREIGN 
 ALTER TABLE `Study` ADD UNIQUE KEY `UK_k65c7qp8ndhaqllkeeianjrpc` (`uuid`);
 
 ALTER TABLE `StudyResult` ADD KEY `FK_2vbvsrpwxwnqbd0rud8kfr9ur` (`groupResult_id`);
-ALTER TABLE `StudyResult` ADD KEY `FK_iiln24n58g3b1mxx3vupmg36h` (`study_id`);
-ALTER TABLE `StudyResult` ADD KEY `FK_dggkq2gf4lsibvfxqrc25r8m6` (`worker_id`);
 ALTER TABLE `StudyResult` ADD KEY `FK_7052aavudt8sm5b6a3lhqn4uu` (`groupResultHistory_id`);
 ALTER TABLE `StudyResult` ADD KEY `FK_lsp7qm39v4t18he9jbgy4b1w5` (`batch_id`);
-ALTER TABLE `StudyResult` ADD CONSTRAINT `FK_7052aavudt8sm5b6a3lhqn4uu` FOREIGN KEY (`groupResultHistory_id`) REFERENCES `GroupResult` (`id`);
-ALTER TABLE `StudyResult` ADD CONSTRAINT `FK_2vbvsrpwxwnqbd0rud8kfr9ur` FOREIGN KEY (`groupResult_id`) REFERENCES `GroupResult` (`id`);
+ALTER TABLE `StudyResult` ADD KEY `FK_iiln24n58g3b1mxx3vupmg36h` (`study_id`);
+ALTER TABLE `StudyResult` ADD KEY `FK_dggkq2gf4lsibvfxqrc25r8m6` (`worker_id`);
 ALTER TABLE `StudyResult` ADD CONSTRAINT `FK_dggkq2gf4lsibvfxqrc25r8m6` FOREIGN KEY (`worker_id`) REFERENCES `Worker` (`id`);
 ALTER TABLE `StudyResult` ADD CONSTRAINT `FK_iiln24n58g3b1mxx3vupmg36h` FOREIGN KEY (`study_id`) REFERENCES `Study` (`id`);
 ALTER TABLE `StudyResult` ADD CONSTRAINT `FK_lsp7qm39v4t18he9jbgy4b1w5` FOREIGN KEY (`batch_id`) REFERENCES `Batch` (`id`);
+ALTER TABLE `StudyResult` ADD CONSTRAINT `FK_7052aavudt8sm5b6a3lhqn4uu` FOREIGN KEY (`groupResultHistory_id`) REFERENCES `GroupResult` (`id`);
+ALTER TABLE `StudyResult` ADD CONSTRAINT `FK_2vbvsrpwxwnqbd0rud8kfr9ur` FOREIGN KEY (`groupResult_id`) REFERENCES `GroupResult` (`id`);
 
 ALTER TABLE `StudyUserMap` ADD KEY `FK_d3uknug3vjrsetf527b7uplcd` (`user_email`);
 ALTER TABLE `StudyUserMap` ADD KEY `FK_povwnfi99xfcfiyloh0ufv7hb` (`study_id`);

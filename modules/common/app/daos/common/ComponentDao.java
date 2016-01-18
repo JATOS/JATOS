@@ -1,17 +1,13 @@
 package daos.common;
 
 import java.util.List;
-import java.util.UUID;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import models.common.Component;
-import models.common.ComponentResult;
 import models.common.Study;
-import models.common.StudyResult;
 import play.db.jpa.JPA;
 
 /**
@@ -22,33 +18,7 @@ import play.db.jpa.JPA;
 @Singleton
 public class ComponentDao extends AbstractDao {
 
-	private final ComponentResultDao componentResultDao;
-
-	@Inject
-	ComponentDao(ComponentResultDao componentResultDao) {
-		this.componentResultDao = componentResultDao;
-	}
-
-	/**
-	 * Persist Component and add it to the given Study.
-	 */
-	public void create(Study study, Component component) {
-		if (component.getUuid() == null) {
-			component.setUuid(UUID.randomUUID().toString());
-		}
-		component.setStudy(study);
-		study.addComponent(component);
-		persist(component);
-		merge(study);
-	}
-
-	/**
-	 * Persist Component.
-	 */
 	public void create(Component component) {
-		if (component.getUuid() == null) {
-			component.setUuid(UUID.randomUUID().toString());
-		}
 		persist(component);
 	}
 
@@ -64,22 +34,11 @@ public class ComponentDao extends AbstractDao {
 		merge(component);
 	}
 
-	/**
-	 * Remove Component: Remove it from the given study, remove all its
-	 * ComponentResults, and remove the component itself.
-	 */
+	public void remove(Component component) {
+		super.remove(component);
+	}
+
 	public void remove(Study study, Component component) {
-		// Remove component from study
-		study.removeComponent(component);
-		merge(study);
-		// Remove component's ComponentResults
-		for (ComponentResult componentResult : componentResultDao
-				.findAllByComponent(component)) {
-			StudyResult studyResult = componentResult.getStudyResult();
-			studyResult.removeComponentResult(componentResult);
-			merge(studyResult);
-			remove(componentResult);
-		}
 		super.remove(component);
 	}
 

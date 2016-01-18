@@ -6,15 +6,16 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.common.User;
-import play.data.validation.ValidationError;
-import utils.common.HashUtils;
 import controllers.gui.Authentication;
 import daos.common.UserDao;
-import exceptions.gui.ForbiddenException;
+import daos.common.worker.WorkerDao;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.gui.RequestScope;
+import models.common.User;
+import models.common.workers.JatosWorker;
+import play.data.validation.ValidationError;
+import utils.common.HashUtils;
 
 /**
  * Service class mostly for Users controller. Handles everything around User.
@@ -29,10 +30,12 @@ public class UserService {
 	public static final String ADMIN_NAME = "Admin";
 
 	private final UserDao userDao;
+	private final WorkerDao workerDao;
 
 	@Inject
-	UserService(UserDao userDao) {
+	UserService(UserDao userDao, WorkerDao workerDao) {
 		this.userDao = userDao;
+		this.workerDao = workerDao;
 	}
 
 	/**
@@ -53,24 +56,6 @@ public class UserService {
 	 */
 	public User retrieveLoggedInUser() {
 		return (User) RequestScope.get(Authentication.LOGGED_IN_USER);
-	}
-
-	/**
-	 * Throws an Exception in case the user isn't equal to the loggedInUser.
-	 */
-	public void checkUserLoggedIn(User user, User loggedInUser)
-			throws ForbiddenException {
-		if (!user.equals(loggedInUser)) {
-			throw new ForbiddenException(
-					MessagesStrings.userMustBeLoggedInToSeeProfile(user));
-		}
-	}
-
-	public User createAdmin() {
-		String passwordHash = HashUtils.getHashMDFive(ADMIN_PASSWORD);
-		User adminUser = new User(ADMIN_EMAIL, ADMIN_NAME, passwordHash);
-		userDao.create(adminUser);
-		return adminUser;
 	}
 
 	public List<ValidationError> validateNewUser(User newUser, String password,
@@ -100,7 +85,7 @@ public class UserService {
 		return errorList;
 	}
 
-	public void checkPasswords(String password, String passwordRepeat,
+	private void checkPasswords(String password, String passwordRepeat,
 			List<ValidationError> errorList) {
 
 		// Check for non empty passwords
@@ -118,19 +103,30 @@ public class UserService {
 		}
 	}
 
+	public User createAndPersistAdmin() {
+		User adminUser = new User(ADMIN_EMAIL, ADMIN_NAME);
+		createAndPersistUser(adminUser, ADMIN_PASSWORD);
+		return adminUser;
+	}
+
 	/**
-	 * Creates a user, sets password hash and persists it.
+	 * Creates a user, sets password hash and persists him. Creates and persists
+	 * an JatosWorker for the user.
 	 */
-	public void createUser(User newUser, String password) {
+	public void createAndPersistUser(User user, String password) {
 		String passwordHash = HashUtils.getHashMDFive(password);
-		newUser.setPasswordHash(passwordHash);
-		userDao.create(newUser);
+		user.setPasswordHash(passwordHash);
+		JatosWorker worker = new JatosWorker(user);
+		workerDao.create(worker);
+		user.setWorker(worker);
+		userDao.create(user);
+		workerDao.update(worker);
 	}
 
 	/**
 	 * Change password hash and persist user.
 	 */
-	public void changePasswordHash(User user, String newPasswordHash) {
+	public void updatePasswordHash(User user, String newPasswordHash) {
 		user.setPasswordHash(newPasswordHash);
 		userDao.update(user);
 	}

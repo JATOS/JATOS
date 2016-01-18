@@ -38,7 +38,7 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 		batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
@@ -55,7 +55,7 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 		batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		// State of study has no influence. Personal multiple workers can do
 		// studies multiple times

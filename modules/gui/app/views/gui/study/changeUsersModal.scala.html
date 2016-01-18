@@ -27,7 +27,7 @@ $('#studyToolbar').on('click', '#changeUsersLink', function() {
 		success: function(response) {
 			removeWarnings("#changeUsersModal");
 			removeFormErrors("#changeUsersModal");
-			clearForm("#changeUsersForm");
+			$('#changeUsersModal .modal-body').empty();
 			fillChangeUsersForm(response);
 			$('#changeUsersModal').modal('show');
 		},

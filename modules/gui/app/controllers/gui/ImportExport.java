@@ -32,13 +32,11 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
-import services.gui.ComponentService;
+import services.gui.Checker;
 import services.gui.ImportExportService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.ResultDataStringGenerator;
-import services.gui.StudyService;
 import services.gui.UserService;
-import services.gui.WorkerService;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -60,12 +58,10 @@ public class ImportExport extends Controller {
 			DATE_FORMAT_FILE);
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final StudyService studyService;
-	private final ComponentService componentService;
+	private final Checker checker;
 	private final UserService userService;
 	private final ImportExportService importExportService;
 	private final ResultDataStringGenerator resultDataStringGenerator;
-	private final WorkerService workerService;
 	private final IOUtils ioUtils;
 	private final JsonUtils jsonUtils;
 	private final StudyDao studyDao;
@@ -73,22 +69,18 @@ public class ImportExport extends Controller {
 	private final WorkerDao workerDao;
 
 	@Inject
-	ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower, IOUtils ioUtils,
-			JsonUtils jsonUtils, StudyService studyService,
-			ComponentService componentService, UserService userService,
-			ImportExportService importExportService,
+	ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			Checker checker, IOUtils ioUtils, JsonUtils jsonUtils,
+			UserService userService, ImportExportService importExportService,
 			ResultDataStringGenerator resultDataStringGenerator,
-			WorkerService workerService, StudyDao studyDao,
-			ComponentDao componentDao, WorkerDao workerDao) {
+			StudyDao studyDao, ComponentDao componentDao, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.checker = checker;
 		this.jsonUtils = jsonUtils;
 		this.ioUtils = ioUtils;
-		this.studyService = studyService;
-		this.componentService = componentService;
 		this.userService = userService;
 		this.importExportService = importExportService;
 		this.resultDataStringGenerator = resultDataStringGenerator;
-		this.workerService = workerService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.workerDao = workerDao;
@@ -169,7 +161,7 @@ public class ImportExport extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -207,9 +199,8 @@ public class ImportExport extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			componentService.checkStandardForComponents(studyId, componentId,
-					component);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForComponents(studyId, componentId, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -246,8 +237,8 @@ public class ImportExport extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		ObjectNode json = null;
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			studyService.checkStudyLocked(study);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 
 			FilePart filePart = request().body().asMultipartFormData()
 					.getFile(Component.COMPONENT);
@@ -274,9 +265,10 @@ public class ImportExport extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			studyService.checkStudyLocked(study);
-			String tempComponentFileName = session(ImportExportService.SESSION_TEMP_COMPONENT_FILE);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
+			String tempComponentFileName = session(
+					ImportExportService.SESSION_TEMP_COMPONENT_FILE);
 			importExportService.importComponentConfirmed(study,
 					tempComponentFileName);
 		} catch (ForbiddenException | IOException | BadRequestException e) {
@@ -309,7 +301,8 @@ public class ImportExport extends Controller {
 		try {
 			resultDataAsStr = resultDataStringGenerator
 					.fromListOfStudyResultIds(studyResultIds, loggedInUser);
-		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
+		} catch (ForbiddenException | BadRequestException
+				| NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		prepareResponseForExport();
@@ -333,7 +326,7 @@ public class ImportExport extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -371,7 +364,8 @@ public class ImportExport extends Controller {
 			resultDataAsStr = resultDataStringGenerator
 					.fromListOfComponentResultIds(componentResultIds,
 							loggedInUser);
-		} catch (ForbiddenException | BadRequestException | NotFoundException e) {
+		} catch (ForbiddenException | BadRequestException
+				| NotFoundException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		prepareResponseForExport();
@@ -385,8 +379,8 @@ public class ImportExport extends Controller {
 	 * component and study.
 	 */
 	@Transactional
-	public Result exportDataOfAllComponentResults(Long studyId, Long componentId)
-			throws JatosGuiException {
+	public Result exportDataOfAllComponentResults(Long studyId,
+			Long componentId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".exportDataOfAllComponentResults: studyId "
 				+ studyId + ", " + "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
@@ -397,17 +391,16 @@ public class ImportExport extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			componentService.checkStandardForComponents(studyId, componentId,
-					component);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForComponents(studyId, componentId, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		String resultDataAsStr = null;
 		try {
-			resultDataAsStr = resultDataStringGenerator.forComponent(
-					loggedInUser, component);
+			resultDataAsStr = resultDataStringGenerator
+					.forComponent(loggedInUser, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -433,7 +426,7 @@ public class ImportExport extends Controller {
 		Worker worker = workerDao.findById(workerId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			workerService.checkWorker(worker, workerId);
+			checker.checkWorker(worker, workerId);
 		} catch (BadRequestException e) {
 			jatosGuiExceptionThrower.throwRedirect(e,
 					controllers.gui.routes.Home.home());

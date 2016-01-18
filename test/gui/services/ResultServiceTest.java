@@ -106,7 +106,7 @@ public class ResultServiceTest extends AbstractTest {
 				.getComponentResults(idList);
 
 		// Must not throw an exception
-		resultService.checkComponentResults(componentResultList, admin, true);
+		checker.checkComponentResults(componentResultList, admin, true);
 
 		// Clean-up
 		removeStudy(study);
@@ -127,8 +127,7 @@ public class ResultServiceTest extends AbstractTest {
 		// Check results with wrong user
 		User testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 		try {
-			resultService.checkComponentResults(componentResultList, testUser,
-					true);
+			checker.checkComponentResults(componentResultList, testUser, true);
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage()).isEqualTo(MessagesStrings.studyNotUser(
 					testUser.getName(), testUser.getEmail(), study.getId(),
@@ -158,12 +157,11 @@ public class ResultServiceTest extends AbstractTest {
 
 		// Must not throw an exception since we tell it not to check for locked
 		// study
-		resultService.checkComponentResults(componentResultList, admin, false);
+		checker.checkComponentResults(componentResultList, admin, false);
 
 		// Must throw an exception since we told it to check for locked study
 		try {
-			resultService.checkComponentResults(componentResultList, admin,
-					true);
+			checker.checkComponentResults(componentResultList, admin, true);
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage())
 					.isEqualTo(MessagesStrings.studyLocked(study.getId()));
@@ -186,7 +184,7 @@ public class ResultServiceTest extends AbstractTest {
 				.getStudyResults(idList);
 
 		// Must not throw an exception
-		resultService.checkStudyResults(studyResultList, admin, true);
+		checker.checkStudyResults(studyResultList, admin, true);
 
 		// Clean-up
 		removeStudy(study);
@@ -211,11 +209,11 @@ public class ResultServiceTest extends AbstractTest {
 
 		// Must not throw an exception since we tell it not to check for locked
 		// study
-		resultService.checkStudyResults(studyResultList, admin, false);
+		checker.checkStudyResults(studyResultList, admin, false);
 
 		// Must throw an exception since we told it to check for locked study
 		try {
-			resultService.checkStudyResults(studyResultList, admin, true);
+			checker.checkStudyResults(studyResultList, admin, true);
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage())
 					.isEqualTo(MessagesStrings.studyLocked(study.getId()));
@@ -245,7 +243,7 @@ public class ResultServiceTest extends AbstractTest {
 	private void createTwoComponentResults(Study study)
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(study,
+		StudyResult studyResult = resultCreator.createStudyResult(study,
 				study.getBatchList().get(0), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
@@ -335,11 +333,11 @@ public class ResultServiceTest extends AbstractTest {
 
 	private void createTwoStudyResults(Study study) {
 		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = studyResultDao.create(study,
+		StudyResult studyResult1 = resultCreator.createStudyResult(study,
 				study.getBatchList().get(0), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
-		StudyResult studyResult2 = studyResultDao.create(study,
+		StudyResult studyResult2 = resultCreator.createStudyResult(study,
 				study.getBatchList().get(0), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult2.setWorker(admin.getWorker());

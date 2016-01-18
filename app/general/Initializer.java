@@ -78,7 +78,7 @@ public class Initializer {
 		jpa.withTransaction(() -> {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			if (admin == null) {
-				userService.createAdmin();
+				userService.createAndPersistAdmin();
 			}
 		});
 	}

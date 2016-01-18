@@ -10,10 +10,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
 
+import com.google.common.collect.Lists;
+
+import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Batch;
@@ -41,19 +43,22 @@ public class StudyService {
 	private final BatchService batchService;
 	private final ComponentService componentService;
 	private final StudyDao studyDao;
+	private final BatchDao batchDao;
 	private final UserDao userDao;
 	private final IOUtils ioUtils;
 
 	@Inject
-	StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao, UserDao userDao,
+	StudyService(BatchService batchService, ComponentService componentService,
+			StudyDao studyDao, BatchDao batchDao, UserDao userDao,
 			IOUtils ioUtils) {
 		this.batchService = batchService;
 		this.componentService = componentService;
 		this.studyDao = studyDao;
+		this.batchDao = batchDao;
 		this.userDao = userDao;
 		this.ioUtils = ioUtils;
 	}
-	
+
 	/**
 	 * Clones the given Study. Does not clone id, uuid, or date. Generates a new
 	 * UUID for the clone. Copies the corresponding study assets. Does NOT
@@ -70,10 +75,12 @@ public class StudyService {
 		clone.setJsonData(study.getJsonData());
 		clone.setLocked(false);
 		clone.setGroupStudy(study.isGroupStudy());
-		
+
 		// Clone each batch
 		for (Batch batch : study.getBatchList()) {
-			clone.addBatch(batchService.clone(batch));
+			Batch batchClone = batchService.clone(batch);
+			batchClone.setStudy(clone);
+			clone.addBatch(batchClone);
 		}
 
 		// Clone each component
@@ -133,34 +140,10 @@ public class StudyService {
 		}
 		study.getUserList().clear();
 		for (User user : userList) {
-			studyDao.addUser(study, user);
-		}
-	}
-
-	/**
-	 * Throws an ForbiddenException if a study is locked.
-	 */
-	public void checkStudyLocked(Study study) throws ForbiddenException {
-		if (study.isLocked()) {
-			String errorMsg = MessagesStrings.studyLocked(study.getId());
-			throw new ForbiddenException(errorMsg);
-		}
-	}
-
-	/**
-	 * Checks the study and throws an Exception in case of a problem.
-	 */
-	public void checkStandardForStudy(Study study, Long studyId, User user)
-			throws ForbiddenException, BadRequestException {
-		if (study == null) {
-			String errorMsg = MessagesStrings.studyNotExist(studyId);
-			throw new BadRequestException(errorMsg);
-		}
-		// Check that the user is a user of the study
-		if (!study.hasUser(user)) {
-			String errorMsg = MessagesStrings.studyNotUser(user.getName(),
-					user.getEmail(), studyId, study.getTitle());
-			throw new ForbiddenException(errorMsg);
+			study.addUser(user);
+			user.addStudy(study);
+			studyDao.update(study);
+			userDao.update(user);
 		}
 	}
 
@@ -182,15 +165,13 @@ public class StudyService {
 			throw new BadRequestException(
 					MessagesStrings.COULDNT_CHANGE_POSITION_OF_COMPONENT);
 		} catch (IndexOutOfBoundsException e) {
-			throw new BadRequestException(
-					MessagesStrings.studyReorderUnknownPosition(newPosition,
-							study.getId()));
+			throw new BadRequestException(MessagesStrings
+					.studyReorderUnknownPosition(newPosition, study.getId()));
 		}
 	}
 
 	/**
-	 * Binds study properties from a edit/create study request onto a
-	 * Study.
+	 * Binds study properties from a edit/create study request onto a Study.
 	 */
 	public Study bindToStudy(StudyProperties studyProperties) {
 		Study study = new Study();
@@ -200,20 +181,43 @@ public class StudyService {
 	}
 
 	/**
-	 * Create and persist a Study with given properties.
+	 * Create and persist a Study with given properties. Creates and persists
+	 * the default Batch. If the study has components already it persists them
+	 * too. Adds the given user to the users of this study.
 	 */
-	public Study createStudy(User loggedInUser, StudyProperties studyProperties) {
+	public Study createAndPersistStudy(User loggedInUser,
+			StudyProperties studyProperties) {
 		Study study = bindToStudy(studyProperties);
-		return createStudy(loggedInUser, study);
+		return createAndPersistStudy(loggedInUser, study);
 	}
 
 	/**
-	 * Persist the given Study and create the Batch.
+	 * Persists the given Study. Creates and persists the default Batch. If the
+	 * study has components already it persists them too. Adds the given user to
+	 * the users of this study.
 	 */
-	public Study createStudy(User loggedInUser, Study study) {
-		Batch batch = batchService.createDefaultBatch(loggedInUser);
-		study.addBatch(batch);
-		studyDao.create(study, loggedInUser);
+	public Study createAndPersistStudy(User loggedInUser, Study study) {
+		if (study.getUuid() == null) {
+			study.setUuid(UUID.randomUUID().toString());
+		}
+
+		// Create default batch
+		Batch defaultBatch = batchService.createDefaultBatch(study,
+				loggedInUser);
+		study.addBatch(defaultBatch);
+		defaultBatch.setStudy(study);
+		batchDao.create(defaultBatch);
+
+		// Add user
+		study.addUser(loggedInUser);
+		loggedInUser.addStudy(study);
+		userDao.update(loggedInUser);
+
+		studyDao.create(study);
+
+		// Create components
+		study.getComponentList().forEach(
+				c -> componentService.createAndPersistComponent(study, c));
 		return study;
 	}
 
@@ -300,13 +304,26 @@ public class StudyService {
 	public void validate(Study study) throws ValidationException {
 		StudyProperties studyProperties = bindToProperties(study);
 		if (studyProperties.validate() != null) {
-			Logger.warn(CLASS_NAME
-					+ ".validate: "
+			Logger.warn(CLASS_NAME + ".validate: "
 					+ studyProperties.validate().stream()
 							.map(ValidationError::message)
 							.collect(Collectors.joining(", ")));
 			throw new ValidationException(MessagesStrings.STUDY_INVALID);
 		}
+	}
+
+	/**
+	 * Removes the given study, its components, component results, study
+	 * results, group results and batches
+	 */
+	public void remove(Study study) {
+		// Remove all study's components and their ComponentResults
+		Lists.newArrayList(study.getComponentList()).forEach(componentService::remove);
+
+		// Remove all study's batches and their StudyResults and GroupResults
+		Lists.newArrayList(study.getBatchList()).forEach(batchService::remove);
+
+		studyDao.remove(study);
 	}
 
 }

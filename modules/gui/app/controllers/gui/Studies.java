@@ -37,7 +37,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
-import services.gui.ComponentService;
+import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.StudyService;
 import services.gui.UserService;
@@ -58,10 +58,9 @@ public class Studies extends Controller {
 
 	private static final String CLASS_NAME = Studies.class.getSimpleName();
 
-	private final JsonUtils jsonUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
+	private final Checker checker;
 	private final StudyService studyService;
-	private final ComponentService componentService;
 	private final UserService userService;
 	private final WorkerService workerService;
 	private final BreadcrumbsService breadcrumbsService;
@@ -70,28 +69,29 @@ public class Studies extends Controller {
 	private final ComponentDao componentDao;
 	private final StudyResultDao studyResultDao;
 	private final ComponentResultDao componentResultDao;
+	private final JsonUtils jsonUtils;
 	private final IOUtils ioUtils;
 
 	@Inject
-	Studies(UserDao userDao, JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService, ComponentService componentService,
-			UserService userService, WorkerService workerService,
-			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-			ComponentDao componentDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao,
-			ComponentResultDao componentResultDao, IOUtils ioUtils) {
-		this.userDao = userDao;
+	Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
+			StudyService studyService, UserService userService,
+			WorkerService workerService, BreadcrumbsService breadcrumbsService,
+			StudyDao studyDao, ComponentDao componentDao,
+			StudyResultDao studyResultDao, UserDao userDao,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			IOUtils ioUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
+		this.checker = checker;
 		this.studyService = studyService;
-		this.componentService = componentService;
 		this.userService = userService;
 		this.workerService = workerService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
-		this.jsonUtils = jsonUtils;
 		this.studyResultDao = studyResultDao;
 		this.componentResultDao = componentResultDao;
+		this.userDao = userDao;
+		this.jsonUtils = jsonUtils;
 		this.ioUtils = ioUtils;
 	}
 
@@ -142,7 +142,8 @@ public class Studies extends Controller {
 			return badRequest(form.errorsAsJson());
 		}
 
-		Study study = studyService.createStudy(loggedInUser, studyProperties);
+		Study study = studyService.createAndPersistStudy(loggedInUser,
+				studyProperties);
 		return ok(study.getId().toString());
 	}
 
@@ -171,8 +172,8 @@ public class Studies extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			studyService.checkStudyLocked(study);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -226,13 +227,13 @@ public class Studies extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			studyService.checkStudyLocked(study);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		studyDao.remove(study);
+		studyService.remove(study);
 		try {
 			ioUtils.removeStudyAssetsDir(study.getDirName());
 		} catch (IOException e) {
@@ -254,14 +255,14 @@ public class Studies extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
 		try {
 			Study clone = studyService.clone(study);
-			studyService.createStudy(loggedInUser, clone);
+			studyService.createAndPersistStudy(loggedInUser, clone);
 		} catch (IOException e) {
 			jatosGuiExceptionThrower.throwAjax(e.getMessage(),
 					Http.Status.INTERNAL_SERVER_ERROR);
@@ -280,7 +281,7 @@ public class Studies extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -298,7 +299,7 @@ public class Studies extends Controller {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -328,10 +329,9 @@ public class Studies extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			studyService.checkStudyLocked(study);
-			componentService.checkStandardForComponents(studyId, componentId,
-					component);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
+			checker.checkStandardForComponents(studyId, componentId, component);
 			studyService.changeComponentPosition(newPosition, study, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
@@ -443,7 +443,7 @@ public class Studies extends Controller {
 	private void checkStandardForStudy(Long studyId, Study study,
 			User loggedInUser) throws JatosGuiException {
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwHome(e);
 		}

@@ -17,6 +17,7 @@ import models.common.User;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import services.publix.PublixUtils;
+import services.publix.ResultCreator;
 
 /**
  * JatosPublix' implementation of PublixUtils (studies or components started via
@@ -31,12 +32,13 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	private final UserDao userDao;
 
 	@Inject
-	JatosPublixUtils(JatosErrorMessages errorMessages, UserDao userDao,
+	JatosPublixUtils(ResultCreator resultCreator,
+			JatosErrorMessages errorMessages, UserDao userDao,
 			StudyDao studyDao, StudyResultDao studyResultDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
 			WorkerDao workerDao, BatchDao batchDao) {
-		super(	errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao, batchDao);
+		super(resultCreator, errorMessages, studyDao, studyResultDao,
+				componentDao, componentResultDao, workerDao, batchDao);
 		this.errorMessages = errorMessages;
 		this.userDao = userDao;
 	}

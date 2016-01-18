@@ -16,6 +16,7 @@ import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
+import services.publix.ResultCreator;
 
 /**
  * GeneralSinglePublix' implementation of PublixUtils
@@ -28,12 +29,13 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	private static final String COOKIE_DELIMITER = ":";
 
 	@Inject
-	GeneralSinglePublixUtils(GeneralSingleErrorMessages errorMessages,
-			StudyDao studyDao, StudyResultDao studyResultDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao, BatchDao batchDao) {
-		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao, batchDao);
+	GeneralSinglePublixUtils(ResultCreator resultCreator,
+			GeneralSingleErrorMessages errorMessages, StudyDao studyDao,
+			StudyResultDao studyResultDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, WorkerDao workerDao,
+			BatchDao batchDao) {
+		super(resultCreator, errorMessages, studyDao, studyResultDao,
+				componentDao, componentResultDao, workerDao, batchDao);
 	}
 
 	@Override

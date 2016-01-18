@@ -6,8 +6,6 @@ import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import daos.common.AbstractDao;
-import models.common.StudyResult;
-import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import play.db.jpa.JPA;
 
@@ -22,24 +20,12 @@ public class WorkerDao extends AbstractDao {
 	public void create(Worker worker) {
 		persist(worker);
 	}
+	
+	public void update(Worker worker) {
+		merge(worker);
+	}
 
-	/**
-	 * Removes a Worker including all its StudyResults and all their
-	 * ComponentResults.
-	 */
 	public void remove(Worker worker) {
-		// Don't remove JATOS' own workers
-		if (worker instanceof JatosWorker) {
-			return;
-		}
-
-		// Remove all studyResults and their componentResults
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			studyResult.getComponentResultList().forEach(this::remove);
-			remove(studyResult);
-		}
-
-		// Remove worker
 		super.remove(worker);
 	}
 

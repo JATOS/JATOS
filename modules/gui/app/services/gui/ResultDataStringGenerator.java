@@ -5,17 +5,17 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.ComponentResultDao;
+import daos.common.StudyResultDao;
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
 import models.common.workers.Worker;
-import daos.common.ComponentResultDao;
-import daos.common.StudyResultDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 
 /**
  * Service class that generates Strings from ComponentResult's or StudyResult's
@@ -26,13 +26,15 @@ import exceptions.gui.NotFoundException;
 @Singleton
 public class ResultDataStringGenerator {
 
+	private final Checker checker;
 	private final ResultService resultService;
 	private final ComponentResultDao componentResultDao;
 	private final StudyResultDao studyResultDao;
 
 	@Inject
-	ResultDataStringGenerator(ResultService resultService,
+	ResultDataStringGenerator(Checker checker, ResultService resultService,
 			ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
+		this.checker = checker;
 		this.resultService = resultService;
 		this.componentResultDao = componentResultDao;
 		this.studyResultDao = studyResultDao;
@@ -47,7 +49,7 @@ public class ResultDataStringGenerator {
 			throws ForbiddenException, BadRequestException {
 		List<StudyResult> allowedStudyResultList = resultService
 				.getAllowedStudyResultList(user, worker);
-		resultService.checkStudyResults(allowedStudyResultList, user, false);
+		checker.checkStudyResults(allowedStudyResultList, user, false);
 		return resultService.studyResultDataToString(allowedStudyResultList);
 	}
 
@@ -59,7 +61,7 @@ public class ResultDataStringGenerator {
 			throws ForbiddenException, BadRequestException {
 		List<StudyResult> studyResultList = studyResultDao
 				.findAllByStudy(study);
-		resultService.checkStudyResults(studyResultList, user, false);
+		checker.checkStudyResults(studyResultList, user, false);
 		return resultService.studyResultDataToString(studyResultList);
 	}
 
@@ -71,7 +73,7 @@ public class ResultDataStringGenerator {
 			throws ForbiddenException, BadRequestException {
 		List<ComponentResult> componentResultList = componentResultDao
 				.findAllByComponent(component);
-		resultService.checkComponentResults(componentResultList, user, false);
+		checker.checkComponentResults(componentResultList, user, false);
 		return resultService.componentResultDataToString(componentResultList);
 	}
 
@@ -85,7 +87,7 @@ public class ResultDataStringGenerator {
 				.extractResultIds(studyResultIds);
 		List<StudyResult> studyResultList = resultService
 				.getStudyResults(studyResultIdList);
-		resultService.checkStudyResults(studyResultList, user, false);
+		checker.checkStudyResults(studyResultList, user, false);
 		return resultService.studyResultDataToString(studyResultList);
 	}
 
@@ -100,7 +102,7 @@ public class ResultDataStringGenerator {
 				.extractResultIds(componentResultIds);
 		List<ComponentResult> componentResultList = resultService
 				.getComponentResults(componentResultIdList);
-		resultService.checkComponentResults(componentResultList, user, false);
+		checker.checkComponentResults(componentResultList, user, false);
 		return resultService.componentResultDataToString(componentResultList);
 	}
 

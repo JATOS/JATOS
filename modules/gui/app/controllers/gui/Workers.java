@@ -6,6 +6,14 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import daos.common.StudyDao;
+import daos.common.worker.WorkerDao;
+import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.JatosGuiException;
+import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
@@ -15,19 +23,11 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
+import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
-import services.gui.StudyService;
 import services.gui.UserService;
 import services.gui.WorkerService;
 import utils.common.JsonUtils;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import daos.common.StudyDao;
-import daos.common.worker.WorkerDao;
-import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.JatosGuiException;
-import general.common.MessagesStrings;
 
 /**
  * Controller that handles all worker actions in JATOS' GUI
@@ -42,7 +42,7 @@ public class Workers extends Controller {
 	private static final String CLASS_NAME = Workers.class.getSimpleName();
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final StudyService studyService;
+	private final Checker checker;
 	private final UserService userService;
 	private final WorkerService workerService;
 	private final BreadcrumbsService breadcrumbsService;
@@ -51,12 +51,12 @@ public class Workers extends Controller {
 	private final WorkerDao workerDao;
 
 	@Inject
-	Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService, UserService userService,
-			WorkerService workerService, BreadcrumbsService breadcrumbsService,
-			StudyDao studyDao, JsonUtils jsonUtils, WorkerDao workerDao) {
+	Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
+			UserService userService, WorkerService workerService,
+			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
+			JsonUtils jsonUtils, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-		this.studyService = studyService;
+		this.checker = checker;
 		this.userService = userService;
 		this.workerService = workerService;
 		this.breadcrumbsService = breadcrumbsService;
@@ -76,7 +76,7 @@ public class Workers extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Worker worker = workerDao.findById(workerId);
 		try {
-			workerService.checkWorker(worker, workerId);
+			checker.checkWorker(worker, workerId);
 		} catch (BadRequestException e) {
 			jatosGuiExceptionThrower.throwRedirect(e,
 					controllers.gui.routes.Home.home());
@@ -105,14 +105,14 @@ public class Workers extends Controller {
 		Worker worker = workerDao.findById(workerId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
-			workerService.checkWorker(worker, workerId);
+			checker.checkWorker(worker, workerId);
 		} catch (BadRequestException e) {
 			jatosGuiExceptionThrower.throwRedirect(e,
 					controllers.gui.routes.Home.home());
 		}
 
 		try {
-			workerService.checkRemovalAllowed(worker, loggedInUser);
+			checker.checkRemovalAllowed(worker, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -134,7 +134,7 @@ public class Workers extends Controller {
 
 		String dataAsJson = null;
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 
 			Set<Worker> workerSet = workerService.retrieveWorkers(study);
 			dataAsJson = jsonUtils.allWorkersForUI(workerSet);

@@ -23,12 +23,14 @@ import models.common.StudyResult;
 @Singleton
 public class GroupService {
 
+	private final ResultCreator resultCreator;
 	private final StudyResultDao studyResultDao;
 	private final GroupResultDao groupResultDao;
 
 	@Inject
-	GroupService(StudyResultDao studyResultDao,
+	GroupService(ResultCreator resultCreator, StudyResultDao studyResultDao,
 			GroupResultDao groupResultDao) {
+		this.resultCreator = resultCreator;
 		this.studyResultDao = studyResultDao;
 		this.groupResultDao = groupResultDao;
 	}
@@ -58,8 +60,7 @@ public class GroupService {
 		// new one.
 		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(batch);
 		if (groupResult == null) {
-			groupResult = new GroupResult(batch);
-			groupResultDao.create(groupResult);
+			resultCreator.createGroupResult(batch);
 		}
 
 		// Add StudyResult to GroupResult and vice versa

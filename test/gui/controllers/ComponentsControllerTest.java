@@ -14,14 +14,17 @@ import java.util.Map;
 import org.apache.http.HttpHeaders;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import controllers.gui.Components;
 import controllers.gui.Users;
 import general.AbstractTest;
+import general.common.MessagesStrings;
 import models.common.Study;
 import models.gui.ComponentProperties;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
-import services.gui.BreadcrumbsService;
+import utils.common.JsonUtils;
 
 /**
  * Testing actions of controller.Components.
@@ -52,8 +55,8 @@ public class ComponentsControllerTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
 						controllers.gui.routes.Components
-								.runComponent(studyClone.getId(), -1l,
-										studyClone.getComponent(1).getId())
+								.runComponent(studyClone.getId(),
+										studyClone.getComponent(1).getId(), -1l)
 								.url());
 		Result result = route(request);
 
@@ -85,8 +88,8 @@ public class ComponentsControllerTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
 						controllers.gui.routes.Components
-								.runComponent(studyClone.getId(), -1l,
-										studyClone.getComponent(1).getId())
+								.runComponent(studyClone.getId(),
+										studyClone.getComponent(1).getId(), -1l)
 								.url());
 		Result result = route(request);
 
@@ -110,11 +113,37 @@ public class ComponentsControllerTest extends AbstractTest {
 										studyClone.getFirstComponent().getId())
 								.url());
 		Result result = route(request);
-		// TODO check JSON
 
 		assertThat(result.status()).isEqualTo(OK);
-		assertThat(contentAsString(result))
-				.contains(BreadcrumbsService.NEW_COMPONENT);
+		assertThat(result.charset()).isEqualTo("utf-8");
+		assertThat(result.contentType()).isEqualTo("application/json");
+
+		// Check properties in JSON
+		JsonNode node = JsonUtils.OBJECTMAPPER
+				.readTree(contentAsString(result));
+		assertThat(node.get(ComponentProperties.TITLE).toString()).isEqualTo(
+				"\"" + studyClone.getFirstComponent().getTitle() + "\"");
+		assertThat(node.get(ComponentProperties.ACTIVE).toString()).isEqualTo(
+				String.valueOf(studyClone.getFirstComponent().isActive()));
+		assertThat(node.get(ComponentProperties.COMMENTS).toString()).isEqualTo(
+				"\"" + studyClone.getFirstComponent().getComments() + "\"");
+		assertThat(node.get(ComponentProperties.HTML_FILE_PATH).toString())
+				.isEqualTo(
+						"\"" + studyClone.getFirstComponent().getHtmlFilePath()
+								+ "\"");
+		assertThat(node.get(ComponentProperties.JSON_DATA).toString()).contains(
+				"This component displays text and reacts to key presses.");
+		assertThat(node.get(ComponentProperties.RELOADABLE).toString())
+				.isEqualTo(String.valueOf(
+						studyClone.getFirstComponent().isReloadable()));
+		assertThat(node.get(ComponentProperties.UUID).toString()).isEqualTo(
+				"\"" + studyClone.getFirstComponent().getUuid() + "\"");
+		assertThat(node.get(ComponentProperties.ID).toString()).isEqualTo(
+				String.valueOf(studyClone.getFirstComponent().getId()));
+		assertThat(node.get("studyId").toString()).isEqualTo(String
+				.valueOf(studyClone.getFirstComponent().getStudy().getId()));
+		assertThat(node.get("date").toString()).isEqualTo(
+				String.valueOf(studyClone.getFirstComponent().getDate()));
 
 		// Clean up
 		removeStudy(studyClone);
@@ -131,47 +160,49 @@ public class ComponentsControllerTest extends AbstractTest {
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentProperties.TITLE, "Title Test");
 		form.put(ComponentProperties.RELOADABLE, "true");
-		form.put(ComponentProperties.HTML_FILE_PATH, "html_file_path_test.html");
+		form.put(ComponentProperties.HTML_FILE_PATH,
+				"html_file_path_test.html");
 		form.put(ComponentProperties.COMMENTS, "Comments test test.");
 		form.put(ComponentProperties.JSON_DATA, "{}");
-		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE);
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Components
 						.submitCreated(studyClone.getId()).url());
 		Result result = route(request);
 
-		assertEquals(SEE_OTHER, result.status());
+		assertEquals(OK, result.status());
 
 		// Clean up
 		removeStudy(studyClone);
 	}
-	
-	//TODO callSubmitEdited
+
+	// TODO callSubmitEdited
 
 	/**
 	 * Checks action with route Components.submit. After the call the component
 	 * itself should be shown.
 	 */
 	@Test
-	public void callSubmitAndRun() throws Exception {
+	public void callSubmitEdited() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentProperties.TITLE, "Title Test");
 		form.put(ComponentProperties.RELOADABLE, "true");
-		form.put(ComponentProperties.HTML_FILE_PATH, "html_file_path_test.html");
+		form.put(ComponentProperties.HTML_FILE_PATH,
+				"html_file_path_test.html");
 		form.put(ComponentProperties.COMMENTS, "Comments test test.");
 		form.put(ComponentProperties.JSON_DATA, "{}");
-		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE_AND_RUN);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Components
-						.submitCreated(studyClone.getId()).url());
+				.bodyForm(form)
+				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
+						controllers.gui.routes.Components
+								.submitEdited(studyClone.getId(),
+										studyClone.getFirstComponent().getId())
+								.url());
 		Result result = route(request);
 
-		assertEquals(SEE_OTHER, result.status());
-		assertThat(result.headers().get(HttpHeaders.LOCATION)).contains("show");
+		assertEquals(OK, result.status());
 
 		// Clean up
 		removeStudy(studyClone);
@@ -187,8 +218,8 @@ public class ComponentsControllerTest extends AbstractTest {
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentProperties.TITLE, "");
 		form.put(ComponentProperties.RELOADABLE, "true");
-		form.put(ComponentProperties.HTML_FILE_PATH, "");
-		form.put(ComponentProperties.COMMENTS, "");
+		form.put(ComponentProperties.HTML_FILE_PATH, "%.test");
+		form.put(ComponentProperties.COMMENTS, "Comments test <i>.");
 		form.put(ComponentProperties.JSON_DATA, "{");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE_AND_RUN);
 		RequestBuilder request = new RequestBuilder().method("POST")
@@ -197,8 +228,19 @@ public class ComponentsControllerTest extends AbstractTest {
 						.submitCreated(studyClone.getId()).url());
 		Result result = route(request);
 
-		assertThat(contentAsString(result)).contains(
-				"Problems deserializing JSON data string: invalid JSON format");
+		assertThat(result.contentType()).isEqualTo("application/json");
+		JsonNode node = JsonUtils.OBJECTMAPPER
+				.readTree(contentAsString(result));
+		assertThat(node.get(ComponentProperties.TITLE).toString())
+				.isEqualTo("[\"" + MessagesStrings.MISSING_TITLE + "\"]");
+		assertThat(node.get(ComponentProperties.HTML_FILE_PATH).toString())
+				.isEqualTo(
+						"[\"" + MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY
+								+ "\"]");
+		assertThat(node.get(ComponentProperties.COMMENTS).toString())
+				.isEqualTo("[\"" + MessagesStrings.NO_HTML_ALLOWED + "\"]");
+		assertThat(node.get(ComponentProperties.JSON_DATA).toString())
+				.isEqualTo("[\"" + MessagesStrings.INVALID_JSON_FORMAT + "\"]");
 
 		removeStudy(studyClone);
 	}

@@ -13,6 +13,7 @@ import exceptions.publix.ForbiddenPublixException;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import services.publix.PublixUtils;
+import services.publix.ResultCreator;
 
 /**
  * MTPublix' implementation of PublixUtils (studies started via MTurk).
@@ -23,11 +24,12 @@ import services.publix.PublixUtils;
 public class MTPublixUtils extends PublixUtils<MTWorker> {
 
 	@Inject
-	MTPublixUtils(MTErrorMessages errorMessages, StudyDao studyDao,
-			StudyResultDao studyResultDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, WorkerDao workerDao, BatchDao batchDao) {
-		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao, batchDao);
+	MTPublixUtils(ResultCreator resultCreator, MTErrorMessages errorMessages,
+			StudyDao studyDao, StudyResultDao studyResultDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			WorkerDao workerDao, BatchDao batchDao) {
+		super(resultCreator, errorMessages, studyDao, studyResultDao,
+				componentDao, componentResultDao, workerDao, batchDao);
 	}
 
 	@Override

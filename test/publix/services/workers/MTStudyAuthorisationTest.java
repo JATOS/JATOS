@@ -46,9 +46,9 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			ForbiddenPublixException {
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
-		addWorker(mtWorker);
+		persistWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		addWorker(mtSandboxWorker);
+		persistWorker(mtSandboxWorker);
 
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
@@ -72,9 +72,9 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			ForbiddenPublixException {
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
-		addWorker(mtWorker);
+		persistWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		addWorker(mtSandboxWorker);
+		persistWorker(mtSandboxWorker);
 
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
@@ -108,9 +108,9 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			IOException, ForbiddenPublixException {
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
-		addWorker(mtWorker);
+		persistWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		addWorker(mtSandboxWorker);
+		persistWorker(mtSandboxWorker);
 
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
@@ -136,9 +136,9 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		Batch batch = study.getBatchList().get(0);
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
-		addWorker(mtWorker);
+		persistWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		addWorker(mtSandboxWorker);
+		persistWorker(mtSandboxWorker);
 		batch.removeAllowedWorkerType(MTWorker.WORKER_TYPE);
 		batch.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
 		addStudy(study);
@@ -175,7 +175,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		Batch batch = study.getBatchList().get(0);
 		MTWorker mtWorker = new MTWorker();
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		addWorker(mtWorker);
+		persistWorker(mtWorker);
 		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		batch.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
 		addStudy(study);

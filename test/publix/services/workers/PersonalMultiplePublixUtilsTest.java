@@ -43,7 +43,7 @@ public class PersonalMultiplePublixUtilsTest
 	public void checkRetrieveTypedWorker()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		PersonalMultipleWorker retrievedWorker = publixUtils
 				.retrieveTypedWorker(worker.getId().toString());

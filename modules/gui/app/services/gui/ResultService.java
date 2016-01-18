@@ -8,18 +8,15 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import models.common.Component;
-import models.common.ComponentResult;
-import models.common.Study;
-import models.common.StudyResult;
-import models.common.User;
-import models.common.workers.Worker;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
+import models.common.ComponentResult;
+import models.common.StudyResult;
+import models.common.User;
+import models.common.workers.Worker;
 
 /**
  * Service class around ComponentResults and StudyResults. It's used by
@@ -30,16 +27,12 @@ import general.common.MessagesStrings;
 @Singleton
 public class ResultService {
 
-	private final ComponentService componentService;
-	private final StudyService studyService;
 	private final ComponentResultDao componentResultDao;
 	private final StudyResultDao studyResultDao;
 
 	@Inject
-	ResultService(ComponentService componentService, StudyService studyService,
-			ComponentResultDao componentResultDao, StudyResultDao studyResultDao) {
-		this.componentService = componentService;
-		this.studyService = studyService;
+	ResultService(ComponentResultDao componentResultDao,
+			StudyResultDao studyResultDao) {
 		this.componentResultDao = componentResultDao;
 		this.studyResultDao = studyResultDao;
 	}
@@ -71,66 +64,6 @@ public class ResultService {
 	}
 
 	/**
-	 * Checks a list of ComponentResult. Checks each ComponentResult whether the
-	 * belonging Study and Component are fine (checkStandard). It also checks
-	 * whether the study is locked.
-	 * 
-	 * @param componentResultList
-	 *            A list of ComponentResults
-	 * @param user
-	 *            The study that corresponds to the results must have this user
-	 *            otherwise ForbiddenException will be thrown.
-	 * @param studyMustNotBeLocked
-	 *            If true the study that corresponds to the results must not be
-	 *            locked and it will throw an ForbiddenException.
-	 * @throws ForbiddenException
-	 * @throws BadRequestException
-	 */
-	public void checkComponentResults(
-			List<ComponentResult> componentResultList, User user,
-			boolean studyMustNotBeLocked) throws ForbiddenException,
-			BadRequestException {
-		for (ComponentResult componentResult : componentResultList) {
-			Component component = componentResult.getComponent();
-			Study study = component.getStudy();
-			studyService.checkStandardForStudy(study, study.getId(), user);
-			componentService.checkStandardForComponents(study.getId(),
-					component.getId(), component);
-			if (studyMustNotBeLocked) {
-				studyService.checkStudyLocked(study);
-			}
-		}
-	}
-
-	/**
-	 * Checks a list of StudyResult. Checks each StudyResult whether the
-	 * belonging Study is fine (checkStandard). It also checks whether the study
-	 * is locked.
-	 * 
-	 * @param studyResultList
-	 *            A list of StudyResults
-	 * @param user
-	 *            The study that corresponds to the results must have this user
-	 *            otherwise ForbiddenException will be thrown.
-	 * @param studyMustNotBeLocked
-	 *            If true the study that corresponds to the results must not be
-	 *            locked and it will throw an ForbiddenException.
-	 * @throws ForbiddenException
-	 * @throws BadRequestException
-	 */
-	public void checkStudyResults(List<StudyResult> studyResultList,
-			User user, boolean studyMustNotBeLocked)
-			throws ForbiddenException, BadRequestException {
-		for (StudyResult studyResult : studyResultList) {
-			Study study = studyResult.getStudy();
-			studyService.checkStandardForStudy(study, study.getId(), user);
-			if (studyMustNotBeLocked) {
-				studyService.checkStudyLocked(study);
-			}
-		}
-	}
-
-	/**
 	 * Gets the corresponding ComponentResult for a list of IDs. Throws an
 	 * exception if the ComponentResult doesn't exist.
 	 */
@@ -141,9 +74,8 @@ public class ResultService {
 			ComponentResult componentResult = componentResultDao
 					.findById(componentResultId);
 			if (componentResult == null) {
-				throw new NotFoundException(
-						MessagesStrings
-								.componentResultNotExist(componentResultId));
+				throw new NotFoundException(MessagesStrings
+						.componentResultNotExist(componentResultId));
 			}
 			componentResultList.add(componentResult);
 		}
@@ -188,8 +120,8 @@ public class ResultService {
 		Iterator<StudyResult> iterator = studyResultList.iterator();
 		while (iterator.hasNext()) {
 			StudyResult studyResult = iterator.next();
-			String componentResultData = componentResultDataToString(studyResult
-					.getComponentResultList());
+			String componentResultData = componentResultDataToString(
+					studyResult.getComponentResultList());
 			sb.append(componentResultData);
 			if (iterator.hasNext()) {
 				sb.append("\n");

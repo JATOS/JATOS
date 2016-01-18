@@ -97,7 +97,7 @@ public class LockedStudyControllerTest extends AbstractTest {
 
 		// Create some results
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = studyResultDao.create(studyClone,
+		StudyResult studyResult = resultCreator.createStudyResult(studyClone,
 				studyClone.getBatchList().get(0), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());

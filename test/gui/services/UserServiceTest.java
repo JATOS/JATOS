@@ -62,7 +62,7 @@ public class UserServiceTest extends AbstractTest {
 	@Test
 	public void testCheckUserLoggedIn() {
 		try {
-			userService.checkUserLoggedIn(admin, admin);
+			checker.checkUserLoggedIn(admin, admin);
 		} catch (ForbiddenException e) {
 			Fail.fail();
 		}
@@ -70,7 +70,7 @@ public class UserServiceTest extends AbstractTest {
 		User testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
 
 		try {
-			userService.checkUserLoggedIn(testUser, admin);
+			checker.checkUserLoggedIn(testUser, admin);
 			Fail.fail();
 		} catch (ForbiddenException e) {
 			assertThat(e.getMessage()).isEqualTo(

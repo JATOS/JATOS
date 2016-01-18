@@ -11,13 +11,9 @@ import daos.common.BatchDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import general.common.MessagesStrings;
 import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
-import models.common.User;
-import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
@@ -31,56 +27,16 @@ import play.data.validation.ValidationError;
 @Singleton
 public class WorkerService {
 
-	private final StudyService studyService;
 	private final StudyResultDao studyResultDao;
 	private final WorkerDao workerDao;
 	private final BatchDao batchDao;
 
 	@Inject
-	WorkerService(StudyService studyService, StudyResultDao studyResultDao,
+	WorkerService(StudyResultDao studyResultDao,
 			WorkerDao workerDao, BatchDao batchDao) {
-		this.studyService = studyService;
 		this.studyResultDao = studyResultDao;
 		this.workerDao = workerDao;
 		this.batchDao = batchDao;
-	}
-
-	/**
-	 * Throws a Exception in case the worker doesn't exist. Distinguishes
-	 * between normal and Ajax request.
-	 */
-	public void checkWorker(Worker worker, Long workerId)
-			throws BadRequestException {
-		if (worker == null) {
-			throw new BadRequestException(
-					MessagesStrings.workerNotExist(workerId));
-		}
-	}
-
-	/**
-	 * Check whether the removal of this worker is allowed.
-	 * 
-	 * @throws BadRequestException
-	 * @throws ForbiddenException
-	 */
-	public void checkRemovalAllowed(Worker worker, User loggedInUser)
-			throws ForbiddenException, BadRequestException {
-		// JatosWorker associated to a JATOS user must not be removed
-		if (worker instanceof JatosWorker) {
-			JatosWorker maWorker = (JatosWorker) worker;
-			String errorMsg = MessagesStrings.removeJatosWorkerNotAllowed(
-					worker.getId(), maWorker.getUser().getName(),
-					maWorker.getUser().getEmail());
-			throw new ForbiddenException(errorMsg);
-		}
-
-		// Check for every study if removal is allowed
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			Study study = studyResult.getStudy();
-			studyService.checkStandardForStudy(study, study.getId(),
-					loggedInUser);
-			studyService.checkStudyLocked(study);
-		}
 	}
 
 	/**
@@ -96,12 +52,12 @@ public class WorkerService {
 	/**
 	 * Creates, validates and persists a PersonalSingleWorker.
 	 */
-	public PersonalSingleWorker createPersonalSingleWorker(String comment,
-			Batch batch) throws BadRequestException {
+	public PersonalSingleWorker createAndPersistPersonalSingleWorker(
+			String comment, Batch batch) throws BadRequestException {
 		PersonalSingleWorker worker = new PersonalSingleWorker(comment);
 		validateWorker(worker);
 		workerDao.create(worker);
-		batch.addAllowedWorker(worker);
+		batch.addWorker(worker);
 		batchDao.update(batch);
 		return worker;
 	}
@@ -110,12 +66,12 @@ public class WorkerService {
 	 * Creates, validates and persists a PersonalMultipleWorker (worker for a
 	 * Personal Multiple Run).
 	 */
-	public PersonalMultipleWorker createPersonalMultipleWorker(String comment,
-			Batch batch) throws BadRequestException {
+	public PersonalMultipleWorker createAndPersistPersonalMultipleWorker(
+			String comment, Batch batch) throws BadRequestException {
 		PersonalMultipleWorker worker = new PersonalMultipleWorker(comment);
 		validateWorker(worker);
 		workerDao.create(worker);
-		batch.addAllowedWorker(worker);
+		batch.addWorker(worker);
 		batchDao.update(batch);
 		return worker;
 	}

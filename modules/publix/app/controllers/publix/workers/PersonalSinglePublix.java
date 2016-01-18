@@ -19,6 +19,7 @@ import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ChannelService;
 import services.publix.GroupService;
+import services.publix.ResultCreator;
 import services.publix.workers.PersonalSingleErrorMessages;
 import services.publix.workers.PersonalSinglePublixUtils;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
@@ -42,10 +43,11 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 
 	private final PersonalSinglePublixUtils publixUtils;
 	private final PersonalSingleStudyAuthorisation studyAuthorisation;
+	private final ResultCreator resultCreator;
 
 	@Inject
 	PersonalSinglePublix(JPAApi jpa, PersonalSinglePublixUtils publixUtils,
-			PersonalSingleStudyAuthorisation studyAuthorisation,
+			PersonalSingleStudyAuthorisation studyAuthorisation, ResultCreator resultCreator,
 			GroupService groupService, ChannelService channelService,
 			PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
@@ -55,6 +57,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 				jsonUtils, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
+		this.resultCreator = resultCreator;
 	}
 
 	@Override
@@ -73,7 +76,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		session(BATCH_ID, batch.getId().toString());
 
 		publixUtils.finishAllPriorStudyResults(worker, study);
-		studyResultDao.create(study, batch, worker);
+		resultCreator.createStudyResult(study, batch, worker);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

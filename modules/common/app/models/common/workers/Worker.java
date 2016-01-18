@@ -51,6 +51,8 @@ public abstract class Worker {
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderColumn(name = "studyResultList_order")
 	@JoinColumn(name = "worker_id")
+	// Not using mappedBy because of
+	// http://stackoverflow.com/questions/2956171/jpa-2-0-ordercolumn-annotation-in-hibernate-3-5
 	private List<StudyResult> studyResultList = new ArrayList<>();
 
 	public Worker() {

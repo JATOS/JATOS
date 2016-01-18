@@ -25,9 +25,9 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import services.gui.Checker;
 import services.gui.ComponentService;
 import services.gui.JatosGuiExceptionThrower;
-import services.gui.StudyService;
 import services.gui.UserService;
 import utils.common.JsonUtils;
 
@@ -48,7 +48,7 @@ public class Components extends Controller {
 	private static final String CLASS_NAME = Components.class.getSimpleName();
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final StudyService studyService;
+	private final Checker checker;
 	private final ComponentService componentService;
 	private final UserService userService;
 	private final StudyDao studyDao;
@@ -56,11 +56,11 @@ public class Components extends Controller {
 
 	@Inject
 	Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			StudyService studyService, ComponentService componentService,
+			Checker checker, ComponentService componentService,
 			UserService userService, StudyDao studyDao,
 			ComponentDao componentDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-		this.studyService = studyService;
+		this.checker = checker;
 		this.componentService = componentService;
 		this.userService = userService;
 		this.studyDao = studyDao;
@@ -81,13 +81,12 @@ public class Components extends Controller {
 		Study study = studyDao.findById(studyId);
 		Component component = componentDao.findById(componentId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwHome(e);
 		}
 		try {
-			componentService.checkStandardForComponents(studyId, componentId,
-					component);
+			checker.checkStandardForComponents(studyId, componentId, component);
 		} catch (BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
@@ -126,7 +125,7 @@ public class Components extends Controller {
 		}
 		ComponentProperties componentProperties = form.get();
 
-		Component component = componentService.createComponent(study,
+		Component component = componentService.createAndPersistComponent(study,
 				componentProperties);
 		return ok(component.getId().toString());
 	}
@@ -144,9 +143,8 @@ public class Components extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			componentService.checkStandardForComponents(studyId, componentId,
-					component);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForComponents(studyId, componentId, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -232,7 +230,7 @@ public class Components extends Controller {
 				loggedInUser, component);
 
 		Component clone = componentService.cloneWholeComponent(component);
-		componentDao.create(study, clone);
+		componentService.createAndPersistComponent(study, clone);
 		return ok(RequestScopeMessaging.getAsJson());
 	}
 
@@ -253,7 +251,7 @@ public class Components extends Controller {
 		checkStudyAndLockedAndComponent(studyId, componentId, study,
 				loggedInUser, component);
 
-		componentDao.remove(study, component);
+		componentService.remove(component);
 		RequestScopeMessaging
 				.success(MessagesStrings.COMPONENT_DELETED_BUT_FILES_NOT);
 		return ok(RequestScopeMessaging.getAsJson());
@@ -262,8 +260,8 @@ public class Components extends Controller {
 	private void checkStudyAndLocked(Long studyId, Study study,
 			User loggedInUser) throws JatosGuiException {
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			studyService.checkStudyLocked(study);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
@@ -273,10 +271,9 @@ public class Components extends Controller {
 			Study study, User loggedInUser, Component component)
 					throws JatosGuiException {
 		try {
-			studyService.checkStandardForStudy(study, studyId, loggedInUser);
-			studyService.checkStudyLocked(study);
-			componentService.checkStandardForComponents(studyId, componentId,
-					component);
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
+			checker.checkStandardForComponents(studyId, componentId, component);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}

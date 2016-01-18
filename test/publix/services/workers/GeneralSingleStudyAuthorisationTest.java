@@ -47,7 +47,7 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 		batch.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 		addStudyResult(study, batch, worker, StudyState.STARTED);
 
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
@@ -87,7 +87,7 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 				.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		GeneralSingleWorker worker = new GeneralSingleWorker();
-		addWorker(worker);
+		persistWorker(worker);
 
 		addStudyResult(study, batch, worker, StudyState.FINISHED);
 

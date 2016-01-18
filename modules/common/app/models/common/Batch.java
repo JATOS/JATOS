@@ -11,9 +11,11 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 import models.common.workers.Worker;
@@ -26,10 +28,9 @@ import utils.common.JsonUtils;
  * Defines the constrains regarding workers for a batch of a study, e.g. which
  * workers are allowed, how many etc.
  * 
- * @TODO
- * An active member is a member who joined a group and is still member of this
- * group. minActiveMembers, maxActiveMemberLimited, maxActiveMembers,
- * maxTotalMemberLimited and maxTotalMembers are properties for groups.
+ * @TODO An active member is a member who joined a group and is still member of
+ *       this group. minActiveMembers, maxActiveMemberLimited, maxActiveMembers,
+ *       maxTotalMemberLimited and maxTotalMembers are properties for groups.
  * 
  * @author Kristian Lange (2015)
  */
@@ -48,7 +49,15 @@ public class Batch {
 	@Column(unique = false, nullable = false)
 	@JsonView(JsonUtils.JsonForIO.class)
 	private String uuid;
-	
+
+	/**
+	 * Study this batch belongs to
+	 */
+	@JsonIgnore
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "study_id")
+	private Study study;
+
 	/**
 	 * Title of the batch
 	 */
@@ -59,7 +68,7 @@ public class Batch {
 	 * Only active (if true) batches can be used.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private boolean active;
+	private boolean active = true;
 
 	/**
 	 * Minimum number of workers/members in one group of this batch that are
@@ -94,12 +103,14 @@ public class Batch {
 	private Integer maxTotalWorkers = null;
 
 	/**
-	 * Set of workers that are allowed to run in this batch.
+	 * Set of workers that created in this batch. Workers can be created before
+	 * the study starts (Jatos, PM or PS) or created on-the-fly after the study
+	 * started (MT, GS) - but all appear in this list.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class })
 	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "batch_id")
-	private Set<Worker> allowedWorkers = new HashSet<>();
+	private Set<Worker> workerList = new HashSet<>();
 
 	/**
 	 * Set of worker types that are allowed to run in this batch. If the worker
@@ -119,13 +130,21 @@ public class Batch {
 	public Long getId() {
 		return this.id;
 	}
-	
+
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
 
 	public String getUuid() {
 		return this.uuid;
+	}
+
+	public void setStudy(Study study) {
+		this.study = study;
+	}
+
+	public Study getStudy() {
+		return this.study;
 	}
 
 	public String getTitle() {
@@ -196,24 +215,24 @@ public class Batch {
 		return allowedWorkerTypes.contains(workerType);
 	}
 
-	public void setAllowedWorkers(Set<Worker> allowedWorkers) {
-		this.allowedWorkers = allowedWorkers;
+	public void setWorkerList(Set<Worker> workerList) {
+		this.workerList = workerList;
 	}
 
-	public Set<Worker> getAllowedWorkers() {
-		return this.allowedWorkers;
+	public Set<Worker> getWorkerList() {
+		return this.workerList;
 	}
 
-	public void addAllowedWorker(Worker worker) {
-		allowedWorkers.add(worker);
+	public void addWorker(Worker worker) {
+		workerList.add(worker);
 	}
 
-	public void removeAllowedWorker(Worker worker) {
-		allowedWorkers.remove(worker);
+	public void removeWorker(Worker worker) {
+		workerList.remove(worker);
 	}
 
-	public boolean hasAllowedWorker(Worker worker) {
-		return allowedWorkers.contains(worker);
+	public boolean hasWorker(Worker worker) {
+		return workerList.contains(worker);
 	}
 
 	@Override

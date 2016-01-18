@@ -13,6 +13,7 @@ import exceptions.publix.ForbiddenPublixException;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import services.publix.PublixUtils;
+import services.publix.ResultCreator;
 
 /**
  * PersonalSinglePublix' implementation of PublixUtils
@@ -20,16 +21,17 @@ import services.publix.PublixUtils;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalSinglePublixUtils extends
-		PublixUtils<PersonalSingleWorker> {
+public class PersonalSinglePublixUtils
+		extends PublixUtils<PersonalSingleWorker> {
 
 	@Inject
-	PersonalSinglePublixUtils(PersonalSingleErrorMessages errorMessages,
-			StudyDao studyDao, StudyResultDao studyResultDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao, BatchDao batchDao) {
-		super(errorMessages, studyDao, studyResultDao, componentDao,
-				componentResultDao, workerDao, batchDao);
+	PersonalSinglePublixUtils(ResultCreator resultCreator,
+			PersonalSingleErrorMessages errorMessages, StudyDao studyDao,
+			StudyResultDao studyResultDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, WorkerDao workerDao,
+			BatchDao batchDao) {
+		super(resultCreator, errorMessages, studyDao, studyResultDao,
+				componentDao, componentResultDao, workerDao, batchDao);
 	}
 
 	@Override
