@@ -1,7 +1,5 @@
 package models.common.legacy;
 
-import general.common.MessagesStrings;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,7 +8,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.FetchType;
@@ -23,21 +20,21 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+
+import general.common.MessagesStrings;
 import models.common.Component;
 import models.common.User;
 import models.common.workers.JatosWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
-
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
-
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Old model kept for unmarshaling JSON of old versions!

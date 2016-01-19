@@ -61,6 +61,8 @@ CREATE TABLE `GroupResult` (
   `endDate` datetime DEFAULT NULL,
   `groupState` int(11) DEFAULT NULL,
   `startDate` datetime DEFAULT NULL,
+  `groupSessionData` longtext,
+  `groupSessionVersion` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8;
 
@@ -86,7 +88,7 @@ CREATE TABLE `StudyResult` (
   `endDate` datetime DEFAULT NULL,
   `errorMsg` varchar(255) DEFAULT NULL,
   `startDate` datetime DEFAULT NULL,
-  `studySessionData` longtext ,
+  `studySessionData` longtext,
   `studyState` int(11) DEFAULT NULL,
   `groupResult_id` bigint(20) DEFAULT NULL,
   `study_id` bigint(20) DEFAULT NULL,

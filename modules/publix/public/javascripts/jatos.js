@@ -50,6 +50,15 @@ jatos.groupMembers = [];
  */
 jatos.groupChannels = [];
 /**
+ * Group session data shared in between the group. 
+ */
+jatos.groupSessionData = {};
+/**
+ * Version of the current group session data. This is used to prevent concurrent
+ * changes of the data.
+ */
+var groupSessionVersion;
+/**
  * Group channel WebSocket to exchange messages between workers of a group.
  * Not to be confused with 'jatos.groupChannels'. Accessible only by jatos.js.
  */
@@ -572,6 +581,8 @@ jatos.joinGroup = function(callbacks) {
 		jatos.groupMemberId = null;
 		jatos.groupMembers = [];
 		jatos.groupChannels = [];
+		jatos.groupSessionData = null;
+		groupSessionVersion = null;
 		if (callbacks.onClose) {
 			callbacks.onClose();
 		}
@@ -595,11 +606,23 @@ function updateGroupVars(groupMsg) {
 		// Group member ID is equal to study result ID
 		jatos.groupMemberId = jatos.studyResultId;
 	}
-	if (groupMsg.members) {
-		jatos.groupMembers = jatos.jQuery.parseJSON(groupMsg.members);
-	}
-	if (groupMsg.channels) {
-		jatos.groupChannels = jatos.jQuery.parseJSON(groupMsg.channels);
+	try {
+		if (groupMsg.members) {
+			jatos.groupMembers = jatos.jQuery.parseJSON(groupMsg.members);
+		}
+		if (groupMsg.channels) {
+			jatos.groupChannels = jatos.jQuery.parseJSON(groupMsg.channels);
+		}
+		if (groupMsg.groupSessionData) {
+			jatos.groupSessionData = jatos.jQuery.parseJSON(groupMsg.groupSessionData);
+		}
+		if (groupMsg.groupSessionVersion) {
+			groupSessionVersion = jatos.jQuery.parseJSON(groupMsg.groupSessionVersion);
+		}
+	} catch (error) {
+		if (onJatosError) {
+			onJatosError(error);
+		}
 	}
 }
 
@@ -639,7 +662,29 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 			 && callbacks.onMemberLeave) {
 		callbacks.onMemberLeave(groupMsg.memberId);
 	}
+	
+	if (groupMsg.action == "update" && callbacks.onUpdate) {
+		callbacks.onUpdate(jatos.groupSessionData);
+	}
 }
+
+jatos.setGroupSessionData = function(sessionData) {
+	if (!jQueryExists()) {
+		return;
+	}
+	if (groupChannel && groupChannel.readyState == 1) {
+		var msgObj = {};
+		msgObj.groupSessionData = sessionData;
+		msgObj.groupSessionVersion = groupSessionVersion;
+		try {
+			groupChannel.send(JSON.stringify(msgObj));
+		} catch (error) {
+			if (onJatosError) {
+				onJatosError(error);
+			}
+		}
+	}
+};
 
 /**
  * @return {Boolean} True if the group has reached the minimum amount of active

@@ -2,7 +2,10 @@ package services.publix.akka.actors;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import akka.actor.ActorRef;
@@ -30,10 +33,10 @@ import utils.common.JsonUtils;
  * the actual joining of a GroupResult. This is done prior to creating a
  * GroupDispatcher by the GroupService which persists all data in a GroupResult.
  * 
- * A GroupChannel is only opened after a StudyResult joined a GroupResult,
- * which is done in the GroupService. Group data (e.g. who's member) are
- * persisted in a GroupResult entity. A GroupChannel is closed after the
- * StudyResult left the group.
+ * A GroupChannel is only opened after a StudyResult joined a GroupResult, which
+ * is done in the GroupService. Group data (e.g. who's member) are persisted in
+ * a GroupResult entity. A GroupChannel is closed after the StudyResult left the
+ * group.
  * 
  * A GroupChannel registers in a GroupDispatcher by sending the RegisterChannel
  * message and unregisters by sending a UnregisterChannel message.
@@ -52,7 +55,7 @@ public class GroupDispatcher extends UntypedActor {
 
 	/**
 	 * Contains the members that are handled by this GroupDispatcher. Maps
-	 * StudyResult's IDs to ActorRefs.
+	 * StudyResult's IDs to ActorRefs. It's a one-to-one relationship.
 	 */
 	private final Map<Long, ActorRef> groupChannelMap = new HashMap<>();
 	private final JPAApi jpa;
@@ -87,7 +90,7 @@ public class GroupDispatcher extends UntypedActor {
 	public void onReceive(Object msg) throws Exception {
 		if (msg instanceof GroupMsg) {
 			// We got a GroupMsg from a client
-			dispatchGroupMsg(msg);
+			handleGroupMsg(msg);
 		} else if (msg instanceof Joined) {
 			// A member joined
 			joined(msg);
@@ -108,13 +111,63 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	private void dispatchGroupMsg(Object msg) {
+	/**
+	 * Handle a GroupMsg received from a client. What to do with it depends on
+	 * the JSON inside the GroupMsg, but it always leads to forwarding the
+	 * GroupMsg to other clients.
+	 */
+	private void handleGroupMsg(Object msg) {
 		ObjectNode jsonNode = ((GroupMsg) msg).jsonNode;
-		if (jsonNode.has(GroupMsg.RECIPIENT)) {
+		if (jsonNode.has(GroupMsg.GROUP_SESSION_DATA)) {
+			tellGroupSessionData(jsonNode);
+		} else if (jsonNode.has(GroupMsg.RECIPIENT)) {
 			tellRecipientOnly(msg, jsonNode);
 		} else {
 			tellAllButSender(msg);
 		}
+	}
+
+	private void tellGroupSessionData(ObjectNode jsonNode) {
+		GroupResult groupResult = persistGroupSessionData(jsonNode);
+		if (groupResult != null) {
+			Long studyResultId = getStudyResultByActorRef(sender());
+			tellGroupAction(studyResultId, GroupMsg.UPDATE, groupResult);
+		} else {
+			String errorMsg = "Wrong groupSessionVersion";
+			sendErrorBackToSender(jsonNode, errorMsg);
+		}
+	}
+
+	/**
+	 * Persists the group session data in the GroupResult, but only if the
+	 * stored version is equal to the received one. Returns the GroupResult
+	 * object if this was successful - otherwise null.
+	 */
+	private GroupResult persistGroupSessionData(ObjectNode jsonNode) {
+		Long clientVersion = Long
+				.valueOf(jsonNode.get(GroupMsg.GROUP_SESSION_VERSION).asText());
+		JsonNode newData = jsonNode.get(GroupMsg.GROUP_SESSION_DATA);
+		GroupResult groupResult = getGroupResult(groupResultId);
+
+		if (groupResult != null && clientVersion != null
+				&& groupResult.getGroupSessionVersion().equals(clientVersion)) {
+			groupResult.setGroupSessionData(newData.toString());
+			updateGroupResult(groupResult);
+			return groupResult;
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the study result ID that maps to the given ActorRef.
+	 */
+	public Long getStudyResultByActorRef(ActorRef actorRef) {
+		for (Entry<Long, ActorRef> entry : groupChannelMap.entrySet()) {
+			if (Objects.equals(actorRef, entry.getValue())) {
+				return entry.getKey();
+			}
+		}
+		return null;
 	}
 
 	private void tellRecipientOnly(Object msg, ObjectNode jsonNode) {
@@ -173,6 +226,11 @@ public class GroupDispatcher extends UntypedActor {
 		tellGroupAction(left.studyResultId, GroupMsg.LEFT);
 	}
 
+	/**
+	 * Wrapper around {@link #tellGroupAction(long, String, GroupResult)
+	 * tellGroupAction} but retrieves the GroupResult from the database before
+	 * calling it.
+	 */
 	private void tellGroupAction(long studyResultId, String action) {
 		// The current group data are persisted in a GroupResult entity. The
 		// GroupResult determines who is member of the group - and not
@@ -181,6 +239,23 @@ public class GroupDispatcher extends UntypedActor {
 		if (groupResult == null) {
 			return;
 		}
+		tellGroupAction(studyResultId, action, groupResult);
+	}
+
+	/**
+	 * Creates a new GroupMsg and sends it to all group members. The GroupMsg
+	 * includes a whole bunch of data including the action, all currently open
+	 * channels, the group session data and the group session version.
+	 * 
+	 * @param studyResultId
+	 *            Which group member initiated this action
+	 * @param action
+	 *            The action of the GroupMsg
+	 * @param GroupResult
+	 *            The GroupResult of this group
+	 */
+	private void tellGroupAction(long studyResultId, String action,
+			GroupResult groupResult) {
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(GroupMsg.ACTION, action);
 		objectNode.put(GroupMsg.GROUP_RESULT_ID, groupResultId);
@@ -189,6 +264,10 @@ public class GroupDispatcher extends UntypedActor {
 				String.valueOf(groupResult.getStudyResultList()));
 		objectNode.put(GroupMsg.CHANNELS,
 				String.valueOf(groupChannelMap.keySet()));
+		objectNode.put(GroupMsg.GROUP_SESSION_DATA,
+				groupResult.getGroupSessionData());
+		objectNode.put(GroupMsg.GROUP_SESSION_VERSION,
+				groupResult.getGroupSessionVersion());
 		tellAll(new GroupMsg(objectNode));
 	}
 
@@ -240,6 +319,16 @@ public class GroupDispatcher extends UntypedActor {
 			Logger.error(CLASS_NAME + ".getGroupResult: ", e);
 		}
 		return null;
+	}
+	
+	private void updateGroupResult(GroupResult groupResult) {
+		try {
+			jpa.withTransaction(() -> {
+				groupResultDao.update(groupResult);
+			});
+		} catch (Throwable e) {
+			Logger.error(CLASS_NAME + ".getGroupResult: ", e);
+		}
 	}
 
 }

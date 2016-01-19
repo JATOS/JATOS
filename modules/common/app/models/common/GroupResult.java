@@ -6,11 +6,13 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -44,6 +46,26 @@ public class GroupResult {
 	 * but hey, it's so much nice this way.)
 	 */
 	private GroupState groupState;
+
+	/**
+	 * Temporary, global data storage that can be used via Publix API (from
+	 * JavaScript in the browser) to exchange data in between a group while the
+	 * study is running. All members of this group share the same
+	 * groupSessionData. It will be deleted after the group is finished. It's
+	 * stored as a normal string but jatos.js is converting it into JSON. We use
+	 * versioning to prevent concurrent changes of the data. It's initialised
+	 * with an empty JSON object.
+	 */
+	@Lob
+	private String groupSessionData = "{}";
+
+	/**
+	 * Current version of the groupSessionData. With each change of the data it
+	 * is increased by 1. We use versioning to prevent concurrent changes of the
+	 * data.
+	 */
+	@Column(nullable = false)
+	private Long groupSessionVersion = 1l;
 
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "batch_id")
@@ -104,6 +126,22 @@ public class GroupResult {
 
 	public void setGroupState(GroupState groupState) {
 		this.groupState = groupState;
+	}
+
+	public void setGroupSessionData(String groupSessionData) {
+		this.groupSessionData = groupSessionData;
+	}
+
+	public String getGroupSessionData() {
+		return this.groupSessionData;
+	}
+
+	public Long getGroupSessionVersion() {
+		return groupSessionVersion;
+	}
+
+	public void setGroupSessionVersion(Long groupSessionVersion) {
+		this.groupSessionVersion = groupSessionVersion;
 	}
 
 	public Batch getBatch() {

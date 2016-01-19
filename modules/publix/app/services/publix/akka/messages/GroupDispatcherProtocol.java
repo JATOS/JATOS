@@ -54,18 +54,24 @@ public class GroupDispatcherProtocol {
 	}
 
 	/**
-	 * Message send from one GroupChannel via GroupDispatcher to other
-	 * GroupChannels. A GroupMsg contains a JSON node.
+	 * Message send from one group member via the GroupDispatcher to other group
+	 * members - or from JATOS to all group members. A GroupMsg contains a JSON
+	 * node.
 	 */
 	public static class GroupMsg {
 
 		/**
-		 * JSON variables that can be send in a GroupMsg
+		 * Possible actions
 		 */
 		public static final String JOINED = "joined";
 		public static final String LEFT = "left";
 		public static final String OPENED = "opened";
 		public static final String CLOSED = "closed";
+		public static final String UPDATE = "update";
+		
+		/**
+		 * JSON variables that can be send in a GroupMsg
+		 */
 		public static final String ACTION = "action";
 		public static final String GROUP_RESULT_ID = "groupResultId";
 		public static final String MEMBER_ID = "memberId";
@@ -73,6 +79,8 @@ public class GroupDispatcherProtocol {
 		public static final String CHANNELS = "channels";
 		public static final String RECIPIENT = "recipient";
 		public static final String ERROR = "error";
+		public static final String GROUP_SESSION_DATA = "groupSessionData";
+		public static final String GROUP_SESSION_VERSION = "groupSessionVersion";
 
 		public final ObjectNode jsonNode;
 

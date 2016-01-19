@@ -203,6 +203,7 @@ public class StudyService {
 		if (study.getUuid() == null) {
 			study.setUuid(UUID.randomUUID().toString());
 		}
+		studyDao.create(study);
 
 		// Create default batch
 		Batch defaultBatch = batchService.createDefaultBatch(study,
@@ -216,12 +217,12 @@ public class StudyService {
 		loggedInUser.addStudy(study);
 		userDao.update(loggedInUser);
 
-		studyDao.create(study);
-
 		// Create components
 		study.getComponentList()
 				.forEach(c -> componentService.createComponent(study, c));
 		study.getComponentList().forEach(c -> componentDao.create(c));
+		
+		studyDao.update(study);
 		return study;
 	}
 

@@ -60,7 +60,7 @@ public class GroupService {
 		// new one.
 		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(batch);
 		if (groupResult == null) {
-			resultCreator.createGroupResult(batch);
+			groupResult = resultCreator.createGroupResult(batch);
 		}
 
 		// Add StudyResult to GroupResult and vice versa
