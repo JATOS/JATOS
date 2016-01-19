@@ -143,20 +143,28 @@ public class ComponentService {
 	}
 
 	/**
+	 * Creates but NOT persists the given Component. Generates UUID.
+	 */
+	public Component createComponent(Study study, Component component) {
+		if (component.getUuid() == null) {
+			component.setUuid(UUID.randomUUID().toString());
+		}
+		component.setStudy(study);
+		return component;
+	}
+
+	/**
 	 * Create and persist the given Component. Generates UUID. Updates its
 	 * study.
 	 */
 	public Component createAndPersistComponent(Study study,
 			Component component) {
-		if (component.getUuid() == null) {
-			component.setUuid(UUID.randomUUID().toString());
-		}
-		component.setStudy(study);
+		createComponent(study, component);
 		if (!study.hasComponent(component)) {
 			study.addComponent(component);
-			studyDao.update(study);
 		}
 		componentDao.create(component);
+		studyDao.update(study);
 		return component;
 	}
 

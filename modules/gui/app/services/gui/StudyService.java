@@ -13,6 +13,7 @@ import javax.validation.ValidationException;
 import com.google.common.collect.Lists;
 
 import daos.common.BatchDao;
+import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
@@ -43,17 +44,19 @@ public class StudyService {
 	private final BatchService batchService;
 	private final ComponentService componentService;
 	private final StudyDao studyDao;
+	private final ComponentDao componentDao;
 	private final BatchDao batchDao;
 	private final UserDao userDao;
 	private final IOUtils ioUtils;
 
 	@Inject
 	StudyService(BatchService batchService, ComponentService componentService,
-			StudyDao studyDao, BatchDao batchDao, UserDao userDao,
-			IOUtils ioUtils) {
+			StudyDao studyDao, ComponentDao componentDao, BatchDao batchDao,
+			UserDao userDao, IOUtils ioUtils) {
 		this.batchService = batchService;
 		this.componentService = componentService;
 		this.studyDao = studyDao;
+		this.componentDao = componentDao;
 		this.batchDao = batchDao;
 		this.userDao = userDao;
 		this.ioUtils = ioUtils;
@@ -216,8 +219,9 @@ public class StudyService {
 		studyDao.create(study);
 
 		// Create components
-		study.getComponentList().forEach(
-				c -> componentService.createAndPersistComponent(study, c));
+		study.getComponentList()
+				.forEach(c -> componentService.createComponent(study, c));
+		study.getComponentList().forEach(c -> componentDao.create(c));
 		return study;
 	}
 
@@ -318,7 +322,8 @@ public class StudyService {
 	 */
 	public void remove(Study study) {
 		// Remove all study's components and their ComponentResults
-		Lists.newArrayList(study.getComponentList()).forEach(componentService::remove);
+		Lists.newArrayList(study.getComponentList())
+				.forEach(componentService::remove);
 
 		// Remove all study's batches and their StudyResults and GroupResults
 		Lists.newArrayList(study.getBatchList()).forEach(batchService::remove);
