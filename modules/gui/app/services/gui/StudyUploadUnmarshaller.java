@@ -47,6 +47,7 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		switch (version) {
 		case 0:
 		case 2:
+			// Version 2
 			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr)
 					.findValue(JsonUtils.DATA);
 			StudyV2 studyV2 = JsonUtils.OBJECTMAPPER.treeToValue(node,

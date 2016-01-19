@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -54,15 +53,15 @@ public class GroupResult {
 	 * StudyResult that this GroupResult belongs to as long as this study run is
 	 * not finished. This relationship is bidirectional.
 	 */
-	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.EAGER)
 	@JoinColumn(name = "groupResult_id")
 	private Set<StudyResult> studyResultList = new HashSet<>();
 
 	/**
 	 * StudyResult that this GroupResult belongs to after this study run is
-	 * finished. This relationship is bidirectional.
+	 * finished. This relationship is unidirectional.
 	 */
-	@OneToMany(cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.LAZY)
 	@JoinColumn(name = "groupResultHistory_id")
 	private Set<StudyResult> studyResultHistory = new HashSet<>();
 

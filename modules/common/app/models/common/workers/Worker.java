@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.AttributeOverride;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.Entity;
@@ -18,13 +17,13 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 
-import models.common.StudyResult;
-import play.data.validation.ValidationError;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+
+import models.common.StudyResult;
+import play.data.validation.ValidationError;
 
 /**
  * Abstract model and DB entity of a worker. Workers are doing studies (and
@@ -55,7 +54,7 @@ public abstract class Worker {
 	 * studies. This relationship is bidirectional.
 	 */
 	@JsonIgnore
-	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.LAZY)
 	@OrderColumn(name = "studyResultList_order")
 	@JoinColumn(name = "worker_id")
 	// Not using mappedBy because of

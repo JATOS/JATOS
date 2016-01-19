@@ -55,7 +55,7 @@ public class Batch {
 	 */
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "study_id")
+	@JoinColumn(name = "study_id", insertable=false, updatable=false, nullable=false)
 	private Study study;
 
 	/**

@@ -1,13 +1,10 @@
 package models.common;
 
-import general.common.MessagesStrings;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -15,14 +12,14 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import models.common.workers.JatosWorker;
-
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
-import play.data.validation.ValidationError;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import general.common.MessagesStrings;
+import models.common.workers.JatosWorker;
+import play.data.validation.ValidationError;
 
 /**
  * Model and DB entity of a user.
@@ -51,7 +48,7 @@ public class User {
 	 * Corresponding JatosWorker. This relationship is bidirectional.
 	 */
 	@JsonIgnore
-	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
 	private JatosWorker worker;
 
 	// Password is stored as a hash

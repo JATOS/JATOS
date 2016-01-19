@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -19,12 +18,12 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 
-import models.common.workers.Worker;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+import models.common.workers.Worker;
 
 /**
  * Model and DB entity of a study result.
@@ -101,7 +100,7 @@ public class StudyResult {
 	 * relationship is bidirectional.
 	 */
 	@JsonIgnore
-	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.LAZY)
 	@OrderColumn(name = "componentResultList_order")
 	@JoinColumn(name = "studyResult_id")
 	// Not using mappedBy because of
@@ -110,7 +109,7 @@ public class StudyResult {
 
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "worker_id")
+	@JoinColumn(name = "worker_id", insertable = false, updatable = false, nullable = false)
 	private Worker worker;
 
 	/**

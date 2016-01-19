@@ -142,7 +142,7 @@ public class StudyV2 {
 	 * Ordered list of component of this study
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
-	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.LAZY)
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
 	// Not using mappedBy because of

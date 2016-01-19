@@ -69,8 +69,8 @@ public class ComponentResult {
 	private ComponentState componentState;
 
 	/**
-	 * The Component corresponding to this ComponentResult. This
-	 * relationship is unidirectional.
+	 * The Component corresponding to this ComponentResult. This relationship is
+	 * unidirectional.
 	 */
 	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY)
@@ -78,12 +78,12 @@ public class ComponentResult {
 	private Component component;
 
 	/**
-	 * StudyResult that this ComponentResult belongs to. This
-	 * relationship is bidirectional.
+	 * StudyResult that this ComponentResult belongs to. This relationship is
+	 * bidirectional.
 	 */
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "studyResult_id")
+	@JoinColumn(name = "studyResult_id", insertable = false, updatable = false, nullable = false)
 	private StudyResult studyResult;
 
 	/**

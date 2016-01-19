@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -123,7 +122,7 @@ public class Study {
 	 * bidirectional.
 	 */
 	@JsonView(JsonUtils.JsonForIO.class)
-	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.LAZY)
 	@OrderColumn(name = "componentList_order")
 	@JoinColumn(name = "study_id")
 	// Not using mappedBy because of
@@ -134,7 +133,7 @@ public class Study {
 	 * Ordered list of batches of this study. The relationship is bidirectional.
 	 */
 	@JsonIgnore
-	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.LAZY)
 	@OrderColumn(name = "batchList_order")
 	@JoinColumn(name = "study_id")
 	// Not using mappedBy because of

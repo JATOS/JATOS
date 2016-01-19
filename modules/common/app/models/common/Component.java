@@ -51,7 +51,7 @@ public class Component {
 
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "study_id")
+	@JoinColumn(name = "study_id", insertable = false, updatable = false, nullable = false)
 	private Study study;
 
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
