@@ -5,6 +5,7 @@ import javax.inject.Singleton;
 
 import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix;
+import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
@@ -23,9 +24,9 @@ public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
 	private final JatosErrorMessages errorMessages;
 
 	@Inject
-	JatosStudyAuthorisation(JatosPublixUtils publixUtils,
-			JatosErrorMessages errorMessages) {
-		super(publixUtils, errorMessages);
+	JatosStudyAuthorisation(JatosErrorMessages errorMessages,
+			StudyResultDao studyResultDao) {
+		super(errorMessages, studyResultDao);
 		this.errorMessages = errorMessages;
 	}
 
@@ -33,10 +34,10 @@ public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
 	public void checkWorkerAllowedToStartStudy(JatosWorker worker, Study study,
 			Batch batch) throws ForbiddenPublixException {
 		if (!batch.isActive()) {
-			throw new ForbiddenPublixException(errorMessages
-					.batchInactive(batch.getId()));
+			throw new ForbiddenPublixException(
+					errorMessages.batchInactive(batch.getId()));
 		}
-		checkMaxTotalWorkers(batch);
+		checkMaxTotalWorkers(batch, worker);
 		checkWorkerAllowedToDoStudy(worker, study, batch);
 	}
 

@@ -1,7 +1,6 @@
 package services.publix;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -55,7 +54,8 @@ public abstract class PublixUtils<T extends Worker> {
 	private final WorkerDao workerDao;
 	private final BatchDao batchDao;
 
-	public PublixUtils(ResultCreator resultCreator, PublixErrorMessages errorMessages, StudyDao studyDao,
+	public PublixUtils(ResultCreator resultCreator,
+			PublixErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
 			ComponentResultDao componentResultDao, WorkerDao workerDao,
 			BatchDao batchDao) {
@@ -609,17 +609,6 @@ public abstract class PublixUtils<T extends Worker> {
 					errorMessages.batchNotExist(batchId));
 		}
 		return batch;
-	}
-
-	/**
-	 * Returns the number of workers who run (at least started) in this batch.
-	 */
-	public int retrieveCurrentWorkerNumber(Batch batch) {
-		List<StudyResult> studyResultList = studyResultDao
-				.findAllByBatch(batch);
-		List<Worker> workerList = new ArrayList<>();
-		studyResultList.stream().map(sr -> workerList.add(sr.getWorker()));
-		return workerList.size();
 	}
 
 }

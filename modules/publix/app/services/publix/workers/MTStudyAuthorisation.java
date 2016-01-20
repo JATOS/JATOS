@@ -3,13 +3,14 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
-import services.publix.StudyAuthorisation;
 import services.publix.PublixErrorMessages;
+import services.publix.StudyAuthorisation;
 
 /**
  * PersonalMultiplePublix's implementation of StudyAuthorization
@@ -24,8 +25,8 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 
 	@Inject
 	MTStudyAuthorisation(MTPublixUtils publixUtils,
-			MTErrorMessages errorMessages) {
-		super(publixUtils, errorMessages);
+			MTErrorMessages errorMessages, StudyResultDao studyResultDao) {
+		super(errorMessages, studyResultDao);
 		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
 	}
@@ -34,15 +35,15 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 	public void checkWorkerAllowedToStartStudy(MTWorker worker, Study study,
 			Batch batch) throws ForbiddenPublixException {
 		if (!batch.isActive()) {
-			throw new ForbiddenPublixException(errorMessages
-					.batchInactive(batch.getId()));
+			throw new ForbiddenPublixException(
+					errorMessages.batchInactive(batch.getId()));
 		}
 		if (!(worker instanceof MTSandboxWorker)
 				&& publixUtils.didStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
-		checkMaxTotalWorkers(batch);
+		checkMaxTotalWorkers(batch, worker);
 		checkWorkerAllowedToDoStudy(worker, study, batch);
 	}
 

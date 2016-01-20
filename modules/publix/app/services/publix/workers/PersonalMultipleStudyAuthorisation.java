@@ -3,6 +3,7 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
@@ -21,9 +22,10 @@ public class PersonalMultipleStudyAuthorisation
 	private final PersonalMultipleErrorMessages errorMessages;
 
 	@Inject
-	PersonalMultipleStudyAuthorisation(PersonalMultiplePublixUtils publixUtils,
-			PersonalMultipleErrorMessages errorMessages) {
-		super(publixUtils, errorMessages);
+	PersonalMultipleStudyAuthorisation(
+			PersonalMultipleErrorMessages errorMessages,
+			StudyResultDao studyResultDao) {
+		super(errorMessages, studyResultDao);
 		this.errorMessages = errorMessages;
 	}
 
@@ -31,10 +33,10 @@ public class PersonalMultipleStudyAuthorisation
 	public void checkWorkerAllowedToStartStudy(PersonalMultipleWorker worker,
 			Study study, Batch batch) throws ForbiddenPublixException {
 		if (!batch.isActive()) {
-			throw new ForbiddenPublixException(errorMessages
-					.batchInactive(batch.getId()));
+			throw new ForbiddenPublixException(
+					errorMessages.batchInactive(batch.getId()));
 		}
-		checkMaxTotalWorkers(batch);
+		checkMaxTotalWorkers(batch, worker);
 		checkWorkerAllowedToDoStudy(worker, study, batch);
 	}
 

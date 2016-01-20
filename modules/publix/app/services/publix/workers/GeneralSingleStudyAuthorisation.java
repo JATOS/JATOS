@@ -3,12 +3,13 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
-import services.publix.StudyAuthorisation;
 import services.publix.PublixErrorMessages;
+import services.publix.StudyAuthorisation;
 
 /**
  * GeneralSinglePublix's implementation of StudyAuthorization
@@ -24,8 +25,9 @@ public class GeneralSingleStudyAuthorisation
 
 	@Inject
 	GeneralSingleStudyAuthorisation(GeneralSinglePublixUtils publixUtils,
-			GeneralSingleErrorMessages errorMessages) {
-		super(publixUtils, errorMessages);
+			GeneralSingleErrorMessages errorMessages,
+			StudyResultDao studyResultDao) {
+		super(errorMessages, studyResultDao);
 		this.errorMessages = errorMessages;
 		this.publixUtils = publixUtils;
 	}
@@ -34,10 +36,10 @@ public class GeneralSingleStudyAuthorisation
 	public void checkWorkerAllowedToStartStudy(GeneralSingleWorker worker,
 			Study study, Batch batch) throws ForbiddenPublixException {
 		if (!batch.isActive()) {
-			throw new ForbiddenPublixException(errorMessages
-					.batchInactive(batch.getId()));
+			throw new ForbiddenPublixException(
+					errorMessages.batchInactive(batch.getId()));
 		}
-		checkMaxTotalWorkers(batch);
+		checkMaxTotalWorkers(batch, worker);
 		checkWorkerAllowedToDoStudy(worker, study, batch);
 	}
 

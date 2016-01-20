@@ -3,12 +3,13 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.workers.PersonalSingleWorker;
-import services.publix.StudyAuthorisation;
 import services.publix.PublixErrorMessages;
+import services.publix.StudyAuthorisation;
 
 /**
  * PersonalSinglePublix's implementation of StudyAuthorization
@@ -24,8 +25,9 @@ public class PersonalSingleStudyAuthorisation
 
 	@Inject
 	PersonalSingleStudyAuthorisation(PersonalSinglePublixUtils publixUtils,
-			PersonalSingleErrorMessages errorMessages) {
-		super(publixUtils, errorMessages);
+			PersonalSingleErrorMessages errorMessages,
+			StudyResultDao studyResultDao) {
+		super(errorMessages, studyResultDao);
 		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
 	}
@@ -34,8 +36,8 @@ public class PersonalSingleStudyAuthorisation
 	public void checkWorkerAllowedToStartStudy(PersonalSingleWorker worker,
 			Study study, Batch batch) throws ForbiddenPublixException {
 		if (!batch.isActive()) {
-			throw new ForbiddenPublixException(errorMessages
-					.batchInactive(batch.getId()));
+			throw new ForbiddenPublixException(
+					errorMessages.batchInactive(batch.getId()));
 		}
 		// Personal Single Runs are used only once - don't start if worker has a
 		// study result
@@ -43,7 +45,7 @@ public class PersonalSingleStudyAuthorisation
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
-		checkMaxTotalWorkers(batch);
+		checkMaxTotalWorkers(batch, worker);
 		checkWorkerAllowedToDoStudy(worker, study, batch);
 	}
 
