@@ -139,9 +139,10 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	/**
-	 * Persists the group session data in the GroupResult, but only if the
-	 * stored version is equal to the received one. Returns the GroupResult
-	 * object if this was successful - otherwise null.
+	 * Persists the groupSessionData in the GroupResult and increases the
+	 * groupSessionVersion by 1 - but only if the stored version is equal to the
+	 * received one. Returns the GroupResult object if this was successful -
+	 * otherwise null.
 	 */
 	private GroupResult persistGroupSessionData(ObjectNode jsonNode) {
 		Long clientVersion = Long
@@ -152,6 +153,8 @@ public class GroupDispatcher extends UntypedActor {
 		if (groupResult != null && clientVersion != null
 				&& groupResult.getGroupSessionVersion().equals(clientVersion)) {
 			groupResult.setGroupSessionData(newData.toString());
+			long newVersion = groupResult.getGroupSessionVersion() + 1l;
+			groupResult.setGroupSessionVersion(newVersion);
 			updateGroupResult(groupResult);
 			return groupResult;
 		}
@@ -320,7 +323,7 @@ public class GroupDispatcher extends UntypedActor {
 		}
 		return null;
 	}
-	
+
 	private void updateGroupResult(GroupResult groupResult) {
 		try {
 			jpa.withTransaction(() -> {
