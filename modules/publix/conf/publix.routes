@@ -8,7 +8,7 @@ GET     /publix/:studyId/end                             @controllers.publix.Pub
 GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null)
 GET     /publix/:studyId/group/join                      @controllers.publix.PublixInterceptor.joinGroup(studyId: Long)
 GET     /publix/:studyId/group/leave                     @controllers.publix.PublixInterceptor.leaveGroup(studyId: Long)
-POST    /publix/:studyId/sessionData                     @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long)
+POST    /publix/:studyId/studySessionData                @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long)
 GET     /publix/:studyId/nextComponent/start             @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long)
 # Start component by position
 GET     /publix/:studyId/component/start                 @controllers.publix.PublixInterceptor.startComponentByPosition(studyId: Long, position: Integer)

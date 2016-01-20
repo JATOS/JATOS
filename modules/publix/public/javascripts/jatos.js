@@ -200,7 +200,7 @@ function initJatos() {
 	function setInitData(initData) {
 		// Session data
 		try {
-			jatos.studySessionData = jatos.jQuery.parseJSON(initData.studySession);
+			jatos.studySessionData = jatos.jQuery.parseJSON(initData.studySessionData);
 		} catch (e) {
 			jatos.studySessionData = "Error parsing JSON";
 			if (onJatosError) {
@@ -208,7 +208,7 @@ function initJatos() {
 			}
 		}
 		jatos.studySessionDataFrozen = Object.freeze({
-			"sessionDataStr" : initData.studySession
+			"studySessionDataStr" : initData.studySessionData
 		});
 		
 		// Study properties
@@ -355,18 +355,18 @@ jatos.submitResultData = function(resultData, onSuccess, onError) {
  * call it manually.
  * 
  * @param {Object}
- *            sessionData - Object to be submitted
+ *            studySessionData - Object to be submitted
  * @param {optional
  *            Function} onComplete - Function to be called after this function is
  *            finished
  */
-jatos.setStudySessionData = function(sessionData, onComplete) {
+jatos.setStudySessionData = function(studySessionData, onComplete) {
 	if (!jQueryExists()) {
 		return;
 	}
-	var sessionDataStr;
+	var studySessionDataStr;
 	try {
-		sessionDataStr = JSON.stringify(sessionData);
+		studySessionDataStr = JSON.stringify(studySessionData);
 	} catch (error) {
 		if (onJatosError) {
 			onJatosError(error);
@@ -376,7 +376,7 @@ jatos.setStudySessionData = function(sessionData, onComplete) {
 		}
 		return;
 	}
-	if (jatos.studySessionDataFrozen.sessionDataStr == sessionDataStr) {
+	if (jatos.studySessionDataFrozen.studySessionDataStr == studySessionDataStr) {
 		// If old and new session data are equal don't post it
 		if (onComplete) {
 			onComplete();
@@ -384,8 +384,8 @@ jatos.setStudySessionData = function(sessionData, onComplete) {
 		return;
 	}
 	jatos.jQuery.ajax({
-		url : "/publix/" + jatos.studyId + "/sessionData",
-		data : sessionDataStr,
+		url : "/publix/" + jatos.studyId + "/studySessionData",
+		data : studySessionDataStr,
 		processData : false,
 		type : "POST",
 		contentType : "text/plain",
@@ -668,13 +668,19 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 	}
 }
 
-jatos.setGroupSessionData = function(sessionData) {
+/**
+ * Sends the group session data via the group channel WebSocket to the JATOS
+ * server where it's stored and broadcasted to all members of this group.
+ * 
+ * @param {Object} groupSessionData - An object in JSON
+ */
+jatos.setGroupSessionData = function(groupSessionData) {
 	if (!jQueryExists()) {
 		return;
 	}
 	if (groupChannel && groupChannel.readyState == 1) {
 		var msgObj = {};
-		msgObj.groupSessionData = sessionData;
+		msgObj.groupSessionData = groupSessionData;
 		msgObj.groupSessionVersion = groupSessionVersion;
 		try {
 			groupChannel.send(JSON.stringify(msgObj));

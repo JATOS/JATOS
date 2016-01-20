@@ -150,7 +150,7 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(JsonUtils.isValidJSON(contentAsString(result))).isTrue();
 		JsonNode json = JsonUtils.OBJECTMAPPER
 				.readTree(contentAsString(result));
-		assertThat(json.get("studySession")).isNotNull();
+		assertThat(json.get("studySessionData")).isNotNull();
 		assertThat(json.get("studyProperties")).isNotNull();
 		assertThat(json.get("componentList")).isNotNull();
 		assertThat(json.get("componentProperties")).isNotNull();
@@ -326,7 +326,7 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(JsonUtils.isValidJSON(contentAsString(result))).isTrue();
 		json = JsonUtils.OBJECTMAPPER.readTree(contentAsString(result));
-		assertThat(json.get("studySession").asText())
+		assertThat(json.get("studySessionData").asText())
 				.isEqualTo("That's our session data.");
 		assertThat(json.get("studyProperties")).isNotNull();
 		assertThat(json.get("componentList")).isNotNull();

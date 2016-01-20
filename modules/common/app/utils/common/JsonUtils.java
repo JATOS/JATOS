@@ -137,9 +137,9 @@ public class JsonUtils {
 		String batchProperties = asJsonForPublix(batch);
 		ArrayNode componentList = getComponentListForInitData(study);
 		String componentProperties = asJsonForPublix(component);
-		String studySession = studyResult.getStudySessionData();
+		String studySessionData = studyResult.getStudySessionData();
 		ObjectNode initData = OBJECTMAPPER.createObjectNode();
-		initData.put("studySession", studySession);
+		initData.put("studySessionData", studySessionData);
 		// This is ugly: first marshaling, now unmarshaling again
 		initData.set("studyProperties", OBJECTMAPPER.readTree(studyProperties));
 		initData.set("batchProperties", OBJECTMAPPER.readTree(batchProperties));
