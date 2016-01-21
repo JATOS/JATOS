@@ -530,8 +530,9 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
  * 			events. These callbacks functions can be:
  *		onOpen: to be called when the group channel is successfully opened
  *		onClose: to be called when the group channel is closed
- *		onError: to be called when an error during opening of the group channel's
- *			WebSocket occurs 
+ *		onError: to be called when an error (e.g. during opening of the group
+ *			channel's WebSocket occurs or the group session data couldn't be
+ *			updated)
  * 		onMessage(msg): to be called if a message from another group member is
  *			received. It gets the message as a parameter.
  *		onMemberJoin(memberId): to be called when another member (not the worker
@@ -546,6 +547,8 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
  *		onMemberClose(memberId): to be called when another member (not the worker
  *			running this study) closed his group channel. It gets the group 
  *			member ID as a parameter.
+ *		onGroupSession(groupSessionData): to be called when the group session is
+ *			updated. It gets the new group session data as a parameter.
  */
 jatos.joinGroup = function(callbacks) {
 	if (!webSocketSupported) {
@@ -663,8 +666,8 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 		callbacks.onMemberLeave(groupMsg.memberId);
 	}
 	
-	if (groupMsg.action == "update" && callbacks.onUpdate) {
-		callbacks.onUpdate(jatos.groupSessionData);
+	if (groupMsg.action == "groupSession" && callbacks.onGroupSession) {
+		callbacks.onGroupSession(jatos.groupSessionData);
 	}
 }
 
@@ -978,18 +981,20 @@ jatos.log = function(logMsg) {
 
 /**
  * Convenience function that adds all JATOS IDs (study ID, component ID, worker
- * ID, study result ID, component result ID) to the given object.
+ * ID, study result ID, component result ID, group result ID, group member ID)
+ * to the given object.
  * 
  * @param {Object}
  *            obj - Object to which the IDs will be added
  */
 jatos.addJatosIds = function(obj) {
 	obj.studyId = jatos.studyId;
-	obj.groupResultId = jatos.groupResultId;
 	obj.componentId = jatos.componentId;
 	obj.workerId = jatos.workerId;
 	obj.studyResultId = jatos.studyResultId;
 	obj.componentResultId = jatos.componentResultId;
+	obj.groupResultId = jatos.groupResultId;
+	obj.groupMemberId = jatos.groupMemberId;
 };
 
 })();

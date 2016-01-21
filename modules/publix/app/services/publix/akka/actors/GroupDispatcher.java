@@ -131,9 +131,9 @@ public class GroupDispatcher extends UntypedActor {
 		GroupResult groupResult = persistGroupSessionData(jsonNode);
 		if (groupResult != null) {
 			Long studyResultId = getStudyResultByActorRef(sender());
-			tellGroupAction(studyResultId, GroupMsg.UPDATE, groupResult);
+			tellGroupAction(studyResultId, GroupMsg.GROUP_SESSION, groupResult);
 		} else {
-			String errorMsg = "Wrong groupSessionVersion";
+			String errorMsg = "Group session data not stored due to wrong group session version";
 			sendErrorBackToSender(jsonNode, errorMsg);
 		}
 	}
@@ -150,14 +150,14 @@ public class GroupDispatcher extends UntypedActor {
 		JsonNode newData = jsonNode.get(GroupMsg.GROUP_SESSION_DATA);
 		GroupResult groupResult = getGroupResult(groupResultId);
 
-		if (groupResult != null && clientVersion != null
-				&& groupResult.getGroupSessionVersion().equals(clientVersion)) {
-			groupResult.setGroupSessionData(newData.toString());
-			long newVersion = groupResult.getGroupSessionVersion() + 1l;
-			groupResult.setGroupSessionVersion(newVersion);
-			updateGroupResult(groupResult);
-			return groupResult;
-		}
+//		if (groupResult != null && clientVersion != null
+//				&& groupResult.getGroupSessionVersion().equals(clientVersion)) {
+//			groupResult.setGroupSessionData(newData.toString());
+//			long newVersion = groupResult.getGroupSessionVersion() + 1l;
+//			groupResult.setGroupSessionVersion(newVersion);
+//			updateGroupResult(groupResult);
+//			return groupResult;
+//		}
 		return null;
 	}
 

@@ -67,7 +67,7 @@ public class GroupDispatcherProtocol {
 		public static final String LEFT = "left";
 		public static final String OPENED = "opened";
 		public static final String CLOSED = "closed";
-		public static final String UPDATE = "update";
+		public static final String GROUP_SESSION = "groupSession";
 		
 		/**
 		 * JSON variables that can be send in a GroupMsg
