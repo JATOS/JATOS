@@ -34,7 +34,7 @@ public class StudyDao extends AbstractDao {
 	}
 
 	public Study findByUuid(String uuid) {
-		String queryStr = "SELECT e FROM Study e WHERE " + "e.uuid=:uuid";
+		String queryStr = "SELECT s FROM Study s WHERE " + "s.uuid=:uuid";
 		TypedQuery<Study> query = JPA.em().createQuery(queryStr, Study.class);
 		query.setParameter("uuid", uuid);
 		// There can be only one study with this UUID
@@ -48,13 +48,13 @@ public class StudyDao extends AbstractDao {
 	 * there is none it returns an empty list.
 	 */
 	public List<Study> findByTitle(String title) {
-		String queryStr = "SELECT e FROM Study e WHERE e.title=:title";
+		String queryStr = "SELECT s FROM Study s WHERE s.title=:title";
 		TypedQuery<Study> query = JPA.em().createQuery(queryStr, Study.class);
 		return query.setParameter("title", title).getResultList();
 	}
 
 	public List<Study> findAll() {
-		TypedQuery<Study> query = JPA.em().createQuery("SELECT e FROM Study e",
+		TypedQuery<Study> query = JPA.em().createQuery("SELECT s FROM Study s",
 				Study.class);
 		return query.getResultList();
 	}

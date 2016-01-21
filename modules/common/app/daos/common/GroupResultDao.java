@@ -39,7 +39,7 @@ public class GroupResultDao extends AbstractDao {
 	}
 
 	public List<GroupResult> findAllByBatch(Batch batch) {
-		String queryStr = "SELECT e FROM GroupResult e WHERE e.batch=:batchId";
+		String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batchId";
 		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
 		return query.setParameter("batchId", batch).getResultList();
@@ -74,7 +74,7 @@ public class GroupResultDao extends AbstractDao {
 	}
 
 	public List<GroupResult> findAllNotFinished() {
-		String queryStr = "SELECT e FROM GroupResult e WHERE e.groupState <> :groupState";
+		String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.groupState <> :groupState";
 		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
 		query.setParameter("groupState", GroupState.FINISHED);

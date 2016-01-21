@@ -42,19 +42,19 @@ public class ComponentResultDao extends AbstractDao {
 	 * Returns the number of ComponentResults belonging to the given Component.
 	 */
 	public int countByComponent(Component component) {
-		String queryStr = "SELECT COUNT(e) FROM ComponentResult e WHERE e.component=:componentId";
+		String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr WHERE cr.component=:component";
 		Query query = JPA.em().createQuery(queryStr);
-		Number result = (Number) query.setParameter("componentId", component)
+		Number result = (Number) query.setParameter("component", component)
 				.getSingleResult();
 		return result.intValue();
 	}
 
 	public List<ComponentResult> findAllByComponent(Component component) {
-		String queryStr = "SELECT e FROM ComponentResult e "
-				+ "WHERE e.component=:componentId";
+		String queryStr = "SELECT cr FROM ComponentResult cr "
+				+ "WHERE cr.component=:component";
 		TypedQuery<ComponentResult> query = JPA.em().createQuery(queryStr,
 				ComponentResult.class);
-		return query.setParameter("componentId", component).getResultList();
+		return query.setParameter("component", component).getResultList();
 	}
 
 }

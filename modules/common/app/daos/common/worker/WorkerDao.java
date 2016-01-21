@@ -35,7 +35,7 @@ public class WorkerDao extends AbstractDao {
 
 	public List<Worker> findAll() {
 		TypedQuery<Worker> query = JPA.em()
-				.createQuery("SELECT e FROM Worker e", Worker.class);
+				.createQuery("SELECT w FROM Worker w", Worker.class);
 		return query.getResultList();
 	}
 

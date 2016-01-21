@@ -38,8 +38,8 @@ public class MTWorkerDao extends WorkerDao {
 	 * way.
 	 */
 	public MTWorker findByMTWorkerId(String mtWorkerId) {
-		String queryStr = "SELECT e FROM Worker e WHERE "
-				+ "upper(e.mtWorkerId)=:mtWorkerId";
+		String queryStr = "SELECT w FROM Worker w WHERE "
+				+ "upper(w.mtWorkerId)=:mtWorkerId";
 		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
 		query.setParameter("mtWorkerId", mtWorkerId);
 		query.setMaxResults(1);

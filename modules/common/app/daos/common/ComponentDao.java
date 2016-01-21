@@ -51,8 +51,8 @@ public class ComponentDao extends AbstractDao {
 	 * ID.
 	 */
 	public Component findByUuid(String uuid, Study study) {
-		String queryStr = "SELECT e FROM Component e WHERE "
-				+ "e.uuid=:uuid and e.study=:study";
+		String queryStr = "SELECT c FROM Component c WHERE "
+				+ "c.uuid=:uuid and c.study=:study";
 		TypedQuery<Component> query = JPA.em().createQuery(queryStr,
 				Component.class);
 		query.setParameter("uuid", uuid);
@@ -68,7 +68,7 @@ public class ComponentDao extends AbstractDao {
 	 * there is none it returns an empty list.
 	 */
 	public List<Component> findByTitle(String title) {
-		String queryStr = "SELECT e FROM Component e WHERE " + "e.title=:title";
+		String queryStr = "SELECT c FROM Component c WHERE " + "c.title=:title";
 		TypedQuery<Component> query = JPA.em().createQuery(queryStr,
 				Component.class);
 		return query.setParameter("title", title).getResultList();

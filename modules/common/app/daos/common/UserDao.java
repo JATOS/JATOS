@@ -28,8 +28,8 @@ public class UserDao extends AbstractDao {
 	}
 
 	public boolean authenticate(String email, String passwordHash) {
-		String queryStr = "SELECT e FROM User e WHERE "
-				+ "e.email=:email and e.passwordHash=:passwordHash";
+		String queryStr = "SELECT u FROM User e WHERE "
+				+ "u.email=:email and u.passwordHash=:passwordHash";
 		boolean doesNotExist = JPA.em().createQuery(queryStr, User.class)
 				.setMaxResults(1).setParameter("email", email)
 				.setParameter("passwordHash", passwordHash).getResultList()
@@ -42,7 +42,7 @@ public class UserDao extends AbstractDao {
 	}
 
 	public List<User> findAll() {
-		TypedQuery<User> query = JPA.em().createQuery("SELECT e FROM User e",
+		TypedQuery<User> query = JPA.em().createQuery("SELECT u FROM User u",
 				User.class);
 		return query.getResultList();
 	}

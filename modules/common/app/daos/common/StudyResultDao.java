@@ -43,27 +43,27 @@ public class StudyResultDao extends AbstractDao {
 	 * Returns the number of StudyResults belonging to the given study.
 	 */
 	public int countByStudy(Study study) {
-		String queryStr = "SELECT COUNT(e) FROM StudyResult e WHERE e.study=:studyId";
+		String queryStr = "SELECT COUNT(sr) FROM StudyResult sr WHERE sr.study=:study";
 		Query query = JPA.em().createQuery(queryStr);
-		Number result = (Number) query.setParameter("studyId", study)
+		Number result = (Number) query.setParameter("study", study)
 				.getSingleResult();
 		return result.intValue();
 	}
 
 	public List<StudyResult> findAllByStudy(Study study) {
-		String queryStr = "SELECT e FROM StudyResult e "
-				+ "WHERE e.study=:studyId";
+		String queryStr = "SELECT sr FROM StudyResult sr "
+				+ "WHERE sr.study=:study";
 		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
 				StudyResult.class);
-		return query.setParameter("studyId", study).getResultList();
+		return query.setParameter("study", study).getResultList();
 	}
 
 	public List<StudyResult> findAllByBatch(Batch batch) {
-		String queryStr = "SELECT e FROM StudyResult e "
-				+ "WHERE e.batch=:batchId";
+		String queryStr = "SELECT sr FROM StudyResult sr "
+				+ "WHERE sr.batch=:batch";
 		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
 				StudyResult.class);
-		return query.setParameter("batchId", batch).getResultList();
+		return query.setParameter("batch", batch).getResultList();
 	}
 
 }
