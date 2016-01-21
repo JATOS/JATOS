@@ -163,7 +163,7 @@ public class GroupDispatcher extends UntypedActor {
 	private GroupResult persistGroupSessionData(Long version,
 			JsonNode sessionData) {
 		GroupResult groupResult = getGroupResult(groupResultId);
-		if (groupResult != null && version != null
+		if (groupResult != null && version != null && sessionData != null
 				&& groupResult.getGroupSessionVersion().equals(version)) {
 			groupResult.setGroupSessionData(sessionData.toString());
 			long newVersion = groupResult.getGroupSessionVersion() + 1l;
