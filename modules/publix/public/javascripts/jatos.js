@@ -647,7 +647,7 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 	// onOpen and onMemberOpen
 	// Someone opened a group channel; distinguish between the worker running
 	// this study and others
-	if (groupMsg.action == "opened") {
+	if (groupMsg.action == "OPENED") {
 		if (groupMsg.memberId == jatos.groupMemberId && callbacks.onOpen) {
 			callbacks.onOpen(groupMsg.memberId);
 		} else if (groupMsg.memberId != jatos.groupMemberId
@@ -658,27 +658,27 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 	// onMemberClose
 	// Some member closed its group channel
 	// (onClose callback function is handled during groupChannel.onclose)
-	if (groupMsg.action == "closed" && groupMsg.memberId != jatos.groupMemberId
+	if (groupMsg.action == "CLOSED" && groupMsg.memberId != jatos.groupMemberId
 			&& callbacks.onMemberClose) {
 		callbacks.onMemberClose(groupMsg.memberId);
 	}
 	// onMemberJoin
 	// Some member joined (it should not happen, but check the group member ID
 	// (aka study result ID) is not the one of the joined member)
-	if (groupMsg.action == "joined" && groupMsg.memberId != jatos.groupMemberId
+	if (groupMsg.action == "JOINED" && groupMsg.memberId != jatos.groupMemberId
 			&& callbacks.onMemberJoin) {
 		callbacks.onMemberJoin(groupMsg.memberId);
 	}
 	// onMemberLeave
 	// Some member left (it should not happen, but check the group member ID
 	// (aka study result ID) is not the one of the left member)
-	if (groupMsg.action == "left" && groupMsg.memberId != jatos.groupMemberId
+	if (groupMsg.action == "LEFT" && groupMsg.memberId != jatos.groupMemberId
 			 && callbacks.onMemberLeave) {
 		callbacks.onMemberLeave(groupMsg.memberId);
 	}
 	// onGroupSession
 	// Got updated group session data and version
-	if (groupMsg.action == "groupSession" && callbacks.onGroupSession) {
+	if (groupMsg.action == "GROUP_SESSION" && callbacks.onGroupSession) {
 		callbacks.onGroupSession(jatos.groupSessionData);
 	}
 }
@@ -695,6 +695,7 @@ jatos.setGroupSessionData = function(groupSessionData) {
 	}
 	if (groupChannel && groupChannel.readyState == 1) {
 		var msgObj = {};
+		msgObj.action = "GROUP_SESSION";
 		msgObj.groupSessionData = groupSessionData;
 		msgObj.groupSessionVersion = groupSessionVersion;
 		try {

@@ -16,6 +16,10 @@ import daos.common.GroupResultDao;
 import models.common.GroupResult;
 import play.Logger;
 import play.db.jpa.JPAApi;
+import services.publix.akka.messages.GroupDispatcherProtocol;
+import services.publix.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
+import services.publix.akka.messages.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
+import services.publix.akka.messages.GroupDispatcherProtocol.GroupErrorMsg;
 import services.publix.akka.messages.GroupDispatcherProtocol.GroupMsg;
 import services.publix.akka.messages.GroupDispatcherProtocol.Joined;
 import services.publix.akka.messages.GroupDispatcherProtocol.Left;
@@ -37,6 +41,9 @@ import utils.common.JsonUtils;
  * is done in the GroupService. Group data (e.g. who's member) are persisted in
  * a GroupResult entity. A GroupChannel is closed after the StudyResult left the
  * group.
+ * 
+ * A GroupDispatcher handles all messages specified in the
+ * GroupDispatcherProtocol.
  * 
  * A GroupChannel registers in a GroupDispatcher by sending the RegisterChannel
  * message and unregisters by sending a UnregisterChannel message.
@@ -90,22 +97,22 @@ public class GroupDispatcher extends UntypedActor {
 	public void onReceive(Object msg) throws Exception {
 		if (msg instanceof GroupMsg) {
 			// We got a GroupMsg from a client
-			handleGroupMsg(msg);
+			handleGroupMsg((GroupMsg) msg);
 		} else if (msg instanceof Joined) {
 			// A member joined
-			joined(msg);
+			joined((Joined) msg);
 		} else if (msg instanceof Left) {
 			// A member left
-			left(msg);
+			left((Left) msg);
 		} else if (msg instanceof RegisterChannel) {
 			// A GroupChannel wants to register
-			registerChannel(msg);
+			registerChannel((RegisterChannel) msg);
 		} else if (msg instanceof UnregisterChannel) {
 			// A GroupChannel wants to unregister
-			unregisterChannel(msg);
+			unregisterChannel((UnregisterChannel) msg);
 		} else if (msg instanceof PoisonChannel) {
 			// Comes from ChannelService: close a group channel
-			poisonAGroupChannel(msg);
+			poisonAGroupChannel((PoisonChannel) msg);
 		} else {
 			unhandled(msg);
 		}
@@ -113,56 +120,95 @@ public class GroupDispatcher extends UntypedActor {
 
 	/**
 	 * Handle a GroupMsg received from a client. What to do with it depends on
-	 * the JSON inside the GroupMsg, but it always leads to forwarding the
-	 * GroupMsg to other clients.
+	 * the JSON inside the GroupMsg.
+	 * 
+	 * @see GroupDispatcherProtocol.GroupMsg
+	 * @see GroupDispatcherProtocol.GroupActionMsg
 	 */
-	private void handleGroupMsg(Object msg) {
-		ObjectNode jsonNode = ((GroupMsg) msg).jsonNode;
-		if (jsonNode.has(GroupMsg.GROUP_SESSION_DATA)) {
-			tellGroupSessionData(jsonNode);
+	private void handleGroupMsg(GroupMsg groupMsg) {
+		ObjectNode jsonNode = groupMsg.jsonNode;
+		if (jsonNode.has(GroupActionMsg.ACTION)) {
+			// We have a group action message
+			handleGroupActionMsg(jsonNode);
 		} else if (jsonNode.has(GroupMsg.RECIPIENT)) {
-			tellRecipientOnly(msg, jsonNode);
+			// We have a message intended for only one recipient
+			Long recipient = retrieveRecipient(jsonNode);
+			if (recipient != null) {
+				tellRecipientOnly(groupMsg, recipient);
+			}
 		} else {
-			tellAllButSender(msg);
+			// We have broadcast message: Just tell everyone except the sender
+			tellAllButSender(groupMsg);
 		}
 	}
 
-	private void tellGroupSessionData(ObjectNode jsonNode) {
-		GroupResult groupResult = persistGroupSessionData(jsonNode);
-		if (groupResult != null) {
-			Long studyResultId = getStudyResultByActorRef(sender());
-			tellGroupAction(studyResultId, GroupMsg.GROUP_SESSION, groupResult);
-		} else {
-			String errorMsg = "Group session data not stored due to wrong group session version";
-			sendErrorBackToSender(jsonNode, errorMsg);
-		}
+	private void handleGroupActionMsg(ObjectNode jsonNode) {
+		// So far we have only one kind of group action that originates in the
+		// client: an updated group session
+		Long clientsVersion = Long.valueOf(
+				jsonNode.get(GroupActionMsg.GROUP_SESSION_VERSION).asText());
+		JsonNode newSessionData = jsonNode
+				.get(GroupActionMsg.GROUP_SESSION_DATA);
+		GroupResult groupResult = persistGroupSessionData(clientsVersion,
+				newSessionData);
+		tellGroupSessionData(groupResult);
 	}
 
 	/**
-	 * Persists the groupSessionData in the GroupResult and increases the
+	 * Persists the given sessionData in the GroupResult and increases the
 	 * groupSessionVersion by 1 - but only if the stored version is equal to the
 	 * received one. Returns the GroupResult object if this was successful -
 	 * otherwise null.
 	 */
-	private GroupResult persistGroupSessionData(ObjectNode jsonNode) {
-		Long clientVersion = Long
-				.valueOf(jsonNode.get(GroupMsg.GROUP_SESSION_VERSION).asText());
-		JsonNode newData = jsonNode.get(GroupMsg.GROUP_SESSION_DATA);
+	private GroupResult persistGroupSessionData(Long version,
+			JsonNode sessionData) {
 		GroupResult groupResult = getGroupResult(groupResultId);
-
-		if (groupResult != null && clientVersion != null
-				&& groupResult.getGroupSessionVersion().equals(clientVersion)) {
-			groupResult.setGroupSessionData(newData.toString());
+		if (groupResult != null && version != null
+				&& groupResult.getGroupSessionVersion().equals(version)) {
+			groupResult.setGroupSessionData(sessionData.toString());
 			long newVersion = groupResult.getGroupSessionVersion() + 1l;
 			groupResult.setGroupSessionVersion(newVersion);
-			updateGroupResult(groupResult);
-			return groupResult;
+			boolean success = updateGroupResult(groupResult);
+			return success ? groupResult : null;
 		}
 		return null;
 	}
 
 	/**
-	 * Gets the study result ID that maps to the given ActorRef.
+	 * Retrieves the recipient's study result ID from the given jsonNode. If
+	 * it's malformed it returns a null.
+	 */
+	private Long retrieveRecipient(ObjectNode jsonNode) {
+		Long recipientStudyResultId = null;
+		try {
+			recipientStudyResultId = Long
+					.valueOf(jsonNode.get(GroupMsg.RECIPIENT).asText());
+		} catch (NumberFormatException e) {
+			String errorMsg = "Recipient "
+					+ jsonNode.get(GroupMsg.RECIPIENT).asText()
+					+ " isn't a study result ID.";
+			sendErrorBackToSender(jsonNode, errorMsg);
+		}
+		return recipientStudyResultId;
+	}
+
+	/**
+	 * Sends a GROUP_SESSION action message to everyone in the group - or if the
+	 * GroupResult doesn't exist sends an error message back to the sender.
+	 */
+	private void tellGroupSessionData(GroupResult groupResult) {
+		if (groupResult != null) {
+			Long studyResultId = getStudyResultByActorRef(sender());
+			tellGroupAction(studyResultId, GroupAction.GROUP_SESSION,
+					groupResult);
+		} else {
+			String errorMsg = "Group session data not stored";
+			sendErrorBackToSender(errorMsg);
+		}
+	}
+
+	/**
+	 * Gets the study result ID that maps to the given ActorRef. Not performant.
 	 */
 	public Long getStudyResultByActorRef(ActorRef actorRef) {
 		for (Entry<Long, ActorRef> entry : groupChannelMap.entrySet()) {
@@ -173,44 +219,29 @@ public class GroupDispatcher extends UntypedActor {
 		return null;
 	}
 
-	private void tellRecipientOnly(Object msg, ObjectNode jsonNode) {
-		Long studyResultId = null;
-		try {
-			studyResultId = Long
-					.valueOf(jsonNode.get(GroupMsg.RECIPIENT).asText());
-		} catch (NumberFormatException e) {
-			String errorMsg = "Recipient "
-					+ jsonNode.get(GroupMsg.RECIPIENT).asText()
-					+ " isn't a study result ID.";
-			sendErrorBackToSender(jsonNode, errorMsg);
-		}
-
-		ActorRef actorRef = groupChannelMap.get(studyResultId);
-		if (actorRef != null) {
-			actorRef.tell(msg, self());
-		} else {
-			String errorMsg = "Recipient " + studyResultId.toString()
-					+ " isn't member of this group.";
-			sendErrorBackToSender(jsonNode, errorMsg);
-		}
-	}
-
-	private void registerChannel(Object msg) {
-		RegisterChannel registerChannel = (RegisterChannel) msg;
+	/**
+	 * Registers the given channel and sends an OPENED action group message to
+	 * everyone in this group.
+	 */
+	private void registerChannel(RegisterChannel registerChannel) {
 		long studyResultId = registerChannel.studyResultId;
 		groupChannelMap.put(studyResultId, sender());
-		tellGroupAction(studyResultId, GroupMsg.OPENED);
+		tellGroupAction(studyResultId, GroupAction.OPENED);
 	}
 
-	private void unregisterChannel(Object msg) {
-		UnregisterChannel channelClosed = (UnregisterChannel) msg;
-		long studyResultId = channelClosed.studyResultId;
+	/**
+	 * Unregisters the given channel and sends an CLOSED action group message to
+	 * everyone in this group. Then if the group is now empty it sends a
+	 * PoisonPill to this GroupDispatcher.
+	 */
+	private void unregisterChannel(UnregisterChannel unregisterChannel) {
+		long studyResultId = unregisterChannel.studyResultId;
 		// Only remove GroupChannel if it's the one from the sender (there might
 		// be a new GroupChannel for the same StudyResult after a reload)
 		if (groupChannelMap.containsKey(studyResultId)
 				&& groupChannelMap.get(studyResultId).equals(sender())) {
-			groupChannelMap.remove(channelClosed.studyResultId);
-			tellGroupAction(studyResultId, GroupMsg.CLOSED);
+			groupChannelMap.remove(unregisterChannel.studyResultId);
+			tellGroupAction(studyResultId, GroupAction.CLOSED);
 		}
 
 		// Tell this dispatcher to kill itself if it has no more members
@@ -219,14 +250,18 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
-	private void joined(Object msg) {
-		Joined joined = (Joined) msg;
-		tellGroupAction(joined.studyResultId, GroupMsg.JOINED);
+	/**
+	 * Send the JOINED action to group member specified in Joined.
+	 */
+	private void joined(Joined joined) {
+		tellGroupAction(joined.studyResultId, GroupAction.JOINED);
 	}
 
-	private void left(Object msg) {
-		Left left = (Left) msg;
-		tellGroupAction(left.studyResultId, GroupMsg.LEFT);
+	/**
+	 * Send the LEFT action to group member specified in Left.
+	 */
+	private void left(Left left) {
+		tellGroupAction(left.studyResultId, GroupAction.LEFT);
 	}
 
 	/**
@@ -234,12 +269,15 @@ public class GroupDispatcher extends UntypedActor {
 	 * tellGroupAction} but retrieves the GroupResult from the database before
 	 * calling it.
 	 */
-	private void tellGroupAction(long studyResultId, String action) {
+	private void tellGroupAction(long studyResultId, GroupAction action) {
 		// The current group data are persisted in a GroupResult entity. The
 		// GroupResult determines who is member of the group - and not
 		// the groupChannelMap.
 		GroupResult groupResult = getGroupResult(groupResultId);
 		if (groupResult == null) {
+			String errorMsg = "Couldn't find group result with ID "
+					+ groupResultId + " in database.";
+			sendErrorBackToSender(errorMsg);
 			return;
 		}
 		tellGroupAction(studyResultId, action, groupResult);
@@ -257,39 +295,45 @@ public class GroupDispatcher extends UntypedActor {
 	 * @param GroupResult
 	 *            The GroupResult of this group
 	 */
-	private void tellGroupAction(long studyResultId, String action,
+	private void tellGroupAction(long studyResultId, GroupAction action,
 			GroupResult groupResult) {
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
-		objectNode.put(GroupMsg.ACTION, action);
-		objectNode.put(GroupMsg.GROUP_RESULT_ID, groupResultId);
-		objectNode.put(GroupMsg.MEMBER_ID, studyResultId);
-		objectNode.put(GroupMsg.MEMBERS,
+		objectNode.put(GroupActionMsg.ACTION, action.toString());
+		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResultId);
+		objectNode.put(GroupActionMsg.MEMBER_ID, studyResultId);
+		objectNode.put(GroupActionMsg.MEMBERS,
 				String.valueOf(groupResult.getStudyResultList()));
-		objectNode.put(GroupMsg.CHANNELS,
+		objectNode.put(GroupActionMsg.CHANNELS,
 				String.valueOf(groupChannelMap.keySet()));
-		objectNode.put(GroupMsg.GROUP_SESSION_DATA,
+		objectNode.put(GroupActionMsg.GROUP_SESSION_DATA,
 				groupResult.getGroupSessionData());
-		objectNode.put(GroupMsg.GROUP_SESSION_VERSION,
+		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
 				groupResult.getGroupSessionVersion());
-		tellAll(new GroupMsg(objectNode));
+		tellAll(new GroupActionMsg(objectNode));
 	}
 
-	private void poisonAGroupChannel(Object msg) {
-		PoisonChannel poison = (PoisonChannel) msg;
+	/**
+	 * Tell GroupChannel to close itself. The GroupChannel then sends a
+	 * ChannelClosed back to this GroupDispatcher during postStop and then we
+	 * can remove the channel from the groupChannelMap and tell all other
+	 * members about it. Also send false back to the sender if the GroupChannel
+	 * wasn't handled by this GroupDispatcher.
+	 */
+	private void poisonAGroupChannel(PoisonChannel poison) {
 		long studyResultId = poison.studyResultIdOfTheOneToPoison;
 		ActorRef groupChannel = groupChannelMap.get(studyResultId);
 		if (groupChannel != null) {
-			// Tell GroupChannel to close itself. The GroupChannel sends a
-			// ChannelClosed to this GroupDispatcher during postStop and then we
-			// can remove it from the groupChannelMap and tell all other members
-			// about it
-			groupChannel.forward(msg, getContext());
+			groupChannel.forward(poison, getContext());
 			sender().tell(true, self());
 		} else {
 			sender().tell(false, self());
 		}
 	}
 
+	/**
+	 * Send the message to everyone in the groupChannelMap except the sender of
+	 * this message.
+	 */
 	private void tellAllButSender(Object msg) {
 		for (ActorRef actorRef : groupChannelMap.values()) {
 			if (actorRef != sender()) {
@@ -298,6 +342,9 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
+	/**
+	 * Send the message to everyone in groupChannelMap.
+	 */
 	private void tellAll(Object msg) {
 		for (ActorRef actorRef : groupChannelMap.values()) {
 			actorRef.tell(msg, self());
@@ -305,14 +352,42 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	/**
+	 * Sends the message msg only to the recipient specified with the given
+	 * study result ID.
+	 */
+	private void tellRecipientOnly(GroupMsg msg, Long recipientStudyResultId) {
+		ActorRef actorRef = groupChannelMap.get(recipientStudyResultId);
+		if (actorRef != null) {
+			actorRef.tell(msg, self());
+		} else {
+			String errorMsg = "Recipient "
+					+ String.valueOf(recipientStudyResultId)
+					+ " isn't member of this group.";
+			sendErrorBackToSender(errorMsg);
+		}
+	}
+
+	/**
+	 * Send an error back to sender.
+	 */
+	private void sendErrorBackToSender(String errorMsg) {
+		ObjectNode jsonNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		jsonNode.put(GroupErrorMsg.ERROR, errorMsg);
+		sender().tell(new GroupErrorMsg(jsonNode), self());
+	}
+
+	/**
 	 * Send an error back to sender. Recycle the JsonNode.
 	 */
 	private void sendErrorBackToSender(ObjectNode jsonNode, String errorMsg) {
 		jsonNode.removeAll();
-		jsonNode.put(GroupMsg.ERROR, errorMsg);
-		sender().tell(new GroupMsg(jsonNode), self());
+		jsonNode.put(GroupErrorMsg.ERROR, errorMsg);
+		sender().tell(new GroupErrorMsg(jsonNode), self());
 	}
 
+	/**
+	 * Retrieve the GroupResult from the database.
+	 */
 	private GroupResult getGroupResult(long groupResultId) {
 		try {
 			return jpa.withTransaction(() -> {
@@ -324,13 +399,19 @@ public class GroupDispatcher extends UntypedActor {
 		return null;
 	}
 
-	private void updateGroupResult(GroupResult groupResult) {
+	/**
+	 * Persist the changes in the GroupResult. Returns true if successful and
+	 * false otherwise.
+	 */
+	private boolean updateGroupResult(GroupResult groupResult) {
 		try {
 			jpa.withTransaction(() -> {
 				groupResultDao.update(groupResult);
 			});
+			return true;
 		} catch (Throwable e) {
-			Logger.error(CLASS_NAME + ".getGroupResult: ", e);
+			Logger.error(CLASS_NAME + ".updateGroupResult: ", e);
+			return false;
 		}
 	}
 

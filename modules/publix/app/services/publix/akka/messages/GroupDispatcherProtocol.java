@@ -18,7 +18,7 @@ public class GroupDispatcherProtocol {
 	 */
 	public static class Joined {
 
-		public long studyResultId;
+		public final long studyResultId;
 
 		public Joined(long studyResultId) {
 			this.studyResultId = studyResultId;
@@ -33,7 +33,7 @@ public class GroupDispatcherProtocol {
 	 */
 	public static class Left {
 
-		public long studyResultId;
+		public final long studyResultId;
 
 		public Left(long studyResultId) {
 			this.studyResultId = studyResultId;
@@ -46,7 +46,7 @@ public class GroupDispatcherProtocol {
 	 */
 	public static class UnregisterChannel {
 
-		public long studyResultId;
+		public final long studyResultId;
 
 		public UnregisterChannel(long studyResultId) {
 			this.studyResultId = studyResultId;
@@ -54,33 +54,18 @@ public class GroupDispatcherProtocol {
 	}
 
 	/**
-	 * Message send from one group member via the GroupDispatcher to other group
-	 * members - or from JATOS to all group members. A GroupMsg contains a JSON
-	 * node.
+	 * Message format used for communication in the group channel between the
+	 * GroupDispatcher and the group members. A GroupMsg contains a JSON node.
+	 * If the JSON node has a key named 'recipient' the message is intended for
+	 * only one group member - otherwise it's a broadcast message.
+	 * 
+	 * For system messages the special GroupActionMsg is used. For sending an
+	 * error message the special GroupErrorMsg is used.
+	 * 
 	 */
 	public static class GroupMsg {
 
-		/**
-		 * Possible actions
-		 */
-		public static final String JOINED = "joined";
-		public static final String LEFT = "left";
-		public static final String OPENED = "opened";
-		public static final String CLOSED = "closed";
-		public static final String GROUP_SESSION = "groupSession";
-		
-		/**
-		 * JSON variables that can be send in a GroupMsg
-		 */
-		public static final String ACTION = "action";
-		public static final String GROUP_RESULT_ID = "groupResultId";
-		public static final String MEMBER_ID = "memberId";
-		public static final String MEMBERS = "members";
-		public static final String CHANNELS = "channels";
 		public static final String RECIPIENT = "recipient";
-		public static final String ERROR = "error";
-		public static final String GROUP_SESSION_DATA = "groupSessionData";
-		public static final String GROUP_SESSION_VERSION = "groupSessionVersion";
 
 		public final ObjectNode jsonNode;
 
@@ -92,6 +77,53 @@ public class GroupDispatcherProtocol {
 		public String toString() {
 			return jsonNode.asText();
 		}
+	}
+
+	/**
+	 * Special GroupMsg that contains a GroupAction. A group action message is
+	 * like a system event and used solely for messages between the
+	 * GroupDispatcher and its group members. A GroupActionMsg is specified by
+	 * an key named 'action' in the JSON node.
+	 */
+	public static class GroupActionMsg extends GroupMsg {
+
+		/**
+		 * All possible group actions a group action message can have.
+		 */
+		public enum GroupAction {
+			JOINED, LEFT, OPENED, CLOSED, GROUP_SESSION
+		};
+
+		public GroupActionMsg(ObjectNode jsonNode) {
+			super(jsonNode);
+		}
+
+		/**
+		 * JSON variables that can be send in a GroupActionMsg
+		 */
+		public static final String ACTION = "action";
+		public static final String GROUP_RESULT_ID = "groupResultId";
+		public static final String MEMBER_ID = "memberId";
+		public static final String MEMBERS = "members";
+		public static final String CHANNELS = "channels";
+		public static final String GROUP_SESSION_DATA = "groupSessionData";
+		public static final String GROUP_SESSION_VERSION = "groupSessionVersion";
+
+	}
+
+	/**
+	 * A special GroupMsg that contains an error message send from the
+	 * GroupDispatcher to a group member. A GroupActionMsg is specified by an
+	 * key named 'error' in the JSON node.
+	 */
+	public static class GroupErrorMsg extends GroupMsg {
+
+		public static final String ERROR = "error";
+
+		public GroupErrorMsg(ObjectNode jsonNode) {
+			super(jsonNode);
+		}
+
 	}
 
 	/**
@@ -112,7 +144,7 @@ public class GroupDispatcherProtocol {
 	 */
 	public static class PoisonChannel {
 
-		public long studyResultIdOfTheOneToPoison;
+		public final long studyResultIdOfTheOneToPoison;
 
 		public PoisonChannel(long studyResultIdOfTheOneToPoison) {
 			this.studyResultIdOfTheOneToPoison = studyResultIdOfTheOneToPoison;

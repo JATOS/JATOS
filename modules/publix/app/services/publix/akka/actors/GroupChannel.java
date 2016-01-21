@@ -1,5 +1,7 @@
 package services.publix.akka.actors;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -8,8 +10,6 @@ import services.publix.akka.messages.GroupDispatcherProtocol.GroupMsg;
 import services.publix.akka.messages.GroupDispatcherProtocol.PoisonChannel;
 import services.publix.akka.messages.GroupDispatcherProtocol.RegisterChannel;
 import services.publix.akka.messages.GroupDispatcherProtocol.UnregisterChannel;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * GroupChannel is an Akka Actor that represents the group channel's WebSocket.
@@ -74,7 +74,7 @@ public class GroupChannel extends UntypedActor {
 			ObjectNode jsonNode = (ObjectNode) msg;
 			groupDispatcher.tell(new GroupMsg(jsonNode), self());
 		} else if (msg instanceof GroupMsg) {
-			// If we receive a GroupMessage (only from the GroupDispatcher) send
+			// If we receive a GroupMsg (only from the GroupDispatcher) send
 			// the wrapped JsonNode to the client
 			GroupMsg groupMsg = (GroupMsg) msg;
 			out.tell(groupMsg.jsonNode, self());
