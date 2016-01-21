@@ -570,16 +570,13 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Gets the batch with given ID from the database or if the batchId is null
-	 * returns the default batch in this study.
+	 * Gets the batch with given ID from the database or if the batchId is -1
+	 * returns the default batch of this study.
 	 */
 	public Batch retrieveBatchByIdOrDefault(Long batchId, Study study) {
 		if (batchId == -1) {
-			// The default batch is the one with the lowest ID (= earliest
-			// created)
-			return study.getBatchList().stream()
-					.sorted((s1, s2) -> Long.compare(s1.getId(), s2.getId()))
-					.findFirst().get();
+			// The default batch is always the first one in study's batch list
+			return study.getBatchList().get(0);
 		} else {
 			return batchDao.findById(batchId);
 		}
