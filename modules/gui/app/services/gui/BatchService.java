@@ -68,7 +68,7 @@ public class BatchService {
 	 */
 	public Batch createDefaultBatch(Study study, User loggedInUser) {
 		Batch batch = new Batch();
-		batch.setTitle("Default");
+		batch.setTitle(BatchProperties.DEFAULT_TITLE);
 		initBatch(batch, loggedInUser);
 		return batch;
 	}

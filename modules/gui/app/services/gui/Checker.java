@@ -63,6 +63,17 @@ public class Checker {
 	}
 
 	/**
+	 * Throws an ForbiddenException if this batch is the default batch of it's
+	 * study.
+	 */
+	public void checkDefaultBatch(Batch batch) throws ForbiddenException {
+		if (batch.equals(batch.getStudy().getBatchList().get(0))) {
+			String errorMsg = MessagesStrings.BATCH_NOT_ALLOWED_DELETE_DEFAULT;
+			throw new ForbiddenException(errorMsg);
+		}
+	}
+
+	/**
 	 * Throws an ForbiddenException if a study is locked.
 	 */
 	public void checkStudyLocked(Study study) throws ForbiddenException {
@@ -147,7 +158,7 @@ public class Checker {
 			}
 		}
 	}
-	
+
 	/**
 	 * Throws an Exception in case the user isn't equal to the loggedInUser.
 	 */
@@ -158,7 +169,7 @@ public class Checker {
 					MessagesStrings.userMustBeLoggedInToSeeProfile(user));
 		}
 	}
-	
+
 	/**
 	 * Throws a Exception in case the worker doesn't exist. Distinguishes
 	 * between normal and Ajax request.

@@ -27,6 +27,7 @@ import play.data.validation.ValidationError;
 public class BatchProperties {
 
 	public static final String TITLE = "title";
+	public static final String DEFAULT_TITLE = "Default";
 	public static final String ACTIVE = "active";
 	public static final String MIN_ACTIVE_MEMBERS = "minActiveMembers";
 	public static final String MAX_ACTIVE_MEMBERS = "maxActiveMembers";
@@ -273,7 +274,7 @@ public class BatchProperties {
 			errorList.add(new ValidationError(MAX_TOTAL_WORKERS,
 					MessagesStrings.BATCH_MAX_TOTAL_WORKER_SET));
 		}
-		
+
 		return errorList.isEmpty() ? null : errorList;
 	}
 

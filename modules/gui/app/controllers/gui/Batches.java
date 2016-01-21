@@ -300,6 +300,7 @@ public class Batches extends Controller {
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStandardForBatch(batch, study, batchId);
+			checker.checkDefaultBatch(batch);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
