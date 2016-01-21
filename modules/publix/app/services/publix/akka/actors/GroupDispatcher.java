@@ -150,14 +150,14 @@ public class GroupDispatcher extends UntypedActor {
 		JsonNode newData = jsonNode.get(GroupMsg.GROUP_SESSION_DATA);
 		GroupResult groupResult = getGroupResult(groupResultId);
 
-//		if (groupResult != null && clientVersion != null
-//				&& groupResult.getGroupSessionVersion().equals(clientVersion)) {
-//			groupResult.setGroupSessionData(newData.toString());
-//			long newVersion = groupResult.getGroupSessionVersion() + 1l;
-//			groupResult.setGroupSessionVersion(newVersion);
-//			updateGroupResult(groupResult);
-//			return groupResult;
-//		}
+		if (groupResult != null && clientVersion != null
+				&& groupResult.getGroupSessionVersion().equals(clientVersion)) {
+			groupResult.setGroupSessionData(newData.toString());
+			long newVersion = groupResult.getGroupSessionVersion() + 1l;
+			groupResult.setGroupSessionVersion(newVersion);
+			updateGroupResult(groupResult);
+			return groupResult;
+		}
 		return null;
 	}
 
