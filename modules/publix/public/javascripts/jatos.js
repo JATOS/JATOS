@@ -301,8 +301,8 @@ function getAjaxErrorMsg(jqxhr) {
 }
 
 /**
- * Little helper function calls either onError or onJatosError if one of them is
- * defined.
+ * Little helper function that calls error functions. First it tries to call the
+ * given onError one. If this fails it tries the onJatosError.
  */
 function callingOnError(onError, errorMsg) {
 	if (onError) {
@@ -530,9 +530,11 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
  * 			events. These callbacks functions can be:
  *		onOpen: to be called when the group channel is successfully opened
  *		onClose: to be called when the group channel is closed
- *		onError: to be called when an error (e.g. during opening of the group
- *			channel's WebSocket occurs or the group session data couldn't be
- *			updated)
+ *		onError: to be called if an error during opening of the group
+ *			channel's WebSocket occurs or if an error is received via the
+ *			group channel (e.g. the group session data couldn't be updated). If
+ *			this function is not defined jatos.js will try to call the global
+ *			onJatosError function.
  * 		onMessage(msg): to be called if a message from another group member is
  *			received. It gets the message as a parameter.
  *		onMemberJoin(memberId): to be called when another member (not the worker
@@ -592,14 +594,25 @@ jatos.joinGroup = function(callbacks) {
 	};
 };
 
+/**
+ * A group message from the JATOS server can be an action, a message from an
+ * other group member, or an error. An action usually comes with the current
+ * group variables (members, channels, group session data etc.). A group message
+ * from the JATOS server is always in JSON format.
+ */
 function handleGroupMsg(msg, callbacks) {
 	var groupMsg = jatos.jQuery.parseJSON(msg);
+	// Update the group variables that usually come with an group action
 	updateGroupVars(groupMsg);
-	// Now do the callbacks that were given as parameter to joinGroup
+	// Now handle the action and map them to callbacks that were given as
+	// parameter to joinGroup
 	callGroupActionCallbacks(groupMsg, callbacks);
 	// Handle onMessage callback
 	if (groupMsg.msg && callbacks.onMessage) {
 		callbacks.onMessage(groupMsg.msg);
+	}
+	if (groupMsg.error) {
+		callingOnError(callbacks.onError, groupMsg.error);
 	}
 }
 
@@ -623,9 +636,7 @@ function updateGroupVars(groupMsg) {
 			groupSessionVersion = jatos.jQuery.parseJSON(groupMsg.groupSessionVersion);
 		}
 	} catch (error) {
-		if (onJatosError) {
-			onJatosError(error);
-		}
+		callingOnError(callbacks.onError, error);
 	}
 }
 
@@ -665,7 +676,8 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 			 && callbacks.onMemberLeave) {
 		callbacks.onMemberLeave(groupMsg.memberId);
 	}
-	
+	// onGroupSession
+	// Got updated group session data and version
 	if (groupMsg.action == "groupSession" && callbacks.onGroupSession) {
 		callbacks.onGroupSession(jatos.groupSessionData);
 	}
