@@ -69,7 +69,8 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages
-					.workerTypeNotAllowed(admin.getWorker().getUIWorkerType()));
+					.workerTypeNotAllowed(admin.getWorker().getUIWorkerType(),
+							study.getId(), batch.getId()));
 		}
 
 		// Clean-up

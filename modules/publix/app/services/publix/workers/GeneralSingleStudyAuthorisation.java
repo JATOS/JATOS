@@ -48,8 +48,9 @@ public class GeneralSingleStudyAuthorisation
 			Study study, Batch batch) throws ForbiddenPublixException {
 		// Check if worker type is allowed
 		if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(errorMessages
-					.workerTypeNotAllowed(worker.getUIWorkerType()));
+			throw new ForbiddenPublixException(
+					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType(),
+							study.getId(), batch.getId()));
 		}
 		// General single workers can't repeat the same study
 		if (publixUtils.finishedStudyAlready(worker, study)) {

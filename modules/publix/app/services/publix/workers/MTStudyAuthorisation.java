@@ -52,8 +52,9 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 			Batch batch) throws ForbiddenPublixException {
 		// Check if worker type is allowed
 		if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(errorMessages
-					.workerTypeNotAllowed(worker.getUIWorkerType()));
+			throw new ForbiddenPublixException(
+					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType(),
+							study.getId(), batch.getId()));
 		}
 		// Sandbox workers can repeat studies
 		if (worker instanceof MTSandboxWorker) {

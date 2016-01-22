@@ -45,24 +45,26 @@ public class PublixErrorMessages {
 		return "A worker with ID " + workerIdStr + " doesn't exist.";
 	}
 
-	public String workerTypeNotAllowed(String workerType) {
-		return "It's not allowed to run this study with a worker of type \""
-				+ workerType + "\".";
+	public String workerTypeNotAllowed(String workerType, Long studyId,
+			Long batchId) {
+		return "It's not allowed to run this study (ID: " + studyId
+				+ ") in this batch (ID: " + batchId
+				+ ") with a worker of type \"" + workerType + "\".";
 	}
 
 	public String batchNotExist(Long batchId) {
 		return workerNotExist(String.valueOf(batchId));
 	}
-	
+
 	public String batchNotExist(String batchIdStr) {
 		return "A batch with ID " + batchIdStr + " doesn't exist.";
 	}
-	
+
 	public String batchMaxTotalWorkerReached(Long batchId) {
 		return "For the batch (ID: " + batchId
 				+ ") the maximum number of workers is already reached.";
 	}
-	
+
 	public String batchInactive(Long batchId) {
 		return "The batch (ID: " + batchId + ") is inactive.";
 	}

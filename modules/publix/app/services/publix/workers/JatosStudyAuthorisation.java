@@ -46,8 +46,9 @@ public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
 			Batch batch) throws ForbiddenPublixException {
 		// Check if worker type is allowed
 		if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(errorMessages
-					.workerTypeNotAllowed(worker.getUIWorkerType()));
+			throw new ForbiddenPublixException(
+					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType(),
+							study.getId(), batch.getId()));
 		}
 		User user = worker.getUser();
 		// User has to be a user of this study

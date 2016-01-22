@@ -150,7 +150,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(mtErrorMessages
-					.workerTypeNotAllowed(mtWorker.getUIWorkerType()));
+					.workerTypeNotAllowed(mtWorker.getUIWorkerType(),
+							study.getId(), batch.getId()));
 		}
 
 		// Study doesn't allow this worker type
@@ -160,7 +161,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(mtErrorMessages
-					.workerTypeNotAllowed(mtSandboxWorker.getUIWorkerType()));
+					.workerTypeNotAllowed(mtSandboxWorker.getUIWorkerType(),
+							study.getId(), batch.getId()));
 		}
 
 		// Clean-up

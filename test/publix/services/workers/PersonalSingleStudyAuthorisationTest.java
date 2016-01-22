@@ -116,7 +116,8 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(personalSingleErrorMessages
-					.workerTypeNotAllowed(worker.getUIWorkerType()));
+					.workerTypeNotAllowed(worker.getUIWorkerType(),
+							study.getId(), batch.getId()));
 		}
 
 		// Clean-up
