@@ -34,7 +34,8 @@ public class GroupResult {
 
 	public enum GroupState {
 		STARTED, // Group study run was started
-		FINISHED; // Group study run is finished
+		FINISHED, // Group study run is finished
+		FIXED; // No new members can join the group
 		public static String allStatesAsString() {
 			String str = Arrays.toString(values());
 			return str.substring(1, str.length() - 1);

@@ -91,7 +91,7 @@ public class GroupDispatcherProtocol {
 		 * All possible group actions a group action message can have.
 		 */
 		public enum GroupAction {
-			JOINED, LEFT, OPENED, CLOSED, GROUP_SESSION
+			JOINED, LEFT, OPENED, CLOSED, GROUP_SESSION, FIXED
 		};
 
 		public GroupActionMsg(ObjectNode jsonNode) {

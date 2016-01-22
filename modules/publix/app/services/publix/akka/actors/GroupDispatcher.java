@@ -14,6 +14,7 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import daos.common.GroupResultDao;
 import models.common.GroupResult;
+import models.common.GroupResult.GroupState;
 import play.Logger;
 import play.db.jpa.JPAApi;
 import services.publix.akka.messages.GroupDispatcherProtocol;
@@ -142,9 +143,30 @@ public class GroupDispatcher extends UntypedActor {
 		}
 	}
 
+	/**
+	 * Handles group actions originating from the client
+	 */
 	private void handleGroupActionMsg(ObjectNode jsonNode) {
-		// So far we have only one kind of group action that originates in the
-		// client: an updated group session
+		String action = jsonNode.get(GroupActionMsg.ACTION).asText();
+		GroupAction.GROUP_SESSION.name();
+		switch (GroupAction.valueOf(action)) {
+		case GROUP_SESSION:
+			handleActionGroupSession(jsonNode);
+			break;
+		case FIXED:
+			handleActionFix(jsonNode);
+			break;
+		default:
+			String errorMsg = "Unknown action " + action;
+			sendErrorBackToSender(jsonNode, errorMsg);
+			break;
+		}
+	}
+
+	/**
+	 * Persists GroupSession and tells everyone
+	 */
+	private void handleActionGroupSession(ObjectNode jsonNode) {
 		Long clientsVersion = Long.valueOf(
 				jsonNode.get(GroupActionMsg.GROUP_SESSION_VERSION).asText());
 		JsonNode newSessionData = jsonNode
@@ -152,6 +174,20 @@ public class GroupDispatcher extends UntypedActor {
 		GroupResult groupResult = persistGroupSessionData(clientsVersion,
 				newSessionData);
 		tellGroupSessionData(groupResult);
+	}
+
+	/**
+	 * Changes state of GroupResult to FIXED
+	 */
+	private void handleActionFix(ObjectNode jsonNode) {
+		GroupResult groupResult = getGroupResult(groupResultId);
+		if (groupResult != null) {
+			groupResult.setGroupState(GroupState.FIXED);
+			updateGroupResult(groupResult);
+		} else {
+			String errorMsg = "Couldn't fix group result.";
+			sendErrorBackToSender(errorMsg);
+		}
 	}
 
 	/**

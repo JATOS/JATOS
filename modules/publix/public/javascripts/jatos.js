@@ -690,14 +690,28 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
  * @param {Object} groupSessionData - An object in JSON
  */
 jatos.setGroupSessionData = function(groupSessionData) {
-	if (!jQueryExists()) {
-		return;
-	}
 	if (groupChannel && groupChannel.readyState == 1) {
 		var msgObj = {};
 		msgObj.action = "GROUP_SESSION";
 		msgObj.groupSessionData = groupSessionData;
 		msgObj.groupSessionVersion = groupSessionVersion;
+		try {
+			groupChannel.send(JSON.stringify(msgObj));
+		} catch (error) {
+			if (onJatosError) {
+				onJatosError(error);
+			}
+		}
+	}
+};
+
+/**
+ * Ask the JATOS server to fix this group.
+ */
+jatos.setGroupFixed = function() {
+	if (groupChannel && groupChannel.readyState == 1) {
+		var msgObj = {};
+		msgObj.action = "FIXED";
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
 		} catch (error) {
