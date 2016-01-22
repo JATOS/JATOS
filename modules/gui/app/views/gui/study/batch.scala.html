@@ -1,4 +1,5 @@
-@(loggedInUser: common.User, breadcrumbs: String, batchId: Long, study: common.Study, baseUrl: String)
+@(loggedInUser: common.User, breadcrumbs: String, batchId: Long,
+study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[String, Integer])
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
@@ -8,10 +9,10 @@
 	<div class="panel-heading">
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")" style="visibility: hidden"></a>
 		<b class="panel-title">@common.workers.JatosWorker.UI_WORKER_TYPE Worker</b>
-		<button id="jatosResults" type="button" class="btn btn-primary"
+		<button type="button" class="btn btn-primary resultButton"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows study results only of @common.workers.JatosWorker.UI_WORKER_TYPE worker">
-			Results <span class="resultsBadge badge">10</span>
+			Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.JatosWorker.WORKER_TYPE)</span>
 		</button>
 	</div>
 	<div class="list-group workerList">
@@ -23,6 +24,11 @@
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
 		<b class="panel-title">@common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker</b>
 		<button type="button" class="btn btn-primary linkButton">Link</button>
+		<button type="button" class="btn btn-primary resultButton"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Shows study results only of @common.workers.GeneralSingleWorker.UI_WORKER_TYPE worker">
+			Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.GeneralSingleWorker.WORKER_TYPE)</span>
+		</button>
 	</div>
 	<div class="list-group workerList">
 	</div>
@@ -33,6 +39,11 @@
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
 		<b class="panel-title">@common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker</b>
 		<button type="button" class="btn btn-primary addButton">Add</button>
+		<button type="button" class="btn btn-primary resultButton"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Shows study results only of @common.workers.PersonalSingleWorker.UI_WORKER_TYPE worker">
+			Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.PersonalSingleWorker.WORKER_TYPE)</span>
+		</button>
 	</div>
 	<div class="list-group workerList">
 	</div>
@@ -43,6 +54,11 @@
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
 		<b class="panel-title">@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker</b>
 		<button type="button" class="btn btn-primary addButton">Add</button>
+		<button type="button" class="btn btn-primary resultButton"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Shows study results only of @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE worker">
+			Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.PersonalMultipleWorker.WORKER_TYPE)</span>
+		</button>
 	</div>
 	<div class="list-group workerList">
 	</div>
@@ -56,6 +72,11 @@
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows code that has to be copied into the 'source' field of your study's design layout in Mechanical Turk">
 			Source Code
+		</button>
+		<button type="button" class="btn btn-primary resultButton"
+			data-toggle="tooltip" data-placement="bottom"
+			title="Shows study results only of @common.workers.MTWorker.UI_WORKER_TYPE worker">
+			Results <span class="badge">@studyResultCountsPerWorker.get(common.workers.MTWorker.WORKER_TYPE)</span>
 		</button>
 	</div>
 	<div class="list-group workerList">

@@ -50,6 +50,20 @@ public class StudyResultDao extends AbstractDao {
 		return result.intValue();
 	}
 
+	/**
+	 * Returns the number of StudyResults belonging to the given batch and given
+	 * worker type.
+	 */
+	public int countByBatchAndWorkerType(Batch batch, String workerType) {
+		String queryStr = "SELECT COUNT(*) FROM StudyResult sr WHERE sr.batch_id = :batchId "
+				+ "AND sr.worker_id IN (SELECT id FROM Worker w WHERE w.workerType = :workerType)";
+		Query query = JPA.em().createNativeQuery(queryStr)
+				.setParameter("batchId", batch.getId())
+				.setParameter("workerType", workerType);
+		Number result = (Number) query.getSingleResult();
+		return result.intValue();
+	}
+
 	public List<StudyResult> findAllByStudy(Study study) {
 		String queryStr = "SELECT sr FROM StudyResult sr "
 				+ "WHERE sr.study=:study";

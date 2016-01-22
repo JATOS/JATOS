@@ -2,6 +2,7 @@ package controllers.gui;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -184,10 +185,11 @@ public class Batches extends Controller {
 		}
 
 		String baseUrl = ControllerUtils.getReferer();
+		Map<String, Integer> studyResultCountsPerWorker = batchService.retrieveStudyResultCountsPerWorker(batch);
 		String breadcrumbs = breadcrumbsService.generateForRunManager(study,
 				batch);
 		return ok(views.html.gui.study.batch.render(loggedInUser, breadcrumbs,
-				batch.getId(), study, baseUrl));
+				batch.getId(), study, baseUrl, studyResultCountsPerWorker));
 	}
 
 	/**
