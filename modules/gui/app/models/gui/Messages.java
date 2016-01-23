@@ -7,8 +7,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
- * Model for messages (success, info, warning, error) destined for JATOS' GUI
- * views (but never persisted in the DB).
+ * Model for messages (success, info, warning, error) used for JSON marshaling
+ * and destined for JATOS' GUI views.
  * 
  * @author Kristian Lange
  */
@@ -16,13 +16,13 @@ public class Messages {
 
 	@JsonInclude(Include.NON_NULL)
 	private List<String> successList;
-	
+
 	@JsonInclude(Include.NON_NULL)
 	private List<String> infoList;
-	
+
 	@JsonInclude(Include.NON_NULL)
 	private List<String> warningList;
-	
+
 	@JsonInclude(Include.NON_NULL)
 	private List<String> errorList;
 

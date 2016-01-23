@@ -27,11 +27,17 @@ import com.google.common.collect.Lists;
 import utils.common.JsonUtils;
 
 /**
- * Model for a DB entity of a study with all properties of a study but not the
- * results of a study. The results of a study are stored in StudyResults and
- * ComponentResult. A study consists of a list components and their model is
- * Component. Default values, where necessary, are at the fields or in the
- * constructor. As the GUI model {@link models.gui.StudyProperties} is used.
+ * Domain model / entity of a study. Used for JSON marshalling and JPA
+ * persistance.
+ * 
+ * This entity has all properties of a study but not the results of a study. The
+ * results of a study are stored in StudyResults and ComponentResult. A study
+ * consists of a list components and their model is Component. It can have
+ * several Batches.
+ * 
+ * Default values, where necessary, are at the fields or in the constructor.
+ * 
+ * For the GUI a different model {@link models.gui.StudyProperties} is used.
  * 
  * @author Kristian Lange (2014)
  */

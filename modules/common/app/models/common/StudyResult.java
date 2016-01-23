@@ -26,7 +26,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import models.common.workers.Worker;
 
 /**
- * Model and DB entity of a study result.
+ * Domain model /entity of a study result. Used for JSON marshalling and JPA
+ * persistance.
  * 
  * @author Kristian Lange
  */

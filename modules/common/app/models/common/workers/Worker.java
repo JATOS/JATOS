@@ -26,8 +26,11 @@ import models.common.StudyResult;
 import play.data.validation.ValidationError;
 
 /**
- * Abstract model and DB entity of a worker. Workers are doing studies (and
- * their components) and produce study results (and their component results).
+ * Abstract domain model / entity of a worker. It's used fro JSON marshaling and
+ * JPA persistance.
+ * 
+ * Workers are doing studies (and their components) and produce study results
+ * (and their component results).
  * 
  * All worker entities are stored in the same database table. Inheritance is
  * established with an discriminator column.

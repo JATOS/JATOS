@@ -22,7 +22,8 @@ import models.common.workers.JatosWorker;
 import play.data.validation.ValidationError;
 
 /**
- * Model and DB entity of a user.
+ * Domain model / entity of a user. Used for JSON marshalling and JPA
+ * persistance.
  * 
  * @author Kristian Lange
  */

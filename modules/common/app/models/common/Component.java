@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import utils.common.JsonUtils;
 
 /**
- * DB entity of a component. The corresponding UI model is
- * {@link models.gui.ComponentProperties}.
+ * Domain model / entity of a component. It's used by JPA and JSON marshaling.
+ * The corresponding UI model is {@link models.gui.ComponentProperties}.
  * 
  * @author Kristian Lange
  */
