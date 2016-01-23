@@ -28,7 +28,7 @@ public class UserDao extends AbstractDao {
 	}
 
 	public boolean authenticate(String email, String passwordHash) {
-		String queryStr = "SELECT u FROM User e WHERE "
+		String queryStr = "SELECT u FROM User u WHERE "
 				+ "u.email=:email and u.passwordHash=:passwordHash";
 		boolean doesNotExist = JPA.em().createQuery(queryStr, User.class)
 				.setMaxResults(1).setParameter("email", email)
