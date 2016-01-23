@@ -551,6 +551,7 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
  *			member ID as a parameter.
  *		onGroupSession(groupSessionData): to be called when the group session is
  *			updated. It gets the new group session data as a parameter.
+ * *	onUpdate(): to be called if any of the group variables changes
  */
 jatos.joinGroup = function(callbacks) {
 	if (!webSocketSupported) {
@@ -583,6 +584,7 @@ jatos.joinGroup = function(callbacks) {
 	groupChannel.onclose = function() {
 		joiningGroup = false;
 		jatos.groupResultId = null;
+		jatos.groupState = null;
 		jatos.groupMemberId = null;
 		jatos.groupMembers = [];
 		jatos.groupChannels = [];
@@ -602,8 +604,6 @@ jatos.joinGroup = function(callbacks) {
  */
 function handleGroupMsg(msg, callbacks) {
 	var groupMsg = jatos.jQuery.parseJSON(msg);
-	// Update the group variables that usually come with an group action
-	updateGroupVars(groupMsg);
 	// Now handle the action and map them to callbacks that were given as
 	// parameter to joinGroup
 	callGroupActionCallbacks(groupMsg, callbacks);
@@ -616,11 +616,76 @@ function handleGroupMsg(msg, callbacks) {
 	}
 }
 
+function callGroupActionCallbacks(groupMsg, callbacks) {
+	if (!groupMsg.action) {
+		return;
+	}
+	// onOpen and onMemberOpen
+	// Someone opened a group channel; distinguish between the worker running
+	// this study and others
+	if (groupMsg.action == "OPENED") {
+		updateGroupVars(groupMsg);
+		if (groupMsg.memberId == jatos.groupMemberId && callbacks.onOpen) {
+			callbacks.onOpen(groupMsg.memberId);
+		} else if (groupMsg.memberId != jatos.groupMemberId
+				&& callbacks.onMemberOpen) {
+			callbacks.onMemberOpen(groupMsg.memberId);
+			callOnUpdate();
+		}
+	}
+	// onMemberClose
+	// Some member closed its group channel
+	// (onClose callback function is handled during groupChannel.onclose)
+	if (groupMsg.action == "CLOSED" && groupMsg.memberId != jatos.groupMemberId
+			&& callbacks.onMemberClose) {
+		updateGroupVars(groupMsg);
+		callbacks.onMemberClose(groupMsg.memberId);
+		callOnUpdate();
+	}
+	// onMemberJoin
+	// Some member joined (it should not happen, but check the group member ID
+	// (aka study result ID) is not the one of the joined member)
+	if (groupMsg.action == "JOINED" && groupMsg.memberId != jatos.groupMemberId
+			&& callbacks.onMemberJoin) {
+		updateGroupVars(groupMsg);
+		callbacks.onMemberJoin(groupMsg.memberId);
+		callOnUpdate();
+	}
+	// onMemberLeave
+	// Some member left (it should not happen, but check the group member ID
+	// (aka study result ID) is not the one of the left member)
+	if (groupMsg.action == "LEFT" && groupMsg.memberId != jatos.groupMemberId
+			 && callbacks.onMemberLeave) {
+		updateGroupVars(groupMsg);
+		callbacks.onMemberLeave(groupMsg.memberId);
+		callOnUpdate();
+	}
+	// onGroupSession
+	// Got updated group session data and version
+	if (groupMsg.action == "GROUP_SESSION" && callbacks.onGroupSession) {
+		updateGroupVars(groupMsg);
+		callbacks.onGroupSession(jatos.groupSessionData);
+		callOnUpdate();
+	}
+	// onUpdate
+	// Got update
+	if (groupMsg.action == "UPDATE" && callbacks.onUpdate) {
+		updateGroupVars(groupMsg);
+		callbacks.onUpdate();
+	}
+};
+
+/**
+* Update the group variables that usually come with an group action
+*/
 function updateGroupVars(groupMsg) {
 	if (groupMsg.groupResultId) {
 		jatos.groupResultId = groupMsg.groupResultId;
 		// Group member ID is equal to study result ID
 		jatos.groupMemberId = jatos.studyResultId;
+	}
+	if (groupMsg.groupState) {
+		jatos.groupState = groupMsg.groupState;
 	}
 	try {
 		if (groupMsg.members) {
@@ -640,48 +705,11 @@ function updateGroupVars(groupMsg) {
 	}
 }
 
-function callGroupActionCallbacks(groupMsg, callbacks) {
-	if (!groupMsg.action) {
-		return;
+function callOnUpdate() {
+	if (callbacks.onUpdate) {
+		callbacks.onUpdate();
 	}
-	// onOpen and onMemberOpen
-	// Someone opened a group channel; distinguish between the worker running
-	// this study and others
-	if (groupMsg.action == "OPENED") {
-		if (groupMsg.memberId == jatos.groupMemberId && callbacks.onOpen) {
-			callbacks.onOpen(groupMsg.memberId);
-		} else if (groupMsg.memberId != jatos.groupMemberId
-				&& callbacks.onMemberOpen) {
-			callbacks.onMemberOpen(groupMsg.memberId);
-		}
-	}
-	// onMemberClose
-	// Some member closed its group channel
-	// (onClose callback function is handled during groupChannel.onclose)
-	if (groupMsg.action == "CLOSED" && groupMsg.memberId != jatos.groupMemberId
-			&& callbacks.onMemberClose) {
-		callbacks.onMemberClose(groupMsg.memberId);
-	}
-	// onMemberJoin
-	// Some member joined (it should not happen, but check the group member ID
-	// (aka study result ID) is not the one of the joined member)
-	if (groupMsg.action == "JOINED" && groupMsg.memberId != jatos.groupMemberId
-			&& callbacks.onMemberJoin) {
-		callbacks.onMemberJoin(groupMsg.memberId);
-	}
-	// onMemberLeave
-	// Some member left (it should not happen, but check the group member ID
-	// (aka study result ID) is not the one of the left member)
-	if (groupMsg.action == "LEFT" && groupMsg.memberId != jatos.groupMemberId
-			 && callbacks.onMemberLeave) {
-		callbacks.onMemberLeave(groupMsg.memberId);
-	}
-	// onGroupSession
-	// Got updated group session data and version
-	if (groupMsg.action == "GROUP_SESSION" && callbacks.onGroupSession) {
-		callbacks.onGroupSession(jatos.groupSessionData);
-	}
-}
+};
 
 /**
  * Sends the group session data via the group channel WebSocket to the JATOS

@@ -177,13 +177,14 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	/**
-	 * Changes state of GroupResult to FIXED
+	 * Changes state of GroupResult to FIXED and sends update to group members
 	 */
 	private void handleActionFix(ObjectNode jsonNode) {
 		GroupResult groupResult = getGroupResult(groupResultId);
 		if (groupResult != null) {
 			groupResult.setGroupState(GroupState.FIXED);
 			updateGroupResult(groupResult);
+			tellGroupAction(GroupAction.UPDATE, groupResult);
 		} else {
 			String errorMsg = "Couldn't fix group result.";
 			sendErrorBackToSender(errorMsg);
@@ -301,7 +302,7 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	/**
-	 * Wrapper around {@link #tellGroupAction(long, String, GroupResult)
+	 * Wrapper around {@link #tellGroupAction(Long, String, GroupResult)
 	 * tellGroupAction} but retrieves the GroupResult from the database before
 	 * calling it.
 	 */
@@ -320,6 +321,14 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	/**
+	 * Wrapper around {@link #tellGroupAction(Long, String, GroupResult) but for
+	 * an action that originates in JATOS itself and not in a client.
+	 */
+	private void tellGroupAction(GroupAction action, GroupResult groupResult) {
+		tellGroupAction(null, action, groupResult);
+	}
+
+	/**
 	 * Creates a new GroupMsg and sends it to all group members. The GroupMsg
 	 * includes a whole bunch of data including the action, all currently open
 	 * channels, the group session data and the group session version.
@@ -331,12 +340,16 @@ public class GroupDispatcher extends UntypedActor {
 	 * @param GroupResult
 	 *            The GroupResult of this group
 	 */
-	private void tellGroupAction(long studyResultId, GroupAction action,
+	private void tellGroupAction(Long studyResultId, GroupAction action,
 			GroupResult groupResult) {
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, action.toString());
+		if (studyResultId != null) {
+			objectNode.put(GroupActionMsg.MEMBER_ID, studyResultId);
+		}
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResultId);
-		objectNode.put(GroupActionMsg.MEMBER_ID, studyResultId);
+		objectNode.put(GroupActionMsg.GROUP_STATE,
+				groupResult.getGroupState().name());
 		objectNode.put(GroupActionMsg.MEMBERS,
 				String.valueOf(groupResult.getStudyResultList()));
 		objectNode.put(GroupActionMsg.CHANNELS,

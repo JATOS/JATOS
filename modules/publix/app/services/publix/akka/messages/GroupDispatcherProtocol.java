@@ -91,7 +91,7 @@ public class GroupDispatcherProtocol {
 		 * All possible group actions a group action message can have.
 		 */
 		public enum GroupAction {
-			JOINED, LEFT, OPENED, CLOSED, GROUP_SESSION, FIXED
+			JOINED, LEFT, OPENED, CLOSED, GROUP_SESSION, FIXED, UPDATE
 		};
 
 		public GroupActionMsg(ObjectNode jsonNode) {
@@ -103,6 +103,7 @@ public class GroupDispatcherProtocol {
 		 */
 		public static final String ACTION = "action";
 		public static final String GROUP_RESULT_ID = "groupResultId";
+		public static final String GROUP_STATE = "groupState";
 		public static final String MEMBER_ID = "memberId";
 		public static final String MEMBERS = "members";
 		public static final String CHANNELS = "channels";
