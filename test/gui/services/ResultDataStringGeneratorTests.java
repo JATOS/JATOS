@@ -129,7 +129,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		ComponentResult componentResult1 = jatosPublixUtils
@@ -169,7 +169,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		ComponentResult componentResult = jatosPublixUtils
@@ -214,7 +214,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
 		ComponentResult componentResult11 = jatosPublixUtils

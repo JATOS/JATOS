@@ -44,7 +44,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 		Http.Context.current().session().put("email", admin.getEmail());
 
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		addStudy(study);
 
 		studyAuthorisation.checkWorkerAllowedToDoStudy(admin.getWorker(), study,
@@ -58,7 +58,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		batch.removeAllowedWorkerType(admin.getWorker().getWorkerType());
 		addStudy(study);
 
@@ -81,7 +81,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyNotUser()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		addStudy(study);
 
 		entityManager.getTransaction().begin();
@@ -108,7 +108,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 		mockContext();
 
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		addStudy(study);
 
 		// User has to be logged in

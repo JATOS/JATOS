@@ -53,7 +53,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
@@ -79,7 +79,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
@@ -115,7 +115,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		addStudy(study);
 
@@ -133,7 +133,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
 		persistWorker(mtWorker);
@@ -174,7 +174,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		MTWorker mtWorker = new MTWorker();
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
 		persistWorker(mtWorker);

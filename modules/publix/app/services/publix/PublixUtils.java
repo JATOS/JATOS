@@ -576,7 +576,7 @@ public abstract class PublixUtils<T extends Worker> {
 	public Batch retrieveBatchByIdOrDefault(Long batchId, Study study) {
 		if (batchId == -1) {
 			// The default batch is always the first one in study's batch list
-			return study.getBatchList().get(0);
+			return study.getDefaultBatch();
 		} else {
 			return batchDao.findById(batchId);
 		}

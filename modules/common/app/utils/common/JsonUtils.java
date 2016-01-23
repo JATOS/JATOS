@@ -475,8 +475,8 @@ public class JsonUtils {
 	 * Marshals the given object into JSON, adds the application's version, and
 	 * saves it into the given File. It uses the view JsonForIO.
 	 */
-	public void studyAsJsonForIO(Object obj, File file) throws IOException {
-		ObjectNode node = generateNodeWithVersionForIO(obj,
+	public void studyAsJsonForIO(Study study, File file) throws IOException {
+		ObjectNode node = generateNodeWithVersionForIO(study,
 				String.valueOf(Study.SERIAL_VERSION));
 		OBJECTMAPPER.writer().writeValue(file, node);
 	}

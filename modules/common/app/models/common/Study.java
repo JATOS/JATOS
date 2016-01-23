@@ -328,6 +328,10 @@ public class Study {
 	public void removeBatch(Batch batch) {
 		batchList.remove(batch);
 	}
+	
+	public Batch getDefaultBatch() {
+		return this.batchList.get(0);
+	}
 
 	@Override
 	public String toString() {

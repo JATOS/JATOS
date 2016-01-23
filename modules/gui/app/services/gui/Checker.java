@@ -67,7 +67,7 @@ public class Checker {
 	 * study.
 	 */
 	public void checkDefaultBatch(Batch batch) throws ForbiddenException {
-		if (batch.equals(batch.getStudy().getBatchList().get(0))) {
+		if (batch.equals(batch.getStudy().getDefaultBatch())) {
 			String errorMsg = MessagesStrings.BATCH_NOT_ALLOWED_DELETE_DEFAULT;
 			throw new ForbiddenException(errorMsg);
 		}

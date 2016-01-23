@@ -46,7 +46,7 @@ public class BatchesControllerTest extends AbstractTest {
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Batches
 						.createPersonalSingleRun(studyClone.getId(),
-								studyClone.getBatchList().get(0).getId())
+								studyClone.getDefaultBatch().getId())
 								.url());
 		Result result = route(request);
 
@@ -67,7 +67,7 @@ public class BatchesControllerTest extends AbstractTest {
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Batches
 						.createPersonalMultipleRun(studyClone.getId(),
-								studyClone.getBatchList().get(0).getId())
+								studyClone.getDefaultBatch().getId())
 						.url());
 		Result result = route(request);
 

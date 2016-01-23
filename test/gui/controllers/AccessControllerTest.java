@@ -401,7 +401,7 @@ public class AccessControllerTest extends AbstractTest {
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		// Have to set study manually in test - don't know why
@@ -548,7 +548,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callBatchesAllowedWorkers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches.workers(
-				studyClone.getId(), studyClone.getBatchList().get(0).getId());
+				studyClone.getId(), studyClone.getDefaultBatch().getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
@@ -568,7 +568,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callBatchesBatch() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches.batch(studyClone.getId(),
-				studyClone.getBatchList().get(0).getId());
+				studyClone.getDefaultBatch().getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
@@ -578,7 +578,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callBatchesProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches.properties(
-				studyClone.getId(), studyClone.getBatchList().get(0).getId());
+				studyClone.getId(), studyClone.getDefaultBatch().getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
@@ -588,7 +588,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callBatchesSubmitEditedProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches.submitEditedProperties(
-				studyClone.getId(), studyClone.getBatchList().get(0).getId());
+				studyClone.getId(), studyClone.getDefaultBatch().getId());
 		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
 		removeStudy(studyClone);
@@ -598,7 +598,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callBatchesChangeProperty() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches.changeProperty(
-				studyClone.getId(), studyClone.getBatchList().get(0).getId(),
+				studyClone.getId(), studyClone.getDefaultBatch().getId(),
 				true);
 		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
@@ -609,7 +609,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callBatchesRemove() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches.remove(
-				studyClone.getId(), studyClone.getBatchList().get(0).getId());
+				studyClone.getId(), studyClone.getDefaultBatch().getId());
 		checkDeniedAccess(call, Helpers.DELETE);
 		checkNotUser(call, studyClone, Helpers.DELETE);
 		removeStudy(studyClone);

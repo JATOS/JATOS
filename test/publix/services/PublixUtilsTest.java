@@ -88,7 +88,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
@@ -121,7 +121,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		ComponentResult componentResult1 = publixUtils
@@ -157,7 +157,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		ComponentResult componentResult1 = publixUtils
@@ -193,7 +193,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		study.getFirstComponent().setReloadable(false);
@@ -231,7 +231,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		ComponentResult componentResult = publixUtils
@@ -239,7 +239,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		String cookieValue = publixUtils.generateIdCookieValue(
-				study.getBatchList().get(0), studyResult, componentResult,
+				study.getDefaultBatch(), studyResult, componentResult,
 				admin.getWorker());
 
 		// Check IDs in cookie value String
@@ -269,7 +269,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		studyResult.setStudySessionData("{\"test\":\"test\"}");
@@ -309,7 +309,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		ComponentResult componentResult1 = publixUtils
@@ -348,11 +348,11 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
 		StudyResult studyResult2 = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult2.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
@@ -385,15 +385,15 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
 		StudyResult studyResult2 = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult2.setWorker(admin.getWorker());
 		StudyResult studyResult3 = resultCreator.createStudyResult(clone,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult3.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
@@ -422,11 +422,11 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = resultCreator.createStudyResult(clone,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
 		StudyResult studyResult2 = resultCreator.createStudyResult(clone,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult2.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
@@ -454,11 +454,11 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
 		StudyResult studyResult2 = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult2.setWorker(admin.getWorker());
 		publixUtils.finishStudyResult(true, null, studyResult2);
@@ -525,7 +525,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		publixUtils.startComponent(study.getFirstComponent(), studyResult);
@@ -754,7 +754,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
@@ -794,7 +794,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(clone,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		studyResult.setStudyState(StudyState.FINISHED);
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
@@ -818,7 +818,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
@@ -837,7 +837,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
@@ -868,7 +868,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		ComponentResult componentResult = publixUtils

@@ -244,7 +244,7 @@ public class ResultServiceTest extends AbstractTest {
 			throws ForbiddenReloadException {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(admin.getWorker());
 		// Have to set study manually in test - don't know why
@@ -334,11 +334,11 @@ public class ResultServiceTest extends AbstractTest {
 	private void createTwoStudyResults(Study study) {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult1 = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult1.setWorker(admin.getWorker());
 		StudyResult studyResult2 = resultCreator.createStudyResult(study,
-				study.getBatchList().get(0), admin.getWorker());
+				study.getDefaultBatch(), admin.getWorker());
 		// Have to set worker manually in test - don't know why
 		studyResult2.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();

@@ -44,7 +44,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
@@ -61,7 +61,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
@@ -87,7 +87,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
@@ -104,7 +104,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		batch.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
@@ -129,7 +129,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
-		Batch batch = study.getBatchList().get(0);
+		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
