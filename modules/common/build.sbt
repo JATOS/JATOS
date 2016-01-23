@@ -2,10 +2,6 @@ import com.typesafe.config._
 
 name := "jatos-common"
 
-version := "2.1.1-beta"
-
-scalaVersion := "2.11.7"
-
 libraryDependencies ++= Seq(
 	javaCore,
 	javaJdbc,

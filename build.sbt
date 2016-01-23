@@ -2,13 +2,9 @@ import com.typesafe.config._
 
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
-version := "2.1.1-beta"
+// Settings that are common to all modules are in project/Common.scala
 
 name := "JATOS"
-
-organization := "org.jatos"
-
-scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq(
 	"org.mockito" % "mockito-core" % "1.9.5" % "test",
