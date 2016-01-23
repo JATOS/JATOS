@@ -90,11 +90,13 @@ public class Initializer {
 		jpa.withTransaction(() -> {
 			List<GroupResult> groupResultList = groupResultDao.findAllNotFinished();
 			for (GroupResult groupresult : groupResultList) {
-				groupresult.setGroupState(GroupState.FINISHED);
-				groupResultDao.update(groupresult);
-				Logger.info(CLASS_NAME + ".checkGroupResults: All group results should be "
-						+ "finished when starting, but group result " + groupresult.getId()
-						+ " wasn't. Finish it now.");
+				if (groupresult.getGroupState() == GroupState.STARTED) {
+					groupresult.setGroupState(GroupState.FINISHED);
+					groupResultDao.update(groupresult);
+					Logger.info(CLASS_NAME + ".checkGroupResults: No group results should be "
+							+ "in state STARTED, but group result " + groupresult.getId()
+							+ " wasn. Finish it now.");
+				}
 			}
 		});
 	}
