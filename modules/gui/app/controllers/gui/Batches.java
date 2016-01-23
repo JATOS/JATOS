@@ -252,8 +252,7 @@ public class Batches extends Controller {
 					.forEach(batchProperties::addAllowedWorkerType);
 		}
 
-		Batch updatedBatch = batchService.bindToBatch(batchProperties);
-		batchService.updateBatch(currentBatch, updatedBatch);
+		batchService.updateBatch(currentBatch, batchProperties);
 		return ok();
 	}
 

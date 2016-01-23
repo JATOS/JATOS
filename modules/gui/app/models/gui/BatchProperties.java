@@ -9,7 +9,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
 import general.common.MessagesStrings;
-import models.common.workers.Worker;
 import play.data.validation.ValidationError;
 
 /**
@@ -93,13 +92,6 @@ public class BatchProperties {
 	 * groups.
 	 */
 	private Integer maxTotalWorkers = null;
-
-	/**
-	 * Set of workers that created in this batch. Workers can be created before
-	 * the study starts (Jatos, PM or PS) or created on-the-fly after the study
-	 * started (MT, GS) - but all appear in this list.
-	 */
-	private Set<Worker> workers = new HashSet<>();
 
 	/**
 	 * Set of worker types that are allowed to run in this batch. If the worker
@@ -205,26 +197,6 @@ public class BatchProperties {
 
 	public boolean hasAllowedWorkerType(String workerType) {
 		return allowedWorkerTypes.contains(workerType);
-	}
-
-	public void setWorkerList(Set<Worker> workers) {
-		this.workers = workers;
-	}
-
-	public Set<Worker> getWorkers() {
-		return this.workers;
-	}
-
-	public void addWorker(Worker worker) {
-		workers.add(worker);
-	}
-
-	public void removeWorker(Worker worker) {
-		workers.remove(worker);
-	}
-
-	public boolean hasWorker(Worker worker) {
-		return workers.contains(worker);
 	}
 
 	@Override

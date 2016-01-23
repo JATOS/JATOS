@@ -117,17 +117,15 @@ public class BatchService {
 		batch.addWorker(loggedInUser.getWorker());
 	}
 
-	public void updateBatch(Batch batch, Batch updatedBatch) {
-		batch.setTitle(updatedBatch.getTitle());
-		batch.setActive(updatedBatch.isActive());
-		batch.setMinActiveMembers(updatedBatch.getMinActiveMembers());
-		batch.setMaxActiveMembers(updatedBatch.getMaxActiveMembers());
-		batch.setMaxTotalMembers(updatedBatch.getMaxTotalMembers());
-		batch.setMaxTotalWorkers(updatedBatch.getMaxTotalWorkers());
-		batch.getWorkerList().clear();
-		updatedBatch.getWorkerList().forEach(batch::addWorker);
+	public void updateBatch(Batch batch, BatchProperties updatedBatchProps) {
+		batch.setTitle(updatedBatchProps.getTitle());
+		batch.setActive(updatedBatchProps.isActive());
+		batch.setMinActiveMembers(updatedBatchProps.getMinActiveMembers());
+		batch.setMaxActiveMembers(updatedBatchProps.getMaxActiveMembers());
+		batch.setMaxTotalMembers(updatedBatchProps.getMaxTotalMembers());
+		batch.setMaxTotalWorkers(updatedBatchProps.getMaxTotalWorkers());
 		batch.getAllowedWorkerTypes().clear();
-		updatedBatch.getAllowedWorkerTypes()
+		updatedBatchProps.getAllowedWorkerTypes()
 				.forEach(batch::addAllowedWorkerType);
 		batchDao.update(batch);
 	}
@@ -145,7 +143,6 @@ public class BatchService {
 		props.setMaxTotalWorkerLimited(batch.getMaxTotalWorkers() != null);
 		props.setMaxTotalWorkers(batch.getMaxTotalWorkers());
 		batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
-		batch.getWorkerList().forEach(props::addWorker);
 		return props;
 	}
 
@@ -170,7 +167,6 @@ public class BatchService {
 			batch.setMaxTotalWorkers(null);
 		}
 		props.getAllowedWorkerTypes().forEach(batch::addAllowedWorkerType);
-		props.getWorkers().forEach(batch::addWorker);
 		return batch;
 	}
 
