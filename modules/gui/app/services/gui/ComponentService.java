@@ -143,7 +143,7 @@ public class ComponentService {
 	}
 
 	/**
-	 * Creates but NOT persists the given Component. Generates UUID.
+	 * Initialise but NOT persists the given Component. Generates UUID.
 	 */
 	public Component createComponent(Study study, Component component) {
 		if (component.getUuid() == null) {
@@ -154,7 +154,7 @@ public class ComponentService {
 	}
 
 	/**
-	 * Create and persist the given Component. Generates UUID. Updates its
+	 * Initialise and persist the given Component. Generates UUID. Updates its
 	 * study.
 	 */
 	public Component createAndPersistComponent(Study study,

@@ -205,12 +205,17 @@ public class StudyService {
 		}
 		studyDao.create(study);
 
-		// Create default batch
-		Batch defaultBatch = batchService.createDefaultBatch(study,
-				loggedInUser);
-		study.addBatch(defaultBatch);
-		defaultBatch.setStudy(study);
-		batchDao.create(defaultBatch);
+		if (study.getBatchList().isEmpty()) {
+			// Create default batch if we have no batch 
+			Batch defaultBatch = batchService.createDefaultBatch(study,
+					loggedInUser);
+			study.addBatch(defaultBatch);
+			batchDao.create(defaultBatch);
+		} else {
+			study.getBatchList().forEach(
+					b -> batchService.createBatch(b, study, loggedInUser));
+			study.getBatchList().forEach(b -> batchDao.create(b));
+		}
 
 		// Add user
 		study.addUser(loggedInUser);
@@ -221,7 +226,7 @@ public class StudyService {
 		study.getComponentList()
 				.forEach(c -> componentService.createComponent(study, c));
 		study.getComponentList().forEach(c -> componentDao.create(c));
-		
+
 		studyDao.update(study);
 		return study;
 	}

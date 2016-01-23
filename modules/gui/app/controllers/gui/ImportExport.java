@@ -113,15 +113,15 @@ public class ImportExport extends Controller {
 					Http.Status.BAD_REQUEST);
 		}
 
-		JsonNode jsonNode = null;
+		JsonNode responseJson = null;
 		try {
-			jsonNode = importExportService.importStudy(loggedInUser,
+			responseJson = importExportService.importStudy(loggedInUser,
 					filePart.getFile());
 		} catch (ForbiddenException | IOException e) {
 			importExportService.cleanupAfterStudyImport();
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		return ok(jsonNode);
+		return ok(responseJson);
 	}
 
 	/**
@@ -141,6 +141,9 @@ public class ImportExport extends Controller {
 		try {
 			importExportService.importStudyConfirmed(loggedInUser, json);
 		} catch (ForbiddenException | IOException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwHome(e);
+		} catch (Exception e) {
+			// Unexpected exception, but we have to clean up
 			jatosGuiExceptionThrower.throwHome(e);
 		} finally {
 			importExportService.cleanupAfterStudyImport();
@@ -272,6 +275,9 @@ public class ImportExport extends Controller {
 			importExportService.importComponentConfirmed(study,
 					tempComponentFileName);
 		} catch (ForbiddenException | IOException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+		} catch (Exception e) {
+			// Unexpected exception, but we have to clean up
 			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
 		} finally {
 			importExportService.cleanupAfterComponentImport();

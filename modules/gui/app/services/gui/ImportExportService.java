@@ -101,7 +101,7 @@ public class ImportExportService {
 	}
 
 	public void importComponentConfirmed(Study study,
-			String tempComponentFileName) throws IOException {
+			String tempComponentFileName) throws Exception {
 		File componentFile = getTempComponentFile(tempComponentFileName);
 		if (componentFile == null) {
 			Logger.warn(
@@ -157,18 +157,18 @@ public class ImportExportService {
 				dirExists);
 
 		// Create JSON response
-		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
-		objectNode.put(ImportExportService.STUDY_EXISTS, studyExists);
-		objectNode.put(ImportExportService.STUDY_TITLE,
+		ObjectNode responseJson = JsonUtils.OBJECTMAPPER.createObjectNode();
+		responseJson.put(ImportExportService.STUDY_EXISTS, studyExists);
+		responseJson.put(ImportExportService.STUDY_TITLE,
 				uploadedStudy.getTitle());
-		objectNode.put(ImportExportService.DIR_EXISTS, dirExists);
-		objectNode.put(ImportExportService.DIR_PATH,
+		responseJson.put(ImportExportService.DIR_EXISTS, dirExists);
+		responseJson.put(ImportExportService.DIR_PATH,
 				uploadedStudy.getDirName());
-		return objectNode;
+		return responseJson;
 	}
 
 	public void importStudyConfirmed(User loggedInUser, JsonNode json)
-			throws IOException, ForbiddenException, BadRequestException {
+			throws Exception {
 		if (json == null) {
 			Logger.error(CLASS_NAME + ".importStudyConfirmed: JSON is null");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);

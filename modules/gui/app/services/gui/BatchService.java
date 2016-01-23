@@ -69,18 +69,29 @@ public class BatchService {
 	}
 
 	/**
-	 * Create and init default Batch. Each Study has a default batch. Does NOT
-	 * persist.
+	 * Initialises Batch. Does NOT persist.
+	 */
+	public Batch createBatch(Batch batch, Study study, User loggedInUser) {
+		initBatch(batch, loggedInUser);
+		batch.setStudy(study);
+		return batch;
+	}
+
+	/**
+	 * Create and initialises default Batch. Each Study has a default batch.
+	 * Does NOT persist.
 	 */
 	public Batch createDefaultBatch(Study study, User loggedInUser) {
 		Batch batch = new Batch();
 		batch.setTitle(BatchProperties.DEFAULT_TITLE);
 		initBatch(batch, loggedInUser);
+		batch.setStudy(study);
 		return batch;
 	}
 
 	/**
-	 * Creates batch, inits it and persists it. Updates study with new batch.
+	 * Creates batch, initialises it and persists it. Updates study with new
+	 * batch.
 	 */
 	public void createAndPersistBatch(Batch batch, Study study,
 			User loggedInUser) {

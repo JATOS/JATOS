@@ -14,7 +14,6 @@ import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import general.AbstractTest;
 import models.common.Component;
@@ -126,8 +125,7 @@ public class ImportExportServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void importNewComponent()
-			throws NoSuchAlgorithmException, IOException {
+	public void importNewComponent() throws Exception {
 		Study study = importExampleStudy();
 		addStudy(study);
 		File componentFile = getExampleComponentFile();
@@ -187,7 +185,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 	@Test
 	public void importNewStudy()
-			throws IOException, ForbiddenException, BadRequestException {
+			throws Exception {
 
 		// Import 1. part: Call importStudy()
 		File studyFile = getExampleStudyFile();
@@ -258,8 +256,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 	@Test
 	public void importStudyOverwritePropertiesAndAssets()
-			throws NoSuchAlgorithmException, IOException, ForbiddenException,
-			BadRequestException {
+			throws Exception {
 		// Import study and alter it, so we have something to overwrite later on
 		Study study = importExampleStudy();
 		alterStudy(study);
@@ -308,8 +305,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 	@Test
 	public void importStudyOverwritePropertiesNotAssets()
-			throws NoSuchAlgorithmException, IOException, ForbiddenException,
-			BadRequestException {
+			throws Exception {
 		// Import study, so we have something to overwrite
 		Study study = importExampleStudy();
 		alterStudy(study);
@@ -359,8 +355,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 	@Test
 	public void importStudyOverwriteAssetsNotProperties()
-			throws NoSuchAlgorithmException, IOException, ForbiddenException,
-			BadRequestException {
+			throws Exception {
 		// Import study and alter it, so we have something to overwrite
 		Study study = importExampleStudy();
 		alterStudy(study);

@@ -19,8 +19,10 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.google.common.collect.Lists;
 
 import utils.common.JsonUtils;
 
@@ -79,10 +81,10 @@ public class Study {
 	private boolean locked = false;
 
 	/**
-	 * Is this study a group study, e.g. worker scripts can send messages
-	 * between each other.
+	 * Is this study a group study (e.g. group members can send messages to each
+	 * other)
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
+	@JsonView({ JsonUtils.JsonForIO.class, JsonUtils.JsonForPublix.class })
 	private boolean groupStudy = false;
 
 	/**
@@ -132,7 +134,7 @@ public class Study {
 	/**
 	 * Ordered list of batches of this study. The relationship is bidirectional.
 	 */
-	@JsonIgnore
+	@JsonView(JsonUtils.JsonForIO.class)
 	@OneToMany(fetch = FetchType.LAZY)
 	@OrderColumn(name = "batchList_order")
 	@JoinColumn(name = "study_id")
@@ -328,9 +330,15 @@ public class Study {
 	public void removeBatch(Batch batch) {
 		batchList.remove(batch);
 	}
-	
+
+	@JsonIgnore
 	public Batch getDefaultBatch() {
 		return this.batchList.get(0);
+	}
+
+	@JsonGetter("batchList")
+	public List<Batch> getDefaultBatchList() {
+		return Lists.newArrayList(this.batchList.get(0));
 	}
 
 	@Override
