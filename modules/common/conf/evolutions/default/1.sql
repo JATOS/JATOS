@@ -5,7 +5,6 @@
 CREATE TABLE `Batch` (
   `active` tinyint(1) NOT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `minActiveMembers` int(11) NOT NULL,
   `maxActiveMembers` int(11) DEFAULT NULL,
   `maxTotalMembers` int(11) DEFAULT NULL,
   `maxTotalWorkers` int(11) DEFAULT NULL,

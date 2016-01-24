@@ -751,23 +751,6 @@ jatos.setGroupFixed = function() {
 };
 
 /**
- * @return {Boolean} True if the group has reached the minimum amount of active
- *         members. It's not necessary that each member has an open group
- *         channel.
- */
-jatos.isMinActiveMemberReached = function() {
-	return jatos.groupMembers.length >= jatos.batchProperties.minActiveMembers;
-};
-
-/**
- * @return {Boolean} True if the group has reached the minimum amount of active
- *         members and each member has an open group channel.
- */
-jatos.isMinActiveMemberOpen = function() {
-	return jatos.groupChannels.length >= jatos.batchProperties.minActiveMembers;
-};
-
-/**
  * @return {Boolean} True if the group has reached the maximum amount of active
  *         members. It's not necessary that each member has an open group
  *         channel.

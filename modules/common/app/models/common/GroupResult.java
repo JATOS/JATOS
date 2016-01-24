@@ -20,7 +20,16 @@ import javax.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * Model and DB entity of a group result.
+ * Model and DB entity of a group result. A group result defines some properties
+ * and who's member in a group of a group study.
+ * 
+ * Members of a GroupResult (or just group) are the StudyResults and not the
+ * workers. But a studyResult is always associated with a Worker.
+ * 
+ * A group can be joined or left.
+ * 
+ * An active member is a StudyResult who joined a group and is in the
+ * studyResultList.
  * 
  * @author Kristian Lange
  */
@@ -44,7 +53,7 @@ public class GroupResult {
 
 	/**
 	 * Current group result state (Yes, it should be named groupResultState -
-	 * but hey, it's so much nice this way.)
+	 * but hey, it's so much nicer this way.)
 	 */
 	private GroupState groupState;
 
@@ -73,16 +82,16 @@ public class GroupResult {
 	private Batch batch;
 
 	/**
-	 * StudyResult that this GroupResult belongs to as long as this study run is
-	 * not finished. This relationship is bidirectional.
+	 * Contains all current active members of this group. Members are
+	 * StudyResults. This relationship is bidirectional.
 	 */
 	@OneToMany(fetch = FetchType.EAGER)
 	@JoinColumn(name = "groupResult_id")
 	private Set<StudyResult> studyResultList = new HashSet<>();
 
 	/**
-	 * StudyResult that this GroupResult belongs to after this study run is
-	 * finished. This relationship is unidirectional.
+	 * Contains all former members of this group (not active any more) that
+	 * somehow finished this study. This relationship is unidirectional.
 	 */
 	@OneToMany(fetch = FetchType.LAZY)
 	@JoinColumn(name = "groupResultHistory_id")

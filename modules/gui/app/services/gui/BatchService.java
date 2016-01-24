@@ -59,7 +59,6 @@ public class BatchService {
 		clone.setUuid(UUID.randomUUID().toString());
 		clone.setTitle(batch.getTitle());
 		clone.setActive(batch.isActive());
-		clone.setMinActiveMembers(batch.getMinActiveMembers());
 		clone.setMaxActiveMembers(batch.getMaxActiveMembers());
 		clone.setMaxTotalMembers(batch.getMaxTotalMembers());
 		clone.setMaxTotalWorkers(batch.getMaxTotalWorkers());
@@ -120,7 +119,6 @@ public class BatchService {
 	public void updateBatch(Batch batch, BatchProperties updatedBatchProps) {
 		batch.setTitle(updatedBatchProps.getTitle());
 		batch.setActive(updatedBatchProps.isActive());
-		batch.setMinActiveMembers(updatedBatchProps.getMinActiveMembers());
 		batch.setMaxActiveMembers(updatedBatchProps.getMaxActiveMembers());
 		batch.setMaxTotalMembers(updatedBatchProps.getMaxTotalMembers());
 		batch.setMaxTotalWorkers(updatedBatchProps.getMaxTotalWorkers());
@@ -139,7 +137,6 @@ public class BatchService {
 		props.setMaxActiveMemberLimited(batch.getMaxActiveMembers() != null);
 		props.setMaxTotalMembers(batch.getMaxTotalMembers());
 		props.setMaxTotalMemberLimited(batch.getMaxTotalMembers() != null);
-		props.setMinActiveMembers(batch.getMinActiveMembers());
 		props.setMaxTotalWorkerLimited(batch.getMaxTotalWorkers() != null);
 		props.setMaxTotalWorkers(batch.getMaxTotalWorkers());
 		batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
@@ -160,7 +157,6 @@ public class BatchService {
 		} else {
 			batch.setMaxTotalMembers(null);
 		}
-		batch.setMinActiveMembers(props.getMinActiveMembers());
 		if (props.isMaxTotalWorkerLimited()) {
 			batch.setMaxTotalWorkers(props.getMaxTotalWorkers());
 		} else {

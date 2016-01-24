@@ -26,13 +26,9 @@ import utils.common.JsonUtils;
  * {@link models.gui.BatchProperties}.
  * 
  * Defines the constrains regarding workers for a batch of a study, e.g. which
- * workers are allowed, how many etc.
+ * worker types are allowed, how many etc.
  * 
- * @TODO An active member is a member who joined a group and is still member of
- *       this group. minActiveMembers, maxActiveMemberLimited, maxActiveMembers,
- *       maxTotalMemberLimited and maxTotalMembers are properties for groups.
- * 
- * @author Kristian Lange (2015)
+ * @author Kristian Lange
  */
 @Entity
 @Table(name = "Batch")
@@ -69,14 +65,6 @@ public class Batch {
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private boolean active = true;
-
-	/**
-	 * Minimum number of workers/members in one group of this batch that are
-	 * active at the same time. This property is only used if this batch belongs
-	 * to a group study.
-	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
-	private int minActiveMembers = 2;
 
 	/**
 	 * Maximum number of workers/members in one group of this batch that are
@@ -165,14 +153,6 @@ public class Batch {
 
 	public void setActive(boolean active) {
 		this.active = active;
-	}
-
-	public int getMinActiveMembers() {
-		return minActiveMembers;
-	}
-
-	public void setMinActiveMembers(int minActiveMembers) {
-		this.minActiveMembers = minActiveMembers;
 	}
 
 	public Integer getMaxActiveMembers() {

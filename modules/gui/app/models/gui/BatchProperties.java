@@ -18,8 +18,8 @@ import play.data.validation.ValidationError;
  * database entity is {@link models.common.Batch}.
  * 
  * An active member is a member who joined a group and is still member of this
- * group. minActiveMembers, maxActiveMemberLimited, maxActiveMembers,
- * maxTotalMemberLimited and maxTotalMembers are properties for groups.
+ * group. maxActiveMemberLimited, maxActiveMembers, maxTotalMemberLimited and
+ * maxTotalMembers are properties for groups.
  * 
  * @author Kristian Lange (2015)
  */
@@ -28,7 +28,6 @@ public class BatchProperties {
 	public static final String TITLE = "title";
 	public static final String DEFAULT_TITLE = "Default";
 	public static final String ACTIVE = "active";
-	public static final String MIN_ACTIVE_MEMBERS = "minActiveMembers";
 	public static final String MAX_ACTIVE_MEMBERS = "maxActiveMembers";
 	public static final String MAX_ACTIVE_MEMBER_LIMITED = "maxActiveMemberLimited";
 	public static final String MAX_TOTAL_MEMBERS = "maxTotalMembers";
@@ -49,13 +48,6 @@ public class BatchProperties {
 	 * True if batch can be used.
 	 */
 	private boolean active = true;
-
-	/**
-	 * Minimum number of workers/members in one group of this batch that are
-	 * active at the same time. This property is only used if this batch belongs
-	 * to a group study.
-	 */
-	private Integer minActiveMembers = 2;
 
 	/**
 	 * Set to true if the maxActiveMembers are limited (= groups have an limited
@@ -121,14 +113,6 @@ public class BatchProperties {
 
 	public void setActive(boolean active) {
 		this.active = active;
-	}
-
-	public Integer getMinActiveMembers() {
-		return minActiveMembers;
-	}
-
-	public void setMinActiveMembers(Integer minActiveMembers) {
-		this.minActiveMembers = minActiveMembers;
 	}
 
 	public boolean isMaxActiveMemberLimited() {
@@ -214,19 +198,9 @@ public class BatchProperties {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (minActiveMembers == null || minActiveMembers < 1) {
-			errorList.add(new ValidationError(MIN_ACTIVE_MEMBERS,
-					MessagesStrings.BATCH_MIN_ACTIVE_MEMBERS));
-		}
 		if (maxActiveMemberLimited && maxActiveMembers == null) {
 			errorList.add(new ValidationError(MAX_ACTIVE_MEMBERS,
 					MessagesStrings.BATCH_MAX_ACTIVE_MEMBERS_SET));
-		}
-		if (maxActiveMemberLimited && maxActiveMembers != null
-				&& minActiveMembers != null
-				&& maxActiveMembers < minActiveMembers) {
-			errorList.add(new ValidationError(MAX_ACTIVE_MEMBERS,
-					MessagesStrings.BATCH_MAX_ACTIVE_MEMBERS));
 		}
 		if (maxTotalMemberLimited && maxTotalMembers == null) {
 			errorList.add(new ValidationError(MAX_TOTAL_MEMBERS,
