@@ -46,19 +46,9 @@ public class GroupResultDao extends AbstractDao {
 	}
 
 	/**
-	 * Searches the database for the first GroupResult of this batch where the
-	 * maxActiveMembers size and maxTotalMembers size is not reached yet and
-	 * that is in state STARTED.
-	 */
-	public GroupResult findFirstMaxNotReached(Batch group) {
-		List<GroupResult> groupResultList = findAllMaxNotReached(group);
-		return !groupResultList.isEmpty() ? groupResultList.get(0) : null;
-	}
-
-	/**
 	 * Searches the database for all GroupResults of this batch where the
-	 * maxActiveMembers size and maxTotalMembers size is not reached yet and
-	 * that is in state STARTED.
+	 * maxActiveMembers size and maxTotalMembers size are not reached yet and
+	 * that ate in state STARTED.
 	 */
 	public List<GroupResult> findAllMaxNotReached(Batch batch) {
 		String queryStr = "SELECT gr FROM GroupResult gr, Batch b "

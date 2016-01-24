@@ -1,5 +1,7 @@
 package services.publix;
 
+import java.util.List;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -46,9 +48,7 @@ public class GroupService {
 	}
 
 	/**
-	 * Joins the first GroupResult where the max number of members is not
-	 * reached yet and returns it. If such doesn't exist it creates a new one
-	 * and persists it.
+	 * Joins the a GroupResult or create a new one. Persists changes.
 	 */
 	public GroupResult join(StudyResult studyResult, Batch batch) {
 		// If we already have a GroupResult just return it
@@ -56,42 +56,50 @@ public class GroupService {
 			return studyResult.getGroupResult();
 		}
 
-		// Look in the DB if we have an incomplete GroupResult. If not create
-		// new one.
-		GroupResult groupResult = groupResultDao.findFirstMaxNotReached(batch);
-		if (groupResult == null) {
-			groupResult = resultCreator.createGroupResult(batch);
-		}
+		// TODO Check in history
 
-		// Add StudyResult as member to GroupResult and vice versa
+		GroupResult groupResult = assignGroupResult(batch);
 		groupResult.addActiveMember(studyResult);
 		studyResult.setGroupResult(groupResult);
-
 		groupResultDao.update(groupResult);
 		studyResultDao.update(studyResult);
 		return groupResult;
 	}
 
+	/**
+	 * Look in the database if we have an incomplete GroupResult (state STARTED,
+	 * maxActiveMember not reached, maxTotalMembers not reached). If there are
+	 * more than one, return the one with the most active members. If there is
+	 * none, create a new GroupResult.
+	 */
+	private GroupResult assignGroupResult(Batch batch) {
+		GroupResult groupResult;
+		List<GroupResult> groupResultList = groupResultDao
+				.findAllMaxNotReached(batch);
+		if (groupResultList.isEmpty()) {
+			groupResult = resultCreator.createGroupResult(batch);
+		} else {
+			groupResult = groupResultList.stream()
+					.max((gr1, gr2) -> Integer.compare(
+							gr1.getActiveMemberList().size(),
+							gr2.getActiveMemberList().size()))
+					.get();
+		}
+		return groupResult;
+	}
+
+	/**
+	 * Leaves the GroupResult this studyResult is member of.
+	 */
 	public void leave(StudyResult studyResult) {
 		GroupResult groupResult = studyResult.getGroupResult();
 		if (groupResult == null) {
 			return;
 		}
-
-		moveGroupMemberToHistory(studyResult, groupResult);
-
-		// TODO If GroupResult has no more members empty remove it from DB
-		// if (groupResult.getStudyResultList().isEmpty()) {
-		// groupResultDao.remove(groupResult);
-		// }
-
-	}
-
-	private void moveGroupMemberToHistory(StudyResult studyResult,
-			GroupResult groupResult) {
 		groupResult.removeActiveMember(studyResult);
-		groupResult.addHistoryMember(studyResult);
+		studyResult.setGroupResult(null);
 		groupResultDao.update(groupResult);
+		studyResultDao.update(studyResult);
 	}
 
 }
