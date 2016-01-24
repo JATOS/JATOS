@@ -39,7 +39,6 @@ public class MessagesStrings {
 	public static final String COMPONENT_WASNT_SAVED = "Component wasn't saved";
 	public static final String BATCH_WASNT_SAVED = "Data weren't saved";
 	public static final String BATCH_NOT_ALLOWED_DELETE_DEFAULT = "It's not allowed to delete the default batch.";
-	public static final String BATCH_MIN_ACTIVE_MEMBERS = "Group's min active member size must be at least 1.";
 	public static final String BATCH_MAX_ACTIVE_MEMBERS_SET = "Group's max acitive members size must be set if you want to limit it.";
 	public static final String BATCH_MAX_ACTIVE_MEMBERS = "Group's max active member size must be greater or equal than the min one.";
 	public static final String BATCH_MAX_TOTAL_MEMBERS_SET = "Group's max total members size must be set if you want to limit it.";
