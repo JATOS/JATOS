@@ -3,7 +3,6 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
@@ -25,9 +24,8 @@ public class PersonalSingleStudyAuthorisation
 
 	@Inject
 	PersonalSingleStudyAuthorisation(PersonalSinglePublixUtils publixUtils,
-			PersonalSingleErrorMessages errorMessages,
-			StudyResultDao studyResultDao) {
-		super(errorMessages, studyResultDao);
+			PersonalSingleErrorMessages errorMessages) {
+		super(errorMessages);
 		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
 	}

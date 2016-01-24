@@ -1,25 +1,18 @@
 package services.publix;
 
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
-import models.common.StudyResult;
 import models.common.workers.Worker;
 
 public abstract class StudyAuthorisation<T extends Worker> {
 
 	private PublixErrorMessages errorMessages;
-	private StudyResultDao studyResultDao;
 
-	public StudyAuthorisation(PublixErrorMessages errorMessages,
-			StudyResultDao studyResultDao) {
+	public StudyAuthorisation(PublixErrorMessages errorMessages) {
 		this.errorMessages = errorMessages;
-		this.studyResultDao = studyResultDao;
 	}
 
 	/**
@@ -38,30 +31,22 @@ public abstract class StudyAuthorisation<T extends Worker> {
 	public abstract void checkWorkerAllowedToDoStudy(T worker, Study study,
 			Batch batch) throws ForbiddenPublixException;
 
+	/**
+	 * Check if the max total worker number is reached for this batch. Only
+	 * non-JatosWorker count here.
+	 */
 	public void checkMaxTotalWorkers(Batch batch, Worker worker)
 			throws ForbiddenPublixException {
-		int potentialWorkerNumber = retievePotentialWorkerNumber(batch, worker);
+		Set<Worker> workerSet = batch.getWorkerList();
+		// Add the worker who wants to run the study (he might have run it
+		// already)
+		workerSet.add(worker);
+		int potentialWorkerNumber = workerSet.size();
 		if (batch.getMaxTotalWorkers() != null
 				&& potentialWorkerNumber > batch.getMaxTotalWorkers()) {
 			throw new ForbiddenPublixException(
 					errorMessages.batchMaxTotalWorkerReached(batch.getId()));
 		}
-	}
-
-	/**
-	 * Returns the number of workers who run (at least started a study) in this
-	 * batch in case the given worker would have started this study already. The
-	 * same worker can run the same study several times - in this case the
-	 * number stays unchanged.
-	 */
-	public int retievePotentialWorkerNumber(Batch batch, Worker worker) {
-		List<StudyResult> studyResultList = studyResultDao
-				.findAllByBatch(batch);
-		// Worker can run the same study several times -> get the nr of workers
-		Set<Worker> workerSet = studyResultList.stream()
-				.map(sr -> sr.getWorker()).collect(Collectors.toSet());
-		workerSet.add(worker);
-		return workerSet.size();
 	}
 
 }

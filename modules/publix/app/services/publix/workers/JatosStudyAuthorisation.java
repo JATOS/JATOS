@@ -5,7 +5,6 @@ import javax.inject.Singleton;
 
 import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix;
-import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
@@ -24,9 +23,8 @@ public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
 	private final JatosErrorMessages errorMessages;
 
 	@Inject
-	JatosStudyAuthorisation(JatosErrorMessages errorMessages,
-			StudyResultDao studyResultDao) {
-		super(errorMessages, studyResultDao);
+	JatosStudyAuthorisation(JatosErrorMessages errorMessages) {
+		super(errorMessages);
 		this.errorMessages = errorMessages;
 	}
 

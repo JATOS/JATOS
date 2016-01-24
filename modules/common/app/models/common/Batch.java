@@ -51,7 +51,7 @@ public class Batch {
 	 */
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "study_id", insertable=false, updatable=false, nullable=false)
+	@JoinColumn(name = "study_id", insertable = false, updatable = false, nullable = false)
 	private Study study;
 
 	/**
@@ -86,6 +86,7 @@ public class Batch {
 	/**
 	 * Maximum number of workers in this batch in total independent of its
 	 * groups. If there is no limit in active members the value is null.
+	 * JatosWorker does not count here.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private Integer maxTotalWorkers = null;

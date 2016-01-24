@@ -3,7 +3,6 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
@@ -25,8 +24,8 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 
 	@Inject
 	MTStudyAuthorisation(MTPublixUtils publixUtils,
-			MTErrorMessages errorMessages, StudyResultDao studyResultDao) {
-		super(errorMessages, studyResultDao);
+			MTErrorMessages errorMessages) {
+		super(errorMessages);
 		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
 	}
