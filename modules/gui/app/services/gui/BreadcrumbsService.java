@@ -36,7 +36,7 @@ public class BreadcrumbsService {
 	public static final String CHANGE_PASSWORD = "Change Password";
 	public static final String EDIT_PROFILE = "Edit Profile";
 	public static final String NEW_USER = "New User";
-	public static final String RUN_MANAGER = "Run Manager";
+	public static final String BATCH_MANAGER = "Batch Manager";
 
 	public String generateForHome() {
 		return generateForHome(null);
@@ -121,11 +121,11 @@ public class BreadcrumbsService {
 		breadcrumbs.addBreadcrumb(study.getTitle(),
 				controllers.gui.routes.Studies.index(study.getId()).url());
 		if (batch != null) {
-			breadcrumbs.addBreadcrumb(RUN_MANAGER,
+			breadcrumbs.addBreadcrumb(BATCH_MANAGER,
 					controllers.gui.routes.Batches.runManager(study.getId()).url());
-			breadcrumbs.addBreadcrumb("Batch " + batch.getTitle(), "");
+			breadcrumbs.addBreadcrumb(batch.getTitle(), "");
 		} else {
-			breadcrumbs.addBreadcrumb(RUN_MANAGER, "");
+			breadcrumbs.addBreadcrumb(BATCH_MANAGER, "");
 		}
 		String breadcrumbsStr = "";
 		try {
