@@ -85,8 +85,7 @@ public class GroupResult {
 	 * Contains all current active members of this group. Members are
 	 * StudyResults. This relationship is bidirectional.
 	 */
-	@OneToMany(fetch = FetchType.EAGER)
-	@JoinColumn(name = "activeGroupMember_id")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy="groupResult")
 	private Set<StudyResult> activeMemberList = new HashSet<>();
 
 	/**

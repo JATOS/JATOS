@@ -119,7 +119,7 @@ public class StudyResult {
 	 */
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "groupResult_id")
+	@JoinColumn(name = "activeGroupMember_id")
 	private GroupResult groupResult;
 
 	private String confirmationCode;
