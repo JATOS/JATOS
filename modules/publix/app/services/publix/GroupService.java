@@ -63,8 +63,8 @@ public class GroupService {
 			groupResult = resultCreator.createGroupResult(batch);
 		}
 
-		// Add StudyResult to GroupResult and vice versa
-		groupResult.addStudyResult(studyResult);
+		// Add StudyResult as member to GroupResult and vice versa
+		groupResult.addActiveMember(studyResult);
 		studyResult.setGroupResult(groupResult);
 
 		groupResultDao.update(groupResult);
@@ -78,7 +78,7 @@ public class GroupService {
 			return;
 		}
 
-		moveStudyResultToHistory(studyResult, groupResult);
+		moveGroupMemberToHistory(studyResult, groupResult);
 
 		// TODO If GroupResult has no more members empty remove it from DB
 		// if (groupResult.getStudyResultList().isEmpty()) {
@@ -87,10 +87,10 @@ public class GroupService {
 
 	}
 
-	private void moveStudyResultToHistory(StudyResult studyResult,
+	private void moveGroupMemberToHistory(StudyResult studyResult,
 			GroupResult groupResult) {
-		groupResult.removeStudyResult(studyResult);
-		groupResult.addStudyResultToHistory(studyResult);
+		groupResult.removeActiveMember(studyResult);
+		groupResult.addHistoryMember(studyResult);
 		groupResultDao.update(groupResult);
 	}
 

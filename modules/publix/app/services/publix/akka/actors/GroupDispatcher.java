@@ -351,7 +351,7 @@ public class GroupDispatcher extends UntypedActor {
 		objectNode.put(GroupActionMsg.GROUP_STATE,
 				groupResult.getGroupState().name());
 		objectNode.put(GroupActionMsg.MEMBERS,
-				String.valueOf(groupResult.getStudyResultList()));
+				String.valueOf(groupResult.getActiveMemberList()));
 		objectNode.put(GroupActionMsg.CHANNELS,
 				String.valueOf(groupChannelMap.keySet()));
 		objectNode.put(GroupActionMsg.GROUP_SESSION_DATA,

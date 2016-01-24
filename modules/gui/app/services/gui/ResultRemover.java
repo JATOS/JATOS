@@ -172,10 +172,10 @@ public class ResultRemover {
 		worker.removeStudyResult(studyResult);
 		workerDao.update(worker);
 
-		// Remove studyResult from group result
+		// Remove studyResult as member from group result
 		GroupResult groupResult = studyResult.getGroupResult();
 		if (groupResult != null) {
-			groupResult.removeStudyResult(studyResult);
+			groupResult.removeActiveMember(studyResult);
 			groupResultDao.update(groupResult);
 		}
 

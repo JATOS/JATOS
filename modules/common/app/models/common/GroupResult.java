@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * A group can be joined or left.
  * 
  * An active member is a StudyResult who joined a group and is in the
- * studyResultList.
+ * activeMemberList. A former member is in the historyMemberList.
  * 
  * @author Kristian Lange
  */
@@ -86,16 +86,16 @@ public class GroupResult {
 	 * StudyResults. This relationship is bidirectional.
 	 */
 	@OneToMany(fetch = FetchType.EAGER)
-	@JoinColumn(name = "groupResult_id")
-	private Set<StudyResult> studyResultList = new HashSet<>();
+	@JoinColumn(name = "activeGroupMember_id")
+	private Set<StudyResult> activeMemberList = new HashSet<>();
 
 	/**
 	 * Contains all former members of this group (not active any more) that
 	 * somehow finished this study. This relationship is unidirectional.
 	 */
 	@OneToMany(fetch = FetchType.LAZY)
-	@JoinColumn(name = "groupResultHistory_id")
-	private Set<StudyResult> studyResultHistory = new HashSet<>();
+	@JoinColumn(name = "historyGroupMember_id")
+	private Set<StudyResult> historyMemberList = new HashSet<>();
 
 	/**
 	 * Time and date when the study was started on the server.
@@ -178,36 +178,36 @@ public class GroupResult {
 		return this.endDate;
 	}
 
-	public void setStudyResultList(Set<StudyResult> studyResultList) {
-		this.studyResultList = studyResultList;
+	public void setActiveMemberList(Set<StudyResult> activeMemberList) {
+		this.activeMemberList = activeMemberList;
 	}
 
-	public Set<StudyResult> getStudyResultList() {
-		return this.studyResultList;
+	public Set<StudyResult> getActiveMemberList() {
+		return this.activeMemberList;
 	}
 
-	public void removeStudyResult(StudyResult studyResult) {
-		studyResultList.remove(studyResult);
+	public void removeActiveMember(StudyResult studyResult) {
+		activeMemberList.remove(studyResult);
 	}
 
-	public void addStudyResult(StudyResult studyResult) {
-		studyResultList.add(studyResult);
+	public void addActiveMember(StudyResult studyResult) {
+		activeMemberList.add(studyResult);
 	}
 
-	public void setStudyResultHistory(Set<StudyResult> studyResultHistory) {
-		this.studyResultHistory = studyResultHistory;
+	public void setHistoryMemberList(Set<StudyResult> historyMemberList) {
+		this.historyMemberList = historyMemberList;
 	}
 
-	public Set<StudyResult> getStudyResultHistory() {
-		return this.studyResultHistory;
+	public Set<StudyResult> getHistoryMemberList() {
+		return this.historyMemberList;
 	}
 
-	public void removeStudyResultFromHistory(StudyResult studyResult) {
-		studyResultHistory.remove(studyResult);
+	public void removeHistoryMember(StudyResult studyResult) {
+		historyMemberList.remove(studyResult);
 	}
 
-	public void addStudyResultToHistory(StudyResult studyResult) {
-		studyResultHistory.add(studyResult);
+	public void addHistoryMember(StudyResult studyResult) {
+		historyMemberList.add(studyResult);
 	}
 
 	@Override
