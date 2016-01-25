@@ -56,7 +56,7 @@ GET     /jatos/:studyId                              @controllers.gui.Studies.in
 GET     /jatos/:studyId/                             @controllers.gui.Studies.index(studyId: Long)
 
 # Batches controller
-GET     /jatos/:studyId/runManager                           @controllers.gui.Batches.runManager(studyId: Long)
+GET     /jatos/:studyId/batchManager                         @controllers.gui.Batches.batchManager(studyId: Long)
 POST    /jatos/:studyId/batch                                @controllers.gui.Batches.submitCreated(studyId: Long)
 GET     /jatos/:studyId/batch/:batchId/properties            @controllers.gui.Batches.properties(studyId: Long, batchId: Long)
 POST    /jatos/:studyId/batch/:batchId/properties            @controllers.gui.Batches.submitEditedProperties(studyId: Long, batchId: Long)

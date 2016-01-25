@@ -80,7 +80,7 @@ public class Batches extends Controller {
 	 * GET request to get the runManager page
 	 */
 	@Transactional
-	public Result runManager(Long studyId) throws JatosGuiException {
+	public Result batchManager(Long studyId) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".runManager: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
@@ -91,8 +91,8 @@ public class Batches extends Controller {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
 
-		String breadcrumbs = breadcrumbsService.generateForRunManager(study);
-		return ok(views.html.gui.study.runManager.render(loggedInUser,
+		String breadcrumbs = breadcrumbsService.generateForBatchManager(study);
+		return ok(views.html.gui.study.batchManager.render(loggedInUser,
 				breadcrumbs, study));
 	}
 
@@ -150,6 +150,7 @@ public class Batches extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -186,7 +187,7 @@ public class Batches extends Controller {
 
 		String baseUrl = ControllerUtils.getReferer();
 		Map<String, Integer> studyResultCountsPerWorker = batchService.retrieveStudyResultCountsPerWorker(batch);
-		String breadcrumbs = breadcrumbsService.generateForRunManager(study,
+		String breadcrumbs = breadcrumbsService.generateForBatchManager(study,
 				batch);
 		return ok(views.html.gui.study.batch.render(loggedInUser, breadcrumbs,
 				batch.getId(), study, baseUrl, studyResultCountsPerWorker));
@@ -233,6 +234,7 @@ public class Batches extends Controller {
 		Batch currentBatch = batchDao.findById(batchId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 			checker.checkStandardForBatch(currentBatch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
@@ -273,6 +275,7 @@ public class Batches extends Controller {
 		Batch batch = batchDao.findById(batchId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
@@ -300,6 +303,7 @@ public class Batches extends Controller {
 		Batch batch = batchDao.findById(batchId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 			checker.checkStandardForBatch(batch, study, batchId);
 			checker.checkDefaultBatch(batch);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -326,6 +330,7 @@ public class Batches extends Controller {
 		Batch batch = batchDao.findById(batchId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
@@ -368,6 +373,7 @@ public class Batches extends Controller {
 		Batch batch = batchDao.findById(batchId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
 			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);

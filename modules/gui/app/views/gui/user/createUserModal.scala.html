@@ -43,7 +43,7 @@
 <script>
 
 $('#jatosHeader').on('click', '#createUserLink', function() {
-	removeWarnings("#createUserModal");
+	removeAlerts("#createUserModal");
 	removeFormErrors("#createUserModal");
 	$('#createUserModal .@common.User.EMAIL').val('');
 	$('#createUserModal .@common.User.NAME').val('');
@@ -59,15 +59,16 @@ $("#createUserForm").submit(function(event) {
 		url: "@controllers.gui.routes.Users.submit()",
 		data: $('#createUserForm').serialize(), 
 		success: function(response) {
-			removeWarnings("#createUserModal");
+			removeAlerts("#createUserModal");
 			removeFormErrors("#createUserModal");
 			$('#createUserModal').modal('hide');
 		},
 		error: function(response) {
-			removeWarnings("#createUserModal");
+			removeAlerts("#createUserModal");
 			removeFormErrors("#createUserModal");
 			showWarning("User wasn't created", "#createUserModal .modal-header");
-			showFormErrors("#createUserModal", response.responseJSON);
+			showModalError("#createUserModal .modal-header", response);
+			showFormErrors("#createUserModal", response);
 		}
 	});
 });

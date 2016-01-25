@@ -89,7 +89,7 @@ $('#toolbar').on('click', '#editProfile', function() {
 });
 
 $('#toolbar').on('click', '#changePassword', function() {
-	removeWarnings("#changePasswordModal");
+	removeAlerts("#changePasswordModal");
 	removeFormErrors("#changePasswordModal");
 	$('#changePasswordModal .@common.User.OLD_PASSWORD').val('');
 	$('#changePasswordModal .@common.User.PASSWORD').val('');
@@ -104,7 +104,7 @@ $("#editProfileForm").submit(function(event) {
 		url: "@controllers.gui.routes.Users.submitEditedProfile(user.getEmail())",
 		data: $('#editProfileForm').serialize(), 
 		success: function(response) {
-			removeWarnings("#editProfileModal");
+			removeAlerts("#editProfileModal");
 			removeFormErrors("#editProfileModal");
 			$('#editProfileModal').modal('hide');
 			var userText = $('#editProfileName').val() + " (@user.getEmail())";
@@ -112,10 +112,11 @@ $("#editProfileForm").submit(function(event) {
 			$('#breadcrumbs li:last-child').text(userText);
 		},
 		error: function(response) {
-			removeWarnings("#editProfileModal");
+			removeAlerts("#editProfileModal");
 			removeFormErrors("#editProfileModal");
 			showWarning("User profile wasn't updated", "#editProfileModal .modal-header");
-			showFormErrors("#editProfileModal", response.responseJSON);
+			showModalError("#editProfileModal .modal-header", response);
+			showFormErrors("#editProfileModal", response);
 		}
 	});
 });
@@ -127,15 +128,16 @@ $("#changePasswordForm").submit(function(event) {
 		url: "@controllers.gui.routes.Users.submitChangedPassword(user.getEmail())",
 		data: $('#changePasswordForm').serialize(), 
 		success: function(response) {
-			removeWarnings("#changePasswordModal");
+			removeAlerts("#changePasswordModal");
 			removeFormErrors("#changePasswordModal");
 			$('#changePasswordModal').modal('hide');
 		},
 		error: function(response) {
-			removeWarnings("#changePasswordModal");
+			removeAlerts("#changePasswordModal");
 			removeFormErrors("#changePasswordModal");
 			showWarning("Password wasn't changed", "#changePasswordModal .modal-header");
-			showFormErrors("#changePasswordModal", response.responseJSON);
+			showModalError("#changePasswordModal .modal-header", response);
+			showFormErrors("#changePasswordModal", response);
 		}
 	});
 });

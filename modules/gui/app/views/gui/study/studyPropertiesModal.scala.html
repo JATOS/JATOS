@@ -82,8 +82,7 @@
 <script>
 
 $('#jatosHeader').on('click', '#createStudyLink', function() {
-	removeInfo("#studyPropertiesModal");
-	removeWarnings("#studyPropertiesModal");
+	removeAlerts("#studyPropertiesModal");
 	removeFormErrors("#studyPropertiesModal");
 	clearForm("#studyPropertiesForm");
 	$('#studyPropertiesModal .modal-title').text("Create Study");
@@ -100,8 +99,7 @@ $('#studyToolbar').on('click', '#studyPropertiesButton', function() {
 		type: 'GET',
 		url: "/jatos/" + studyId + "/properties",
 		success: function(response) {
-			removeInfo("#studyPropertiesModal");
-			removeWarnings("#studyPropertiesModal");
+			removeAlerts("#studyPropertiesModal");
 			removeFormErrors("#studyPropertiesModal");
 			clearForm("#studyPropertiesForm");
 			fillStudyPropertiesForm(response);
@@ -160,8 +158,7 @@ $("#studyPropertiesForm").submit(function(event) {
 		url : $("#studyPropertiesForm").attr("action"),
 		data : $('#studyPropertiesForm').serialize(),
 		success : function(response) {
-			removeInfo("#studyPropertiesModal");
-			removeWarnings("#studyPropertiesModal");
+			removeAlerts("#studyPropertiesModal");
 			removeFormErrors("#studyPropertiesModal");
 			$('#studyPropertiesModal').modal('hide');
 			fillSidebar();
@@ -169,11 +166,11 @@ $("#studyPropertiesForm").submit(function(event) {
 			$('#breadcrumbs li:last-child').text(title);
 		},
 		error : function(response) {
-			removeInfo("#studyPropertiesModal");
-			removeWarnings("#studyPropertiesModal");
+			removeAlerts("#studyPropertiesModal");
 			removeFormErrors("#studyPropertiesModal");
 			showWarning("@general.common.MessagesStrings.STUDY_WASNT_SAVED", "#studyPropertiesModal .modal-header");
-			showFormErrors("#studyPropertiesModal", response.responseJSON);
+			showModalError("#studyPropertiesModal .modal-header", response);
+			showFormErrors("#studyPropertiesModal", response);
 		}
 	});
 });

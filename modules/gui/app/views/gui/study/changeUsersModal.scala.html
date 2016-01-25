@@ -25,7 +25,7 @@ $('#studyToolbar').on('click', '#changeUsersLink', function() {
 		type: 'GET',
 		url: "/jatos/" + studyId + "/users",
 		success: function(response) {
-			removeWarnings("#changeUsersModal");
+			removeAlerts("#changeUsersModal");
 			removeFormErrors("#changeUsersModal");
 			$('#changeUsersModal .modal-body').empty();
 			fillChangeUsersForm(response);
@@ -57,12 +57,12 @@ $("#changeUsersForm").submit(function(event) {
 		url : '/jatos/' + studyId + '/users ',
 		data : $('#changeUsersForm').serialize(),
 		success : function(response) {
-			removeWarnings("#changeUsersModal");
+			removeAlerts("#changeUsersModal");
 			removeFormErrors("#changeUsersModal");
 			$('#changeUsersModal').modal('hide');
 		},
 		error : function(response) {
-			removeWarnings("#changeUsersModal");
+			removeAlerts("#changeUsersModal");
 			removeFormErrors("#changeUsersModal");
 			showWarning(response.responseText, "#changeUsersModal .modal-header");;
 		}

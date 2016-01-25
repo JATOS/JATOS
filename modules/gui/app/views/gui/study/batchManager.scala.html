@@ -108,7 +108,7 @@ function fillBatchList(batchList) {
 }
 
 $('#createBatchButton').click(function(event) {
-	removeWarnings("#createBatchModal");
+	removeAlerts("#createBatchModal");
 	removeFormErrors("#createBatchModal");
 	$('#createBatchModal .@models.gui.BatchProperties.TITLE').val('');
 	$('#createBatchModal').modal('show');
@@ -121,16 +121,17 @@ $("#createBatchForm").submit(function(event) {
 		url: "@controllers.gui.routes.Batches.submitCreated(study.getId())",
 		data: $('#createBatchForm').serialize(), 
 		success: function(response) {
-			removeWarnings("#createBatchModal");
+			removeAlerts("#createBatchModal");
 			removeFormErrors("#createBatchModal");
 			$('#createBatchModal').modal('hide');
 			loadBatchList();
 		},
 		error: function(response) {
-			removeWarnings("#createBatchModal");
+			removeAlerts("#createBatchModal");
 			removeFormErrors("#createBatchModal");
 			showWarning("Batch wasn't created", "#createBatchModal .modal-header");
-			showFormErrors("#createBatchModal", response.responseJSON);
+			showModalError("#createBatchModal .modal-header", response);
+			showFormErrors("#createBatchModal", response);
 		}
 	});
 });

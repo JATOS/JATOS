@@ -8,7 +8,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 <div class="panel panel-default" id="jatosWorkerPanel">
 	<div class="panel-heading">
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")" style="visibility: hidden"></a>
-		<b class="panel-title">@common.workers.JatosWorker.UI_WORKER_TYPE Worker</b>
+		<b class="panel-title">@common.workers.JatosWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-baby-formula jatosWorker" aria-hidden="true"></b>
 		<button type="button" class="btn btn-primary resultButton"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows study results only of @common.workers.JatosWorker.UI_WORKER_TYPE worker">
@@ -22,7 +22,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 <div class="panel panel-default" id="generalSingleWorkerPanel">
 	<div class="panel-heading">
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
-		<b class="panel-title">@common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker</b>
+		<b class="panel-title">@common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-glass generalSingleWorker" aria-hidden="true"></b>
 		<button type="button" class="btn btn-primary linkButton">Link</button>
 		<button type="button" class="btn btn-primary resultButton"
 			data-toggle="tooltip" data-placement="bottom"
@@ -37,7 +37,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 <div class="panel panel-default" id="personalSingleWorkerPanel">
 	<div class="panel-heading">
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
-		<b class="panel-title">@common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker</b>
+		<b class="panel-title">@common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-leaf personalSingleWorker" aria-hidden="true"></b>
 		<button type="button" class="btn btn-primary addButton">Add</button>
 		<button type="button" class="btn btn-primary resultButton"
 			data-toggle="tooltip" data-placement="bottom"
@@ -52,7 +52,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 <div class="panel panel-default" id="personalMultipleWorkerPanel">
 	<div class="panel-heading">
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
-		<b class="panel-title">@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker</b>
+		<b class="panel-title">@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-tree-deciduous personalMultipleWorker" aria-hidden="true"></b>
 		<button type="button" class="btn btn-primary addButton">Add</button>
 		<button type="button" class="btn btn-primary resultButton"
 			data-toggle="tooltip" data-placement="bottom"
@@ -67,7 +67,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 <div class="panel panel-default" id="mtWorkerPanel">
 	<div class="panel-heading">
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
-		<b class="panel-title">@common.workers.MTWorker.UI_WORKER_TYPE Worker</b>
+		<b class="panel-title">@common.workers.MTWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-knight mtWorker" aria-hidden="true"></b>
 		<button id="mtWorkerSourceCode" type="button" class="btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows code that has to be copied into the 'source' field of your study's design layout in Mechanical Turk">

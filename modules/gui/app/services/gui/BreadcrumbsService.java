@@ -111,18 +111,18 @@ public class BreadcrumbsService {
 		}
 		return breadcrumbsStr;
 	}
-	public String generateForRunManager(Study study) {
-		return generateForRunManager(study, null);
+	public String generateForBatchManager(Study study) {
+		return generateForBatchManager(study, null);
 	}
 	
-	public String generateForRunManager(Study study, Batch batch) {
+	public String generateForBatchManager(Study study, Batch batch) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		breadcrumbs.addBreadcrumb(HOME, controllers.gui.routes.Home.home().url());
 		breadcrumbs.addBreadcrumb(study.getTitle(),
 				controllers.gui.routes.Studies.index(study.getId()).url());
 		if (batch != null) {
 			breadcrumbs.addBreadcrumb(BATCH_MANAGER,
-					controllers.gui.routes.Batches.runManager(study.getId()).url());
+					controllers.gui.routes.Batches.batchManager(study.getId()).url());
 			breadcrumbs.addBreadcrumb(batch.getTitle(), "");
 		} else {
 			breadcrumbs.addBreadcrumb(BATCH_MANAGER, "");

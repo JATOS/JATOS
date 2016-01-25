@@ -27,7 +27,7 @@ studyResultsCount: Integer)
 			title="Study's properties">
 			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
 		</button>
-		<button id="runManagerButton" type="button" class="btn btn-primary"
+		<button id="batchManagerButton" type="button" class="btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Open Batch Manager to manage your batches or create workers">
 			Batch Manager <span class="glyphicon glyphicon-globe" aria-hidden="true"></span></span>
@@ -469,8 +469,8 @@ $('#studyToolbar').on('click', '#workers', function() {
 	window.location.href = "@controllers.gui.routes.Studies.workers(study.getId())";
 });
 
-$('#studyToolbar').on('click', '#runManagerButton', function() {
-	window.location.href = "@controllers.gui.routes.Batches.runManager(study.getId())";
+$('#studyToolbar').on('click', '#batchManagerButton', function() {
+	window.location.href = "@controllers.gui.routes.Batches.batchManager(study.getId())";
 });
 
 $('#studyToolbar').on('click', '#removeStudy', function() {

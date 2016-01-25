@@ -75,8 +75,7 @@
 <script>
 
 $('#studyToolbar').on('click', '#createComponentLink', function() {
-	removeInfo("#componentPropertiesModal");
-	removeWarnings("#componentPropertiesModal");
+	removeAlerts("#componentPropertiesModal");
 	removeFormErrors("#componentPropertiesModal");
 	clearForm("#componentPropertiesForm");
 	$('#componentPropertiesModal .modal-title').text("Create Component");
@@ -124,8 +123,7 @@ $('#componentsTable tbody').on('click', '.componentPropertiesButton', function()
 		type: 'GET',
 		url: "/jatos/" + studyId + "/" + getComponentId(this) + "/properties",
 		success: function(response) {
-			removeInfo("#componentPropertiesModal");
-			removeWarnings("#componentPropertiesModal");
+			removeAlerts("#componentPropertiesModal");
 			removeFormErrors("#componentPropertiesModal");
 			clearForm("#componentPropertiesForm");
 			fillComponentPropertiesForm(response);
@@ -155,19 +153,18 @@ $("#componentPropertiesForm").submit(function(event) {
 		url : $("#componentPropertiesForm").attr("action"),
 		data : $('#componentPropertiesForm').serialize(),
 		success : function(response) {
-			removeInfo("#componentPropertiesModal");
-			removeWarnings("#componentPropertiesModal");
+			removeAlerts("#componentPropertiesModal");
 			removeFormErrors("#componentPropertiesModal");
 			$('#componentPropertiesModal').modal('hide');
 			fillSidebar();
 			componentsTable.ajax.reload();
 		},
 		error : function(response) {
-			removeInfo("#componentPropertiesModal");
-			removeWarnings("#componentPropertiesModal");
+			removeAlerts("#componentPropertiesModal");
 			removeFormErrors("#componentPropertiesModal");
 			showWarning("@general.common.MessagesStrings.COMPONENT_WASNT_SAVED", "#componentPropertiesModal .modal-header");
-			showFormErrors("#componentPropertiesModal", response.responseJSON);
+			showModalError("#componentPropertiesModal .modal-header", response);
+			showFormErrors("#componentPropertiesModal", response);
 		}
 	});
 });
@@ -181,11 +178,11 @@ $("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAV
 			window.location.href = "/jatos/" + studyId + "/" + componentId + "/run";
 		},
 		error : function(response) {
-			removeInfo("#componentPropertiesModal");
-			removeWarnings("#componentPropertiesModal");
+			removeAlerts("#componentPropertiesModal");
 			removeFormErrors("#componentPropertiesModal");
 			showWarning("@general.common.MessagesStrings.COMPONENT_WASNT_SAVED", "#componentPropertiesModal .modal-header");
-			showFormErrors("#componentPropertiesModal", response.responseJSON);
+			showModalError("#componentPropertiesModal .modal-header", response);
+			showFormErrors("#componentPropertiesModal", response);
 		}
 	});
 });

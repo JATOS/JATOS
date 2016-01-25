@@ -110,7 +110,7 @@ function removeInfo(elem) {
 	}
 }
 
-function removeWarnings(elem) {
+function removeWarning(elem) {
 	if (elem) {
 		$(elem).find(".alert-warning").remove();
 	} else {
@@ -118,7 +118,7 @@ function removeWarnings(elem) {
 	}
 }
 
-function removeErrors(elem) {
+function removeError(elem) {
 	if (elem) {
 		$(elem).find(".alert-danger").remove();
 	} else {
@@ -126,12 +126,28 @@ function removeErrors(elem) {
 	}
 }
 
-function showFormErrors(formElem, errors) {
-	$.each(errors, function(key, errorArray) {
-		$.each(errorArray, function(index, msg) {
-			showSingleFormError(formElem + " ." + key, msg)
+function removeAlerts(elem) {
+	removeSuccess(elem);
+	removeInfo(elem);
+	removeWarning(elem);
+	removeError(elem);
+}
+
+function showFormErrors(formElem, response) {
+	if (response.responseJSON) {
+		var errors = response.responseJSON;
+		$.each(errors, function(key, errorArray) {
+			$.each(errorArray, function(index, msg) {
+				showSingleFormError(formElem + " ." + key, msg)
+			});
 		});
-	});
+	}
+}
+
+function showModalError(formElem, response) {
+	if (response.responseText) {
+		showError(response.responseText, formElem);
+	}
 }
 
 function showSingleFormError(selector, msg) {

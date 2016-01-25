@@ -128,7 +128,7 @@ $('#batchPropertiesButton').click(function(event) {
 		type: 'GET',
 		url: "@controllers.gui.routes.Batches.properties(study.getId(), batchId)",
 		success: function(properties) {
-			removeWarnings('#batchPropertiesModal');
+			removeAlerts('#batchPropertiesModal');
 			removeFormErrors('#batchPropertiesModal')
 			clearForm("#batchPropertiesForm");
 			fillbatchPropertiesForm(properties);
@@ -177,15 +177,16 @@ $("#batchPropertiesForm").submit(function(event) {
 		url: "@controllers.gui.routes.Batches.submitEditedProperties(study.getId(), batchId)",
 		data: $('#batchPropertiesForm').serialize(), 
 		success: function(response) {
-			removeWarnings('#batchPropertiesModal');
+			removeAlerts('#batchPropertiesModal');
 			removeFormErrors('#batchPropertiesModal')
 			$('#batchPropertiesModal').modal('hide');
 		},
 		error: function(response) {
-			removeWarnings('#batchPropertiesModal');
+			removeAlerts('#batchPropertiesModal');
 			removeFormErrors('#batchPropertiesModal');
 			showWarning("@general.common.MessagesStrings.BATCH_WASNT_SAVED", "#batchPropertiesModal .modal-header");
-			showFormErrors('#batchPropertiesModal', response.responseJSON)
+			showModalError("#batchPropertiesModal .modal-header", response);
+			showFormErrors('#batchPropertiesModal', response)
 		}
 	});
 });
