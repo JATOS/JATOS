@@ -92,7 +92,7 @@ public class Batches extends Controller {
 		}
 
 		String breadcrumbs = breadcrumbsService.generateForBatchManager(study);
-		return ok(views.html.gui.study.batchManager.render(loggedInUser,
+		return ok(views.html.gui.batch.batchManager.render(loggedInUser,
 				breadcrumbs, study));
 	}
 
@@ -189,7 +189,7 @@ public class Batches extends Controller {
 		Map<String, Integer> studyResultCountsPerWorker = batchService.retrieveStudyResultCountsPerWorker(batch);
 		String breadcrumbs = breadcrumbsService.generateForBatchManager(study,
 				batch);
-		return ok(views.html.gui.study.batch.render(loggedInUser, breadcrumbs,
+		return ok(views.html.gui.batch.batch.render(loggedInUser, breadcrumbs,
 				batch.getId(), study, baseUrl, studyResultCountsPerWorker));
 	}
 

@@ -384,7 +384,7 @@ public class Studies extends Controller {
 		}
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
-		return ok(views.html.gui.study.mTurkSourceCode.render(loggedInUser,
+		return ok(views.html.gui.batch.mTurkSourceCode.render(loggedInUser,
 				breadcrumbs, study, jatosURL));
 	}
 
