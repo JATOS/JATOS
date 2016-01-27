@@ -10,28 +10,35 @@ body {
 /*
  * Glyphicons
  */
+@import "lib/bootstrap/less/variables.less";
+@import (reference) "lib/bootstrap/less/glyphicons.less";
 
 .gray-light{
 	color: #aaa;
 }
 
-.mtWorker {
-	color: #003380;
+.glyphicon-mturk {
+	&:extend(.glyphicon-knight all);
+	color: #bf00ff;
 }
 
-.jatosWorker {
+.glyphicon-jatos {
+	&:extend(.glyphicon-wrench all);
 	color: #ffcc00;
 }
 
-.generalSingleWorker {
-	color: #800000;
+.glyphicon-general-single {
+	&:extend(.glyphicon-glass all);
+	color: #b30000;
 }
 
-.personalSingleWorker {
+.glyphicon-personal-single {
+	&:extend(.glyphicon-leaf all);
 	color: #00e600;
 }
 
-.personalMultipleWorker {
+.glyphicon-personal-multiple {
+	&:extend(.glyphicon-tree-deciduous all);
 	color: #004d00;
 }
 

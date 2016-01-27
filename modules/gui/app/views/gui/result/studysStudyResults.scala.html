@@ -100,7 +100,9 @@ $(document).ready(function() {
 						+ data + '">' + data + '</a>';
 				}
 			},
-			{ "data": "worker.uiWorkerType" },
+			{	"data": "worker.workerType",
+				"render": getWorkerType
+			},
 			{ 
 				"render": function (data, type, full, meta) {
 					var mtWorkerId = (full.worker.mtWorkerId) ?
@@ -147,6 +149,23 @@ $(document).ready(function() {
 		]
 	});
 	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
+	
+	function getWorkerType(workerType) {
+		switch (workerType) {
+		case "Jatos":
+			return '@common.workers.JatosWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-jatos" aria-hidden="true">'
+		case "GeneralSingle":
+			return '@common.workers.GeneralSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-general-single" aria-hidden="true">'
+		case "PersonalSingle":
+			return '@common.workers.PersonalSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-single" aria-hidden="true">'
+		case "PersonalMultiple":
+			return '@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true">'
+		case "MT":
+			return '@common.workers.MTWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-mturk" aria-hidden="true">'
+		default:
+			return "unknown";
+		}
+	}
 	
 	function getMTWorkerId(data, type, full, meta) {
 		if (data.MTSandboxWorker) {
