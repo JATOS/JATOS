@@ -3,8 +3,6 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-<button id="batchPropertiesButton" type="button" class="btn btn-primary">Properties</button>
-
 <div class="panel panel-default" id="jatosWorkerPanel">
 	<div class="panel-heading">
 		<a href="#"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")" style="visibility: hidden"></a>
@@ -131,15 +129,13 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	</div>
 </div>
 
-@views.html.gui.batch.batchPropertiesModal(batchId, study)
-
 <script>
 loadWorkers();
 
 function loadWorkers() {
 	$.ajax({
 		type: 'GET',
-		url: "@controllers.gui.routes.Batches.workers(study.getId(), batchId)",
+		url: "@controllers.gui.routes.Batches.workerData(study.getId(), batchId)",
 		success: function(response) {
 			fillWorkers(response);
 		},

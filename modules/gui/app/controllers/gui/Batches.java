@@ -81,7 +81,7 @@ public class Batches extends Controller {
 	 */
 	@Transactional
 	public Result batchManager(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".runManager: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".batchManager: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -119,8 +119,8 @@ public class Batches extends Controller {
 	 * Ajax GET request: Returns a list of workers as JSON
 	 */
 	@Transactional
-	public Result workers(Long studyId, Long batchId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
+	public Result workerData(Long studyId, Long batchId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".workersData: studyId " + studyId + ", "
 				+ "batchId " + batchId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
@@ -171,8 +171,8 @@ public class Batches extends Controller {
 	 * GET request to get the batch page
 	 */
 	@Transactional
-	public Result batch(Long studyId, Long batchId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".runManager: studyId " + studyId + ", "
+	public Result workers(Long studyId, Long batchId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
 				+ "batchId " + batchId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
@@ -187,9 +187,9 @@ public class Batches extends Controller {
 
 		String baseUrl = ControllerUtils.getReferer();
 		Map<String, Integer> studyResultCountsPerWorker = batchService.retrieveStudyResultCountsPerWorker(batch);
-		String breadcrumbs = breadcrumbsService.generateForBatchManager(study,
+		String breadcrumbs = breadcrumbsService.generateForBatchWorkers(study,
 				batch);
-		return ok(views.html.gui.batch.batch.render(loggedInUser, breadcrumbs,
+		return ok(views.html.gui.batch.workers.render(loggedInUser, breadcrumbs,
 				batch.getId(), study, baseUrl, studyResultCountsPerWorker));
 	}
 

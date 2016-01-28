@@ -1,4 +1,4 @@
-@(batchId: Long, study: common.Study)
+@(study: common.Study)
 
 <!-- Batch Properties Modal -->
 <div class="modal fade" id="batchPropertiesModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -123,10 +123,12 @@ $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED'
 	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS').prop("disabled", !this.checked);
 });
 
-$('#batchPropertiesButton').click(function(event) {
+$('#batchList').on('click', '.batchPropertiesButton', function() {
+	var batch = getBatchData(this);
+	if (!batch) {return} // should never happen
 	$.ajax({
 		type: 'GET',
-		url: "@controllers.gui.routes.Batches.properties(study.getId(), batchId)",
+		url: "/jatos/@study.getId()/batch/" + batch.id + "/properties",
 		success: function(properties) {
 			removeAlerts('#batchPropertiesModal');
 			removeFormErrors('#batchPropertiesModal')
@@ -172,9 +174,11 @@ function setInputGroupWithCheckbox(modal, checkbox, input, properties) {
 
 $("#batchPropertiesForm").submit(function(event) {
 	event.preventDefault();
+	var batch = getBatchData(this);
+	if (!batch) {return} // should never happen
 	$.ajax({
 		type: 'POST',
-		url: "@controllers.gui.routes.Batches.submitEditedProperties(study.getId(), batchId)",
+		url: "/jatos/@study.getId()/batch/" + batch.id + "/properties",
 		data: $('#batchPropertiesForm').serialize(), 
 		success: function(response) {
 			removeAlerts('#batchPropertiesModal');

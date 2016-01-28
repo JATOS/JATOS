@@ -47,20 +47,21 @@
 <!-- Template for batch's row -->
 <div id="batchRowTemplateDiv" class="list-group-item"
 	style="display: none">
-	<button type="button" class="btn btn-sm btn-default activeButton"
-		data-toggle="tooltip" data-placement="bottom"
-		title="Activates or inactivates this batch: Only in an activated batch a study can be run. An already started study can be finished regardless of this batch was inactivated after the start.">
+	<button type="button" class="btn btn-sm btn-primary activeButton"
+		data-toggle="tooltip" data-placement="bottom" title="">
 		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
 	</button>
-	<a class="batchLink" href=""></a>
+	<span class="batchTitle"></span>
 	<div class="batchBtnGroup btn-group" aria-hidden="true">
-		<button type="button" class="batchResults btn btn-info"
+		<button type="button" class="batchPropertiesButton btn btn-primary">Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
+		<button type="button" class="batchWorkersButton btn btn-primary">Workers</button>
+		<button type="button" class="batchResultsButton btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows only the results of this batch">
 			Results <span class="resultsBadge badge"></span>
 		</button>
 		<div class="btn-group">
-			<button type="button" class="btn btn-info dropdown-toggle"
+			<button type="button" class="btn btn-primary dropdown-toggle"
 				data-toggle="dropdown">
 				More <span class="caret"></span>
 			</button>
@@ -76,6 +77,7 @@
 	</div>
 </div>
 
+@views.html.gui.batch.batchPropertiesModal(study)
 <script>
 
 loadBatchList();
@@ -100,9 +102,7 @@ function fillBatchList(batchList) {
 		// Write batch object into toolbar's data attribute so we can use it later on 
 		$(toolbar).data(batch);
 		setButtonActive($(toolbar).find('.activeButton'), batch.active);
-		$(toolbar).find('.batchLink').text(batch.title);
-		var url = "/jatos/@study.getId()/batch/" + batch.id;
-		$(toolbar).find('.batchLink').attr("href", url)
+		$(toolbar).find('.batchTitle').text(batch.title);
 		$("#batchList").append(toolbar);
 	});
 }
@@ -136,6 +136,13 @@ $("#createBatchForm").submit(function(event) {
 	});
 });
 
+
+$('#batchList').on('click', '.batchWorkersButton', function() {
+	var batch = getBatchData(this);
+	if (!batch) {return} // should never happen
+	window.location.href =  "/jatos/@study.getId()/batch/" + batch.id + "/workers";
+});
+
 $('#batchList').on('click', '.activeButton', function() {
 	var button = this;
 	var batch = getBatchData(this);
@@ -158,14 +165,14 @@ function setButtonActive(button, active) {
 	if (active) {
 		button.addClass('activeBatch');
 		button.removeClass('btn-warning');
-		button.addClass('btn-info');
+		button.addClass('btn-primary');
 		button.attr('title', "Click to deactivate this batch");
 		button.html($(button.html())
 				.removeClass('glyphicon-remove')
 				.addClass('glyphicon-ok').prop('outerHTML'));
 	} else {
 		button.removeClass('activeBatch');
-		button.removeClass('btn-info');
+		button.removeClass('btn-primary');
 		button.addClass('btn-warning');
 		button.attr('title', "Click to activate this batch");
 		button.html($(button.html())

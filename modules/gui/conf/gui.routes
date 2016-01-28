@@ -60,11 +60,11 @@ GET     /jatos/:studyId/batchManager                         @controllers.gui.Ba
 POST    /jatos/:studyId/batch                                @controllers.gui.Batches.submitCreated(studyId: Long)
 GET     /jatos/:studyId/batch/:batchId/properties            @controllers.gui.Batches.properties(studyId: Long, batchId: Long)
 POST    /jatos/:studyId/batch/:batchId/properties            @controllers.gui.Batches.submitEditedProperties(studyId: Long, batchId: Long)
-GET     /jatos/:studyId/batch/:batchId/workers               @controllers.gui.Batches.workers(studyId: Long, batchId: Long)
+GET     /jatos/:studyId/batch/:batchId/workerData            @controllers.gui.Batches.workerData(studyId: Long, batchId: Long)
 POST    /jatos/:studyId/batch/:batchId/property              @controllers.gui.Batches.changeProperty(studyId: Long, batchId: Long, active: Boolean)
 POST    /jatos/:studyId/batch/:batchId/personalSingleRun     @controllers.gui.Batches.createPersonalSingleRun(studyId: Long, batchId: Long)
 POST    /jatos/:studyId/batch/:batchId/personalMultipleRun   @controllers.gui.Batches.createPersonalMultipleRun(studyId: Long, batchId: Long)
-GET     /jatos/:studyId/batch/:batchId                       @controllers.gui.Batches.batch(studyId: Long, batchId: Long)
+GET     /jatos/:studyId/batch/:batchId/workers               @controllers.gui.Batches.workers(studyId: Long, batchId: Long)
 DELETE  /jatos/:studyId/batch/:batchId                       @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
 GET     /jatos/:studyId/batches                              @controllers.gui.Batches.batchesByStudy(studyId: Long)
 
