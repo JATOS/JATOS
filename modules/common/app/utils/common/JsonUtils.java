@@ -131,8 +131,8 @@ public class JsonUtils {
 	 * and puts them together with the session data (stored in StudyResult) into
 	 * a new JSON object.
 	 */
-	public ObjectNode initData(Batch batch, StudyResult studyResult, Study study,
-			Component component) throws IOException {
+	public ObjectNode initData(Batch batch, StudyResult studyResult,
+			Study study, Component component) throws IOException {
 		String studyProperties = asJsonForPublix(study);
 		String batchProperties = asJsonForPublix(batch);
 		ArrayNode componentList = getComponentListForInitData(study);
@@ -387,6 +387,26 @@ public class JsonUtils {
 			public String uuid;
 			public String title;
 		}
+	}
+
+	/**
+	 * Returns a JSON string of all batches that belong to the given study. This
+	 * includes the 'resultCount', the number of StudyResults of this batch so
+	 * far. Intended for use in JATOS' GUI.
+	 */
+	public JsonNode allBatchesByStudyForUI(Study study,
+			List<Integer> resultCountList) {
+		ArrayNode batchListNode = OBJECTMAPPER.createArrayNode();
+		List<Batch> batchList = study.getBatchList();
+		for (int i = 0; i < batchList.size(); i++) {
+			ObjectNode batchNode = OBJECTMAPPER.valueToTree(batchList.get(i));
+			// Add count of batch's results
+			batchNode.put("resultCount", resultCountList.get(i));
+			int position = i + 1;
+			batchNode.put("position", position);
+			batchListNode.add(batchNode);
+		}
+		return batchListNode;
 	}
 
 	/**

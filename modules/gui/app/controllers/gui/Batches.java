@@ -1,5 +1,6 @@
 package controllers.gui;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
+import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -54,26 +56,31 @@ public class Batches extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final Checker checker;
+	private final JsonUtils jsonUtils;
 	private final UserService userService;
 	private final WorkerService workerService;
 	private final BatchService batchService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final StudyDao studyDao;
 	private final BatchDao batchDao;
+	private final StudyResultDao studyResultDao;
 
 	@Inject
 	Batches(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-			UserService userService, WorkerService workerService,
-			BatchService batchService, BreadcrumbsService breadcrumbsService,
-			StudyDao studyDao, BatchDao batchDao) {
+			JsonUtils jsonUtils, UserService userService,
+			WorkerService workerService, BatchService batchService,
+			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
+			BatchDao batchDao, StudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
+		this.jsonUtils = jsonUtils;
 		this.userService = userService;
 		this.workerService = workerService;
 		this.batchService = batchService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 		this.batchDao = batchDao;
+		this.studyResultDao = studyResultDao;
 	}
 
 	/**
@@ -97,7 +104,8 @@ public class Batches extends Controller {
 	}
 
 	/**
-	 * Ajax GET request: Returns all Batches of the given study as JSON.
+	 * Ajax GET request: Returns all Batches of the given study as JSON. It
+	 * includes the count of their StudyResults.
 	 */
 	@Transactional
 	public Result batchesByStudy(Long studyId) throws JatosGuiException {
@@ -112,14 +120,18 @@ public class Batches extends Controller {
 		}
 
 		List<Batch> batchList = study.getBatchList();
-		return ok(JsonUtils.asJsonNode(batchList));
+		List<Integer> resultCountList = new ArrayList<>();
+		batchList.forEach(batch -> resultCountList
+				.add(studyResultDao.countByBatch(batch)));
+		return ok(jsonUtils.allBatchesByStudyForUI(study, resultCountList));
 	}
 
 	/**
 	 * Ajax GET request: Returns a list of workers as JSON
 	 */
 	@Transactional
-	public Result workerData(Long studyId, Long batchId) throws JatosGuiException {
+	public Result workerData(Long studyId, Long batchId)
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".workersData: studyId " + studyId + ", "
 				+ "batchId " + batchId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
@@ -186,7 +198,8 @@ public class Batches extends Controller {
 		}
 
 		String baseUrl = ControllerUtils.getReferer();
-		Map<String, Integer> studyResultCountsPerWorker = batchService.retrieveStudyResultCountsPerWorker(batch);
+		Map<String, Integer> studyResultCountsPerWorker = batchService
+				.retrieveStudyResultCountsPerWorker(batch);
 		String breadcrumbs = breadcrumbsService.generateForBatchWorkers(study,
 				batch);
 		return ok(views.html.gui.batch.workers.render(loggedInUser, breadcrumbs,

@@ -103,6 +103,7 @@ function fillBatchList(batchList) {
 		$(toolbar).data(batch);
 		setButtonActive($(toolbar).find('.activeButton'), batch.active);
 		$(toolbar).find('.batchTitle').text(batch.title);
+		$(toolbar).find('.resultsBadge').text(batch.resultCount);
 		$("#batchList").append(toolbar);
 	});
 }
