@@ -15,16 +15,17 @@ studyResultsCount: Integer)
 		<button id="studyResults" type="button" class="btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows study results">
-			Results <span class="badge">@studyResultsCount</span>
+			Results <span class="badge" data-toggle="tooltip" data-placement="bottom"
+			title="Number of study results of this study">@studyResultsCount</span>
 		</button>
 		<button id="workers" type="button" class="btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows workers who participated">
-			Workers <span class="badge">@workerSet.size()</span>
+			Workers <span class="badge" >@workerSet.size()</span>
 		</button>
 		<button id="studyPropertiesButton" type="button" class="btn btn-primary"
 			data-toggle="tooltip" data-placement="bottom"
-			title="Study's properties">
+			title="Edit this study's properties">
 			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
 		</button>
 		<button id="batchManagerButton" type="button" class="btn btn-primary"
@@ -144,7 +145,7 @@ studyResultsCount: Integer)
 		</button>
 		<button type="button" class="componentPropertiesButton btn btn-info"
 			data-toggle="tooltip" data-placement="bottom"
-			title="This component's properties">
+			title="Edit this component's properties">
 			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
 		</button>
 		<div class="btn-group">

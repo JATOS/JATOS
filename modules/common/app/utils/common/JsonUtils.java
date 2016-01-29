@@ -402,6 +402,8 @@ public class JsonUtils {
 			ObjectNode batchNode = OBJECTMAPPER.valueToTree(batchList.get(i));
 			// Add count of batch's results
 			batchNode.put("resultCount", resultCountList.get(i));
+			// Add count of batch's workers (without JatosWorker)
+			batchNode.put("workerCount", batchList.get(i).getWorkerList().size());
 			int position = i + 1;
 			batchNode.put("position", position);
 			batchListNode.add(batchNode);
