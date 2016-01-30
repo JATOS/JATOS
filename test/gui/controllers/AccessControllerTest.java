@@ -528,7 +528,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callBatchesRunManager() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches
-				.runManager(studyClone.getId());
+				.batchManager(studyClone.getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
@@ -567,7 +567,7 @@ public class AccessControllerTest extends AbstractTest {
 	//@Test
 	public void callBatchesBatch() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Batches.batch(studyClone.getId(),
+		Call call = controllers.gui.routes.Batches.workers(studyClone.getId(),
 				studyClone.getDefaultBatch().getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
