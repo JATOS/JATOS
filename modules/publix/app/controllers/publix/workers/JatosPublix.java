@@ -262,7 +262,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			publixUtils.abortStudy(message, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
@@ -298,7 +298,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);

@@ -114,13 +114,22 @@ public class StudyResult {
 	private Worker worker;
 
 	/**
-	 * GroupResults this StudyResult belongs to if the corresponding study is a
+	 * GroupResult this StudyResult belongs to if the corresponding study is a
 	 * group study. This relationship is bidirectional.
 	 */
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "activeGroupMember_id")
-	private GroupResult groupResult;
+	private GroupResult activeGroupResult;
+
+	/**
+	 * After the group study is finished the active GroupResult moves here.
+	 * Before this field is null. This relationship is bidirectional.
+	 */
+	@JsonIgnore
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "historyGroupMember_id")
+	private GroupResult historyGroupResult;
 
 	private String confirmationCode;
 
@@ -261,12 +270,20 @@ public class StudyResult {
 		return this.worker;
 	}
 
-	public GroupResult getGroupResult() {
-		return groupResult;
+	public GroupResult getActiveGroupResult() {
+		return activeGroupResult;
 	}
 
-	public void setGroupResult(GroupResult groupResult) {
-		this.groupResult = groupResult;
+	public void setActiveGroupResult(GroupResult groupResult) {
+		this.activeGroupResult = groupResult;
+	}
+
+	public GroupResult getHistoryGroupResult() {
+		return historyGroupResult;
+	}
+
+	public void setHistoryGroupResult(GroupResult groupResult) {
+		this.historyGroupResult = groupResult;
 	}
 
 	@Override

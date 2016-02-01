@@ -95,7 +95,7 @@ public class Initializer {
 					groupResultDao.update(groupresult);
 					Logger.info(CLASS_NAME + ".checkGroupResults: No group results should be "
 							+ "in state STARTED, but group result " + groupresult.getId()
-							+ " wasn. Finish it now.");
+							+ " was. Finish it now.");
 				}
 			}
 		});

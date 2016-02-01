@@ -53,7 +53,7 @@ public abstract class Worker {
 	private Long id;
 
 	/**
-	 * Ordered list of StudyResults this worker has produces while running
+	 * Ordered list of StudyResults this worker has produced while running
 	 * studies. This relationship is bidirectional.
 	 */
 	@JsonIgnore

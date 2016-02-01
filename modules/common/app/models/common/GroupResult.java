@@ -82,18 +82,17 @@ public class GroupResult {
 	private Batch batch;
 
 	/**
-	 * Contains all current active members of this group. Members are
+	 * Contains all currently active members of this group. Members are
 	 * StudyResults. This relationship is bidirectional.
 	 */
-	@OneToMany(fetch = FetchType.EAGER, mappedBy="groupResult")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy="activeGroupResult")
 	private Set<StudyResult> activeMemberList = new HashSet<>();
 
 	/**
 	 * Contains all former members of this group (not active any more) that
-	 * somehow finished this study. This relationship is unidirectional.
+	 * somehow finished this study. This relationship is bidirectional.
 	 */
-	@OneToMany(fetch = FetchType.LAZY)
-	@JoinColumn(name = "historyGroupMember_id")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy="historyGroupResult")
 	private Set<StudyResult> historyMemberList = new HashSet<>();
 
 	/**

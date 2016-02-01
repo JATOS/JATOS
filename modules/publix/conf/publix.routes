@@ -7,6 +7,7 @@ GET     /publix/:studyId/start                           @controllers.publix.Pub
 GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
 GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null)
 GET     /publix/:studyId/group/join                      @controllers.publix.PublixInterceptor.joinGroup(studyId: Long)
+GET     /publix/:studyId/group/reassign                  @controllers.publix.PublixInterceptor.reassignGroup(studyId: Long)
 GET     /publix/:studyId/group/leave                     @controllers.publix.PublixInterceptor.leaveGroup(studyId: Long)
 POST    /publix/:studyId/studySessionData                @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long)
 GET     /publix/:studyId/nextComponent/start             @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long)

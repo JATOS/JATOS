@@ -239,8 +239,8 @@ public class JsonUtils {
 		studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
 		studyResultNode.put("duration", getDurationPretty(
 				studyResult.getStartDate(), studyResult.getEndDate()));
-		String groupResultId = studyResult.getGroupResult() != null
-				? studyResult.getGroupResult().getId().toString() : null;
+		String groupResultId = studyResult.getActiveGroupResult() != null
+				? studyResult.getActiveGroupResult().getId().toString() : null;
 		studyResultNode.put("groupResultId", groupResultId);
 
 		// Add all componentResults
@@ -275,7 +275,7 @@ public class JsonUtils {
 		componentResultNode.put("duration", getDurationPretty(
 				componentResult.getStartDate(), componentResult.getEndDate()));
 		GroupResult groupResult = componentResult.getStudyResult()
-				.getGroupResult();
+				.getActiveGroupResult();
 		String groupResultId = groupResult != null
 				? groupResult.getId().toString() : null;
 		componentResultNode.put("groupResultId", groupResultId);

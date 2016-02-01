@@ -69,16 +69,16 @@ public interface IPublix {
 	 * by the study running in the browser. The study session data are different
 	 * from Play's session and stored within the study results.
 	 */
-	Result getInitData(Long studyId, Long componentId) throws PublixException,
-			IOException;
+	Result getInitData(Long studyId, Long componentId)
+			throws PublixException, IOException;
 
 	/**
 	 * HTTP type: WebSocket
 	 * 
-	 * Let the worker join a group (actually a GroupResult) and open a WebSocket
-	 * (group channel). Only works if this study is a group study. All group
-	 * data are stored in a GroupResult and the group channels will be handled
-	 * by a GroupDispatcher which uses Akka.
+	 * Let the worker (actually it's StudyResult) join a group (actually a
+	 * GroupResult) and open a WebSocket (group channel). Only works if this
+	 * study is a group study. All group data are stored in a GroupResult and
+	 * the group channels will be handled by a GroupDispatcher which uses Akka.
 	 * 
 	 * @param studyId
 	 *            Study's ID
@@ -86,6 +86,21 @@ public interface IPublix {
 	 * @throws PublixException
 	 */
 	WebSocket<JsonNode> joinGroup(Long studyId) throws PublixException;
+
+	/**
+	 * HTTP type: Ajax GET request
+	 * 
+	 * Try to find a different group for this StudyResult. It reuses the already
+	 * opened group channel and just reassigns it to a different group (or in
+	 * more detail to a different GroupResult and GroupDispatcher). If it is
+	 * successful it returns an 200 (OK) HTTP status code. If it can't find any
+	 * other group it returns a 204 (NO CONTENT) HTTP status code.
+	 * 
+	 * @param studyId
+	 *            Study's ID
+	 * @throws PublixException
+	 */
+	Result reassignGroup(Long studyId) throws PublixException;
 
 	/**
 	 * HTTP type: Ajax GET request

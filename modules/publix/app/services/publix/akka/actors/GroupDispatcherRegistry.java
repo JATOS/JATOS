@@ -6,15 +6,15 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import akka.actor.ActorRef;
+import akka.actor.UntypedActor;
+import daos.common.GroupResultDao;
 import play.db.jpa.JPAApi;
 import play.libs.Akka;
 import services.publix.akka.messages.GroupDispatcherRegistryProtocol.Get;
 import services.publix.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
 import services.publix.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
 import services.publix.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
-import akka.actor.ActorRef;
-import akka.actor.UntypedActor;
-import daos.common.GroupResultDao;
 
 /**
  * A GroupDispatcherRegistry is an Akka Actor keeps track of all
@@ -67,9 +67,8 @@ public class GroupDispatcherRegistry extends UntypedActor {
 		ActorRef groupDispatcher = groupDispatcherMap
 				.get(getOrCreate.groupResultId);
 		if (groupDispatcher == null) {
-			groupDispatcher = Akka.system().actorOf(
-					GroupDispatcher.props(jpa, self(), groupResultDao,
-							getOrCreate.groupResultId));
+			groupDispatcher = Akka.system().actorOf(GroupDispatcher.props(jpa,
+					self(), groupResultDao, getOrCreate.groupResultId));
 			groupDispatcherMap.put(getOrCreate.groupResultId, groupDispatcher);
 		}
 		ItsThisOne answer = new ItsThisOne(groupDispatcher);

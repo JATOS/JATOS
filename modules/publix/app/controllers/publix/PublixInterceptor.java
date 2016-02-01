@@ -85,7 +85,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result startStudy(Long studyId, Long batchId) throws PublixException {
+	public Result startStudy(Long studyId, Long batchId)
+			throws PublixException {
 		Result result = null;
 		String workerType = getWorkerTypeFromQuery();
 		// Put worker type into session so later Publix calls of this study
@@ -237,8 +238,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public WebSocket<JsonNode> joinGroup(Long studyId)
-			throws BadRequestPublixException, NotFoundPublixException,
-			ForbiddenPublixException {
+			throws BadRequestPublixException {
 		WebSocket<JsonNode> result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
@@ -263,12 +263,41 @@ public class PublixInterceptor extends Controller implements IPublix {
 		}
 		return result;
 	}
+	
+	@Override
+	@Transactional
+	public Result reassignGroup(Long studyId)
+			throws PublixException {
+		Result result = null;
+		switch (getWorkerTypeFromSession()) {
+		case MTWorker.WORKER_TYPE:
+		case MTSandboxWorker.WORKER_TYPE:
+			result = mtPublix.reassignGroup(studyId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = jatosPublix.reassignGroup(studyId);
+			break;
+		case PersonalMultipleWorker.WORKER_TYPE:
+			result = pmPublix.reassignGroup(studyId);
+			break;
+		case PersonalSingleWorker.WORKER_TYPE:
+			result = personalSinglePublix.reassignGroup(studyId);
+			break;
+		case GeneralSingleWorker.WORKER_TYPE:
+			result = generalSinglePublix.reassignGroup(studyId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		}
+		return result;
+	}
 
 	@Override
 	@Transactional
-	public Result leaveGroup(Long studyId) throws BadRequestPublixException,
-			NotFoundPublixException, ForbiddenPublixException,
-			InternalServerErrorPublixException {
+	public Result leaveGroup(Long studyId)
+			throws BadRequestPublixException, NotFoundPublixException,
+			ForbiddenPublixException, InternalServerErrorPublixException {
 		Result result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
@@ -339,8 +368,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 			result = pmPublix.submitResultData(studyId, componentId);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
-			result = personalSinglePublix
-					.submitResultData(studyId, componentId);
+			result = personalSinglePublix.submitResultData(studyId,
+					componentId);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
 			result = generalSinglePublix.submitResultData(studyId, componentId);
@@ -499,8 +528,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 		// Check for MT worker and MT Sandbox worker
 		String mtWorkerId = Publix.getQueryString(MTPublix.MT_WORKER_ID);
 		if (mtWorkerId != null) {
-			String turkSubmitTo = request().getQueryString(
-					MTPublix.TURK_SUBMIT_TO);
+			String turkSubmitTo = request()
+					.getQueryString(MTPublix.TURK_SUBMIT_TO);
 			if (turkSubmitTo != null
 					&& turkSubmitTo.toLowerCase().contains(MTPublix.SANDBOX)) {
 				return MTSandboxWorker.WORKER_TYPE;

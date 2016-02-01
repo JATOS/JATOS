@@ -25,6 +25,7 @@ import services.publix.akka.messages.GroupDispatcherProtocol.GroupMsg;
 import services.publix.akka.messages.GroupDispatcherProtocol.Joined;
 import services.publix.akka.messages.GroupDispatcherProtocol.Left;
 import services.publix.akka.messages.GroupDispatcherProtocol.PoisonChannel;
+import services.publix.akka.messages.GroupDispatcherProtocol.ReassignChannel;
 import services.publix.akka.messages.GroupDispatcherProtocol.RegisterChannel;
 import services.publix.akka.messages.GroupDispatcherProtocol.UnregisterChannel;
 import services.publix.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
@@ -111,6 +112,9 @@ public class GroupDispatcher extends UntypedActor {
 		} else if (msg instanceof UnregisterChannel) {
 			// A GroupChannel wants to unregister
 			unregisterChannel((UnregisterChannel) msg);
+		} else if (msg instanceof ReassignChannel) {
+			// A GroupChannel has to be reassigned
+			reassignChannel((ReassignChannel) msg);
 		} else if (msg instanceof PoisonChannel) {
 			// Comes from ChannelService: close a group channel
 			poisonAGroupChannel((PoisonChannel) msg);
@@ -288,6 +292,22 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	/**
+	 * Forwards this ReassignChannel message to the right group channel.
+	 */
+	private void reassignChannel(ReassignChannel reassignChannel) {
+		long studyResultId = reassignChannel.studyResultId;
+		if (groupChannelMap.containsKey(studyResultId)) {
+			ActorRef groupChannel = groupChannelMap.get(studyResultId);
+			groupChannel.forward(reassignChannel, getContext());
+		} else {
+			String errorMsg = "StudyResult with ID " + studyResultId
+					+ " not handled by GroupDispatcher for GroupResult with ID "
+					+ groupResultId + ".";
+			sendErrorBackToSender(errorMsg);
+		}
+	}
+
+	/**
 	 * Send the JOINED action to group member specified in Joined.
 	 */
 	private void joined(Joined joined) {
@@ -358,6 +378,9 @@ public class GroupDispatcher extends UntypedActor {
 				groupResult.getGroupSessionData());
 		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
 				groupResult.getGroupSessionVersion());
+		Logger.debug(CLASS_NAME + ".tellGroupAction: studyResultId "
+				+ studyResultId + ", action " + action + ", groupResultId "
+				+ groupResult.getId());
 		tellAll(new GroupActionMsg(objectNode));
 	}
 

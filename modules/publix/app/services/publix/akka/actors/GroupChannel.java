@@ -8,6 +8,7 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import services.publix.akka.messages.GroupDispatcherProtocol.GroupMsg;
 import services.publix.akka.messages.GroupDispatcherProtocol.PoisonChannel;
+import services.publix.akka.messages.GroupDispatcherProtocol.ReassignChannel;
 import services.publix.akka.messages.GroupDispatcherProtocol.RegisterChannel;
 import services.publix.akka.messages.GroupDispatcherProtocol.UnregisterChannel;
 
@@ -23,9 +24,10 @@ import services.publix.akka.messages.GroupDispatcherProtocol.UnregisterChannel;
  * 
  * A GroupChannel belongs to a GroupDispatcher. A GroupChannel is created by the
  * ChannelService and registers itself by sending a RegisterChannel message to
- * its GroupDispatcher. A closes down after receiving a PoisonChannel message or
- * if the WebSocket is closed. While closing down it unregisters from the
- * GroupDispatcher by sending a UnregisterChannel message.
+ * its GroupDispatcher. It closes down after receiving a PoisonChannel message
+ * or if the WebSocket is closed. While closing down it unregisters from the
+ * GroupDispatcher by sending a UnregisterChannel message. A GroupChannel can,
+ * if it's told to, reassign itself to a different GroupDispatcher.
  * 
  * @author Kristian Lange (2015)
  */
@@ -36,7 +38,7 @@ public class GroupChannel extends UntypedActor {
 	 */
 	private final ActorRef out;
 	private final long studyResultId;
-	private final ActorRef groupDispatcher;
+	private ActorRef groupDispatcher;
 
 	/**
 	 * Akka method to get this Actor started. Changes in props must be done in
@@ -78,6 +80,14 @@ public class GroupChannel extends UntypedActor {
 			// the wrapped JsonNode to the client
 			GroupMsg groupMsg = (GroupMsg) msg;
 			out.tell(groupMsg.jsonNode, self());
+		} else if (msg instanceof ReassignChannel) {
+			// This group channel has to reassign to a different dispatcher
+			ReassignChannel reassignChannel = (ReassignChannel) msg;
+			this.groupDispatcher.tell(new UnregisterChannel(studyResultId),
+					self());
+			this.groupDispatcher = reassignChannel.differentGroupDispatcher;
+			this.groupDispatcher.tell(new RegisterChannel(studyResultId),
+					self());
 		} else if (msg instanceof PoisonChannel) {
 			// Kill this group channel
 			self().tell(PoisonPill.getInstance(), self());

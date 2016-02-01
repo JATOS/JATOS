@@ -78,6 +78,7 @@ var startingComponent = false;
 var endingComponent = false;
 var submittingResultData = false;
 var joiningGroup = false;
+var reassigningGroup = false;
 var leavingGroup = false;
 var abortingComponent = false;
 
@@ -564,8 +565,8 @@ jatos.joinGroup = function(callbacks) {
 	//		OPEN       1 The connection is open and ready to communicate.
 	//		CLOSING    2 The connection is in the process of closing.
 	//		CLOSED     3 The connection is closed or couldn't be opened.
-	if (!jatos.jQuery || joiningGroup || !callbacks
-			|| (groupChannel && groupChannel.readyState != 3)) {
+	if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup
+			|| !callbacks || (groupChannel && groupChannel.readyState != 3)) {
 		return;
 	}
 	joiningGroup = true;
@@ -578,11 +579,11 @@ jatos.joinGroup = function(callbacks) {
 	};
 	groupChannel.onerror = function() {
 		joiningGroup = false;
-		callingOnError(callbacks.onError,
-				"Error during opening of group channel");
+		callingOnError(callbacks.onError, "Couldn't open a group channel");
 	};
 	groupChannel.onclose = function() {
 		joiningGroup = false;
+		reassigningGroup = false;
 		jatos.groupResultId = null;
 		jatos.groupState = null;
 		jatos.groupMemberId = null;
@@ -614,7 +615,7 @@ function handleGroupMsg(msg, callbacks) {
 	if (groupMsg.error) {
 		callingOnError(callbacks.onError, groupMsg.error);
 	}
-}
+};
 
 function callGroupActionCallbacks(groupMsg, callbacks) {
 	if (!groupMsg.action) {
@@ -709,6 +710,49 @@ function callOnUpdate() {
 	if (callbacks.onUpdate) {
 		callbacks.onUpdate();
 	}
+};
+
+/**
+ * Asks the JATOS server to reassign this study run to a different group.
+ * 
+ * @param {optional Function} onSuccess - Function to be called if the
+ *            reassignment was successful
+ * @param {optional Function} onError - Function to be called if the
+ *            reassignment was unsuccessful
+ */
+jatos.reassignGroup = function(onSuccess, onError) {
+	if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup
+			|| (groupChannel && groupChannel.readyState != 1)) {
+		return;
+	}
+	reassigningGroup = true;
+	
+	jatos.jQuery.ajax({
+		url : "/publix/" + jatos.studyId + "/group/reassign",
+		processData : false,
+		type : "GET",
+		timeout : jatos.httpTimeout,
+		statusCode : {
+			200 : function() {
+				// Successful reassignment
+				reassigningGroup = false;
+				if (onSuccess) {
+					onSuccess();
+				}
+			},
+			204 : function() {
+				// Unsuccessful reassignment
+				reassigningGroup = false;
+				if (onError) {
+					onError();
+				}
+			}
+		},
+		error : function(err) {
+			reassigningGroup = false;
+			callingOnError(onError, getAjaxErrorMsg(err));
+		}
+	});
 };
 
 /**
@@ -822,14 +866,12 @@ jatos.sendMsgTo = function(recipient, msg) {
  * The group channel WebSocket is not closed in the function - it's closed from
  * the JATOS' side.
  * 
- * @param {optional
- *            Function} onSuccess - Function to be called after the group is
- *            left.
- * @param {optional
- *            Function} onError - Function to be called in case of error.
+ * @param {optional Function} onSuccess - Function to be called after the group
+ *            is left.
+ * @param {optional Function} onError - Function to be called in case of error.
  */
 jatos.leaveGroup = function(onSuccess, onError) {
-	if (!jQueryExists() || leavingGroup) {
+	if (!jQueryExists() || joiningGroup || reassigningGroup || leavingGroup) {
 		return;
 	}
 	leavingGroup = true;

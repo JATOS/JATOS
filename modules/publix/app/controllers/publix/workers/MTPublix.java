@@ -153,7 +153,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);

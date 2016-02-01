@@ -2,6 +2,8 @@ package services.publix.akka.messages;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import akka.actor.ActorRef;
+
 /**
  * Contains all messages that can be used by the GroupDispatcher Akka Actor.
  * Each message is a static class.
@@ -136,6 +138,24 @@ public class GroupDispatcherProtocol {
 
 		public RegisterChannel(long studyResultId) {
 			this.studyResultId = studyResultId;
+		}
+	}
+
+	/**
+	 * Message to signal that a GroupChannel has to change its GroupDispatcher.
+	 * It originates in the ChannelService and send to the GroupDispatcher who
+	 * currently handles the GroupChannel. There it is forwarded to the actual
+	 * GroupChannel.
+	 */
+	public static class ReassignChannel {
+
+		public final long studyResultId;
+		public final ActorRef differentGroupDispatcher;
+
+		public ReassignChannel(long studyResultId,
+				ActorRef differentGroupDispatcher) {
+			this.studyResultId = studyResultId;
+			this.differentGroupDispatcher = differentGroupDispatcher;
 		}
 	}
 

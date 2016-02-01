@@ -12,6 +12,7 @@ import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.InternalServerErrorPublixException;
+import exceptions.publix.NoContentPublixException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import models.common.Batch;
@@ -193,8 +194,8 @@ public abstract class Publix<T extends Worker> extends Controller
 	}
 
 	@Override
-	public WebSocket<JsonNode> joinGroup(Long studyId)
-			throws NotFoundPublixException, ForbiddenPublixException {
+	// Due to returning a WebSocket and not a Result we don't throw exceptions
+	public WebSocket<JsonNode> joinGroup(Long studyId) {
 		Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
 		String workerIdStr = session(Publix.WORKER_ID);
@@ -204,23 +205,22 @@ public abstract class Publix<T extends Worker> extends Controller
 		// manually because the PublixAction wouldn't send a rejected WebSocket
 		// but normal HTTP responses.
 		try {
-			StudyResult studyResult = jpa.withTransaction(() -> {
+			return jpa.withTransaction(() -> {
 				return joinGroup(studyId, workerIdStr);
 			});
-			return channelService.openGroupChannel(studyResult);
 		} catch (NotFoundPublixException e) {
-			Logger.info(CLASS_NAME + ".openGroupChannel: " + e.getMessage());
+			Logger.info(CLASS_NAME + ".joinGroup: " + e.getMessage());
 			return WebSocketBuilder.reject(notFound());
 		} catch (ForbiddenPublixException e) {
-			Logger.info(CLASS_NAME + ".openGroupChannel: " + e.getMessage());
+			Logger.info(CLASS_NAME + ".joinGroup: " + e.getMessage());
 			return WebSocketBuilder.reject(forbidden());
 		} catch (Throwable e) {
-			Logger.info(CLASS_NAME + ".openGroupChannel: ", e);
+			Logger.error(CLASS_NAME + ".joinGroup: ", e);
 			return WebSocketBuilder.reject(internalServerError());
 		}
 	}
 
-	private StudyResult joinGroup(Long studyId, String workerIdStr)
+	private  WebSocket<JsonNode> joinGroup(Long studyId, String workerIdStr)
 			throws ForbiddenPublixException, NotFoundPublixException,
 			InternalServerErrorPublixException {
 		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
@@ -230,20 +230,53 @@ public abstract class Publix<T extends Worker> extends Controller
 		publixUtils.checkStudyIsGroupStudy(study);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
-		GroupResult groupResult;
-		if (groupService.hasUnfinishedGroupResult(studyResult)) {
-			groupResult = studyResult.getGroupResult();
+		groupService.checkHistoryGroupResult(studyResult);
+
+		if (studyResult.getActiveGroupResult() != null) {
+			GroupResult groupResult = studyResult.getActiveGroupResult();
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr
 					+ " already member of group result " + groupResult.getId());
 		} else {
-			groupResult = groupService.join(studyResult, batch);
+			GroupResult groupResult = groupService.join(studyResult, batch);
 			channelService.sendJoinedMsg(studyResult);
 			Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 					+ "workerId " + workerIdStr + " joined group result "
 					+ groupResult.getId());
 		}
-		return studyResult;
+		return channelService.openGroupChannel(studyResult);
+	}
+
+	@Override
+	public Result reassignGroup(Long studyId)
+			throws ForbiddenPublixException, NoContentPublixException,
+			InternalServerErrorPublixException, NotFoundPublixException {
+		Logger.info(CLASS_NAME + ".reassignGroup: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID));
+		String workerIdStr = session(Publix.WORKER_ID);
+		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
+		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+		publixUtils.checkStudyIsGroupStudy(study);
+		StudyResult studyResult = publixUtils
+				.retrieveWorkersLastStudyResult(worker, study);
+		groupService.checkHistoryGroupResult(studyResult);
+
+		if (studyResult.getActiveGroupResult() == null) {
+			throw new ForbiddenPublixException(errorMessages
+					.groupStudyResultNotMember(studyResult.getId()));
+		}
+		GroupResult currentGroupResult = studyResult.getActiveGroupResult();
+		GroupResult differentGroupResult = groupService.reassign(studyResult,
+				batch);
+		channelService.reassignGroupChannel(studyResult, currentGroupResult,
+				differentGroupResult);
+		Logger.info(CLASS_NAME + ".reassignGroup: studyId " + studyId + ", "
+				+ "workerId " + workerIdStr + " reassigned to group result "
+				+ differentGroupResult.getId());
+		return ok();
+
 	}
 
 	@Override
@@ -257,7 +290,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		if (groupResult == null) {
 			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
 					+ "workerId " + session(WORKER_ID)
@@ -374,7 +407,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 		}
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
@@ -402,7 +435,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		if (!publixUtils.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 		}
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		groupService.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);

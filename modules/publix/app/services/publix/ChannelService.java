@@ -13,6 +13,7 @@ import akka.util.Timeout;
 import exceptions.publix.InternalServerErrorPublixException;
 import models.common.GroupResult;
 import models.common.StudyResult;
+import play.Logger;
 import play.mvc.WebSocket;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
@@ -20,6 +21,7 @@ import scala.concurrent.duration.Duration;
 import services.publix.akka.messages.GroupDispatcherProtocol.Joined;
 import services.publix.akka.messages.GroupDispatcherProtocol.Left;
 import services.publix.akka.messages.GroupDispatcherProtocol.PoisonChannel;
+import services.publix.akka.messages.GroupDispatcherProtocol.ReassignChannel;
 import services.publix.akka.messages.GroupDispatcherRegistryProtocol.Get;
 import services.publix.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
 import services.publix.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
@@ -33,17 +35,21 @@ import services.publix.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
 @Singleton
 public class ChannelService {
 
+	private static final String CLASS_NAME = ChannelService.class
+			.getSimpleName();
+
 	/**
 	 * Time to wait for an answer after asking an Akka actor
 	 */
-	private static final Timeout TIMEOUT = new Timeout(Duration.create(5000l,
-			"millis"));
+	private static final Timeout TIMEOUT = new Timeout(
+			Duration.create(5000l, "millis"));
 
 	/**
 	 * Akka Actor of the GroupDispatcherRegistry. It exists only one and it's
 	 * created during startup of JATOS.
 	 */
-	@Inject @Named("group-dispatcher-registry-actor")
+	@Inject
+	@Named("group-dispatcher-registry-actor")
 	private ActorRef groupDispatcherRegistry;
 
 	/**
@@ -51,7 +57,7 @@ public class ChannelService {
 	 */
 	public WebSocket<JsonNode> openGroupChannel(StudyResult studyResult)
 			throws InternalServerErrorPublixException {
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		if (groupResult == null) {
 			return null;
 		}
@@ -62,6 +68,38 @@ public class ChannelService {
 		closeGroupChannel(studyResult, groupDispatcher);
 		return WebSocketBuilder.withGroupChannel(studyResult.getId(),
 				groupDispatcher);
+	}
+
+	/**
+	 * Reassigns the given group channel that is associated with the given
+	 * StudyResult. It moves the group channel from the current GroupDispatcher
+	 * to a different one that is associated with the given GroupResult.
+	 */
+	public void reassignGroupChannel(StudyResult studyResult,
+			GroupResult currentGroupResult, GroupResult differentGroupResult)
+					throws InternalServerErrorPublixException {
+		ActorRef currentGroupDispatcher = getGroupDispatcher(
+				currentGroupResult);
+		ActorRef differentGroupDispatcher = getGroupDispatcher(
+				differentGroupResult);
+		if (currentGroupDispatcher == null
+				|| differentGroupDispatcher == null) {
+			Logger.error(CLASS_NAME
+					+ ".reassignGroupChannel: couldn't reassign group channel "
+					+ "from current group result " + currentGroupResult.getId()
+					+ " to different group result "
+					+ differentGroupResult.getId()
+					+ ". One of the dispatchers doesn't exist.");
+			throw new InternalServerErrorPublixException(
+					"Couldn't reassign group channel.");
+		}
+
+		currentGroupDispatcher.tell(new ReassignChannel(studyResult.getId(),
+				differentGroupDispatcher), ActorRef.noSender());
+		currentGroupDispatcher.tell(new Left(studyResult.getId()),
+				ActorRef.noSender());
+		differentGroupDispatcher.tell(new Joined(studyResult.getId()),
+				ActorRef.noSender());
 	}
 
 	/**
@@ -88,7 +126,7 @@ public class ChannelService {
 	 */
 	public void sendJoinedMsg(StudyResult studyResult)
 			throws InternalServerErrorPublixException {
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		if (groupResult != null) {
 			sendMsg(studyResult, groupResult, new Joined(studyResult.getId()));
 		}
@@ -122,8 +160,9 @@ public class ChannelService {
 	 */
 	private ActorRef getGroupDispatcher(GroupResult groupResult)
 			throws InternalServerErrorPublixException {
-		Object answer = askGroupDispatcherRegistry(new Get(groupResult.getId()));
-		return ((ItsThisOne) answer).groupDispatcher;
+		ItsThisOne answer = (ItsThisOne) askGroupDispatcherRegistry(
+				new Get(groupResult.getId()));
+		return answer.groupDispatcher;
 	}
 
 	/**
@@ -136,9 +175,9 @@ public class ChannelService {
 	 */
 	private ActorRef getOrCreateGroupDispatcher(GroupResult groupResult)
 			throws InternalServerErrorPublixException {
-		Object answer = askGroupDispatcherRegistry(new GetOrCreate(
-				groupResult.getId()));
-		return ((ItsThisOne) answer).groupDispatcher;
+		ItsThisOne answer = (ItsThisOne) askGroupDispatcherRegistry(
+				new GetOrCreate(groupResult.getId()));
+		return answer.groupDispatcher;
 	}
 
 	/**
@@ -172,9 +211,10 @@ public class ChannelService {
 	 * @throws InternalServerErrorPublixException
 	 */
 	private boolean closeGroupChannel(StudyResult studyResult,
-			ActorRef groupDispatcher) throws InternalServerErrorPublixException {
-		Future<Object> future = ask(groupDispatcher, new PoisonChannel(
-				studyResult.getId()), TIMEOUT);
+			ActorRef groupDispatcher)
+					throws InternalServerErrorPublixException {
+		Future<Object> future = ask(groupDispatcher,
+				new PoisonChannel(studyResult.getId()), TIMEOUT);
 		try {
 			return (boolean) Await.result(future, TIMEOUT.duration());
 		} catch (Exception e) {

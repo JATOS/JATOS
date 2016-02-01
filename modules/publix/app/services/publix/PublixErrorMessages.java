@@ -17,6 +17,7 @@ public class PublixErrorMessages {
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
 	public static final String SUBMITTED_DATA_UNKNOWN_FORMAT = "Submitted data have an unknown format.";
 	public static final String NO_WORKER_IN_SESSION = "Sorry this study is not available to you (any more). Maybe you tried to reload a component that wasn't allowed to be reloaded?";
+	public static final String GROUP_STUDY_NOT_POSSIBLE_TWICE = "It's not possible to run a group study twice.";
 
 	public String workerNotCorrectType(Long workerId) {
 		return "The worker with ID " + workerId
@@ -86,7 +87,6 @@ public class PublixErrorMessages {
 	public String componentNotExist(Long studyId, Long componentId) {
 		return "An component with ID " + componentId + " of study " + studyId
 				+ " doesn't exist.";
-
 	}
 
 	public String componentNotBelongToStudy(Long studyId, Long componentId) {
@@ -117,6 +117,16 @@ public class PublixErrorMessages {
 
 	public String studyFinishedWithMessage(String message) {
 		return "Study finished with message: " + message;
+	}
+
+	public String groupNotFoundForReassigning(Long studyResultId) {
+		return "Couldn't reassign the study result with ID " + studyResultId
+				+ " to any other group.";
+	}
+
+	public String groupStudyResultNotMember(Long studyResultId) {
+		return "The study result with ID " + studyResultId
+				+ " isn't member in any group.";
 	}
 
 }

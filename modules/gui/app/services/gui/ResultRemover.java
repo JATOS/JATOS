@@ -173,7 +173,7 @@ public class ResultRemover {
 		workerDao.update(worker);
 
 		// Remove studyResult as member from group result
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		if (groupResult != null) {
 			groupResult.removeActiveMember(studyResult);
 			groupResultDao.update(groupResult);

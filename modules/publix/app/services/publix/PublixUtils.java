@@ -152,7 +152,7 @@ public abstract class PublixUtils<T extends Worker> {
 	public String generateIdCookieValue(Batch batch, StudyResult studyResult,
 			ComponentResult componentResult, Worker worker) {
 		Study study = studyResult.getStudy();
-		GroupResult groupResult = studyResult.getGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
 		Component component = componentResult.getComponent();
 		Map<String, String> cookieMap = new HashMap<>();
 		cookieMap.put(Publix.WORKER_ID, String.valueOf(worker.getId()));
