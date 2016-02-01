@@ -143,6 +143,7 @@ $('#batchList').on('click', '.batchPropertiesButton', function() {
 });
 
 function fillbatchPropertiesForm(properties) {
+	$('#batchPropertiesModal').data(properties);
 	$('#batchPropertiesModal .@models.gui.BatchProperties.TITLE').val(properties['@models.gui.BatchProperties.TITLE']);
 	setInputGroupWithCheckbox('batchPropertiesModal',
 			'@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED',
@@ -174,11 +175,11 @@ function setInputGroupWithCheckbox(modal, checkbox, input, properties) {
 
 $("#batchPropertiesForm").submit(function(event) {
 	event.preventDefault();
-	var batch = getBatchData(this);
-	if (!batch) {return} // should never happen
+	var batchProps = $('#batchPropertiesModal').data();
+	if (!batchProps) {return} // should never happen
 	$.ajax({
 		type: 'POST',
-		url: "/jatos/@study.getId()/batch/" + batch.id + "/properties",
+		url: "/jatos/@study.getId()/batch/" + batchProps.id + "/properties",
 		data: $('#batchPropertiesForm').serialize(), 
 		success: function(response) {
 			removeAlerts('#batchPropertiesModal');
