@@ -11,12 +11,17 @@
 				</div>
 				<div class="modal-body">
 					<div class="form-group row">
+						<div class="col-xs-3"><p class="text-right"><strong>ID</strong>&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Unique within this JATOS instance" aria-hidden="true"></span></p></div>
+						<div class="col-xs-9">
+							<p class="@models.gui.BatchProperties.ID"></p>
+						</div>
+					</div>
+					<div class="form-group row">
 						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.TITLE">Title</label>
 						<div class="col-xs-9">
 							<input type="text" class="form-control @models.gui.BatchProperties.TITLE" id="@models.gui.BatchProperties.TITLE" name="@models.gui.BatchProperties.TITLE" placeholder="Your batch title">
 						</div>
 					</div>
-					
 					<div class="form-group row">
 						<label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
 						<div class="col-xs-9" id="allowedWorkerTypes">
@@ -47,7 +52,6 @@
 							</label>
 						</div>
 					</div>
-					
 					<div class="form-group row">
 						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED">Max total workers &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of workers this batch is allowed to have." aria-hidden="true"></span></label>
 						<div class="col-xs-3">
@@ -62,7 +66,6 @@
 							</div>
 						</div>
 					</div>
-				
 					<div class="well groupProperties">
 						<h4>Group Properties</h4>
 						<div class="form-group row">
@@ -79,7 +82,6 @@
 								</div>
 							</div>
 						</div>
-						
 						<div class="form-group row">
 							<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">Max active members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of active members a group can have at the same time." aria-hidden="true"></span></label>
 							<div class="col-xs-3">
@@ -144,6 +146,7 @@ $('#batchList').on('click', '.batchPropertiesButton', function() {
 
 function fillbatchPropertiesForm(properties) {
 	$('#batchPropertiesModal').data(properties);
+	$('#batchPropertiesModal .@models.gui.BatchProperties.ID').text(properties['@models.gui.BatchProperties.ID']);
 	$('#batchPropertiesModal .@models.gui.BatchProperties.TITLE').val(properties['@models.gui.BatchProperties.TITLE']);
 	setInputGroupWithCheckbox('batchPropertiesModal',
 			'@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED',

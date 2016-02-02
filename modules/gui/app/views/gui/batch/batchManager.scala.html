@@ -50,6 +50,7 @@
 	<button type="button" class="btn btn-sm btn-primary activeButton" data-toggle="tooltip" data-placement="bottom" title="">
 		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
 	</button>
+	<span class="batchId"></span>
 	<span class="batchTitle"></span>
 	<div class="batchBtnGroup btn-group" aria-hidden="true">
 		<button type="button" class="batchPropertiesButton btn btn-primary" data-toggle="tooltip" data-placement="bottom"
@@ -107,6 +108,7 @@ function fillBatchList(batchList) {
 		// Write batch object into toolbar's data attribute so we can use it later on 
 		$(toolbar).data(batch);
 		setButtonActive($(toolbar).find('.activeButton'), batch.active);
+		$(toolbar).find('.batchId').text(batch.id);
 		$(toolbar).find('.batchTitle').text(batch.title);
 		$(toolbar).find('.resultsBadge').text(batch.resultCount);
 		$(toolbar).find('.workersBadge').text(batch.workerCount);

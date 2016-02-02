@@ -25,6 +25,7 @@ import play.data.validation.ValidationError;
  */
 public class BatchProperties {
 
+	public static final String ID = "id";
 	public static final String TITLE = "title";
 	public static final String DEFAULT_TITLE = "Default";
 	public static final String ACTIVE = "active";
