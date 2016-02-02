@@ -205,9 +205,11 @@ public abstract class Publix<T extends Worker> extends Controller
 		// manually because the PublixAction wouldn't send a rejected WebSocket
 		// but normal HTTP responses.
 		try {
-			return jpa.withTransaction(() -> {
+			StudyResult studyResult = jpa.withTransaction(() -> {
 				return joinGroup(studyId, workerIdStr);
 			});
+			// openGroupChannel has to be outside of the transaction
+			return channelService.openGroupChannel(studyResult);
 		} catch (NotFoundPublixException e) {
 			Logger.info(CLASS_NAME + ".joinGroup: " + e.getMessage());
 			return WebSocketBuilder.reject(notFound());
@@ -220,7 +222,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		}
 	}
 
-	private  WebSocket<JsonNode> joinGroup(Long studyId, String workerIdStr)
+	private StudyResult joinGroup(Long studyId, String workerIdStr)
 			throws ForbiddenPublixException, NotFoundPublixException,
 			InternalServerErrorPublixException {
 		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
@@ -244,7 +246,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ "workerId " + workerIdStr + " joined group result "
 					+ groupResult.getId());
 		}
-		return channelService.openGroupChannel(studyResult);
+		return studyResult;
 	}
 
 	@Override
@@ -276,7 +278,6 @@ public abstract class Publix<T extends Worker> extends Controller
 				+ "workerId " + workerIdStr + " reassigned to group result "
 				+ differentGroupResult.getId());
 		return ok();
-
 	}
 
 	@Override
