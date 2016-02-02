@@ -330,14 +330,16 @@ public class GroupDispatcher extends UntypedActor {
 		// The current group data are persisted in a GroupResult entity. The
 		// GroupResult determines who is member of the group - and not
 		// the groupChannelMap.
-		GroupResult groupResult = getGroupResult(groupResultId);
-		if (groupResult == null) {
-			String errorMsg = "Couldn't find group result with ID "
-					+ groupResultId + " in database.";
-			sendErrorBackToSender(errorMsg);
-			return;
-		}
-		tellGroupAction(studyResultId, action, groupResult);
+		jpa.withTransaction(() -> {
+			GroupResult groupResult = groupResultDao.findById(groupResultId);
+			if (groupResult == null) {
+				String errorMsg = "Couldn't find group result with ID "
+						+ groupResultId + " in database.";
+				sendErrorBackToSender(errorMsg);
+				return;
+			}
+			tellGroupAction(studyResultId, action, groupResult);
+		});
 	}
 
 	/**

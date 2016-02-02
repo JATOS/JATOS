@@ -83,16 +83,17 @@ public class GroupResult {
 
 	/**
 	 * Contains all currently active members of this group. Members are
-	 * StudyResults. This relationship is bidirectional.
+	 * StudyResults. This relationship is bidirectional. It has to be EAGER -
+	 * otherwise GroupDispatcher.tellGroupAction would fail.
 	 */
-	@OneToMany(fetch = FetchType.EAGER, mappedBy="activeGroupResult")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "activeGroupResult")
 	private Set<StudyResult> activeMemberList = new HashSet<>();
 
 	/**
 	 * Contains all former members of this group (not active any more) that
 	 * somehow finished this study. This relationship is bidirectional.
 	 */
-	@OneToMany(fetch = FetchType.EAGER, mappedBy="historyGroupResult")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "historyGroupResult")
 	private Set<StudyResult> historyMemberList = new HashSet<>();
 
 	/**
