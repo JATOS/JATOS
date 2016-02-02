@@ -12,6 +12,7 @@ import exceptions.publix.NoContentPublixException;
 import models.common.Batch;
 import models.common.GroupResult;
 import models.common.StudyResult;
+import play.db.jpa.JPAApi;
 
 /**
  * Handles groups, e.g. joining or leaving a GroupResult. Members of a
@@ -29,14 +30,17 @@ public class GroupService {
 	private final ResultCreator resultCreator;
 	private final StudyResultDao studyResultDao;
 	private final GroupResultDao groupResultDao;
+	private final JPAApi jpa;
 	private final PublixErrorMessages errorMessages;
 
 	@Inject
 	GroupService(ResultCreator resultCreator, StudyResultDao studyResultDao,
-			GroupResultDao groupResultDao, PublixErrorMessages errorMessages) {
+			GroupResultDao groupResultDao, JPAApi jpa,
+			PublixErrorMessages errorMessages) {
 		this.resultCreator = resultCreator;
 		this.studyResultDao = studyResultDao;
 		this.groupResultDao = groupResultDao;
+		this.jpa = jpa;
 		this.errorMessages = errorMessages;
 	}
 
@@ -79,7 +83,7 @@ public class GroupService {
 
 	/**
 	 * Reassigns this StudyResult to a different GroupResult if possible.
-	 * Persists changes.
+	 * Persists changes in it's own transaction.
 	 * 
 	 * Looks in the database whether we have other incomplete GroupResult (state
 	 * STARTED, maxActiveMember not reached, maxTotalMembers not reached). If
@@ -102,9 +106,11 @@ public class GroupService {
 		currentGroupResult.removeActiveMember(studyResult);
 		differentGroupResult.addActiveMember(studyResult);
 		studyResult.setActiveGroupResult(differentGroupResult);
-		groupResultDao.update(currentGroupResult);
-		groupResultDao.update(differentGroupResult);
-		studyResultDao.update(studyResult);
+		jpa.withTransaction(() -> {
+			groupResultDao.update(currentGroupResult);
+			groupResultDao.update(differentGroupResult);
+			studyResultDao.update(studyResult);
+		});
 		return differentGroupResult;
 	}
 
@@ -135,8 +141,10 @@ public class GroupService {
 		}
 		groupResult.removeActiveMember(studyResult);
 		studyResult.setActiveGroupResult(null);
-		groupResultDao.update(groupResult);
-		studyResultDao.update(studyResult);
+		jpa.withTransaction(() -> {
+			groupResultDao.update(groupResult);
+			studyResultDao.update(studyResult);
+		});
 	}
 
 }
