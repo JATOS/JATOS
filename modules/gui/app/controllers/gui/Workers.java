@@ -22,7 +22,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.BreadcrumbsService;
 import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
@@ -45,7 +44,6 @@ public class Workers extends Controller {
 	private final Checker checker;
 	private final UserService userService;
 	private final WorkerService workerService;
-	private final BreadcrumbsService breadcrumbsService;
 	private final JsonUtils jsonUtils;
 	private final StudyDao studyDao;
 	private final WorkerDao workerDao;
@@ -53,44 +51,14 @@ public class Workers extends Controller {
 	@Inject
 	Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
 			UserService userService, WorkerService workerService,
-			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-			JsonUtils jsonUtils, WorkerDao workerDao) {
+			StudyDao studyDao, JsonUtils jsonUtils, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.userService = userService;
 		this.workerService = workerService;
-		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 		this.jsonUtils = jsonUtils;
 		this.workerDao = workerDao;
-	}
-
-	/**
-	 * Shows view with worker details.
-	 */
-	@Transactional
-	public Result index(Long workerId, int httpStatus)
-			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".index: " + "workerId " + workerId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
-		User loggedInUser = userService.retrieveLoggedInUser();
-		Worker worker = workerDao.findById(workerId);
-		try {
-			checker.checkWorker(worker, workerId);
-		} catch (BadRequestException e) {
-			jatosGuiExceptionThrower.throwRedirect(e,
-					controllers.gui.routes.Home.home());
-		}
-
-		String breadcrumbs = breadcrumbsService.generateForWorker(worker,
-				BreadcrumbsService.RESULTS);
-		return status(httpStatus, views.html.gui.result.workersStudyResults
-				.render(loggedInUser, breadcrumbs, worker));
-	}
-
-	@Transactional
-	public Result index(Long workerId) throws JatosGuiException {
-		return index(workerId, Http.Status.OK);
 	}
 
 	/**

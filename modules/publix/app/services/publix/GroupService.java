@@ -12,7 +12,6 @@ import exceptions.publix.NoContentPublixException;
 import models.common.Batch;
 import models.common.GroupResult;
 import models.common.StudyResult;
-import play.db.jpa.JPA;
 
 /**
  * Handles groups, e.g. joining or leaving a GroupResult. Members of a

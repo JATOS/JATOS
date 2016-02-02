@@ -1,4 +1,4 @@
-@(loggedInUser: common.User, breadcrumbs: String, study: common.Study)
+@(loggedInUser: common.User, breadcrumbs: String, study: common.Study, dataUrl: String)
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
@@ -70,7 +70,7 @@ $(document).ready(function() {
 	resultsTable = $('#resultsTable').DataTable({
 		"ajax": {
 			"type": "GET",
-			"url" : "@controllers.gui.routes.StudyResults.tableDataByStudy(study.getId())",
+			"url" : "@dataUrl",
 			"error": function(reason) {
 					showError("Couldn't read results data.")
 			}

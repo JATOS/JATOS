@@ -143,11 +143,16 @@ $("#createBatchForm").submit(function(event) {
 	});
 });
 
-
 $('#batchList').on('click', '.batchWorkersButton', function() {
 	var batch = getBatchData(this);
 	if (!batch) {return} // should never happen
 	window.location.href =  "/jatos/@study.getId()/batch/" + batch.id + "/workers";
+});
+
+$('#batchList').on('click', '.batchResultsButton', function() {
+	var batch = getBatchData(this);
+	if (!batch) {return} // should never happen
+	window.location.href =  "/jatos/@study.getId()/batch/" + batch.id + "/results";
 });
 
 $('#batchList').on('click', '.activeButton', function() {

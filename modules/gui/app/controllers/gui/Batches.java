@@ -98,7 +98,8 @@ public class Batches extends Controller {
 			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
 		}
 
-		String breadcrumbs = breadcrumbsService.generateForBatchManager(study);
+		String breadcrumbs = breadcrumbsService.generateForStudy(study,
+				BreadcrumbsService.BATCH_MANAGER);
 		return ok(views.html.gui.batch.batchManager.render(loggedInUser,
 				breadcrumbs, study));
 	}
@@ -200,8 +201,8 @@ public class Batches extends Controller {
 		String baseUrl = ControllerUtils.getReferer();
 		Map<String, Integer> studyResultCountsPerWorker = batchService
 				.retrieveStudyResultCountsPerWorker(batch);
-		String breadcrumbs = breadcrumbsService.generateForBatchWorkers(study,
-				batch);
+		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
+				BreadcrumbsService.WORKERS);
 		return ok(views.html.gui.batch.workers.render(loggedInUser, breadcrumbs,
 				batch.getId(), study, baseUrl, studyResultCountsPerWorker));
 	}

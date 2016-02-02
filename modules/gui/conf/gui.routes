@@ -23,18 +23,20 @@ GET     /jatos/user/:email                           @controllers.gui.Users.prof
 
 # ComponentResults & StudyResults controller
 GET     /jatos/worker/:workerId/tableData            @controllers.gui.StudyResults.tableDataByWorker(workerId: Long)
+GET     /jatos/worker/:workerId/results              @controllers.gui.StudyResults.workersStudyResults(workerId: Long)
+DELETE  /jatos/worker/:workerId/allResultData        @controllers.gui.StudyResults.removeAllOfWorker(workerId: Long)
+GET     /jatos/:studyId/batch/:batchId/results       @controllers.gui.StudyResults.batchesStudyResults(studyId: Long, batchId: Long)
+GET     /jatos/:studyId/batch/:batchId/tableData     @controllers.gui.StudyResults.tableDataByBatch(studyId: Long, batchId: Long)
 DELETE  /jatos/componentResult                       @controllers.gui.ComponentResults.remove(componentResultIds: String)
 GET     /jatos/:studyId/:componentId/results         @controllers.gui.ComponentResults.index(studyId: Long, componentId: Long)
 GET     /jatos/:studyId/:componentId/tableData       @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long)
 DELETE  /jatos/:studyId/:componentId/allResults      @controllers.gui.ComponentResults.removeAllOfComponent(studyId: Long, componentId: Long)
-DELETE  /jatos/worker/:workerId/allResultData        @controllers.gui.StudyResults.removeAllOfWorker(workerId: Long)
 DELETE  /jatos/studyResult                           @controllers.gui.StudyResults.remove(studyResultIds: String)
-GET     /jatos/:studyId/results                      @controllers.gui.StudyResults.index(studyId: Long)
+GET     /jatos/:studyId/results                      @controllers.gui.StudyResults.studysStudyResults(studyId: Long)
 GET     /jatos/:studyId/resultsTableData             @controllers.gui.StudyResults.tableDataByStudy(studyId: Long)
 DELETE  /jatos/:studyId/allResults                   @controllers.gui.StudyResults.removeAllOfStudy(studyId: Long)
 
 # Workers controller
-GET     /jatos/worker/:workerId                      @controllers.gui.Workers.index(workerId: Long)
 DELETE  /jatos/worker/:workerId                      @controllers.gui.Workers.remove(workerId: Long)
 GET     /jatos/:studyId/workersTableData             @controllers.gui.Workers.tableDataByStudy(studyId: Long)
 

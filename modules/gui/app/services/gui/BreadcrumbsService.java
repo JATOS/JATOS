@@ -108,25 +108,7 @@ public class BreadcrumbsService {
 		return breadcrumbsStr;
 	}
 
-	public String generateForBatchManager(Study study) {
-		Breadcrumbs breadcrumbs = new Breadcrumbs();
-		breadcrumbs.addBreadcrumb(HOME,
-				controllers.gui.routes.Home.home().url());
-		breadcrumbs.addBreadcrumb(study.getTitle(),
-				controllers.gui.routes.Studies.index(study.getId()).url());
-		breadcrumbs.addBreadcrumb(BATCH_MANAGER, "");
-		String breadcrumbsStr = "";
-		try {
-			breadcrumbsStr = breadcrumbs.asJson();
-		} catch (JsonProcessingException e) {
-			Logger.error(CLASS_NAME + ".generateForBatchManager", e);
-			RequestScopeMessaging
-					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
-		}
-		return breadcrumbsStr;
-	}
-
-	public String generateForBatchWorkers(Study study, Batch batch) {
+	public String generateForBatch(Study study, Batch batch, String last) {
 		Breadcrumbs breadcrumbs = new Breadcrumbs();
 		breadcrumbs.addBreadcrumb(HOME,
 				controllers.gui.routes.Home.home().url());
@@ -135,7 +117,9 @@ public class BreadcrumbsService {
 		breadcrumbs.addBreadcrumb(BATCH_MANAGER, controllers.gui.routes.Batches
 				.batchManager(study.getId()).url());
 		breadcrumbs.addBreadcrumb(batch.getTitle(), "");
-		breadcrumbs.addBreadcrumb(WORKERS, "");
+		if (last != null) {
+			breadcrumbs.addBreadcrumb(last, "");
+		}
 		String breadcrumbsStr = "";
 		try {
 			breadcrumbsStr = breadcrumbs.asJson();

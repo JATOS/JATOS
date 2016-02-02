@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
@@ -16,7 +17,7 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
+import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
@@ -54,6 +55,7 @@ public class StudyResults extends Controller {
 	private final ResultRemover resultRemover;
 	private final ResultService resultService;
 	private final StudyDao studyDao;
+	private final BatchDao batchDao;
 	private final WorkerDao workerDao;
 	private final StudyResultDao studyResultDao;
 
@@ -61,8 +63,9 @@ public class StudyResults extends Controller {
 	StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			Checker checker, UserService userService,
 			BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
-			ResultService resultService, StudyDao studyDao, JsonUtils jsonUtils,
-			WorkerDao workerDao, StudyResultDao studyResultDao) {
+			ResultService resultService, StudyDao studyDao, BatchDao batchDao,
+			JsonUtils jsonUtils, WorkerDao workerDao,
+			StudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.userService = userService;
@@ -70,6 +73,7 @@ public class StudyResults extends Controller {
 		this.resultRemover = resultRemover;
 		this.resultService = resultService;
 		this.studyDao = studyDao;
+		this.batchDao = batchDao;
 		this.jsonUtils = jsonUtils;
 		this.workerDao = workerDao;
 		this.studyResultDao = studyResultDao;
@@ -79,10 +83,10 @@ public class StudyResults extends Controller {
 	 * Shows view with all StudyResults of a study.
 	 */
 	@Transactional
-	public Result index(Long studyId, String errorMsg, int httpStatus)
-			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+	public Result studysStudyResults(Long studyId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".studysStudyResults: studyId " + studyId
+				+ ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -91,22 +95,62 @@ public class StudyResults extends Controller {
 			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
 		}
 
-		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.RESULTS);
-		return status(httpStatus, views.html.gui.result.studysStudyResults
-				.render(loggedInUser, breadcrumbs, study));
+		String dataUrl = controllers.gui.routes.StudyResults
+				.tableDataByStudy(study.getId()).url();
+		return ok(views.html.gui.result.studyResults.render(loggedInUser,
+				breadcrumbs, study, dataUrl));
 	}
 
+	/**
+	 * Shows view with all StudyResults of a batch.
+	 */
 	@Transactional
-	public Result index(Long studyId, String errorMsg)
+	public Result batchesStudyResults(Long studyId, Long batchId)
 			throws JatosGuiException {
-		return index(studyId, errorMsg, Http.Status.OK);
+		Logger.info(CLASS_NAME + ".batchesStudyResults: studyId " + studyId
+				+ ", " + "batchId " + batchId + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
+		Batch batch = batchDao.findById(batchId);
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		try {
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+		}
+
+		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
+				BreadcrumbsService.RESULTS);
+		String dataUrl = controllers.gui.routes.StudyResults
+				.tableDataByBatch(study.getId(), batch.getId()).url();
+		return ok(views.html.gui.result.studyResults.render(loggedInUser,
+				breadcrumbs, study, dataUrl));
 	}
 
+	/**
+	 * Shows view with all StudyResults of a worker.
+	 */
 	@Transactional
-	public Result index(Long studyId) throws JatosGuiException {
-		return index(studyId, null, Http.Status.OK);
+	public Result workersStudyResults(Long workerId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".workersStudyResults: " + "workerId "
+				+ workerId + ", " + "logged-in user's email "
+				+ session(Users.SESSION_EMAIL));
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Worker worker = workerDao.findById(workerId);
+		try {
+			checker.checkWorker(worker, workerId);
+		} catch (BadRequestException e) {
+			jatosGuiExceptionThrower.throwRedirect(e,
+					controllers.gui.routes.Home.home());
+		}
+
+		String breadcrumbs = breadcrumbsService.generateForWorker(worker,
+				BreadcrumbsService.RESULTS);
+		return ok(views.html.gui.result.workersStudyResults.render(loggedInUser,
+				breadcrumbs, worker));
 	}
 
 	/**
@@ -185,9 +229,7 @@ public class StudyResults extends Controller {
 	}
 
 	/**
-	 * Ajax request
-	 * 
-	 * Returns all StudyResults of a study in JSON format.
+	 * Ajax request: Returns all StudyResults of a study in JSON format.
 	 */
 	@Transactional
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
@@ -211,9 +253,34 @@ public class StudyResults extends Controller {
 	}
 
 	/**
-	 * Ajax request
-	 * 
-	 * Returns all StudyResults belonging to a worker as JSON.
+	 * Ajax request: Returns all StudyResults of a batch in JSON format.
+	 */
+	@Transactional
+	public Result tableDataByBatch(Long studyId, Long batchId)
+			throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		Study study = studyDao.findById(studyId);
+		Batch batch = batchDao.findById(batchId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		String dataAsJson = null;
+		try {
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
+			dataAsJson = jsonUtils
+					.allStudyResultsForUI(studyResultDao.findAllByBatch(batch));
+		} catch (IOException e) {
+			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
+			jatosGuiExceptionThrower.throwAjax(errorMsg,
+					Http.Status.INTERNAL_SERVER_ERROR);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+		return ok(dataAsJson);
+	}
+
+	/**
+	 * Ajax request: Returns all StudyResults belonging to a worker as JSON.
 	 */
 	@Transactional
 	public Result tableDataByWorker(Long workerId) throws JatosGuiException {
