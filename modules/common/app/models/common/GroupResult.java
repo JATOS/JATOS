@@ -86,7 +86,11 @@ public class GroupResult {
 	 * StudyResults. This relationship is bidirectional. It has to be EAGER -
 	 * otherwise GroupDispatcher.tellGroupAction would fail.
 	 */
+<<<<<<< HEAD
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "activeGroupResult")
+=======
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "activeGroupResult")
+>>>>>>> branch 'master' of https://github.com/JATOS/JATOS.git
 	private Set<StudyResult> activeMemberList = new HashSet<>();
 
 	/**
