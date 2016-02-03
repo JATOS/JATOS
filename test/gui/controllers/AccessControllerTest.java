@@ -445,7 +445,7 @@ public class AccessControllerTest extends AbstractTest {
 	public void callStudyResultsIndex() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.StudyResults
-				.index(studyClone.getId());
+				.studysStudyResults(studyClone.getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
@@ -511,8 +511,8 @@ public class AccessControllerTest extends AbstractTest {
 
 	//@Test
 	public void callWorkersIndex() throws Exception {
-		Call call = controllers.gui.routes.Workers
-				.index(admin.getWorker().getId());
+		Call call = controllers.gui.routes.StudyResults
+				.workersStudyResults(admin.getWorker().getId());
 		checkDeniedAccess(call, Helpers.GET);
 	}
 

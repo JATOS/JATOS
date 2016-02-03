@@ -24,7 +24,9 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
+import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
+import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
 
 /**
@@ -238,7 +240,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 				.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 
-		String cookieValue = publixUtils.generateIdCookieValue(
+		String cookieValue = HttpHelpers.generateIdCookieValue(
 				study.getDefaultBatch(), studyResult, componentResult,
 				admin.getWorker());
 
@@ -761,21 +763,21 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		// FINISHED, ABORTED, FAIL must return true
 		studyResult.setStudyState(StudyState.FINISHED);
-		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
 				.isTrue();
 		studyResult.setStudyState(StudyState.ABORTED);
-		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
 				.isTrue();
 		studyResult.setStudyState(StudyState.FAIL);
-		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
 				.isTrue();
 
 		// DATA_RETRIEVED, STARTED must return false
 		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
-		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
 				.isFalse();
 		studyResult.setStudyState(StudyState.STARTED);
-		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
 				.isFalse();
 
 		// Clean-up
@@ -800,7 +802,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		studyResult.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
 
-		assertThat(publixUtils.finishedStudyAlready(admin.getWorker(), study))
+		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
 				.isFalse();
 
 		// Clean-up
@@ -813,7 +815,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		assertThat(publixUtils.didStudyAlready(admin.getWorker(), study))
+		assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study))
 				.isFalse();
 
 		entityManager.getTransaction().begin();
@@ -823,7 +825,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		studyResult.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
 
-		assertThat(publixUtils.didStudyAlready(admin.getWorker(), study))
+		assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study))
 				.isTrue();
 
 		// Clean-up
@@ -844,17 +846,17 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		// FINISHED, ABORTED, FAIL must return true
 		studyResult.setStudyState(StudyState.FINISHED);
-		assertThat(publixUtils.studyDone(studyResult)).isTrue();
+		assertThat(PublixHelpers.studyDone(studyResult)).isTrue();
 		studyResult.setStudyState(StudyState.ABORTED);
-		assertThat(publixUtils.studyDone(studyResult)).isTrue();
+		assertThat(PublixHelpers.studyDone(studyResult)).isTrue();
 		studyResult.setStudyState(StudyState.FAIL);
-		assertThat(publixUtils.studyDone(studyResult)).isTrue();
+		assertThat(PublixHelpers.studyDone(studyResult)).isTrue();
 
 		// DATA_RETRIEVED, STARTED must return false
 		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
-		assertThat(publixUtils.studyDone(studyResult)).isFalse();
+		assertThat(PublixHelpers.studyDone(studyResult)).isFalse();
 		studyResult.setStudyState(StudyState.STARTED);
-		assertThat(publixUtils.studyDone(studyResult)).isFalse();
+		assertThat(PublixHelpers.studyDone(studyResult)).isFalse();
 
 		// Clean-up
 		removeStudy(study);
@@ -879,21 +881,21 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		// A component is done if state FINISHED, ABORTED, FAIL, or RELOADED
 		componentResult.setComponentState(ComponentState.FINISHED);
-		assertThat(publixUtils.componentDone(componentResult)).isTrue();
+		assertThat(PublixHelpers.componentDone(componentResult)).isTrue();
 		componentResult.setComponentState(ComponentState.ABORTED);
-		assertThat(publixUtils.componentDone(componentResult)).isTrue();
+		assertThat(PublixHelpers.componentDone(componentResult)).isTrue();
 		componentResult.setComponentState(ComponentState.FAIL);
-		assertThat(publixUtils.componentDone(componentResult)).isTrue();
+		assertThat(PublixHelpers.componentDone(componentResult)).isTrue();
 		componentResult.setComponentState(ComponentState.RELOADED);
-		assertThat(publixUtils.componentDone(componentResult)).isTrue();
+		assertThat(PublixHelpers.componentDone(componentResult)).isTrue();
 
 		// Not done if
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
-		assertThat(publixUtils.componentDone(componentResult)).isFalse();
+		assertThat(PublixHelpers.componentDone(componentResult)).isFalse();
 		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
-		assertThat(publixUtils.componentDone(componentResult)).isFalse();
+		assertThat(PublixHelpers.componentDone(componentResult)).isFalse();
 		componentResult.setComponentState(ComponentState.STARTED);
-		assertThat(publixUtils.componentDone(componentResult)).isFalse();
+		assertThat(PublixHelpers.componentDone(componentResult)).isFalse();
 
 		// Clean-up
 		removeStudy(study);
