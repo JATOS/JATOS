@@ -237,13 +237,15 @@ $('#generalSingleWorkerPanel').on('click', '.linkButton', function() {
 // TODO test button for MTWorker
 
 function showLinkModal(title, preText, url, postText) {
+	$('#workerRunLinkModal .runButton').data(url);
 	var htmlPreText = '<p>' + preText + '</p>';
-	var htmlUrl = '<div class="well">' + url + '</div>';
+	var htmlUrl = '<div class="well linkUrl">' + url + '</div>';
 	var htmlPostText = '<p>' + postText + '</p>';
 	$('#workerRunLinkModal').find('.modal-title').text(title);
 	$('#workerRunLinkModal').find('.modal-body').html(htmlPreText + htmlUrl + htmlPostText);
 	$('#workerRunLinkModal').modal('show');
 	$('#workerRunLinkModal').on('click', '.runButton', function() {
+		var url = $('#workerRunLinkModal .linkUrl').text();
 		window.open(url);
 	});
 }
