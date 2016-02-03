@@ -171,28 +171,32 @@ public class GroupDispatcher extends UntypedActor {
 	 * Persists GroupSession and tells everyone
 	 */
 	private void handleActionGroupSession(ObjectNode jsonNode) {
-		Long clientsVersion = Long.valueOf(
-				jsonNode.get(GroupActionMsg.GROUP_SESSION_VERSION).asText());
-		JsonNode newSessionData = jsonNode
-				.get(GroupActionMsg.GROUP_SESSION_DATA);
-		GroupResult groupResult = persistGroupSessionData(clientsVersion,
-				newSessionData);
-		tellGroupSessionData(groupResult);
+		jpa.withTransaction(() -> {
+			Long clientsVersion = Long.valueOf(jsonNode
+					.get(GroupActionMsg.GROUP_SESSION_VERSION).asText());
+			JsonNode newSessionData = jsonNode
+					.get(GroupActionMsg.GROUP_SESSION_DATA);
+			GroupResult groupResult = persistGroupSessionData(clientsVersion,
+					newSessionData);
+			tellGroupSessionData(groupResult);
+		});
 	}
 
 	/**
 	 * Changes state of GroupResult to FIXED and sends update to group members
 	 */
 	private void handleActionFix(ObjectNode jsonNode) {
-		GroupResult groupResult = getGroupResult(groupResultId);
-		if (groupResult != null) {
-			groupResult.setGroupState(GroupState.FIXED);
-			updateGroupResult(groupResult);
-			tellGroupAction(GroupAction.UPDATE, groupResult);
-		} else {
-			String errorMsg = "Couldn't fix group result.";
-			sendErrorBackToSender(errorMsg);
-		}
+		jpa.withTransaction(() -> {
+			GroupResult groupResult = groupResultDao.findById(groupResultId);
+			if (groupResult != null) {
+				groupResult.setGroupState(GroupState.FIXED);
+				updateGroupResult(groupResult);
+				tellGroupAction(GroupAction.UPDATE, groupResult);
+			} else {
+				String errorMsg = "Couldn't fix group result.";
+				sendErrorBackToSender(errorMsg);
+			}
+		});
 	}
 
 	/**
@@ -203,16 +207,17 @@ public class GroupDispatcher extends UntypedActor {
 	 */
 	private GroupResult persistGroupSessionData(Long version,
 			JsonNode sessionData) {
-		GroupResult groupResult = getGroupResult(groupResultId);
+		GroupResult groupResult = groupResultDao.findById(groupResultId);
 		if (groupResult != null && version != null && sessionData != null
 				&& groupResult.getGroupSessionVersion().equals(version)) {
 			groupResult.setGroupSessionData(sessionData.toString());
 			long newVersion = groupResult.getGroupSessionVersion() + 1l;
 			groupResult.setGroupSessionVersion(newVersion);
-			boolean success = updateGroupResult(groupResult);
-			return success ? groupResult : null;
+			updateGroupResult(groupResult);
+			return groupResult;
+		} else {
+			return null;
 		}
-		return null;
 	}
 
 	/**
@@ -460,33 +465,13 @@ public class GroupDispatcher extends UntypedActor {
 	}
 
 	/**
-	 * Retrieve the GroupResult from the database.
-	 */
-	private GroupResult getGroupResult(long groupResultId) {
-		try {
-			return jpa.withTransaction(() -> {
-				return groupResultDao.findById(groupResultId);
-			});
-		} catch (Throwable e) {
-			Logger.error(CLASS_NAME + ".getGroupResult: ", e);
-		}
-		return null;
-	}
-
-	/**
 	 * Persist the changes in the GroupResult. Returns true if successful and
 	 * false otherwise.
 	 */
-	private boolean updateGroupResult(GroupResult groupResult) {
-		try {
-			jpa.withTransaction(() -> {
-				groupResultDao.update(groupResult);
-			});
-			return true;
-		} catch (Throwable e) {
-			Logger.error(CLASS_NAME + ".updateGroupResult: ", e);
-			return false;
-		}
+	private void updateGroupResult(GroupResult groupResult) {
+		jpa.withTransaction(() -> {
+			groupResultDao.update(groupResult);
+		});
 	}
 
 }
