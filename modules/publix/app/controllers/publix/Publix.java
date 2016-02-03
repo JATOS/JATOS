@@ -32,9 +32,11 @@ import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.publix.ChannelService;
 import services.publix.GroupService;
-import services.publix.StudyAuthorisation;
+import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
+import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
+import services.publix.StudyAuthorisation;
 import services.publix.WebSocketBuilder;
 import utils.common.ControllerUtils;
 import utils.common.JsonUtils;
@@ -119,7 +121,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					.pure(redirect(controllers.publix.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		String cookieValue = publixUtils.generateIdCookieValue(batch,
+		String cookieValue = HttpHelpers.generateIdCookieValue(batch,
 				studyResult, componentResult, worker);
 		response().setCookie(Publix.ID_COOKIE_NAME, cookieValue);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
@@ -265,10 +267,6 @@ public abstract class Publix<T extends Worker> extends Controller
 				.retrieveWorkersLastStudyResult(worker, study);
 		groupService.checkHistoryGroupResult(studyResult);
 
-		if (studyResult.getActiveGroupResult() == null) {
-			throw new ForbiddenPublixException(errorMessages
-					.groupStudyResultNotMember(studyResult.getId()));
-		}
 		GroupResult currentGroupResult = studyResult.getActiveGroupResult();
 		GroupResult differentGroupResult = groupService.reassign(studyResult,
 				batch);
@@ -291,6 +289,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
+		publixUtils.checkStudyIsGroupStudy(study);
 		GroupResult groupResult = studyResult.getActiveGroupResult();
 		if (groupResult == null) {
 			Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
@@ -317,7 +316,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
-		String studySessionData = publixUtils
+		String studySessionData = HttpHelpers
 				.getDataFromRequestBody(request().body());
 		studyResult.setStudySessionData(studySessionData);
 		studyResultDao.update(studyResult);
@@ -348,7 +347,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					.finishStudy(studyId, false, error));
 		}
 
-		String resultData = publixUtils
+		String resultData = HttpHelpers
 				.getDataFromRequestBody(request().body());
 		componentResult.setData(resultData);
 		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
@@ -405,13 +404,10 @@ public abstract class Publix<T extends Worker> extends Controller
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
-		if (!publixUtils.studyDone(studyResult)) {
+		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
+			groupService.finishStudyInGroup(study, studyResult);
 		}
-		GroupResult groupResult = studyResult.getActiveGroupResult();
-		groupService.leave(studyResult);
-		channelService.closeGroupChannel(studyResult, groupResult);
-		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok();
@@ -433,13 +429,10 @@ public abstract class Publix<T extends Worker> extends Controller
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
-		if (!publixUtils.studyDone(studyResult)) {
+		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
+			groupService.finishStudyInGroup(study, studyResult);
 		}
-		GroupResult groupResult = studyResult.getActiveGroupResult();
-		groupService.leave(studyResult);
-		channelService.closeGroupChannel(studyResult, groupResult);
-		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok();

@@ -15,7 +15,6 @@ import exceptions.publix.PublixException;
 import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
-import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.JatosWorker;
@@ -26,6 +25,8 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import services.publix.ChannelService;
 import services.publix.GroupService;
+import services.publix.HttpHelpers;
+import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.workers.JatosErrorMessages;
 import services.publix.workers.JatosPublixUtils;
@@ -87,11 +88,12 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	@Inject
 	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
-			JatosStudyAuthorisation studyAuthorisation, ResultCreator resultCreator,
-			GroupService groupService, ChannelService channelService,
-			JatosErrorMessages errorMessages, StudyAssets studyAssets,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+			JatosStudyAuthorisation studyAuthorisation,
+			ResultCreator resultCreator, GroupService groupService,
+			ChannelService channelService, JatosErrorMessages errorMessages,
+			StudyAssets studyAssets, ComponentResultDao componentResultDao,
+			JsonUtils jsonUtils, StudyResultDao studyResultDao,
+			GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
 				channelService, errorMessages, studyAssets, componentResultDao,
 				jsonUtils, studyResultDao, groupResultDao);
@@ -132,6 +134,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			throw new ForbiddenPublixException(
 					JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
+		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		resultCreator.createStudyResult(study, batch, worker);
 		return redirect(controllers.publix.routes.PublixInterceptor
@@ -187,7 +190,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 							.finishStudy(studyId, false, e.getMessage())));
 		}
 		response().setCookie(Publix.ID_COOKIE_NAME,
-				publixUtils.generateIdCookieValue(batch, studyResult,
+				HttpHelpers.generateIdCookieValue(batch, studyResult,
 						componentResult, worker));
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
@@ -258,14 +261,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
-		if (!publixUtils.studyDone(studyResult)) {
+		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
+			groupService.finishStudyInGroup(study, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		GroupResult groupResult = studyResult.getActiveGroupResult();
-		groupService.leave(studyResult);
-		channelService.closeGroupChannel(studyResult, groupResult);
-		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok();
@@ -294,14 +294,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
-		if (!publixUtils.studyDone(studyResult)) {
+		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
+			groupService.finishStudyInGroup(study, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		GroupResult groupResult = studyResult.getActiveGroupResult();
-		groupService.leave(studyResult);
-		channelService.closeGroupChannel(studyResult, groupResult);
-		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);

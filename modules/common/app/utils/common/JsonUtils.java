@@ -131,8 +131,8 @@ public class JsonUtils {
 	 * and puts them together with the session data (stored in StudyResult) into
 	 * a new JSON object.
 	 */
-	public ObjectNode initData(Batch batch, StudyResult studyResult,
-			Study study, Component component) throws IOException {
+	public JsonNode initData(Batch batch, StudyResult studyResult, Study study,
+			Component component) throws IOException {
 		String studyProperties = asJsonForPublix(study);
 		String batchProperties = asJsonForPublix(batch);
 		ArrayNode componentList = getComponentListForInitData(study);
@@ -192,41 +192,41 @@ public class JsonUtils {
 	 * Returns all studyResults as a JSON string. It's including the
 	 * studyResult's componentResults.
 	 */
-	public String allStudyResultsForUI(List<StudyResult> studyResultList)
+	public JsonNode allStudyResultsForUI(List<StudyResult> studyResultList)
 			throws JsonProcessingException {
 		ObjectNode allStudyResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allStudyResultsNode.arrayNode();
 		for (StudyResult studyResult : studyResultList) {
-			ObjectNode studyResultNode = studyResultAsJsonNode(studyResult);
+			JsonNode studyResultNode = studyResultAsJsonNode(studyResult);
 			arrayNode.add(studyResultNode);
 		}
 		allStudyResultsNode.set(DATA, arrayNode);
-		return OBJECTMAPPER.writeValueAsString(allStudyResultsNode);
+		return allStudyResultsNode;
 	}
 
 	/**
 	 * Returns JSON of all ComponentResuls of the specified component. The JSON
 	 * string is intended for use in JATOS' GUI.
 	 */
-	public String allComponentResultsForUI(
+	public JsonNode allComponentResultsForUI(
 			List<ComponentResult> componentResultList)
 					throws JsonProcessingException {
 		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allComponentResultsNode.arrayNode();
 		for (ComponentResult componentResult : componentResultList) {
-			ObjectNode componentResultNode = componentResultAsJsonNode(
+			JsonNode componentResultNode = componentResultAsJsonNode(
 					componentResult);
 			arrayNode.add(componentResultNode);
 		}
 		allComponentResultsNode.set(DATA, arrayNode);
-		return OBJECTMAPPER.writeValueAsString(allComponentResultsNode);
+		return allComponentResultsNode;
 	}
 
 	/**
 	 * Returns ObjectNode of the given StudyResult. It contains the worker,
 	 * study's ID and title, and all ComponentResults.
 	 */
-	private ObjectNode studyResultAsJsonNode(StudyResult studyResult) {
+	private JsonNode studyResultAsJsonNode(StudyResult studyResult) {
 		ObjectNode studyResultNode = OBJECTMAPPER.valueToTree(studyResult);
 
 		// Add worker
@@ -239,15 +239,13 @@ public class JsonUtils {
 		studyResultNode.put("studyTitle", studyResult.getStudy().getTitle());
 		studyResultNode.put("duration", getDurationPretty(
 				studyResult.getStartDate(), studyResult.getEndDate()));
-		String groupResultId = studyResult.getActiveGroupResult() != null
-				? studyResult.getActiveGroupResult().getId().toString() : null;
-		studyResultNode.put("groupResultId", groupResultId);
+		studyResultNode.put("groupResultId", getGroupResultId(studyResult));
 
 		// Add all componentResults
 		ArrayNode arrayNode = studyResultNode.arrayNode();
 		for (ComponentResult componentResult : studyResult
 				.getComponentResultList()) {
-			ObjectNode componentResultNode = componentResultAsJsonNode(
+			JsonNode componentResultNode = componentResultAsJsonNode(
 					componentResult);
 			arrayNode.add(componentResultNode);
 		}
@@ -257,10 +255,24 @@ public class JsonUtils {
 	}
 
 	/**
+	 * Returns group result ID of the given StudyResult or 'none' if it doesn't
+	 * exist.
+	 */
+	private String getGroupResultId(StudyResult studyResult) {
+		if (studyResult.getActiveGroupResult() != null) {
+			return studyResult.getActiveGroupResult().getId().toString();
+		} else if (studyResult.getHistoryGroupResult() != null) {
+			return studyResult.getHistoryGroupResult().getId().toString();
+		} else {
+			return "none";
+		}
+	}
+
+	/**
 	 * Returns an ObjectNode of the given ComponentResult. It contains the study
 	 * ID, component ID and component title.
 	 */
-	private ObjectNode componentResultAsJsonNode(
+	private JsonNode componentResultAsJsonNode(
 			ComponentResult componentResult) {
 		ObjectNode componentResultNode = OBJECTMAPPER
 				.valueToTree(componentResult);
@@ -311,11 +323,11 @@ public class JsonUtils {
 	 * Returns JSON string of the given study. This JSON is intended for JATOS'
 	 * GUI.
 	 */
-	public String studyForUI(Study study, int resultCount)
+	public JsonNode studyForUI(Study study, int resultCount)
 			throws JsonProcessingException {
 		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
 		studyNode.put("resultCount", resultCount);
-		return OBJECTMAPPER.writeValueAsString(studyNode);
+		return studyNode;
 	}
 
 	/**
@@ -403,7 +415,8 @@ public class JsonUtils {
 			// Add count of batch's results
 			batchNode.put("resultCount", resultCountList.get(i));
 			// Add count of batch's workers (without JatosWorker)
-			batchNode.put("workerCount", batchList.get(i).getWorkerList().size());
+			batchNode.put("workerCount",
+					batchList.get(i).getWorkerList().size());
 			int position = i + 1;
 			batchNode.put("position", position);
 			batchListNode.add(batchNode);
@@ -438,7 +451,7 @@ public class JsonUtils {
 	 * Returns a JSON string with the given set of workers wrapped in a data
 	 * object. Intended for use in JATOS' GUI / datatables plugin.
 	 */
-	public String allWorkersForUI(Set<Worker> workerSet)
+	public JsonNode allWorkersForUI(Set<Worker> workerSet)
 			throws JsonProcessingException {
 		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
 		for (Worker worker : workerSet) {
@@ -449,7 +462,7 @@ public class JsonUtils {
 		}
 		ObjectNode workersNode = OBJECTMAPPER.createObjectNode();
 		workersNode.set(DATA, arrayNode);
-		return OBJECTMAPPER.writeValueAsString(workersNode);
+		return workersNode;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -487,10 +500,9 @@ public class JsonUtils {
 	 * Marshals the given object into JSON, adds the application's version, and
 	 * returns it as String. It uses the view JsonForIO.
 	 */
-	public String componentAsJsonForIO(Object obj) throws IOException {
-		ObjectNode node = generateNodeWithVersionForIO(obj,
+	public JsonNode componentAsJsonForIO(Object obj) throws IOException {
+		return generateNodeWithVersionForIO(obj,
 				String.valueOf(Component.SERIAL_VERSION));
-		return OBJECTMAPPER.writer().writeValueAsString(node);
 	}
 
 	/**
@@ -498,7 +510,7 @@ public class JsonUtils {
 	 * saves it into the given File. It uses the view JsonForIO.
 	 */
 	public void studyAsJsonForIO(Study study, File file) throws IOException {
-		ObjectNode node = generateNodeWithVersionForIO(study,
+		JsonNode node = generateNodeWithVersionForIO(study,
 				String.valueOf(Study.SERIAL_VERSION));
 		OBJECTMAPPER.writer().writeValue(file, node);
 	}
@@ -507,7 +519,7 @@ public class JsonUtils {
 	 * Generic JSON marshaler that adds the JATOS version to the JSON string.
 	 * Intended for file IO.
 	 */
-	private ObjectNode generateNodeWithVersionForIO(Object obj, String version)
+	private JsonNode generateNodeWithVersionForIO(Object obj, String version)
 			throws IOException {
 		ObjectNode node = OBJECTMAPPER.createObjectNode();
 		node.put(VERSION, version);

@@ -6,6 +6,8 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import daos.common.ComponentDao;
@@ -184,7 +186,7 @@ public class ComponentResults extends Controller {
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		String dataAsJson = null;
+		JsonNode dataAsJson = null;
 		try {
 			List<ComponentResult> componentResultList = componentResultDao
 					.findAllByComponent(component);

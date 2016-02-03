@@ -15,7 +15,6 @@ import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
 import models.common.Batch;
 import models.common.Component;
-import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.MTSandboxWorker;
@@ -25,6 +24,7 @@ import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ChannelService;
 import services.publix.GroupService;
+import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
 import services.publix.workers.MTErrorMessages;
@@ -67,11 +67,12 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	@Inject
 	MTPublix(JPAApi jpa, MTPublixUtils publixUtils,
 			MTStudyAuthorisation studyAuthorisation,
-			ResultCreator resultCreator, WorkerCreator workerCreator, GroupService groupService,
-			ChannelService channelService, MTErrorMessages errorMessages,
-			StudyAssets studyAssets, ComponentResultDao componentResultDao,
-			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			MTWorkerDao mtWorkerDao, GroupResultDao groupResultDao) {
+			ResultCreator resultCreator, WorkerCreator workerCreator,
+			GroupService groupService, ChannelService channelService,
+			MTErrorMessages errorMessages, StudyAssets studyAssets,
+			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao,
+			GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
 				channelService, errorMessages, studyAssets, componentResultDao,
 				jsonUtils, studyResultDao, groupResultDao);
@@ -124,6 +125,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ ", batch ID " + batchId + ") " + "assigned to worker with ID "
 				+ worker.getId());
 
+		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		resultCreator.createStudyResult(study, batch, worker);
 
@@ -147,16 +149,13 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		StudyResult studyResult = publixUtils
 				.retrieveWorkersLastStudyResult(worker, study);
 		String confirmationCode;
-		if (!publixUtils.studyDone(studyResult)) {
+		if (!PublixHelpers.studyDone(studyResult)) {
 			confirmationCode = publixUtils.finishStudyResult(successful,
 					errorMsg, studyResult);
+			groupService.finishStudyInGroup(study, studyResult);
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
-		GroupResult groupResult = studyResult.getActiveGroupResult();
-		groupService.leave(studyResult);
-		channelService.closeGroupChannel(studyResult, groupResult);
-		channelService.sendLeftMsg(studyResult, groupResult);
 		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
 		if (ControllerUtils.isAjax()) {
 			return ok(confirmationCode);

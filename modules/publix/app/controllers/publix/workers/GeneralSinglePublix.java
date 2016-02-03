@@ -88,6 +88,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 				+ ", batch ID " + batchId + ") " + "assigned to worker with ID "
 				+ worker.getId());
 
+		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		resultCreator.createStudyResult(study, batch, worker);
 

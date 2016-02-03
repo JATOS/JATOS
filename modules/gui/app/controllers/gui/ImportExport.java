@@ -208,7 +208,7 @@ public class ImportExport extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		String componentAsJson = null;
+		JsonNode componentAsJson = null;
 		try {
 			componentAsJson = jsonUtils.componentAsJsonForIO(component);
 		} catch (IOException e) {

@@ -6,6 +6,8 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
 import daos.common.BatchDao;
@@ -237,7 +239,7 @@ public class StudyResults extends Controller {
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
-		String dataAsJson = null;
+		JsonNode dataAsJson = null;
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			dataAsJson = jsonUtils
@@ -263,7 +265,7 @@ public class StudyResults extends Controller {
 		Study study = studyDao.findById(studyId);
 		Batch batch = batchDao.findById(batchId);
 		User loggedInUser = userService.retrieveLoggedInUser();
-		String dataAsJson = null;
+		JsonNode dataAsJson = null;
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStandardForBatch(batch, study, batchId);
@@ -297,7 +299,7 @@ public class StudyResults extends Controller {
 
 		List<StudyResult> allowedStudyResultList = resultService
 				.getAllowedStudyResultList(loggedInUser, worker);
-		String dataAsJson = null;
+		JsonNode dataAsJson = null;
 		try {
 			dataAsJson = jsonUtils.allStudyResultsForUI(allowedStudyResultList);
 		} catch (IOException e) {

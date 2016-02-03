@@ -8,6 +8,7 @@ import models.common.Batch;
 import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
 import services.publix.PublixErrorMessages;
+import services.publix.PublixHelpers;
 import services.publix.StudyAuthorisation;
 
 /**
@@ -20,14 +21,11 @@ public class GeneralSingleStudyAuthorisation
 		extends StudyAuthorisation<GeneralSingleWorker> {
 
 	private final GeneralSingleErrorMessages errorMessages;
-	private final GeneralSinglePublixUtils publixUtils;
 
 	@Inject
-	GeneralSingleStudyAuthorisation(GeneralSinglePublixUtils publixUtils,
-			GeneralSingleErrorMessages errorMessages) {
+	GeneralSingleStudyAuthorisation(GeneralSingleErrorMessages errorMessages) {
 		super(errorMessages);
 		this.errorMessages = errorMessages;
-		this.publixUtils = publixUtils;
 	}
 
 	@Override
@@ -51,7 +49,7 @@ public class GeneralSingleStudyAuthorisation
 							study.getId(), batch.getId()));
 		}
 		// General single workers can't repeat the same study
-		if (publixUtils.finishedStudyAlready(worker, study)) {
+		if (PublixHelpers.finishedStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}

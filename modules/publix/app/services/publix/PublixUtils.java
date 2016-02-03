@@ -2,17 +2,8 @@ package services.publix;
 
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
-import org.w3c.dom.Document;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import controllers.publix.Publix;
 import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -24,18 +15,14 @@ import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
-import exceptions.publix.UnsupportedMediaTypePublixException;
 import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
-import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
-import play.mvc.Http.RequestBody;
-import utils.common.XMLUtils;
 
 /**
  * Service class with functions that are common for all classes that extend
@@ -145,54 +132,6 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Generates the value that will be put in the ID cookie. An ID cookie has a
-	 * worker ID, study ID, study result ID, group result ID (if not exist:
-	 * null), component ID, component result ID and component position.
-	 */
-	public String generateIdCookieValue(Batch batch, StudyResult studyResult,
-			ComponentResult componentResult, Worker worker) {
-		Study study = studyResult.getStudy();
-		GroupResult groupResult = studyResult.getActiveGroupResult();
-		Component component = componentResult.getComponent();
-		Map<String, String> cookieMap = new HashMap<>();
-		cookieMap.put(Publix.WORKER_ID, String.valueOf(worker.getId()));
-		cookieMap.put(Publix.STUDY_ID, String.valueOf(study.getId()));
-		cookieMap.put(Publix.STUDY_RESULT_ID,
-				String.valueOf(studyResult.getId()));
-		String batchId = String.valueOf(batch.getId());
-		cookieMap.put(Publix.BATCH_ID, batchId);
-		String groupResultId = (groupResult != null)
-				? String.valueOf(groupResult.getId()) : "null";
-		cookieMap.put(Publix.GROUP_RESULT_ID, groupResultId);
-		cookieMap.put(Publix.COMPONENT_ID, String.valueOf(component.getId()));
-		cookieMap.put(Publix.COMPONENT_RESULT_ID,
-				String.valueOf(componentResult.getId()));
-		cookieMap.put(Publix.COMPONENT_POSITION,
-				String.valueOf(study.getComponentPosition(component)));
-		return generateUrlQueryString(cookieMap);
-	}
-
-	/**
-	 * Generates a query string as used in an URL. It takes a map and put its
-	 * key-value-pairs into a string like in key=value&key=value&...
-	 */
-	private String generateUrlQueryString(Map<String, String> cookieMap) {
-		StringBuilder sb = new StringBuilder();
-		Iterator<Entry<String, String>> iterator = cookieMap.entrySet()
-				.iterator();
-		while (iterator.hasNext()) {
-			Entry<String, String> entry = iterator.next();
-			sb.append(entry.getKey());
-			sb.append("=");
-			sb.append(entry.getValue());
-			if (iterator.hasNext()) {
-				sb.append("&");
-			}
-		}
-		return sb.toString();
-	}
-
-	/**
 	 * Does everything to abort a study: ends the current component with state
 	 * ABORTED, finishes all other Components that might still be open, deletes
 	 * all result data and ends the study with state ABORTED and sets the given
@@ -262,52 +201,28 @@ public abstract class PublixUtils<T extends Worker> {
 
 	private void finishAllComponentResults(StudyResult studyResult) {
 		studyResult.getComponentResultList().stream()
-				.filter(componentResult -> !componentDone(componentResult))
+				.filter(componentResult -> !PublixHelpers
+						.componentDone(componentResult))
 				.forEach(componentResult -> finishComponentResult(
 						componentResult, ComponentState.FINISHED));
 	}
 
 	/**
-	 * Retrieves the text from the request body and returns it as a String. If
-	 * the content is in JSON or XML format it's parsed to bring the String into
-	 * a nice format. If the content is neither text nor JSON or XML an
-	 * UnsupportedMediaTypePublixException is thrown.
-	 */
-	public String getDataFromRequestBody(RequestBody requestBody)
-			throws UnsupportedMediaTypePublixException {
-		// Text
-		String text = requestBody.asText();
-		if (text != null) {
-			return text;
-		}
-
-		// JSON
-		JsonNode json = requestBody.asJson();
-		if (json != null) {
-			return json.toString();
-		}
-
-		// XML
-		Document xml = requestBody.asXml();
-		if (xml != null) {
-			return XMLUtils.asString(xml);
-		}
-
-		// No supported format
-		throw new UnsupportedMediaTypePublixException(
-				PublixErrorMessages.SUBMITTED_DATA_UNKNOWN_FORMAT);
-	}
-
-	/**
-	 * Finishes all StudyResults of this worker of this study that aren't
-	 * 'done'. Each worker can do only one study with the same ID at the same
-	 * time.
+	 * Finishes all StudyResults of this worker of this study that aren't 'done'
+	 * (StudyResult's state is in FINISHED, FAILED, ABORTED). Each worker can do
+	 * only one study with the same ID at the same time. E.g. this is necessary
+	 * for a JatosWorker if he starts the same study a second time without
+	 * actually finishing the prior study run.
+	 * 
+	 * It should be max one StudyResult to be treated in this way since we call
+	 * this method during start of each study run, but we iterate over all
+	 * StudyResults of this worker just in case.
 	 */
 	public void finishAllPriorStudyResults(Worker worker, Study study) {
 		List<StudyResult> studyResultList = worker.getStudyResultList();
 		for (StudyResult studyResult : studyResultList) {
 			if (study.getId().equals(studyResult.getStudy().getId())
-					&& !studyDone(studyResult)) {
+					&& !PublixHelpers.studyDone(studyResult)) {
 				// Should be max. one StudyResult to finish this way
 				finishStudyResult(false,
 						PublixErrorMessages.STUDY_NEVER_FINSHED, studyResult);
@@ -327,7 +242,7 @@ public abstract class PublixUtils<T extends Worker> {
 		for (int i = (studyResultListSize - 1); i >= 0; i--) {
 			StudyResult studyResult = worker.getStudyResultList().get(i);
 			if (studyResult.getStudy().getId().equals(study.getId())) {
-				if (studyDone(studyResult)) {
+				if (PublixHelpers.studyDone(studyResult)) {
 					throw new ForbiddenPublixException(errorMessages
 							.workerFinishedStudyAlready(worker, study.getId()));
 				} else {
@@ -374,7 +289,7 @@ public abstract class PublixUtils<T extends Worker> {
 			StudyResult studyResult) {
 		ComponentResult componentResult = retrieveLastComponentResult(
 				studyResult);
-		if (componentDone(componentResult)) {
+		if (PublixHelpers.componentDone(componentResult)) {
 			return null;
 		}
 		return componentResult;
@@ -518,55 +433,6 @@ public abstract class PublixUtils<T extends Worker> {
 			throw new ForbiddenPublixException(
 					errorMessages.studyNotGroupStudy(study.getId()));
 		}
-	}
-
-	/**
-	 * Checks if the worker finished this study already. 'Finished' includes
-	 * failed and aborted.
-	 */
-	public boolean finishedStudyAlready(Worker worker, Study study) {
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().equals(study)
-					&& studyDone(studyResult)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Checks if the worker ever did this study independent of the study
-	 * result's state.
-	 */
-	public boolean didStudyAlready(Worker worker, Study study) {
-		for (StudyResult studyResult : worker.getStudyResultList()) {
-			if (studyResult.getStudy().equals(study)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * True if StudyResult's state is in FINISHED or ABORTED or FAIL. False
-	 * otherwise.
-	 */
-	public boolean studyDone(StudyResult studyResult) {
-		StudyState state = studyResult.getStudyState();
-		return state == StudyState.FINISHED || state == StudyState.ABORTED
-				|| state == StudyState.FAIL;
-	}
-
-	/**
-	 * True if ComponentResult's state is in FINISHED or ABORTED or FAIL or
-	 * RELOADED. False otherwise.
-	 */
-	public boolean componentDone(ComponentResult componentResult) {
-		ComponentState state = componentResult.getComponentState();
-		return ComponentState.FINISHED == state
-				|| ComponentState.ABORTED == state
-				|| ComponentState.FAIL == state
-				|| ComponentState.RELOADED == state;
 	}
 
 	/**

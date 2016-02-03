@@ -9,6 +9,7 @@ import models.common.Study;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import services.publix.PublixErrorMessages;
+import services.publix.PublixHelpers;
 import services.publix.StudyAuthorisation;
 
 /**
@@ -19,14 +20,11 @@ import services.publix.StudyAuthorisation;
 @Singleton
 public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 
-	private final MTPublixUtils publixUtils;
 	private final MTErrorMessages errorMessages;
 
 	@Inject
-	MTStudyAuthorisation(MTPublixUtils publixUtils,
-			MTErrorMessages errorMessages) {
+	MTStudyAuthorisation(MTErrorMessages errorMessages) {
 		super(errorMessages);
-		this.publixUtils = publixUtils;
 		this.errorMessages = errorMessages;
 	}
 
@@ -38,7 +36,7 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 					errorMessages.batchInactive(batch.getId()));
 		}
 		if (!(worker instanceof MTSandboxWorker)
-				&& publixUtils.didStudyAlready(worker, study)) {
+				&& PublixHelpers.didStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
@@ -60,7 +58,7 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 			return;
 		}
 		// MTurk workers can't repeat studies
-		if (publixUtils.finishedStudyAlready(worker, study)) {
+		if (PublixHelpers.finishedStudyAlready(worker, study)) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}

@@ -75,6 +75,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		session(WORKER_ID, workerIdStr);
 		session(BATCH_ID, batch.getId().toString());
 
+		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAllPriorStudyResults(worker, study);
 		resultCreator.createStudyResult(study, batch, worker);
 
