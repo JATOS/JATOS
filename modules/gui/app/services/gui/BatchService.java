@@ -1,10 +1,6 @@
 package services.gui;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -16,13 +12,9 @@ import daos.common.StudyResultDao;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.GeneralSingleWorker;
 import models.common.workers.JatosWorker;
-import models.common.workers.MTSandboxWorker;
-import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
-import models.common.workers.Worker;
 import models.gui.BatchProperties;
 
 /**
@@ -180,41 +172,6 @@ public class BatchService {
 		groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);
 
 		batchDao.remove(batch);
-	}
-
-	/**
-	 * Get all workers (PersonalSingleWorker, PersonalMultipleWorker,
-	 * GeneralSingle, MTWorker, MTSandboxWorker and JatosWorker) that belong to
-	 * the given batch.
-	 */
-	public Set<Worker> retrieveAllWorkers(Study study, Batch batch) {
-		// Put personal single worker & personal multiple workers in a list.
-		// They are created prior to the run and are in the allowed workers
-		Set<Worker> workerSet = batch.getWorkerList();
-
-		// Add Jatos workers of this study.
-		study.getUserList().stream().map(u -> u.getWorker())
-				.forEachOrdered(workerSet::add);
-		return workerSet;
-	}
-
-	/**
-	 * Retrieves the count of StudyResults for each worker type in map:
-	 * workerType -> count.
-	 */
-	public Map<String, Integer> retrieveStudyResultCountsPerWorker(
-			Batch batch) {
-		Map<String, Integer> resultsPerWorker = new HashMap<>();
-		Consumer<String> putCountToMap = (String workerType) -> resultsPerWorker
-				.put(workerType, studyResultDao.countByBatchAndWorkerType(batch,
-						workerType));
-		putCountToMap.accept(JatosWorker.WORKER_TYPE);
-		putCountToMap.accept(GeneralSingleWorker.WORKER_TYPE);
-		putCountToMap.accept(PersonalSingleWorker.WORKER_TYPE);
-		putCountToMap.accept(PersonalMultipleWorker.WORKER_TYPE);
-		putCountToMap.accept(MTWorker.WORKER_TYPE);
-		putCountToMap.accept(MTSandboxWorker.WORKER_TYPE);
-		return resultsPerWorker;
 	}
 
 }

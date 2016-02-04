@@ -3,8 +3,6 @@ package controllers.gui;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -26,7 +24,6 @@ import models.common.Study;
 import models.common.User;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
-import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import play.Logger;
 import play.data.Form;
@@ -128,29 +125,6 @@ public class Batches extends Controller {
 	}
 
 	/**
-	 * Ajax GET request: Returns a list of workers as JSON
-	 */
-	@Transactional
-	public Result workerData(Long studyId, Long batchId)
-			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".workersData: studyId " + studyId + ", "
-				+ "batchId " + batchId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		Batch batch = batchDao.findById(batchId);
-		try {
-			checker.checkStandardForStudy(study, studyId, loggedInUser);
-			checker.checkStandardForBatch(batch, study, batchId);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwAjax(e);
-		}
-
-		Set<Worker> workerList = batchService.retrieveAllWorkers(study, batch);
-		return ok(JsonUtils.asJsonNode(workerList));
-	}
-
-	/**
 	 * Ajax POST request to submit created Batch
 	 * 
 	 * @throws JatosGuiException
@@ -178,33 +152,6 @@ public class Batches extends Controller {
 
 		batchService.createAndPersistBatch(batch, study, loggedInUser);
 		return ok(batch.getId().toString());
-	}
-
-	/**
-	 * GET request to get the batch page
-	 */
-	@Transactional
-	public Result workers(Long studyId, Long batchId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
-				+ "batchId " + batchId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		Batch batch = batchDao.findById(batchId);
-		try {
-			checker.checkStandardForStudy(study, studyId, loggedInUser);
-			checker.checkStandardForBatch(batch, study, batchId);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
-		}
-
-		String baseUrl = ControllerUtils.getReferer();
-		Map<String, Integer> studyResultCountsPerWorker = batchService
-				.retrieveStudyResultCountsPerWorker(batch);
-		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
-				BreadcrumbsService.WORKERS);
-		return ok(views.html.gui.batch.workers.render(loggedInUser, breadcrumbs,
-				batch.getId(), study, baseUrl, studyResultCountsPerWorker));
 	}
 
 	/**
