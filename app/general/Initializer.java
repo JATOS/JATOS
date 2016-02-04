@@ -50,7 +50,7 @@ public class Initializer {
 	public void initialize() {
 		checkAdmin();
 		checkStudyAssetsRootDir();
-		checkGroupResults();
+//		checkGroupResults();
 		Logger.info(CLASS_NAME + ": JATOS initialized");
 	}
 
