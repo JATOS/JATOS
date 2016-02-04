@@ -6,13 +6,17 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 <div class="panel-group" id="accordion" role="tablist">
 	<div class="panel panel-default" id="jatosWorkerPanel">
 		<div class="panel-heading">
-			<a role="button" data-toggle="collapse" data-parent="#accordion" href="#jatosWorkerTable"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
-			<b class="panel-title">@common.workers.JatosWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span></b>
-			<button type="button" class="btn btn-primary resultButton"
-				data-toggle="tooltip" data-placement="bottom"
-				title="Shows study results only of @common.workers.JatosWorker.UI_WORKER_TYPE worker">
-				Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.JatosWorker.WORKER_TYPE)</span>
-			</button>
+			 <span class="panel-title">
+				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#jatosWorkerTable">
+					<span class="caret"></span> @common.workers.JatosWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>
+				</a>
+				<span class="btn-group pull-right"> 
+					<button type="button" class="btn btn-primary resultButton" data-toggle="tooltip" data-placement="bottom"
+						title="Shows study results only of @common.workers.JatosWorker.UI_WORKER_TYPE worker">
+						Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.JatosWorker.WORKER_TYPE)</span>
+					</button>
+				</span>
+			</span>
 		</div>
 		<div id="jatosWorkerTable" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
@@ -28,14 +32,18 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	
 	<div class="panel panel-default" id="personalSingleWorkerPanel">
 		<div class="panel-heading">
-			<a role="button" data-toggle="collapse" data-parent="#accordion" href="#personalSingleWorkerTable"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
-			<b class="panel-title">@common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span></b>
-			<button type="button" class="btn btn-primary addButton">Add</button>
-			<button type="button" class="btn btn-primary resultButton"
-				data-toggle="tooltip" data-placement="bottom"
-				title="Shows study results only of @common.workers.PersonalSingleWorker.UI_WORKER_TYPE worker">
-				Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.PersonalSingleWorker.WORKER_TYPE)</span>
-			</button>
+			<span class="panel-title">
+				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#personalSingleWorkerTable">
+					<span class="caret"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
+				</a>
+			</span>
+			<span class="btn-group pull-right"> 
+				<button type="button" class="btn btn-primary addButton">Add</button>
+				<button type="button" class="btn btn-primary resultButton" data-toggle="tooltip" data-placement="bottom"
+					title="Shows study results only of @common.workers.PersonalSingleWorker.UI_WORKER_TYPE worker">
+					Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.PersonalSingleWorker.WORKER_TYPE)</span>
+				</button>
+			</span>
 		</div>
 		<div id="personalSingleWorkerTable" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
@@ -51,14 +59,18 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	
 	<div class="panel panel-default" id="personalMultipleWorkerPanel">
 		<div class="panel-heading">
-			<a role="button" data-toggle="collapse" data-parent="#accordion" href="#personalMultipleWorkerTable"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
-			<b class="panel-title">@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span></b>
-			<button type="button" class="btn btn-primary addButton">Add</button>
-			<button type="button" class="btn btn-primary resultButton"
-				data-toggle="tooltip" data-placement="bottom"
-				title="Shows study results only of @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE worker">
-				Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.PersonalMultipleWorker.WORKER_TYPE)</span>
-			</button>
+			<span class="panel-title">
+				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#personalMultipleWorkerTable">
+					<span class="caret"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
+				</a>
+			</span>
+			<span class="btn-group pull-right">
+				<button type="button" class="btn btn-primary addButton">Add</button>
+				<button type="button" class="btn btn-primary resultButton" data-toggle="tooltip" data-placement="bottom"
+					title="Shows study results only of @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE worker">
+					Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.PersonalMultipleWorker.WORKER_TYPE)</span>
+				</button>
+			</span>
 		</div>
 		<div id="personalMultipleWorkerTable" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
@@ -74,18 +86,21 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	
 	<div class="panel panel-default" id="mtWorkerPanel">
 		<div class="panel-heading">
-			<a role="button" data-toggle="collapse" data-parent="#accordion" href="#mtWorkerTable"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
-			<b class="panel-title">@common.workers.MTWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-mturk" aria-hidden="true"></b>
-			<button type="button" class="btn btn-primary mtWorkerSourceCode"
-				data-toggle="tooltip" data-placement="bottom"
-				title="Shows code that has to be copied into the 'source' field of your study's design layout in Mechanical Turk">
-				Source Code
-			</button>
-			<button type="button" class="btn btn-primary resultButton"
-				data-toggle="tooltip" data-placement="bottom"
-				title="Shows study results only of @common.workers.MTWorker.UI_WORKER_TYPE worker">
-				Results <span class="badge">@studyResultCountsPerWorker.get(common.workers.MTWorker.WORKER_TYPE)</span>
-			</button>
+			<span class="panel-title">
+				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#mtWorkerTable">
+					<span class="caret"></span> @common.workers.MTWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-mturk" aria-hidden="true">
+				</a>
+			</span>
+			<span class="btn-group pull-right">
+				<button type="button" class="btn btn-primary mtWorkerSourceCode" data-toggle="tooltip" data-placement="bottom"
+					title="Shows code that has to be copied into the 'source' field of your study's design layout in Mechanical Turk">
+					Source Code
+				</button>
+				<button type="button" class="btn btn-primary resultButton" data-toggle="tooltip" data-placement="bottom"
+					title="Shows study results only of @common.workers.MTWorker.UI_WORKER_TYPE worker">
+					Results <span class="badge">@studyResultCountsPerWorker.get(common.workers.MTWorker.WORKER_TYPE)</span>
+				</button>
+			</span>
 		</div>
 		<div id="mtWorkerTable" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
@@ -100,14 +115,18 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	
 	<div class="panel panel-default" id="generalSingleWorkerPanel">
 		<div class="panel-heading">
-			<a role="button" data-toggle="collapse" data-parent="#accordion" href="#generalSingleWorkerTable"><img alt="+" src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/details_open.png")"></a>
-			<b class="panel-title">@common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span></b>
-			<button type="button" class="btn btn-primary linkButton">Link</button>
-			<button type="button" class="btn btn-primary resultButton"
-				data-toggle="tooltip" data-placement="bottom"
-				title="Shows study results only of @common.workers.GeneralSingleWorker.UI_WORKER_TYPE worker">
-				Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.GeneralSingleWorker.WORKER_TYPE)</span>
-			</button>
+			<span class="panel-title">
+				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#generalSingleWorkerTable">
+					<span class="caret"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
+				</a>
+			</span>
+			<span class="btn-group pull-right">
+				<button type="button" class="btn btn-primary linkButton">Link</button>
+				<button type="button" class="btn btn-primary resultButton" data-toggle="tooltip" data-placement="bottom"
+					title="Shows study results only of @common.workers.GeneralSingleWorker.UI_WORKER_TYPE worker">
+					Results <span class="resultsBadge badge">@studyResultCountsPerWorker.get(common.workers.GeneralSingleWorker.WORKER_TYPE)</span>
+				</button>
+			</span>
 		</div>
 		<div id="generalSingleWorkerTable" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
