@@ -2,6 +2,8 @@ import com.typesafe.config._
 
 name := "jatos-gui"
 
+Common.settings
+
 includeFilter in (Assets, LessKeys.less) := "*.less"
 
 excludeFilter in (Assets, LessKeys.less) := "_*.less"

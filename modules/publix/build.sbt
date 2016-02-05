@@ -2,6 +2,8 @@ import com.typesafe.config._
 
 name := "jatos-publix"
 
+Common.settings
+
 libraryDependencies ++= Seq(
 )
 

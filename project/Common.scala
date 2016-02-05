@@ -7,5 +7,4 @@ object Common {
 		organization := "org.jatos",
 		scalaVersion := "2.11.7"
 	)
-
 }

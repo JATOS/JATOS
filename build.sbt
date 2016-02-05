@@ -6,6 +6,8 @@ import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
 name := "JATOS"
 
+Common.settings
+
 libraryDependencies ++= Seq(
 	"org.mockito" % "mockito-core" % "1.9.5" % "test",
 	"org.easytesting" % "fest-assert" % "1.4" % Test,
