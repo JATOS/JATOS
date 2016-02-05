@@ -211,45 +211,78 @@ function fillWorkers(workerList) {
 	$('#generalSingleWorkerPanel .workerRowTemplate').nextAll().remove();
 	$.each(workerList, function(index, worker) {
 		if (worker.workerType == '@common.workers.JatosWorker.WORKER_TYPE') {
-			var row = $('#jatosWorkerPanel .workerRowTemplate').clone().show();
-			$(row).removeClass('workerRowTemplate');
-			$(row).find('.workerId').text(worker.id);
-			$(row).find('.userEmail').text(worker.userEmail);
-			if ("@loggedInUser.getEmail()" != worker.userEmail) {
-				$(row).find('.runButton').hide();
-			}
-			$(row).data(worker);
-			$("#jatosWorkerPanel .workerRowTemplate").after(row);
+			fillJatosRow(worker);
 		} else if (worker.workerType == '@common.workers.PersonalSingleWorker.WORKER_TYPE') {
-			var row = $('#personalSingleWorkerPanel .workerRowTemplate').clone().show();
-			$(row).removeClass('workerRowTemplate');
-			$(row).find('.workerId').text(worker.id);
-			$(row).find('.workerComment').text(worker.comment);
-			$(row).data(worker);
-			$("#personalSingleWorkerPanel .workerRowTemplate").after(row);
+			fillPersonalSingleRow(worker);
 		} else if (worker.workerType == '@common.workers.PersonalMultipleWorker.WORKER_TYPE') {
-			var row = $('#personalMultipleWorkerPanel .workerRowTemplate').clone().show();
-			$(row).removeClass('workerRowTemplate');
-			$(row).find('.workerId').text(worker.id);
-			$(row).find('.workerComment').text(worker.comment);
-			$(row).data(worker);
-			$("#personalMultipleWorkerPanel .workerRowTemplate").after(row);
+			fillPersonalMultipleRow(worker);
 		} else if (worker.workerType == '@common.workers.MTWorker.WORKER_TYPE') {
-			var row = $('#mtWorkerPanel .workerRowTemplate').clone().show();
-			$(row).removeClass('workerRowTemplate');
-			$(row).find('.workerId').text(worker.id);
-			$(row).find('.mtWorkerId').text(worker.mtWorkerId);
-			$(row).data(worker);
-			$("#mtWorkerPanel .workerRowTemplate").after(row);
+			fillMtRow(worker);
 		} else if (worker.workerType == '@common.workers.GeneralSingleWorker.WORKER_TYPE') {
-			var row = $('#generalSingleWorkerPanel .workerRowTemplate').clone().show();
-			$(row).removeClass('workerRowTemplate');
-			$(row).find('.workerId').text(worker.id);
-			$(row).data(worker);
-			$("#generalSingleWorkerPanel .workerRowTemplate").after(row);
+			fillGeneralSingleRow(worker);
 		}
+		checkEmptyWorkerTable('#jatosWorkerTable');
+		checkEmptyWorkerTable('#personalSingleWorkerTable');
+		checkEmptyWorkerTable('#personalMultipleWorkerTable');
+		checkEmptyWorkerTable('#mtWorkerTable');
+		checkEmptyWorkerTable('#generalSingleWorkerTable');
 		setButtonWidthToMax(".resultButton");
 	});
+}
+
+function fillJatosRow(worker) {
+	var row = $('#jatosWorkerPanel .workerRowTemplate').clone().show();
+	$(row).removeClass('workerRowTemplate');
+	$(row).find('.workerId').text(worker.id);
+	$(row).find('.userEmail').text(worker.userEmail);
+	if ("@loggedInUser.getEmail()" != worker.userEmail) {
+		$(row).find('.runButton').hide();
+	}
+	$(row).data(worker);
+	$("#jatosWorkerPanel .workerRowTemplate").after(row);
+}
+
+function fillPersonalSingleRow(worker) {
+	var row = $('#personalSingleWorkerPanel .workerRowTemplate').clone().show();
+	$(row).removeClass('workerRowTemplate');
+	$(row).find('.workerId').text(worker.id);
+	$(row).find('.workerComment').text(worker.comment);
+	$(row).data(worker);
+	$("#personalSingleWorkerPanel .workerRowTemplate").after(row);
+}
+
+function fillPersonalMultipleRow(worker) {
+	var row = $('#personalMultipleWorkerPanel .workerRowTemplate').clone().show();
+	$(row).removeClass('workerRowTemplate');
+	$(row).find('.workerId').text(worker.id);
+	$(row).find('.workerComment').text(worker.comment);
+	$(row).data(worker);
+	$("#personalMultipleWorkerPanel .workerRowTemplate").after(row);
+}
+
+function fillMtRow(worker) {
+	var row = $('#mtWorkerPanel .workerRowTemplate').clone().show();
+	$(row).removeClass('workerRowTemplate');
+	$(row).find('.workerId').text(worker.id);
+	$(row).find('.mtWorkerId').text(worker.mtWorkerId);
+	$(row).data(worker);
+	$("#mtWorkerPanel .workerRowTemplate").after(row);
+}
+
+function fillGeneralSingleRow(worker) {
+	var row = $('#generalSingleWorkerPanel .workerRowTemplate').clone().show();
+	$(row).removeClass('workerRowTemplate');
+	$(row).find('.workerId').text(worker.id);
+	$(row).data(worker);
+	$("#generalSingleWorkerPanel .workerRowTemplate").after(row);
+}
+
+function checkEmptyWorkerTable(e) {
+	var rowCount = $(e + ' tr').length;
+	if (rowCount <= 1) {
+		var row = "<tr><td>none</td></tr>"
+		$(e + " .workerRowTemplate").after(row);
+	}
 }
 
 $('#workerAccordion').on('click', '.resultButton', function() {
