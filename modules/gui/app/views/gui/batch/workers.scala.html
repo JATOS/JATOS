@@ -98,7 +98,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 				</button>
 				<button type="button" class="btn btn-primary resultButton" data-toggle="tooltip" data-placement="bottom"
 					title="Shows study results only of @common.workers.MTWorker.UI_WORKER_TYPE worker">
-					Results <span class="badge">@studyResultCountsPerWorker.get(common.workers.MTWorker.WORKER_TYPE)</span>
+					Results <span class="badge">@(studyResultCountsPerWorker.get(common.workers.MTWorker.WORKER_TYPE) + studyResultCountsPerWorker.get(common.workers.MTSandboxWorker.WORKER_TYPE))</span>
 				</button>
 			</span>
 		</div>
@@ -108,6 +108,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 				<tr class="workerRowTemplate" style="display: none">
 					<td class="workerId"></td>
 					<td class="mtWorkerId"></td>
+					<td class="workerType"></td>
 				</tr>
 			</table>
 		</div>
@@ -265,6 +266,7 @@ function fillMtRow(worker) {
 	$(row).removeClass('workerRowTemplate');
 	$(row).find('.workerId').text(worker.id);
 	$(row).find('.mtWorkerId').text(worker.mtWorkerId);
+	$(row).find('.workerType').text(worker.uiWorkerType);
 	$(row).data(worker);
 	$("#mtWorkerPanel .workerRowTemplate").after(row);
 }
