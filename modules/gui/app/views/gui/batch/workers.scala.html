@@ -221,13 +221,13 @@ function fillWorkers(workerList) {
 		} else if (worker.workerType == '@common.workers.GeneralSingleWorker.WORKER_TYPE') {
 			fillGeneralSingleRow(worker);
 		}
-		checkEmptyWorkerTable('#jatosWorkerTable');
-		checkEmptyWorkerTable('#personalSingleWorkerTable');
-		checkEmptyWorkerTable('#personalMultipleWorkerTable');
-		checkEmptyWorkerTable('#mtWorkerTable');
-		checkEmptyWorkerTable('#generalSingleWorkerTable');
-		setButtonWidthToMax(".resultButton");
 	});
+	checkEmptyWorkerTable('#jatosWorkerTable');
+	checkEmptyWorkerTable('#personalSingleWorkerTable');
+	checkEmptyWorkerTable('#personalMultipleWorkerTable');
+	checkEmptyWorkerTable('#mtWorkerTable');
+	checkEmptyWorkerTable('#generalSingleWorkerTable');
+	setButtonWidthToMax(".resultButton");
 }
 
 function fillJatosRow(worker) {
