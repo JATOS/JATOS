@@ -2,10 +2,10 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-<button id="createBatchButton" type="button" class="btn btn-primary">New
-	Batch</button>
-
-<div class="list-group" id="batchList"></div>
+<div class="btn-group">
+	<button id="createBatchButton" type="button" class="btn btn-primary">New Batch</button>
+</div>
+<div id="batchList" class="list-group top-buffer"></div>
 
 <!-- Create Batch Modal -->
 <div class="modal fade" id="createBatchModal" data-backdrop="static"
