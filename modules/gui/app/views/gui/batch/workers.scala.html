@@ -305,7 +305,7 @@ $('#workerAccordion').on('click', '.resultButton', function() {
 });
 
 $('#mtWorkerPanel').on('click', '.mtWorkerSourceCode', function() {
-	window.location.href = "@controllers.gui.routes.Studies.showMTurkSourceCode(study.getId())";
+	window.location.href = "@controllers.gui.routes.Batches.showMTurkSourceCode(study.getId(), batchId)";
 });
 
 $('#personalSingleWorkerPanel').on('click', '.addButton', function() {

@@ -124,7 +124,7 @@ public class BreadcrumbsService {
 		try {
 			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
-			Logger.error(CLASS_NAME + ".generateForBatchWorkers", e);
+			Logger.error(CLASS_NAME + ".generateForBatch", e);
 			RequestScopeMessaging
 					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
 		}

@@ -50,7 +50,6 @@ GET     /jatos/:studyId/users                        @controllers.gui.Studies.us
 POST    /jatos/:studyId/users                        @controllers.gui.Studies.submitChangedUsers(studyId: Long)
 DELETE  /jatos/:studyId                              @controllers.gui.Studies.remove(studyId: Long)
 POST    /jatos/:studyId/componentOrder               @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, newPosition: String)
-GET     /jatos/:studyId/mturk                        @controllers.gui.Studies.showMTurkSourceCode(studyId: Long)
 GET     /jatos/:studyId/run                          @controllers.gui.Studies.runStudy(studyId: Long, batchId: Long ?= -1)
 GET     /jatos/:studyId/clone                        @controllers.gui.Studies.cloneStudy(studyId: Long)
 POST    /jatos/:studyId/lock/swap                    @controllers.gui.Studies.swapLock(studyId: Long)
@@ -67,6 +66,7 @@ POST    /jatos/:studyId/batch/:batchId/properties            @controllers.gui.Ba
 POST    /jatos/:studyId/batch/:batchId/property              @controllers.gui.Batches.changeProperty(studyId: Long, batchId: Long, active: Boolean)
 POST    /jatos/:studyId/batch/:batchId/personalSingleRun     @controllers.gui.Batches.createPersonalSingleRun(studyId: Long, batchId: Long)
 POST    /jatos/:studyId/batch/:batchId/personalMultipleRun   @controllers.gui.Batches.createPersonalMultipleRun(studyId: Long, batchId: Long)
+GET     /jatos/:studyId/batch/:batchId/mturk                 @controllers.gui.Batches.showMTurkSourceCode(studyId: Long, batchId: Long)
 DELETE  /jatos/:studyId/batch/:batchId                       @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
 GET     /jatos/:studyId/batches                              @controllers.gui.Batches.batchesByStudy(studyId: Long)
 
