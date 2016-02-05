@@ -3,11 +3,11 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-<div class="panel-group" id="accordion" role="tablist">
+<div class="panel-group" id="workerAccordion" role="tablist">
 	<div class="panel panel-default" id="jatosWorkerPanel">
 		<div class="panel-heading">
 			 <span class="panel-title">
-				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#jatosWorkerTable">
+				<a role="button" data-toggle="collapse" data-parent="#workerAccordion" href="#jatosWorkerTable">
 					<span class="caret"></span> @common.workers.JatosWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>
 				</a>
 				<span class="btn-group pull-right"> 
@@ -33,7 +33,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	<div class="panel panel-default" id="personalSingleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#personalSingleWorkerTable">
+				<a role="button" data-toggle="collapse" data-parent="#workerAccordion" href="#personalSingleWorkerTable">
 					<span class="caret"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
 				</a>
 			</span>
@@ -60,7 +60,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	<div class="panel panel-default" id="personalMultipleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#personalMultipleWorkerTable">
+				<a role="button" data-toggle="collapse" data-parent="#workerAccordion" href="#personalMultipleWorkerTable">
 					<span class="caret"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
 				</a>
 			</span>
@@ -87,7 +87,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	<div class="panel panel-default" id="mtWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#mtWorkerTable">
+				<a role="button" data-toggle="collapse" data-parent="#workerAccordion" href="#mtWorkerTable">
 					<span class="caret"></span> @common.workers.MTWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-mturk" aria-hidden="true">
 				</a>
 			</span>
@@ -116,7 +116,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	<div class="panel panel-default" id="generalSingleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#generalSingleWorkerTable">
+				<a role="button" data-toggle="collapse" data-parent="#workerAccordion" href="#generalSingleWorkerTable">
 					<span class="caret"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
 				</a>
 			</span>
@@ -251,6 +251,25 @@ function fillWorkers(workerList) {
 		setButtonWidthToMax(".resultButton");
 	});
 }
+
+$('#workerAccordion').on('click', '.resultButton', function() {
+	var workerType;
+	if ($(this).closest('.panel').is('#jatosWorkerPanel')) {
+		workerType = "@common.workers.JatosWorker.WORKER_TYPE";
+	} else if ($(this).closest('.panel').is('#personalSingleWorkerPanel')) {
+		workerType = "@common.workers.PersonalSingleWorker.WORKER_TYPE";
+	} else if ($(this).closest('.panel').is('#personalMultipleWorkerPanel')) {
+		workerType = "@common.workers.PersonalMultipleWorker.WORKER_TYPE";
+	} else if ($(this).closest('.panel').is('#mtWorkerPanel')) {
+		workerType = "@common.workers.MTWorker.WORKER_TYPE";
+	} else if ($(this).closest('.panel').is('#generalSingleWorkerPanel')) {
+		workerType = "@common.workers.GeneralSingleWorker.WORKER_TYPE";
+	}
+	if (workerType) {
+		window.location.href =  "/jatos/@study.getId()/batch/" + @batchId
+			+ "/results?workerType=" + workerType;
+	}
+});
 
 $('#mtWorkerPanel').on('click', '.mtWorkerSourceCode', function() {
 	window.location.href = "@controllers.gui.routes.Studies.showMTurkSourceCode(study.getId())";

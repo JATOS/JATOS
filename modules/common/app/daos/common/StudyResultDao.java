@@ -91,4 +91,19 @@ public class StudyResultDao extends AbstractDao {
 		return query.setParameter("batch", batch).getResultList();
 	}
 
+	/**
+	 * Returns a list of all StudyResults that belongs to the given Batch and
+	 * worker type.
+	 */
+	public List<StudyResult> findAllByBatchAndWorkerType(Batch batch,
+			String workerType) {
+		String queryStr = "SELECT sr FROM StudyResult sr WHERE "
+				+ "sr.batch=:batch "
+				+ "AND sr.worker IN (SELECT w FROM Worker w WHERE w.class=:workerType)";
+		TypedQuery<StudyResult> query = JPA.em().createQuery(queryStr,
+				StudyResult.class);
+		return query.setParameter("batch", batch)
+				.setParameter("workerType", workerType).getResultList();
+	}
+
 }

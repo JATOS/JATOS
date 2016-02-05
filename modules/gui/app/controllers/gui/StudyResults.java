@@ -109,8 +109,8 @@ public class StudyResults extends Controller {
 	 * Shows view with all StudyResults of a batch.
 	 */
 	@Transactional
-	public Result batchesStudyResults(Long studyId, Long batchId)
-			throws JatosGuiException {
+	public Result batchesStudyResults(Long studyId, Long batchId,
+			String workerType) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".batchesStudyResults: studyId " + studyId
 				+ ", " + "batchId " + batchId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
@@ -127,7 +127,8 @@ public class StudyResults extends Controller {
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
 				BreadcrumbsService.RESULTS);
 		String dataUrl = controllers.gui.routes.StudyResults
-				.tableDataByBatch(study.getId(), batch.getId()).url();
+				.tableDataByBatch(study.getId(), batch.getId(), workerType)
+				.url();
 		return ok(views.html.gui.result.studyResults.render(loggedInUser,
 				breadcrumbs, study, dataUrl));
 	}
@@ -255,11 +256,13 @@ public class StudyResults extends Controller {
 	}
 
 	/**
-	 * Ajax request: Returns all StudyResults of a batch in JSON format.
+	 * Ajax request: Returns all StudyResults of a batch in JSON format. As an
+	 * additional parameter the worker type can be specified and the results
+	 * will only be of this type.
 	 */
 	@Transactional
-	public Result tableDataByBatch(Long studyId, Long batchId)
-			throws JatosGuiException {
+	public Result tableDataByBatch(Long studyId, Long batchId,
+			String workerType) throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
@@ -269,8 +272,11 @@ public class StudyResults extends Controller {
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStandardForBatch(batch, study, batchId);
-			dataAsJson = jsonUtils
-					.allStudyResultsForUI(studyResultDao.findAllByBatch(batch));
+			List<StudyResult> studyResultList = (workerType == null)
+					? studyResultDao.findAllByBatch(batch)
+					: studyResultDao.findAllByBatchAndWorkerType(batch,
+							workerType);
+			dataAsJson = jsonUtils.allStudyResultsForUI(studyResultList);
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
