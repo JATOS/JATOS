@@ -5,7 +5,49 @@
 <div class="btn-group">
 	<button id="createBatchButton" type="button" class="btn btn-primary">New Batch</button>
 </div>
-<div id="batchList" class="list-group top-buffer"></div>
+<table id="batchTable" class="table top-buffer">
+	<!-- Template for batch's row -->
+	<tr id="batchRowTemplate" class="batchItem" style="display: none">
+		<td>
+			<button type="button" class="btn btn-sm btn-primary activeButton" data-toggle="tooltip" data-placement="bottom" title="">
+				<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+			</button>
+		</td>
+		<td class="batchId"></td>
+		<td class="batchTitle"></td>
+		<td>
+			<div class="batchBtnGroup btn-group pull-right" aria-hidden="true">
+				<button type="button" class="batchPropertiesButton btn btn-primary" data-toggle="tooltip" data-placement="bottom"
+					title="Edit this batch's properties">
+					Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
+				<button type="button" class="batchWorkersButton btn btn-primary" data-toggle="tooltip" data-placement="bottom"
+					title="Manage the workers of this batch">
+					Workers <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+					title="Number of workers that started a study in this batch (without Jatos worker)"></span>
+				</button>
+				<button type="button" class="batchResultsButton btn btn-primary" data-toggle="tooltip" data-placement="bottom"
+					title="Shows the study results of this batch">
+					Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+					title="Number of study results that belong to this batch"></span>
+				</button>
+				<div class="btn-group">
+					<button type="button" class="btn btn-primary dropdown-toggle"
+						data-toggle="dropdown">
+						More <span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu" role="menu">
+						<li data-toggle="tooltip" data-placement="bottom"
+							title="Deletes this batch but doesn't delete any results">
+							<a class="removeBatch" href="#"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+								Delete
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</td>
+	</tr>
+</table>
 
 <!-- Create Batch Modal -->
 <div class="modal fade" id="createBatchModal" data-backdrop="static"
@@ -44,45 +86,6 @@
 	</div>
 </div>
 
-<!-- Template for batch's row -->
-<div id="batchRowTemplateDiv" class="list-group-item"
-	style="display: none">
-	<button type="button" class="btn btn-sm btn-primary activeButton" data-toggle="tooltip" data-placement="bottom" title="">
-		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-	</button>
-	<span class="batchId"></span>
-	<span class="batchTitle"></span>
-	<div class="batchBtnGroup btn-group" aria-hidden="true">
-		<button type="button" class="batchPropertiesButton btn btn-primary" data-toggle="tooltip" data-placement="bottom"
-			title="Edit this batch's properties">
-			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
-		<button type="button" class="batchWorkersButton btn btn-primary" data-toggle="tooltip" data-placement="bottom"
-			title="Manage the workers of this batch">
-			Workers <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
-			title="Number of workers that started a study in this batch (without Jatos worker)"></span>
-		</button>
-		<button type="button" class="batchResultsButton btn btn-primary" data-toggle="tooltip" data-placement="bottom"
-			title="Shows the study results of this batch">
-			Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
-			title="Number of study results that belong to this batch"></span>
-		</button>
-		<div class="btn-group">
-			<button type="button" class="btn btn-primary dropdown-toggle"
-				data-toggle="dropdown">
-				More <span class="caret"></span>
-			</button>
-			<ul class="dropdown-menu" role="menu">
-				<li data-toggle="tooltip" data-placement="bottom"
-					title="Deletes this batch but doesn't delete any results">
-					<a class="removeBatch" href="#"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-						Delete
-					</a>
-				</li>
-			</ul>
-		</div>
-	</div>
-</div>
-
 @views.html.gui.batch.batchPropertiesModal(study)
 <script>
 
@@ -93,7 +96,7 @@ function loadBatchList() {
 		type: 'GET',
 		url: "@controllers.gui.routes.Batches.batchesByStudy(study.getId())",
 		success: function(response) {
-			fillBatchList(response);
+			fillBatchTable(response);
 		},
 		error: function(response) {
 			showError("Couldn't load batches.");
@@ -101,19 +104,22 @@ function loadBatchList() {
 	});
 }
 
-function fillBatchList(batchList) {
-	$("#batchList").empty();
+function fillBatchTable(batchList) {
+	$('#batchRowTemplate').nextAll().remove();
 	$.each(batchList, function(index, batch) {
-		var toolbar = $('#batchRowTemplateDiv').clone().show();
+		var row = $('#batchRowTemplate').clone().show();
+		$(row).removeAttr('id');
 		// Write batch object into toolbar's data attribute so we can use it later on 
-		$(toolbar).data(batch);
-		setButtonActive($(toolbar).find('.activeButton'), batch.active);
-		$(toolbar).find('.batchId').text(batch.id);
-		$(toolbar).find('.batchTitle').text(batch.title);
-		$(toolbar).find('.resultsBadge').text(batch.resultCount);
-		$(toolbar).find('.workersBadge').text(batch.workerCount);
-		$("#batchList").append(toolbar);
+		$(row).data(batch);
+		setButtonActive($(row).find('.activeButton'), batch.active);
+		$(row).find('.batchId').text(batch.id);
+		$(row).find('.batchTitle').text(batch.title);
+		$(row).find('.resultsBadge').text(batch.resultCount);
+		$(row).find('.workersBadge').text(batch.workerCount);
+		$("#batchTable tr:last").after(row);
 	});
+	setButtonWidthToMax("#batchTable .batchResultsButton");
+	setButtonWidthToMax("#batchTable .batchWorkersButton");
 }
 
 $('#createBatchButton').click(function(event) {
@@ -145,19 +151,19 @@ $("#createBatchForm").submit(function(event) {
 	});
 });
 
-$('#batchList').on('click', '.batchWorkersButton', function() {
+$('#batchTable').on('click', '.batchWorkersButton', function() {
 	var batch = getBatchData(this);
 	if (!batch) {return} // should never happen
 	window.location.href =  "/jatos/@study.getId()/batch/" + batch.id + "/workers";
 });
 
-$('#batchList').on('click', '.batchResultsButton', function() {
+$('#batchTable').on('click', '.batchResultsButton', function() {
 	var batch = getBatchData(this);
 	if (!batch) {return} // should never happen
 	window.location.href =  "/jatos/@study.getId()/batch/" + batch.id + "/results";
 });
 
-$('#batchList').on('click', '.activeButton', function() {
+$('#batchTable').on('click', '.activeButton', function() {
 	var button = this;
 	var batch = getBatchData(this);
 	if (!batch) {return} // should never happen
@@ -195,7 +201,7 @@ function setButtonActive(button, active) {
 	}
 }
 
-$('#batchList').on('click', '.removeBatch', function() {
+$('#batchTable').on('click', '.removeBatch', function() {
 	var element = this;
 	var batch = getBatchData(this);
 	if (!batch) {return} // should never happen
@@ -219,7 +225,7 @@ $('#batchList').on('click', '.removeBatch', function() {
 });
 
 function getBatchData(element) {
-	var row = $(element).closest('#batchRowTemplateDiv');
+	var row = $(element).closest('.batchItem');
 	var batch = row.data();
 	return batch;
 }

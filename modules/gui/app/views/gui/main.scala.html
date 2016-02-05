@@ -171,6 +171,20 @@ function clearForm(formElem) {
 	$(formElem + " input[type=radio]").removeAttr('selected');
 }
 
+// Adjust the width of every button to the widest one
+function setButtonWidthToMax(element) {
+	var maxWidth = 0;
+	$(element).each(function(index) {
+		var width = $(this).width();
+		if (width > maxWidth) {
+			maxWidth = width;
+		}
+	});
+	$(element).each(function(index) {
+		$(this).width(maxWidth);
+	});
+}
+
 </script>
 
 <nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top"

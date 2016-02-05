@@ -255,16 +255,7 @@ $(document).ready(function() {
 	
 	// Adjust the width of every component's toolbar to the widest one
 	componentsTable.on('column-sizing.dt', function (e, settings) {
-		var maxWidth = 0;
-		$('.componentResults').each(function(index) {
-			var width = $(this).width();
-			if (width > maxWidth) {
-				maxWidth = width;
-			}
-		});
-		$('.componentResults').each(function(index) {
-			$(this).width(maxWidth);
-		});
+		setButtonWidthToMax(".componentResults");
 	});
 	
 	$('#componentsTable tbody').on('click', '.runComponent', function() {

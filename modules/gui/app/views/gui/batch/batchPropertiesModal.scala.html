@@ -125,7 +125,7 @@ $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED'
 	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS').prop("disabled", !this.checked);
 });
 
-$('#batchList').on('click', '.batchPropertiesButton', function() {
+$('#batchTable').on('click', '.batchPropertiesButton', function() {
 	var batch = getBatchData(this);
 	if (!batch) {return} // should never happen
 	$.ajax({
