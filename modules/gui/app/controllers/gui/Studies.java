@@ -1,8 +1,6 @@
 package controllers.gui;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -22,7 +20,6 @@ import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
-import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
@@ -42,7 +39,6 @@ import services.gui.JatosGuiExceptionThrower;
 import services.gui.StudyService;
 import services.gui.UserService;
 import services.gui.WorkerService;
-import utils.common.ControllerUtils;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -359,33 +355,6 @@ public class Studies extends Controller {
 				+ "batchId" + "=" + batchId + "&" + "jatosWorkerId" + "="
 				+ loggedInUser.getWorker().getId();
 		return redirect(startStudyUrl);
-	}
-
-	/**
-	 * Shows a view with the source code that is intended to be copied into
-	 * Mechanical Turk.
-	 */
-	@Transactional
-	public Result showMTurkSourceCode(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".showMTurkSourceCode: studyId " + studyId
-				+ ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		checkStandardForStudy(studyId, study, loggedInUser);
-
-		URL jatosURL = null;
-		try {
-			jatosURL = ControllerUtils.getRefererUrl();
-		} catch (MalformedURLException e) {
-			String errorMsg = MessagesStrings.COULDNT_GENERATE_JATOS_URL;
-			jatosGuiExceptionThrower.throwStudyIndex(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
-		String breadcrumbs = breadcrumbsService.generateForStudy(study,
-				BreadcrumbsService.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
-		return ok(views.html.gui.batch.mTurkSourceCode.render(loggedInUser,
-				breadcrumbs, study, jatosURL));
 	}
 
 	/**
