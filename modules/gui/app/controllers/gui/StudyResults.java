@@ -125,7 +125,7 @@ public class StudyResults extends Controller {
 		}
 
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
-				BreadcrumbsService.RESULTS);
+				BreadcrumbsService.RESULTS + " of " + workerType + " Workers");
 		String dataUrl = controllers.gui.routes.StudyResults
 				.tableDataByBatch(study.getId(), batch.getId(), workerType)
 				.url();
