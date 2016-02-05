@@ -2,14 +2,9 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
-<script type="text/javascript">
-var studyId = @study.getId();
-showInfo("Copy & paste this code into the 'source' field of your study's design layout in Mechanical Turk");
-</script>
-
 <h3>Source code for Mechanical Turk</h3>
 
-<pre><code>
+<pre><code id="mtSourceCode">
 &lt;link href=&quot;https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot; /&gt;
 &lt;section class=&quot;container&quot; id=&quot;SurveyLink&quot; style=&quot;margin-bottom:15px; padding: 10px 10px; font-family: Verdana, Geneva, sans-serif; color:#333333; font-size:0.9em;&quot;&gt;
 &lt;div class=&quot;row col-xs-12 col-md-12&quot;&gt;&lt;!-- Instructions --&gt;
@@ -77,5 +72,34 @@ showInfo("Copy & paste this code into the 'source' field of your study's design 
 	}
 &lt;/script&gt;
 </code></pre>
+
+<script>
+
+var studyId = @study.getId();
+showInfo("Copy & paste this code into the 'source' field of your study's design layout in Mechanical Turk");
+
+$('#mtSourceCode').on("click", function(e) {
+	e.preventDefault();
+	selectText('mtSourceCode');
+});
+
+function selectText(element) {
+	var text = document.getElementById(element);
+	var range;
+	var selection;
+	if (document.body.createTextRange) {
+		range = document.body.createTextRange();
+		range.moveToElementText(text);
+		range.select();
+	} else if (window.getSelection) {
+		selection = window.getSelection();
+		range = document.createRange();
+		range.selectNodeContents(text);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	}
+}
+
+</script>
 
 }
