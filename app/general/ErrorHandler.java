@@ -42,6 +42,12 @@ public class ErrorHandler extends DefaultHttpErrorHandler {
 			Logger.info(CLASS_NAME + ".onForbidden: " + message);
 			return Promise.<Result> pure(Results
 					.forbidden("You're not allowed to access this resource."));
+		case Http.Status.REQUEST_ENTITY_TOO_LARGE:
+			Logger.info(
+					CLASS_NAME + ".onRequestEntityTooLarge: HTTP status code "
+							+ statusCode + ", " + message);
+			return Promise.<Result> pure(Results.status(statusCode,
+					"Request entity too large: You probably tried to upload a file that is too large"));
 		default:
 			Logger.info(CLASS_NAME + ".onClientError: HTTP status code "
 					+ statusCode + ", " + message);
