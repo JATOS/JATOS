@@ -162,8 +162,8 @@ public class GroupService {
 	 */
 	public void finishStudyInGroup(Study study, StudyResult studyResult)
 			throws InternalServerErrorPublixException {
-		if (study.isGroupStudy()) {
-			GroupResult groupResult = studyResult.getActiveGroupResult();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
+		if (study.isGroupStudy() && groupResult != null) {
 			moveToHistory(studyResult);
 			channelService.closeGroupChannel(studyResult, groupResult);
 			channelService.sendLeftMsg(studyResult, groupResult);
