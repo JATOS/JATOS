@@ -519,9 +519,10 @@ function fillSidebar() {
 
 $('#sidebarStudyList').on('click', '.studyListItem', function(e) {
 	// If plus or minus expand the study
-	if($(e.target).hasClass('glyphicon-plus')
-			|| $(e.target).hasClass('glyphicon-minus')) {
+	if($(e.target).hasClass('glyphicon-chevron-right')
+			|| $(e.target).hasClass('glyphicon-chevron-down')) {
 		$(this).find(".glyphicon").toggleClass('study-expanded study-collapsed');
+		$(this).find(".glyphicon").toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 	} else {
 		var clickedStudyId = $(this).attr('id').replace('sidebarStudy', "");
 		window.location.href = "/jatos/" + clickedStudyId;
@@ -538,8 +539,7 @@ function fillSidebarStudyList(studyArray) {
 		}
 		listItem += '">'
 				+ '<span data-toggle="collapse" data-target="#componentsOfStudy' + study.id + '" aria-expanded="false">'
-				+ '<span class="glyphicon glyphicon-plus gray-light study-collapsed" aria-hidden="true"></span>'
-				+ '<span class="glyphicon glyphicon-minus gray-light study-collapsed" aria-hidden="true"></span>'
+				+ '<span class="glyphicon glyphicon-chevron-right gray-light study-collapsed" aria-hidden="true"></span>'
 				+ '</span>'
 				+ '<span class="text-primary" data-toggle="tooltip" data-placement="bottom" title="ID ' + study.id + '" href="/jatos/' + study.id + '">'
 				+ '&nbsp;' + study.title;	

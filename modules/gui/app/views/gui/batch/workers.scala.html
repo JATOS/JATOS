@@ -8,7 +8,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 		<div class="panel-heading">
 			 <span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#jatosWorkerTable">
-					<span class="caret"></span> @common.workers.JatosWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>
+					<span class="glyphicon glyphicon-chevron-right"></span> @common.workers.JatosWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>
 				</a>
 				<span class="btn-group pull-right"> 
 					<button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
@@ -35,7 +35,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 		<div class="panel-heading">
 			<span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#personalSingleWorkerTable">
-					<span class="caret"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
+					<span class="glyphicon glyphicon-chevron-right"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
 				</a>
 			</span>
 			<span class="btn-group pull-right"> 
@@ -63,7 +63,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 		<div class="panel-heading">
 			<span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#personalMultipleWorkerTable">
-					<span class="caret"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
+					<span class="glyphicon glyphicon-chevron-right"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
 				</a>
 			</span>
 			<span class="btn-group pull-right">
@@ -91,7 +91,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 		<div class="panel-heading">
 			<span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#mtWorkerTable">
-					<span class="caret"></span> @common.workers.MTWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-mturk" aria-hidden="true">
+					<span class="glyphicon glyphicon-chevron-right"></span> @common.workers.MTWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-mturk" aria-hidden="true">
 				</a>
 			</span>
 			<span class="btn-group pull-right">
@@ -122,7 +122,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 		<div class="panel-heading">
 			<span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#generalSingleWorkerTable">
-					<span class="caret"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
+					<span class="glyphicon glyphicon-chevron-right"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
 				</a>
 			</span>
 			<span class="btn-group pull-right">
@@ -290,6 +290,13 @@ function checkEmptyWorkerTable(e) {
 		var row = "<tr><td>none</td></tr>"
 		$(e + " .workerRowTemplate").after(row);
 	}
+}
+
+$('#workerPanelGroup').on('hide.bs.collapse', toggleChevron);
+$('#workerPanelGroup').on('show.bs.collapse', toggleChevron);
+function toggleChevron(e) {
+	$(e.target).prev('.panel-heading').find('.glyphicon-chevron-down, .glyphicon-chevron-right')
+			.toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 }
 
 $('#workerPanelGroup').on('click', '.resultButton', function() {
