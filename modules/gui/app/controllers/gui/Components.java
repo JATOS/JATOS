@@ -209,7 +209,7 @@ public class Components extends Controller {
 		if (active != null) {
 			componentDao.changeActive(component, active);
 		}
-		return ok(String.valueOf(component.isActive()));
+		return ok(JsonUtils.asJsonNode(component.isActive()));
 	}
 
 	/**

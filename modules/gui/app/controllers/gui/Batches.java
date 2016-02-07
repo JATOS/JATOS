@@ -249,7 +249,7 @@ public class Batches extends Controller {
 			batch.setActive(active);
 			batchDao.update(batch);
 		}
-		return ok(String.valueOf(batch.isActive()));
+		return ok(JsonUtils.asJsonNode(batch.isActive()));
 	}
 
 	/**

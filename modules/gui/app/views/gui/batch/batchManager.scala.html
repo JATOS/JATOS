@@ -111,7 +111,7 @@ function fillBatchTable(batchList) {
 		$(row).removeAttr('id');
 		// Write batch object into toolbar's data attribute so we can use it later on 
 		$(row).data(batch);
-		setButtonActive($(row).find('.activeButton'), batch.active);
+		setRowActive(row, batch.active);
 		$(row).find('.batchId').text(batch.id);
 		$(row).find('.batchTitle').text(batch.title);
 		$(row).find('.resultsBadge').text(batch.resultCount);
@@ -172,8 +172,9 @@ $('#batchTable').on('click', '.activeButton', function() {
 		url : "/jatos/" + @study.getId() +"/batch/" + batch.id
 				+ "/property?active=" + !active,
 		type : "POST",
-		success: function(response) {
-			setButtonActive($(button), response === 'true');
+		success: function(active) {
+			var row = $(button).closest('tr');
+			setRowActive(row, active);
 		},
 		error : function(err) {
 			showError(err.responseText);
@@ -181,19 +182,22 @@ $('#batchTable').on('click', '.activeButton', function() {
 	});
 });
 
-function setButtonActive(button, active) {
+function setRowActive(row, active) {
+	var button = $(row).find('.activeButton');
 	if (active) {
+		row.removeClass("grayout");
 		button.addClass('activeBatch');
-		button.removeClass('btn-warning');
+		button.removeClass('btn-default');
 		button.addClass('btn-batch');
 		button.attr('title', "Click to deactivate this batch");
 		button.html($(button.html())
 				.removeClass('glyphicon-remove')
 				.addClass('glyphicon-ok').prop('outerHTML'));
 	} else {
+		row.addClass("grayout");
 		button.removeClass('activeBatch');
 		button.removeClass('btn-batch');
-		button.addClass('btn-warning');
+		button.addClass('btn-default');
 		button.attr('title', "Click to activate this batch");
 		button.html($(button.html())
 				.removeClass('glyphicon-ok')

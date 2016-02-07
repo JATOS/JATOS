@@ -249,6 +249,9 @@ $(document).ready(function() {
 				}
 			}
 		],
+		"createdRow": function(row, data, index) {
+			setRowActive($(row), data.active);
+		},
 		"order" : [],
 		"oLanguage": {
 			"sEmptyTable": "No components yet"
@@ -324,8 +327,9 @@ $(document).ready(function() {
 			url : "/jatos/" + @study.getId() +"/" + componentId
 					+ "/property?active=" + !active,
 			type : "POST",
-			success: function(response) {
-				setButtonActive($(button), response === 'true');
+			success: function(active) {
+				setButtonActive($(button), active);
+				setRowActive(tr, active);
 			},
 			error : function(err) {
 				showError(err.responseText);
@@ -333,10 +337,18 @@ $(document).ready(function() {
 		});
 	});
 	
+	function setRowActive(tr, active) {
+		if (active) {
+			tr.removeClass("grayout");
+		} else {
+			tr.addClass("grayout");
+		}
+	}
+	
 	function setButtonActive(button, active) {
 		if (active) {
 			button.addClass('activeComponent');
-			button.removeClass('btn-warning');
+			button.removeClass('btn-default');
 			button.addClass('btn-component');
 			button.attr('title', "Click to deactivate this component");
 			button.html($(button.html())
@@ -345,7 +357,7 @@ $(document).ready(function() {
 		} else {
 			button.removeClass('activeComponent');
 			button.removeClass('btn-component');
-			button.addClass('btn-warning');
+			button.addClass('btn-default');
 			button.attr('title', "Click to activate this component");
 			button.html($(button.html())
 					.removeClass('glyphicon-ok')
