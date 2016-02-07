@@ -92,7 +92,7 @@ public class BreadcrumbsService {
 				controllers.gui.routes.Home.home().url());
 		if (last != null) {
 			breadcrumbs.addBreadcrumb(study.getTitle(),
-					controllers.gui.routes.Studies.index(study.getId()).url());
+					controllers.gui.routes.Studies.study(study.getId()).url());
 			breadcrumbs.addBreadcrumb(last, "");
 		} else {
 			breadcrumbs.addBreadcrumb(study.getTitle(), "");
@@ -113,7 +113,7 @@ public class BreadcrumbsService {
 		breadcrumbs.addBreadcrumb(HOME,
 				controllers.gui.routes.Home.home().url());
 		breadcrumbs.addBreadcrumb(study.getTitle(),
-				controllers.gui.routes.Studies.index(study.getId()).url());
+				controllers.gui.routes.Studies.study(study.getId()).url());
 		breadcrumbs.addBreadcrumb(BATCH_MANAGER, controllers.gui.routes.Batches
 				.batchManager(study.getId()).url());
 		breadcrumbs.addBreadcrumb(batch.getTitle(), "");
@@ -158,7 +158,7 @@ public class BreadcrumbsService {
 		breadcrumbs.addBreadcrumb(HOME,
 				controllers.gui.routes.Home.home().url());
 		breadcrumbs.addBreadcrumb(study.getTitle(),
-				controllers.gui.routes.Studies.index(study.getId()).url());
+				controllers.gui.routes.Studies.study(study.getId()).url());
 		breadcrumbs.addBreadcrumb(component.getTitle(), "");
 		breadcrumbs.addBreadcrumb(last, "");
 		String breadcrumbsStr = "";

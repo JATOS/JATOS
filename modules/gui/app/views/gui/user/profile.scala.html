@@ -11,7 +11,7 @@
 <ul class="list-group">
 	@for(study <- user.getStudyList()) {
 	<li class="list-group-item">
-		<a href="@controllers.gui.routes.Studies.index(study.getId())">
+		<a href="@controllers.gui.routes.Studies.study(study.getId())">
 			@study.getTitle() (ID: @study.getId())
 		</a>
 	</li>

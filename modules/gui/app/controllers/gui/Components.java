@@ -88,13 +88,13 @@ public class Components extends Controller {
 		try {
 			checker.checkStandardForComponents(studyId, componentId, component);
 		} catch (BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+			jatosGuiExceptionThrower.throwStudy(e, studyId);
 		}
 
 		if (component.getHtmlFilePath() == null
 				|| component.getHtmlFilePath().trim().isEmpty()) {
 			String errorMsg = MessagesStrings.htmlFilePathEmpty(componentId);
-			jatosGuiExceptionThrower.throwStudyIndex(errorMsg,
+			jatosGuiExceptionThrower.throwStudy(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		session("jatos_run", "single_component_start");
@@ -263,7 +263,7 @@ public class Components extends Controller {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStudyLocked(study);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+			jatosGuiExceptionThrower.throwStudy(e, studyId);
 		}
 	}
 
@@ -275,7 +275,7 @@ public class Components extends Controller {
 			checker.checkStudyLocked(study);
 			checker.checkStandardForComponents(studyId, componentId, component);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+			jatosGuiExceptionThrower.throwStudy(e, studyId);
 		}
 	}
 }

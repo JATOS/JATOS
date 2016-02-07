@@ -12,7 +12,7 @@
 
 <ul class="list-group visible-xs visible-sm">
 	@for(study <- studyList) {
-	<li class="list-group-item"><a class="list-group-item-heading" href="@controllers.gui.routes.Studies.index(study.getId())">@study.getTitle()</a></li>
+	<li class="list-group-item"><a class="list-group-item-heading" href="@controllers.gui.routes.Studies.study(study.getId())">@study.getTitle()</a></li>
 	}
 </ul>
 

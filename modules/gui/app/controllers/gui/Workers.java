@@ -143,7 +143,7 @@ public class Workers extends Controller {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+			jatosGuiExceptionThrower.throwStudy(e, studyId);
 		}
 
 		String baseUrl = ControllerUtils.getReferer();

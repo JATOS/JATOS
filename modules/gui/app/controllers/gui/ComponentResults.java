@@ -77,9 +77,9 @@ public class ComponentResults extends Controller {
 	 * Shows a view with all component results of a component of a study.
 	 */
 	@Transactional
-	public Result index(Long studyId, Long componentId, String errorMsg,
+	public Result componentResults(Long studyId, Long componentId, String errorMsg,
 			int httpStatus) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".componentResults: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
@@ -102,15 +102,15 @@ public class ComponentResults extends Controller {
 	}
 
 	@Transactional
-	public Result index(Long studyId, Long componentId, String errorMsg)
+	public Result componentResults(Long studyId, Long componentId, String errorMsg)
 			throws JatosGuiException {
-		return index(studyId, componentId, errorMsg, Http.Status.OK);
+		return componentResults(studyId, componentId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
-	public Result index(Long studyId, Long componentId)
+	public Result componentResults(Long studyId, Long componentId)
 			throws JatosGuiException {
-		return index(studyId, componentId, null, Http.Status.OK);
+		return componentResults(studyId, componentId, null, Http.Status.OK);
 	}
 
 	/**

@@ -28,7 +28,7 @@ DELETE  /jatos/worker/:workerId/allResultData        @controllers.gui.StudyResul
 GET     /jatos/:studyId/batch/:batchId/results       @controllers.gui.StudyResults.batchesStudyResults(studyId: Long, batchId: Long, workerType: String ?= null)
 GET     /jatos/:studyId/batch/:batchId/tableData     @controllers.gui.StudyResults.tableDataByBatch(studyId: Long, batchId: Long, workerType: String ?= null)
 DELETE  /jatos/componentResult                       @controllers.gui.ComponentResults.remove(componentResultIds: String)
-GET     /jatos/:studyId/:componentId/results         @controllers.gui.ComponentResults.index(studyId: Long, componentId: Long)
+GET     /jatos/:studyId/:componentId/results         @controllers.gui.ComponentResults.componentResults(studyId: Long, componentId: Long)
 GET     /jatos/:studyId/:componentId/tableData       @controllers.gui.ComponentResults.tableDataByComponent(studyId: Long, componentId: Long)
 DELETE  /jatos/:studyId/:componentId/allResults      @controllers.gui.ComponentResults.removeAllOfComponent(studyId: Long, componentId: Long)
 DELETE  /jatos/studyResult                           @controllers.gui.StudyResults.remove(studyResultIds: String)
@@ -55,8 +55,8 @@ GET     /jatos/:studyId/clone                        @controllers.gui.Studies.cl
 POST    /jatos/:studyId/lock/swap                    @controllers.gui.Studies.swapLock(studyId: Long)
 GET     /jatos/:studyId/componentsTableData          @controllers.gui.Studies.tableDataByStudy(studyId: Long)
 GET     /jatos/:studyId/workers                      @controllers.gui.Studies.workers(studyId: Long)
-GET     /jatos/:studyId                              @controllers.gui.Studies.index(studyId: Long)
-GET     /jatos/:studyId/                             @controllers.gui.Studies.index(studyId: Long)
+GET     /jatos/:studyId                              @controllers.gui.Studies.study(studyId: Long)
+GET     /jatos/:studyId/                             @controllers.gui.Studies.study(studyId: Long)
 
 # Batches controller
 GET     /jatos/:studyId/batchManager                         @controllers.gui.Batches.batchManager(studyId: Long)

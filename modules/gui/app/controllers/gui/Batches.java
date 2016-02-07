@@ -95,7 +95,7 @@ public class Batches extends Controller {
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+			jatosGuiExceptionThrower.throwStudy(e, studyId);
 		}
 
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
@@ -382,7 +382,7 @@ public class Batches extends Controller {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, studyId);
+			jatosGuiExceptionThrower.throwStudy(e, studyId);
 		}
 
 		URL jatosURL = null;
@@ -390,7 +390,7 @@ public class Batches extends Controller {
 			jatosURL = ControllerUtils.getRefererUrl();
 		} catch (MalformedURLException e) {
 			String errorMsg = MessagesStrings.COULDNT_GENERATE_JATOS_URL;
-			jatosGuiExceptionThrower.throwStudyIndex(errorMsg,
+			jatosGuiExceptionThrower.throwStudy(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,

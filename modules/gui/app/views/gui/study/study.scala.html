@@ -7,34 +7,30 @@ studyResultsCount: Integer)
 <!-- Toolbar -->
 <div id="studyToolbar" class="btn-toolbar" role="toolbar">
 	<div class="btn-group">
-		<button id="runStudy" type="button" class="btn btn-primary"
+		<button id="runStudy" type="button" class="btn btn-study"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Runs the study as a JATOS worker">
 			Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
 		</button>
-		<button id="studyResults" type="button" class="btn btn-primary"
+		<button id="studyResults" type="button" class="btn btn-study"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows study results">
 			Results <span class="badge" data-toggle="tooltip" data-placement="bottom"
 			title="Number of study results of this study">@studyResultsCount</span>
 		</button>
-		<button id="workers" type="button" class="btn btn-primary"
+		<button id="workers" type="button" class="btn btn-study"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows workers who participated">
-			Workers <span class="badge" >@workerSet.size()</span>
+			Workers <span class="badge" data-toggle="tooltip" data-placement="bottom"
+			title="Number of workers who did this study so far">@workerSet.size()</span>
 		</button>
-		<button id="studyPropertiesButton" type="button" class="btn btn-primary"
+		<button id="studyPropertiesButton" type="button" class="btn btn-study"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Edit this study's properties">
 			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
 		</button>
-		<button id="batchManagerButton" type="button" class="btn btn-primary"
-			data-toggle="tooltip" data-placement="bottom"
-			title="Open Batch Manager to manage your batches or create workers">
-			Batch Manager <span class="glyphicon glyphicon-globe" aria-hidden="true"></span></span>
-		</button>
 		<div class="btn-group">
-			<button type="button" class="btn btn-primary dropdown-toggle"
+			<button type="button" class="btn btn-study dropdown-toggle"
 				data-toggle="dropdown">
 				More <span class="caret"></span>
 			</button>
@@ -67,16 +63,21 @@ studyResultsCount: Integer)
 			</ul>
 		</div>
 	</div>
+	<button id="batchManagerButton" type="button" class="btn btn-batch"
+		data-toggle="tooltip" data-placement="bottom"
+		title="Open Batch Manager to manage your batches or create workers">
+		Batch Manager <span class="glyphicon glyphicon-globe" aria-hidden="true"></span></span>
+	</button>
 	<!-- Content and tooltip of lock button is set later in JS -->
 	<div class="btn-group">
-		<button id="lockStudy" type="button" class="btn btn-primary"
+		<button id="lockStudy" type="button" class="btn btn-study"
 			data-toggle="tooltip" data-placement="bottom"
 			title="">
 			@if(study.isLocked()) {Locked} else {Unlocked}
 		</button>
 	</div>
 	<div class="btn-group">
-		<button type="button" class="btn btn-info dropdown-toggle"
+		<button type="button" class="btn btn-component dropdown-toggle"
 			data-toggle="dropdown">
 			Components <span class="caret"></span>
 		</button>
@@ -125,7 +126,7 @@ studyResultsCount: Integer)
 
 <!-- Template for drag button in Component's row -->
 <div id="componentDragButtonDiv" style="display: none">
-	<button type="button" class="btn btn-sm btn-info dragButton"
+	<button type="button" class="btn btn-sm btn-component dragButton"
 		data-toggle="tooltip" data-placement="bottom" title="">
 	</button>
 </div>
@@ -133,23 +134,24 @@ studyResultsCount: Integer)
 <!-- Template for button toolbar in Component's row -->
 <div id="componentToolbarDiv" style="display: none">
 	<div class="componentBtnGroup btn-group" aria-hidden="true">
-		<button type="button" class="runComponent btn btn-info"
+		<button type="button" class="runComponent btn btn-component"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Runs only this component as a JATOS worker">
 			Run <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
 		</button>
-		<button type="button" class="componentResults btn btn-info"
+		<button type="button" class="componentResults btn btn-component"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Shows only the results of this component">
-			Results <span class="resultsBadge badge"></span>
+			Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+					title="Number of component results only of this component"></span>
 		</button>
-		<button type="button" class="componentPropertiesButton btn btn-info"
+		<button type="button" class="componentPropertiesButton btn btn-component"
 			data-toggle="tooltip" data-placement="bottom"
 			title="Edit this component's properties">
 			Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>
 		</button>
 		<div class="btn-group">
-			<button type="button" class="btn btn-info dropdown-toggle"
+			<button type="button" class="btn btn-component dropdown-toggle"
 				data-toggle="dropdown">
 				More <span class="caret"></span>
 			</button>
@@ -335,14 +337,14 @@ $(document).ready(function() {
 		if (active) {
 			button.addClass('activeComponent');
 			button.removeClass('btn-warning');
-			button.addClass('btn-info');
+			button.addClass('btn-component');
 			button.attr('title', "Click to deactivate this component");
 			button.html($(button.html())
 					.removeClass('glyphicon-remove')
 					.addClass('glyphicon-ok').prop('outerHTML'));
 		} else {
 			button.removeClass('activeComponent');
-			button.removeClass('btn-info');
+			button.removeClass('btn-component');
 			button.addClass('btn-warning');
 			button.attr('title', "Click to activate this component");
 			button.html($(button.html())
@@ -434,11 +436,11 @@ function setLockButton(locked) {
 	if (locked) {
 		$('#lockStudy').html('Locked');
 		$('#lockStudy').addClass('btn-warning');
-		$('#lockStudy').removeClass('btn-primary');
+		$('#lockStudy').removeClass('btn-study');
 		$("#lockStudy").attr("title", "Press to unlock this study and allow changes.");
 	} else {
 		$('#lockStudy').html('Unlocked');
-		$('#lockStudy').addClass('btn-primary');
+		$('#lockStudy').addClass('btn-study');
 		$('#lockStudy').removeClass('btn-warning');
 		$("#lockStudy").attr("title", "Press to lock this study and prohibit changes.");
 	}

@@ -92,11 +92,11 @@ public class Studies extends Controller {
 	}
 
 	/**
-	 * Shows the index view with details regarding a study.
+	 * Shows the study view with details of a study components and so on.
 	 */
 	@Transactional
-	public Result index(Long studyId, int httpStatus) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".index: studyId " + studyId + ", "
+	public Result study(Long studyId, int httpStatus) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".study: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -105,13 +105,13 @@ public class Studies extends Controller {
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study);
 		int studyResultCount = studyResultDao.countByStudy(study);
-		return status(httpStatus, views.html.gui.study.index.render(
+		return status(httpStatus, views.html.gui.study.study.render(
 				loggedInUser, breadcrumbs, study, workerSet, studyResultCount));
 	}
 
 	@Transactional
-	public Result index(Long studyId) throws JatosGuiException {
-		return index(studyId, Http.Status.OK);
+	public Result study(Long studyId) throws JatosGuiException {
+		return study(studyId, Http.Status.OK);
 	}
 
 	/**

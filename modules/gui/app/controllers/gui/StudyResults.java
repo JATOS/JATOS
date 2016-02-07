@@ -94,7 +94,7 @@ public class StudyResults extends Controller {
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+			jatosGuiExceptionThrower.throwStudy(e, study.getId());
 		}
 
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
@@ -121,7 +121,7 @@ public class StudyResults extends Controller {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStandardForBatch(batch, study, batchId);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+			jatosGuiExceptionThrower.throwStudy(e, study.getId());
 		}
 
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
@@ -192,7 +192,7 @@ public class StudyResults extends Controller {
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+			jatosGuiExceptionThrower.throwStudy(e, study.getId());
 		}
 
 		try {

@@ -248,7 +248,7 @@ public class ImportExport extends Controller {
 			json = importExportService.importComponent(study, filePart);
 		} catch (ForbiddenException | BadRequestException | IOException e) {
 			importExportService.cleanupAfterComponentImport();
-			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+			jatosGuiExceptionThrower.throwStudy(e, study.getId());
 		}
 		return ok(json);
 	}
@@ -275,10 +275,10 @@ public class ImportExport extends Controller {
 			importExportService.importComponentConfirmed(study,
 					tempComponentFileName);
 		} catch (ForbiddenException | IOException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+			jatosGuiExceptionThrower.throwStudy(e, study.getId());
 		} catch (Exception e) {
 			// Unexpected exception, but we have to clean up
-			jatosGuiExceptionThrower.throwStudyIndex(e, study.getId());
+			jatosGuiExceptionThrower.throwStudy(e, study.getId());
 		} finally {
 			importExportService.cleanupAfterComponentImport();
 		}
