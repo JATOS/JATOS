@@ -52,7 +52,7 @@
 	<thead>
 		<tr>
 			<!-- If you change something in the head, change it in the footer too! -->
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA">Data</th>
+			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
 			<th>Result ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
 			<th>Duration</th>
@@ -67,7 +67,7 @@
 	<tfoot>
 		<tr>
 			<!-- If you change something in the footer, change it in the head too! -->
-			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA">Data</th>
+			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DATA"></th>
 			<th>Result ID</th>
 			<th data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_START_TIME">Start Time (Server)</th>
 			<th>Duration</th>
@@ -103,7 +103,11 @@ $(document).ready(function() {
 				"class": 'details-control',
 				"orderable": false,
 				"data": null,
-				"defaultContent": ''
+				"render": function (data, type, full, meta) {
+					return '<span class="glyphicon glyphicon-chevron-right" '
+						+ 'data-toggle="tooltip" data-placement="bottom" '
+						+ 'title="Click to expand/collapse this result"></span>';
+				}
 			},
 			{ "data": "id" },
 			{
@@ -142,24 +146,24 @@ $(document).ready(function() {
 		"sRowSelect": "multi",
 		"sRowSelector": "td:not(:first-child):not(:last-child)",
 		"aButtons": [
-  			{
-  				"sExtends": "select_all",
-  				"sButtonText": "Select All"
-  			},
-  			{
-  				"sExtends": "select_all",
-              	"sButtonText": "Select Filtered",
-              	"fnClick": function (nButton, oConfig, oFlash) {
-              		var oTT = TableTools.fnGetInstance('resultsTable');
-              		var rows = $("#myTable").dataTable().$('tr', {"filter":"applied"});
-              		oTT.fnSelectAll(rows);
-  				}
-          	},
-          	{
-  				"sExtends": "select_none",
-  				"sButtonText": "Deselect All",
-  			}
- 		]
+			{
+				"sExtends": "select_all",
+				"sButtonText": "Select All"
+			},
+			{
+				"sExtends": "select_all",
+				"sButtonText": "Select Filtered",
+				"fnClick": function (nButton, oConfig, oFlash) {
+					var oTT = TableTools.fnGetInstance('resultsTable');
+					var rows = $("#myTable").dataTable().$('tr', {"filter":"applied"});
+					oTT.fnSelectAll(rows);
+				}
+			},
+			{
+				"sExtends": "select_none",
+				"sButtonText": "Deselect All",
+			}
+		]
 	});
 	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
 	
@@ -191,6 +195,8 @@ $(document).ready(function() {
 			tr.addClass('shown');
 			tr.next().addClass('info');
 		}
+		$(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
+				.toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 	});
 });
 
