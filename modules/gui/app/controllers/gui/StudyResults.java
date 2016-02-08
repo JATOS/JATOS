@@ -124,8 +124,12 @@ public class StudyResults extends Controller {
 			jatosGuiExceptionThrower.throwStudy(e, study.getId());
 		}
 
+		String breadcrumbsTitle = (workerType == null)
+				? BreadcrumbsService.RESULTS
+				: BreadcrumbsService.RESULTS + " of "
+						+ Worker.getUIWorkerType(workerType) + " workers";
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
-				BreadcrumbsService.RESULTS + " of " + workerType + " Workers");
+				breadcrumbsTitle);
 		String dataUrl = controllers.gui.routes.StudyResults
 				.tableDataByBatch(study.getId(), batch.getId(), workerType)
 				.url();

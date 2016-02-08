@@ -76,6 +76,30 @@ public abstract class Worker {
 	@JsonProperty("uiWorkerType")
 	public abstract String getUIWorkerType();
 
+	/**
+	 * Little helper method that translates a workerType into the UI worker
+	 * type.
+	 */
+	@JsonIgnore
+	public static String getUIWorkerType(String workerType) {
+		switch (workerType) {
+		case JatosWorker.WORKER_TYPE:
+			return JatosWorker.UI_WORKER_TYPE;
+		case GeneralSingleWorker.WORKER_TYPE:
+			return GeneralSingleWorker.UI_WORKER_TYPE;
+		case MTSandboxWorker.WORKER_TYPE:
+			return MTSandboxWorker.UI_WORKER_TYPE;
+		case MTWorker.WORKER_TYPE:
+			return MTWorker.UI_WORKER_TYPE;
+		case PersonalMultipleWorker.WORKER_TYPE:
+			return PersonalMultipleWorker.UI_WORKER_TYPE;
+		case PersonalSingleWorker.WORKER_TYPE:
+			return PersonalSingleWorker.UI_WORKER_TYPE;
+		default:
+			return "Unknown";
+		}
+	}
+
 	public void setId(Long id) {
 		this.id = id;
 	}
