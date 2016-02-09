@@ -60,7 +60,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 			<table class="table workerTable">
 				<tr>
 					<th>Worker ID</th>
-					<th>Comment</th>
+					<th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
 					<th></th>
 				</tr>
 				<!-- Template for Personal Single worker row -->
@@ -95,7 +95,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 			<table class="table workerTable">
 				<tr>
 					<th>Worker ID</th>
-					<th>Comment</th>
+					<th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
 					<th></th>
 				</tr>
 				<!-- Template for Muliple Single worker row -->
@@ -133,8 +133,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 			<table class="table workerTable">
 				<tr>
 					<th>Worker ID</th>
-					<th>MTurk Worker ID</th>
-					<th>Type</th>
+					<th data-toggle="tooltip" data-placement="bottom" title="ID given by MTurk - not JATOS">MTurk Worker ID</th>
+					<th data-toggle="tooltip" data-placement="bottom" title="MTurk or MTurk Sandbox">Type</th>
 				</tr>
 				<!-- Template for MTurk worker row -->
 				<tr class="workerRowTemplate" style="display: none">
