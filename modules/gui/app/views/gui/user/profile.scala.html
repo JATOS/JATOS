@@ -115,8 +115,11 @@ $("#editProfileForm").submit(function(event) {
 			removeAlerts("#editProfileModal");
 			removeFormErrors("#editProfileModal");
 			showWarning("User profile wasn't updated", "#editProfileModal .modal-header");
-			showModalError("#editProfileModal .modal-header", response);
-			showFormErrors("#editProfileModal", response);
+			if (isJson(response.responseText)) {
+				showFormErrors("#editProfileModal", response);
+			} else {
+				showModalError("#editProfileModal .modal-header", response);
+			}
 		}
 	});
 });
@@ -136,8 +139,11 @@ $("#changePasswordForm").submit(function(event) {
 			removeAlerts("#changePasswordModal");
 			removeFormErrors("#changePasswordModal");
 			showWarning("Password wasn't changed", "#changePasswordModal .modal-header");
-			showModalError("#changePasswordModal .modal-header", response);
-			showFormErrors("#changePasswordModal", response);
+			if (isJson(response.responseText)) {
+				showFormErrors("#changePasswordModal", response);
+			} else {
+				showModalError("#changePasswordModal .modal-header", response);
+			}
 		}
 	});
 });

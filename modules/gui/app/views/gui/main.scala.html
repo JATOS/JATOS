@@ -185,6 +185,15 @@ function setButtonWidthToMax(element) {
 	});
 }
 
+function isJson(string) {
+	try {
+		$.parseJSON(string);
+		return true;
+	} catch(error) {
+		return false;
+	}
+}
+
 </script>
 
 <nav id="jatosHeader" class="navbar navbar-inverse navbar-fixed-top"

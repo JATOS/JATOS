@@ -163,8 +163,11 @@ $("#componentPropertiesForm").submit(function(event) {
 			removeAlerts("#componentPropertiesModal");
 			removeFormErrors("#componentPropertiesModal");
 			showWarning("@general.common.MessagesStrings.COMPONENT_WASNT_SAVED", "#componentPropertiesModal .modal-header");
-			showModalError("#componentPropertiesModal .modal-header", response);
-			showFormErrors("#componentPropertiesModal", response);
+			if (isJson(response.responseText)) {
+				showFormErrors("#componentPropertiesModal", response);
+			} else {
+				showModalError("#componentPropertiesModal .modal-header", response);
+			}
 		}
 	});
 });
@@ -181,8 +184,11 @@ $("#componentPropertiesForm").on('click', '.@controllers.gui.Components.EDIT_SAV
 			removeAlerts("#componentPropertiesModal");
 			removeFormErrors("#componentPropertiesModal");
 			showWarning("@general.common.MessagesStrings.COMPONENT_WASNT_SAVED", "#componentPropertiesModal .modal-header");
-			showModalError("#componentPropertiesModal .modal-header", response);
-			showFormErrors("#componentPropertiesModal", response);
+			if (isJson(response.responseText)) {
+				showFormErrors("#componentPropertiesModal", response);
+			} else {
+				showModalError("#componentPropertiesModal .modal-header", response);
+			}
 		}
 	});
 });

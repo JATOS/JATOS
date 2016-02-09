@@ -169,8 +169,11 @@ $("#studyPropertiesForm").submit(function(event) {
 			removeAlerts("#studyPropertiesModal");
 			removeFormErrors("#studyPropertiesModal");
 			showWarning("@general.common.MessagesStrings.STUDY_WASNT_SAVED", "#studyPropertiesModal .modal-header");
-			showModalError("#studyPropertiesModal .modal-header", response);
-			showFormErrors("#studyPropertiesModal", response);
+			if (isJson(response.responseText)) {
+				showFormErrors("#studyPropertiesModal", response);
+			} else {
+				showModalError("#studyPropertiesModal .modal-header", response);
+			}
 		}
 	});
 });

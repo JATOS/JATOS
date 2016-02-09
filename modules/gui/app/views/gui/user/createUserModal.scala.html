@@ -67,8 +67,11 @@ $("#createUserForm").submit(function(event) {
 			removeAlerts("#createUserModal");
 			removeFormErrors("#createUserModal");
 			showWarning("User wasn't created", "#createUserModal .modal-header");
-			showModalError("#createUserModal .modal-header", response);
-			showFormErrors("#createUserModal", response);
+			if (isJson(response.responseText)) {
+				showFormErrors("#createUserModal", response);
+			} else {
+				showModalError("#createUserModal .modal-header", response);
+			}
 		}
 	});
 });

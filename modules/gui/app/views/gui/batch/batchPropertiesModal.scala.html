@@ -193,8 +193,11 @@ $("#batchPropertiesForm").submit(function(event) {
 			removeAlerts('#batchPropertiesModal');
 			removeFormErrors('#batchPropertiesModal');
 			showWarning("@general.common.MessagesStrings.BATCH_WASNT_SAVED", "#batchPropertiesModal .modal-header");
-			showModalError("#batchPropertiesModal .modal-header", response);
-			showFormErrors('#batchPropertiesModal', response)
+			if (isJson(response.responseText)) {
+				showFormErrors('#batchPropertiesModal', response)
+			} else {
+				showModalError("#batchPropertiesModal .modal-header", response);
+			}
 		}
 	});
 });

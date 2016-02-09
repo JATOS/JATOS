@@ -145,8 +145,11 @@ $("#createBatchForm").submit(function(event) {
 			removeAlerts("#createBatchModal");
 			removeFormErrors("#createBatchModal");
 			showWarning("Batch wasn't created", "#createBatchModal .modal-header");
-			showModalError("#createBatchModal .modal-header", response);
-			showFormErrors("#createBatchModal", response);
+			if (isJson(response.responseText)) {
+				showFormErrors("#createBatchModal", response);
+			} else {
+				showModalError("#createBatchModal .modal-header", response);
+			}
 		}
 	});
 });
