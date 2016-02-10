@@ -188,6 +188,7 @@ $("#batchPropertiesForm").submit(function(event) {
 			removeAlerts('#batchPropertiesModal');
 			removeFormErrors('#batchPropertiesModal')
 			$('#batchPropertiesModal').modal('hide');
+			loadBatchList();
 		},
 		error: function(response) {
 			removeAlerts('#batchPropertiesModal');
