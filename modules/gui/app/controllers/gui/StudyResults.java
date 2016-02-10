@@ -23,6 +23,8 @@ import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
+import models.common.workers.MTSandboxWorker;
+import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import play.Logger;
 import play.db.jpa.Transactional;
@@ -280,6 +282,12 @@ public class StudyResults extends Controller {
 					? studyResultDao.findAllByBatch(batch)
 					: studyResultDao.findAllByBatchAndWorkerType(batch,
 							workerType);
+			// If worker type is MT then add MTSandbox on top
+			if (MTWorker.WORKER_TYPE.equals(workerType)) {
+				studyResultList.addAll(
+						studyResultDao.findAllByBatchAndWorkerType(batch,
+								MTSandboxWorker.WORKER_TYPE));
+			}
 			dataAsJson = jsonUtils.allStudyResultsForUI(studyResultList);
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;

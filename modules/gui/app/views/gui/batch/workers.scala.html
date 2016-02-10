@@ -132,7 +132,7 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 				</button>
 				<button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
 					title="Shows study results only of @common.workers.MTWorker.UI_WORKER_TYPE workers">
-					Results <span class="badge" data-toggle="tooltip" data-placement="bottom"
+					Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
 					title="Number of study results that belong to this batch that are done by @common.workers.MTWorker.UI_WORKER_TYPE workers">@(studyResultCountsPerWorker.get(common.workers.MTWorker.WORKER_TYPE) + studyResultCountsPerWorker.get(common.workers.MTSandboxWorker.WORKER_TYPE))</span>
 				</button>
 			</span>
@@ -265,17 +265,18 @@ function fillWorkers(workerList) {
 			fillPersonalSingleRow(worker);
 		} else if (worker.workerType == '@common.workers.PersonalMultipleWorker.WORKER_TYPE') {
 			fillPersonalMultipleRow(worker);
-		} else if (worker.workerType == '@common.workers.MTWorker.WORKER_TYPE') {
+		} else if (worker.workerType == '@common.workers.MTWorker.WORKER_TYPE'
+				|| worker.workerType == '@common.workers.MTSandboxWorker.WORKER_TYPE') {
 			fillMtRow(worker);
 		} else if (worker.workerType == '@common.workers.GeneralSingleWorker.WORKER_TYPE') {
 			fillGeneralSingleRow(worker);
 		}
 	});
-	checkEmptyWorkerTable('#jatosWorkerPanel');
-	checkEmptyWorkerTable('#personalSingleWorkerPanel');
-	checkEmptyWorkerTable('#personalMultipleWorkerPanel');
-	checkEmptyWorkerTable('#mtWorkerPanel');
-	checkEmptyWorkerTable('#generalSingleWorkerPanel');
+	addWorkersBadgeAndEmptyTableText('#jatosWorkerPanel');
+	addWorkersBadgeAndEmptyTableText('#personalSingleWorkerPanel');
+	addWorkersBadgeAndEmptyTableText('#personalMultipleWorkerPanel');
+	addWorkersBadgeAndEmptyTableText('#mtWorkerPanel');
+	addWorkersBadgeAndEmptyTableText('#generalSingleWorkerPanel');
 	setButtonWidthToMax(".resultButton");
 }
 
@@ -327,7 +328,7 @@ function fillGeneralSingleRow(worker) {
 	$("#generalSingleWorkerPanel .workerRowTemplate").after(row);
 }
 
-function checkEmptyWorkerTable(e) {
+function addWorkersBadgeAndEmptyTableText(e) {
 	// subtract 2 for template row and header row
 	var rowCount = $(e + ' tr').length - 2;
 	if (rowCount <= 0) {

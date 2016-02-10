@@ -156,16 +156,18 @@ $(document).ready(function() {
 	
 	function getWorkerType(workerType) {
 		switch (workerType) {
-		case "Jatos":
+		case "@common.workers.JatosWorker.WORKER_TYPE":
 			return '@common.workers.JatosWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-jatos" aria-hidden="true">'
-		case "GeneralSingle":
+		case "@common.workers.GeneralSingleWorker.WORKER_TYPE":
 			return '@common.workers.GeneralSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-general-single" aria-hidden="true">'
-		case "PersonalSingle":
+		case "@common.workers.PersonalSingleWorker.WORKER_TYPE":
 			return '@common.workers.PersonalSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-single" aria-hidden="true">'
-		case "PersonalMultiple":
+		case "@common.workers.PersonalMultipleWorker.WORKER_TYPE":
 			return '@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true">'
-		case "MT":
+		case "@common.workers.MTWorker.WORKER_TYPE":
 			return '@common.workers.MTWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-mturk" aria-hidden="true">'
+		case "@common.workers.MTSandboxWorker.WORKER_TYPE":
+			return '@common.workers.MTSandboxWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-mturk-sandbox" aria-hidden="true">'
 		default:
 			return "unknown";
 		}
