@@ -25,10 +25,12 @@ public class GeneralSingleWorker extends Worker {
 	public GeneralSingleWorker() {
 	}
 
+	@Override
 	public String getWorkerType() {
 		return WORKER_TYPE;
 	}
 
+	@Override
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}

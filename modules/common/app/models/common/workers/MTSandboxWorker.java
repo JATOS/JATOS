@@ -25,7 +25,13 @@ public class MTSandboxWorker extends MTWorker {
 	public MTSandboxWorker(String mtWorkerId) {
 		super(mtWorkerId);
 	}
+	
+	@Override
+	public String getWorkerType() {
+		return WORKER_TYPE;
+	}
 
+	@Override
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}
