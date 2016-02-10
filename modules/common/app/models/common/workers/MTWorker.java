@@ -45,10 +45,12 @@ public class MTWorker extends Worker {
 		return this.mtWorkerId;
 	}
 
+	@Override
 	public String getWorkerType() {
 		return WORKER_TYPE;
 	}
 
+	@Override
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}

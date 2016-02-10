@@ -48,10 +48,12 @@ public class PersonalMultipleWorker extends Worker {
 		return this.comment;
 	}
 
+	@Override
 	public String getWorkerType() {
 		return WORKER_TYPE;
 	}
 
+	@Override
 	public String getUIWorkerType() {
 		return UI_WORKER_TYPE;
 	}
