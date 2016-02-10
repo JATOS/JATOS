@@ -11,14 +11,16 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.JatosWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>
+					<span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+						title="Number of workers of type @common.workers.JatosWorker.UI_WORKER_TYPE who at least started this study"></span>
 				</a>
-				<span class="btn-group pull-right"> 
-					<button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
-						title="Shows study results only of @common.workers.JatosWorker.UI_WORKER_TYPE workers">
-						Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
+			</span>
+			<span class="btn-group pull-right"> 
+				<button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
+					title="Shows study results only of @common.workers.JatosWorker.UI_WORKER_TYPE workers">
+					Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
 					title="Number of study results that belong to this batch that are done by @common.workers.JatosWorker.UI_WORKER_TYPE workers">@studyResultCountsPerWorker.get(common.workers.JatosWorker.WORKER_TYPE)</span>
-					</button>
-				</span>
+				</button>
 			</span>
 		</div>
 		<div id="jatosWorkerTable" class="panel-collapse collapse" role="tabpanel">
@@ -45,6 +47,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
+					<span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+						title="Number of workers of type @common.workers.PersonalSingleWorker.UI_WORKER_TYPE who at least started this study"></span>
 				</a>
 			</span>
 			<span class="btn-group pull-right"> 
@@ -80,6 +84,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
+					<span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+						title="Number of workers of type @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE who at least started this study"></span>
 				</a>
 			</span>
 			<span class="btn-group pull-right">
@@ -115,6 +121,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.MTWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-mturk" aria-hidden="true">
+					<span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+						title="Number of workers of type @common.workers.MTWorker.UI_WORKER_TYPE who at least started this study"></span>
 				</a>
 			</span>
 			<span class="btn-group pull-right">
@@ -153,6 +161,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
+					<span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
+						title="Number of workers of type @common.workers.GeneralSingleWorker.UI_WORKER_TYPE who at least started this study"></span>
 				</a>
 			</span>
 			<span class="btn-group pull-right">
@@ -261,11 +271,11 @@ function fillWorkers(workerList) {
 			fillGeneralSingleRow(worker);
 		}
 	});
-	checkEmptyWorkerTable('#jatosWorkerTable');
-	checkEmptyWorkerTable('#personalSingleWorkerTable');
-	checkEmptyWorkerTable('#personalMultipleWorkerTable');
-	checkEmptyWorkerTable('#mtWorkerTable');
-	checkEmptyWorkerTable('#generalSingleWorkerTable');
+	checkEmptyWorkerTable('#jatosWorkerPanel');
+	checkEmptyWorkerTable('#personalSingleWorkerPanel');
+	checkEmptyWorkerTable('#personalMultipleWorkerPanel');
+	checkEmptyWorkerTable('#mtWorkerPanel');
+	checkEmptyWorkerTable('#generalSingleWorkerPanel');
 	setButtonWidthToMax(".resultButton");
 }
 
@@ -318,11 +328,13 @@ function fillGeneralSingleRow(worker) {
 }
 
 function checkEmptyWorkerTable(e) {
-	var rowCount = $(e + ' tr').length;
-	if (rowCount <= 1) {
+	// subtract 2 for template row and header row
+	var rowCount = $(e + ' tr').length - 2;
+	if (rowCount <= 0) {
 		var row = "<tr><td>none</td></tr>"
 		$(e + " .workerRowTemplate").after(row);
 	}
+	$(e + " .workersBadge").text(rowCount);
 }
 
 $('#workerPanelGroup').on('hide.bs.collapse', toggleChevron);
