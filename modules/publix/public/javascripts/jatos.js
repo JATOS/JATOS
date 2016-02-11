@@ -605,6 +605,7 @@ jatos.joinGroup = function(callbacks) {
  */
 function handleGroupMsg(msg, callbacks) {
 	var groupMsg = jatos.jQuery.parseJSON(msg);
+	updateGroupVars(groupMsg);
 	// Now handle the action and map them to callbacks that were given as
 	// parameter to joinGroup
 	callGroupActionCallbacks(groupMsg, callbacks);
@@ -625,13 +626,12 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 	// Someone opened a group channel; distinguish between the worker running
 	// this study and others
 	if (groupMsg.action == "OPENED") {
-		updateGroupVars(groupMsg);
 		if (groupMsg.memberId == jatos.groupMemberId && callbacks.onOpen) {
 			callbacks.onOpen(groupMsg.memberId);
 		} else if (groupMsg.memberId != jatos.groupMemberId
 				&& callbacks.onMemberOpen) {
 			callbacks.onMemberOpen(groupMsg.memberId);
-			callOnUpdate();
+			callOnUpdate(callbacks);
 		}
 	}
 	// onMemberClose
@@ -639,39 +639,34 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 	// (onClose callback function is handled during groupChannel.onclose)
 	if (groupMsg.action == "CLOSED" && groupMsg.memberId != jatos.groupMemberId
 			&& callbacks.onMemberClose) {
-		updateGroupVars(groupMsg);
 		callbacks.onMemberClose(groupMsg.memberId);
-		callOnUpdate();
+		callOnUpdate(callbacks);
 	}
 	// onMemberJoin
 	// Some member joined (it should not happen, but check the group member ID
 	// (aka study result ID) is not the one of the joined member)
 	if (groupMsg.action == "JOINED" && groupMsg.memberId != jatos.groupMemberId
 			&& callbacks.onMemberJoin) {
-		updateGroupVars(groupMsg);
 		callbacks.onMemberJoin(groupMsg.memberId);
-		callOnUpdate();
+		callOnUpdate(callbacks);
 	}
 	// onMemberLeave
 	// Some member left (it should not happen, but check the group member ID
 	// (aka study result ID) is not the one of the left member)
 	if (groupMsg.action == "LEFT" && groupMsg.memberId != jatos.groupMemberId
 			 && callbacks.onMemberLeave) {
-		updateGroupVars(groupMsg);
 		callbacks.onMemberLeave(groupMsg.memberId);
-		callOnUpdate();
+		callOnUpdate(callbacks);
 	}
 	// onGroupSession
 	// Got updated group session data and version
 	if (groupMsg.action == "GROUP_SESSION" && callbacks.onGroupSession) {
-		updateGroupVars(groupMsg);
 		callbacks.onGroupSession(jatos.groupSessionData);
-		callOnUpdate();
+		callOnUpdate(callbacks);
 	}
 	// onUpdate
 	// Got update
 	if (groupMsg.action == "UPDATE" && callbacks.onUpdate) {
-		updateGroupVars(groupMsg);
 		callbacks.onUpdate();
 	}
 };
@@ -699,14 +694,14 @@ function updateGroupVars(groupMsg) {
 			jatos.groupSessionData = jatos.jQuery.parseJSON(groupMsg.groupSessionData);
 		}
 		if (groupMsg.groupSessionVersion) {
-			groupSessionVersion = jatos.jQuery.parseJSON(groupMsg.groupSessionVersion);
+			groupSessionVersion = groupMsg.groupSessionVersion;
 		}
 	} catch (error) {
 		callingOnError(callbacks.onError, error);
 	}
 }
 
-function callOnUpdate() {
+function callOnUpdate(callbacks) {
 	if (callbacks.onUpdate) {
 		callbacks.onUpdate();
 	}
@@ -757,15 +752,20 @@ jatos.reassignGroup = function(onSuccess, onError) {
 
 /**
  * Sends the group session data via the group channel WebSocket to the JATOS
- * server where it's stored and broadcasted to all members of this group.
+ * server where it's stored and broadcasted to all members of this group. It
+ * either takes an Object as parameter or uses jatos.groupSessionData.
  * 
- * @param {Object} groupSessionData - An object in JSON
+ * @param {optional Object} groupSessionData - An object in JSON; If it's not
+ *             given take jatos.groupSessionData
  */
 jatos.setGroupSessionData = function(groupSessionData) {
 	if (groupChannel && groupChannel.readyState == 1) {
+		if (groupSessionData) {
+			jatos.groupSessionData = groupSessionData;
+		}
 		var msgObj = {};
 		msgObj.action = "GROUP_SESSION";
-		msgObj.groupSessionData = groupSessionData;
+		msgObj.groupSessionData = jatos.groupSessionData;
 		msgObj.groupSessionVersion = groupSessionVersion;
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
