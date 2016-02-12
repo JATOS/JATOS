@@ -52,7 +52,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.index(studyClone.getId())
+				.uri(controllers.gui.routes.Studies.study(studyClone.getId())
 						.url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(OK);
@@ -375,9 +375,11 @@ public class StudiesControllerTest extends AbstractTest {
 
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.header("Referer", "http://www.example.com:9000")
-				.uri(controllers.gui.routes.Studies
-						.showMTurkSourceCode(studyClone.getId()).url());
+				.header("Referer", "http://www.example.com:9000").uri(
+						controllers.gui.routes.Batches
+								.showMTurkSourceCode(studyClone.getId(),
+										studyClone.getDefaultBatch().getId())
+								.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);

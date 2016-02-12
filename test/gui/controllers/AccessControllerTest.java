@@ -95,16 +95,16 @@ public class AccessControllerTest extends AbstractTest {
 		assertThat(contentAsString(result)).contains("is a worker of JATOS");
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesIndex() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Studies.index(studyClone.getId());
+		Call call = controllers.gui.routes.Studies.study(studyClone.getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies
@@ -114,13 +114,13 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesSubmitCreated() throws Exception {
 		Call call = controllers.gui.routes.Studies.submitCreated();
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies
@@ -130,7 +130,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesSubmitEdited() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies
@@ -140,7 +140,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesSwapLock() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.swapLock(studyClone.getId());
@@ -149,7 +149,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesRemove() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.remove(studyClone.getId());
@@ -158,7 +158,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesCloneStudy() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies
@@ -168,7 +168,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesUsers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.users(studyClone.getId());
@@ -177,7 +177,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callUsers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.users(studyClone.getId());
@@ -186,7 +186,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesSubmitChangedUsers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies
@@ -196,7 +196,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesTableDataByStudy() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies
@@ -206,7 +206,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesChangeComponentOrder() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.changeComponentOrder(
@@ -218,7 +218,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesRunStudy() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.runStudy(studyClone.getId(),
@@ -228,17 +228,17 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesShowMTurkSourceCode() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Studies
-				.showMTurkSourceCode(studyClone.getId());
+		Call call = controllers.gui.routes.Batches.showMTurkSourceCode(
+				studyClone.getId(), studyClone.getDefaultBatch().getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudiesWorkers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.workers(studyClone.getId());
@@ -247,7 +247,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentsRunComponent() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Components.runComponent(
@@ -257,7 +257,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentsSubmitCreated() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Components
@@ -267,7 +267,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentsSubmitEdited() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Components.submitEdited(
@@ -277,7 +277,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentsProperties() throws IOException {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Components.properties(
@@ -287,7 +287,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentsChangeProperty() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Components.changeProperty(
@@ -297,7 +297,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentsCloneComponent() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Components.cloneComponent(
@@ -307,7 +307,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentsRemove() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Components.remove(studyClone.getId(),
@@ -317,25 +317,25 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callHome() throws Exception {
 		Call call = controllers.gui.routes.Home.home();
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callImportExportImportStudy() throws Exception {
 		Call call = controllers.gui.routes.ImportExport.importStudy();
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callImportExportImportStudyConfirmed() throws Exception {
 		Call call = controllers.gui.routes.ImportExport.importStudyConfirmed();
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callImportExportImportComponent() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.ImportExport
@@ -345,7 +345,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callImportExportExportComponent() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.ImportExport.exportComponent(
@@ -355,7 +355,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callImportExportExportStudy() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.ImportExport
@@ -365,11 +365,11 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentResultsIndex() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.ComponentResults
-				.index(studyClone.getId(), studyClone.getComponent(1).getId());
+		Call call = controllers.gui.routes.ComponentResults.componentResults(
+				studyClone.getId(), studyClone.getComponent(1).getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
@@ -412,7 +412,7 @@ public class AccessControllerTest extends AbstractTest {
 		return studyResult;
 	}
 
-	//@Test
+	// @Test
 	public void callComponentResultsRemoveAllOfComponent() throws IOException {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.ComponentResults
@@ -423,7 +423,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentResultsTableDataByComponent() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.ComponentResults
@@ -434,14 +434,14 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callComponentResultsExportResultData() throws Exception {
 		Call call = controllers.gui.routes.ImportExport
 				.exportDataOfComponentResults("1");
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callStudyResultsIndex() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.StudyResults
@@ -451,13 +451,13 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudyResultsRemove() throws Exception {
 		Call call = controllers.gui.routes.StudyResults.remove("1");
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callStudyResultsTableDataByStudy() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.StudyResults
@@ -467,33 +467,33 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callStudyResultsTableDataByWorker() throws Exception {
 		Call call = controllers.gui.routes.StudyResults.tableDataByWorker(1l);
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callStudyResultsExportResultData() throws Exception {
 		Call call = controllers.gui.routes.ImportExport
 				.exportDataOfStudyResults("1");
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callUsersProfile() throws Exception {
 		Call call = controllers.gui.routes.Users.profile(testUser.getEmail());
 		checkDeniedAccess(call, Helpers.GET);
 		checkRightUserWithRedirect(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callUsersSubmit() throws Exception {
 		Call call = controllers.gui.routes.Users.submit();
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callUsersSubmitEditedProfile() throws Exception {
 		Call call = controllers.gui.routes.Users
 				.submitEditedProfile(testUser.getEmail());
@@ -501,7 +501,7 @@ public class AccessControllerTest extends AbstractTest {
 		checkRightUserWithRedirect(call, Helpers.POST);
 	}
 
-	//@Test
+	// @Test
 	public void callUsersSubmitChangedPassword() throws Exception {
 		Call call = controllers.gui.routes.Users
 				.submitChangedPassword(testUser.getEmail());
@@ -509,14 +509,14 @@ public class AccessControllerTest extends AbstractTest {
 		checkRightUserWithRedirect(call, Helpers.POST);
 	}
 
-	//@Test
+	// @Test
 	public void callWorkersIndex() throws Exception {
 		Call call = controllers.gui.routes.StudyResults
 				.workersStudyResults(admin.getWorker().getId());
 		checkDeniedAccess(call, Helpers.GET);
 	}
 
-	//@Test
+	// @Test
 	public void callWorkersRemove() throws Exception {
 		Call call = controllers.gui.routes.Workers
 				.remove(admin.getWorker().getId());
@@ -524,7 +524,7 @@ public class AccessControllerTest extends AbstractTest {
 		checkRemoveJatosWorker(call, Helpers.DELETE);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesRunManager() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches
@@ -534,7 +534,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesBatchesByStudy() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches
@@ -544,17 +544,17 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesAllowedWorkers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Workers.workers(
-				studyClone.getId(), studyClone.getDefaultBatch().getId());
+		Call call = controllers.gui.routes.Workers.workers(studyClone.getId(),
+				studyClone.getDefaultBatch().getId());
 		checkDeniedAccess(call, Helpers.GET);
 		checkNotUser(call, studyClone, Helpers.GET);
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesSubmitCreated() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches
@@ -564,7 +564,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesBatch() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Workers.workers(studyClone.getId(),
@@ -574,7 +574,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches.properties(
@@ -584,7 +584,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesSubmitEditedProperties() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches.submitEditedProperties(
@@ -594,28 +594,27 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesChangeProperty() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches.changeProperty(
-				studyClone.getId(), studyClone.getDefaultBatch().getId(),
-				true);
+				studyClone.getId(), studyClone.getDefaultBatch().getId(), true);
 		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
 		removeStudy(studyClone);
 	}
-	
-	//@Test
+
+	// @Test
 	public void callBatchesRemove() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Batches.remove(
-				studyClone.getId(), studyClone.getDefaultBatch().getId());
+		Call call = controllers.gui.routes.Batches.remove(studyClone.getId(),
+				studyClone.getDefaultBatch().getId());
 		checkDeniedAccess(call, Helpers.DELETE);
 		checkNotUser(call, studyClone, Helpers.DELETE);
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesCreatePersonalSingleRun() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches
@@ -625,7 +624,7 @@ public class AccessControllerTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	//@Test
+	// @Test
 	public void callBatchesCreatePersonalMultipleRun() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Batches
