@@ -41,7 +41,20 @@ jatos.httpRetry = 5;
  */
 jatos.httpRetryWait = 1000;
 /**
- * Member IDs of the current members of the group result .
+ * Group member ID is unique for this member (it is actually identical with the
+ * study result ID)
+ */
+jatos.groupMemberId = null;
+/**
+ * Unique ID of this group
+ */
+jatos.groupResultId = null;
+/**
+ * Represents the state of the group in JATOS; only set if group channel is open
+ */
+jatos.groupState = null;
+/**
+ * Member IDs of the current members of the group result
  */
 jatos.groupMembers = [];
 /**
@@ -584,9 +597,9 @@ jatos.joinGroup = function(callbacks) {
 	groupChannel.onclose = function() {
 		joiningGroup = false;
 		reassigningGroup = false;
+		jatos.groupMemberId = null;
 		jatos.groupResultId = null;
 		jatos.groupState = null;
-		jatos.groupMemberId = null;
 		jatos.groupMembers = [];
 		jatos.groupChannels = [];
 		jatos.groupSessionData = null;
@@ -793,6 +806,25 @@ jatos.setGroupFixed = function() {
 		}
 	}
 };
+
+/**
+ * Returns true if this study run joined a group and false otherwise. It doesn't
+ * necessarily mean that we have an open group channel. We can have joined a
+ * group in a prior component. If you want to check for an open group channel
+ * use jatos.hasOpenGroupChannel.
+ */
+jatos.hasJoinedGroup = function() {
+	return jatos.groupResultId != null;
+}
+
+/**
+ * Returns true if we currently have an open group channel and false otherwise.
+ * Since you can't open a group channel without joining a group, it also means
+ * that we joined a group.
+ */
+jatos.hasOpenGroupChannel = function() {
+	return groupChannel && groupChannel.readyState == 1;
+}
 
 /**
  * @return {Boolean} True if the group has reached the maximum amount of active
