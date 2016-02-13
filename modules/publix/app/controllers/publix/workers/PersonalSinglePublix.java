@@ -36,7 +36,7 @@ import utils.common.JsonUtils;
 public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		implements IPublix {
 
-	public static final String PERSONALSINGLE_WORKER_ID = "personalSingleWorkerId";
+	public static final String PERSONAL_SINGLE_WORKER_ID = "personalSingleWorkerId";
 
 	private static final String CLASS_NAME = PersonalSinglePublix.class
 			.getSimpleName();
@@ -47,8 +47,9 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 
 	@Inject
 	PersonalSinglePublix(JPAApi jpa, PersonalSinglePublixUtils publixUtils,
-			PersonalSingleStudyAuthorisation studyAuthorisation, ResultCreator resultCreator,
-			GroupService groupService, ChannelService channelService,
+			PersonalSingleStudyAuthorisation studyAuthorisation,
+			ResultCreator resultCreator, GroupService groupService,
+			ChannelService channelService,
 			PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
@@ -63,9 +64,9 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
-		String workerIdStr = getQueryString(PERSONALSINGLE_WORKER_ID);
+		String workerIdStr = getQueryString(PERSONAL_SINGLE_WORKER_ID);
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "batchId " + batchId + ", " + PERSONALSINGLE_WORKER_ID + " "
+				+ "batchId " + batchId + ", " + PERSONAL_SINGLE_WORKER_ID + " "
 				+ workerIdStr);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);

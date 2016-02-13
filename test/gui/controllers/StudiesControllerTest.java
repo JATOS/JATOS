@@ -402,7 +402,7 @@ public class StudiesControllerTest extends AbstractTest {
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(contentAsString(result))
-				.contains(BreadcrumbsService.WORKERS);
+				.contains(BreadcrumbsService.WORKER_SETUP);
 
 		// Clean up
 		removeStudy(studyClone);

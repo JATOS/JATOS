@@ -26,7 +26,7 @@ public class BreadcrumbsService {
 			.getSimpleName();
 
 	public static final String HOME = "Home";
-	public static final String WORKERS = "Workers";
+	public static final String WORKER_SETUP = "Workers";
 	public static final String MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE = "Mechanical Turk HIT Layout Source Code";
 	public static final String RESULTS = "Results";
 	public static final String BATCH_MANAGER = "Batch Manager";

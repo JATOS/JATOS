@@ -539,13 +539,13 @@ public class PublixInterceptor extends Controller implements IPublix {
 		}
 		// Check for Personal Multiple Worker
 		String pmWorkerId = Publix
-				.getQueryString(PersonalMultiplePublix.PERSONAL_MULTIPLE_ID);
+				.getQueryString(PersonalMultiplePublix.PERSONAL_MULTIPLE_WORKER_ID);
 		if (pmWorkerId != null) {
 			return PersonalMultipleWorker.WORKER_TYPE;
 		}
 		// Check for Personal Single Worker
 		String personalSingleWorkerId = Publix
-				.getQueryString(PersonalSinglePublix.PERSONALSINGLE_WORKER_ID);
+				.getQueryString(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID);
 		if (personalSingleWorkerId != null) {
 			return PersonalSingleWorker.WORKER_TYPE;
 		}

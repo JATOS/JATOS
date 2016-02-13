@@ -132,7 +132,8 @@ public class Workers extends Controller {
 	 * GET request to get the workers page of the given study and batch
 	 */
 	@Transactional
-	public Result workers(Long studyId, Long batchId) throws JatosGuiException {
+	public Result workerSetup(Long studyId, Long batchId)
+			throws JatosGuiException {
 		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
 				+ "batchId " + batchId + ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
@@ -150,8 +151,8 @@ public class Workers extends Controller {
 		Map<String, Integer> studyResultCountsPerWorker = workerService
 				.retrieveStudyResultCountsPerWorker(batch);
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
-				BreadcrumbsService.WORKERS);
-		return ok(views.html.gui.batch.workers.render(loggedInUser, breadcrumbs,
+				BreadcrumbsService.WORKER_SETUP);
+		return ok(views.html.gui.batch.workerSetup.render(loggedInUser, breadcrumbs,
 				batch.getId(), study, baseUrl, studyResultCountsPerWorker));
 	}
 

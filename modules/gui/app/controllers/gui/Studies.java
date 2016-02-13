@@ -393,7 +393,7 @@ public class Studies extends Controller {
 
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
-				BreadcrumbsService.WORKERS);
+				BreadcrumbsService.WORKER_SETUP);
 		return status(httpStatus, views.html.gui.study.studysWorkers
 				.render(loggedInUser, breadcrumbs, study));
 	}

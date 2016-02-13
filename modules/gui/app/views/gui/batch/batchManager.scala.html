@@ -17,7 +17,7 @@
 		<td class="batchTitle"></td>
 		<td>
 			<div class="batchBtnGroup btn-group pull-right" aria-hidden="true">
-				<button type="button" class="batchWorkersButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+				<button type="button" class="batchWorkerSetupButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
 					title="Manage the workers of this batch">
 					Worker Setup 
 				</button>
@@ -117,7 +117,7 @@ function fillBatchTable(batchList) {
 		$("#batchTable tr:last").after(row);
 	});
 	setButtonWidthToMax("#batchTable .batchResultsButton");
-	setButtonWidthToMax("#batchTable .batchWorkersButton");
+	setButtonWidthToMax("#batchTable .batchWorkerSetupButton");
 }
 
 $('#createBatchButton').click(function(event) {
@@ -152,10 +152,10 @@ $("#createBatchForm").submit(function(event) {
 	});
 });
 
-$('#batchTable').on('click', '.batchWorkersButton', function() {
+$('#batchTable').on('click', '.batchWorkerSetupButton', function() {
 	var batch = getBatchData(this);
 	if (!batch) {return} // should never happen
-	window.location.href =  "/jatos/@study.getId()/batch/" + batch.id + "/workers";
+	window.location.href =  "/jatos/@study.getId()/batch/" + batch.id + "/workerSetup";
 });
 
 $('#batchTable').on('click', '.batchResultsButton', function() {

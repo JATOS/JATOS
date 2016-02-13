@@ -35,7 +35,7 @@ import utils.common.JsonUtils;
 public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 		implements IPublix {
 
-	public static final String PERSONAL_MULTIPLE_ID = "personalMultipleId";
+	public static final String PERSONAL_MULTIPLE_WORKER_ID = "personalMultipleWorkerId";
 
 	private static final String CLASS_NAME = PersonalMultiplePublix.class
 			.getSimpleName();
@@ -46,8 +46,9 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 
 	@Inject
 	PersonalMultiplePublix(JPAApi jpa, PersonalMultiplePublixUtils publixUtils,
-			PersonalMultipleStudyAuthorisation studyAuthorisation, ResultCreator resultCreator,
-			GroupService groupService, ChannelService channelService,
+			PersonalMultipleStudyAuthorisation studyAuthorisation,
+			ResultCreator resultCreator, GroupService groupService,
+			ChannelService channelService,
 			PersonalMultipleErrorMessages errorMessages,
 			StudyAssets studyAssets, ComponentResultDao componentResultDao,
 			JsonUtils jsonUtils, StudyResultDao studyResultDao,
@@ -63,7 +64,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
-		String workerId = getQueryString(PERSONAL_MULTIPLE_ID);
+		String workerId = getQueryString(PERSONAL_MULTIPLE_WORKER_ID);
 		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
 				+ "batchId " + batchId + ", " + "workerId " + workerId);
 		Study study = publixUtils.retrieveStudy(studyId);
