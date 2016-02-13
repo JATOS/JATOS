@@ -360,8 +360,8 @@ public class Batches extends Controller {
 		}
 
 		String url = ControllerUtils.getReferer() + "/publix/" + study.getId()
-				+ "/start?" + "batchId=" + batchId + "&" + "personalMultipleId"
-				+ "=" + worker.getId();
+				+ "/start?" + "batchId=" + batchId + "&"
+				+ "personalMultipleWorkerId" + "=" + worker.getId();
 		return ok(url);
 	}
 
