@@ -39,10 +39,19 @@ public class GroupResultDao extends AbstractDao {
 	}
 
 	public List<GroupResult> findAllByBatch(Batch batch) {
-		String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batchId";
+		String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch";
 		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
-		return query.setParameter("batchId", batch).getResultList();
+		return query.setParameter("batch", batch).getResultList();
+	}
+	
+	public List<GroupResult> findAllStartedByBatch(Batch batch) {
+		String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch "
+				+ "AND gr.groupState=:groupState ";
+		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
+				GroupResult.class);
+		return query.setParameter("batch", batch)
+				.setParameter("groupState", GroupState.STARTED).getResultList();
 	}
 
 	/**
@@ -52,13 +61,13 @@ public class GroupResultDao extends AbstractDao {
 	 */
 	public List<GroupResult> findAllMaxNotReached(Batch batch) {
 		String queryStr = "SELECT gr FROM GroupResult gr, Batch b "
-				+ "WHERE gr.batch=:batchId AND b.id=:batchId "
+				+ "WHERE gr.batch=:batch AND b.id=:batch "
 				+ "AND gr.groupState=:groupState "
 				+ "AND (b.maxActiveMembers is null OR size(gr.activeMemberList) < b.maxActiveMembers) "
 				+ "AND (b.maxTotalMembers is null OR ((size(gr.activeMemberList) + size(gr.historyMemberList)) < b.maxTotalMembers))";
 		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
 				GroupResult.class);
-		query.setParameter("batchId", batch);
+		query.setParameter("batch", batch);
 		query.setParameter("groupState", GroupState.STARTED);
 		return query.getResultList();
 	}

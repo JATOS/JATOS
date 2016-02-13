@@ -86,7 +86,8 @@ public class Batch {
 	/**
 	 * Maximum number of workers in this batch in total independent of its
 	 * groups. If there is no limit in active members the value is null.
-	 * JatosWorker does not count here.
+	 * JatosWorker does not count here. The workers who did this batch are
+	 * stored in the workerList.
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private Integer maxTotalWorkers = null;

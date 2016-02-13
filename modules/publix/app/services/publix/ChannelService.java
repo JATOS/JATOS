@@ -80,7 +80,9 @@ public class ChannelService {
 					throws InternalServerErrorPublixException {
 		ActorRef currentGroupDispatcher = getGroupDispatcher(
 				currentGroupResult);
-		ActorRef differentGroupDispatcher = getGroupDispatcher(
+		// Get or create, because if the dispatcher was empty it was shutdown
+		// and has to be recreated
+		ActorRef differentGroupDispatcher = getOrCreateGroupDispatcher(
 				differentGroupResult);
 		if (currentGroupDispatcher == null
 				|| differentGroupDispatcher == null) {

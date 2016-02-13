@@ -1,5 +1,7 @@
 package services.publix;
 
+import java.util.List;
+
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
 import models.common.Study;
@@ -47,6 +49,19 @@ public abstract class PublixHelpers {
 		StudyState state = studyResult.getStudyState();
 		return state == StudyState.FINISHED || state == StudyState.ABORTED
 				|| state == StudyState.FAIL;
+	}
+
+	/**
+	 * Returns true only if every single StudyResult's state from the given list
+	 * is in FINISHED or ABORTED or FAIL. False otherwise.
+	 */
+	public boolean allStudiesDone(List<StudyResult> studyResultList) {
+		for (StudyResult studyResult : studyResultList) {
+			if (!PublixHelpers.studyDone(studyResult)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**

@@ -712,10 +712,10 @@ function callOnUpdate(callbacks) {
  * 
  * @param {optional Function} onSuccess - Function to be called if the
  *            reassignment was successful
- * @param {optional Function} onError - Function to be called if the
+ * @param {optional Function} onFail - Function to be called if the
  *            reassignment was unsuccessful
  */
-jatos.reassignGroup = function(onSuccess, onError) {
+jatos.reassignGroup = function(onSuccess, onFail) {
 	if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup
 			|| (groupChannel && groupChannel.readyState != 1)) {
 		return;
@@ -738,14 +738,14 @@ jatos.reassignGroup = function(onSuccess, onError) {
 			204 : function() {
 				// Unsuccessful reassignment
 				reassigningGroup = false;
-				if (onError) {
-					onError();
+				if (onFail) {
+					onFail();
 				}
 			}
 		},
 		error : function(err) {
 			reassigningGroup = false;
-			callingOnError(onError, getAjaxErrorMsg(err));
+			callingOnError(onFail, getAjaxErrorMsg(err));
 		}
 	});
 };

@@ -12,6 +12,7 @@ import exceptions.publix.InternalServerErrorPublixException;
 import exceptions.publix.NoContentPublixException;
 import models.common.Batch;
 import models.common.GroupResult;
+import models.common.GroupResult.GroupState;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.Worker;
@@ -115,6 +116,7 @@ public class GroupService {
 		currentGroupResult.removeActiveMember(studyResult);
 		differentGroupResult.addActiveMember(studyResult);
 		studyResult.setActiveGroupResult(differentGroupResult);
+		checkAndFinishGroup(currentGroupResult);
 		jpa.withTransaction(() -> {
 			groupResultDao.update(currentGroupResult);
 			groupResultDao.update(differentGroupResult);
@@ -150,10 +152,44 @@ public class GroupService {
 		}
 		groupResult.removeActiveMember(studyResult);
 		studyResult.setActiveGroupResult(null);
+		checkAndFinishGroup(groupResult);
+
 		jpa.withTransaction(() -> {
 			groupResultDao.update(groupResult);
 			studyResultDao.update(studyResult);
 		});
+	}
+
+	/**
+	 * Checks if a GroupResult should be put in state FINISHED and does it.
+	 * There are there reasons to do this:<br>
+	 * All three have in common that the group does have no more active members.
+	 * <br>
+	 * 1. The group is in state FIXED (no new members are allowed to join)<br>
+	 * 2. The max number of workers is reached in the batch<br>
+	 * 3. There is more than one group in state STARTED (one open group is
+	 * enough - more than one makes assembling new groups difficult)
+	 */
+	public void checkAndFinishGroup(GroupResult groupResult) {
+		if (groupResult.getActiveMemberList().isEmpty()) {
+			return;
+		}
+		Batch batch = groupResult.getBatch();
+		if (GroupState.FIXED == groupResult.getGroupState()) {
+			groupResult.setGroupState(GroupState.FINISHED);
+			return;
+		}
+		if (batch.getMaxTotalWorkers() != null
+				&& batch.getWorkerList().size() >= batch.getMaxTotalWorkers()) {
+			groupResult.setGroupState(GroupState.FINISHED);
+			return;
+		}
+		List<GroupResult> startedGroupList = groupResultDao
+				.findAllStartedByBatch(batch);
+		if (startedGroupList.size() > 1) {
+			groupResult.setGroupState(GroupState.FINISHED);
+			return;
+		}
 	}
 
 	/**
@@ -165,6 +201,7 @@ public class GroupService {
 		GroupResult groupResult = studyResult.getActiveGroupResult();
 		if (study.isGroupStudy() && groupResult != null) {
 			moveToHistory(studyResult);
+			checkAndFinishGroup(groupResult);
 			channelService.closeGroupChannel(studyResult, groupResult);
 			channelService.sendLeftMsg(studyResult, groupResult);
 		}
