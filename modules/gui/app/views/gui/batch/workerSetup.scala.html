@@ -462,11 +462,12 @@ function showLinkModal(title, preText, url, postText) {
 	$('#workerRunLinkModal').find('.modal-title').text(title);
 	$('#workerRunLinkModal').find('.modal-body').html(htmlPreText + htmlUrl + htmlPostText);
 	$('#workerRunLinkModal').modal('show');
-	$('#workerRunLinkModal').on('click', '.runButton', function() {
-		var url = $('#workerRunLinkModal .linkUrl').text();
-		window.open(url);
-	});
 }
+
+$('#workerRunLinkModal').on('click', '.runButton', function() {
+	var url = $('#workerRunLinkModal .linkUrl').text();
+	window.open(url);
+});
 
 $('#jatosWorkerPanel').on('click', '.runButton', function() {
 	window.open("@controllers.gui.routes.Studies.runStudy(study.getId(), batchId)");
