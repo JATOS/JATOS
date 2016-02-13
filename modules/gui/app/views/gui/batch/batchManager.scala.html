@@ -17,14 +17,13 @@
 		<td class="batchTitle"></td>
 		<td>
 			<div class="batchBtnGroup btn-group pull-right" aria-hidden="true">
+				<button type="button" class="batchWorkersButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+					title="Manage the workers of this batch">
+					Worker Setup 
+				</button>
 				<button type="button" class="batchPropertiesButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
 					title="Edit this batch's properties">
 					Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
-				<button type="button" class="batchWorkersButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
-					title="Manage the workers of this batch">
-					Workers <span class="workersBadge badge" data-toggle="tooltip" data-placement="bottom"
-					title="Number of workers that started a study in this batch (without Jatos worker)"></span>
-				</button>
 				<button type="button" class="batchResultsButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
 					title="Shows the study results of this batch">
 					Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -115,7 +114,6 @@ function fillBatchTable(batchList) {
 		$(row).find('.batchId').text(batch.id);
 		$(row).find('.batchTitle').text(batch.title);
 		$(row).find('.resultsBadge').text(batch.resultCount);
-		$(row).find('.workersBadge').text(batch.workerCount);
 		$("#batchTable tr:last").after(row);
 	});
 	setButtonWidthToMax("#batchTable .batchResultsButton");
