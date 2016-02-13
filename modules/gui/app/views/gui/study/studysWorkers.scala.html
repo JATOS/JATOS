@@ -37,7 +37,10 @@ $(document).ready(function() {
 						+ data + '/results">' + data + '</a>';
 				}
 			},
-			{ "data": "uiWorkerType" },
+			{
+				"data": "workerType",
+				"render": getUIWorkerTypeWithGlyphicon
+			},
 			{ "data": getOther }
 		]
 	});

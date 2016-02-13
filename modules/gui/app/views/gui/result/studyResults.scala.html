@@ -105,7 +105,7 @@ $(document).ready(function() {
 				}
 			},
 			{	"data": "worker.workerType",
-				"render": getWorkerType
+				"render": getUIWorkerTypeWithGlyphicon
 			},
 			{ 
 				"render": function (data, type, full, meta) {
@@ -153,26 +153,7 @@ $(document).ready(function() {
 		]
 	});
 	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
-	
-	function getWorkerType(workerType) {
-		switch (workerType) {
-		case "@common.workers.JatosWorker.WORKER_TYPE":
-			return '@common.workers.JatosWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-jatos" aria-hidden="true">'
-		case "@common.workers.GeneralSingleWorker.WORKER_TYPE":
-			return '@common.workers.GeneralSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-general-single" aria-hidden="true">'
-		case "@common.workers.PersonalSingleWorker.WORKER_TYPE":
-			return '@common.workers.PersonalSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-single" aria-hidden="true">'
-		case "@common.workers.PersonalMultipleWorker.WORKER_TYPE":
-			return '@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true">'
-		case "@common.workers.MTWorker.WORKER_TYPE":
-			return '@common.workers.MTWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-mturk" aria-hidden="true">'
-		case "@common.workers.MTSandboxWorker.WORKER_TYPE":
-			return '@common.workers.MTSandboxWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-mturk-sandbox" aria-hidden="true">'
-		default:
-			return "unknown";
-		}
-	}
-	
+
 	function getMTWorkerId(data, type, full, meta) {
 		if (data.MTSandboxWorker) {
 			return data.MTSandboxWorker.mtWorkerId;
@@ -182,7 +163,7 @@ $(document).ready(function() {
 		}
 		return "none";
 	}
-	
+
 	function getMessages(data, type, dataToSet) {
 		var messages = [];
 		if (data.errorMsg != null) {
@@ -194,7 +175,7 @@ $(document).ready(function() {
 		}
 		return messages.join("");
 	}
-	
+
 	$('#resultsTable tbody').on('click', 'td.details-control', function() {
 		var tr = $(this).closest('tr');
 		var row = resultsTable.row(tr);
