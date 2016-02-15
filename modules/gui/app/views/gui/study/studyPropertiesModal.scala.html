@@ -120,10 +120,10 @@ function fillStudyPropertiesForm(properties) {
 	$('#studyPropertiesModal .@models.gui.StudyProperties.UUID').closest('.form-group').show();
 	$('#studyPropertiesModal .@models.gui.StudyProperties.TITLE').val(properties['@models.gui.StudyProperties.TITLE']);
 	var description = (properties['@models.gui.StudyProperties.DESCRIPTION']) ? properties['@models.gui.StudyProperties.DESCRIPTION'] : "";
-	$('#studyPropertiesModal .@models.gui.StudyProperties.DESCRIPTION').text(description);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.DESCRIPTION').val(description);
 	$('#studyPropertiesModal .@models.gui.StudyProperties.DIRNAME').val(properties['@models.gui.StudyProperties.DIRNAME']);
 	var comments = (properties['@models.gui.StudyProperties.COMMENTS']) ? properties['@models.gui.StudyProperties.COMMENTS'] : "";
-	$('#studyPropertiesModal .@models.gui.StudyProperties.COMMENTS').text(comments);
+	$('#studyPropertiesModal .@models.gui.StudyProperties.COMMENTS').val(comments);
 	try {
 		var jsonInput = (properties['@models.gui.StudyProperties.JSON_DATA']) ? properties['@models.gui.StudyProperties.JSON_DATA'] : "";
 		var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);

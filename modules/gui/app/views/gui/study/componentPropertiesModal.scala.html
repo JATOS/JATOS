@@ -100,7 +100,7 @@ function fillComponentPropertiesForm(properties) {
 	$('#componentPropertiesModal .@models.gui.ComponentProperties.RELOADABLE').prop('checked', properties['@models.gui.ComponentProperties.RELOADABLE']);
 	$('#componentPropertiesModal .@models.gui.ComponentProperties.HTML_FILE_PATH').val(properties['@models.gui.ComponentProperties.HTML_FILE_PATH']);
 	var comments = (properties['@models.gui.ComponentProperties.COMMENTS']) ? properties['@models.gui.ComponentProperties.COMMENTS'] : "";
-	$('#componentPropertiesModal .@models.gui.ComponentProperties.COMMENTS').text(comments);
+	$('#componentPropertiesModal .@models.gui.ComponentProperties.COMMENTS').val(comments);
 	try {
 		var jsonInput = (properties['@models.gui.ComponentProperties.JSON_DATA']) ? properties['@models.gui.ComponentProperties.JSON_DATA'] : "";
 		var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
