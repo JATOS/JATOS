@@ -75,6 +75,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, workerIdStr);
 		session(BATCH_ID, batch.getId().toString());
+		session(STUDY_ASSETS, study.getDirName());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAllPriorStudyResults(worker, study);

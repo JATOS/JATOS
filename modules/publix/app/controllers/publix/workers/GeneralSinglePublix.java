@@ -84,6 +84,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, worker.getId().toString());
 		session(BATCH_ID, batch.getId().toString());
+		session(STUDY_ASSETS, study.getDirName());
 		Logger.info(CLASS_NAME + ".startStudy: study (study ID " + studyId
 				+ ", batch ID " + batchId + ") " + "assigned to worker with ID "
 				+ worker.getId());

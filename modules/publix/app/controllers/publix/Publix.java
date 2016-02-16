@@ -61,6 +61,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	public static final String BATCH_ID = "batchId";
 	public static final String GROUP_RESULT_ID = "groupResultId";
 	public static final String STUDY_ID = "studyId";
+	public static final String STUDY_ASSETS = "studyAssets";
 	public static final String STUDY_RESULT_ID = "studyResultId";
 	public static final String COMPONENT_ID = "componentId";
 	public static final String COMPONENT_RESULT_ID = "componentResultId";
@@ -200,7 +201,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	public WebSocket<JsonNode> joinGroup(Long studyId) {
 		Logger.info(CLASS_NAME + ".joinGroup: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
-		String workerIdStr = session(Publix.WORKER_ID);
+		String workerIdStr = session(WORKER_ID);
 		// The @Transactional annotation can only be used with Actions.
 		// Since WebSockets aren't considered Actions in Play we have to do
 		// it manually. Additionally we have to catch the PublixExceptions
@@ -257,7 +258,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			InternalServerErrorPublixException, NotFoundPublixException {
 		Logger.info(CLASS_NAME + ".reassignGroup: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
-		String workerIdStr = session(Publix.WORKER_ID);
+		String workerIdStr = session(WORKER_ID);
 		T worker = publixUtils.retrieveTypedWorker(workerIdStr);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
@@ -283,7 +284,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			InternalServerErrorPublixException, NotFoundPublixException {
 		Logger.info(CLASS_NAME + ".leaveGroup: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID));
-		T worker = publixUtils.retrieveTypedWorker(session(Publix.WORKER_ID));
+		T worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);

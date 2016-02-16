@@ -24,7 +24,7 @@ import utils.common.XMLUtils;
 /**
  * @author Kristian Lange
  */
-public abstract class HttpHelpers {
+public class HttpHelpers {
 
 	/**
 	 * Generates the value that will be put in the ID cookie. An ID cookie has a

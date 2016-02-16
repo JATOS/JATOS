@@ -6,20 +6,21 @@ import java.io.IOException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.google.common.base.Strings;
+
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.NotFoundPublixException;
+import general.common.Common;
+import general.common.MessagesStrings;
 import models.common.Component;
 import play.Logger;
 import play.libs.F.Promise;
 import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.publix.PublixErrorMessages;
 import utils.common.ControllerUtils;
 import utils.common.IOUtils;
-
-import com.google.common.base.Strings;
-
-import exceptions.publix.NotFoundPublixException;
-import general.common.Common;
-import general.common.MessagesStrings;
 
 /**
  * Manages web-access to files in the external study assets directories (outside
@@ -41,14 +42,17 @@ public class StudyAssets extends Controller {
 	private final WSClient ws;
 	private final IOUtils ioUtils;
 	private final Common common;
-	
+	private final PublixErrorMessages errorMessages;
+
 	@Inject
-	StudyAssets(WSClient ws, IOUtils ioUtils, Common common) {
+	StudyAssets(WSClient ws, IOUtils ioUtils, Common common,
+			PublixErrorMessages errorMessages) {
 		this.ws = ws;
 		this.ioUtils = ioUtils;
 		this.common = common;
+		this.errorMessages = errorMessages;
 	}
-	
+
 	/**
 	 * Action called while routing. Translates the given file path from the URL
 	 * into a file path of the OS's file system and returns the file.
@@ -57,13 +61,23 @@ public class StudyAssets extends Controller {
 		File file;
 		try {
 			filePath = filePath.replace("/", File.separator);
+			checkProperAssets(filePath);
 			file = ioUtils.getExistingFileSecurely(
 					common.getStudyAssetsRootPath(), filePath);
-			Logger.info(CLASS_NAME + ".at: loading file " + file.getPath()
-					+ ".");
+			Logger.info(CLASS_NAME + ".versioned: loading file "
+					+ file.getPath() + ".");
+		} catch (ForbiddenPublixException e) {
+			String errorMsg = e.getMessage();
+			Logger.info(CLASS_NAME + ".versioned: " + errorMsg);
+			if (ControllerUtils.isAjax()) {
+				return forbidden(errorMsg);
+			} else {
+				return forbidden(views.html.publix.error.render(errorMsg));
+			}
 		} catch (IOException e) {
-			Logger.info(CLASS_NAME + ".at: failed loading from path "
-					+ common.getStudyAssetsRootPath() + File.separator + filePath);
+			Logger.info(CLASS_NAME + ".versioned: failed loading from path "
+					+ common.getStudyAssetsRootPath() + File.separator
+					+ filePath);
 			String errorMsg = "Resource \"" + filePath
 					+ "\" couldn't be found.";
 			if (ControllerUtils.isAjax()) {
@@ -73,6 +87,31 @@ public class StudyAssets extends Controller {
 			}
 		}
 		return ok(file, true);
+	}
+
+	/**
+	 * Throws a ForbiddenPublixException if this request is not allowed to
+	 * access the study assets given in the filePath. For comparison it needs
+	 * the study assets directory name of this study. It gets it either from the
+	 * session or from the request's header.
+	 */
+	private void checkProperAssets(String filePath)
+			throws ForbiddenPublixException {
+		String properStudyAssets;
+		if (session(Publix.STUDY_ASSETS) != null) {
+			properStudyAssets = session(Publix.STUDY_ASSETS);
+		} else if (request().hasHeader(Publix.STUDY_ASSETS)) {
+			properStudyAssets = request().getHeader(Publix.STUDY_ASSETS);
+		} else {
+			throw new ForbiddenPublixException(
+					errorMessages.studyAssetsNotAllowedOutsideRun(filePath));
+		}
+
+		if (!filePath.startsWith(properStudyAssets + File.separator)) {
+			throw new ForbiddenPublixException(
+					errorMessages.studyAssetsNotAllowedOutsideAssets(filePath,
+							properStudyAssets));
+		}
 	}
 
 	public static String getComponentUrlPath(String studyAssetsDirName,
@@ -108,15 +147,21 @@ public class StudyAssets extends Controller {
 
 	/**
 	 * Like an internal redirect or an proxy. The URL in the browser doesn't
-	 * change.
+	 * change. Additionally it adds a header with the study assets name which is
+	 * stored in the session. The study assets name is needed by
+	 * StudyAssets.versioned to verify whether this study run is allowed to
+	 * access those study assets.
 	 */
 	public Promise<Result> forwardTo(String url) {
-		return ws.url(url).get().map(response -> {
-			// Prevent browser from caching pages - this would be an
-			// security issue and additionally confuse the study flow
-				response().setHeader("Cache-control", "no-cache, no-store");
-				return ok(response.getBody()).as("text/html; charset=utf-8");
-			});
+		return ws.url(url)
+				.setHeader(Publix.STUDY_ASSETS, session(Publix.STUDY_ASSETS))
+				.get().map(response -> {
+					// Prevent browser from caching pages - this would be an
+					// security issue and additionally confuse the study flow
+					response().setHeader("Cache-control", "no-cache, no-store");
+					return ok(response.getBody())
+							.as("text/html; charset=utf-8");
+				});
 	}
 
 }

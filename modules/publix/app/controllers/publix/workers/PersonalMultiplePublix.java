@@ -74,6 +74,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 		session(WORKER_ID, workerId);
 		session(BATCH_ID, batch.getId().toString());
+		session(STUDY_ASSETS, study.getDirName());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAllPriorStudyResults(worker, study);
