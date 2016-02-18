@@ -62,8 +62,7 @@ public class Home extends Controller {
 		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));
 		User loggedInUser = userService.retrieveLoggedInUser();
-		List<Study> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
+		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		String breadcrumbs = breadcrumbsService.generateForHome();
 		return status(httpStatus, views.html.gui.home.render(studyList,
 				loggedInUser, breadcrumbs));
@@ -85,8 +84,7 @@ public class Home extends Controller {
 		Logger.info(CLASS_NAME + ".sidebarStudyList: "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		User loggedInUser = userService.retrieveLoggedInUser();
-		List<Study> studyList = studyDao.findAllByUser(loggedInUser
-				.getEmail());
+		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		return ok(jsonUtils.sidebarStudyList(studyList));
 	}
 

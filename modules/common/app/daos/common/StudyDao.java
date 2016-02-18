@@ -1,12 +1,12 @@
 package daos.common;
 
-import java.util.Iterator;
 import java.util.List;
 
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.common.Study;
+import models.common.User;
 import play.db.jpa.JPA;
 
 /**
@@ -59,23 +59,12 @@ public class StudyDao extends AbstractDao {
 		return query.getResultList();
 	}
 
-	public List<Study> findAllByUser(String userEmail) {
+	public List<Study> findAllByUser(User user) {
 		TypedQuery<Study> query = JPA.em().createQuery(
-				"SELECT DISTINCT g FROM User u LEFT JOIN u.studyList g "
-						+ "WHERE u.email = :user",
+				"SELECT s FROM Study s INNER JOIN s.userList u WHERE u = :user",
 				Study.class);
-		query.setParameter("user", userEmail);
-		List<Study> studyList = query.getResultList();
-		// Sometimes the DB returns an element that's just null (bug?). Iterate
-		// through the list and remove all null elements.
-		Iterator<Study> it = studyList.iterator();
-		while (it.hasNext()) {
-			Study study = it.next();
-			if (study == null) {
-				it.remove();
-			}
-		}
-		return studyList;
+		query.setParameter("user", user);
+		return query.getResultList();
 	}
 
 }
