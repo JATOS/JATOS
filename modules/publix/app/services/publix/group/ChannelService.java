@@ -1,4 +1,4 @@
-package services.publix;
+package services.publix.group;
 
 import static akka.pattern.Patterns.ask;
 
@@ -18,13 +18,13 @@ import play.mvc.WebSocket;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import services.publix.akka.messages.GroupDispatcherProtocol.Joined;
-import services.publix.akka.messages.GroupDispatcherProtocol.Left;
-import services.publix.akka.messages.GroupDispatcherProtocol.PoisonChannel;
-import services.publix.akka.messages.GroupDispatcherProtocol.ReassignChannel;
-import services.publix.akka.messages.GroupDispatcherRegistryProtocol.Get;
-import services.publix.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
-import services.publix.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.Joined;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.Left;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.PoisonChannel;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.ReassignChannel;
+import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Get;
+import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
+import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
 
 /**
  * Service class that handles of opening and closing of group channels with

@@ -1,4 +1,4 @@
-package services.publix.akka.actors;
+package services.publix.group.akka.actors;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -6,11 +6,11 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import services.publix.akka.messages.GroupDispatcherProtocol.GroupMsg;
-import services.publix.akka.messages.GroupDispatcherProtocol.PoisonChannel;
-import services.publix.akka.messages.GroupDispatcherProtocol.ReassignChannel;
-import services.publix.akka.messages.GroupDispatcherProtocol.RegisterChannel;
-import services.publix.akka.messages.GroupDispatcherProtocol.UnregisterChannel;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupMsg;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.PoisonChannel;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.ReassignChannel;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.RegisterChannel;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.UnregisterChannel;
 
 /**
  * GroupChannel is an Akka Actor that represents the group channel's WebSocket.

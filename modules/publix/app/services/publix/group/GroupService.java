@@ -1,4 +1,4 @@
-package services.publix;
+package services.publix.group;
 
 import java.util.List;
 
@@ -17,6 +17,9 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.Worker;
 import play.db.jpa.JPAApi;
+import services.publix.PublixErrorMessages;
+import services.publix.PublixHelpers;
+import services.publix.ResultCreator;
 
 /**
  * Handles groups, e.g. joining or leaving a GroupResult. Members of a

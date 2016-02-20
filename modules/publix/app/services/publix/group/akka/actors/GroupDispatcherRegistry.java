@@ -1,4 +1,4 @@
-package services.publix.akka.actors;
+package services.publix.group.akka.actors;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,10 +11,10 @@ import akka.actor.UntypedActor;
 import daos.common.GroupResultDao;
 import play.db.jpa.JPAApi;
 import play.libs.Akka;
-import services.publix.akka.messages.GroupDispatcherRegistryProtocol.Get;
-import services.publix.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
-import services.publix.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
-import services.publix.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
+import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Get;
+import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
+import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
+import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
 
 /**
  * A GroupDispatcherRegistry is an Akka Actor keeps track of all

@@ -37,9 +37,14 @@ jatos.httpTimeout = 60000;
  */
 jatos.httpRetry = 5;
 /**
- * How long should jatos.js wait between a failed HTTP call and a retry.
+ * How long in ms should jatos.js wait between a failed HTTP call and a retry.
  */
 jatos.httpRetryWait = 1000;
+/**
+ * How long in ms should jatos.js wait for an answer after a group session
+ * upload.
+ */
+jatos.groupSessionTimeoutTime = 5000;
 /**
  * Group member ID is unique for this member (it is actually identical with the
  * study result ID)
@@ -67,6 +72,16 @@ jatos.groupChannels = [];
  */
 jatos.groupSessionData = {};
 /**
+ * Intermediate storage for the groupSessionData during uploading to the JATOS
+ * server
+ */
+var groupSessionDataFrozen;
+/**
+ * Timeout for group session upload: How long to we wait for an answer from
+ * JATOS.
+ */
+var groupSessionTimeout;
+/**
  * Version of the current group session data. This is used to prevent concurrent
  * changes of the data.
  */
@@ -93,6 +108,7 @@ var submittingResultData = false;
 var joiningGroup = false;
 var reassigningGroup = false;
 var leavingGroup = false;
+var sendingGroupSession = false;
 var abortingComponent = false;
 
 /**
@@ -626,19 +642,17 @@ function handleGroupMsg(msg, callbacks) {
 	if (groupMsg.msg && callbacks.onMessage) {
 		callbacks.onMessage(groupMsg.msg);
 	}
-	if (groupMsg.error) {
-		callingOnError(callbacks.onError, groupMsg.error);
-	}
 };
 
 function callGroupActionCallbacks(groupMsg, callbacks) {
 	if (!groupMsg.action) {
 		return;
 	}
-	// onOpen and onMemberOpen
-	// Someone opened a group channel; distinguish between the worker running
-	// this study and others
-	if (groupMsg.action == "OPENED") {
+	switch(groupMsg.action) {
+	case "OPENED":
+		// onOpen and onMemberOpen
+		// Someone opened a group channel; distinguish between the worker running
+		// this study and others
 		if (groupMsg.memberId == jatos.groupMemberId && callbacks.onOpen) {
 			callbacks.onOpen(groupMsg.memberId);
 		} else if (groupMsg.memberId != jatos.groupMemberId
@@ -646,41 +660,53 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 			callbacks.onMemberOpen(groupMsg.memberId);
 			callOnUpdate(callbacks);
 		}
-	}
-	// onMemberClose
-	// Some member closed its group channel
-	// (onClose callback function is handled during groupChannel.onclose)
-	if (groupMsg.action == "CLOSED" && groupMsg.memberId != jatos.groupMemberId
-			&& callbacks.onMemberClose) {
+		break;
+	case "CLOSED":
+		// onMemberClose
+		// Some member closed its group channel
+		// (onClose callback function is handled during groupChannel.onclose)
 		callbacks.onMemberClose(groupMsg.memberId);
 		callOnUpdate(callbacks);
-	}
-	// onMemberJoin
-	// Some member joined (it should not happen, but check the group member ID
-	// (aka study result ID) is not the one of the joined member)
-	if (groupMsg.action == "JOINED" && groupMsg.memberId != jatos.groupMemberId
-			&& callbacks.onMemberJoin) {
+		break;
+	case "JOINED":
+		// onMemberJoin
+		// Some member joined (it should not happen, but check the group member ID
+		// (aka study result ID) is not the one of the joined member)
 		callbacks.onMemberJoin(groupMsg.memberId);
 		callOnUpdate(callbacks);
-	}
-	// onMemberLeave
-	// Some member left (it should not happen, but check the group member ID
-	// (aka study result ID) is not the one of the left member)
-	if (groupMsg.action == "LEFT" && groupMsg.memberId != jatos.groupMemberId
-			 && callbacks.onMemberLeave) {
+		break;
+	case "LEFT":
+		// onMemberLeave
+		// Some member left (it should not happen, but check the group member ID
+		// (aka study result ID) is not the one of the left member)
 		callbacks.onMemberLeave(groupMsg.memberId);
 		callOnUpdate(callbacks);
-	}
-	// onGroupSession
-	// Got updated group session data and version
-	if (groupMsg.action == "GROUP_SESSION" && callbacks.onGroupSession) {
+		break;
+	case "SESSION":
+		// onGroupSession
+		// Got updated group session data and version
 		callbacks.onGroupSession(jatos.groupSessionData);
 		callOnUpdate(callbacks);
-	}
-	// onUpdate
-	// Got update
-	if (groupMsg.action == "UPDATE" && callbacks.onUpdate) {
+		break;
+	case "UPDATE":
+		// onUpdate
+		// Got update
 		callbacks.onUpdate();
+		break;
+	case "SESSION_ACK":
+		sendingGroupSession = false;
+		window.clearTimeout(groupSessionTimeout);
+		break;
+	case "SESSION_FAIL":
+		sendingGroupSession = false;
+		window.clearTimeout(groupSessionTimeout);
+		uploadGroupSessionData(groupSessionDataFrozen);
+		break;
+	case "ERROR":
+		// onError or jatos.onError
+		// Got an error
+		callingOnError(callbacks.onError, groupMsg.errorMsg);
+		break;
 	}
 };
 
@@ -771,24 +797,44 @@ jatos.reassignGroup = function(onSuccess, onFail) {
  * @param {optional Object} groupSessionData - An object in JSON; If it's not
  *             given take jatos.groupSessionData
  */
-jatos.setGroupSessionData = function(groupSessionData) {
-	if (groupChannel && groupChannel.readyState == 1) {
-		if (groupSessionData) {
-			jatos.groupSessionData = groupSessionData;
-		}
-		var msgObj = {};
-		msgObj.action = "GROUP_SESSION";
-		msgObj.groupSessionData = jatos.groupSessionData;
-		msgObj.groupSessionVersion = groupSessionVersion;
-		try {
-			groupChannel.send(JSON.stringify(msgObj));
-		} catch (error) {
-			if (onJatosError) {
-				onJatosError(error);
-			}
-		}
+jatos.setGroupSessionData = function(groupSessionData, onError) {
+	if (!groupChannel || groupChannel.readyState != 1) {
+		callingOnError(onError, "No open group channel");
+		return;
 	}
+	if (sendingGroupSession) {
+		callingOnError(onError, "Can send only one group session at a time");
+		return;
+	}
+	sendingGroupSession = true;
+	if (groupSessionData) {
+		jatos.groupSessionData = groupSessionData;
+	}
+	// Store the current state in case we have to resent it
+	groupSessionDataFrozen = Object.freeze(jatos.groupSessionData);
+	uploadGroupSessionData(jatos.groupSessionData, onError);
 };
+
+function uploadGroupSessionData(groupSessionData, onError) {
+	if (!groupChannel || groupChannel.readyState != 1) {
+		return;
+	}
+	sendingGroupSession = true;
+	
+	var msgObj = {};
+	msgObj.action = "SESSION";
+	msgObj.groupSessionData = groupSessionData;
+	msgObj.groupSessionVersion = groupSessionVersion;
+	try {
+		groupChannel.send(JSON.stringify(msgObj));
+		// Setup timeout: How long to wait for an answer from JATOS.
+		groupSessionTimeout = window.setTimeout(function() {
+			callingOnError(onError, "Couldn't set group session.");
+		}, jatos.groupSessionTimeoutTime);
+	} catch (error) {
+		callingOnError(onError, error);
+	}
+}
 
 /**
  * Ask the JATOS server to fix this group.

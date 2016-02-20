@@ -1,4 +1,4 @@
-package services.publix.akka.messages;
+package services.publix.group.akka.messages;
 
 import akka.actor.ActorRef;
 

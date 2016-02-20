@@ -30,14 +30,14 @@ import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
-import services.publix.ChannelService;
-import services.publix.GroupService;
 import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
-import services.publix.WebSocketBuilder;
+import services.publix.group.ChannelService;
+import services.publix.group.GroupService;
+import services.publix.group.WebSocketBuilder;
 import utils.common.ControllerUtils;
 import utils.common.JsonUtils;
 

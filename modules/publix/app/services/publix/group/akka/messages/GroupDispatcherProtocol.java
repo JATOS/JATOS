@@ -1,4 +1,4 @@
-package services.publix.akka.messages;
+package services.publix.group.akka.messages;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -93,7 +93,7 @@ public class GroupDispatcherProtocol {
 		 * All possible group actions a group action message can have.
 		 */
 		public enum GroupAction {
-			JOINED, LEFT, OPENED, CLOSED, GROUP_SESSION, FIXED, UPDATE
+			JOINED, LEFT, OPENED, CLOSED, SESSION, SESSION_ACK, SESSION_FAIL, FIXED, UPDATE, ERROR
 		};
 
 		public GroupActionMsg(ObjectNode jsonNode) {
@@ -111,21 +111,7 @@ public class GroupDispatcherProtocol {
 		public static final String CHANNELS = "channels";
 		public static final String GROUP_SESSION_DATA = "groupSessionData";
 		public static final String GROUP_SESSION_VERSION = "groupSessionVersion";
-
-	}
-
-	/**
-	 * A special GroupMsg that contains an error message send from the
-	 * GroupDispatcher to a group member. A GroupActionMsg is specified by an
-	 * key named 'error' in the JSON node.
-	 */
-	public static class GroupErrorMsg extends GroupMsg {
-
-		public static final String ERROR = "error";
-
-		public GroupErrorMsg(ObjectNode jsonNode) {
-			super(jsonNode);
-		}
+		public static final String ERROR_MSG = "errorMsg";
 
 	}
 

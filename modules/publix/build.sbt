@@ -5,6 +5,7 @@ name := "jatos-publix"
 Common.settings
 
 libraryDependencies ++= Seq(
+	"org.apache.commons" % "commons-collections4" % "4.0"
 )
 
 // Compile the project before generating Eclipse files, so that .class files for views and routes are present

@@ -1,8 +1,8 @@
-package services.publix;
+package services.publix.group;
 
 import play.mvc.Result;
 import play.mvc.WebSocket;
-import services.publix.akka.actors.GroupChannel;
+import services.publix.group.akka.actors.GroupChannel;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 
