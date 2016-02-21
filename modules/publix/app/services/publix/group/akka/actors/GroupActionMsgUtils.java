@@ -2,9 +2,11 @@ package services.publix.group.akka.actors;
 
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import models.common.GroupResult;
+import models.common.StudyResult;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
 import utils.common.JsonUtils;
@@ -39,8 +41,16 @@ public class GroupActionMsgUtils {
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResult.getId());
 		objectNode.put(GroupActionMsg.GROUP_STATE,
 				groupResult.getGroupState().name());
-		objectNode.put(GroupActionMsg.MEMBERS,
-				String.valueOf(groupResult.getActiveMemberList()));
+		ArrayNode members = JsonUtils.OBJECTMAPPER.createArrayNode();
+		for (StudyResult studyResult : groupResult.getActiveMemberList()) {
+			members.add(String.valueOf(studyResult.getId()));
+		}
+		objectNode.set(GroupActionMsg.MEMBERS, members);
+		ArrayNode channels = JsonUtils.OBJECTMAPPER.createArrayNode();
+		for (Long id : studyResultIdSet) {
+			channels.add(String.valueOf(id));
+		}
+		objectNode.set(GroupActionMsg.MEMBERS, members);
 		objectNode.put(GroupActionMsg.CHANNELS,
 				String.valueOf(studyResultIdSet));
 		objectNode.put(GroupActionMsg.GROUP_SESSION_DATA,

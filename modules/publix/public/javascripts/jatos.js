@@ -723,7 +723,7 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 */
 function updateGroupVars(groupMsg) {
 	if (groupMsg.groupResultId) {
-		jatos.groupResultId = groupMsg.groupResultId;
+		jatos.groupResultId = groupMsg.groupResultId.toString();
 		// Group member ID is equal to study result ID
 		jatos.groupMemberId = jatos.studyResultId;
 	}
@@ -732,10 +732,10 @@ function updateGroupVars(groupMsg) {
 	}
 	try {
 		if (groupMsg.members) {
-			jatos.groupMembers = jatos.jQuery.parseJSON(groupMsg.members);
+			jatos.groupMembers = groupMsg.members;
 		}
 		if (groupMsg.channels) {
-			jatos.groupChannels = jatos.jQuery.parseJSON(groupMsg.channels);
+			jatos.groupChannels = groupMsg.channels;
 		}
 		if (groupMsg.groupSessionData) {
 			jatos.groupSessionData = jatos.jQuery.parseJSON(groupMsg.groupSessionData);
