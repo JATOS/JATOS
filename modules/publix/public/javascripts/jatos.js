@@ -665,33 +665,41 @@ function callGroupActionCallbacks(groupMsg, callbacks) {
 		// onMemberClose
 		// Some member closed its group channel
 		// (onClose callback function is handled during groupChannel.onclose)
-		callbacks.onMemberClose(groupMsg.memberId);
-		callOnUpdate(callbacks);
+		if (groupMsg.memberId != jatos.groupMemberId && callbacks.onMemberClose) {
+			callbacks.onMemberClose(groupMsg.memberId);
+			callOnUpdate(callbacks);
+		}
 		break;
 	case "JOINED":
 		// onMemberJoin
 		// Some member joined (it should not happen, but check the group member ID
 		// (aka study result ID) is not the one of the joined member)
-		callbacks.onMemberJoin(groupMsg.memberId);
-		callOnUpdate(callbacks);
+		if (groupMsg.memberId != jatos.groupMemberId && callbacks.onMemberJoin) {
+			callbacks.onMemberJoin(groupMsg.memberId);
+			callOnUpdate(callbacks);
+		}
 		break;
 	case "LEFT":
 		// onMemberLeave
 		// Some member left (it should not happen, but check the group member ID
 		// (aka study result ID) is not the one of the left member)
-		callbacks.onMemberLeave(groupMsg.memberId);
-		callOnUpdate(callbacks);
+		if (groupMsg.memberId != jatos.groupMemberId && callbacks.onMemberLeave) {
+			callbacks.onMemberLeave(groupMsg.memberId);
+			callOnUpdate(callbacks);
+		}
 		break;
 	case "SESSION":
 		// onGroupSession
 		// Got updated group session data and version
-		callbacks.onGroupSession(jatos.groupSessionData);
-		callOnUpdate(callbacks);
+		if (callbacks.onGroupSession) {
+			callbacks.onGroupSession(jatos.groupSessionData);
+			callOnUpdate(callbacks);
+		}
 		break;
 	case "UPDATE":
 		// onUpdate
 		// Got update
-		callbacks.onUpdate();
+		callOnUpdate(callbacks);
 		break;
 	case "SESSION_ACK":
 		sendingGroupSession = false;
