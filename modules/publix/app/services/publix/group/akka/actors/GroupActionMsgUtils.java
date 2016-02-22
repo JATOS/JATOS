@@ -50,9 +50,7 @@ public class GroupActionMsgUtils {
 		for (Long id : studyResultIdSet) {
 			channels.add(String.valueOf(id));
 		}
-		objectNode.set(GroupActionMsg.MEMBERS, members);
-		objectNode.put(GroupActionMsg.CHANNELS,
-				String.valueOf(studyResultIdSet));
+		objectNode.set(GroupActionMsg.CHANNELS, channels);
 		objectNode.put(GroupActionMsg.GROUP_SESSION_DATA,
 				groupResult.getGroupSessionData());
 		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
