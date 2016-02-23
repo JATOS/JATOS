@@ -206,7 +206,7 @@ public class StudyService {
 		studyDao.create(study);
 
 		if (study.getBatchList().isEmpty()) {
-			// Create default batch if we have no batch 
+			// Create default batch if we have no batch
 			Batch defaultBatch = batchService.createDefaultBatch(study,
 					loggedInUser);
 			study.addBatch(defaultBatch);
@@ -324,7 +324,8 @@ public class StudyService {
 
 	/**
 	 * Removes the given study, its components, component results, study
-	 * results, group results and batches
+	 * results, group results and batches and persists the changes to the
+	 * database.
 	 */
 	public void remove(Study study) {
 		// Remove all study's components and their ComponentResults

@@ -158,6 +158,10 @@ public class BatchService {
 		return batch;
 	}
 
+	/**
+	 * Removes batch, all it's StudyResults and GroupResults and persists the
+	 * changes to the database.
+	 */
 	public void remove(Batch batch) {
 		// Update Study
 		Study study = batch.getStudy();
