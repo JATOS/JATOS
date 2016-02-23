@@ -3,10 +3,10 @@
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
 <!-- Worker Info Panel -->
-<div class="panel panel-default">
+<div id="workerInfoPanel" class="panel panel-default">
 	<div class="panel-body">
 	Worker ID: @worker.getId()<br>
-	Worker Type: @worker.getUIWorkerType()<br>
+	<span class="workerType">Worker Type: </span><br>
 	@if(worker.getWorkerType().equals(common.workers.MTWorker.WORKER_TYPE) || worker.getWorkerType().equals(common.workers.MTSandboxWorker.WORKER_TYPE)) {
 		MTurk Worker ID: @worker.asInstanceOf[common.workers.MTWorker].getMTWorkerId()
 	}
@@ -84,6 +84,8 @@
 <script type="text/javascript">
 
 showInfo("@general.common.MessagesStrings.RESULTS_INFO");
+
+$('#workerInfoPanel .workerType').append(getUIWorkerTypeWithGlyphicon('@worker.getWorkerType()'));;
 
 var resultsTable;
 $(document).ready(function() {

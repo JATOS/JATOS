@@ -27,28 +27,28 @@
 						<div class="col-xs-9" id="allowedWorkerTypes">
 							<label class="checkbox-inline">
 								<input type="checkbox" class="@common.workers.JatosWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE"
-										>@common.workers.JatosWorker.UI_WORKER_TYPE
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
-							</label>
-							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.PersonalMultipleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE"
-										>@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
+										>@common.workers.JatosWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>&nbsp;&nbsp;&nbsp;&nbsp;
 							</label>
 							<label class="checkbox-inline">
 								<input type="checkbox" class="@common.workers.PersonalSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE"
-										>@common.workers.PersonalSingleWorker.UI_WORKER_TYPE
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide an ID (some pseudonym or ID) when creating it." aria-hidden="true"></span>
+										>@common.workers.PersonalSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it." aria-hidden="true"></span>&nbsp;&nbsp;&nbsp;&nbsp;
 							</label>
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE"
-										>@common.workers.GeneralSingleWorker.UI_WORKER_TYPE
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
+								<input type="checkbox" class="@common.workers.PersonalMultipleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE"
+										>@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it." aria-hidden="true"></span>&nbsp;&nbsp;&nbsp;&nbsp;
 							</label>
 							<label class="checkbox-inline">
 								<input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE"
-										>@common.workers.MTWorker.UI_WORKER_TYPE
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
+										>@common.workers.MTWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-mturk" aria-hidden="true"></span>
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>&nbsp;&nbsp;&nbsp;&nbsp;
+							</label>
+							<label class="checkbox-inline">
+								<input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE"
+										>@common.workers.GeneralSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
+										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
 							</label>
 						</div>
 					</div>
@@ -109,10 +109,6 @@
 
 <script>
 
-@if(!study.isGroupStudy) {
-$('#batchPropertiesModal .groupProperties').fadeTo(0, 0.5)
-}
-
 $('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED').change(function() {
 	$('#batchPropertiesModal .@models.gui.BatchProperties.MAX_TOTAL_WORKERS').prop("disabled", !this.checked);
 });
@@ -155,24 +151,35 @@ function fillbatchPropertiesForm(properties) {
 		$('#batchPropertiesModal' + ' .' + workerType).prop('checked', true);
 	});
 	// Group properties
+	@if(!study.isGroupStudy) {
+		$('#batchPropertiesModal .groupProperties').fadeTo(0, 0.5);
+		$("#batchPropertiesModal .groupProperties :input").prop("disabled", true);
+	} else {
+		$('#batchPropertiesModal .groupProperties').fadeTo(0, 1);
+		$("#batchPropertiesModal .groupProperties :input").prop("disabled", false);
+	}
 	setInputGroupWithCheckbox('batchPropertiesModal',
 			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED',
 			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBERS', properties);
 	setInputGroupWithCheckbox('batchPropertiesModal',
 			'@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED',
 			'@models.gui.BatchProperties.MAX_TOTAL_MEMBERS', properties);
+	$('#batchPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", @study.isLocked());
+	if (@study.isLocked()) {
+		showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#batchPropertiesModal .modal-header");
+	}
 }
 
-function setInputGroupWithCheckbox(modal, checkbox, input, properties) {
+function setInputGroupWithCheckbox(modal, checkboxVarName, inputVarName, properties) {
 	// Don't remove the space in the ' .'!
-	if (properties[checkbox]) {
-		$('#' + modal + ' .' + checkbox).prop('checked', true);
-		$('#' + modal + ' .' + input).prop('disabled', false);
-		$('#' + modal + ' .' + input).val(properties[input]);
+	if (properties[checkboxVarName]) {
+		$('#' + modal + ' .' + checkboxVarName).prop('checked', true);
+		$('#' + modal + ' .' + inputVarName).prop('disabled', false);
+		$('#' + modal + ' .' + inputVarName).val(properties[inputVarName]);
 	} else {
-		$('#' + modal + ' .' + checkbox).prop('checked', false);
-		$('#' + modal + ' .' + input).prop('disabled', true);
-		$('#' + modal + ' .' + input).val('');
+		$('#' + modal + ' .' + checkboxVarName).prop('checked', false);
+		$('#' + modal + ' .' + inputVarName).prop('disabled', true);
+		$('#' + modal + ' .' + inputVarName).val('');
 	}
 }
 

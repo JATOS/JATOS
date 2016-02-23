@@ -7,7 +7,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	<div class="panel panel-default" id="jatosWorkerPanel">
 		<div class="panel-heading">
 			 <span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#jatosWorkerTable">
+				<a role="button" data-toggle="collapse" href="#jatosWorkerTable" data-toggle="tooltip"
+					title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.JatosWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>
@@ -43,7 +44,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	<div class="panel panel-default" id="personalSingleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#personalSingleWorkerTable">
+				<a role="button" data-toggle="collapse" href="#personalSingleWorkerTable"
+					data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
@@ -80,7 +82,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	<div class="panel panel-default" id="personalMultipleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#personalMultipleWorkerTable">
+				<a role="button" data-toggle="collapse" href="#personalMultipleWorkerTable"
+					data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
@@ -117,7 +120,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	<div class="panel panel-default" id="mtWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#mtWorkerTable">
+				<a role="button" data-toggle="collapse" href="#mtWorkerTable"
+					data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.MTWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-mturk" aria-hidden="true"></span>
@@ -157,7 +161,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	<div class="panel panel-default" id="generalSingleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#generalSingleWorkerTable">
+				<a role="button" data-toggle="collapse" href="#generalSingleWorkerTable"
+					data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
@@ -315,7 +320,7 @@ function fillMtRow(worker) {
 	$(row).removeClass('workerRowTemplate');
 	$(row).find('.workerId').text(worker.id);
 	$(row).find('.mtWorkerId').text(worker.mtWorkerId);
-	$(row).find('.workerType').text(worker.uiWorkerType);
+	$(row).find('.workerType').html(getUIWorkerTypeWithGlyphicon(worker.workerType));
 	$(row).data(worker);
 	$("#mtWorkerPanel .workerRowTemplate").after(row);
 }
