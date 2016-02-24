@@ -1,10 +1,18 @@
-@(loggedInUser: common.User, breadcrumbs: String, study: common.Study,
-batch: common.Batch, jatosUrl: java.net.URL)
+@(study: common.Study, batchId: Long, jatosUrl: java.net.URL)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
-
-<h3>Source code for Mechanical Turk</h3>
-
+<!-- Batch Properties Modal -->
+<div class="modal fade" id="mtSourceCodeModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title">Source Code for Mechanical Turk</h4>
+			</div>
+			<div class="modal-body">
+				<p><b>Copy & paste</b> this code into the 'source' field of your study's design layout in Mechanical Turk. Don't change it.</p>
+				<p>Clicking on the text will select the whole source code.</p>
+			
+<!-- Don't change indentation - it screws up the view -->		
 <pre><code id="mtSourceCode">
 &lt;link href=&quot;https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot; /&gt;
 &lt;section class=&quot;container&quot; id=&quot;SurveyLink&quot; style=&quot;margin-bottom:15px; padding: 10px 10px; font-family: Verdana, Geneva, sans-serif; color:#333333; font-size:0.9em;&quot;&gt;
@@ -65,7 +73,7 @@ batch: common.Batch, jatosUrl: java.net.URL)
 			// Show accepted HIT
 			document.getElementById(&quot;previewHit&quot;).style.display = &quot;none&quot;;
 			document.getElementById(&quot;acceptedHit&quot;).style.display = &quot;block&quot;;
-			var studyUrlHref = host + studyPath + &quot;?batchId=@batch.getId()&&quot; + query;
+			var studyUrlHref = host + studyPath + &quot;?batchId=@batchId&&quot; + query;
 			var studyUrlText = &quot;link to HIT&quot;;
 		}
 		document.getElementById(&quot;studyUrl&quot;).setAttribute(&quot;href&quot;, studyUrlHref);
@@ -74,10 +82,17 @@ batch: common.Batch, jatosUrl: java.net.URL)
 &lt;/script&gt;
 </code></pre>
 
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 
 var studyId = @study.getId();
-showInfo("Copy & paste this code into the 'source' field of your study's design layout in Mechanical Turk");
 
 $('#mtSourceCode').on("click", function(e) {
 	e.preventDefault();
@@ -103,4 +118,3 @@ function selectText(element) {
 
 </script>
 
-}

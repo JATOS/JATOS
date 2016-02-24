@@ -1,5 +1,5 @@
 @(loggedInUser: common.User, breadcrumbs: String, batchId: Long,
-study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[String, Integer])
+study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.util.Map[String, Integer])
 
 @views.html.gui.main(loggedInUser, breadcrumbs){
 
@@ -241,6 +241,8 @@ study: common.Study, baseUrl: String, studyResultCountsPerWorker: java.util.Map[
 	</div>
 </div>
 
+@views.html.gui.batch.mTurkSourceCodeModal(study, batchId, jatosUrl)
+
 <script>
 loadWorkers();
 
@@ -370,7 +372,7 @@ $('#workerPanelGroup').on('click', '.resultButton', function() {
 });
 
 $('#mtWorkerPanel').on('click', '.mtWorkerSourceCode', function() {
-	window.location.href = "@controllers.gui.routes.Batches.showMTurkSourceCode(study.getId(), batchId)";
+	$('#mtSourceCodeModal').modal('show');
 });
 
 $('#personalSingleWorkerPanel').on('click', '.addButton', function() {
@@ -426,7 +428,7 @@ $('#personalMultipleWorkerPanel').on('click', '.addButton', function() {
 $('#personalSingleWorkerPanel').on('click', '.linkButton', function() {
 	var worker = $(this).parents('tr').data();
 	if (!worker) {return} // Should not happen
-	var url = "@baseUrl" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalSingleWorkerId=" + worker.id;
+	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalSingleWorkerId=" + worker.id;
 	showPersonalSingleLinkModal(url);
 });
 
@@ -440,7 +442,7 @@ function showPersonalSingleLinkModal(url) {
 $('#personalMultipleWorkerPanel').on('click', '.linkButton', function() {
 	var worker = $(this).parents('tr').data();
 	if (!worker) {return} // Should not happen
-	var url = "@baseUrl" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalMultipleWorkerId=" + worker.id;
+	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalMultipleWorkerId=" + worker.id;
 	showPersonalMultipleLinkModal(url);
 });
 
@@ -453,7 +455,7 @@ function showPersonalMultipleLinkModal(url) {
 
 $('#generalSingleWorkerPanel').on('click', '.linkButton', function() {
 	var title = "General Single Run";
-	var url = "@baseUrl" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "generalSingle";
+	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "generalSingle";
 	var preText = "This address will start the run.";
 	var postText = "Copy & paste it or press \"Run\" to start a run right away.";
 	showLinkModal(title, preText, url, postText);

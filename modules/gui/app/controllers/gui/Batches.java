@@ -1,7 +1,5 @@
 package controllers.gui;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +29,6 @@ import play.Logger;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.BatchService;
 import services.gui.BreadcrumbsService;
@@ -363,40 +360,6 @@ public class Batches extends Controller {
 				+ "/start?" + "batchId=" + batchId + "&"
 				+ "personalMultipleWorkerId" + "=" + worker.getId();
 		return ok(url);
-	}
-
-	/**
-	 * Shows a view with the source code that is intended to be copied into
-	 * Mechanical Turk.
-	 */
-	@Transactional
-	public Result showMTurkSourceCode(Long studyId, Long batchId)
-			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".showMTurkSourceCode: studyId " + studyId
-				+ ", " + "batchId " + batchId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
-		Study study = studyDao.findById(studyId);
-		Batch batch = batchDao.findById(batchId);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		try {
-			checker.checkStandardForStudy(study, studyId, loggedInUser);
-			checker.checkStandardForBatch(batch, study, batchId);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudy(e, studyId);
-		}
-
-		URL jatosURL = null;
-		try {
-			jatosURL = ControllerUtils.getRefererUrl();
-		} catch (MalformedURLException e) {
-			String errorMsg = MessagesStrings.COULDNT_GENERATE_JATOS_URL;
-			jatosGuiExceptionThrower.throwStudy(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
-		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
-				BreadcrumbsService.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
-		return ok(views.html.gui.batch.mTurkSourceCode.render(loggedInUser,
-				breadcrumbs, study, batch, jatosURL));
 	}
 
 }

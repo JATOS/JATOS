@@ -1,6 +1,8 @@
 package controllers.gui;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import java.util.Set;
 
@@ -147,13 +149,20 @@ public class Workers extends Controller {
 			jatosGuiExceptionThrower.throwStudy(e, studyId);
 		}
 
-		String baseUrl = ControllerUtils.getReferer();
+		URL jatosURL = null;
+		try {
+			jatosURL = ControllerUtils.getRefererUrl();
+		} catch (MalformedURLException e) {
+			String errorMsg = MessagesStrings.COULDNT_GENERATE_JATOS_URL;
+			jatosGuiExceptionThrower.throwStudy(errorMsg,
+					Http.Status.BAD_REQUEST, studyId);
+		}
 		Map<String, Integer> studyResultCountsPerWorker = workerService
 				.retrieveStudyResultCountsPerWorker(batch);
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
 				BreadcrumbsService.WORKER_SETUP);
 		return ok(views.html.gui.batch.workerSetup.render(loggedInUser, breadcrumbs,
-				batch.getId(), study, baseUrl, studyResultCountsPerWorker));
+				batch.getId(), study, jatosURL, studyResultCountsPerWorker));
 	}
 
 	/**
