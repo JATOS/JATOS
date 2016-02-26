@@ -10,12 +10,45 @@
 	position: relative;
 }
 
+/*
+ * Badges
+ */
 .panel-default > .panel-heading .resultsBadge {
-    color: @btn-success-bg;
-    background-color: @btn-success-color;
+	color: @btn-success-bg;
+	background-color: @btn-success-color;
+}
+.panel-default > .panel-heading .workersBadge {
+	color: @btn-success-color;
+	background-color: @btn-success-bg;
 }
 
-.panel-default > .panel-heading .workersBadge {
-    color: @btn-success-color;
-    background-color: @btn-success-bg;
+/*
+ * DataTables
+ */
+#workerPanelGroup .pagination > li.active > a {
+	color: @btn-success-color;
+	background-color: @btn-success-bg;
+	border-color: darken(@btn-success-bg, 5%);
+}
+#workerPanelGroup .pagination > li.active > a:hover {
+	background-color: darken(@btn-success-bg, 10%);
+}
+#workerPanelGroup .pagination > li > a {
+	color: @btn-default-color;
+	background-color: @btn-default-bg;
+	border-color: darken(@btn-default-bg, 20%);
+}
+#workerPanelGroup .pagination > li:not(.disabled):not(.active) > a:hover {
+	background-color: darken(@btn-default-bg, 10%);
+}
+#workerPanelGroup .pagination > li.disabled > a {
+	color: lighten(@btn-default-color, 20%);
+}
+#workerPanelGroup .pagination > li.next > a {
+	margin-right: 10px;
+}
+#workerPanelGroup table.dataTable thead .sorting, 
+		table.dataTable thead .sorting_asc, 
+		table.dataTable thead .sorting_desc {
+	background : none;
 }
