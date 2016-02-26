@@ -7,7 +7,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 	<div class="panel panel-default" id="jatosWorkerPanel">
 		<div class="panel-heading">
 			 <span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#jatosWorkerTable" data-toggle="tooltip"
+				<a role="button" data-toggle="collapse" href="#jatosWorkerTableDiv" data-toggle="tooltip"
 					title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
@@ -24,19 +24,17 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				</button>
 			</span>
 		</div>
-		<div id="jatosWorkerTable" class="panel-collapse collapse" role="tabpanel">
+		<div id="jatosWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
-				<tr>
-					<th>Worker ID</th>
-					<th>User Email</th>
-					<th></th>
-				</tr>
-				<!-- Template for Jatos worker row -->
-				<tr class="workerRowTemplate" style="display: none">
-					<td class="workerId"></td>
-					<td class="userEmail"></td>
-					<td><button type="button" class="btn btn-batch runButton">Run</button></td>
-				</tr>
+				<thead>
+					<tr>
+						<th>Worker ID</th>
+						<th>User Email</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
 			</table>
 		</div>
 	</div>
@@ -44,7 +42,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 	<div class="panel panel-default" id="personalSingleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#personalSingleWorkerTable"
+				<a role="button" data-toggle="collapse" href="#personalSingleWorkerTableDiv"
 					data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
@@ -62,19 +60,17 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				</button>
 			</span>
 		</div>
-		<div id="personalSingleWorkerTable" class="panel-collapse collapse" role="tabpanel">
+		<div id="personalSingleWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
-				<tr>
-					<th>Worker ID</th>
-					<th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
-					<th></th>
-				</tr>
-				<!-- Template for Personal Single worker row -->
-				<tr class="workerRowTemplate" style="display: none">
-					<td class="workerId"></td>
-					<td class="workerComment"></td>
-					<td><button type="button" class="btn btn-batch linkButton">Link</button></td>
-				</tr>
+				<thead>
+					<tr>
+						<th>Worker ID</th>
+						<th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
 			</table>
 		</div>
 	</div>
@@ -82,7 +78,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 	<div class="panel panel-default" id="personalMultipleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#personalMultipleWorkerTable"
+				<a role="button" data-toggle="collapse" href="#personalMultipleWorkerTableDiv"
 					data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
@@ -100,19 +96,17 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				</button>
 			</span>
 		</div>
-		<div id="personalMultipleWorkerTable" class="panel-collapse collapse" role="tabpanel">
+		<div id="personalMultipleWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
-				<tr>
-					<th>Worker ID</th>
-					<th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
-					<th></th>
-				</tr>
-				<!-- Template for Muliple Single worker row -->
-				<tr class="workerRowTemplate" style="display: none">
-					<td class="workerId"></td>
-					<td class="workerComment"></td>
-					<td><button type="button" class="btn btn-batch linkButton">Link</button></td>
-				</tr>
+				<thead>
+					<tr>
+						<th>Worker ID</th>
+						<th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
 			</table>
 		</div>
 	</div>
@@ -120,7 +114,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 	<div class="panel panel-default" id="mtWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#mtWorkerTable"
+				<a role="button" data-toggle="collapse" href="#mtWorkerTableDiv"
 					data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
@@ -141,19 +135,17 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				</button>
 			</span>
 		</div>
-		<div id="mtWorkerTable" class="panel-collapse collapse" role="tabpanel">
+		<div id="mtWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
-				<tr>
-					<th>Worker ID</th>
-					<th data-toggle="tooltip" data-placement="bottom" title="ID given by MTurk - not JATOS">MTurk Worker ID</th>
-					<th data-toggle="tooltip" data-placement="bottom" title="MTurk or MTurk Sandbox">Type</th>
-				</tr>
-				<!-- Template for MTurk worker row -->
-				<tr class="workerRowTemplate" style="display: none">
-					<td class="workerId"></td>
-					<td class="mtWorkerId"></td>
-					<td class="workerType"></td>
-				</tr>
+				<thead>
+					<tr>
+						<th>Worker ID</th>
+						<th data-toggle="tooltip" data-placement="bottom" title="ID given by MTurk - not JATOS">MTurk Worker ID</th>
+						<th data-toggle="tooltip" data-placement="bottom" title="MTurk or MTurk Sandbox">Type</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
 			</table>
 		</div>
 	</div>
@@ -161,7 +153,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 	<div class="panel panel-default" id="generalSingleWorkerPanel">
 		<div class="panel-heading">
 			<span class="panel-title">
-				<a role="button" data-toggle="collapse" href="#generalSingleWorkerTable"
+				<a role="button" data-toggle="collapse" href="#generalSingleWorkerTableDiv"
 					data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
@@ -179,15 +171,15 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				</button>
 			</span>
 		</div>
-		<div id="generalSingleWorkerTable" class="panel-collapse collapse" role="tabpanel">
+		<div id="generalSingleWorkerTableDiv" class="panel-collapse collapse" role="tabpanel">
 			<table class="table workerTable">
-				<tr>
-					<th>Worker ID</th>
-				</tr>
-				<!-- Template for General Single worker row -->
-				<tr class="workerRowTemplate" style="display: none">
-					<td class="workerId"></td>
-				</tr>
+				<thead>
+					<tr>
+						<th>Worker ID</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
 			</table>
 		</div>
 	</div>
@@ -244,14 +236,44 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 @views.html.gui.batch.mTurkSourceCodeModal(study, batchId, jatosUrl)
 
 <script>
+
+// Max length of each worker table before pagination kicks in
+var paginationLength = 10;
+
+var jatosWorkerTable = initWorkerTable('#jatosWorkerTableDiv .workerTable');
+var personalSingleWorkerTable = initWorkerTable('#personalSingleWorkerTableDiv .workerTable');
+var personalMultipleWorkerTable = initWorkerTable('#personalMultipleWorkerTableDiv .workerTable');
+var mtWorkerTable = initWorkerTable('#mtWorkerTableDiv .workerTable');
+var generalSingleWorkerTable = initWorkerTable('#generalSingleWorkerTableDiv .workerTable');
+
 loadWorkers();
+
+function initWorkerTable(tableElement) {
+	return $(tableElement).DataTable({
+		"pageLength": paginationLength,
+		"bFilter": false,
+		"filter": false,
+		"columnDefs": [ {
+			"searchable": false,
+			"orderable": false,
+			"targets": "_all"
+		} ],
+		"bLengthChange": false,
+		"info": false,
+		"sPaginationType": "simple_numbers",
+		"order" : [],
+		"oLanguage": {
+			"sEmptyTable": "No workers yet"
+		}
+	});
+}
 
 function loadWorkers() {
 	$.ajax({
 		type: 'GET',
 		url: "@controllers.gui.routes.Workers.workerData(study.getId(), batchId)",
 		success: function(response) {
-			fillWorkers(response);
+			fillWorkerPanels(response);
 		},
 		error: function(response) {
 			showError("Couldn't load workers.");
@@ -259,12 +281,31 @@ function loadWorkers() {
 	});
 }
 
-function fillWorkers(workerList) {
-	$('#jatosWorkerPanel .workerRowTemplate').nextAll().remove();
-	$('#personalSingleWorkerPanel .workerRowTemplate').nextAll().remove();
-	$('#personalMultipleWorkerPanel .workerRowTemplate').nextAll().remove();
-	$('#mtWorkerPanel .workerRowTemplate').nextAll().remove();
-	$('#generalSingleWorkerPanel .workerRowTemplate').nextAll().remove();
+function fillWorkerPanels(workerList) {
+	jatosWorkerTable.clear();
+	personalSingleWorkerTable.clear();
+	personalMultipleWorkerTable.clear();
+	mtWorkerTable.clear();
+	generalSingleWorkerTable.clear();
+	
+	fillWorkerTable(workerList);
+	
+	jatosWorkerTable.order([0, 'asc']).draw();
+	personalSingleWorkerTable.order([0, 'asc']).draw();
+	personalMultipleWorkerTable.order([0, 'asc']).draw();
+	mtWorkerTable.order([0, 'asc']).draw();
+	generalSingleWorkerTable.order([0, 'asc']).draw();
+	
+	toggleTablePagination("#jatosWorkerTableDiv");
+	toggleTablePagination("#personalSingleWorkerTableDiv");
+	toggleTablePagination("#personalMultipleWorkerTableDiv");
+	toggleTablePagination("#mtWorkerTableDiv");
+	toggleTablePagination("#generalSingleWorkerTableDiv");
+
+	setButtonWidthToMax(".resultButton");
+}
+
+function fillWorkerTable(workerList) {
 	$.each(workerList, function(index, worker) {
 		if (worker.workerType == '@common.workers.JatosWorker.WORKER_TYPE') {
 			fillJatosRow(worker);
@@ -279,72 +320,62 @@ function fillWorkers(workerList) {
 			fillGeneralSingleRow(worker);
 		}
 	});
-	addWorkersBadgeAndEmptyTableText('#jatosWorkerPanel');
-	addWorkersBadgeAndEmptyTableText('#personalSingleWorkerPanel');
-	addWorkersBadgeAndEmptyTableText('#personalMultipleWorkerPanel');
-	addWorkersBadgeAndEmptyTableText('#mtWorkerPanel');
-	addWorkersBadgeAndEmptyTableText('#generalSingleWorkerPanel');
-	setButtonWidthToMax(".resultButton");
 }
 
 function fillJatosRow(worker) {
-	var row = $('#jatosWorkerPanel .workerRowTemplate').clone().show();
-	$(row).removeClass('workerRowTemplate');
-	$(row).find('.workerId').text(worker.id);
-	$(row).find('.userEmail').text(worker.userEmail);
-	if ("@loggedInUser.getEmail()" != worker.userEmail) {
-		$(row).find('.runButton').hide();
+	if ("@loggedInUser.getEmail()" == worker.userEmail) {
+		jatosWorkerTable.row.add([
+			worker.id,
+			worker.userEmail,
+			'<button type="button" class="btn btn-batch runButton">Run</button>'
+		]);
+	} else {
+		jatosWorkerTable.row.add([
+			worker.id,
+			worker.userEmail,
+			''
+		]);
 	}
-	$(row).data(worker);
-	$("#jatosWorkerPanel .workerRowTemplate").after(row);
 }
 
 function fillPersonalSingleRow(worker) {
-	var row = $('#personalSingleWorkerPanel .workerRowTemplate').clone().show();
-	$(row).removeClass('workerRowTemplate');
-	$(row).find('.workerId').text(worker.id);
-	$(row).find('.workerComment').text(worker.comment);
-	$(row).data(worker);
-	$("#personalSingleWorkerPanel .workerRowTemplate").after(row);
+	personalSingleWorkerTable.row.add([
+		worker.id,
+		worker.comment,
+		'<button type="button" class="btn btn-batch linkButton">Link</button>'
+	]);
 }
 
 function fillPersonalMultipleRow(worker) {
-	var row = $('#personalMultipleWorkerPanel .workerRowTemplate').clone().show();
-	$(row).removeClass('workerRowTemplate');
-	$(row).find('.workerId').text(worker.id);
-	$(row).find('.workerComment').text(worker.comment);
-	$(row).data(worker);
-	$("#personalMultipleWorkerPanel .workerRowTemplate").after(row);
+	personalMultipleWorkerTable.row.add([
+		worker.id,
+		worker.comment,
+		'<button type="button" class="btn btn-batch linkButton">Link</button>'
+	]);
 }
 
 function fillMtRow(worker) {
-	var row = $('#mtWorkerPanel .workerRowTemplate').clone().show();
-	$(row).removeClass('workerRowTemplate');
-	$(row).find('.workerId').text(worker.id);
-	$(row).find('.mtWorkerId').text(worker.mtWorkerId);
-	$(row).find('.workerType').html(getUIWorkerTypeWithGlyphicon(worker.workerType));
-	$(row).data(worker);
-	$("#mtWorkerPanel .workerRowTemplate").after(row);
+	var workerType = getUIWorkerTypeWithGlyphicon(worker.workerType);
+	mtWorkerTable.row.add([
+		worker.id,
+		worker.mtWorkerId,
+		workerType,
+	]);
 }
 
 function fillGeneralSingleRow(worker) {
-	var row = $('#generalSingleWorkerPanel .workerRowTemplate').clone().show();
-	$(row).removeClass('workerRowTemplate');
-	$(row).find('.workerId').text(worker.id);
-	$(row).data(worker);
-	$("#generalSingleWorkerPanel .workerRowTemplate").after(row);
+	generalSingleWorkerTable.row.add([
+		worker.id,
+	]);
 }
 
-function addWorkersBadgeAndEmptyTableText(e) {
-	// subtract 2 for template row and header row
-	var rowCount = $(e + ' tr').length - 2;
-	if (rowCount <= 0) {
-		var row = "<tr><td>none</td></tr>"
-		$(e + " .workerRowTemplate").after(row);
-	}
-	$(e + " .workersBadge").text(rowCount);
+function toggleTablePagination(tableElement) {
+	var numOfTr = $(tableElement + " .workerTable").find('tbody tr').length;
+	var hidePaging = numOfTr < paginationLength;
+	$(tableElement + " .dataTables_paginate").toggle(!hidePaging);
 }
 
+// Display and toggle little chevron (arrow) in each worker panel
 $('#workerPanelGroup').on('hide.bs.collapse', toggleChevron);
 $('#workerPanelGroup').on('show.bs.collapse', toggleChevron);
 function toggleChevron(e) {
