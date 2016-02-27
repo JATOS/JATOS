@@ -8,7 +8,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 		<div class="panel-heading">
 			 <span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#jatosWorkerTableDiv" data-toggle="tooltip"
-					title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want.">
+					title="This worker belongs to a JATOS user. Jatos workers can run any study as many times as they want. Usually used during development.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.JatosWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>
@@ -44,7 +44,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 		<div class="panel-heading">
 			<span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#personalSingleWorkerTableDiv"
-					data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
+					data-toggle="tooltip" title="This worker must be pre-created here (Add button) and it can run a study only once. Typically used to distribute amongst participants that you contact individually. Each link is personalized with the comments.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
@@ -53,7 +53,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				</a>
 			</span>
 			<span class="btn-group pull-right"> 
-				<button type="button" class="btn btn-batch addButton">Add</button>
+				<button type="button" class="btn btn-batch addButton" data-toggle="tooltip" data-placement="bottom" title="Create a new Personal Single Worker">Add</button>
 				<button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
 					title="Shows study results only of @common.workers.PersonalSingleWorker.UI_WORKER_TYPE workers">
 					Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -81,7 +81,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 		<div class="panel-heading">
 			<span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#personalMultipleWorkerTableDiv"
-					data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it.">
+					data-toggle="tooltip" title="This worker must be pre-created here (Add button) and it can run a study multiple times. Typically used to distribute amongst your pilot workers. Each link can be personalized with the comments.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
@@ -90,7 +90,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				</a>
 			</span>
 			<span class="btn-group pull-right">
-				<button type="button" class="btn btn-batch addButton">Add</button>
+				<button type="button" class="btn btn-batch addButton" data-toggle="tooltip" data-placement="bottom" title="Create a new Personal Multiple Worker">Add</button>
 				<button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
 					title="Shows study results only of @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE workers">
 					Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -118,7 +118,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 		<div class="panel-heading">
 			<span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#mtWorkerTableDiv"
-					data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once.">
+					data-toggle="tooltip" title="MTurk workers are created on the fly when the study is started through Mechanical Turk. MTurk workers can run a study only once.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.MTWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-mturk" aria-hidden="true"></span>
@@ -158,7 +158,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 		<div class="panel-heading">
 			<span class="panel-title">
 				<a role="button" data-toggle="collapse" href="#generalSingleWorkerTableDiv"
-					data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website.">
+					data-toggle="tooltip" title="This worker type is created on the fly when the study is started with the link. This worker can start a study only once. Typically used to distribute in a mailing list or posting it in a public website.">
 					<span class="glyphicon glyphicon-chevron-right" data-toggle="tooltip"
 						data-placement="bottom" title="Click to expand/collapse this result">
 					</span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE Worker <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
@@ -167,7 +167,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				</a>
 			</span>
 			<span class="btn-group pull-right">
-				<button type="button" class="btn btn-batch linkButton">Link</button>
+				<button type="button" class="btn btn-batch linkButton" data-toggle="tooltip" data-placement="bottom" title="Get the link with which one can start a run with a General Single Worker">Link</button>
 				<button type="button" class="btn btn-batch resultButton" data-toggle="tooltip" data-placement="bottom"
 					title="Shows study results only of @common.workers.GeneralSingleWorker.UI_WORKER_TYPE workers">
 					Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
