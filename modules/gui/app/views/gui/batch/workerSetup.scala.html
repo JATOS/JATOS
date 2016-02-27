@@ -307,6 +307,12 @@ function fillWorkerPanels(workerList) {
 	toggleTablePagination("#mtWorkerTableDiv");
 	toggleTablePagination("#generalSingleWorkerTableDiv");
 	
+	addWorkersBadge('#jatosWorkerPanel', jatosWorkerTable);
+	addWorkersBadge('#personalSingleWorkerPanel', personalSingleWorkerTable);
+	addWorkersBadge('#personalMultipleWorkerPanel', personalMultipleWorkerTable);
+	addWorkersBadge('#mtWorkerPanel', mtWorkerTable);
+	addWorkersBadge('#generalSingleWorkerPanel', generalSingleWorkerTable);
+	
 	setButtonWidthToMax(".resultButton");
 }
 
@@ -402,6 +408,11 @@ $('#workerPanelGroup').on('show.bs.collapse', toggleChevron);
 function toggleChevron(e) {
 	$(e.target).prev('.panel-heading').find('.glyphicon-chevron-down, .glyphicon-chevron-right')
 			.toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+}
+
+function addWorkersBadge(panel, table) {
+	var rowCount = table.data().length;
+	$(panel + " .workersBadge").text(rowCount);
 }
 
 $('#workerPanelGroup').on('click', '.resultButton', function() {
