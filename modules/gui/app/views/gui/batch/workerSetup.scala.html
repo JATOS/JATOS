@@ -30,6 +30,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 					<tr>
 						<th>Worker ID</th>
 						<th>User Email</th>
+						<th data-toggle="tooltip" data-placement="bottom" title="State of the last started study">Last Study State</th>
 						<th></th>
 					</tr>
 				</thead>
@@ -66,6 +67,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 					<tr>
 						<th>Worker ID</th>
 						<th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
+						<th data-toggle="tooltip" data-placement="bottom" title="State of the study">Study State</th>
 						<th></th>
 					</tr>
 				</thead>
@@ -102,6 +104,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 					<tr>
 						<th>Worker ID</th>
 						<th data-toggle="tooltip" data-placement="bottom" title="Comment given during creation of worker">Comment</th>
+						<th data-toggle="tooltip" data-placement="bottom" title="State of the last started study">Last Study State</th>
 						<th></th>
 					</tr>
 				</thead>
@@ -142,6 +145,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 						<th>Worker ID</th>
 						<th data-toggle="tooltip" data-placement="bottom" title="ID given by MTurk - not JATOS">MTurk Worker ID</th>
 						<th data-toggle="tooltip" data-placement="bottom" title="MTurk or MTurk Sandbox">Type</th>
+						<th data-toggle="tooltip" data-placement="bottom" title="State of study">Study State</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -176,6 +180,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				<thead>
 					<tr>
 						<th>Worker ID</th>
+						<th data-toggle="tooltip" data-placement="bottom" title="State of the study">Study State</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -323,49 +328,65 @@ function fillWorkerTable(workerList) {
 }
 
 function fillJatosRow(worker) {
+	var lastStudyState = worker.lastStudyResult != null
+			? worker.lastStudyResult.studyState : "none started yet";
 	if ("@loggedInUser.getEmail()" == worker.userEmail) {
 		jatosWorkerTable.row.add([
 			worker.id,
 			worker.userEmail,
+			lastStudyState,
 			'<button type="button" class="btn btn-batch runButton">Run</button>'
 		]);
 	} else {
 		jatosWorkerTable.row.add([
 			worker.id,
 			worker.userEmail,
+			lastStudyState,
 			''
 		]);
 	}
 }
 
 function fillPersonalSingleRow(worker) {
+	var lastStudyState = worker.lastStudyResult != null
+			? worker.lastStudyResult.studyState : "not started yet";
 	personalSingleWorkerTable.row.add([
 		worker.id,
 		worker.comment,
+		lastStudyState,
 		'<button type="button" class="btn btn-batch linkButton">Link</button>'
 	]);
 }
 
 function fillPersonalMultipleRow(worker) {
+	var lastStudyState = worker.lastStudyResult != null
+			? worker.lastStudyResult.studyState : "none started yet";
 	personalMultipleWorkerTable.row.add([
 		worker.id,
 		worker.comment,
+		lastStudyState,
 		'<button type="button" class="btn btn-batch linkButton">Link</button>'
 	]);
 }
 
 function fillMtRow(worker) {
 	var workerType = getUIWorkerTypeWithGlyphicon(worker.workerType);
+	var lastStudyState = worker.lastStudyResult != null
+			? worker.lastStudyResult.studyState : "not started yet";
 	mtWorkerTable.row.add([
 		worker.id,
 		worker.mtWorkerId,
 		workerType,
+		lastStudyState
 	]);
 }
 
 function fillGeneralSingleRow(worker) {
+	var lastStudyState = worker.lastStudyResult != null
+			? worker.lastStudyResult.studyState : "not started yet";
 	generalSingleWorkerTable.row.add([
 		worker.id,
+		lastStudyState
 	]);
 }
 

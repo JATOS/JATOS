@@ -26,8 +26,8 @@ import models.common.StudyResult;
 import play.data.validation.ValidationError;
 
 /**
- * Abstract domain model / entity of a worker. It's used fro JSON marshaling and
- * JPA persistance.
+ * Abstract domain model / entity of a worker. It's used for JSON marshaling and
+ * JPA persistence.
  * 
  * Workers are doing studies (and their components) and produce study results
  * (and their component results).
@@ -114,6 +114,12 @@ public abstract class Worker {
 
 	public List<StudyResult> getStudyResultList() {
 		return this.studyResultList;
+	}
+
+	@JsonProperty("lastStudyResult")
+	public StudyResult getLastStudyResult() {
+		return (!studyResultList.isEmpty())
+				? studyResultList.get(studyResultList.size() - 1) : null;
 	}
 
 	public void addStudyResult(StudyResult studyResult) {
