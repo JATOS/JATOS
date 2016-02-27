@@ -68,6 +68,7 @@
 					</div>
 					<div class="well groupProperties">
 						<h4>Group Properties</h4>
+						<p class="notGroupStudyText">This is not a group study. Enable this option in the study properties.</p>
 						<div class="form-group row">
 							<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED">Max total members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of members a group can have, active or inactive." aria-hidden="true"></span></label>
 							<div class="col-xs-3">
@@ -153,10 +154,12 @@ function fillbatchPropertiesForm(properties) {
 	// Group properties
 	@if(!study.isGroupStudy) {
 		$('#batchPropertiesModal .groupProperties').fadeTo(0, 0.5);
-		$("#batchPropertiesModal .groupProperties :input").prop("disabled", true);
+		$("#batchPropertiesModal .groupProperties input").attr("disabled", true);
+		$('#batchPropertiesModal .groupProperties .notGroupStudyText').show();
 	} else {
 		$('#batchPropertiesModal .groupProperties').fadeTo(0, 1);
-		$("#batchPropertiesModal .groupProperties :input").prop("disabled", false);
+		$("#batchPropertiesModal .groupProperties input").attr("disabled", false);
+		$('#batchPropertiesModal .groupProperties .notGroupStudyText').hide();
 	}
 	setInputGroupWithCheckbox('batchPropertiesModal',
 			'@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED',
@@ -164,9 +167,9 @@ function fillbatchPropertiesForm(properties) {
 	setInputGroupWithCheckbox('batchPropertiesModal',
 			'@models.gui.BatchProperties.MAX_TOTAL_MEMBER_LIMITED',
 			'@models.gui.BatchProperties.MAX_TOTAL_MEMBERS', properties);
-	$('#batchPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", @study.isLocked());
 	if (@study.isLocked()) {
 		showInfo("@general.common.MessagesStrings.STUDY_IS_LOCKED", "#batchPropertiesModal .modal-header");
+		$('#batchPropertiesModal input, textarea').not(":input[type=reset]").attr("disabled", @study.isLocked());
 	}
 }
 
