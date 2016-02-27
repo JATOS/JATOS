@@ -370,27 +370,6 @@ public class StudiesControllerTest extends AbstractTest {
 	}
 
 	@Test
-	public void callShowMTurkSourceCode() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
-		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.header("Referer", "http://www.example.com:9000").uri(
-						controllers.gui.routes.Batches
-								.showMTurkSourceCode(studyClone.getId(),
-										studyClone.getDefaultBatch().getId())
-								.url());
-		Result result = route(request);
-
-		assertThat(result.status()).isEqualTo(OK);
-		assertThat(contentAsString(result)).contains(
-				BreadcrumbsService.MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE);
-
-		// Clean up
-		removeStudy(studyClone);
-	}
-
-	@Test
 	public void callWorkers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 

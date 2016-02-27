@@ -229,16 +229,6 @@ public class AccessControllerTest extends AbstractTest {
 	}
 
 	// @Test
-	public void callStudiesShowMTurkSourceCode() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Batches.showMTurkSourceCode(
-				studyClone.getId(), studyClone.getDefaultBatch().getId());
-		checkDeniedAccess(call, Helpers.GET);
-		checkNotUser(call, studyClone, Helpers.GET);
-		removeStudy(studyClone);
-	}
-
-	// @Test
 	public void callStudiesWorkers() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		Call call = controllers.gui.routes.Studies.workers(studyClone.getId());
