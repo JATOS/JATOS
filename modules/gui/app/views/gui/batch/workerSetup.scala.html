@@ -489,9 +489,9 @@ $('#personalMultipleWorkerPanel').on('click', '.addButton', function() {
 });
 
 $('#personalSingleWorkerPanel').on('click', '.linkButton', function() {
-	var worker = $(this).parents('tr').data();
-	if (!worker) {return} // Should not happen
-	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalSingleWorkerId=" + worker.id;
+	var tr = $(this).closest('tr');
+	var rowData = personalSingleWorkerTable.row(tr).data();
+	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalSingleWorkerId=" + rowData[0];
 	showPersonalSingleLinkModal(url);
 });
 
@@ -503,9 +503,9 @@ function showPersonalSingleLinkModal(url) {
 }
 
 $('#personalMultipleWorkerPanel').on('click', '.linkButton', function() {
-	var worker = $(this).parents('tr').data();
-	if (!worker) {return} // Should not happen
-	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalMultipleWorkerId=" + worker.id;
+	var tr = $(this).closest('tr');
+	var rowData = personalMultipleWorkerTable.row(tr).data();
+	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalMultipleWorkerId=" + rowData[0];
 	showPersonalMultipleLinkModal(url);
 });
 
