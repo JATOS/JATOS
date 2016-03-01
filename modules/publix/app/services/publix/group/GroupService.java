@@ -120,6 +120,9 @@ public class GroupService {
 		differentGroupResult.addActiveMember(studyResult);
 		studyResult.setActiveGroupResult(differentGroupResult);
 		checkAndFinishGroup(currentGroupResult);
+		
+		// We need this transaction here because later on in the GroupDispatcher
+		// the updated data are needed
 		jpa.withTransaction(() -> {
 			groupResultDao.update(currentGroupResult);
 			groupResultDao.update(differentGroupResult);
@@ -157,6 +160,8 @@ public class GroupService {
 		studyResult.setActiveGroupResult(null);
 		checkAndFinishGroup(groupResult);
 
+		// We need this transaction here because later on in the GroupDispatcher
+		// the updated data are needed
 		jpa.withTransaction(() -> {
 			groupResultDao.update(groupResult);
 			studyResultDao.update(studyResult);
@@ -179,20 +184,25 @@ public class GroupService {
 		}
 		Batch batch = groupResult.getBatch();
 		if (GroupState.FIXED == groupResult.getGroupState()) {
-			groupResult.setGroupState(GroupState.FINISHED);
+			finishGroupResult(groupResult);
 			return;
 		}
 		if (batch.getMaxTotalWorkers() != null
 				&& batch.getWorkerList().size() >= batch.getMaxTotalWorkers()) {
-			groupResult.setGroupState(GroupState.FINISHED);
+			finishGroupResult(groupResult);
 			return;
 		}
 		List<GroupResult> startedGroupList = groupResultDao
 				.findAllStartedByBatch(batch);
 		if (startedGroupList.size() > 1) {
-			groupResult.setGroupState(GroupState.FINISHED);
+			finishGroupResult(groupResult);
 			return;
 		}
+	}
+	
+	private void finishGroupResult(GroupResult groupResult) {
+		groupResult.setGroupState(GroupState.FINISHED);
+		groupResultDao.update(groupResult);
 	}
 
 	/**
