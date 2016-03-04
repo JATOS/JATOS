@@ -221,14 +221,14 @@ public class Batches extends Controller {
 
 	/**
 	 * Ajax POST request: Request to change the property 'active' of the given
-	 * batch. If needed this method can be extended for other properties.
+	 * batch.
 	 * 
 	 * @throws JatosGuiException
 	 */
 	@Transactional
-	public Result changeProperty(Long studyId, Long batchId, Boolean active)
+	public Result toggleActive(Long studyId, Long batchId, Boolean active)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".changeProperty: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".toggleActive: studyId " + studyId + ", "
 				+ "batchId " + batchId + ", " + "active " + active + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);

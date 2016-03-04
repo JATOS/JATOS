@@ -190,13 +190,12 @@ public class Components extends Controller {
 	/**
 	 * Ajax POST
 	 * 
-	 * Request to change the property 'active' of a component. If needed this
-	 * method can be extended for other properties.
+	 * Request to change the property 'active' of a component.
 	 */
 	@Transactional
-	public Result changeProperty(Long studyId, Long componentId, Boolean active)
+	public Result toggleActive(Long studyId, Long componentId, Boolean active)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".changeProperty: studyId " + studyId + ", "
+		Logger.info(CLASS_NAME + ".toggleActive: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "active " + active
 				+ ", " + "logged-in user's email "
 				+ session(Users.SESSION_EMAIL));

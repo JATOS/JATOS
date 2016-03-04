@@ -325,7 +325,7 @@ $(document).ready(function() {
 		var active = $(this).hasClass('activeComponent');
 		$.ajax({
 			url : "/jatos/" + @study.getId() +"/" + componentId
-					+ "/property?active=" + !active,
+					+ "/properties/active?active=" + !active,
 			type : "POST",
 			success: function(active) {
 				setButtonActive($(button), active);
@@ -431,7 +431,7 @@ function ajaxChangeComponentOrder(componentId, direction, tr) {
 
 $('#studyToolbar').on('click', '#lockStudy', function() {
 	$.ajax({
-		url : "@controllers.gui.routes.Studies.swapLock(study.getId())",
+		url : "@controllers.gui.routes.Studies.toggleLock(study.getId())",
 		type : "POST",
 		success : function(response) {
 			studyLocked = response === 'true';

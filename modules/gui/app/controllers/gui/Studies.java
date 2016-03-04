@@ -199,8 +199,8 @@ public class Studies extends Controller {
 	 * Swap the locked field of a study.
 	 */
 	@Transactional
-	public Result swapLock(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".swapLock: studyId " + studyId + ", "
+	public Result toggleLock(Long studyId) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".toggleLock: studyId " + studyId + ", "
 				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();

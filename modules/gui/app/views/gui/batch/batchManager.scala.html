@@ -181,7 +181,7 @@ $('#batchTable').on('click', '.activeButton', function() {
 	var active = $(this).hasClass('activeBatch');
 	$.ajax({
 		url : "/jatos/" + @study.getId() +"/batch/" + batch.id
-				+ "/property?active=" + !active,
+				+ "/properties/active?active=" + !active,
 		type : "POST",
 		success: function(active) {
 			var row = $(button).closest('tr');
