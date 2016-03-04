@@ -120,7 +120,7 @@ public class GroupService {
 		differentGroupResult.addActiveMember(studyResult);
 		studyResult.setActiveGroupResult(differentGroupResult);
 		checkAndFinishGroup(currentGroupResult);
-		
+
 		// We need this transaction here because later on in the GroupDispatcher
 		// the updated data are needed
 		jpa.withTransaction(() -> {
@@ -199,9 +199,12 @@ public class GroupService {
 			return;
 		}
 	}
-	
+
 	private void finishGroupResult(GroupResult groupResult) {
 		groupResult.setGroupState(GroupState.FINISHED);
+		// All session data are temporarily and have to be deleted when the
+		// group is finished
+		groupResult.setGroupSessionData(null);
 		groupResultDao.update(groupResult);
 	}
 
