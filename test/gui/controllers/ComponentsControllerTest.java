@@ -251,7 +251,7 @@ public class ComponentsControllerTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Components
-						.changeProperty(studyClone.getId(),
+						.toggleActive(studyClone.getId(),
 								studyClone.getComponent(1).getId(), true)
 								.url());
 		Result result = route(request);

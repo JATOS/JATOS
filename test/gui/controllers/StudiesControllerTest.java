@@ -223,8 +223,8 @@ public class StudiesControllerTest extends AbstractTest {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.swapLock(studyClone.getId())
-						.url());
+				.uri(controllers.gui.routes.Studies
+						.toggleLock(studyClone.getId()).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);

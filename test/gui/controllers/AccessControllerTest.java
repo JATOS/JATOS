@@ -143,7 +143,7 @@ public class AccessControllerTest extends AbstractTest {
 	// @Test
 	public void callStudiesSwapLock() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Studies.swapLock(studyClone.getId());
+		Call call = controllers.gui.routes.Studies.toggleLock(studyClone.getId());
 		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
 		removeStudy(studyClone);
@@ -280,7 +280,7 @@ public class AccessControllerTest extends AbstractTest {
 	// @Test
 	public void callComponentsChangeProperty() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Components.changeProperty(
+		Call call = controllers.gui.routes.Components.toggleActive(
 				studyClone.getId(), studyClone.getComponent(1).getId(), true);
 		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
@@ -587,7 +587,7 @@ public class AccessControllerTest extends AbstractTest {
 	// @Test
 	public void callBatchesChangeProperty() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		Call call = controllers.gui.routes.Batches.changeProperty(
+		Call call = controllers.gui.routes.Batches.toggleActive(
 				studyClone.getId(), studyClone.getDefaultBatch().getId(), true);
 		checkDeniedAccess(call, Helpers.POST);
 		checkNotUser(call, studyClone, Helpers.POST);
