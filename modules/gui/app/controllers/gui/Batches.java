@@ -248,6 +248,42 @@ public class Batches extends Controller {
 		}
 		return ok(JsonUtils.asJsonNode(batch.isActive()));
 	}
+	
+	/**
+	 * Ajax POST request: Request to allow or disallow a worker type in a batch.
+	 * 
+	 * @throws JatosGuiException
+	 */
+	@Transactional
+	public Result toggleAllowedWorkerType(Long studyId, Long batchId,
+			String workerType, Boolean allow) throws JatosGuiException {
+		Logger.info(CLASS_NAME + ".toggleAllowedWorkerType: studyId " + studyId
+				+ ", " + "batchId " + batchId + ", " + "workerType "
+				+ workerType + ", " + "allow " + allow + ", "
+				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = userService.retrieveLoggedInUser();
+		Batch batch = batchDao.findById(batchId);
+		try {
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
+			checker.checkStandardForBatch(batch, study, batchId);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+
+		if (allow != null && workerType != null) {
+			if (allow) {
+				batch.addAllowedWorkerType(workerType);
+			} else {
+				batch.removeAllowedWorkerType(workerType);
+			}
+			batchDao.update(batch);
+		} else {
+			return badRequest();
+		}
+		return ok(JsonUtils.asJsonNode(batch.getAllowedWorkerTypes()));
+	}
 
 	/**
 	 * Ajax POST request to remove a Batch

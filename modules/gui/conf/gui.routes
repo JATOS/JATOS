@@ -59,15 +59,16 @@ GET     /jatos/:studyId                              @controllers.gui.Studies.st
 GET     /jatos/:studyId/                             @controllers.gui.Studies.study(studyId: Long)
 
 # Batches controller
-GET     /jatos/:studyId/batchManager                         @controllers.gui.Batches.batchManager(studyId: Long)
-POST    /jatos/:studyId/batch                                @controllers.gui.Batches.submitCreated(studyId: Long)
-GET     /jatos/:studyId/batch/:batchId/properties            @controllers.gui.Batches.properties(studyId: Long, batchId: Long)
-POST    /jatos/:studyId/batch/:batchId/properties            @controllers.gui.Batches.submitEditedProperties(studyId: Long, batchId: Long)
-POST    /jatos/:studyId/batch/:batchId/property              @controllers.gui.Batches.changeProperty(studyId: Long, batchId: Long, active: Boolean)
-POST    /jatos/:studyId/batch/:batchId/personalSingleRun     @controllers.gui.Batches.createPersonalSingleRun(studyId: Long, batchId: Long)
-POST    /jatos/:studyId/batch/:batchId/personalMultipleRun   @controllers.gui.Batches.createPersonalMultipleRun(studyId: Long, batchId: Long)
-DELETE  /jatos/:studyId/batch/:batchId                       @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
-GET     /jatos/:studyId/batches                              @controllers.gui.Batches.batchesByStudy(studyId: Long)
+GET     /jatos/:studyId/batchManager                                       @controllers.gui.Batches.batchManager(studyId: Long)
+POST    /jatos/:studyId/batch                                              @controllers.gui.Batches.submitCreated(studyId: Long)
+POST    /jatos/:studyId/batch/:batchId/properties/workerType/:workerType   @controllers.gui.Batches.toggleAllowedWorkerType(studyId: Long, batchId: Long, workerType: String, allow: Boolean)
+GET     /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.Batches.properties(studyId: Long, batchId: Long)
+POST    /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.Batches.submitEditedProperties(studyId: Long, batchId: Long)
+POST    /jatos/:studyId/batch/:batchId/property                            @controllers.gui.Batches.changeProperty(studyId: Long, batchId: Long, active: Boolean)
+POST    /jatos/:studyId/batch/:batchId/personalSingleRun                   @controllers.gui.Batches.createPersonalSingleRun(studyId: Long, batchId: Long)
+POST    /jatos/:studyId/batch/:batchId/personalMultipleRun                 @controllers.gui.Batches.createPersonalMultipleRun(studyId: Long, batchId: Long)
+DELETE  /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.remove(studyId: Long, batchId: Long)
+GET     /jatos/:studyId/batches                                            @controllers.gui.Batches.batchesByStudy(studyId: Long)
 
 # Components controller
 POST    /jatos/:studyId/component                    @controllers.gui.Components.submitCreated(studyId: Long)

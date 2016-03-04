@@ -161,8 +161,11 @@ public class Workers extends Controller {
 				.retrieveStudyResultCountsPerWorker(batch);
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
 				BreadcrumbsService.WORKER_SETUP);
-		return ok(views.html.gui.batch.workerSetup.render(loggedInUser, breadcrumbs,
-				batch.getId(), study, jatosURL, studyResultCountsPerWorker));
+		String allowedWorkerTypes = JsonUtils
+				.asJson(batch.getAllowedWorkerTypes());
+		return ok(views.html.gui.batch.workerSetup.render(loggedInUser,
+				breadcrumbs, batch.getId(), allowedWorkerTypes, study, jatosURL,
+				studyResultCountsPerWorker));
 	}
 
 	/**

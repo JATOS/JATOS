@@ -1,23 +1,27 @@
 /*
  * Batch's worker panel
  */
-
-#jatosWorkerPanel,#personalSingleWorkerPanel,#personalMultipleWorkerPanel,#mtWorkerPanel,#generalSingleWorkerPanel .panel-heading {
+#workerPanelGroup .panel-default > .panel-heading .panel-heading {
 	overflow: hidden;
 	line-height:32px;
 }
-#jatosWorkerPanel,#personalSingleWorkerPanel,#personalMultipleWorkerPanel,#mtWorkerPanel,#generalSingleWorkerPanel .btn-group {
+#workerPanelGroup .panel-default > .panel-heading .btn-group {
 	position: relative;
+}
+
+#workerPanelGroup .panel-default > .panel-heading .activeButton {
+	margin-left: 10px;
+	margin-right: 10px;
 }
 
 /*
  * Badges
  */
-.panel-default > .panel-heading .resultsBadge {
+#workerPanelGroup .panel-default > .panel-heading .resultsBadge {
 	color: @btn-success-bg;
 	background-color: @btn-success-color;
 }
-.panel-default > .panel-heading .workersBadge {
+#workerPanelGroup .panel-default > .panel-heading .workersBadge {
 	color: @btn-success-color;
 	background-color: @btn-success-bg;
 }
