@@ -26,29 +26,33 @@
 						<label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
 						<div class="col-xs-9" id="allowedWorkerTypes">
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.JatosWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE"
-										>@common.workers.JatosWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-jatos" aria-hidden="true"></span>
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="checkbox" class="@common.workers.JatosWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.JatosWorker.WORKER_TYPE">
+								<span class="glyphicon glyphicon-jatos" aria-hidden="true"></span> @common.workers.JatosWorker.UI_WORKER_TYPE
+								<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Used for runs started with study's or component's 'run' button. Jatos workers can run any study as many times as they want." aria-hidden="true"></span>
+								&nbsp;&nbsp;&nbsp;&nbsp;
 							</label>
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.PersonalSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE"
-										>@common.workers.PersonalSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span>
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it." aria-hidden="true"></span>&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="checkbox" class="@common.workers.PersonalSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalSingleWorker.WORKER_TYPE">
+								<span class="glyphicon glyphicon-personal-single" aria-hidden="true"></span> @common.workers.PersonalSingleWorker.UI_WORKER_TYPE
+								<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and always assigns the results to the same JATOS worker. Typically used to distribute amongst workers that you contact individually. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it." aria-hidden="true"></span>
+								&nbsp;&nbsp;&nbsp;&nbsp;
 							</label>
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.PersonalMultipleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE"
-										>@common.workers.PersonalMultipleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span>
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it." aria-hidden="true"></span>&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="checkbox" class="@common.workers.PersonalMultipleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.PersonalMultipleWorker.WORKER_TYPE">
+								<span class="glyphicon glyphicon-personal-multiple" aria-hidden="true"></span> @common.workers.PersonalMultipleWorker.UI_WORKER_TYPE
+								<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title=" Creates a link to a run that can be used multiple times and always assigns the results to the same JATOS worker. Typically used to distribute amongst your pilot workers. Each link is personalized, i.e., you provide some kind of ID (e.g. name or pseudonym) when creating it." aria-hidden="true"></span>
+								&nbsp;&nbsp;&nbsp;&nbsp;
 							</label>
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE"
-										>@common.workers.MTWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-mturk" aria-hidden="true"></span>
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="checkbox" class="@common.workers.MTWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.MTWorker.WORKER_TYPE">
+								<span class="glyphicon glyphicon-mturk" aria-hidden="true"></span> @common.workers.MTWorker.UI_WORKER_TYPE
+								<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="MTurk workers access a study through Amazon's Mechanical Turk. MTurk workers can access a study only once." aria-hidden="true"></span>
+								&nbsp;&nbsp;&nbsp;&nbsp;
 							</label>
 							<label class="checkbox-inline">
-								<input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE"
-										>@common.workers.GeneralSingleWorker.UI_WORKER_TYPE <span class="glyphicon glyphicon-general-single" aria-hidden="true"></span>
-										<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
+								<input type="checkbox" class="@common.workers.GeneralSingleWorker.WORKER_TYPE" name="@models.gui.BatchProperties.ALLOWED_WORKER_TYPES" value="@common.workers.GeneralSingleWorker.WORKER_TYPE">
+								<span class="glyphicon glyphicon-general-single" aria-hidden="true"></span> @common.workers.GeneralSingleWorker.UI_WORKER_TYPE
+								<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Creates a link to a run that can be used only once and creates a new JATOS worker with each run. Typically used to distribute in a mailing list or posting it in a public website." aria-hidden="true"></span>
 							</label>
 						</div>
 					</div>
