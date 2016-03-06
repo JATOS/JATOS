@@ -63,7 +63,7 @@ public class Batch {
 	/**
 	 * Only active (if true) batches can be used.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+	@JsonView({ JsonUtils.JsonForIO.class })
 	private boolean active = true;
 
 	/**
@@ -99,7 +99,7 @@ public class Batch {
 	 * GeneralSingleWorker) - but all appear in this list - with the exception
 	 * of JatosWorkers. This relationship is unidirectional.
 	 */
-	@JsonView({ JsonUtils.JsonForPublix.class })
+	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "BatchWorkerMap", joinColumns = {
 			@JoinColumn(name = "batch_id", referencedColumnName = "id") }, inverseJoinColumns = {
