@@ -2,7 +2,7 @@
  * jatos.js (JATOS JavaScript Library)
  * Version 2.1.2
  * http://www.jatos.org
- * Author Kristian Lange 2014 - 2015
+ * Author Kristian Lange 2014 - 2016
  * Licensed under Apache License 2.0
  * 
  * Uses plugin jquery.ajax-retry:
@@ -21,7 +21,7 @@ var jatos = {};
 /**
  * jatos.js version
  */
-jatos.version = "2.1.1";
+jatos.version = "2.1.2";
 /**
  * How long should JATOS wait until to retry the HTTP call. Warning: There is a
  * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
@@ -41,10 +41,42 @@ jatos.httpRetry = 5;
  */
 jatos.httpRetryWait = 1000;
 /**
- * How long in ms should jatos.js wait for an answer after a group session
- * upload.
+ * The JSON data given to the study in the JATOS GUI
  */
-jatos.groupSessionTimeoutTime = 5000;
+jatos.studyJsonInput = {};
+/**
+ * Number of component this study has
+ */
+jatos.studyLength = null;
+/**
+ * All the properties (except studyJsonInput) belonging to the study
+ */
+jatos.studyProperties = {};
+/**
+ * The study session data can be accessed and modified by every component of
+ * this study
+ */
+jatos.studySessionData = {};
+/**
+ * List of components of this study with some basic info about them
+ */
+jatos.componentList = [];
+/**
+ * The JSON data given to the component in the JATOS GUI
+ */
+jatos.componentJsonInput = {};
+/**
+ * Position of this component in this study (starts with 1)
+ */
+jatos.componentPos = null;
+/**
+ * All the properties (except componentJsonInput) belonging to the component
+ */
+jatos.componentProperties = {};
+/**
+ * All properties of the batch
+ */
+jatos.batchProperties = {};
 /**
  * Group member ID is unique for this member (it is actually identical with the
  * study result ID)
@@ -68,9 +100,14 @@ jatos.groupMembers = [];
  */
 jatos.groupChannels = [];
 /**
- * Group session data shared in between the group. 
+ * Group session data shared in between members of the group. 
  */
 jatos.groupSessionData = {};
+/**
+ * How long in ms should jatos.js wait for an answer after a group session
+ * upload.
+ */
+jatos.groupSessionTimeoutTime = 5000;
 /**
  * Intermediate storage for the groupSessionData during uploading to the JATOS
  * server
@@ -489,10 +526,10 @@ jatos.startNextComponent = function() {
  */
 jatos.startLastComponent = function() {
 	for (var i = jatos.componentList.length - 1; i >= 0; i--) {
-	    if (jatos.componentList[i].active) {
-	    	jatos.startComponentByPos(i + 1);
-	    	break;
-	    }
+		if (jatos.componentList[i].active) {
+			jatos.startComponentByPos(i + 1);
+			break;
+		}
 	}
 };
 
@@ -553,11 +590,12 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
 };
 
 /**
- * Tries to join a group (actually a GroupResult) in the JATOS server and open
- * the group channel WebSocket.
+ * Tries to join a group (actually a GroupResult) in the JATOS server and if it
+ * succeeds opens the group channel's WebSocket.
  * 
  * @param {Object} callbacks - Defining callback functions for group
- * 			events. These callbacks functions can be:
+ * 			events. All callbacks are optional. These callbacks functions can
+ * 			be:
  *		onOpen: to be called when the group channel is successfully opened
  *		onClose: to be called when the group channel is closed
  *		onError: to be called if an error during opening of the group
@@ -568,7 +606,7 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
  * 		onMessage(msg): to be called if a message from another group member is
  *			received. It gets the message as a parameter.
  *		onMemberJoin(memberId): to be called when another member (not the worker
- *			running	this study) joined the group. It gets the group member ID as
+ *			running this study) joined the group. It gets the group member ID as
  *			a parameter. 
  *		onMemberOpen(memberId): to be called when another member (not the worker
  *			running this study) opened a group channel. It gets the group member
@@ -581,7 +619,10 @@ jatos.endComponent = function(successful, errorMsg, onSuccess, onError) {
  *			member ID as a parameter.
  *		onGroupSession(groupSessionData): to be called when the group session is
  *			updated. It gets the new group session data as a parameter.
- * *	onUpdate(): to be called if any of the group variables changes
+ *		onUpdate(): Combines several other callbacks. It's called if one of the
+ *			following is called: onMemberJoin, onMemberOpen, onMemberLeave,
+ *			onMemberClose, or onGroupSession (the group session can then be read
+ *			via jatos.groupSessionData).
  */
 jatos.joinGroup = function(callbacks) {
 	if (!webSocketSupported) {
@@ -760,7 +801,7 @@ function callOnUpdate(callbacks) {
  * @param {optional Function} onSuccess - Function to be called if the
  *            reassignment was successful
  * @param {optional Function} onFail - Function to be called if the
- *            reassignment was unsuccessful
+ *            reassignment was unsuccessful. 
  */
 jatos.reassignGroup = function(onSuccess, onFail) {
 	if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup
@@ -800,10 +841,16 @@ jatos.reassignGroup = function(onSuccess, onFail) {
 /**
  * Sends the group session data via the group channel WebSocket to the JATOS
  * server where it's stored and broadcasted to all members of this group. It
- * either takes an Object as parameter or uses jatos.groupSessionData.
+ * either takes an Object as parameter or uses jatos.groupSessionData. jatos.js
+ * tries several times to upload the session data, but if there are many
+ * concurrent members updating at the same time it might fail. But
+ * jatos.js/JATOS guarantees that it either persists the updated session data
+ * or calls the onError callback.
  * 
  * @param {optional Object} groupSessionData - An object in JSON; If it's not
  *             given take jatos.groupSessionData
+ * @param {optional Object} onError - Function to be called if this upload was
+ *             unsuccessful
  */
 jatos.setGroupSessionData = function(groupSessionData, onError) {
 	if (!groupChannel || groupChannel.readyState != 1) {
@@ -882,8 +929,8 @@ jatos.hasOpenGroupChannel = function() {
 
 /**
  * @return {Boolean} True if the group has reached the maximum amount of active
- *         members. It's not necessary that each member has an open group
- *         channel.
+ *         members like specified in the batch properties. It's not necessary
+ *         that each member has an open group channel.
  */
 jatos.isMaxActiveMemberReached = function() {
 	if (jatos.batchProperties.maxActiveMembers == null) {
@@ -895,7 +942,8 @@ jatos.isMaxActiveMemberReached = function() {
 
 /**
  * @return {Boolean} True if the group has reached the maximum amount of active
- *         members and each member has an open group channel.
+ *         members like specified in the batch properties and each member has an
+ *         open group channel.
  */
 jatos.isMaxActiveMemberOpen = function() {
 	if (jatos.batchProperties.maxActiveMembers == null) {
@@ -921,7 +969,7 @@ jatos.isGroupOpen = function() {
 /**
  * Sends a message to all group members if group channel is open.
  * 
- * @param {String} msg - Message to send
+ * @param {Object} msg - Any JavaScript object
  */
 jatos.sendGroupMsg = function(msg) {
 	if (groupChannel && groupChannel.readyState == 1) {
@@ -932,13 +980,13 @@ jatos.sendGroupMsg = function(msg) {
 };
 
 /**
- * Sends a message to the group member with the given member ID only  if group
- * channel is open.
+ * Sends a message to a single group member specified with the given member ID
+ * (only if group channel is open).
  * 
  * @param {String} recipient - Recipient's group member ID
- * @param {String} msg - Message to send to the recipient
+ * @param {Object} msg - Any JavaScript object
  */
-jatos.sendMsgTo = function(recipient, msg) {
+jatos.sendGroupMsgTo = function(recipient, msg) {
 	if (groupChannel && groupChannel.readyState == 1) {
 		var msgObj = {};
 		msgObj.recipient = recipient;
@@ -949,7 +997,7 @@ jatos.sendMsgTo = function(recipient, msg) {
 
 /**
  * Tries to leave the group (actually a GroupResult) it has previously joined.
- * The group channel WebSocket is not closed in the function - it's closed from
+ * The group channel WebSocket is not closed in this function - it's closed from
  * the JATOS' side.
  * 
  * @param {optional Function} onSuccess - Function to be called after the group
@@ -1119,6 +1167,7 @@ jatos.endStudy = function(successful, errorMsg) {
 
 /**
  * Logs a message within the JATOS log on the server side.
+ * Deprecated, use jatos.log instead.
  */
 jatos.logError = function(logErrorMsg) {
 	jatos.log(logErrorMsg);
