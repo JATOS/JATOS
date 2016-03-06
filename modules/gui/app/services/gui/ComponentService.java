@@ -136,7 +136,9 @@ public class ComponentService {
 		props.setId(component.getId());
 		props.setJsonData(component.getJsonData());
 		props.setReloadable(component.isReloadable());
-		props.setStudyId(component.getStudy().getId());
+		if (component.getStudy() != null) {
+			props.setStudyId(component.getStudy().getId());
+		}
 		props.setTitle(component.getTitle());
 		props.setUuid(component.getUuid());
 		return props;
