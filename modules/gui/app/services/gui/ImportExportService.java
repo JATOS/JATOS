@@ -2,6 +2,9 @@ package services.gui;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,6 +83,7 @@ public class ImportExportService {
 		if (filePart == null) {
 			throw new IOException(MessagesStrings.FILE_MISSING);
 		}
+		
 		// Remember component's file name
 		Controller.session(ImportExportService.SESSION_TEMP_COMPONENT_FILE,
 				filePart.getFile().getName());
@@ -92,6 +96,11 @@ public class ImportExportService {
 		Component uploadedComponent = unmarshalComponent(filePart.getFile());
 		boolean componentExists = componentDao
 				.findByUuid(uploadedComponent.getUuid(), study) != null;
+
+		// Move uploaded component file to Java's tmp folder
+		Path source = filePart.getFile().toPath();
+		Path target = getTempComponentFile(filePart.getFile().getName()).toPath();
+		Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
 
 		// Create JSON response
 		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
