@@ -13,8 +13,7 @@ dir="$( cd "$( dirname "$0" )" && pwd )"
 export PATH="$dir:$dir/bin:$PATH"
 
 function start() {
-	[ -f $dir/RUNNING_PID ] && return
-	
+	checkAlreadyRunning
 	checkJava
 	
 	echo -n "Starting JATOS"
@@ -55,6 +54,19 @@ function stop() {
 	done
 
 	echo "...stopped"
+}
+
+function checkAlreadyRunning() {
+        if [ -f $dir/RUNNING_PID ]
+        then
+                echo "There seems to be a running JATOS. If you're sure there is no running JATOS delete the file RUNNING_PID in JATOS' root folder."
+                exit 1
+        fi
+        if [[ $(nc -z $address $port) ]];
+        then
+                echo "Port $port already in use"
+                exit 1
+        fi
 }
 
 function checkJava() {
