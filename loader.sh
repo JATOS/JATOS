@@ -58,23 +58,25 @@ function stop() {
 }
 
 function checkJava() {
-	if type -p java
-	then
-		JAVA_VER=$(java -version 2>&1 | sed 's/java version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
-	fi
-	if [[ -z "$JAVA_VER" ]] || [[ "$JAVA_VER" -lt 18 ]]
-	then
-		if [[ -n $dir/jre/linux_x64_jre ]] && [[ -x "$dir/jre/linux_x64_jre/bin/java" ]]
-		then
-			echo "Jatos uses local JRE"
-			export JAVA_HOME="$dir/jre/linux_x64_jre"
-		fi
-		if [[ -n $dir/jre/mac_x64_jre ]] && [[ -x "$dir/jre/mac_x64_jre/bin/java" ]]
-		then
-			echo "Jatos uses local JRE"
-			export JAVA_HOME="$dir/jre/mac_x64_jre"
-		fi
-	fi
+        if type -p java
+        then
+                JAVA_VER=$(java -version 2>&1 | sed 's/java version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
+        fi
+        if [[ -z "$JAVA_VER" ]] || [[ "$JAVA_VER" -lt 18 ]]
+        then
+                if [[ -n $dir/jre/linux_x64_jre ]] && [[ -x "$dir/jre/linux_x64_jre/bin/java" ]]
+                then
+                        echo "Jatos uses local JRE"
+                        export JAVA_HOME="$dir/jre/linux_x64_jre"
+                elif [[ -n $dir/jre/mac_x64_jre ]] && [[ -x "$dir/jre/mac_x64_jre/bin/java" ]]
+                then
+                        echo "Jatos uses local JRE"
+                        export JAVA_HOME="$dir/jre/mac_x64_jre"
+                else
+                        echo "No Java found"
+                        exit 1
+                fi
+        fi
 }
 
 case "$1" in
