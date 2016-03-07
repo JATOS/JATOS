@@ -41,6 +41,9 @@ import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Unreg
  * A GroupDispatcher handles all messages specified in the
  * GroupDispatcherProtocol.
  * 
+ * For the group session the GroupDispatcher is a message broker in a simple pub
+ * sub system with receipt messages to assure delivery or its absence.
+ * 
  * A GroupChannel registers in a GroupDispatcher by sending the RegisterChannel
  * message and unregisters by sending a UnregisterChannel message.
  * 
