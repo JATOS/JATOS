@@ -24,7 +24,7 @@ function start() {
 	secretfile="$dir/play.crypto.secret"
 	if [ ! -f "$secretfile" ]
 	then
-		random="$(LC_CTYPE=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1)"
+		random="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1)"
 		echo "$random" > "$secretfile"
 	fi
 	secret=$(<$secretfile)
