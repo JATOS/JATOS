@@ -12,7 +12,7 @@ rem ###################################
 
 set JATOS_HOME=%~dp0
 set JATOS_HOME=%JATOS_HOME:~0,-1%
-set LOCAL_JRE=jre\win32_jre
+set LOCAL_JRE=jre\win64_jre
 
 rem Detect if we were double clicked
 for %%x in (%cmdcmdline%) do if %%~x==/c set DOUBLECLICKED=1
