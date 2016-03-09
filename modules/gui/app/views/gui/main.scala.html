@@ -296,8 +296,6 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 				<h4 class="modal-title">Confirm</h4>
 			</div>
 			<div class="modal-body">
-				<p class="modalText"></p>
-				<p class="modalPostText"></p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -398,23 +396,12 @@ function showBreadcrumbs (breadcrumbs) {
 	});
 }
 
-function askConfirmation(title, preText, html, postText, buttonText, action) {
-		$('#confirmationModal').find('.modal-title').text(title);
-	if (preText) {
-		$('#confirmationModal').find('.modalText').text(preText);
-	}
-	// html and preText share the same <p>, use an additional <p> in html if you need one
+function askConfirmation(title, html, buttonText, action) {
+	$('#confirmationModal .modal-title').text(title);
 	if (html) {
-		if ($('#confirmationModal').find('.modalText').next().is('.modalPostText')) {
-			$('#confirmationModal').find('.modalText').after(html);
-		} else {
-			$('#confirmationModal').find('.modalText').next().html(html);
-		}
+		$('#confirmationModal .modal-body').html(html);
 	}
-	if (postText) {
-		$('#confirmationModal').find('.modalPostText').text(postText);
-	}
-	$('#confirmationModal').find('.confirmed').text(buttonText);
+	$('#confirmationModal .confirmed').text(buttonText);
 	$('#confirmationModal').modal('show');
 	$('#confirmationModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmationModal').modal('hide');
@@ -488,12 +475,12 @@ function askConfirmationForStudyExists(response) {
 
 function askConfirmationForStudyNotExistsDirExists(response) {
 	var title = "Study import - but study assets' directory already exists";
-	var html = "You are about to import the study \"" + response.studyTitle 
+	var htmlText = "<p>You are about to import the study \"" + response.studyTitle 
 		+ "\" and its directory \"" + response.dirPath
 		+ "\". There already exist a directory with the same name. "
-		+ "If you proceed the <b>current directory will be overridden</b>.";
-	var postText = "Do you want to proceed?";
-	askConfirmation(title, null, html, postText, 'Import', function() {
+		+ "If you proceed the <b>current directory will be overridden</b>.</p>"
+		+ "<p>Do you want to proceed?</p>";
+	askConfirmation(title, htmlText, 'Import', function() {
 		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
 			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);
@@ -502,10 +489,10 @@ function askConfirmationForStudyNotExistsDirExists(response) {
 
 function askConfirmationForStudyNotExistsDirNotExists(response) {
 	var title = "Study import";
-	var html = "You are about to import the study \"" + response.studyTitle 
-		+ "\" and its directory \"" + response.dirPath + "\".";
-	var postText = "Do you want to proceed?"
-	askConfirmation(title, null, html, postText, 'Import', function() {
+	var htmlText = "<p>You are about to import the study \"" + response.studyTitle 
+		+ "\" and its directory \"" + response.dirPath + "\".</p>"
+		+ "<p>Do you want to proceed?</p>";
+	askConfirmation(title, htmlText, 'Import', function() {
 		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
 			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);

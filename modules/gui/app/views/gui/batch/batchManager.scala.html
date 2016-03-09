@@ -221,10 +221,10 @@ $('#batchTable').on('click', '.removeBatch', function() {
 	var batch = getBatchData(this);
 	if (!batch) {return} // should never happen
 	var title = "Confirm Delete";
-	var htmlText = "You are about to delete batch \"" + batch.title 
-		+ "\" (ID " + batch.id + ") <b>with all its results</b>.";
-	var postText = "Do you want to proceed?";
-	askConfirmation(title, null, htmlText, postText, 'Delete', function() {
+	var htmlText = "<p>You are about to delete batch \"" + batch.title 
+		+ "\" (ID " + batch.id + ") <b>with all its results</b>.</p>"
+		+ "<p>Do you want to proceed?</p>";
+	askConfirmation(title, htmlText, 'Delete', function() {
 		$.ajax({
 			url : "/jatos/" + @study.getId() +"/batch/" + batch.id,
 			type : 'DELETE',
