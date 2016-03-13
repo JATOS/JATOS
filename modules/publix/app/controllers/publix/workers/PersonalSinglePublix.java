@@ -51,11 +51,11 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 			ResultCreator resultCreator, GroupService groupService,
 			ChannelService channelService,
 			PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
-				channelService, errorMessages, studyAssets, componentResultDao,
-				jsonUtils, studyResultDao, groupResultDao);
+				channelService, errorMessages, studyAssets, jsonUtils,
+				componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
@@ -78,7 +78,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		session(STUDY_ASSETS, study.getDirName());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAllPriorStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults(worker, study);
 		resultCreator.createStudyResult(study, batch, worker);
 
 		Component firstComponent = publixUtils

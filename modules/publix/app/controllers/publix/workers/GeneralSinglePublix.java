@@ -16,7 +16,6 @@ import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
 import play.Logger;
 import play.db.jpa.JPAApi;
-import play.mvc.Http.Cookie;
 import play.mvc.Result;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
@@ -58,11 +57,11 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 			ResultCreator resultCreator, WorkerCreator workerCreator,
 			GroupService groupService, ChannelService channelService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
-				channelService, errorMessages, studyAssets, componentResultDao,
-				jsonUtils, studyResultDao, groupResultDao);
+				channelService, errorMessages, studyAssets, jsonUtils,
+				componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
@@ -76,8 +75,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 				+ "batchId " + batchId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
-		Cookie cookie = Publix.request().cookie(GeneralSinglePublix.COOKIE);
-		publixUtils.checkStudyInCookie(study, cookie);
+		publixUtils.checkStudyInGeneralSingleCookie(study);
 
 		GeneralSingleWorker worker = workerCreator
 				.createAndPersistGeneralSingleWorker(batch);
@@ -90,11 +88,10 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 				+ worker.getId());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAllPriorStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults(worker, study);
 		resultCreator.createStudyResult(study, batch, worker);
 
-		String cookieValue = publixUtils.addStudyToCookie(study, cookie);
-		Publix.response().setCookie(GeneralSinglePublix.COOKIE, cookieValue);
+		publixUtils.addStudyUuidToGeneralSingleCookie(study);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

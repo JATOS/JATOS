@@ -9,7 +9,8 @@ import models.common.workers.Worker;
  */
 public class PublixErrorMessages {
 
-	public static final String STUDY_NEVER_FINSHED = "Study not completed, but new study started by the same worker";
+	public static final String ABANDONED_STUDY_BY_COOKIE = "Closed by JATOS: Only one study run is allowed in the same browser at the same time.";
+	public static final String ABANDONED_STUDY_BY_WORKER = "Closed by JATOS: study not completed, but new study started by the same worker";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
 	public static final String NO_BATCHID_IN_SESSION = "No batch ID in session. Was the study started?";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";

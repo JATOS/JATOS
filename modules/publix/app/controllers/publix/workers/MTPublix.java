@@ -70,12 +70,14 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			ResultCreator resultCreator, WorkerCreator workerCreator,
 			GroupService groupService, ChannelService channelService,
 			MTErrorMessages errorMessages, StudyAssets studyAssets,
-			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
+			JsonUtils jsonUtils,  
+			ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao,
 			GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
-				channelService, errorMessages, studyAssets, componentResultDao,
-				jsonUtils, studyResultDao, groupResultDao);
+				channelService, errorMessages, studyAssets, jsonUtils,
+				 componentResultDao, studyResultDao,
+				groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
@@ -127,7 +129,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ worker.getId());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAllPriorStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults(worker, study);
 		resultCreator.createStudyResult(study, batch, worker);
 
 		Component firstComponent = publixUtils
@@ -157,7 +159,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
-		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
+		publixUtils.discardIdCookie(studyResult);
 		if (ControllerUtils.isAjax()) {
 			return ok(confirmationCode);
 		} else {

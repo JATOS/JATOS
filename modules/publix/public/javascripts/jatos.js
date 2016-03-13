@@ -218,7 +218,7 @@ function initJatos() {
 	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope.
 	 */
 	function readIdCookie() {
-		var nameEQ = encodeURI("JATOS_IDS") + "=";
+		var nameEQ = "JATOS_IDS=";
 		var ca = document.cookie.split(';');
 		for (var i = 0; i < ca.length; i++) {
 			var c = ca[i];

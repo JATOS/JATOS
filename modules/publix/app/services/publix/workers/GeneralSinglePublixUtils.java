@@ -3,6 +3,8 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.publix.Publix;
+import controllers.publix.workers.GeneralSinglePublix;
 import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -26,7 +28,7 @@ import services.publix.ResultCreator;
 @Singleton
 public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 
-	private static final String COOKIE_DELIMITER = ":";
+	private static final String GENERAL_SINGLE_COOKIE_DELIMITER = ":";
 
 	@Inject
 	GeneralSinglePublixUtils(ResultCreator resultCreator,
@@ -50,13 +52,19 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	}
 
 	/**
-	 * Check if study was done before. Throws an ForbiddenPublixException if
-	 * this study's UUID is in the cookie.
+	 * Check if the given study was done before. Throws an
+	 * ForbiddenPublixException if this study's UUID is in the cookie. This
+	 * cookie is used only in General Single runs to determine whether in a
+	 * browser a study was done already. This is a (simple) way of preventing
+	 * workers doing the same study twice.
 	 */
-	public void checkStudyInCookie(Study study, Cookie cookie)
+	public void checkStudyInGeneralSingleCookie(Study study)
 			throws ForbiddenPublixException {
-		if (cookie != null) {
-			String[] studyUuidArray = cookie.value().split(COOKIE_DELIMITER);
+		Cookie generalSingleCookie = Publix.request()
+				.cookie(GeneralSinglePublix.COOKIE);
+		if (generalSingleCookie != null) {
+			String[] studyUuidArray = generalSingleCookie.value()
+					.split(GENERAL_SINGLE_COOKIE_DELIMITER);
 			for (String uuidStr : studyUuidArray) {
 				if (study.getUuid().equals(uuidStr)) {
 					throw new ForbiddenPublixException(
@@ -67,16 +75,22 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	}
 
 	/**
-	 * Adds this study's UUID to this cookie's value and returns the value.
+	 * Adds this study's UUID to the cookie's value and sets the new cookie
+	 * value in the response object. This cookie is used only in General Single
+	 * runs to determine whether in a browser a study was done already. This is
+	 * a (simple) way of preventing workers doing the same study twice.
 	 */
-	public String addStudyToCookie(Study study, Cookie cookie) {
+	public void addStudyUuidToGeneralSingleCookie(Study study) {
+		Cookie generalSingleCookie = Publix.request()
+				.cookie(GeneralSinglePublix.COOKIE);
 		String value;
-		if (cookie != null) {
-			value = cookie.value() + COOKIE_DELIMITER + study.getUuid();
+		if (generalSingleCookie != null) {
+			value = generalSingleCookie.value()
+					+ GENERAL_SINGLE_COOKIE_DELIMITER + study.getUuid();
 		} else {
 			value = study.getUuid();
 		}
-		return value;
+		Publix.response().setCookie(GeneralSinglePublix.COOKIE, value);
 	}
 
 }

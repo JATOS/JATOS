@@ -164,7 +164,7 @@ public abstract class PublixUtils<T extends Worker> {
 
 	/**
 	 * Finishes a StudyResult (includes ComponentResults) and returns a
-	 * confirmation code.
+	 * confirmation code if it was successful.
 	 *
 	 * @param successful
 	 *            If true finishes all ComponentResults, generates a
@@ -175,7 +175,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 *            happened.
 	 * @param studyResult
 	 *            A StudyResult
-	 * @return The confirmation code
+	 * @return The confirmation code or null if it was unsuccessful
 	 */
 	public String finishStudyResult(Boolean successful, String errorMsg,
 			StudyResult studyResult) {
@@ -208,6 +208,19 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
+	 * Checks if there are abandoned study results and finishes them with a
+	 * state FAIL. 1) The same worker can run only one study at the same time.
+	 * So it finishes all old study results of the given worker with a state
+	 * FAIL. 2) In the same browser can run only one study at the same time. So
+	 * it checks the ID cookie for an unfinished study run.
+	 */
+	public void finishAbandonedStudyResults(Worker worker, Study study)
+			throws BadRequestPublixException {
+		finishAllPriorStudyResultsOfWorker(worker, study);
+		checkIdCookieAndFinishAbandonedStudyResult();
+	}
+
+	/**
 	 * Finishes all StudyResults of this worker of this study that aren't 'done'
 	 * (StudyResult's state is in FINISHED, FAILED, ABORTED). Each worker can do
 	 * only one study with the same ID at the same time. E.g. this is necessary
@@ -218,14 +231,17 @@ public abstract class PublixUtils<T extends Worker> {
 	 * this method during start of each study run, but we iterate over all
 	 * StudyResults of this worker just in case.
 	 */
-	public void finishAllPriorStudyResults(Worker worker, Study study) {
+	private void finishAllPriorStudyResultsOfWorker(Worker worker,
+			Study study) {
 		List<StudyResult> studyResultList = worker.getStudyResultList();
 		for (StudyResult studyResult : studyResultList) {
 			if (study.getId().equals(studyResult.getStudy().getId())
 					&& !PublixHelpers.studyDone(studyResult)) {
-				// Should be max. one StudyResult to finish this way
+				// Should be max. one StudyResult to finish this way since we do
+				// this in every study start
 				finishStudyResult(false,
-						PublixErrorMessages.STUDY_NEVER_FINSHED, studyResult);
+						PublixErrorMessages.ABANDONED_STUDY_BY_WORKER,
+						studyResult);
 			}
 		}
 	}
@@ -472,6 +488,47 @@ public abstract class PublixUtils<T extends Worker> {
 					errorMessages.batchNotExist(batchId));
 		}
 		return batch;
+	}
+
+	/**
+	 * Checks if there is an abandoned study result and if so finishes it. An
+	 * abandoned study result happens when in the same browser a second study
+	 * run is started without finishing the first one.
+	 */
+	private void checkIdCookieAndFinishAbandonedStudyResult()
+			throws BadRequestPublixException {
+		IdCookie idCookie = new IdCookie();
+		if (idCookie.exists()) {
+			Long abandonedStudyResultId = idCookie.getStudyResultId();
+			StudyResult abandonedStudyResult = studyResultDao
+					.findById(abandonedStudyResultId);
+			if (!PublixHelpers.studyDone(abandonedStudyResult)) {
+				finishStudyResult(false,
+						PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
+						abandonedStudyResult);
+			}
+			idCookie.discard(abandonedStudyResultId);
+		}
+	}
+
+	/**
+	 * Generates an ID cookie from the given parameters and sets it in the
+	 * response object.
+	 */
+	public void writeIdCookie(T worker, Batch batch, StudyResult studyResult,
+			ComponentResult componentResult) throws BadRequestPublixException {
+		IdCookie idCookie = new IdCookie();
+		idCookie.writeToResponse(batch, studyResult, componentResult, worker);
+	}
+
+	/**
+	 * Discards the ID cookie if the given study result ID is equal to the one
+	 * in the cookie.
+	 */
+	public void discardIdCookie(StudyResult studyResult)
+			throws BadRequestPublixException {
+		IdCookie idCookie = new IdCookie();
+		idCookie.discard(studyResult.getId());
 	}
 
 }

