@@ -31,6 +31,7 @@ import play.mvc.Http.Cookie;
 import play.mvc.Http.HeaderNames;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
+import services.publix.IdCookie;
 import utils.common.JsonUtils;
 
 /**
@@ -358,7 +359,7 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(result.session().get(JatosPublix.JATOS_RUN)).isNull();
 
 		// Check that ID cookie is removed
-		assertThat(result.cookie(Publix.ID_COOKIE_NAME).value()).isEmpty();
+		assertThat(result.cookie(IdCookie.ID_COOKIE_NAME).value()).isEmpty();
 
 		// Check results
 		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.FINISHED);
@@ -373,7 +374,7 @@ public class PublixJatosTest extends AbstractTest {
 
 	private void checkIdCookie(Result result, Worker worker, Study study,
 			StudyResult studyResult, int componentPosition) {
-		Cookie idCookie = result.cookie(Publix.ID_COOKIE_NAME);
+		Cookie idCookie = result.cookie(IdCookie.ID_COOKIE_NAME);
 		assertThat(idCookie.value()).contains("workerId=" + worker.getId());
 		assertThat(idCookie.value()).contains(
 				"componentId=" + study.getComponent(componentPosition).getId());
