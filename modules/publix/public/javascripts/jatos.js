@@ -641,8 +641,10 @@ jatos.joinGroup = function(callbacks) {
 	}
 	joiningGroup = true;
 	
-	groupChannel = new WebSocket("ws://" + location.host + 
-			"/publix/" + jatos.studyId + "/group/join");
+	groupChannel = new WebSocket(((
+			window.location.protocol === "https:") ? "wss://" : "ws://")
+			+ window.location.host
+			+ "/publix/" + jatos.studyId + "/group/join");
 	groupChannel.onmessage = function(event) {
 		joiningGroup = false;
 		handleGroupMsg(event.data, callbacks);
