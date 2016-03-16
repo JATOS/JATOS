@@ -502,7 +502,8 @@ public abstract class PublixUtils<T extends Worker> {
 			Long abandonedStudyResultId = idCookie.getStudyResultId();
 			StudyResult abandonedStudyResult = studyResultDao
 					.findById(abandonedStudyResultId);
-			if (!PublixHelpers.studyDone(abandonedStudyResult)) {
+			if (abandonedStudyResult != null
+					&& !PublixHelpers.studyDone(abandonedStudyResult)) {
 				finishStudyResult(false,
 						PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
 						abandonedStudyResult);
