@@ -386,7 +386,7 @@ function toggleWorkerTypeButton(button, active) {
 		button.addClass('allowedWorkerType');
 		button.removeClass('btn-default');
 		button.addClass('btn-batch');
-		button.attr('title', "Click to disallow this worker type");
+		button.attr('title', "Click to forbid this worker type");
 		button.html($(button.html())
 				.removeClass('glyphicon-remove')
 				.addClass('glyphicon-ok').prop('outerHTML'));

@@ -250,7 +250,7 @@ public class Batches extends Controller {
 	}
 	
 	/**
-	 * Ajax POST request: Request to allow or disallow a worker type in a batch.
+	 * Ajax POST request: Request to allow or deny a worker type in a batch.
 	 * 
 	 * @throws JatosGuiException
 	 */
