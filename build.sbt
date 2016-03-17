@@ -74,17 +74,8 @@ mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh
 // Add loader.sh to distribution
 mappings in Universal += file(baseDirectory.value + "/loader.bat") -> ("loader.bat")
 
-// Add app.json of Heroku configuration to distribution
-mappings in Universal += file(baseDirectory.value + "/app.json") -> ("app.json")
-
-// Add Procfile of Heroku configuration to distribution
-mappings in Universal += file(baseDirectory.value + "/Procfile") -> ("Procfile")
-
 // Add conf/production.conf to distribution
 mappings in Universal += file(baseDirectory.value + "/conf/production.conf") -> ("conf/production.conf")
-
-// Add conf/heroku.conf to distribution
-mappings in Universal += file(baseDirectory.value + "/conf/heroku.conf") -> ("conf/heroku.conf")
 
 // Don't include dev config to distribution
 mappings in Universal := (mappings in Universal).value filter {
