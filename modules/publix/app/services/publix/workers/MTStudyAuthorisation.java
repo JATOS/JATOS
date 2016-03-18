@@ -48,7 +48,7 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 	public void checkWorkerAllowedToDoStudy(MTWorker worker, Study study,
 			Batch batch) throws ForbiddenPublixException {
 		// Check if worker type is allowed
-		if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {
+		if (!batch.hasAllowedWorkerType(MTWorker.WORKER_TYPE)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType(),
 							study.getId(), batch.getId()));
