@@ -7,6 +7,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.google.common.base.Strings;
+import com.ning.http.client.providers.netty.response.NettyResponse;
 
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.NotFoundPublixException;
@@ -159,7 +160,11 @@ public class StudyAssets extends Controller {
 					// Prevent browser from caching pages - this would be an
 					// security issue and additionally confuse the study flow
 					response().setHeader("Cache-control", "no-cache, no-store");
-					return ok(response.getBody())
+					// Play's WSResponse has problems with the UTF-8 encoding.
+					// So we use the underlying NettyResponse.
+					NettyResponse nettyResponse = (NettyResponse) response
+							.getUnderlying();
+					return ok(nettyResponse.getResponseBody("UTF-8"))
 							.as("text/html; charset=utf-8");
 				});
 	}
