@@ -1197,8 +1197,9 @@ jatos.log = function(logMsg) {
 };
 
 /**
- * Convenience function that adds all JATOS IDs (study ID, component ID, worker
- * ID, study result ID, component result ID, group result ID, group member ID)
+ * Convenience function that adds all JATOS IDs (study ID, study title, 
+ * component ID, component position, component title, worker ID,
+ * study result ID, component result ID, group result ID, group member ID)
  * to the given object.
  * 
  * @param {Object}
@@ -1206,12 +1207,16 @@ jatos.log = function(logMsg) {
  */
 jatos.addJatosIds = function(obj) {
 	obj.studyId = jatos.studyId;
+	obj.studyTitle = jatos.studyProperties.title;
 	obj.componentId = jatos.componentId;
+	obj.componentPos = jatos.componentPos;
+	obj.componentTitle = jatos.componentProperties.title;
 	obj.workerId = jatos.workerId;
 	obj.studyResultId = jatos.studyResultId;
 	obj.componentResultId = jatos.componentResultId;
 	obj.groupResultId = jatos.groupResultId;
 	obj.groupMemberId = jatos.groupMemberId;
+	return obj;
 };
 
 })();
