@@ -131,15 +131,8 @@ public class PublixErrorMessages {
 	}
 
 	public String studyAssetsNotAllowedOutsideRun(String filePath) {
-		return "Someone tried to access " + filePath + " but it's not allowed "
-				+ "to access the study assets from outside a study run";
-	}
-
-	public String studyAssetsNotAllowedOutsideAssets(String filePath,
-			String properStudyAssets) {
-		return "Someone tried to access " + filePath + " but it's not allowed "
-				+ "to load files from outside this study's assets " + "\'"
-				+ properStudyAssets + "\'.";
+		return "You tried to access the file " + filePath
+				+ " but this study was never started.";
 	}
 
 }

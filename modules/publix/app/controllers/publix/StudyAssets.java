@@ -94,7 +94,7 @@ public class StudyAssets extends Controller {
 	 * Throws a ForbiddenPublixException if this request is not allowed to
 	 * access the study assets given in the filePath. For comparison it needs
 	 * the study assets directory name of this study. It gets it either from the
-	 * session or from the request's header.
+	 * session or from a request's header.
 	 */
 	private void checkProperAssets(String filePath)
 			throws ForbiddenPublixException {
@@ -110,8 +110,7 @@ public class StudyAssets extends Controller {
 
 		if (!filePath.startsWith(properStudyAssets + File.separator)) {
 			throw new ForbiddenPublixException(
-					errorMessages.studyAssetsNotAllowedOutsideAssets(filePath,
-							properStudyAssets));
+					errorMessages.studyAssetsNotAllowedOutsideRun(filePath));
 		}
 	}
 
