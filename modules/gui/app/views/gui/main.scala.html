@@ -509,11 +509,11 @@ function postStudyImportConfirm(jsonData) {
 		success: function(result) {
 			showMessages(JSON.parse(result));
 			fillSidebar();
-			if (componentsTable) {
+			if (typeof componentsTable !== 'undefined') {
 				componentsTable.ajax.reload();
 			}
 		},
-		error : function(err) {
+		error: function(err) {
 			showError(err.responseText);
 		}
 	});
@@ -534,7 +534,7 @@ function fillSidebar() {
 
 $('#sidebarStudyList').on('click', '.studyListItem', function(e) {
 	// If plus or minus expand the study
-	if($(e.target).hasClass('glyphicon-chevron-right')
+	if ($(e.target).hasClass('glyphicon-chevron-right')
 			|| $(e.target).hasClass('glyphicon-chevron-down')) {
 		$(this).find(".glyphicon").toggleClass('study-expanded study-collapsed');
 		$(this).find(".glyphicon").toggleClass('glyphicon-chevron-right glyphicon-chevron-down');

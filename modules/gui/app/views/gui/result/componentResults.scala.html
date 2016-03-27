@@ -165,7 +165,7 @@ $('#resultsToolbar').on('click', '.exportResultData', function() {
 		var rowData = resultsTable.row(selectedTr).data();
 		ids.push(rowData.id);
 	});
-	if(ids.length == 0) {
+	if (ids.length == 0) {
 		showError("No results selected");
 		return;
 	}
@@ -195,7 +195,7 @@ $('#resultsToolbar').on('click', '.remove', function() {
 		var rowData = resultsTable.row(selectedTr).data();
 		ids.push(rowData.id);
 	});
-	if(ids.length <= 0) {
+	if (ids.length <= 0) {
 		showError("No results selected");
 		return;
 	}
@@ -206,14 +206,14 @@ $('#resultsToolbar').on('click', '.remove', function() {
 	askConfirmation(title, htmlText, 'Delete', function() {
 		var url = '/jatos/componentResult?componentResultIds=' + ids.toString();
 		$.ajax({
-			url : url,
-			type : 'DELETE',
-			success : function(result) {
+			url: url,
+			type: 'DELETE',
+			success: function(result) {
 				selectedTrs.forEach(function(selectedTr) {
 					resultsTable.row(selectedTr).remove().draw();
 				});
 			},
-			error : function(err) {
+			error: function(err) {
 				showError(err.responseText);
 			}
 		});
@@ -227,12 +227,12 @@ $('#resultsToolbar').on('click', '.removeAll', function() {
 	askConfirmation(title, htmlText, 'Delete', function() {
 		var url = "@controllers.gui.routes.ComponentResults.removeAllOfComponent(study.getId(), component.getId())";
 		$.ajax({
-			url : url,
-			type : 'DELETE',
-			success : function(result) {
+			url: url,
+			type: 'DELETE',
+			success: function(result) {
 				resultsTable.ajax.reload();
 			},
-			error : function(err) {
+			error: function(err) {
 				showError(err.responseText);
 			}
 		});

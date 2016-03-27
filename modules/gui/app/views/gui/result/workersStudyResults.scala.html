@@ -210,7 +210,7 @@ $('#resultsToolbar').on('click', '.exportResultData', function() {
 		var rowData = resultsTable.row(selectedTr).data();
 		ids.push(rowData.id);
 	});
-	if(ids.length == 0) {
+	if (ids.length == 0) {
 		showError("No results selected");
 		return;
 	}
@@ -240,7 +240,7 @@ $('#resultsToolbar').on('click', '.remove', function() {
 		var rowData = resultsTable.row(selectedTr).data();
 		ids.push(rowData.id);
 	});
-	if(ids.length <= 0) {
+	if (ids.length <= 0) {
 		showError("No results selected");
 		return;
 	}
@@ -299,7 +299,7 @@ function childRowFormat(data) {
 		'<td><b>Duration</b></td>',
 		'<td><b>State</b></td>',
 		'</tr>');
-		if(data.componentResults.length > 0) {
+		if (data.componentResults.length > 0) {
 			data.componentResults.forEach(function(componentResult) {
 				var duration = (componentResult.duration) ? componentResult.duration : "not yet";
 				html.push('<tr class="info">',
