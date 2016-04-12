@@ -23,6 +23,11 @@ import javax.inject.Singleton;
 public class ZipUtil {
 
 	private static final int BUFFER_SIZE = 4096;
+	
+	/**
+	 * File separator must be '/' and NOT the system's FILE.SEPARATOR
+	 */
+	private static final String ZIP_FILE_SEPARATOR = "/";
 
 	/**
 	 * Unzips the given File. Creates a new File object with the prefix
@@ -39,7 +44,7 @@ public class ZipUtil {
 			ZipEntry zipEntry = (ZipEntry) enumeration.nextElement();
 			String fileName = zipEntry.getName();
 			file = new File(tempDir, fileName);
-			if (fileName.endsWith(File.separator)) {
+			if (fileName.endsWith(ZIP_FILE_SEPARATOR)) {
 				file.mkdirs();
 				continue;
 			}
@@ -71,8 +76,8 @@ public class ZipUtil {
 	static public File zipStudy(String studyAssetsDirPath,
 			String studyAssetsDirNameInZip, String studyAsJsonPath)
 			throws IOException {
-		File zipFile = File.createTempFile("study", "."
-				+ IOUtils.ZIP_FILE_SUFFIX);
+		File zipFile = File.createTempFile("study",
+				"." + IOUtils.ZIP_FILE_SUFFIX);
 		zipFile.deleteOnExit();
 		FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
 		ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
@@ -90,8 +95,8 @@ public class ZipUtil {
 	}
 
 	static private void addDirectoryToZip(String dirPathInZip,
-			String dirNameInZip, String dirPath, ZipOutputStream zipOutputStream)
-			throws IOException {
+			String dirNameInZip, String dirPath,
+			ZipOutputStream zipOutputStream) throws IOException {
 		File dir = new File(dirPath);
 		if (!dir.isDirectory()) {
 			return;
@@ -101,10 +106,12 @@ public class ZipUtil {
 			if (dirPathInZip.equals("")) {
 				filePathInZip = dirNameInZip;
 			} else {
-				filePathInZip = dirPathInZip + File.separator + dir.getName();
+				filePathInZip = dirPathInZip + ZIP_FILE_SEPARATOR
+						+ dir.getName();
 			}
-			addFileToZip(filePathInZip, dir.getAbsolutePath() + File.separator
-					+ fileName, zipOutputStream);
+			String filePath = dir.getAbsolutePath() + ZIP_FILE_SEPARATOR
+					+ fileName;
+			addFileToZip(filePathInZip, filePath, zipOutputStream);
 		}
 	}
 
@@ -121,8 +128,8 @@ public class ZipUtil {
 				byte[] buffer = new byte[BUFFER_SIZE];
 				int length;
 				fileInputStream = new FileInputStream(file);
-				zipOutputStream.putNextEntry(new ZipEntry(filePathInZip
-						+ File.separator + file.getName()));
+				zipOutputStream.putNextEntry(new ZipEntry(
+						filePathInZip + ZIP_FILE_SEPARATOR + file.getName()));
 				while ((length = fileInputStream.read(buffer)) > 0) {
 					zipOutputStream.write(buffer, 0, length);
 				}
