@@ -126,26 +126,6 @@ public class StudyAssets extends Controller {
 	}
 
 	/**
-	 * Generates an URL with protocol HTTP. Takes the hostname from the request,
-	 * the url's path from the given urlPath, and the query string again from
-	 * the request.
-	 */
-	public static String getUrlWithQueryString(String oldUri,
-			String requestHost, String newUrlPath) {
-		// Check if we have an query string (begins with '?')
-		int queryBegin = oldUri.lastIndexOf("?");
-		if (queryBegin > 0) {
-			String queryString = oldUri.substring(queryBegin + 1);
-			newUrlPath = newUrlPath + "?" + queryString;
-		}
-
-		// It would be nice if Play has a way to find out which protocol it
-		// uses. Apparently it changes http automatically into https if it uses
-		// encryption (at least when I checked with Play 2.2.3).
-		return "http://" + requestHost + newUrlPath;
-	}
-
-	/**
 	 * Like an internal redirect or an proxy. The URL in the browser doesn't
 	 * change. Additionally it adds a header with the study assets name which is
 	 * stored in the session. The study assets name is needed by
@@ -159,8 +139,9 @@ public class StudyAssets extends Controller {
 					// Prevent browser from caching pages - this would be an
 					// security issue and additionally confuse the study flow
 					response().setHeader("Cache-control", "no-cache, no-store");
-					// Play's WSResponse has problems with the UTF-8 encoding.
-					// So we use the underlying NettyResponse.
+					// Play's WSResponse has problems with the UTF-8 encoding
+					// (at least in version 2.4.3). So we use the underlying
+					// NettyResponse.
 					NettyResponse nettyResponse = (NettyResponse) response
 							.getUnderlying();
 					return ok(nettyResponse.getResponseBody("UTF-8"))

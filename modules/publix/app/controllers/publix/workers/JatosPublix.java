@@ -23,6 +23,7 @@ import play.db.jpa.JPAApi;
 import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.publix.HttpHelpers;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
@@ -192,7 +193,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
-		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(
+		String urlWithQueryStr = HttpHelpers.getUrlWithQueryString(
 				request().uri(), request().host(), urlPath);
 		return studyAssets.forwardTo(urlWithQueryStr);
 	}
@@ -239,7 +240,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		}
 		String startComponentUrlPath = controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, nextComponent.getId()).url();
-		String urlWithQueryString = StudyAssets.getUrlWithQueryString(
+		String urlWithQueryString = HttpHelpers.getUrlWithQueryString(
 				request().uri(), request().host(), startComponentUrlPath);
 		return redirect(urlWithQueryString);
 	}

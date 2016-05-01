@@ -43,5 +43,25 @@ public class HttpHelpers {
 		throw new UnsupportedMediaTypePublixException(
 				PublixErrorMessages.SUBMITTED_DATA_UNKNOWN_FORMAT);
 	}
+	
+	/**
+	 * Generates an URL with protocol HTTP. Takes the hostname from the request,
+	 * the url's path from the given urlPath, and the query string again from
+	 * the request.
+	 */
+	public static String getUrlWithQueryString(String oldUri,
+			String requestHost, String newUrlPath) {
+		// Check if we have an query string (begins with '?')
+		int queryBegin = oldUri.lastIndexOf("?");
+		if (queryBegin > 0) {
+			String queryString = oldUri.substring(queryBegin + 1);
+			newUrlPath = newUrlPath + "?" + queryString;
+		}
+
+		// It would be nice if Play has a way to find out which protocol it
+		// uses. Apparently it changes http automatically into https if it uses
+		// encryption (at least when I checked with Play 2.2.3).
+		return "http://" + requestHost + newUrlPath;
+	}
 
 }

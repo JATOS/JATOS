@@ -113,7 +113,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
 		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
 				component);
-		String urlWithQueryStr = StudyAssets.getUrlWithQueryString(
+		String urlWithQueryStr = HttpHelpers.getUrlWithQueryString(
 				request().uri(), request().host(), urlPath);
 		return studyAssets.forwardTo(urlWithQueryStr);
 	}
@@ -147,7 +147,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		}
 		String startComponentUrlPath = controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, nextComponent.getId()).url();
-		String urlWithQueryString = StudyAssets.getUrlWithQueryString(
+		String urlWithQueryString = HttpHelpers.getUrlWithQueryString(
 				request().uri(), request().host(), startComponentUrlPath);
 		return redirect(urlWithQueryString);
 	}
