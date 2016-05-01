@@ -1,6 +1,6 @@
 /**
  * jatos.js (JATOS JavaScript Library)
- * Version 2.1.7
+ * Version 2.1.8
  * http://www.jatos.org
  * Author Kristian Lange 2014 - 2016
  * Licensed under Apache License 2.0
@@ -21,7 +21,7 @@ var jatos = {};
 /**
  * jatos.js version
  */
-jatos.version = "2.1.7";
+jatos.version = "2.1.8";
 /**
  * How long should JATOS wait until to retry the HTTP call. Warning: There is a
  * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
