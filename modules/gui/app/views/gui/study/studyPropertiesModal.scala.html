@@ -161,9 +161,15 @@ $("#studyPropertiesForm").submit(function(event) {
 			removeAlerts("#studyPropertiesModal");
 			removeFormErrors("#studyPropertiesModal");
 			$('#studyPropertiesModal').modal('hide');
-			fillSidebar();
-			var title = $('#studyPropertiesModal .@models.gui.StudyProperties.TITLE').val();
-			$('#breadcrumbs li:last-child').text(title);
+			// Destinguish between newly created study und edited properties
+			if ($("#studyPropertiesForm").attr("action") === "@controllers.gui.routes.Studies.submitCreated()") {
+				// New study's ID is in the response
+				window.location.href = "/jatos/" + response;
+			} else {
+				fillSidebar();
+				var title = $('#studyPropertiesModal .@models.gui.StudyProperties.TITLE').val();
+				$('#breadcrumbs li:last-child').text(title);
+			}
 		},
 		error : function(response) {
 			removeAlerts("#studyPropertiesModal");
