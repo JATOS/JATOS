@@ -21,6 +21,7 @@ import play.mvc.Call;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.publix.HttpHelpers;
 
 /**
  * Testing controller.publix.StudyAssets
@@ -140,7 +141,7 @@ public class StudyAssetsTest extends AbstractTest {
 
 	@Test
 	public void testGetUrlWithRequestQueryString() throws IOException {
-		String url = StudyAssets.getUrlWithQueryString(
+		String url = HttpHelpers.getUrlWithQueryString(
 				"oldCall?para=foo&puru=bar", "localhost:9000/", "newCall");
 		assertThat(url)
 				.isEqualTo("http://localhost:9000/newCall?para=foo&puru=bar");
