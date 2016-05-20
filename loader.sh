@@ -55,9 +55,9 @@ function checkAlreadyRunning() {
 		echo "There seems to be a running JATOS. If you're sure there is no running JATOS delete the file RUNNING_PID in JATOS' root folder."
 		exit 1
 	fi
-	if [[ $(nc -z $address $port) ]];
+	if nc -z $address $port > /dev/null 2>&1
 	then
-		echo "Port $port already in use"
+		echo "Some other program is using port $port already. Maybe another JATOS?"
 		exit 1
 	fi
 }
