@@ -19,14 +19,7 @@ function start() {
 	echo -n "Starting JATOS"
 
 	# Generate application secret for the Play framework
-	# If it's the first start, create a new secret, otherwise load it from the file.
-	secretfile="$dir/play.crypto.secret"
-	if [ ! -f "$secretfile" ]
-	then
-		random="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1)"
-		echo "$random" > "$secretfile"
-	fi
-	secret=$(<$secretfile)
+	secret="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1)"
 
 	if [ ! -f $dir/bin/jatos ]
 	then
@@ -57,38 +50,46 @@ function stop() {
 }
 
 function checkAlreadyRunning() {
-        if [ -f $dir/RUNNING_PID ]
-        then
-                echo "There seems to be a running JATOS. If you're sure there is no running JATOS delete the file RUNNING_PID in JATOS' root folder."
-                exit 1
-        fi
-        if [[ $(nc -z $address $port) ]];
-        then
-                echo "Port $port already in use"
-                exit 1
-        fi
+	if [ -f $dir/RUNNING_PID ]
+	then
+		echo "There seems to be a running JATOS. If you're sure there is no running JATOS delete the file RUNNING_PID in JATOS' root folder."
+		exit 1
+	fi
+	if [[ $(nc -z $address $port) ]];
+	then
+		echo "Port $port already in use"
+		exit 1
+	fi
 }
 
 function checkJava() {
-        if type -p java
-        then
-                JAVA_VER=$(java -version 2>&1 | sed 's/java version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
-        fi
-        if [[ -z "$JAVA_VER" ]] || [[ "$JAVA_VER" -lt 18 ]]
-        then
-                if [[ -n $dir/jre/linux_x64_jre ]] && [[ -x "$dir/jre/linux_x64_jre/bin/java" ]]
-                then
-                        echo "Jatos uses local JRE"
-                        export JAVA_HOME="$dir/jre/linux_x64_jre"
-                elif [[ -n $dir/jre/mac_x64_jre ]] && [[ -x "$dir/jre/mac_x64_jre/bin/java" ]]
-                then
-                        echo "Jatos uses local JRE"
-                        export JAVA_HOME="$dir/jre/mac_x64_jre"
-                else
-                        echo "No Java found"
-                        exit 1
-                fi
-        fi
+	# Get Java version if installed
+	if type -p java
+	then
+		echo "Found Java"
+		JAVA_VER=$(java -version 2>&1 | sed 's/.*version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
+	elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]]
+	then
+		echo "Found Java in JAVA_HOME"
+		JAVA_VER=$($JAVA_HOME/bin/java -version 2>&1 | sed 's/.*version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
+	fi
+	
+	# If we don't have a version or if the version is not a number or if the version is smaller 18 (Java 8) try to find a local Java installation
+	if [[ -z "$JAVA_VER" ]] || [[ ! "$JAVA_VER" =~ ^[0-9]+$ ]] || [[ "$JAVA_VER" -lt 18 ]]
+	then
+		if [[ -n $dir/jre/linux_x64_jre ]] && [[ -x "$dir/jre/linux_x64_jre/bin/java" ]]
+		then
+			echo "Jatos uses local JRE"
+			export JAVA_HOME="$dir/jre/linux_x64_jre"
+		elif [[ -n $dir/jre/mac_x64_jre ]] && [[ -x "$dir/jre/mac_x64_jre/bin/java" ]]
+		then
+			echo "Jatos uses local JRE"
+			export JAVA_HOME="$dir/jre/mac_x64_jre"
+		else
+			echo "No Java found"
+			exit 1
+		fi
+	fi
 }
 
 case "$1" in
