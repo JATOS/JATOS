@@ -21,7 +21,7 @@ var jatos = {};
 /**
  * jatos.js version
  */
-jatos.version = "2.1.8";
+jatos.version = "2.1.9";
 /**
  * How long should JATOS wait until to retry the HTTP call. Warning: There is a
  * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
