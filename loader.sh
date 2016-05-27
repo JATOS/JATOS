@@ -10,7 +10,7 @@ port="9000"
 
 # Get JATOS directory and add it to PATH
 dir="$( cd "$( dirname "$0" )" && pwd )"
-export PATH="$dir:$dir/bin:$PATH"
+pidfile=$dir/RUNNING_PID
 
 function start() {
 	checkAlreadyRunning
@@ -31,31 +31,34 @@ function start() {
 	chmod u+x $dir/bin/jatos
 	
 	# Start JATOS with configuration file and application secret
-	jatos -Dconfig.file="conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
+	$dir/bin/jatos -Dconfig.file="conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
 	
 	echo "...started"
 	echo "To use JATOS type $address:$port in your browser's address bar"
 }
 
 function stop() {
-	[ -f $dir/RUNNING_PID ] || return
+	if [ ! -f $pidfile ] || ! kill -0 $(cat "$pidfile") 2>1 >/dev/null
+	then
+		echo "JATOS not running"
+		exit 1
+	fi
 	echo -n "Stopping JATOS"
-	kill -SIGTERM $(cat $dir/RUNNING_PID)
-	while [ -f $dir/RUNNING_PID ]
-	do
-		sleep 0.5
-	done
-
+	kill -SIGTERM $(cat $pidfile)
+	rm -f $pidfile
 	echo "...stopped"
 }
 
 function checkAlreadyRunning() {
-	if [ -f $dir/RUNNING_PID ]
+	if [ -f $pidfile ] && kill -0 $(cat $pidfile) 2>1 >/dev/null
 	then
-		echo "There seems to be a running JATOS. If you're sure there is no running JATOS delete the file RUNNING_PID in JATOS' root folder."
+		echo "There seems to be a running JATOS."
 		exit 1
 	fi
-	if nc -z $address $port > /dev/null 2>&1
+	# Delete old PID file (just to be sure)
+	rm -f $pidfile
+
+	if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null
 	then
 		echo "Some other program is using port $port already. Maybe another JATOS?"
 		exit 1
@@ -67,15 +70,15 @@ function checkJava() {
 	if type -p java
 	then
 		echo "Found Java"
-		JAVA_VER=$(java -version 2>&1 | sed 's/.*version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
+		java_version=$(java -version 2>&1 | sed 's/.*version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
 	elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]]
 	then
 		echo "Found Java in JAVA_HOME"
-		JAVA_VER=$($JAVA_HOME/bin/java -version 2>&1 | sed 's/.*version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
+		java_version=$($JAVA_HOME/bin/java -version 2>&1 | sed 's/.*version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
 	fi
 	
 	# If we don't have a version or if the version is not a number or if the version is smaller 18 (Java 8) try to find a local Java installation
-	if [[ -z "$JAVA_VER" ]] || [[ ! "$JAVA_VER" =~ ^[0-9]+$ ]] || [[ "$JAVA_VER" -lt 18 ]]
+	if [[ -z "$java_version" ]] || [[ ! "$java_version" =~ ^[0-9]+$ ]] || [[ "$java_version" -lt 18 ]]
 	then
 		if [[ -n $dir/jre/linux_x64_jre ]] && [[ -x "$dir/jre/linux_x64_jre/bin/java" ]]
 		then
