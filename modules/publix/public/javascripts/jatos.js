@@ -1,6 +1,6 @@
 /**
  * jatos.js (JATOS JavaScript Library)
- * Version 2.1.8
+ * Version 2.1.10
  * http://www.jatos.org
  * Author Kristian Lange 2014 - 2016
  * Licensed under Apache License 2.0
