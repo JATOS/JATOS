@@ -104,6 +104,10 @@ case "$1" in
 		;;
 	restart)
 		stop
+		while lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 
+		do
+			sleep 1
+		done
 		start
 		;;
 	*)
