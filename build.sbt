@@ -6,6 +6,12 @@ import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
 name := "JATOS"
 
+// Maintainer used for all packaging
+maintainer := "Kristian Lange"
+
+// Exposing the Play ports for Docker
+dockerExposedPorts in Docker := Seq(9000, 9443)
+
 Common.settings
 
 libraryDependencies ++= Seq(
