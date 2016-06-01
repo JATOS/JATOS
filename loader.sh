@@ -8,7 +8,7 @@ port="9000"
 # Don't change after here unless you know what you're doing
 #####################################
 
-# Get JATOS directory and add it to PATH
+# Get JATOS directory
 dir="$( cd "$( dirname "$0" )" && pwd )"
 pidfile=$dir/RUNNING_PID
 
@@ -31,7 +31,7 @@ function start() {
 	chmod u+x $dir/bin/jatos
 	
 	# Start JATOS with configuration file and application secret
-	$dir/bin/jatos -Dconfig.file="conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
+	$dir/bin/jatos -Dconfig.file="$dir/conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address > /dev/null &
 	
 	echo "...started"
 	echo "To use JATOS type $address:$port in your browser's address bar"
@@ -104,6 +104,7 @@ case "$1" in
 		;;
 	restart)
 		stop
+		# Check that JATOS' port is free
 		while lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 
 		do
 			sleep 1
