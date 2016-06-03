@@ -17,7 +17,7 @@ Common.settings
 libraryDependencies ++= Seq(
 	"org.mockito" % "mockito-core" % "1.9.5" % "test",
 	"org.easytesting" % "fest-assert" % "1.4" % Test,
-	"com.h2database" % "h2" % "1.4.191",
+	"com.h2database" % "h2" % "1.4.192",
 	javaCore,
 	javaJdbc,
 	javaJpa,
