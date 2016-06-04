@@ -26,7 +26,6 @@ import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
 import play.db.jpa.JPAApi;
-import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
@@ -89,7 +88,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	}
 
 	@Override
-	public Promise<Result> startComponent(Long studyId, Long componentId)
+	public Result startComponent(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
@@ -106,21 +105,17 @@ public abstract class Publix<T extends Worker> extends Controller
 			componentResult = publixUtils.startComponent(component,
 					studyResult);
 		} catch (ForbiddenReloadException e) {
-			return Promise
-					.pure(redirect(controllers.publix.routes.PublixInterceptor
-							.finishStudy(studyId, false, e.getMessage())));
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, e.getMessage()));
 		}
 		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
-		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
-				component);
-		String urlWithQueryStr = HttpHelpers.getUrlWithQueryString(
-				request().uri(), request().host(), urlPath);
-		return studyAssets.forwardTo(urlWithQueryStr);
+		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
+				component.getHtmlFilePath());
 	}
 
 	@Override
-	public Promise<Result> startComponentByPosition(Long studyId,
-			Integer position) throws PublixException {
+	public Result startComponentByPosition(Long studyId, Integer position)
+			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponentByPosition: studyId " + studyId
 				+ ", " + "position " + position + ", " + ", " + "workerId "
 				+ session(WORKER_ID));
@@ -145,11 +140,8 @@ public abstract class Publix<T extends Worker> extends Controller
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
-		String startComponentUrlPath = controllers.publix.routes.PublixInterceptor
-				.startComponent(studyId, nextComponent.getId()).url();
-		String urlWithQueryString = HttpHelpers.getUrlWithQueryString(
-				request().uri(), request().host(), startComponentUrlPath);
-		return redirect(urlWithQueryString);
+		return redirect(controllers.publix.routes.PublixInterceptor
+				.startComponent(studyId, nextComponent.getId()));
 	}
 
 	@Override

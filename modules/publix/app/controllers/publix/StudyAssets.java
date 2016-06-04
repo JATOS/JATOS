@@ -6,17 +6,11 @@ import java.io.IOException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import com.google.common.base.Strings;
-import com.ning.http.client.providers.netty.response.NettyResponse;
-
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.NotFoundPublixException;
 import general.common.Common;
 import general.common.MessagesStrings;
-import models.common.Component;
 import play.Logger;
-import play.libs.F.Promise;
-import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
@@ -40,15 +34,13 @@ public class StudyAssets extends Controller {
 	 */
 	public static final String URL_STUDY_ASSETS = "study_assets";
 
-	private final WSClient ws;
 	private final IOUtils ioUtils;
 	private final Common common;
 	private final PublixErrorMessages errorMessages;
 
 	@Inject
-	StudyAssets(WSClient ws, IOUtils ioUtils, Common common,
+	StudyAssets(IOUtils ioUtils, Common common,
 			PublixErrorMessages errorMessages) {
-		this.ws = ws;
 		this.ioUtils = ioUtils;
 		this.common = common;
 		this.errorMessages = errorMessages;
@@ -93,16 +85,14 @@ public class StudyAssets extends Controller {
 	/**
 	 * Throws a ForbiddenPublixException if this request is not allowed to
 	 * access the study assets given in the filePath. For comparison it needs
-	 * the study assets directory name of this study. It gets it either from the
-	 * session or from a request's header.
+	 * the study assets directory name of this study and it gets it from the
+	 * session.
 	 */
 	private void checkProperAssets(String filePath)
 			throws ForbiddenPublixException {
 		String properStudyAssets;
 		if (session(Publix.STUDY_ASSETS) != null) {
 			properStudyAssets = session(Publix.STUDY_ASSETS);
-		} else if (request().hasHeader(Publix.STUDY_ASSETS)) {
-			properStudyAssets = request().getHeader(Publix.STUDY_ASSETS);
 		} else {
 			throw new ForbiddenPublixException(
 					errorMessages.studyAssetsNotAllowedOutsideRun(filePath));
@@ -114,39 +104,23 @@ public class StudyAssets extends Controller {
 		}
 	}
 
-	public static String getComponentUrlPath(String studyAssetsDirName,
-			Component component) throws NotFoundPublixException {
-		if (Strings.isNullOrEmpty(studyAssetsDirName)
-				|| Strings.isNullOrEmpty(component.getHtmlFilePath())) {
-			throw new NotFoundPublixException(
-					MessagesStrings.htmlFilePathEmpty(component.getId()));
-		}
-		return "/" + URL_STUDY_ASSETS + "/" + studyAssetsDirName + "/"
-				+ component.getHtmlFilePath();
-	}
-
 	/**
-	 * Like an internal redirect or an proxy. The URL in the browser doesn't
-	 * change. Additionally it adds a header with the study assets name which is
-	 * stored in the session. The study assets name is needed by
-	 * StudyAssets.versioned to verify whether this study run is allowed to
-	 * access those study assets.
+	 * Retrieves the component's HTML file from the study assets
 	 */
-	public Promise<Result> forwardTo(String url) {
-		return ws.url(url)
-				.setHeader(Publix.STUDY_ASSETS, session(Publix.STUDY_ASSETS))
-				.get().map(response -> {
-					// Prevent browser from caching pages - this would be an
-					// security issue and additionally confuse the study flow
-					response().setHeader("Cache-control", "no-cache, no-store");
-					// Play's WSResponse has problems with the UTF-8 encoding
-					// (at least in version 2.4.3). So we use the underlying
-					// NettyResponse.
-					NettyResponse nettyResponse = (NettyResponse) response
-							.getUnderlying();
-					return ok(nettyResponse.getResponseBody("UTF-8"))
-							.as("text/html; charset=utf-8");
-				});
+	public Result retrieveComponentHtmlFile(String studyDirName,
+			String componentHtmlFilePath) throws NotFoundPublixException {
+		File file = null;
+		try {
+			file = ioUtils.getFileInStudyAssetsDir(studyDirName,
+					componentHtmlFilePath);
+		} catch (IOException e) {
+			throw new NotFoundPublixException(MessagesStrings
+					.htmlFilePathNotExist(studyDirName, componentHtmlFilePath));
+		}
+		// Prevent browser from caching pages - this would be an
+		// security issue and additionally confuse the study flow
+		response().setHeader("Cache-control", "no-cache, no-store");
+		return ok(file, true).as("text/html; charset=utf-8");
 	}
 
 }

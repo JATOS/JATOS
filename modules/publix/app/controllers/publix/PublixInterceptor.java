@@ -25,7 +25,6 @@ import models.common.workers.PersonalSingleWorker;
 import play.Logger;
 import play.Play;
 import play.db.jpa.Transactional;
-import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
@@ -104,72 +103,70 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Promise<Result> startComponent(Long studyId, Long componentId)
+	public Result startComponent(Long studyId, Long componentId)
 			throws PublixException {
-		Promise<Result> promise = null;
+		Result result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
-			promise = instanceOfPublix(MTPublix.class).startComponent(studyId,
+			result = instanceOfPublix(MTPublix.class).startComponent(studyId,
 					componentId);
 			break;
 		case JatosWorker.WORKER_TYPE:
-			promise = instanceOfPublix(JatosPublix.class)
-					.startComponent(studyId, componentId);
+			result = instanceOfPublix(JatosPublix.class).startComponent(studyId,
+					componentId);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
-			promise = instanceOfPublix(PersonalMultiplePublix.class)
+			result = instanceOfPublix(PersonalMultiplePublix.class)
 					.startComponent(studyId, componentId);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
-			promise = instanceOfPublix(PersonalSinglePublix.class)
+			result = instanceOfPublix(PersonalSinglePublix.class)
 					.startComponent(studyId, componentId);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
-			promise = instanceOfPublix(GeneralSinglePublix.class)
+			result = instanceOfPublix(GeneralSinglePublix.class)
 					.startComponent(studyId, componentId);
 			break;
 		default:
 			throw new BadRequestPublixException(
 					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
-		return promise;
+		return result;
 	}
 
 	@Override
 	@Transactional
-	public Promise<Result> startComponentByPosition(Long studyId,
-			Integer position) throws PublixException {
-		// This method calls startComponent(). Therefore no synchronisation
-		// and JPA transaction handling
-		Promise<Result> promise = null;
+	public Result startComponentByPosition(Long studyId, Integer position)
+			throws PublixException {
+		Result result = null;
 		switch (getWorkerTypeFromSession()) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
-			promise = instanceOfPublix(MTPublix.class)
+			result = instanceOfPublix(MTPublix.class)
 					.startComponentByPosition(studyId, position);
 			break;
 		case JatosWorker.WORKER_TYPE:
-			promise = instanceOfPublix(JatosPublix.class)
+			result = instanceOfPublix(JatosPublix.class)
 					.startComponentByPosition(studyId, position);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
-			promise = instanceOfPublix(PersonalMultiplePublix.class)
+			result = instanceOfPublix(PersonalMultiplePublix.class)
 					.startComponentByPosition(studyId, position);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
-			promise = instanceOfPublix(PersonalSinglePublix.class)
+			result = instanceOfPublix(PersonalSinglePublix.class)
 					.startComponentByPosition(studyId, position);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
-			promise = instanceOfPublix(GeneralSinglePublix.class)
+			result = instanceOfPublix(GeneralSinglePublix.class)
 					.startComponentByPosition(studyId, position);
 			break;
 		default:
 			throw new BadRequestPublixException(
 					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
-		return promise;
+		return result;
 	}
 
 	@Override

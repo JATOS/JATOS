@@ -20,10 +20,8 @@ import models.common.StudyResult;
 import models.common.workers.JatosWorker;
 import play.Logger;
 import play.db.jpa.JPAApi;
-import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.publix.HttpHelpers;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
@@ -143,7 +141,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	}
 
 	@Override
-	public Promise<Result> startComponent(Long studyId, Long componentId)
+	public Result startComponent(Long studyId, Long componentId)
 			throws PublixException {
 		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
@@ -174,9 +172,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				// It's already the second component (first is finished and it
 				// isn't a reload of the same one). Finish study after first
 				// component.
-				return Promise.pure(
-						redirect(controllers.publix.routes.PublixInterceptor
-								.finishStudy(studyId, true, null)));
+				return redirect(controllers.publix.routes.PublixInterceptor
+						.finishStudy(studyId, true, null));
 			}
 			break;
 		}
@@ -186,16 +183,12 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			componentResult = publixUtils.startComponent(component,
 					studyResult);
 		} catch (ForbiddenReloadException e) {
-			return Promise
-					.pure(redirect(controllers.publix.routes.PublixInterceptor
-							.finishStudy(studyId, false, e.getMessage())));
+			return redirect(controllers.publix.routes.PublixInterceptor
+					.finishStudy(studyId, false, e.getMessage()));
 		}
 		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
-		String urlPath = StudyAssets.getComponentUrlPath(study.getDirName(),
-				component);
-		String urlWithQueryStr = HttpHelpers.getUrlWithQueryString(
-				request().uri(), request().host(), urlPath);
-		return studyAssets.forwardTo(urlWithQueryStr);
+		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
+				component.getHtmlFilePath());
 	}
 
 	@Override
@@ -238,11 +231,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
-		String startComponentUrlPath = controllers.publix.routes.PublixInterceptor
-				.startComponent(studyId, nextComponent.getId()).url();
-		String urlWithQueryString = HttpHelpers.getUrlWithQueryString(
-				request().uri(), request().host(), startComponentUrlPath);
-		return redirect(urlWithQueryString);
+		return redirect(controllers.publix.routes.PublixInterceptor
+				.startComponent(studyId, nextComponent.getId()));
 	}
 
 	@Override

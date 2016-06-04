@@ -2,13 +2,11 @@ package controllers.publix;
 
 import java.io.IOException;
 
-import play.libs.F.Promise;
-import play.mvc.Result;
-import play.mvc.WebSocket;
-
 import com.fasterxml.jackson.databind.JsonNode;
 
 import exceptions.publix.PublixException;
+import play.mvc.Result;
+import play.mvc.WebSocket;
 
 /**
  * Interface to Publix the public API of JATOS. With these actions/methods the
@@ -37,7 +35,7 @@ public interface IPublix {
 	 * Starts the component with the given componentId that belongs to the study
 	 * with the studyId.
 	 */
-	Promise<Result> startComponent(Long studyId, Long componentId)
+	Result startComponent(Long studyId, Long componentId)
 			throws PublixException;
 
 	/**
@@ -46,7 +44,7 @@ public interface IPublix {
 	 * Starts the component in the given position that belongs to the study with
 	 * the studyId.
 	 */
-	Promise<Result> startComponentByPosition(Long studyId, Integer position)
+	Result startComponentByPosition(Long studyId, Integer position)
 			throws PublixException;
 
 	/**

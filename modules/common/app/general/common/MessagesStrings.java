@@ -45,7 +45,7 @@ public class MessagesStrings {
 	public static final String BATCH_MAX_TOTAL_MEMBERS = "Group's max total members size must be greater or equal than the max active member size.";
 	public static final String BATCH_MAX_TOTAL_WORKER_SET = "Batch's max total worker size must be set if you want to limit it.";
 	public static final String BATCH_MAX_TOTAL_WORKERS = "Batch's max total worker size must be at least 1.";
-	
+
 	// User
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
@@ -270,6 +270,13 @@ public class MessagesStrings {
 	public static String htmlFilePathEmpty(Long componentId) {
 		String errorMsg = "Component " + componentId
 				+ "'s HTML file path is empty.";
+		return errorMsg;
+	}
+
+	public static String htmlFilePathNotExist(String studyDirName,
+			String htmlFilePath) {
+		String errorMsg = "HTML file " + htmlFilePath + " in study assets "
+				+ studyDirName + " couldn't be found.";
 		return errorMsg;
 	}
 

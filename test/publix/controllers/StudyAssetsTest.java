@@ -9,19 +9,16 @@ import static play.test.Helpers.route;
 import java.io.File;
 import java.io.IOException;
 
-import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import controllers.publix.StudyAssets;
 import exceptions.publix.NotFoundPublixException;
 import general.AbstractTest;
-import general.common.MessagesStrings;
 import models.common.Study;
 import play.mvc.Call;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
-import services.publix.HttpHelpers;
 
 /**
  * Testing controller.publix.StudyAssets
@@ -106,57 +103,12 @@ public class StudyAssetsTest extends AbstractTest {
 	}
 
 	@Test
-	public void testGetComponentUrlPath()
-			throws IOException, NotFoundPublixException {
-		Study studyClone = cloneAndPersistStudy(studyExample);
-
-		String urlPath = StudyAssets.getComponentUrlPath(
-				studyClone.getDirName(), studyClone.getFirstComponent());
-
-		assertThat(urlPath).isEqualTo("/" + StudyAssets.URL_STUDY_ASSETS + "/"
-				+ studyClone.getDirName() + "/"
-				+ studyClone.getFirstComponent().getHtmlFilePath());
-
-		// Clean up
-		removeStudy(studyClone);
-	}
-
-	@Test
-	public void testGetComponentUrlPathNotFound() throws IOException {
-		Study studyClone = cloneAndPersistStudy(studyExample);
-		studyClone.getFirstComponent().setHtmlFilePath(null);
-
-		try {
-			StudyAssets.getComponentUrlPath(studyClone.getDirName(),
-					studyClone.getFirstComponent());
-			Fail.fail();
-		} catch (NotFoundPublixException e) {
-			assertThat(e.getMessage()).isEqualTo(MessagesStrings
-					.htmlFilePathEmpty(studyClone.getFirstComponent().getId()));
-		}
-
-		// Clean up
-		removeStudy(studyClone);
-	}
-
-	@Test
-	public void testGetUrlWithRequestQueryString() throws IOException {
-		String url = HttpHelpers.getUrlWithQueryString(
-				"oldCall?para=foo&puru=bar", "localhost:9000/", "newCall");
-		assertThat(url)
-				.isEqualTo("http://localhost:9000/newCall?para=foo&puru=bar");
-	}
-
-	@Test
 	public void testForwardTo() throws IOException, NotFoundPublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
 
-		String urlPath = StudyAssets.getComponentUrlPath(
-				studyClone.getDirName(), studyClone.getFirstComponent());
-		Result result = studyAssets
-				.forwardTo("http://localhost:"
-						+ play.api.test.Helpers.testServerPort() + urlPath)
-				.get(10000);
+		Result result = studyAssets.retrieveComponentHtmlFile(
+				studyClone.getDirName(),
+				studyClone.getFirstComponent().getHtmlFilePath());
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(result.charset()).isEqualTo("utf-8");
@@ -174,10 +126,8 @@ public class StudyAssetsTest extends AbstractTest {
 			throws IOException, NotFoundPublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
 
-		Result result = studyAssets.forwardTo(
-				"http://localhost:" + play.api.test.Helpers.testServerPort()
-						+ "/someNotExistingPath")
-				.get(10000);
+		Result result = studyAssets.retrieveComponentHtmlFile(
+				studyClone.getDirName(), "/someNotExistingPath");
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains(
