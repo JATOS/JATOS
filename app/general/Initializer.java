@@ -1,16 +1,12 @@
 package general;
 
 import java.io.File;
-import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import daos.common.GroupResultDao;
 import daos.common.UserDao;
 import general.common.Common;
-import models.common.GroupResult;
-import models.common.GroupResult.GroupState;
 import models.common.User;
 import play.Logger;
 import play.db.jpa.JPAApi;
@@ -31,15 +27,14 @@ public class Initializer {
 	private final Common common;
 	private final UserService userService;
 	private final UserDao userDao;
-	private final GroupResultDao groupResultDao;
 
 	@Inject
-	Initializer(JPAApi jpa, Common common, UserDao userDao, UserService userService, GroupResultDao groupResultDao) {
+	Initializer(JPAApi jpa, Common common, UserDao userDao,
+			UserService userService) {
 		this.jpa = jpa;
 		this.common = common;
 		this.userDao = userDao;
 		this.userService = userService;
-		this.groupResultDao = groupResultDao;
 		initialize();
 	}
 
@@ -50,7 +45,7 @@ public class Initializer {
 	public void initialize() {
 		checkAdmin();
 		checkStudyAssetsRootDir();
-//		checkGroupResults();
+		// checkGroupResults();
 		Logger.info(CLASS_NAME + ": JATOS initialized");
 	}
 
@@ -61,12 +56,15 @@ public class Initializer {
 		File studyAssetsRoot = new File(common.getStudyAssetsRootPath());
 		boolean success = studyAssetsRoot.mkdirs();
 		if (success) {
-			Logger.info(CLASS_NAME + ".checkStudyAssetsRootDir: Created study assets root directory "
+			Logger.info(CLASS_NAME
+					+ ".checkStudyAssetsRootDir: Created study assets root directory "
 					+ common.getStudyAssetsRootPath());
 		}
 		if (!studyAssetsRoot.isDirectory()) {
-			Logger.error(CLASS_NAME + ".checkStudyAssetsRootDir: Study assets root directory "
-					+ common.getStudyAssetsRootPath() + " couldn't be created.");
+			Logger.error(CLASS_NAME
+					+ ".checkStudyAssetsRootDir: Study assets root directory "
+					+ common.getStudyAssetsRootPath()
+					+ " couldn't be created.");
 		}
 	}
 
@@ -83,21 +81,4 @@ public class Initializer {
 		});
 	}
 
-	/**
-	 * Check that all group results are in state FINISHED
-	 */
-	private void checkGroupResults() {
-		jpa.withTransaction(() -> {
-			List<GroupResult> groupResultList = groupResultDao.findAllNotFinished();
-			for (GroupResult groupresult : groupResultList) {
-				if (groupresult.getGroupState() == GroupState.STARTED) {
-					groupresult.setGroupState(GroupState.FINISHED);
-					groupResultDao.update(groupresult);
-					Logger.info(CLASS_NAME + ".checkGroupResults: No group results should be "
-							+ "in state STARTED, but group result " + groupresult.getId()
-							+ " was. Finish it now.");
-				}
-			}
-		});
-	}
 }
