@@ -64,7 +64,7 @@ public class Study {
 	 * have one study with the same UUID.
 	 */
 	@Column(unique = true, nullable = false)
-	@JsonView(JsonUtils.JsonForIO.class)
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String uuid;
 
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })

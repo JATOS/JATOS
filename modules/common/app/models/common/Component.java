@@ -46,7 +46,7 @@ public class Component {
 	 * component with this UUID.
 	 */
 	@Column(unique = false, nullable = false)
-	@JsonView(JsonUtils.JsonForIO.class)
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String uuid;
 
 	@JsonIgnore
