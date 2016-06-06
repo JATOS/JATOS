@@ -41,18 +41,16 @@ public class ControllerUtils {
 	 * Returns the request's referer without the path (only protocol, host,
 	 * port). Sometimes (e.g. if JATOS is behind a proxy) this is the only way
 	 * to get JATOS' absolute URL. If the 'Referer' isn't set in the header it
-	 * returns null.
+	 * throws a MalformedURLException.
 	 */
 	public static URL getRefererUrl() throws MalformedURLException {
-		URL refererURL = null;
 		String[] referer = Controller.request().headers().get("Referer");
-		if (referer != null && referer.length > 0) {
-			URL refererURLWithPath = new URL(referer[0]);
-			refererURL = new URL(refererURLWithPath.getProtocol(),
-					refererURLWithPath.getHost(), refererURLWithPath.getPort(),
-					"");
+		if (referer == null || referer.length > 0) {
+			throw new MalformedURLException();
 		}
-		return refererURL;
+		URL refererURLWithPath = new URL(referer[0]);
+		return new URL(refererURLWithPath.getProtocol(),
+				refererURLWithPath.getHost(), refererURLWithPath.getPort(), "");
 	}
 
 }
