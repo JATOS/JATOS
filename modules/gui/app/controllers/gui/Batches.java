@@ -349,7 +349,7 @@ public class Batches extends Controller {
 			return badRequest(e.getMessage());
 		}
 
-		String url = ControllerUtils.getReferer() + "/publix/" + study.getId()
+		String url = ControllerUtils.getRequestUrl() + "/publix/" + study.getId()
 				+ "/start?" + "batchId=" + batchId + "&"
 				+ "personalSingleWorkerId" + "=" + worker.getId();
 		return ok(url);
@@ -392,7 +392,7 @@ public class Batches extends Controller {
 			return badRequest(e.getMessage());
 		}
 
-		String url = ControllerUtils.getReferer() + "/publix/" + study.getId()
+		String url = ControllerUtils.getRequestUrl() + "/publix/" + study.getId()
 				+ "/start?" + "batchId=" + batchId + "&"
 				+ "personalMultipleWorkerId" + "=" + worker.getId();
 		return ok(url);

@@ -1,7 +1,6 @@
 package controllers.gui;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Set;
@@ -149,14 +148,7 @@ public class Workers extends Controller {
 			jatosGuiExceptionThrower.throwStudy(e, studyId);
 		}
 
-		URL jatosURL = null;
-		try {
-			jatosURL = ControllerUtils.getRefererUrl();
-		} catch (MalformedURLException e) {
-			String errorMsg = MessagesStrings.COULDNT_GENERATE_JATOS_URL;
-			jatosGuiExceptionThrower.throwStudy(errorMsg,
-					Http.Status.BAD_REQUEST, studyId);
-		}
+		URL jatosURL = ControllerUtils.getRequestUrl();
 		Map<String, Integer> studyResultCountsPerWorker = workerService
 				.retrieveStudyResultCountsPerWorker(batch);
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
