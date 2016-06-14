@@ -112,6 +112,7 @@ rem ### Functions ###
   rem Detect if this java is ok to use.
   for /F %%j in ('"%JAVACMD%" -version  2^>^&1') do (
     if %%~j==Java set JAVAINSTALLED=1
+    if %%~j==openjdk set JAVAINSTALLED=1
   )
   
   if "%JAVAINSTALLED%"=="" (
