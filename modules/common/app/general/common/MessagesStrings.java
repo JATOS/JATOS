@@ -311,6 +311,14 @@ public class MessagesStrings {
 				+ ").";
 	}
 
+	public static String pathNotAbsolute(String path) {
+		return "Path \"" + path + "\" should be absolute.";
+	}
+	
+	public static String pathNotRelative(String path) {
+		return "Path \"" + path + "\" should be relative.";
+	}
+
 	public static String filePathIsntFile(String fileName) {
 		return "File path \"" + fileName + "\" doesn't lead to a file.";
 	}

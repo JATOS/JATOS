@@ -1,12 +1,11 @@
 package utils.common;
 
-import general.common.Common;
-import general.common.MessagesStrings;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -16,6 +15,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.lang3.StringUtils;
 
+import general.common.Common;
+import general.common.MessagesStrings;
 import play.mvc.Results.Chunks;
 import play.mvc.Results.StringChunks;
 
@@ -32,10 +33,10 @@ public class IOUtils {
 	public static final String ZIP_FILE_SUFFIX = "zip";
 	public static final String TXT_FILE_SUFFIX = "txt";
 
-/**
-	 * Regular expression of illegal characters or strings in file or directory names
-	 * '/', '\n', '\r', * '//', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':',
-	 * '~', '!', '§', '$', '%', '&' 
+	/**
+	 * Regular expression of illegal characters or strings in file or directory
+	 * names '/', '\n', '\r', * '//', '\t', '\0', '\f', '`', '?', '*', '\\',
+	 * '<', '>', '|', '\"', ':', '~', '!', '§', '$', '%', '&'
 	 */
 	public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&]";
 
@@ -70,37 +71,52 @@ public class IOUtils {
 	 * traversal attack. path and filePath together build the full path (like
 	 * path/filePath). path must be a directory.
 	 */
-	public File getFileSecurely(String path, String filePath)
+	public File getFileSecurely(String baseDirPathStr, String filePathStr)
 			throws IOException {
-		path = getExistingDirSecurely(path).getAbsolutePath();
-		String fullPath = filePath.trim().isEmpty() ? path : path
-				+ File.separator + filePath;
-		String pureFilename = (new File(fullPath)).getName();
-		String purePath = (new File(fullPath)).getParentFile()
-				.getCanonicalPath();
-		File file = new File(purePath, pureFilename);
-		if (!file.getAbsolutePath().equals(fullPath)) {
+		Path baseDirPath = Paths.get(baseDirPathStr);
+		Path filePath = Paths.get(filePathStr);
+		if (!baseDirPath.isAbsolute()) {
 			throw new IOException(
-					MessagesStrings.couldntGeneratePathToFileOrDir(filePath));
+					MessagesStrings.pathNotAbsolute(baseDirPathStr));
 		}
-		return file;
+		if (filePath.isAbsolute()) {
+			throw new IOException(MessagesStrings.pathNotRelative(filePathStr));
+		}
+
+		// Join the two paths together, then normalize so that any ".." elements
+		// in the userPath can remove parts of baseDirPath.
+		// (e.g. "/foo/bar/baz" + "../attack" -> "/foo/bar/attack")
+		final Path resolvedPath = baseDirPath.resolve(filePath).normalize();
+		// Make sure the resulting path is still within the required directory.
+		// (In the example above, "/foo/bar/attack" is not.)
+		if (!resolvedPath.startsWith(baseDirPath)) {
+			throw new IOException(MessagesStrings
+					.couldntGeneratePathToFileOrDir(filePathStr));
+		}
+
+		return resolvedPath.toFile();
 	}
 
 	/**
 	 * Gets the File object of the directory while preventing a path traversal
 	 * attack and checks if the directory actually exists.
 	 */
-	public File getExistingDirSecurely(String fullPath) throws IOException {
-		String pureFilename = (new File(fullPath)).getName();
-		String purePath = (new File(fullPath)).getParentFile()
-				.getCanonicalPath();
-		File file = new File(purePath, pureFilename);
-		if (!file.getAbsolutePath().equals(fullPath)) {
-			throw new IOException(
-					MessagesStrings.couldntGeneratePathToFileOrDir(fullPath));
+	public File getExistingDirSecurely(String fullPathStr) throws IOException {
+		Path fullPath = Paths.get(fullPathStr);
+		if (!fullPath.isAbsolute()) {
+			MessagesStrings.pathNotAbsolute(fullPathStr);
 		}
+		
+		// Normalize so that any ".." gets removed
+		// (e.g. "/foo/bar/baz/../attack" -> "/foo/bar/attack")
+		// and check that the normalized path is equal to the original one
+		if (!fullPath.normalize().equals(fullPath)) {
+			throw new IOException(MessagesStrings
+					.couldntGeneratePathToFileOrDir(fullPathStr));
+		}
+		File file = fullPath.toFile();
 		if (!file.exists() || !file.isDirectory()) {
-			throw new IOException(MessagesStrings.dirPathIsntDir(fullPath));
+			throw new IOException(MessagesStrings.dirPathIsntDir(fullPathStr));
 		}
 		return file;
 	}
@@ -193,7 +209,8 @@ public class IOUtils {
 			return;
 		}
 		if (!dir.isDirectory()) {
-			throw new IOException(MessagesStrings.dirPathIsntDir(dir.getName()));
+			throw new IOException(
+					MessagesStrings.dirPathIsntDir(dir.getName()));
 		}
 		FileUtils.deleteDirectory(dir);
 	}
@@ -208,13 +225,13 @@ public class IOUtils {
 	 *            sub-directory of the study assets directory.
 	 * @return Name of the new file.
 	 */
-	public synchronized String cloneComponentHtmlFile(
-			String studyAssetsDirName, String htmlFilePath) throws IOException {
+	public synchronized String cloneComponentHtmlFile(String studyAssetsDirName,
+			String htmlFilePath) throws IOException {
 		File htmlFile = getFileInStudyAssetsDir(studyAssetsDirName,
 				htmlFilePath);
 		if (!htmlFile.isFile()) {
-			throw new IOException(MessagesStrings.filePathIsntFile(htmlFile
-					.getName()));
+			throw new IOException(
+					MessagesStrings.filePathIsntFile(htmlFile.getName()));
 		}
 
 		File clonedHtmlFile = generateCloneFile(htmlFile);
@@ -245,8 +262,8 @@ public class IOUtils {
 		File srcDir = getFileSecurely(common.getStudyAssetsRootPath(),
 				srcDirName);
 		if (!srcDir.isDirectory()) {
-			throw new IOException(MessagesStrings.dirPathIsntDir(srcDir
-					.getName()));
+			throw new IOException(
+					MessagesStrings.dirPathIsntDir(srcDir.getName()));
 		}
 
 		File destDir = generateCloneFile(srcDir);
@@ -296,9 +313,8 @@ public class IOUtils {
 				targetDirName);
 		if (targetDir.exists()) {
 			throw new IOException(
-					MessagesStrings
-							.studyAssetsDirNotCreatedBecauseExists(targetDir
-									.getName()));
+					MessagesStrings.studyAssetsDirNotCreatedBecauseExists(
+							targetDir.getName()));
 		}
 		FileUtils.moveDirectory(srcDir, targetDir);
 	}
@@ -313,14 +329,13 @@ public class IOUtils {
 	public void createStudyAssetsDir(String dirName) throws IOException {
 		File dir = getFileSecurely(common.getStudyAssetsRootPath(), dirName);
 		if (dir.exists()) {
-			throw new IOException(
-					MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dir
-							.getName()));
+			throw new IOException(MessagesStrings
+					.studyAssetsDirNotCreatedBecauseExists(dir.getName()));
 		}
 		boolean result = dir.mkdirs();
 		if (!result) {
-			throw new IOException(MessagesStrings.studyAssetsDirNotCreated(dir
-					.getName()));
+			throw new IOException(
+					MessagesStrings.studyAssetsDirNotCreated(dir.getName()));
 		}
 	}
 
@@ -328,7 +343,8 @@ public class IOUtils {
 	 * Returns all files within this directory that have the prefix and the
 	 * suffix.
 	 */
-	public File[] findFiles(File dir, final String prefix, final String suffix) {
+	public File[] findFiles(File dir, final String prefix,
+			final String suffix) {
 		return dir.listFiles((file, name) -> name.startsWith(prefix)
 				&& name.endsWith(suffix));
 	}
@@ -400,21 +416,21 @@ public class IOUtils {
 
 		boolean result = oldHtmlFile.renameTo(newHtmlFile);
 		if (!result) {
-			throw new IOException(MessagesStrings.htmlFileNotRenamed(
-					oldHtmlFilePath, newHtmlFilePath));
+			throw new IOException(MessagesStrings
+					.htmlFileNotRenamed(oldHtmlFilePath, newHtmlFilePath));
 		}
 	}
 
 	/**
-	 * Reads logs/application.log file in reverse order and returns it as
-	 * Chunks<String>. It reads maximal to line lineLimit.
+	 * Reads logs/application.log file in reverse order and returns it as Chunks
+	 * <String>. It reads maximal to line lineLimit.
 	 */
 	public Chunks<String> readApplicationLog(final int lineLimit) {
 		Chunks<String> chunks = new StringChunks() {
 			@Override
 			public void onReady(play.mvc.Results.Chunks.Out<String> out) {
-				File logFile = new File(common.getBasepath()
-						+ "/logs/application.log");
+				File logFile = new File(
+						common.getBasepath() + "/logs/application.log");
 				try (ReversedLinesFileReader reader = new ReversedLinesFileReader(
 						logFile)) {
 					String content = reader.readLine();
