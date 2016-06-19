@@ -19,6 +19,7 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.JatosWorker;
 import play.Logger;
+import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -77,7 +78,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	public static final String SESSION_EMAIL = "email";
 
-	private static final String CLASS_NAME = JatosPublix.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(JatosPublix.class);
 
 	private final JatosPublixUtils publixUtils;
 	private final JatosStudyAuthorisation studyAuthorisation;
@@ -104,8 +105,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
-		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "batchId " + batchId + ", " + "logged-in user's email "
+		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
+				+ batchId + ", " + "logged-in user's email "
 				+ session(SESSION_EMAIL));
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
@@ -114,8 +115,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		session(WORKER_ID, worker.getId().toString());
 		session(BATCH_ID, batch.getId().toString());
 		session(STUDY_ASSETS, study.getDirName());
-		Logger.info(CLASS_NAME + ".startStudy: study (study ID " + studyId
-				+ ", batch ID " + batchId + ") " + "assigned to worker with ID "
+		LOGGER.info(".startStudy: study (study ID " + studyId + ", batch ID "
+				+ batchId + ") " + "assigned to worker with ID "
 				+ worker.getId());
 
 		Long componentId = null;
@@ -143,7 +144,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Override
 	public Result startComponent(Long studyId, Long componentId)
 			throws PublixException {
-		Logger.info(CLASS_NAME + ".startComponent: studyId " + studyId + ", "
+		LOGGER.info(".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID) + ", " + "logged-in user's email "
 				+ session(SESSION_EMAIL));
@@ -193,8 +194,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	@Override
 	public Result startNextComponent(Long studyId) throws PublixException {
-		Logger.info(CLASS_NAME + ".startNextComponent: studyId " + studyId
-				+ ", " + "workerId " + session(WORKER_ID) + ", "
+		LOGGER.info(".startNextComponent: studyId " + studyId + ", "
+				+ "workerId " + session(WORKER_ID) + ", "
 				+ "logged-in user's email " + session(SESSION_EMAIL));
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
@@ -238,10 +239,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Override
 	public Result abortStudy(Long studyId, String message)
 			throws PublixException {
-		Logger.info(CLASS_NAME + ".abortStudy: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID) + ", "
-				+ "logged-in user email " + session(SESSION_EMAIL) + ", "
-				+ "message \"" + message + "\"");
+		LOGGER.info(".abortStudy: studyId " + studyId + ", " + "workerId "
+				+ session(WORKER_ID) + ", " + "logged-in user email "
+				+ session(SESSION_EMAIL) + ", " + "message \"" + message
+				+ "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		JatosWorker worker = publixUtils
@@ -270,11 +271,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Override
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
 			throws PublixException {
-		Logger.info(CLASS_NAME + ".finishStudy: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID) + ", "
-				+ "logged-in user email " + session(SESSION_EMAIL) + ", "
-				+ "successful " + successful + ", " + "errorMsg \"" + errorMsg
-				+ "\"");
+		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "workerId "
+				+ session(WORKER_ID) + ", " + "logged-in user email "
+				+ session(SESSION_EMAIL) + ", " + "successful " + successful
+				+ ", " + "errorMsg \"" + errorMsg + "\"");
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
 		JatosWorker worker = publixUtils

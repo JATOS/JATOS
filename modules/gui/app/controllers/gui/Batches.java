@@ -10,7 +10,8 @@ import javax.inject.Singleton;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiException;
+import controllers.gui.actionannotations.GuiLoggingAction.GuiLogging;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
@@ -26,6 +27,7 @@ import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.gui.BatchProperties;
 import play.Logger;
+import play.Logger.ALogger;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -44,12 +46,13 @@ import utils.common.JsonUtils;
  * 
  * @author Kristian Lange
  */
-@JatosGui
+@GuiException
+@GuiLogging
 @Authenticated
 @Singleton
 public class Batches extends Controller {
 
-	private static final String CLASS_NAME = Batches.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(Batches.class);
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final Checker checker;
@@ -85,8 +88,7 @@ public class Batches extends Controller {
 	 */
 	@Transactional
 	public Result batchManager(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".batchManager: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".batchManager: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -107,8 +109,7 @@ public class Batches extends Controller {
 	 */
 	@Transactional
 	public Result batchesByStudy(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".batchesByStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".batchesByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -131,8 +132,7 @@ public class Batches extends Controller {
 	 */
 	@Transactional
 	public Result submitCreated(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".submitCreated: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".submitCreated: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -162,9 +162,7 @@ public class Batches extends Controller {
 	@Transactional
 	public Result properties(Long studyId, Long batchId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".properties: studyId " + studyId
-				+ ", batchId " + batchId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".properties: studyId " + studyId + ", batchId " + batchId);
 		Study study = studyDao.findById(studyId);
 		Batch batch = batchDao.findById(batchId);
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -187,9 +185,8 @@ public class Batches extends Controller {
 	@Transactional
 	public Result submitEditedProperties(Long studyId, Long batchId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".submitEditedProperties: studyId " + studyId
-				+ ", batchId " + batchId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".submitEditedProperties: studyId " + studyId + ", batchId "
+				+ batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch currentBatch = batchDao.findById(batchId);
@@ -228,9 +225,8 @@ public class Batches extends Controller {
 	@Transactional
 	public Result toggleActive(Long studyId, Long batchId, Boolean active)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".toggleActive: studyId " + studyId + ", "
-				+ "batchId " + batchId + ", " + "active " + active + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".toggleActive: studyId " + studyId + ", " + "batchId "
+				+ batchId + ", " + "active " + active + ", ");
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
@@ -248,7 +244,7 @@ public class Batches extends Controller {
 		}
 		return ok(JsonUtils.asJsonNode(batch.isActive()));
 	}
-	
+
 	/**
 	 * Ajax POST request: Request to allow or deny a worker type in a batch.
 	 * 
@@ -257,10 +253,9 @@ public class Batches extends Controller {
 	@Transactional
 	public Result toggleAllowedWorkerType(Long studyId, Long batchId,
 			String workerType, Boolean allow) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".toggleAllowedWorkerType: studyId " + studyId
-				+ ", " + "batchId " + batchId + ", " + "workerType "
-				+ workerType + ", " + "allow " + allow + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".toggleAllowedWorkerType: studyId " + studyId + ", "
+				+ "batchId " + batchId + ", " + "workerType " + workerType
+				+ ", " + "allow " + allow);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
@@ -292,9 +287,7 @@ public class Batches extends Controller {
 	 */
 	@Transactional
 	public Result remove(Long studyId, Long batchId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".remove: studyId " + studyId + ", batchId "
-				+ batchId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".remove: studyId " + studyId + ", batchId " + batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
@@ -319,9 +312,8 @@ public class Batches extends Controller {
 	@Transactional
 	public Result createPersonalSingleRun(Long studyId, Long batchId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".createPersonalSingleRun: studyId " + studyId
-				+ ", " + "batchId " + batchId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".createPersonalSingleRun: studyId " + studyId + ", "
+				+ "batchId " + batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
@@ -349,8 +341,8 @@ public class Batches extends Controller {
 			return badRequest(e.getMessage());
 		}
 
-		String url = ControllerUtils.getRequestUrl() + "/publix/" + study.getId()
-				+ "/start?" + "batchId=" + batchId + "&"
+		String url = ControllerUtils.getRequestUrl() + "/publix/"
+				+ study.getId() + "/start?" + "batchId=" + batchId + "&"
 				+ "personalSingleWorkerId" + "=" + worker.getId();
 		return ok(url);
 	}
@@ -362,9 +354,8 @@ public class Batches extends Controller {
 	@Transactional
 	public Result createPersonalMultipleRun(Long studyId, Long batchId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".createPersonalMultipleRun: studyId "
-				+ studyId + ", " + "batchId " + batchId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".createPersonalMultipleRun: studyId " + studyId + ", "
+				+ "batchId " + batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
@@ -392,8 +383,8 @@ public class Batches extends Controller {
 			return badRequest(e.getMessage());
 		}
 
-		String url = ControllerUtils.getRequestUrl() + "/publix/" + study.getId()
-				+ "/start?" + "batchId=" + batchId + "&"
+		String url = ControllerUtils.getRequestUrl() + "/publix/"
+				+ study.getId() + "/start?" + "batchId=" + batchId + "&"
 				+ "personalMultipleWorkerId" + "=" + worker.getId();
 		return ok(url);
 	}

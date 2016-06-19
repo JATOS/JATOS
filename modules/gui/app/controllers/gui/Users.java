@@ -6,12 +6,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiException;
+import controllers.gui.actionannotations.GuiLoggingAction.GuiLogging;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import models.common.User;
 import play.Logger;
+import play.Logger.ALogger;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.data.validation.ValidationError;
@@ -29,12 +31,13 @@ import utils.common.HashUtils;
  *
  * @author Kristian Lange
  */
-@JatosGui
+@GuiException
+@GuiLogging
 @Authenticated
 @Singleton
 public class Users extends Controller {
 
-	private static final String CLASS_NAME = Users.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(Users.class);
 
 	public static final String SESSION_EMAIL = "email";
 
@@ -57,8 +60,7 @@ public class Users extends Controller {
 	 */
 	@Transactional
 	public Result profile(String email) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".profile: " + "email " + email + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".profile: " + "email " + email);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		User user = checkStandard(email, loggedInUser);
 		String breadcrumbs = breadcrumbsService.generateForUser(user);
@@ -71,8 +73,7 @@ public class Users extends Controller {
 	 */
 	@Transactional
 	public Result submit() {
-		Logger.info(CLASS_NAME + ".submit: " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".submit");
 		Form<User> form = Form.form(User.class).bindFromRequest();
 
 		if (form.hasErrors()) {
@@ -99,9 +100,7 @@ public class Users extends Controller {
 	 */
 	@Transactional
 	public Result submitEditedProfile(String email) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".submitEditedProfile: " + "email " + email
-				+ ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".submitEditedProfile: " + "email " + email);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		User user = checkStandard(email, loggedInUser);
 
@@ -123,9 +122,7 @@ public class Users extends Controller {
 	 */
 	@Transactional
 	public Result submitChangedPassword(String email) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".submitChangedPassword: " + "email " + email
-				+ ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".submitChangedPassword: " + "email " + email);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		User user = checkStandard(email, loggedInUser);
 		Form<User> form = Form.form(User.class).fill(user);

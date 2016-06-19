@@ -14,6 +14,7 @@ import exceptions.publix.InternalServerErrorPublixException;
 import models.common.GroupResult;
 import models.common.StudyResult;
 import play.Logger;
+import play.Logger.ALogger;
 import play.mvc.WebSocket;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
@@ -35,8 +36,7 @@ import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.ItsTh
 @Singleton
 public class ChannelService {
 
-	private static final String CLASS_NAME = ChannelService.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(ChannelService.class);
 
 	/**
 	 * Time to wait for an answer after asking an Akka actor
@@ -77,7 +77,7 @@ public class ChannelService {
 	 */
 	public void reassignGroupChannel(StudyResult studyResult,
 			GroupResult currentGroupResult, GroupResult differentGroupResult)
-					throws InternalServerErrorPublixException {
+			throws InternalServerErrorPublixException {
 		ActorRef currentGroupDispatcher = getGroupDispatcher(
 				currentGroupResult);
 		// Get or create, because if the dispatcher was empty it was shutdown
@@ -86,12 +86,13 @@ public class ChannelService {
 				differentGroupResult);
 		if (currentGroupDispatcher == null
 				|| differentGroupDispatcher == null) {
-			Logger.error(CLASS_NAME
-					+ ".reassignGroupChannel: couldn't reassign group channel "
-					+ "from current group result " + currentGroupResult.getId()
-					+ " to different group result "
-					+ differentGroupResult.getId()
-					+ ". One of the dispatchers doesn't exist.");
+			LOGGER.error(
+					".reassignGroupChannel: couldn't reassign group channel "
+							+ "from current group result "
+							+ currentGroupResult.getId()
+							+ " to different group result "
+							+ differentGroupResult.getId()
+							+ ". One of the dispatchers doesn't exist.");
 			throw new InternalServerErrorPublixException(
 					"Couldn't reassign group channel.");
 		}
@@ -214,7 +215,7 @@ public class ChannelService {
 	 */
 	private boolean closeGroupChannel(StudyResult studyResult,
 			ActorRef groupDispatcher)
-					throws InternalServerErrorPublixException {
+			throws InternalServerErrorPublixException {
 		Future<Object> future = ask(groupDispatcher,
 				new PoisonChannel(studyResult.getId()), TIMEOUT);
 		try {

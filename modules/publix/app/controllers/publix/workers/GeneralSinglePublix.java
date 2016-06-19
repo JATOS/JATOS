@@ -15,6 +15,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
 import play.Logger;
+import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ResultCreator;
@@ -36,15 +37,14 @@ import utils.common.JsonUtils;
 public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 		implements IPublix {
 
+	private static final ALogger LOGGER = Logger.of(GeneralSinglePublix.class);
+
 	/**
 	 * Cookie name where all study's UUIDs are stored.
 	 */
 	public static final String COOKIE = "JATOS_GENERALSINGLE_UUIDS";
 
 	public static final String GENERALSINGLE = "generalSingle";
-
-	private static final String CLASS_NAME = GeneralSinglePublix.class
-			.getSimpleName();
 
 	private final GeneralSinglePublixUtils publixUtils;
 	private final GeneralSingleStudyAuthorisation studyAuthorisation;
@@ -71,8 +71,8 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
-		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "batchId " + batchId);
+		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
+				+ batchId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		publixUtils.checkStudyInGeneralSingleCookie(study);
@@ -83,8 +83,8 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 		session(WORKER_ID, worker.getId().toString());
 		session(BATCH_ID, batch.getId().toString());
 		session(STUDY_ASSETS, study.getDirName());
-		Logger.info(CLASS_NAME + ".startStudy: study (study ID " + studyId
-				+ ", batch ID " + batchId + ") " + "assigned to worker with ID "
+		LOGGER.info(".startStudy: study (study ID " + studyId + ", batch ID "
+				+ batchId + ") " + "assigned to worker with ID "
 				+ worker.getId());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);

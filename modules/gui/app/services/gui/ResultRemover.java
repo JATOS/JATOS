@@ -20,6 +20,7 @@ import models.common.StudyResult;
 import models.common.User;
 import models.common.workers.Worker;
 import play.Logger;
+import play.Logger.ALogger;
 
 /**
  * Service class that removes ComponentResults or StudyResults. It's used by
@@ -30,8 +31,7 @@ import play.Logger;
 @Singleton
 public class ResultRemover {
 
-	private static final String CLASS_NAME = ResultRemover.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(ResultRemover.class);
 
 	private final Checker checker;
 	private final ResultService resultService;
@@ -149,7 +149,7 @@ public class ResultRemover {
 			studyResult.removeComponentResult(componentResult);
 			studyResultDao.update(studyResult);
 		} else {
-			Logger.error(CLASS_NAME + ".remove: StudyResult is null - "
+			LOGGER.error(".removeComponentResult: StudyResult is null - "
 					+ "but a ComponentResult always belongs to a StudyResult "
 					+ "(ComponentResult's ID is " + componentResult.getId()
 					+ ")");

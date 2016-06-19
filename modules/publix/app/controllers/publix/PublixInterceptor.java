@@ -6,6 +6,8 @@ import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import controllers.publix.actionannotation.PublixAction;
+import controllers.publix.actionannotation.PublixLoggingAction.PublixLogging;
 import controllers.publix.workers.GeneralSinglePublix;
 import controllers.publix.workers.JatosPublix;
 import controllers.publix.workers.MTPublix;
@@ -23,6 +25,7 @@ import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import play.Logger;
+import play.Logger.ALogger;
 import play.Play;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -56,10 +59,10 @@ import services.publix.PublixErrorMessages;
  */
 @Singleton
 @With(PublixAction.class)
+@PublixLogging
 public class PublixInterceptor extends Controller implements IPublix {
 
-	private static final String CLASS_NAME = PublixInterceptor.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(PublixInterceptor.class);
 
 	public static final String WORKER_TYPE = "workerType";
 
@@ -548,7 +551,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		if (workerType != null) {
 			return workerType;
 		}
-		Logger.warn(CLASS_NAME + ".getWorkerTypeFromSession: Could not find "
+		LOGGER.warn(".getWorkerTypeFromSession: Could not find "
 				+ "a worker type in session for URI " + request().uri());
 		throw new BadRequestPublixException(
 				PublixErrorMessages.NO_WORKER_IN_SESSION);

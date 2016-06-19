@@ -11,6 +11,7 @@ import daos.common.GroupResultDao;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
 import play.Logger;
+import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import services.publix.group.akka.messages.GroupDispatcherProtocol;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
@@ -54,10 +55,9 @@ import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Unreg
  */
 public class GroupDispatcher extends UntypedActor {
 
-	public static final String ACTOR_NAME = "GroupDispatcher";
+	private static final ALogger LOGGER = Logger.of(GroupDispatcher.class);
 
-	private static final String CLASS_NAME = GroupDispatcher.class
-			.getSimpleName();
+	public static final String ACTOR_NAME = "GroupDispatcher";
 
 	private GroupRegistry groupRegistry = new GroupRegistry();
 	private final JPAApi jpa;
@@ -343,8 +343,8 @@ public class GroupDispatcher extends UntypedActor {
 	 */
 	private void tellAllFullGroupAction(Long studyResultId, GroupAction action,
 			GroupResult groupResult) {
-		Logger.debug(CLASS_NAME + ".tellAllFullGroupAction: studyResultId "
-				+ studyResultId + ", action " + action + ", groupResultId "
+		LOGGER.debug(".tellAllFullGroupAction: studyResultId " + studyResultId
+				+ ", action " + action + ", groupResultId "
 				+ groupResult.getId());
 		GroupActionMsg msg = GroupActionMsgUtils.buildFullActionMsg(
 				studyResultId, action, groupResult,
@@ -358,9 +358,9 @@ public class GroupDispatcher extends UntypedActor {
 	 */
 	private void tellAllSessionGroupAction(Long studyResultId,
 			GroupResult groupResult) {
-		Logger.debug(CLASS_NAME + ".tellAllFullGroupAction: studyResultId "
-				+ studyResultId + ", action " + GroupAction.SESSION
-				+ ", groupResultId " + groupResult.getId());
+		LOGGER.debug(".tellAllFullGroupAction: studyResultId " + studyResultId
+				+ ", action " + GroupAction.SESSION + ", groupResultId "
+				+ groupResult.getId());
 		GroupActionMsg msg = GroupActionMsgUtils
 				.buildSessionActionMsg(studyResultId, groupResult);
 		tellAll(msg);
@@ -370,8 +370,8 @@ public class GroupDispatcher extends UntypedActor {
 	 * Sends a simple group action message to the sender only.
 	 */
 	private void tellSenderOnlySimpleGroupAction(GroupAction action) {
-		Logger.debug(CLASS_NAME + ".tellSenderOnlySimpleGroupAction: action "
-				+ action + ", groupResultId " + groupResultId);
+		LOGGER.debug(".tellSenderOnlySimpleGroupAction: action " + action
+				+ ", groupResultId " + groupResultId);
 		GroupActionMsg msg = GroupActionMsgUtils.buildSimpleActionMsg(action,
 				groupResultId);
 		tellSenderOnly(msg);
@@ -381,8 +381,8 @@ public class GroupDispatcher extends UntypedActor {
 	 * Sends an error group action message back to the sender.
 	 */
 	private void sendErrorBackToSender(String errorMsg) {
-		Logger.debug(CLASS_NAME + ".sendErrorBackToSender: groupResultId "
-				+ groupResultId + " - " + errorMsg);
+		LOGGER.debug(".sendErrorBackToSender: groupResultId " + groupResultId
+				+ " - " + errorMsg);
 		GroupActionMsg msg = GroupActionMsgUtils.buildErrorActionMsg(errorMsg,
 				groupResultId);
 		tellSenderOnly(msg);

@@ -1,13 +1,13 @@
 package exceptions.gui;
 
 import play.mvc.Result;
-import controllers.gui.actionannotations.JatosGuiAction;
+import controllers.gui.actionannotations.GuiExceptionAction;
 
 /**
  * Exception for any kind of exceptional behaviour within one of JATOS' GUI
  * actions. A Result is defined that will be displayed instead of the
  * normal action's output. All JatosGuiExceptions are caught by the
- * {@link JatosGuiAction} annotation.
+ * {@link GuiExceptionAction} annotation.
  * 
  * @author Kristian Lange
  */

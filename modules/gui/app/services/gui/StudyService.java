@@ -25,6 +25,7 @@ import models.common.Study;
 import models.common.User;
 import models.gui.StudyProperties;
 import play.Logger;
+import play.Logger.ALogger;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
 
@@ -36,7 +37,7 @@ import utils.common.IOUtils;
 @Singleton
 public class StudyService {
 
-	private static final String CLASS_NAME = StudyService.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(StudyService.class);
 
 	public static final String COMPONENT_POSITION_DOWN = "down";
 	public static final String COMPONENT_POSITION_UP = "up";
@@ -314,10 +315,9 @@ public class StudyService {
 	public void validate(Study study) throws ValidationException {
 		StudyProperties studyProperties = bindToProperties(study);
 		if (studyProperties.validate() != null) {
-			Logger.warn(CLASS_NAME + ".validate: "
-					+ studyProperties.validate().stream()
-							.map(ValidationError::message)
-							.collect(Collectors.joining(", ")));
+			LOGGER.warn(".validate: " + studyProperties.validate().stream()
+					.map(ValidationError::message)
+					.collect(Collectors.joining(", ")));
 			throw new ValidationException(MessagesStrings.STUDY_INVALID);
 		}
 	}

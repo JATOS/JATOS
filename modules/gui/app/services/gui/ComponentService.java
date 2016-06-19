@@ -18,6 +18,7 @@ import models.common.Component;
 import models.common.Study;
 import models.gui.ComponentProperties;
 import play.Logger;
+import play.Logger.ALogger;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
 
@@ -29,8 +30,7 @@ import utils.common.IOUtils;
 @Singleton
 public class ComponentService {
 
-	private static final String CLASS_NAME = ComponentService.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(ComponentService.class);
 
 	private final ResultRemover resultRemover;
 	private final StudyDao studyDao;
@@ -122,7 +122,7 @@ public class ComponentService {
 			// no HTML file
 			RequestScopeMessaging.warning(MessagesStrings
 					.componentCloneHtmlNotCloned(component.getHtmlFilePath()));
-			Logger.info(CLASS_NAME + ".cloneComponent: " + e.getMessage());
+			LOGGER.info(".cloneWholeComponent: " + e.getMessage());
 		}
 		return clone;
 	}
@@ -235,11 +235,9 @@ public class ComponentService {
 	public void validate(Component component) throws ValidationException {
 		ComponentProperties props = bindToProperties(component);
 		if (props.validate() != null) {
-			Logger.warn(
-					CLASS_NAME + ".validate: "
-							+ props.validate().stream()
-									.map(ValidationError::message)
-									.collect(Collectors.joining(", ")));
+			LOGGER.warn(".validate: "
+					+ props.validate().stream().map(ValidationError::message)
+							.collect(Collectors.joining(", ")));
 			throw new ValidationException(MessagesStrings.COMPONENT_INVALID);
 		}
 	}

@@ -12,7 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiException;
+import controllers.gui.actionannotations.GuiLoggingAction.GuiLogging;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import daos.common.worker.WorkerDao;
@@ -27,6 +28,7 @@ import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
 import play.Logger;
+import play.Logger.ALogger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -45,12 +47,14 @@ import utils.common.JsonUtils;
  * 
  * @author Kristian Lange
  */
-@JatosGui
+@GuiException
+@GuiLogging
 @Authenticated
 @Singleton
 public class ImportExport extends Controller {
 
-	private static final String CLASS_NAME = ImportExport.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(ImportExport.class);
+
 	public static final String JQDOWNLOAD_COOKIE_NAME = "fileDownload";
 	public static final String JQDOWNLOAD_COOKIE_CONTENT = "true";
 	public static final String DATE_FORMAT_FILE = "yyyyMMddHHmmss";
@@ -95,8 +99,7 @@ public class ImportExport extends Controller {
 	 */
 	@Transactional
 	public Result importStudy() throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".importStudy: " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".importStudy");
 		User loggedInUser = userService.retrieveLoggedInUser();
 
 		// Get file from request
@@ -132,8 +135,7 @@ public class ImportExport extends Controller {
 	 */
 	@Transactional
 	public Result importStudyConfirmed() throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".importStudyConfirmed: "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".importStudyConfirmed");
 		User loggedInUser = userService.retrieveLoggedInUser();
 
 		// Get confirmation: overwrite study's properties and/or study assets
@@ -159,8 +161,7 @@ public class ImportExport extends Controller {
 	 */
 	@Transactional
 	public Result exportStudy(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".exportStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".exportStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -174,7 +175,7 @@ public class ImportExport extends Controller {
 			zipFile = importExportService.createStudyExportZipFile(study);
 		} catch (IOException e) {
 			String errorMsg = MessagesStrings.studyExportFailure(studyId);
-			Logger.error(errorMsg, e);
+			LOGGER.error(".exportStudy: " + errorMsg, e);
 			jatosGuiExceptionThrower.throwAjax(errorMsg,
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
@@ -195,9 +196,8 @@ public class ImportExport extends Controller {
 	@Transactional
 	public Result exportComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".exportComponent: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".exportComponent: studyId " + studyId + ", "
+				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Component component = componentDao.findById(componentId);
@@ -234,8 +234,7 @@ public class ImportExport extends Controller {
 	 */
 	@Transactional
 	public Result importComponent(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".importComponent: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".importComponent: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		ObjectNode json = null;
@@ -261,9 +260,7 @@ public class ImportExport extends Controller {
 	@Transactional
 	public Result importComponentConfirmed(Long studyId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".importComponentConfirmed: " + "studyId "
-				+ studyId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".importComponentConfirmed: " + "studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 
@@ -295,9 +292,8 @@ public class ImportExport extends Controller {
 	@Transactional
 	public Result exportDataOfStudyResults(String studyResultIds)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".exportResultData: studyResultIds "
-				+ studyResultIds + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(
+				".exportDataOfStudyResults: studyResultIds " + studyResultIds);
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
@@ -324,8 +320,7 @@ public class ImportExport extends Controller {
 	@Transactional
 	public Result exportDataOfAllStudyResults(Long studyId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".exportAllData: logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".exportDataOfAllStudyResults");
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
@@ -357,9 +352,8 @@ public class ImportExport extends Controller {
 	@Transactional
 	public Result exportDataOfComponentResults(String componentResultIds)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".exportResultData: componentResultIds "
-				+ componentResultIds + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".exportDataOfComponentResults: componentResultIds "
+				+ componentResultIds);
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME);
@@ -387,9 +381,8 @@ public class ImportExport extends Controller {
 	@Transactional
 	public Result exportDataOfAllComponentResults(Long studyId,
 			Long componentId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".exportDataOfAllComponentResults: studyId "
-				+ studyId + ", " + "componentId " + componentId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".exportDataOfAllComponentResults: studyId " + studyId
+				+ ", " + "componentId " + componentId);
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
@@ -423,9 +416,7 @@ public class ImportExport extends Controller {
 	@Transactional
 	public Result exportAllResultDataOfWorker(Long workerId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".exportAllResultDataOfWorker: workerId "
-				+ workerId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".exportAllResultDataOfWorker: workerId " + workerId);
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);

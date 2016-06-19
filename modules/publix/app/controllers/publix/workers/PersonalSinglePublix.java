@@ -15,6 +15,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.workers.PersonalSingleWorker;
 import play.Logger;
+import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ResultCreator;
@@ -38,8 +39,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 
 	public static final String PERSONAL_SINGLE_WORKER_ID = "personalSingleWorkerId";
 
-	private static final String CLASS_NAME = PersonalSinglePublix.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(PersonalSinglePublix.class);
 
 	private final PersonalSinglePublixUtils publixUtils;
 	private final PersonalSingleStudyAuthorisation studyAuthorisation;
@@ -65,9 +65,9 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
 		String workerIdStr = getQueryString(PERSONAL_SINGLE_WORKER_ID);
-		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "batchId " + batchId + ", " + PERSONAL_SINGLE_WORKER_ID + " "
-				+ workerIdStr);
+		LOGGER.info(
+				".startStudy: studyId " + studyId + ", " + "batchId " + batchId
+						+ ", " + PERSONAL_SINGLE_WORKER_ID + " " + workerIdStr);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		PersonalSingleWorker worker = publixUtils

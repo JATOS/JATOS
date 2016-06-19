@@ -1,4 +1,4 @@
-package controllers.publix;
+package controllers.publix.actionannotation;
 
 import play.Logger;
 import play.libs.F;

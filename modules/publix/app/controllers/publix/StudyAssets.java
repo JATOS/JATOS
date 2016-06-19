@@ -11,6 +11,7 @@ import exceptions.publix.NotFoundPublixException;
 import general.common.Common;
 import general.common.MessagesStrings;
 import play.Logger;
+import play.Logger.ALogger;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
@@ -26,7 +27,7 @@ import utils.common.IOUtils;
 @Singleton
 public class StudyAssets extends Controller {
 
-	private static final String CLASS_NAME = StudyAssets.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(StudyAssets.class);
 
 	/**
 	 * Identifying part of any URL that indicates an access to the study assets
@@ -57,18 +58,17 @@ public class StudyAssets extends Controller {
 			checkProperAssets(filePath);
 			file = ioUtils.getExistingFileSecurely(
 					common.getStudyAssetsRootPath(), filePath);
-			Logger.info(CLASS_NAME + ".versioned: loading file "
-					+ file.getPath() + ".");
+			LOGGER.info(".versioned: loading file " + file.getPath() + ".");
 		} catch (ForbiddenPublixException e) {
 			String errorMsg = e.getMessage();
-			Logger.info(CLASS_NAME + ".versioned: " + errorMsg);
+			LOGGER.info(".versioned: " + errorMsg);
 			if (ControllerUtils.isAjax()) {
 				return forbidden(errorMsg);
 			} else {
 				return forbidden(views.html.publix.error.render(errorMsg));
 			}
 		} catch (IOException e) {
-			Logger.info(CLASS_NAME + ".versioned: failed loading from path "
+			LOGGER.info(".versioned: failed loading from path "
 					+ common.getStudyAssetsRootPath() + File.separator
 					+ filePath);
 			String errorMsg = "Resource \"" + filePath

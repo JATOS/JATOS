@@ -3,11 +3,13 @@ package controllers.gui;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiException;
+import controllers.gui.actionannotations.GuiLoggingAction.GuiLogging;
 import daos.common.UserDao;
 import general.common.MessagesStrings;
 import general.gui.FlashScopeMessaging;
 import play.Logger;
+import play.Logger.ALogger;
 import play.data.Form;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -19,12 +21,12 @@ import utils.common.HashUtils;
  * 
  * @author Kristian Lange
  */
-@JatosGui
+@GuiException
+@GuiLogging
 @Singleton
 public class Authentication extends Controller {
 
-	private static final String CLASS_NAME = Authentication.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(Workers.class);
 
 	public static final String LOGGED_IN_USER = "loggedInUser";
 
@@ -39,7 +41,7 @@ public class Authentication extends Controller {
 	 * Shows the login form view.
 	 */
 	public Result login() {
-		Logger.info(CLASS_NAME + ".login");
+		LOGGER.info(".login");
 		return ok(views.html.gui.auth.login
 				.render(Form.form(Authentication.Login.class)));
 	}
@@ -66,7 +68,7 @@ public class Authentication extends Controller {
 	 * Shows login view with an logout message.
 	 */
 	public Result logout() {
-		Logger.info(CLASS_NAME + ".logout: " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".logout: " + session(Users.SESSION_EMAIL));
 		session().remove(Users.SESSION_EMAIL);
 		FlashScopeMessaging.success(MessagesStrings.YOUVE_BEEN_LOGGED_OUT);
 		return redirect(controllers.gui.routes.Authentication.login());

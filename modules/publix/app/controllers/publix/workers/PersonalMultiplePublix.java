@@ -15,6 +15,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.workers.PersonalMultipleWorker;
 import play.Logger;
+import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ResultCreator;
@@ -37,8 +38,8 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 
 	public static final String PERSONAL_MULTIPLE_WORKER_ID = "personalMultipleWorkerId";
 
-	private static final String CLASS_NAME = PersonalMultiplePublix.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger
+			.of(PersonalMultiplePublix.class);
 
 	private final PersonalMultiplePublixUtils publixUtils;
 	private final PersonalMultipleStudyAuthorisation studyAuthorisation;
@@ -65,8 +66,8 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
 		String workerId = getQueryString(PERSONAL_MULTIPLE_WORKER_ID);
-		Logger.info(CLASS_NAME + ".startStudy: studyId " + studyId + ", "
-				+ "batchId " + batchId + ", " + "workerId " + workerId);
+		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
+				+ batchId + ", " + "workerId " + workerId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		PersonalMultipleWorker worker = publixUtils
