@@ -11,7 +11,8 @@ import javax.inject.Singleton;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiException;
+import controllers.gui.actionannotations.GuiLoggingAction.GuiLogging;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.worker.WorkerDao;
@@ -24,6 +25,7 @@ import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
 import play.Logger;
+import play.Logger.ALogger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -41,12 +43,13 @@ import utils.common.JsonUtils;
  * 
  * @author Kristian Lange
  */
-@JatosGui
+@GuiException
+@GuiLogging
 @Authenticated
 @Singleton
 public class Workers extends Controller {
 
-	private static final String CLASS_NAME = Workers.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(Workers.class);
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final Checker checker;
@@ -81,8 +84,7 @@ public class Workers extends Controller {
 	 */
 	@Transactional
 	public Result remove(Long workerId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".remove: workerId " + workerId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".remove: workerId " + workerId);
 		Worker worker = workerDao.findById(workerId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -108,8 +110,7 @@ public class Workers extends Controller {
 	 */
 	@Transactional
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".tableDataByStudy: studyId " + studyId + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".tableDataByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 
@@ -135,9 +136,8 @@ public class Workers extends Controller {
 	@Transactional
 	public Result workerSetup(Long studyId, Long batchId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".workers: studyId " + studyId + ", "
-				+ "batchId " + batchId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(
+				".workers: studyId " + studyId + ", " + "batchId " + batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
@@ -166,9 +166,8 @@ public class Workers extends Controller {
 	@Transactional
 	public Result workerData(Long studyId, Long batchId)
 			throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".workersData: studyId " + studyId + ", "
-				+ "batchId " + batchId + ", " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".workersData: studyId " + studyId + ", " + "batchId "
+				+ batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);

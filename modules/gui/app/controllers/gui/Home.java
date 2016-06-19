@@ -5,9 +5,16 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import controllers.gui.actionannotations.GuiLoggingAction.GuiLogging;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiException;
+import daos.common.StudyDao;
+import exceptions.gui.JatosGuiException;
+import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
 import play.Logger;
+import play.Logger.ALogger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -17,23 +24,19 @@ import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.JatosGuiAction.JatosGui;
-import daos.common.StudyDao;
-import exceptions.gui.JatosGuiException;
-import general.common.MessagesStrings;
 
 /**
  * Controller that provides actions for the home view.
  * 
  * @author Kristian Lange
  */
-@JatosGui
+@GuiException
+@GuiLogging
 @Authenticated
 @Singleton
 public class Home extends Controller {
 
-	private static final String CLASS_NAME = Home.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(Home.class);
 
 	private final IOUtils ioUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
@@ -59,8 +62,7 @@ public class Home extends Controller {
 	 */
 	@Transactional
 	public Result home(int httpStatus) {
-		Logger.info(CLASS_NAME + ".home: " + "logged-in user's email "
-				+ session(Users.SESSION_EMAIL));
+		LOGGER.info(".home");
 		User loggedInUser = userService.retrieveLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		String breadcrumbs = breadcrumbsService.generateForHome();
@@ -81,8 +83,7 @@ public class Home extends Controller {
 	 */
 	@Transactional
 	public Result sidebarStudyList() {
-		Logger.info(CLASS_NAME + ".sidebarStudyList: "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".sidebarStudyList");
 		User loggedInUser = userService.retrieveLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		return ok(jsonUtils.sidebarStudyList(studyList));
@@ -94,8 +95,7 @@ public class Home extends Controller {
 	 */
 	@Transactional
 	public Result log(Integer lineLimit) throws JatosGuiException {
-		Logger.info(CLASS_NAME + ".log: " + "lineLimit " + lineLimit + ", "
-				+ "logged-in user's email " + session(Users.SESSION_EMAIL));
+		LOGGER.info(".log: " + "lineLimit " + lineLimit);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		if (!loggedInUser.getEmail().equals(UserService.ADMIN_EMAIL)) {
 			jatosGuiExceptionThrower.throwHome(

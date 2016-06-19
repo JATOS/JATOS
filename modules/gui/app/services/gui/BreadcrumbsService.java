@@ -13,6 +13,7 @@ import models.common.User;
 import models.common.workers.Worker;
 import models.gui.Breadcrumbs;
 import play.Logger;
+import play.Logger.ALogger;
 
 /**
  * Provides breadcrumbs for different views of JATOS' GUI.
@@ -22,8 +23,7 @@ import play.Logger;
 @Singleton
 public class BreadcrumbsService {
 
-	private static final String CLASS_NAME = BreadcrumbsService.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(BreadcrumbsService.class);
 
 	public static final String HOME = "Home";
 	public static final String WORKER_SETUP = "Worker Setup";
@@ -48,7 +48,7 @@ public class BreadcrumbsService {
 		try {
 			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
-			Logger.error(CLASS_NAME + ".generateForHome", e);
+			LOGGER.error(".generateForHome", e);
 			RequestScopeMessaging
 					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
 		}
@@ -75,7 +75,7 @@ public class BreadcrumbsService {
 		try {
 			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
-			Logger.error(CLASS_NAME + ".generateForUser", e);
+			LOGGER.error(".generateForUser", e);
 			RequestScopeMessaging
 					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
 		}
@@ -101,7 +101,7 @@ public class BreadcrumbsService {
 		try {
 			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
-			Logger.error(CLASS_NAME + ".generateForStudy", e);
+			LOGGER.error(".generateForStudy", e);
 			RequestScopeMessaging
 					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
 		}
@@ -124,7 +124,7 @@ public class BreadcrumbsService {
 		try {
 			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
-			Logger.error(CLASS_NAME + ".generateForBatch", e);
+			LOGGER.error(".generateForBatch", e);
 			RequestScopeMessaging
 					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
 		}
@@ -145,7 +145,7 @@ public class BreadcrumbsService {
 		try {
 			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
-			Logger.error(CLASS_NAME + ".generateForWorker", e);
+			LOGGER.error(".generateForWorker", e);
 			RequestScopeMessaging
 					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
 		}
@@ -165,7 +165,7 @@ public class BreadcrumbsService {
 		try {
 			breadcrumbsStr = breadcrumbs.asJson();
 		} catch (JsonProcessingException e) {
-			Logger.error(CLASS_NAME + ".generateForComponent", e);
+			LOGGER.error(".generateForComponent", e);
 			RequestScopeMessaging
 					.warning(MessagesStrings.PROBLEM_GENERATING_BREADCRUMBS);
 		}

@@ -25,6 +25,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import play.Logger;
+import play.Logger.ALogger;
 import play.api.Application;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData.FilePart;
@@ -40,8 +41,7 @@ import utils.common.ZipUtil;
 @Singleton
 public class ImportExportService {
 
-	private static final String CLASS_NAME = ImportExportService.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(ImportExportService.class);
 
 	public static final String COMPONENT_TITLE = "componentTitle";
 	public static final String COMPONENT_EXISTS = "componentExists";
@@ -83,7 +83,7 @@ public class ImportExportService {
 		if (filePart == null) {
 			throw new IOException(MessagesStrings.FILE_MISSING);
 		}
-		
+
 		// Remember component's file name
 		Controller.session(ImportExportService.SESSION_TEMP_COMPONENT_FILE,
 				filePart.getFile().getName());
@@ -99,7 +99,8 @@ public class ImportExportService {
 
 		// Move uploaded component file to Java's tmp folder
 		Path source = filePart.getFile().toPath();
-		Path target = getTempComponentFile(filePart.getFile().getName()).toPath();
+		Path target = getTempComponentFile(filePart.getFile().getName())
+				.toPath();
 		Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
 
 		// Create JSON response
@@ -113,9 +114,8 @@ public class ImportExportService {
 			String tempComponentFileName) throws Exception {
 		File componentFile = getTempComponentFile(tempComponentFileName);
 		if (componentFile == null) {
-			Logger.warn(
-					CLASS_NAME + ".importComponentConfirmed: unzipping failed, "
-							+ "couldn't find component file in temp directory");
+			LOGGER.warn(".importComponentConfirmed: unzipping failed, "
+					+ "couldn't find component file in temp directory");
 			throw new IOException(MessagesStrings.IMPORT_OF_COMPONENT_FAILED);
 		}
 		Component uploadedComponent = unmarshalComponent(componentFile);
@@ -179,14 +179,14 @@ public class ImportExportService {
 	public void importStudyConfirmed(User loggedInUser, JsonNode json)
 			throws Exception {
 		if (json == null) {
-			Logger.error(CLASS_NAME + ".importStudyConfirmed: JSON is null");
+			LOGGER.error(".importStudyConfirmed: JSON is null");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
 		if (json.findPath(STUDYS_ENTITY_CONFIRM) == null
 				|| json.findPath(STUDYS_DIR_CONFIRM) == null) {
-			Logger.error(CLASS_NAME + ".importStudyConfirmed: "
-					+ "JSON is malformed: " + STUDYS_ENTITY_CONFIRM + " or "
-					+ STUDYS_DIR_CONFIRM + " missing");
+			LOGGER.error(".importStudyConfirmed: " + "JSON is malformed: "
+					+ STUDYS_ENTITY_CONFIRM + " or " + STUDYS_DIR_CONFIRM
+					+ " missing");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
 		Boolean studysEntityConfirm = json.findPath(STUDYS_ENTITY_CONFIRM)
@@ -196,7 +196,7 @@ public class ImportExportService {
 
 		File tempUnzippedStudyDir = getUnzippedStudyDir();
 		if (tempUnzippedStudyDir == null) {
-			Logger.error(CLASS_NAME + ".importStudyConfirmed: "
+			LOGGER.error(".importStudyConfirmed: "
 					+ "missing unzipped study directory in temp directory");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
@@ -224,7 +224,7 @@ public class ImportExportService {
 
 	private void checkStudyImport(User loggedInUser, Study uploadedStudy,
 			Study currentStudy, boolean studyExists, boolean dirExists)
-					throws ForbiddenException {
+			throws ForbiddenException {
 		if (studyExists && !currentStudy.hasUser(loggedInUser)) {
 			String errorMsg = MessagesStrings
 					.studyImportNotUser(currentStudy.getTitle());
@@ -242,8 +242,7 @@ public class ImportExportService {
 	private void overwriteExistingStudy(User loggedInUser,
 			Boolean studyEntityConfirm, Boolean studysDirConfirm,
 			File tempUnzippedStudyDir, Study importedStudy, Study currentStudy)
-					throws IOException, ForbiddenException,
-					BadRequestException {
+			throws IOException, ForbiddenException, BadRequestException {
 		checker.checkStandardForStudy(currentStudy, currentStudy.getId(),
 				loggedInUser);
 		checker.checkStudyLocked(currentStudy);
@@ -405,7 +404,7 @@ public class ImportExportService {
 		try {
 			tempDir = ZipUtil.unzip(file);
 		} catch (IOException e) {
-			Logger.warn(CLASS_NAME + ".unzipUploadedFile: unzipping failed", e);
+			LOGGER.warn(".unzipUploadedFile: unzipping failed", e);
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
 		}
 		return tempDir;
