@@ -6,8 +6,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.GuiLoggingAction.GuiLogging;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiException;
+import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import daos.common.StudyDao;
 import exceptions.gui.JatosGuiException;
 import general.common.MessagesStrings;
@@ -30,8 +30,8 @@ import utils.common.JsonUtils;
  * 
  * @author Kristian Lange
  */
-@GuiException
-@GuiLogging
+@GuiExceptionCatching
+@GuiAccessLogging
 @Authenticated
 @Singleton
 public class Home extends Controller {

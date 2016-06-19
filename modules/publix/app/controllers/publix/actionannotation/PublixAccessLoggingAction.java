@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import controllers.publix.actionannotation.PublixLoggingAction.PublixLogging;
+import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging;
 import play.Logger;
 import play.Logger.ALogger;
 import play.libs.F;
@@ -21,19 +21,19 @@ import play.mvc.With;
  * 
  * @author Kristian Lange (2016)
  */
-public class PublixLoggingAction extends Action<PublixLogging> {
+public class PublixAccessLoggingAction extends Action<PublixAccessLogging> {
 
-	@With(PublixLoggingAction.class)
+	@With(PublixAccessLoggingAction.class)
 	@Target({ ElementType.TYPE, ElementType.METHOD })
 	@Retention(RetentionPolicy.RUNTIME)
-	public @interface PublixLogging {
+	public @interface PublixAccessLogging {
 	}
 
-	private ALogger publixLogger = Logger.of("publix_access");
+	private ALogger logger = Logger.of("publix_access");
 
 	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
 		final Request request = ctx.request();
-		publixLogger.info(request.method() + " " + request.uri());
+		logger.info(request.method() + " " + request.uri());
 		return delegate.call(ctx);
 	}
 

@@ -14,7 +14,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import utils.common.ControllerUtils;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiException;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import exceptions.gui.JatosGuiException;
 import general.gui.FlashScopeMessaging;
 
@@ -27,12 +27,12 @@ import general.gui.FlashScopeMessaging;
  * 
  * @author Kristian Lange
  */
-public class GuiExceptionAction extends Action<GuiException> {
+public class GuiExceptionAction extends Action<GuiExceptionCatching> {
 
 	@With(GuiExceptionAction.class)
 	@Target({ ElementType.TYPE, ElementType.METHOD })
 	@Retention(RetentionPolicy.RUNTIME)
-	public @interface GuiException {
+	public @interface GuiExceptionCatching {
 	}
 
 	public F.Promise<Result> call(Http.Context ctx) throws Throwable {

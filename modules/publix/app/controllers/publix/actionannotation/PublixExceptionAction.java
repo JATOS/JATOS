@@ -1,14 +1,22 @@
 package controllers.publix.actionannotation;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import controllers.publix.actionannotation.PublixExceptionAction.PublixExceptionCatching;
+import exceptions.publix.InternalServerErrorPublixException;
+import exceptions.publix.PublixException;
 import play.Logger;
 import play.libs.F;
 import play.libs.F.Promise;
+import play.mvc.Action;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.mvc.With;
 import utils.common.ControllerUtils;
-import exceptions.publix.InternalServerErrorPublixException;
-import exceptions.publix.PublixException;
 
 /**
  * For all actions in a controller that is annotated with PublixAction catch
@@ -16,7 +24,13 @@ import exceptions.publix.PublixException;
  * 
  * @author Kristian Lange
  */
-public class PublixAction extends play.mvc.Action.Simple {
+public class PublixExceptionAction extends Action<PublixExceptionCatching> {
+
+	@With(PublixExceptionAction.class)
+	@Target({ ElementType.TYPE, ElementType.METHOD })
+	@Retention(RetentionPolicy.RUNTIME)
+	public @interface PublixExceptionCatching {
+	}
 
 	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
 		Promise<Result> call;

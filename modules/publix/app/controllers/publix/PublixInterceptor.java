@@ -6,8 +6,8 @@ import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import controllers.publix.actionannotation.PublixAction;
-import controllers.publix.actionannotation.PublixLoggingAction.PublixLogging;
+import controllers.publix.actionannotation.PublixExceptionAction.PublixExceptionCatching;
+import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging;
 import controllers.publix.workers.GeneralSinglePublix;
 import controllers.publix.workers.JatosPublix;
 import controllers.publix.workers.MTPublix;
@@ -31,7 +31,6 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
-import play.mvc.With;
 import services.publix.PublixErrorMessages;
 
 /**
@@ -58,8 +57,8 @@ import services.publix.PublixErrorMessages;
  * @author Kristian Lange
  */
 @Singleton
-@With(PublixAction.class)
-@PublixLogging
+@PublixAccessLogging
+@PublixExceptionCatching
 public class PublixInterceptor extends Controller implements IPublix {
 
 	private static final ALogger LOGGER = Logger.of(PublixInterceptor.class);

@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import controllers.gui.Users;
-import controllers.gui.actionannotations.GuiLoggingAction.GuiLogging;
+import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import play.Logger;
 import play.Logger.ALogger;
 import play.libs.F;
@@ -23,12 +23,12 @@ import play.mvc.With;
  * 
  * @author Kristian Lange (2016)
  */
-public class GuiLoggingAction extends Action<GuiLogging> {
+public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 
-	@With(GuiLoggingAction.class)
+	@With(GuiAccessLoggingAction.class)
 	@Target({ ElementType.TYPE, ElementType.METHOD })
 	@Retention(RetentionPolicy.RUNTIME)
-	public @interface GuiLogging {
+	public @interface GuiAccessLogging {
 	}
 
 	private ALogger guiLogger = Logger.of("gui_access");

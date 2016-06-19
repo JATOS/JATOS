@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiException;
-import controllers.gui.actionannotations.GuiLoggingAction.GuiLogging;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
+import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import daos.common.worker.WorkerDao;
@@ -47,8 +47,8 @@ import utils.common.JsonUtils;
  * 
  * @author Kristian Lange
  */
-@GuiException
-@GuiLogging
+@GuiExceptionCatching
+@GuiAccessLogging
 @Authenticated
 @Singleton
 public class ImportExport extends Controller {
