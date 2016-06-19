@@ -13,14 +13,14 @@
 			<maxHistory>30</maxHistory>
 		</rollingPolicy>
 		<encoder>
-			<pattern>%date [%level] from %logger in %thread -
+			<pattern>%date [%level] from %logger{5} in %thread -
 				%message%n%xException</pattern>
 		</encoder>
 	</appender>
 
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%coloredLevel - %logger - %message%n%xException</pattern>
+			<pattern>%coloredLevel - %logger{5} - %message%n%xException</pattern>
 		</encoder>
 	</appender>
 
