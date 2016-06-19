@@ -32,6 +32,7 @@ import models.common.StudyResult;
 import models.common.User;
 import models.common.workers.Worker;
 import play.Logger;
+import play.Logger.ALogger;
 import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 
 /**
@@ -43,9 +44,10 @@ import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 @Singleton
 public class JsonUtils {
 
+	private static final ALogger LOGGER = Logger.of(JsonUtils.class);
+
 	public static final String DATA = "data";
 	public static final String VERSION = "version";
-	private static final String CLASS_NAME = JsonUtils.class.getSimpleName();
 
 	/**
 	 * ObjectMapper from Jackson JSON library to marshal/unmarshal. It considers
@@ -98,8 +100,7 @@ public class JsonUtils {
 		try {
 			jsonDataForDB = OBJECTMAPPER.readTree(jsonData).toString();
 		} catch (Exception e) {
-			Logger.info(CLASS_NAME
-					+ ".asStringForDB: error probably due to invalid JSON");
+			LOGGER.info(".asStringForDB: error probably due to invalid JSON");
 		}
 		return jsonDataForDB;
 	}
@@ -118,8 +119,7 @@ public class JsonUtils {
 			}
 			valid = true;
 		} catch (Exception e) {
-			Logger.info(CLASS_NAME
-					+ ".isValidJSON: error probably due to invalid JSON");
+			LOGGER.info(".isValidJSON: error probably due to invalid JSON");
 			valid = false;
 		}
 		return valid;
@@ -210,7 +210,7 @@ public class JsonUtils {
 	 */
 	public JsonNode allComponentResultsForUI(
 			List<ComponentResult> componentResultList)
-					throws JsonProcessingException {
+			throws JsonProcessingException {
 		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
 		ArrayNode arrayNode = allComponentResultsNode.arrayNode();
 		for (ComponentResult componentResult : componentResultList) {
@@ -484,7 +484,7 @@ public class JsonUtils {
 		try {
 			objectAsJson = objectWriter.writeValueAsString(obj);
 		} catch (JsonProcessingException e) {
-			Logger.error(CLASS_NAME + ".asJson: error marshalling object");
+			LOGGER.error(".asJson: error marshalling object");
 		}
 		return objectAsJson;
 	}

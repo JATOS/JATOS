@@ -7,12 +7,13 @@ import javax.inject.Singleton;
 
 import play.Configuration;
 import play.Logger;
+import play.Logger.ALogger;
 import play.api.Application;
 
 @Singleton
 public class Common {
 
-	private static final String CLASS_NAME = Common.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(Common.class);
 
 	/**
 	 * JATOS version
@@ -54,8 +55,8 @@ public class Common {
 	Common(Application application, Configuration configuration) {
 		this.basepath = fillBasePath(application);
 		this.studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
-		this.inMemoryDb = configuration.getString("db.default.url").contains(
-				"jdbc:h2:mem:");
+		this.inMemoryDb = configuration.getString("db.default.url")
+				.contains("jdbc:h2:mem:");
 	}
 
 	private String fillBasePath(Application application) {
@@ -89,8 +90,8 @@ public class Common {
 			tempStudyAssetsRootPath = this.basepath + File.separator
 					+ tempStudyAssetsRootPath;
 		}
-		Logger.info(CLASS_NAME + ": Path to study assets directory is "
-				+ tempStudyAssetsRootPath);
+		LOGGER.info(
+				"Path to study assets directory is " + tempStudyAssetsRootPath);
 		return tempStudyAssetsRootPath;
 	}
 

@@ -4,6 +4,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import play.Logger;
+import play.Logger.ALogger;
 import play.inject.ApplicationLifecycle;
 import play.libs.F;
 
@@ -13,14 +14,14 @@ import play.libs.F;
 @Singleton
 public class OnStartStop {
 
-	private static final String CLASS_NAME = OnStartStop.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(OnStartStop.class);
 
 	@Inject
 	public OnStartStop(ApplicationLifecycle lifecycle) {
-		Logger.info(CLASS_NAME + ": JATOS has started");
-		
+		LOGGER.info("JATOS has started");
+
 		lifecycle.addStopHook(() -> {
-			Logger.info(CLASS_NAME + ": JATOS shutdown");
+			LOGGER.info("JATOS shutdown");
 			return F.Promise.pure(null);
 		});
 	}

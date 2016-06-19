@@ -12,6 +12,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 
 import play.Logger;
+import play.Logger.ALogger;
 
 /**
  * Utils around XML
@@ -21,7 +22,7 @@ import play.Logger;
 @Singleton
 public class XMLUtils {
 
-	private static final String CLASS_NAME = XMLUtils.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(XMLUtils.class);
 
 	/**
 	 * Convert XML-Document into a String
@@ -36,7 +37,7 @@ public class XMLUtils {
 			transformer.transform(domSource, result);
 			return writer.toString();
 		} catch (TransformerException e) {
-			Logger.info(CLASS_NAME + ".asString: XML to String conversion: ", e);
+			LOGGER.info(".asString: XML to String conversion: ", e);
 			return null;
 		}
 	}

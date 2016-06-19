@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import play.Logger;
+import play.Logger.ALogger;
 import play.mvc.Controller;
 
 /**
@@ -13,8 +14,7 @@ import play.mvc.Controller;
  */
 public class ControllerUtils {
 
-	private static final String CLASS_NAME = ControllerUtils.class
-			.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(ControllerUtils.class);
 
 	/**
 	 * Check if the request was made via Ajax or not.
@@ -36,9 +36,7 @@ public class ControllerUtils {
 			String protocol = getRequestsProtocol();
 			return new URL(protocol + "://" + Controller.request().host());
 		} catch (MalformedURLException e) {
-			Logger.error(
-					CLASS_NAME + ".getRequestUrl: couldn't get request's URL",
-					e);
+			LOGGER.error(".getRequestUrl: couldn't get request's URL", e);
 		}
 		// Should never happen
 		return null;

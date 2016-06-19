@@ -9,6 +9,7 @@ import daos.common.UserDao;
 import general.common.Common;
 import models.common.User;
 import play.Logger;
+import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import services.gui.UserService;
 
@@ -21,7 +22,7 @@ import services.gui.UserService;
 @Singleton
 public class Initializer {
 
-	private static final String CLASS_NAME = Initializer.class.getSimpleName();
+	private static final ALogger LOGGER = Logger.of(Initializer.class);
 
 	private final JPAApi jpa;
 	private final Common common;
@@ -46,7 +47,7 @@ public class Initializer {
 		checkAdmin();
 		checkStudyAssetsRootDir();
 		// checkGroupResults();
-		Logger.info(CLASS_NAME + ": JATOS initialized");
+		LOGGER.info("JATOS initialized");
 	}
 
 	/**
@@ -56,15 +57,15 @@ public class Initializer {
 		File studyAssetsRoot = new File(common.getStudyAssetsRootPath());
 		boolean success = studyAssetsRoot.mkdirs();
 		if (success) {
-			Logger.info(CLASS_NAME
-					+ ".checkStudyAssetsRootDir: Created study assets root directory "
-					+ common.getStudyAssetsRootPath());
+			LOGGER.info(
+					".checkStudyAssetsRootDir: Created study assets root directory "
+							+ common.getStudyAssetsRootPath());
 		}
 		if (!studyAssetsRoot.isDirectory()) {
-			Logger.error(CLASS_NAME
-					+ ".checkStudyAssetsRootDir: Study assets root directory "
-					+ common.getStudyAssetsRootPath()
-					+ " couldn't be created.");
+			LOGGER.error(
+					".checkStudyAssetsRootDir: Study assets root directory "
+							+ common.getStudyAssetsRootPath()
+							+ " couldn't be created.");
 		}
 	}
 
