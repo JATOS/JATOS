@@ -1,19 +1,26 @@
 package publix.controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
+import static play.mvc.Http.Status.FORBIDDEN;
 import static play.mvc.Http.Status.NOT_FOUND;
 import static play.mvc.Http.Status.OK;
+import static play.test.Helpers.GET;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
 import java.io.File;
 import java.io.IOException;
 
+import org.fest.assertions.Fail;
 import org.junit.Test;
 
+import controllers.gui.Users;
 import controllers.publix.StudyAssets;
+import controllers.publix.workers.JatosPublix;
 import exceptions.publix.NotFoundPublixException;
+import exceptions.publix.PublixException;
 import general.AbstractTest;
+import general.common.MessagesStrings;
 import models.common.Study;
 import play.mvc.Call;
 import play.mvc.Http.RequestBuilder;
@@ -56,13 +63,16 @@ public class StudyAssetsTest extends AbstractTest {
 	}
 
 	@Test
-	public void testAt() throws IOException {
+	public void testVersioned() throws IOException, PublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
+		startStudy(studyClone);
 
 		Call call = controllers.publix.routes.StudyAssets
-				.versioned("basic_example_study/quit_button.html");
+				.versioned(studyClone.getDirName() + "/"
+						+ studyClone.getFirstComponent().getHtmlFilePath());
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url());
+				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
+						studyClone.getDirName());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(OK);
 
@@ -70,31 +80,25 @@ public class StudyAssetsTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	@Test
-	public void testAtNotFound() {
-		Call call = controllers.publix.routes.StudyAssets
-				.versioned("non/existend/filepath");
-		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url());
-		Result result = route(request);
-		assertThat(result.status()).isEqualTo(NOT_FOUND);
-
-		call = controllers.publix.routes.StudyAssets
-				.versioned("non/&?/filepath");
-		request = new RequestBuilder().method(Helpers.GET).uri(call.url());
-		result = route(request);
-		assertThat(result.status()).isEqualTo(NOT_FOUND);
+	private void startStudy(Study studyClone) {
+		String url = "/publix/" + studyClone.getId() + "/start?"
+				+ JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
+		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
+				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
+		route(request);
 	}
 
 	@Test
-	public void testAtPathTraversalAttack() throws IOException {
+	public void testVersionedNotFound() throws IOException, PublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
+		startStudy(studyClone);
 
-		// Although this file exists, it shouldn't be found
 		Call call = controllers.publix.routes.StudyAssets
-				.versioned("../../conf/application.conf");
+				.versioned(studyClone.getDirName() + "/non_existend_file");
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url());
+				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
+						studyClone.getDirName());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(NOT_FOUND);
 
@@ -103,7 +107,65 @@ public class StudyAssetsTest extends AbstractTest {
 	}
 
 	@Test
-	public void testForwardTo() throws IOException, NotFoundPublixException {
+	public void testVersionedWrongStudyDir()
+			throws IOException, PublixException {
+		Study studyClone = cloneAndPersistStudy(studyExample);
+		startStudy(studyClone);
+
+		Call call = controllers.publix.routes.StudyAssets
+				.versioned("wrong_study_dir/"
+						+ studyClone.getFirstComponent().getHtmlFilePath());
+		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
+				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
+						studyClone.getDirName());
+		Result result = route(request);
+		assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+		// Clean up
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void testVersionedWrongAssets() throws IOException, PublixException {
+		Study studyClone = cloneAndPersistStudy(studyExample);
+		startStudy(studyClone);
+
+		Call call = controllers.publix.routes.StudyAssets
+				.versioned(studyClone.getDirName() + "/"
+						+ studyClone.getFirstComponent().getHtmlFilePath());
+		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
+				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
+						"another_study_dir");
+		Result result = route(request);
+		assertThat(result.status()).isEqualTo(FORBIDDEN);
+
+		// Clean up
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void testVersionedPathTraversalAttack()
+			throws IOException, PublixException {
+		Study studyClone = cloneAndPersistStudy(studyExample);
+		startStudy(studyClone);
+
+		// Although this file exists, it shouldn't be found since all '/..' are
+		// removed
+		Call call = controllers.publix.routes.StudyAssets.versioned(
+				studyClone.getDirName() + "/../../conf/application.conf");
+		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
+				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
+						studyClone.getDirName());
+		Result result = route(request);
+		assertThat(result.status()).isEqualTo(NOT_FOUND);
+
+		// Clean up
+		removeStudy(studyClone);
+	}
+
+	@Test
+	public void testRetrieveComponentHtmlFile()
+			throws IOException, NotFoundPublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
 
 		Result result = studyAssets.retrieveComponentHtmlFile(
@@ -122,16 +184,19 @@ public class StudyAssetsTest extends AbstractTest {
 	}
 
 	@Test
-	public void testForwardToNotFound()
-			throws IOException, NotFoundPublixException {
+	public void testRetrieveComponentHtmlFileNotFound()
+			throws IOException, PublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
 
-		Result result = studyAssets.retrieveComponentHtmlFile(
-				studyClone.getDirName(), "/someNotExistingPath");
-
-		assertThat(result.status()).isEqualTo(OK);
-		assertThat(contentAsString(result)).contains(
-				"Requested page &quot;/someNotExistingPath&quot; couldn&#x27;t be found.");
+		try {
+			studyAssets.retrieveComponentHtmlFile(studyClone.getDirName(),
+					"/someNotExistingPath");
+			Fail.fail();
+		} catch (NotFoundPublixException e) {
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.htmlFilePathNotExist(
+							studyClone.getDirName(), "/someNotExistingPath"));
+		}
 
 		// Clean up
 		removeStudy(studyClone);
