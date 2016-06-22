@@ -121,7 +121,7 @@ public class IdCookie {
 	 * worker ID, study ID, study result ID, group result ID (if not exist:
 	 * null), component ID, component result ID and component position.
 	 */
-	private String generateIdCookieValue(Batch batch, StudyResult studyResult,
+	public String generateIdCookieValue(Batch batch, StudyResult studyResult,
 			ComponentResult componentResult, Worker worker) {
 		Study study = studyResult.getStudy();
 		GroupResult groupResult = studyResult.getActiveGroupResult();

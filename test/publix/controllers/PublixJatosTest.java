@@ -28,6 +28,7 @@ import models.common.StudyResult.StudyState;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
+import play.mvc.Http.Cookies;
 import play.mvc.Http.HeaderNames;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
@@ -111,8 +112,11 @@ public class PublixJatosTest extends AbstractTest {
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
+		Cookies cookies = result.cookies();
 		studyResultDao.refresh(studyResult);
 
 		assertThat(result.status()).isEqualTo(OK);
@@ -140,6 +144,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 
@@ -170,6 +176,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's a test result data.");
 		result = route(request, 10000);
@@ -189,12 +197,14 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Send request setStudySessionData:
 		// studyResult -> DATA_RETRIEVED, componentResult -> RESULTDATA_POSTED
-		url = "/publix/" + study.getId() + "/sessionData";
+		url = "/publix/" + study.getId() + "/studySessionData";
 		request = new RequestBuilder().method(POST).uri(url)
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's our session data.");
 		result = route(request, 10000);
@@ -220,6 +230,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's session data.");
 		result = route(request, 10000);
@@ -231,9 +243,9 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 
 		// Check redirect URL
-		assertThat(result.header("Location")).isEqualTo("http://localhost:"
-				+ testServerPort() + "/publix/" + study.getId() + "/"
-				+ study.getComponent(2).getId() + "/start");
+		assertThat(result.header("Location"))
+				.endsWith("/publix/" + study.getId() + "/"
+						+ study.getComponent(2).getId() + "/start");
 
 		// ***
 		// Start 2. component by ID, studyResult -> DATA_RETRIEVED
@@ -245,6 +257,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 
@@ -272,6 +286,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 
@@ -300,6 +316,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("This is an error message.");
 		result = route(request, 10000);
@@ -317,6 +335,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 
@@ -342,7 +362,10 @@ public class PublixJatosTest extends AbstractTest {
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
 				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
-				.header(HeaderNames.HOST, "localhost:" + testServerPort());
+				.session(Publix.BATCH_ID, "1")
+				.session(Publix.STUDY_ASSETS, study.getDirName())
+				.header(HeaderNames.HOST, "localhost:" + testServerPort())
+				.cookie(cookies.get(IdCookie.ID_COOKIE_NAME));
 		result = route(request, 10000);
 
 		studyResultDao.refresh(studyResult);
