@@ -222,45 +222,6 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	}
 
 	@Test
-	public void checkGenerateIdCookieValue() throws NoSuchAlgorithmException,
-			IOException, ForbiddenReloadException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		ComponentResult componentResult = publixUtils
-				.startComponent(study.getFirstComponent(), studyResult);
-		entityManager.getTransaction().commit();
-
-		// TODO
-		// String cookieValue = HttpHelpers.generateIdCookieValue(
-		// study.getDefaultBatch(), studyResult, componentResult,
-		// admin.getWorker());
-
-		// Check IDs in cookie value String
-		// Map<String, String> cookieMap = new HashMap<>();
-		// String[] idMappings = cookieValue.split("&");
-		// for (String idMappingStr : idMappings) {
-		// String[] idMapping = idMappingStr.split("=");
-		// cookieMap.put(idMapping[0], idMapping[1]);
-		// }
-		// assertThat(cookieMap.get(IdCookie.WORKER_ID)).isEqualTo("1");
-		// assertThat(cookieMap.get(IdCookie.STUDY_ID)).isEqualTo("1");
-		// assertThat(cookieMap.get(IdCookie.STUDY_RESULT_ID)).isEqualTo("1");
-		// TODO batch ID
-		// assertThat(cookieMap.get(IdCookie.COMPONENT_ID)).isEqualTo("1");
-		// assertThat(cookieMap.get(IdCookie.COMPONENT_RESULT_ID)).isEqualTo("1");
-		// assertThat(cookieMap.get(IdCookie.COMPONENT_POSITION)).isEqualTo("1");
-
-		// Clean-up
-		removeStudy(study);
-	}
-
-	@Test
 	public void checkAbortStudy() throws IOException, NoSuchAlgorithmException,
 			ForbiddenReloadException {
 		Study study = importExampleStudy();
@@ -340,7 +301,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	}
 
 	@Test
-	public void checkFinishAllPriorStudyResults() throws IOException,
+	public void checkFinishAbandonedStudyResults() throws IOException,
 			NoSuchAlgorithmException, BadRequestPublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
@@ -356,7 +317,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		studyResult2.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
 
-		publixUtils.finishAbandonedStudyResults(admin.getWorker(), study);
+		publixUtils.finishAbandonedStudyResults(admin.getWorker(), study, null);
 
 		assertThat(studyResult1.getStudyState())
 				.isEqualTo(StudyResult.StudyState.FAIL);
