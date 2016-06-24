@@ -44,8 +44,10 @@ public class IdCookie {
 	private Cookie idCookie;
 	private Map<String, String> idCookieMap;
 
-	public IdCookie() throws BadRequestPublixException {
-		extractIdCookie(Publix.request().cookies());
+	public IdCookie(Cookies cookies) throws BadRequestPublixException {
+		if (cookies != null) {
+			extractIdCookie(cookies); 
+		}
 	}
 
 	/**

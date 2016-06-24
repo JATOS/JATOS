@@ -75,7 +75,8 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 				+ batchId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
-		publixUtils.checkStudyInGeneralSingleCookie(study);
+		publixUtils.checkStudyInGeneralSingleCookie(study,
+				request().cookie(GeneralSinglePublix.COOKIE));
 
 		GeneralSingleWorker worker = workerCreator
 				.createAndPersistGeneralSingleWorker(batch);
@@ -88,10 +89,13 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 				+ worker.getId());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults(worker, study,
+				request().cookies());
 		resultCreator.createStudyResult(study, batch, worker);
 
-		publixUtils.addStudyUuidToGeneralSingleCookie(study);
+		Publix.response().setCookie(GeneralSinglePublix.COOKIE,
+				publixUtils.addStudyUuidToGeneralSingleCookie(study,
+						request().cookie(GeneralSinglePublix.COOKIE)));
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

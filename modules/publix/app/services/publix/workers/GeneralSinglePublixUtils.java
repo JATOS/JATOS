@@ -3,8 +3,6 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import controllers.publix.Publix;
-import controllers.publix.workers.GeneralSinglePublix;
 import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -58,10 +56,8 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	 * browser a study was done already. This is a (simple) way of preventing
 	 * workers doing the same study twice.
 	 */
-	public void checkStudyInGeneralSingleCookie(Study study)
-			throws ForbiddenPublixException {
-		Cookie generalSingleCookie = Publix.request()
-				.cookie(GeneralSinglePublix.COOKIE);
+	public void checkStudyInGeneralSingleCookie(Study study,
+			Cookie generalSingleCookie) throws ForbiddenPublixException {
 		if (generalSingleCookie != null) {
 			String[] studyUuidArray = generalSingleCookie.value()
 					.split(GENERAL_SINGLE_COOKIE_DELIMITER);
@@ -75,22 +71,19 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	}
 
 	/**
-	 * Adds this study's UUID to the cookie's value and sets the new cookie
-	 * value in the response object. This cookie is used only in General Single
-	 * runs to determine whether in a browser a study was done already. This is
-	 * a (simple) way of preventing workers doing the same study twice.
+	 * If the cookie is not null it adds this study's UUID to the cookie's value
+	 * and returns it. If the cookie is null (this client never did a general
+	 * single run) just return the new cookie's value which is just the study's
+	 * UUID.
 	 */
-	public void addStudyUuidToGeneralSingleCookie(Study study) {
-		Cookie generalSingleCookie = Publix.request()
-				.cookie(GeneralSinglePublix.COOKIE);
-		String value;
+	public String addStudyUuidToGeneralSingleCookie(Study study,
+			Cookie generalSingleCookie) {
 		if (generalSingleCookie != null) {
-			value = generalSingleCookie.value()
-					+ GENERAL_SINGLE_COOKIE_DELIMITER + study.getUuid();
+			return generalSingleCookie.value() + GENERAL_SINGLE_COOKIE_DELIMITER
+					+ study.getUuid();
 		} else {
-			value = study.getUuid();
+			return study.getUuid();
 		}
-		Publix.response().setCookie(GeneralSinglePublix.COOKIE, value);
 	}
 
 }

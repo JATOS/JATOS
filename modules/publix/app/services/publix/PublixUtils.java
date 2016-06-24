@@ -23,6 +23,7 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
+import play.mvc.Http.Cookies;
 
 /**
  * Service class with functions that are common for all classes that extend
@@ -214,10 +215,10 @@ public abstract class PublixUtils<T extends Worker> {
 	 * FAIL. 2) In the same browser can run only one study at the same time. So
 	 * it checks the ID cookie for an unfinished study run.
 	 */
-	public void finishAbandonedStudyResults(Worker worker, Study study)
-			throws BadRequestPublixException {
+	public void finishAbandonedStudyResults(Worker worker, Study study,
+			Cookies cookies) throws BadRequestPublixException {
 		finishAllPriorStudyResultsOfWorker(worker, study);
-		checkIdCookieAndFinishAbandonedStudyResult();
+		checkIdCookieAndFinishAbandonedStudyResult(cookies);
 	}
 
 	/**
@@ -495,9 +496,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 * abandoned study result happens when in the same browser a second study
 	 * run is started without finishing the first one.
 	 */
-	private void checkIdCookieAndFinishAbandonedStudyResult()
+	private void checkIdCookieAndFinishAbandonedStudyResult(Cookies cookies)
 			throws BadRequestPublixException {
-		IdCookie idCookie = new IdCookie();
+		IdCookie idCookie = new IdCookie(cookies);
 		if (idCookie.exists()) {
 			Long abandonedStudyResultId = idCookie.getStudyResultId();
 			StudyResult abandonedStudyResult = studyResultDao
@@ -517,8 +518,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 * response object.
 	 */
 	public void writeIdCookie(T worker, Batch batch, StudyResult studyResult,
-			ComponentResult componentResult) throws BadRequestPublixException {
-		IdCookie idCookie = new IdCookie();
+			ComponentResult componentResult, Cookies cookies)
+			throws BadRequestPublixException {
+		IdCookie idCookie = new IdCookie(cookies);
 		idCookie.writeToResponse(batch, studyResult, componentResult, worker);
 	}
 
@@ -526,9 +528,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Discards the ID cookie if the given study result ID is equal to the one
 	 * in the cookie.
 	 */
-	public void discardIdCookie(StudyResult studyResult)
+	public void discardIdCookie(StudyResult studyResult, Cookies cookies)
 			throws BadRequestPublixException {
-		IdCookie idCookie = new IdCookie();
+		IdCookie idCookie = new IdCookie(cookies);
 		idCookie.discard(studyResult.getId());
 	}
 

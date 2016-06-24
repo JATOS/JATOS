@@ -78,7 +78,8 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		session(STUDY_ASSETS, study.getDirName());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults(worker, study,
+				request().cookies());
 		resultCreator.createStudyResult(study, batch, worker);
 
 		Component firstComponent = publixUtils

@@ -128,7 +128,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ worker.getId());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults(worker, study,
+				request().cookies());
 		resultCreator.createStudyResult(study, batch, worker);
 
 		Component firstComponent = publixUtils
@@ -158,7 +159,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
-		publixUtils.discardIdCookie(studyResult);
+		publixUtils.discardIdCookie(studyResult, request().cookies());
 		if (ControllerUtils.isAjax()) {
 			return ok(confirmationCode);
 		} else {

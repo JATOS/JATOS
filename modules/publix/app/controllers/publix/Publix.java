@@ -109,7 +109,8 @@ public abstract class Publix<T extends Worker> extends Controller
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, e.getMessage()));
 		}
-		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
+		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult,
+				request().cookies());
 		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
 				component.getHtmlFilePath());
 	}
@@ -387,7 +388,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			publixUtils.abortStudy(message, studyResult);
 			groupService.finishStudyInGroup(study, studyResult);
 		}
-		publixUtils.discardIdCookie(studyResult);
+		publixUtils.discardIdCookie(studyResult, request().cookies());
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
@@ -412,7 +413,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 			groupService.finishStudyInGroup(study, studyResult);
 		}
-		publixUtils.discardIdCookie(studyResult);
+		publixUtils.discardIdCookie(studyResult, request().cookies());
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {

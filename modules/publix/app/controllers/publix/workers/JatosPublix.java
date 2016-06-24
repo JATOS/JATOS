@@ -135,7 +135,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults(worker, study,
+				request().cookies());
 		resultCreator.createStudyResult(study, batch, worker);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, componentId));
@@ -187,7 +188,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, e.getMessage()));
 		}
-		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
+		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult,
+				request().cookies());
 		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
 				component.getHtmlFilePath());
 	}
@@ -256,7 +258,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			groupService.finishStudyInGroup(study, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		publixUtils.discardIdCookie(studyResult);
+		publixUtils.discardIdCookie(studyResult, request().cookies());
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
@@ -288,7 +290,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			groupService.finishStudyInGroup(study, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		publixUtils.discardIdCookie(studyResult);
+		publixUtils.discardIdCookie(studyResult, request().cookies());
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);
 		} else {
