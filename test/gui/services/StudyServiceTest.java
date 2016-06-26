@@ -306,7 +306,7 @@ public class StudyServiceTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	// @Test
+	@Test
 	public void checkRenameStudyAssetsDir()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
