@@ -104,9 +104,10 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
+		addStudy(study);
+		
 		Batch batch = study.getDefaultBatch();
 		batch.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-		addStudy(study);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
 		persistWorker(worker);
 

@@ -60,8 +60,9 @@ public class GeneralSingleStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
-		Batch batch = study.getDefaultBatch();
 		addStudy(study);
+
+		Batch batch = study.getDefaultBatch();
 		GeneralSingleWorker worker = new GeneralSingleWorker();
 
 		// Study doesn't allow this worker type

@@ -58,9 +58,11 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
+		addStudy(study);
+		
+		// Remove Jatos worker from allowed worker types
 		Batch batch = study.getDefaultBatch();
 		batch.removeAllowedWorkerType(admin.getWorker().getWorkerType());
-		addStudy(study);
 
 		// Study doesn't allow this worker type
 		try {

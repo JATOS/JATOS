@@ -41,6 +41,7 @@ import play.mvc.Http;
 import play.test.FakeApplication;
 import play.test.Helpers;
 import play.test.TestServer;
+import services.gui.BatchService;
 import services.gui.Checker;
 import services.gui.ComponentService;
 import services.gui.ResultService;
@@ -70,6 +71,7 @@ public abstract class AbstractTest {
 	protected Checker checker;
 	protected UserService userService;
 	protected StudyService studyService;
+	protected BatchService batchService;
 	protected ComponentService componentService;
 	protected ResultService resultService;
 	protected ResultCreator resultCreator;
@@ -104,6 +106,7 @@ public abstract class AbstractTest {
 		checker = application.injector().instanceOf(Checker.class);
 		userService = application.injector().instanceOf(UserService.class);
 		studyService = application.injector().instanceOf(StudyService.class);
+		batchService = application.injector().instanceOf(BatchService.class);
 		componentService = application.injector()
 				.instanceOf(ComponentService.class);
 		resultService = application.injector().instanceOf(ResultService.class);
@@ -205,6 +208,10 @@ public abstract class AbstractTest {
 		ioUtils.moveStudyAssetsDir(dirArray[0], importedStudy.getDirName());
 
 		tempUnzippedStudyDir.delete();
+
+		// Every study has a default batch
+		importedStudy.addBatch(
+				batchService.createDefaultBatch(importedStudy, admin));
 		return importedStudy;
 	}
 

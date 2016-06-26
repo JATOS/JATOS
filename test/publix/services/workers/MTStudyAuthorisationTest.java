@@ -133,6 +133,8 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 	public void checkWorkerAllowedToDoStudyWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
+		addStudy(study);
+
 		Batch batch = study.getDefaultBatch();
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
@@ -141,7 +143,6 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		persistWorker(mtSandboxWorker);
 		batch.removeAllowedWorkerType(MTWorker.WORKER_TYPE);
 		batch.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
-		addStudy(study);
 
 		// Study doesn't allow this worker type
 		try {
