@@ -63,22 +63,21 @@ public class ComponentServiceTest extends AbstractTest {
 		assertThat(updatedComponent.isActive() == component.isActive())
 				.isTrue();
 		assertThat(updatedComponent.getId().equals(component.getId())).isTrue();
-		// TODO study always null: weird!
-		// TODO we shouldn'T be able to overwrite IDs
-		// assertThat(updatedComponent.getStudy().equals(study)).isTrue();
+		assertThat(updatedComponent.getStudy().equals(study)).isTrue();
 		assertThat(updatedComponent.getUuid().equals(component.getUuid()))
 				.isTrue();
 		assertThat(updatedComponent.getHtmlFilePath())
 				.isEqualTo(component.getHtmlFilePath());
-		// TODO check study ID
-		
+
 		// Changed stuff
 		assertThat(updatedComponent.getComments())
 				.isEqualTo(updatedProps.getComments());
 		assertThat(updatedComponent.getJsonData()).isEqualTo("{}");
-		assertThat(updatedComponent.getTitle()).isEqualTo(updatedProps.getTitle());
-		assertThat(updatedComponent.isReloadable() == updatedProps.isReloadable())
-				.isTrue();
+		assertThat(updatedComponent.getTitle())
+				.isEqualTo(updatedProps.getTitle());
+		assertThat(
+				updatedComponent.isReloadable() == updatedProps.isReloadable())
+						.isTrue();
 
 		// Clean-up
 		removeStudy(study);
@@ -129,10 +128,10 @@ public class ComponentServiceTest extends AbstractTest {
 					study.getLastComponent().getHtmlFilePath());
 			Fail.fail();
 		} catch (IOException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(MessagesStrings.htmlFileNotRenamedBecauseExists(
-							component.getHtmlFilePath(),
-							study.getLastComponent().getHtmlFilePath()));
+			assertThat(e.getMessage()).isEqualTo(
+					MessagesStrings.htmlFileNotRenamedBecauseExists(
+							component.getHtmlFilePath(), study
+									.getLastComponent().getHtmlFilePath()));
 		}
 
 		// Everything is unchanged
@@ -305,12 +304,10 @@ public class ComponentServiceTest extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 		Component component = study.getFirstComponent();
-		// Study not set automatically, weird!
-		component.setStudy(study);
 
 		try {
-			checker.checkStandardForComponents(study.getId(),
-					component.getId(), component);
+			checker.checkStandardForComponents(study.getId(), component.getId(),
+					component);
 		} catch (BadRequestException e) {
 			Fail.fail();
 		}
@@ -328,8 +325,8 @@ public class ComponentServiceTest extends AbstractTest {
 
 		component.setStudy(null);
 		try {
-			checker.checkStandardForComponents(study.getId(),
-					component.getId(), component);
+			checker.checkStandardForComponents(study.getId(), component.getId(),
+					component);
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -338,8 +335,7 @@ public class ComponentServiceTest extends AbstractTest {
 
 		component = null;
 		try {
-			checker.checkStandardForComponents(study.getId(), null,
-					component);
+			checker.checkStandardForComponents(study.getId(), null, component);
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage())
@@ -347,6 +343,8 @@ public class ComponentServiceTest extends AbstractTest {
 		}
 
 		// Clean-up
+		component = study.getFirstComponent();
+		component.setStudy(study);
 		removeStudy(study);
 	}
 }
