@@ -218,16 +218,17 @@ function initJatos() {
 	 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope.
 	 */
 	function readIdCookie() {
-		var nameEQ = "JATOS_IDS=";
-		var ca = document.cookie.split(';');
-		for (var i = 0; i < ca.length; i++) {
-			var c = ca[i];
-			while (c.charAt(0) === ' ') {
-				c = c.substring(1, c.length);
+		var idCookieName = "JATOS_IDS=";
+		var cookieArray = document.cookie.split(';');
+		for (var i = 0; i < cookieArray.length; i++) {
+			var cookie = cookieArray[i];
+			while (cookie.charAt(0) === ' ') {
+				cookie = cookie.substring(1, cookie.length);
 			}
-			if (c.indexOf(nameEQ) === 0) {
-				var cookieStr = decodeURI(c.substring(nameEQ.length + 1,
-						c.length - 1));
+			if (cookie.indexOf(idCookieName) === 0) {
+				var cookieStr = decodeURI(cookie.substr(
+						cookie.indexOf(idCookieName) + idCookieName.length,
+						cookie.length));
 				var idMap = cookieStr.split("&");
 				idMap.forEach(function(entry) {
 					var keyValuePair = entry.split("=");
