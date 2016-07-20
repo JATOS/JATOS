@@ -1,7 +1,5 @@
 package models.common.workers;
 
-import general.common.MessagesStrings;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,9 +9,10 @@ import javax.persistence.Entity;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
-import play.data.validation.ValidationError;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
+
+import general.common.MessagesStrings;
+import play.data.validation.ValidationError;
 
 /**
  * Model and DB entity of the concrete Worker if a study is run as Personal
@@ -67,6 +66,10 @@ public class PersonalSingleWorker extends Worker {
 	@Override
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
+		if (comment != null && comment.length() > 255) {
+			errorList.add(new ValidationError(COMMENT,
+					MessagesStrings.COMMENT_TOO_LONG));
+		}
 		if (comment != null && !Jsoup.isValid(comment, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENT,
 					MessagesStrings.NO_HTML_ALLOWED));

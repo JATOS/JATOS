@@ -61,7 +61,7 @@ public class StudyProperties {
 	 * between each other.
 	 */
 	private boolean groupStudy = false;
-	
+
 	/**
 	 * Study assets directory name
 	 */
@@ -141,7 +141,7 @@ public class StudyProperties {
 	public boolean isLocked() {
 		return this.locked;
 	}
-	
+
 	public boolean isGroupStudy() {
 		return groupStudy;
 	}
@@ -164,6 +164,10 @@ public class StudyProperties {
 			errorList.add(
 					new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
 		}
+		if (title != null && title.length() > 255) {
+			errorList.add(
+					new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+		}
 		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.NO_HTML_ALLOWED));
@@ -176,6 +180,10 @@ public class StudyProperties {
 		if (dirName == null || dirName.trim().isEmpty()) {
 			errorList.add(new ValidationError(DIRNAME,
 					MessagesStrings.MISSING_DIRNAME));
+		}
+		if (dirName != null && dirName.length() > 255) {
+			errorList.add(new ValidationError(DIRNAME,
+					MessagesStrings.DIRNAME_TOO_LONG));
 		}
 		Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
 		Matcher matcher = pattern.matcher(dirName);

@@ -23,6 +23,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import org.apache.commons.lang3.StringUtils;
+
 import models.common.workers.Worker;
 
 /**
@@ -222,7 +224,7 @@ public class StudyResult {
 	}
 
 	public void setErrorMsg(String errorMsg) {
-		this.errorMsg = errorMsg;
+		this.errorMsg = StringUtils.substring(errorMsg, 0, 255);
 	}
 
 	public String getErrorMsg() {
@@ -230,7 +232,7 @@ public class StudyResult {
 	}
 
 	public void setAbortMsg(String abortMsg) {
-		this.abortMsg = abortMsg;
+		this.abortMsg = StringUtils.substring(abortMsg, 0, 255);
 	}
 
 	public String getAbortMsg() {

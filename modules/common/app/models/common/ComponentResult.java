@@ -14,6 +14,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -169,7 +171,7 @@ public class ComponentResult {
 	}
 
 	public void setErrorMsg(String errorMsg) {
-		this.errorMsg = errorMsg;
+		this.errorMsg = StringUtils.substring(errorMsg, 0, 255);
 	}
 
 	public String getErrorMsg() {

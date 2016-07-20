@@ -195,6 +195,10 @@ public class BatchProperties {
 			errorList.add(
 					new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
 		}
+		if (title != null && title.length() > 255) {
+			errorList.add(
+					new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+		}
 		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.NO_HTML_ALLOWED));

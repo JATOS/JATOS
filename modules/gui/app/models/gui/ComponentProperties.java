@@ -178,11 +178,19 @@ public class ComponentProperties {
 			errorList.add(
 					new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
 		}
+		if (title != null && title.length() > 255) {
+			errorList.add(
+					new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+		}
 		if (title != null && !Jsoup.isValid(title, Whitelist.none())) {
 			errorList.add(new ValidationError(TITLE,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
 		if (htmlFilePath != null && !htmlFilePath.trim().isEmpty()) {
+			if (htmlFilePath.length() > 255) {
+				errorList.add(new ValidationError(HTML_FILE_PATH,
+						MessagesStrings.PATH_TOO_LONG));
+			}
 			// This regular expression defines how a file path should look like
 			String pathRegEx = "^[\\w\\d_-][\\w\\d\\/_-]*\\.[\\w\\d_-]+$";
 			if (!(htmlFilePath.matches(pathRegEx)

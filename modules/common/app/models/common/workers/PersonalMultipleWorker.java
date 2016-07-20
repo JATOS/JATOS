@@ -66,6 +66,10 @@ public class PersonalMultipleWorker extends Worker {
 	@Override
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
+		if (comment != null && comment.length() > 255) {
+			errorList.add(new ValidationError(COMMENT,
+					MessagesStrings.COMMENT_TOO_LONG));
+		}
 		if (comment != null && !Jsoup.isValid(comment, Whitelist.none())) {
 			errorList.add(new ValidationError(COMMENT,
 					MessagesStrings.NO_HTML_ALLOWED));

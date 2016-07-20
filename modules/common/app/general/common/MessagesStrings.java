@@ -19,11 +19,15 @@ public class MessagesStrings {
 
 	// General
 	public static final String MISSING_TITLE = "Missing title";
+	public static final String TITLE_TOO_LONG = "Title too long";
 	public static final String MISSING_FILE_PATH = "Missing file path";
 	public static final String MISSING_NAME = "Missing name";
+	public static final String NAME_TOO_LONG = "Name too long";
 	public static final String MISSING_EMAIL = "Missing email";
+	public static final String EMAIL_TOO_LONG = "Email too long";
 	public static final String NO_USER_LOGGED_IN = "No user logged in";
 	public static final String MISSING_DIRNAME = "Missing directory name";
+	public static final String DIRNAME_TOO_LONG = "Directory name too long";
 	public static final String INVALID_DIR_NAME = "Invalid directory name";
 	public static final String COMPONENT_INVALID = "Component is invalid";
 	public static final String STUDY_INVALID = "Study is invalid";
@@ -31,6 +35,8 @@ public class MessagesStrings {
 	// Edit HTML forms
 	public static final String INVALID_JSON_FORMAT = "Invalid JSON format";
 	public static final String NO_HTML_ALLOWED = "No HTML allowed";
+	public static final String PATH_TOO_LONG = "Path too long";
+	public static final String COMMENT_TOO_LONG = "Comment too long";
 	public static final String NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY = "Not a valid path or filename. Remember to use '/' as folder separator, and to include the file extension. You can leave it empty for now.";
 	public static final String JSON_DATA_MISSING_OR_INVALID_JSON_FORMAT = "JSON data missing or invalid JSON format";
 	public static final String STUDY_AT_LEAST_ONE_USER = "An study should have at least one user.";

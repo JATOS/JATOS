@@ -166,6 +166,10 @@ public class User {
 			errorList.add(
 					new ValidationError(EMAIL, MessagesStrings.MISSING_EMAIL));
 		}
+		if (email != null && email.length() > 255) {
+			errorList.add(
+					new ValidationError(EMAIL, MessagesStrings.EMAIL_TOO_LONG));
+		}
 		if (email != null && !Jsoup.isValid(email, Whitelist.none())) {
 			errorList.add(new ValidationError(EMAIL,
 					MessagesStrings.NO_HTML_ALLOWED));
@@ -173,6 +177,10 @@ public class User {
 		if (name == null || name.trim().isEmpty()) {
 			errorList.add(
 					new ValidationError(NAME, MessagesStrings.MISSING_NAME));
+		}
+		if (name != null && name.length() > 255) {
+			errorList.add(
+					new ValidationError(NAME, MessagesStrings.NAME_TOO_LONG));
 		}
 		if (name != null && !Jsoup.isValid(name, Whitelist.none())) {
 			errorList.add(
