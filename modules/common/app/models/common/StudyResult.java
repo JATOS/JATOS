@@ -28,8 +28,9 @@ import org.apache.commons.lang3.StringUtils;
 import models.common.workers.Worker;
 
 /**
- * Domain model /entity of a study result. Used for JSON marshalling and JPA
- * persistance.
+ * Domain model /entity of a study result. It's used for JSON marshalling and
+ * JPA persistance. A study result essentially stores the state and the result
+ * of a study run.
  * 
  * @author Kristian Lange
  */

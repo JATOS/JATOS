@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * Members of a GroupResult (or just group) are the StudyResults and not the
  * workers. But a studyResult is always associated with a Worker.
  * 
- * A group can be joined or left.
+ * A member (StudyResult) can join a group (GroupResult) or leave a group.
  * 
  * An active member is a StudyResult who joined a group and is in the
  * activeMemberList. A former member is in the historyMemberList.
@@ -83,8 +83,7 @@ public class GroupResult {
 
 	/**
 	 * Contains all currently active members of this group. Members are
-	 * StudyResults. This relationship is bidirectional. It has to be EAGER -
-	 * otherwise GroupDispatcher.tellGroupAction would fail.
+	 * StudyResults. This relationship is bidirectional.
 	 */
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "activeGroupResult")
 	private Set<StudyResult> activeMemberList = new HashSet<>();
