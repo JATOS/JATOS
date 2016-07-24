@@ -26,7 +26,7 @@ import utils.common.JsonUtils;
  * {@link models.gui.BatchProperties}.
  * 
  * Defines the constrains regarding workers for a batch of a study, e.g. which
- * worker types are allowed, how many etc.
+ * worker types are allowed, how many workers, which Workers etc.
  * 
  * @author Kristian Lange
  */
@@ -86,8 +86,8 @@ public class Batch {
 	/**
 	 * Maximum number of workers in this batch in total independent of its
 	 * groups. If there is no limit in active members the value is null.
-	 * JatosWorker does not count here. The workers who did this batch are
-	 * stored in the workerList.
+	 * JatosWorker does not count here. The workers who belong to this batch are
+	 * stored in the workerList (except JatosWorkers).
 	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private Integer maxTotalWorkers = null;
