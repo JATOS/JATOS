@@ -233,8 +233,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 			<div class="modal-body">
 				<p class="modalText">You're about to create a worker.</p>
 				<div class="input-group">
-					<input type="text" class="comment form-control"
-						placeholder="Comment">
+					<input type="text" class="comment form-control" placeholder="Comment">
 				</div>
 			</div>
 			<div class="modal-footer">
@@ -549,10 +548,20 @@ $('#mtWorkerPanel').on('click', '.mtWorkerSourceCode', function() {
 	$('#mtSourceCodeModal').modal('show');
 });
 
-$('#personalSingleWorkerPanel').on('click', '.addButton', function() {
-	$('#confirmModalRun').find('.modal-title').html("Create Personal Single Run");
-	$('#confirmModalRun').find('.modalText').html("You're about to create a worker for a Personal Single Run.");
+function fillConfirmModalRun(title, text) {
+	$('#confirmModalRun').find('.modal-title').html(title);
+	$('#confirmModalRun').find('.modalText').html(text);
+	$('#confirmModalRun').find('.comment').val("");
+	// Focus on comment input field in modal
+	$('#confirmModalRun').on('shown.bs.modal', function () {
+		$('#confirmModalRun').find('.comment').focus();
+	})
 	$('#confirmModalRun').modal('show');
+}
+
+$('#personalSingleWorkerPanel').on('click', '.addButton', function() {
+	fillConfirmModalRun("Create Personal Single Run",
+			"You're about to create a worker for a Personal Single Run. Use a comment to distinguish this worker from others.");
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
 		var comment = $('#confirmModalRun').find('.comment').val();
@@ -575,9 +584,8 @@ $('#personalSingleWorkerPanel').on('click', '.addButton', function() {
 });
 
 $('#personalMultipleWorkerPanel').on('click', '.addButton', function() {
-	$('#confirmModalRun').find('.modal-title').html("Create Personal Multiple Run");
-	$('#confirmModalRun').find('.modalText').html("You're about to create a Personal Multiple Worker. Use a comment to distinguish this worker from others.");
-	$('#confirmModalRun').modal('show');
+	fillConfirmModalRun("Create Personal Multiple Run",
+			"You're about to create a Personal Multiple Worker. Use a comment to distinguish this worker from others.");
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
 		var comment = $('#confirmModalRun').find('.comment').val();
