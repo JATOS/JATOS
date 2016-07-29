@@ -20,7 +20,7 @@
 
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%coloredLevel - %logger{5} - %message%n%xException</pattern>
+			<pattern>%d{HH:mm:ss.SSS} %coloredLevel - %logger{5} - %message%n%xException</pattern>
 		</encoder>
 	</appender>
 
