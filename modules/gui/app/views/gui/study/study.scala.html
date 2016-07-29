@@ -90,10 +90,10 @@ studyResultsCount: Integer)
 			</li>
 			<input id="importComponentBrowser" type="file"
 				name="@models.gui.ComponentProperties.COMPONENT" style="display: none;">
-			<li data-toggle="tooltip" data-placement="bottom" title="Import a component from the local file system">
+			<li data-toggle="tooltip" data-placement="bottom" title="Create a new component from imported properties">
 				<a id="importComponentButton" href="#">
 					<span class="glyphicon glyphicon-import" aria-hidden="true"></span>
-					Import
+					Import Properties
 				</a>
 			</li>
 		</ul>
@@ -155,11 +155,11 @@ studyResultsCount: Integer)
 				data-toggle="dropdown">
 				More <span class="caret"></span>
 			</button>
-			<ul class="dropdown-menu" role="menu">
-				<li  data-toggle="tooltip" data-placement="bottom" title="Export this component to the local file system (without its assets or results)">
+			<ul class="dropdown-menu dropdown-menu-right" role="menu">
+				<li  data-toggle="tooltip" data-placement="bottom" title="Export this component's properties to the local file system (without its assets or results)">
 					<a class="exportComponent" href="#">
 						<span class="glyphicon glyphicon-export" aria-hidden="true"></span>
-						Export
+						Export Properties
 					</a>
 				</li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Clone this component without its results and assets">
@@ -536,17 +536,17 @@ function importComponentConfirm(response) {
 	if (response.componentExists) {
 		var title = "Component already exists";
 		var htmlText = "<p>It seems a component \"" + response.componentTitle 
-			+ "\" already exist in this study.</p>"
+			+ "\" already exists in this study.</p>"
 			+ "<p>Do you want to overwrite this component?</p>";
 		askConfirmation(title, htmlText, 'Overwrite', function() {
 			postComponentImportConfirm();
 		});
 	} else {
-		var title = "Import component";
-		var htmlText = "<p>You are about to import the component \""
+		var title = "Create component from imported properties";
+		var htmlText = "<p>You are about to create the component \""
 			+ response.componentTitle + "\".</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Import', function() {
+		askConfirmation(title, htmlText, 'Create', function() {
 			postComponentImportConfirm();
 		});
 	}
