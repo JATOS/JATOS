@@ -3,6 +3,8 @@ package services.publix.workers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.publix.Publix;
+import controllers.publix.workers.GeneralSinglePublix;
 import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -20,6 +22,9 @@ import services.publix.ResultCreator;
 
 /**
  * GeneralSinglePublix' implementation of PublixUtils
+ * 
+ * Additionally to the parent class PublixUtils it manages the cookie where the
+ * GeneralSingle workers are stored.
  * 
  * @author Kristian Lange
  */
@@ -68,6 +73,19 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Sets the cookie in the response that contains all General Single studies
+	 * done by this worker so far. This cookie is HTTP only and has an expiry
+	 * date in the far future.
+	 */
+	public void setGeneralSingleCookie(Study study) {
+		String newCookieValue = addStudyUuidToGeneralSingleCookie(study,
+				GeneralSinglePublix.request()
+						.cookie(GeneralSinglePublix.COOKIE));
+		Publix.response().setCookie(GeneralSinglePublix.COOKIE, newCookieValue,
+				Integer.MAX_VALUE, "/", "", false, true);
 	}
 
 	/**

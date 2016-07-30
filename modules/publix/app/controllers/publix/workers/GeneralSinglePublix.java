@@ -93,9 +93,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 				request().cookies());
 		resultCreator.createStudyResult(study, batch, worker);
 
-		Publix.response().setCookie(GeneralSinglePublix.COOKIE,
-				publixUtils.addStudyUuidToGeneralSingleCookie(study,
-						request().cookie(GeneralSinglePublix.COOKIE)));
+		publixUtils.setGeneralSingleCookie(study);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
