@@ -23,6 +23,7 @@ import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.publix.HttpHelpers;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
@@ -137,9 +138,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAbandonedStudyResults(worker, study,
 				request().cookies());
-		resultCreator.createStudyResult(study, batch, worker);
-		return redirect(controllers.publix.routes.PublixInterceptor
-				.startComponent(studyId, componentId));
+		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
+				worker);
+		return HttpHelpers
+				.redirectWithinStudy(
+						controllers.publix.routes.PublixInterceptor
+								.startComponent(studyId, componentId),
+						studyResult);
 	}
 
 	@Override
@@ -234,8 +239,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null));
 		}
-		return redirect(controllers.publix.routes.PublixInterceptor
-				.startComponent(studyId, nextComponent.getId()));
+		return HttpHelpers
+				.redirectWithinStudy(
+						controllers.publix.routes.PublixInterceptor
+								.startComponent(studyId, nextComponent.getId()),
+						studyResult);
 	}
 
 	@Override

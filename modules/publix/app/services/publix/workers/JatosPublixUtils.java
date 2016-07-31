@@ -16,6 +16,7 @@ import exceptions.publix.ForbiddenPublixException;
 import models.common.User;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
+import services.publix.IdCookieService;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 
@@ -33,12 +34,13 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 
 	@Inject
 	JatosPublixUtils(ResultCreator resultCreator,
-			JatosErrorMessages errorMessages, UserDao userDao,
-			StudyDao studyDao, StudyResultDao studyResultDao,
+			IdCookieService idCookieService, JatosErrorMessages errorMessages,
+			UserDao userDao, StudyDao studyDao, StudyResultDao studyResultDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
 			WorkerDao workerDao, BatchDao batchDao) {
-		super(resultCreator, errorMessages, studyDao, studyResultDao,
-				componentDao, componentResultDao, workerDao, batchDao);
+		super(resultCreator, idCookieService, errorMessages, studyDao,
+				studyResultDao, componentDao, componentResultDao, workerDao,
+				batchDao);
 		this.errorMessages = errorMessages;
 		this.userDao = userDao;
 	}

@@ -4,8 +4,12 @@ import org.w3c.dom.Document;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import controllers.publix.Publix;
 import exceptions.publix.UnsupportedMediaTypePublixException;
+import models.common.StudyResult;
+import play.mvc.Call;
 import play.mvc.Http.RequestBody;
+import play.mvc.Result;
 import utils.common.XMLUtils;
 
 /**
@@ -43,5 +47,14 @@ public class HttpHelpers {
 		throw new UnsupportedMediaTypePublixException(
 				PublixErrorMessages.SUBMITTED_DATA_UNKNOWN_FORMAT);
 	}
-	
+
+	/**
+	 * Adds the study result ID as URL query string to the call and then
+	 * redirects to it.
+	 */
+	public static Result redirectWithinStudy(Call call,
+			StudyResult studyResult) {
+		return Publix.redirect(call + "?srid=" + studyResult.getId());
+	}
+
 }

@@ -12,6 +12,7 @@ import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
+import services.publix.IdCookieService;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 
@@ -24,12 +25,14 @@ import services.publix.ResultCreator;
 public class MTPublixUtils extends PublixUtils<MTWorker> {
 
 	@Inject
-	MTPublixUtils(ResultCreator resultCreator, MTErrorMessages errorMessages,
-			StudyDao studyDao, StudyResultDao studyResultDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao, BatchDao batchDao) {
-		super(resultCreator, errorMessages, studyDao, studyResultDao,
-				componentDao, componentResultDao, workerDao, batchDao);
+	MTPublixUtils(ResultCreator resultCreator, IdCookieService idCookieService,
+			MTErrorMessages errorMessages, StudyDao studyDao,
+			StudyResultDao studyResultDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, WorkerDao workerDao,
+			BatchDao batchDao) {
+		super(resultCreator, idCookieService, errorMessages, studyDao,
+				studyResultDao, componentDao, componentResultDao, workerDao,
+				batchDao);
 	}
 
 	@Override

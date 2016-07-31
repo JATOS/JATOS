@@ -16,6 +16,7 @@ import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
+import services.publix.IdCookieService;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
@@ -35,12 +36,14 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 
 	@Inject
 	GeneralSinglePublixUtils(ResultCreator resultCreator,
+			IdCookieService idCookieService,
 			GeneralSingleErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
 			ComponentResultDao componentResultDao, WorkerDao workerDao,
 			BatchDao batchDao) {
-		super(resultCreator, errorMessages, studyDao, studyResultDao,
-				componentDao, componentResultDao, workerDao, batchDao);
+		super(resultCreator, idCookieService, errorMessages, studyDao,
+				studyResultDao, componentDao, componentResultDao, workerDao,
+				batchDao);
 	}
 
 	@Override

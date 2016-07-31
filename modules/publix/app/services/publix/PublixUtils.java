@@ -34,6 +34,7 @@ import play.mvc.Http.Cookies;
 public abstract class PublixUtils<T extends Worker> {
 
 	private final ResultCreator resultCreator;
+	private final IdCookieService idCookieService;
 	protected final PublixErrorMessages errorMessages;
 	private final StudyDao studyDao;
 	private final StudyResultDao studyResultDao;
@@ -43,11 +44,12 @@ public abstract class PublixUtils<T extends Worker> {
 	private final BatchDao batchDao;
 
 	public PublixUtils(ResultCreator resultCreator,
-			PublixErrorMessages errorMessages, StudyDao studyDao,
-			StudyResultDao studyResultDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, WorkerDao workerDao,
-			BatchDao batchDao) {
+			IdCookieService idCookieService, PublixErrorMessages errorMessages,
+			StudyDao studyDao, StudyResultDao studyResultDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			WorkerDao workerDao, BatchDao batchDao) {
 		this.resultCreator = resultCreator;
+		this.idCookieService = idCookieService;
 		this.errorMessages = errorMessages;
 		this.studyDao = studyDao;
 		this.studyResultDao = studyResultDao;
@@ -218,7 +220,8 @@ public abstract class PublixUtils<T extends Worker> {
 	public void finishAbandonedStudyResults(Worker worker, Study study,
 			Cookies cookies) throws BadRequestPublixException {
 		finishAllPriorStudyResultsOfWorker(worker, study);
-		checkIdCookieAndFinishAbandonedStudyResult(cookies);
+		// TODO
+		// checkIdCookieAndFinishAbandonedStudyResult(cookies);
 	}
 
 	/**
@@ -496,10 +499,13 @@ public abstract class PublixUtils<T extends Worker> {
 	 * abandoned study result happens when in the same browser a second study
 	 * run is started without finishing the first one.
 	 */
-	private void checkIdCookieAndFinishAbandonedStudyResult(Cookies cookies)
-			throws BadRequestPublixException {
-		IdCookie idCookie = new IdCookie(cookies);
-		if (idCookie.exists()) {
+	private void checkIdCookieAndFinishAbandonedStudyResult(Cookies cookies,
+			StudyResult studyResult) throws BadRequestPublixException {
+		IdCookieContainer idCookieContainer = idCookieService
+				.extractIdCookieList(cookies);
+		IdCookie2 idCookie = idCookieContainer
+				.getWithStudyResultId(studyResult.getId());
+		if (idCookie != null) {
 			Long abandonedStudyResultId = idCookie.getStudyResultId();
 			StudyResult abandonedStudyResult = studyResultDao
 					.findById(abandonedStudyResultId);
@@ -509,7 +515,7 @@ public abstract class PublixUtils<T extends Worker> {
 						PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
 						abandonedStudyResult);
 			}
-			idCookie.discard(abandonedStudyResultId);
+			idCookieService.discard(idCookieContainer, abandonedStudyResultId);
 		}
 	}
 
@@ -520,8 +526,10 @@ public abstract class PublixUtils<T extends Worker> {
 	public void writeIdCookie(T worker, Batch batch, StudyResult studyResult,
 			ComponentResult componentResult, Cookies cookies)
 			throws BadRequestPublixException {
-		IdCookie idCookie = new IdCookie(cookies);
-		idCookie.writeToResponse(batch, studyResult, componentResult, worker);
+		IdCookieContainer idCookieContainer = idCookieService
+				.extractIdCookieList(cookies);
+		idCookieService.writeToResponse(idCookieContainer, batch, studyResult,
+				componentResult, worker);
 	}
 
 	/**
@@ -530,8 +538,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 */
 	public void discardIdCookie(StudyResult studyResult, Cookies cookies)
 			throws BadRequestPublixException {
-		IdCookie idCookie = new IdCookie(cookies);
-		idCookie.discard(studyResult.getId());
+		IdCookieContainer idCookieContainer = idCookieService
+				.extractIdCookieList(cookies);
+		idCookieService.discard(idCookieContainer, studyResult.getId());
 	}
 
 }

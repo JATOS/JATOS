@@ -37,6 +37,7 @@ public class IdCookie {
 	public static final String COMPONENT_ID = "componentId";
 	public static final String COMPONENT_RESULT_ID = "componentResultId";
 	public static final String COMPONENT_POSITION = "componentPos";
+	public static final String CREATION_TIME = "creationTime";
 
 	private static final String COOKIE_EQUALS = "=";
 	private static final String COOKIE_AND = "&";
@@ -46,7 +47,7 @@ public class IdCookie {
 
 	public IdCookie(Cookies cookies) throws BadRequestPublixException {
 		if (cookies != null) {
-			extractIdCookie(cookies); 
+			extractIdCookie(cookies);
 		}
 	}
 
@@ -115,7 +116,9 @@ public class IdCookie {
 		if (idCookie != null) {
 			Publix.response().discardCookie(idCookie.name());
 		}
-		Publix.response().setCookie(ID_COOKIE_NAME, value);
+
+		// Use Integer.MAX_VALUE as Max-Age of the cookie so it never expires
+		Publix.response().setCookie(ID_COOKIE_NAME, value, Integer.MAX_VALUE);
 	}
 
 	/**
@@ -142,6 +145,8 @@ public class IdCookie {
 				String.valueOf(componentResult.getId()));
 		cookieMap.put(COMPONENT_POSITION,
 				String.valueOf(study.getComponentPosition(component)));
+		cookieMap.put(CREATION_TIME,
+				String.valueOf(System.currentTimeMillis()));
 		return generateCookieString(cookieMap);
 	}
 
@@ -170,8 +175,7 @@ public class IdCookie {
 	 * in the cookie. Throws a BadRequestPublixException if the cookie is
 	 * malformed.
 	 */
-	public void discard(long studyResultId)
-			throws BadRequestPublixException {
+	public void discard(long studyResultId) throws BadRequestPublixException {
 		if (getStudyResultId().equals(studyResultId)) {
 			Publix.response().discardCookie(idCookie.name());
 		}

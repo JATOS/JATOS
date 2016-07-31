@@ -13,11 +13,13 @@ import exceptions.publix.PublixException;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
+import models.common.StudyResult;
 import models.common.workers.PersonalSingleWorker;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
+import services.publix.HttpHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
@@ -80,12 +82,15 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAbandonedStudyResults(worker, study,
 				request().cookies());
-		resultCreator.createStudyResult(study, batch, worker);
+		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
+				worker);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
-		return redirect(controllers.publix.routes.PublixInterceptor
-				.startComponent(studyId, firstComponent.getId()));
+		return HttpHelpers.redirectWithinStudy(
+				controllers.publix.routes.PublixInterceptor.startComponent(
+						studyId, firstComponent.getId()),
+				studyResult);
 	}
 
 }
