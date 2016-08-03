@@ -80,8 +80,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 		session(STUDY_ASSETS, study.getDirName());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study,
-				request().cookies());
+		publixUtils.finishAbandonedStudyResults(worker, study);
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
 

@@ -317,7 +317,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		studyResult2.setWorker(admin.getWorker());
 		entityManager.getTransaction().commit();
 
-		publixUtils.finishAbandonedStudyResults(admin.getWorker(), study, null);
+		publixUtils.finishAbandonedStudyResults(admin.getWorker(), study);
 
 		assertThat(studyResult1.getStudyState())
 				.isEqualTo(StudyResult.StudyState.FAIL);

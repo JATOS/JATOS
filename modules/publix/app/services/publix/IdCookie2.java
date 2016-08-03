@@ -3,9 +3,7 @@ package services.publix;
 import java.util.HashMap;
 import java.util.Map;
 
-import exceptions.publix.BadRequestPublixException;
-import play.Logger;
-import play.Logger.ALogger;
+import exceptions.publix.MalformedIdCookieException;
 import play.mvc.Http.Cookie;
 
 /**
@@ -18,8 +16,6 @@ import play.mvc.Http.Cookie;
  * @author Kristian Lange
  */
 public class IdCookie2 {
-	
-	private static final ALogger LOGGER = Logger.of(IdCookieContainer.class);
 
 	public static final String ID_COOKIE_NAME = "JATOS_IDS";
 	public static final String WORKER_ID = "workerId";
@@ -58,8 +54,8 @@ public class IdCookie2 {
 	public String getName() {
 		return idCookie.name();
 	}
-	
-	public Long getCreationTime() throws BadRequestPublixException {
+
+	public Long getCreationTime() throws MalformedIdCookieException {
 		return getCookieContentValue(CREATION_TIME);
 	}
 
@@ -67,7 +63,7 @@ public class IdCookie2 {
 	 * Get study result from ID cookie. Throws a BadRequestPublixException if
 	 * the cookie is malformed.
 	 */
-	public Long getStudyResultId() throws BadRequestPublixException {
+	public Long getStudyResultId() throws MalformedIdCookieException {
 		return getCookieContentValue(STUDY_RESULT_ID);
 	}
 
@@ -76,14 +72,14 @@ public class IdCookie2 {
 	 * value. Throws a BadRequestPublixException if the cookie is malformed.
 	 */
 	private Long getCookieContentValue(String key)
-			throws BadRequestPublixException {
+			throws MalformedIdCookieException {
 		String valueStr = idCookieMap.get(key);
 		try {
 			return Long.valueOf(valueStr);
 		} catch (NumberFormatException e) {
-			LOGGER.warn("Couldn't extract " + key + " from JATOS ID cookie "
-					+ idCookie.name() + " as a Long.");
-			throw new BadRequestPublixException("JATOS' ID cookie malformed.");
+			throw new MalformedIdCookieException(
+					"Couldn't extract " + key + " from JATOS ID cookie "
+							+ idCookie.name() + " as a Long.");
 		}
 	}
 

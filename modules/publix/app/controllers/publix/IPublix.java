@@ -35,7 +35,7 @@ public interface IPublix {
 	 * Starts the component with the given componentId that belongs to the study
 	 * with the studyId.
 	 */
-	Result startComponent(Long studyId, Long componentId)
+	Result startComponent(Long studyId, Long componentId, Long studyResultId)
 			throws PublixException;
 
 	/**
@@ -44,8 +44,8 @@ public interface IPublix {
 	 * Starts the component in the given position that belongs to the study with
 	 * the studyId.
 	 */
-	Result startComponentByPosition(Long studyId, Integer position)
-			throws PublixException;
+	Result startComponentByPosition(Long studyId, Integer position,
+			Long studyResultId) throws PublixException;
 
 	/**
 	 * HTTP type: Normal GET request
@@ -55,7 +55,8 @@ public interface IPublix {
 	 * current one. If there are no more components in the study, the study will
 	 * be finished successfully.
 	 */
-	Result startNextComponent(Long studyId) throws PublixException;
+	Result startNextComponent(Long studyId, Long studyResultId)
+			throws PublixException;
 
 	/**
 	 * HTTP type: Ajax GET request
@@ -67,7 +68,7 @@ public interface IPublix {
 	 * by the study running in the browser. The study session data are different
 	 * from Play's session and stored within the study results.
 	 */
-	Result getInitData(Long studyId, Long componentId)
+	Result getInitData(Long studyId, Long componentId, Long studyResultId)
 			throws PublixException, IOException;
 
 	/**
@@ -83,7 +84,8 @@ public interface IPublix {
 	 * @return WebSocket that transports JSON strings.
 	 * @throws PublixException
 	 */
-	WebSocket<JsonNode> joinGroup(Long studyId) throws PublixException;
+	WebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId)
+			throws PublixException;
 
 	/**
 	 * HTTP type: Ajax GET request
@@ -98,7 +100,8 @@ public interface IPublix {
 	 *            Study's ID
 	 * @throws PublixException
 	 */
-	Result reassignGroup(Long studyId) throws PublixException;
+	Result reassignGroup(Long studyId, Long studyResultId)
+			throws PublixException;
 
 	/**
 	 * HTTP type: Ajax GET request
@@ -106,7 +109,7 @@ public interface IPublix {
 	 * Let the worker leave the group (actually a GroupResult) he joined before
 	 * and closes the group channel. Only works if this study is a group study.
 	 */
-	Result leaveGroup(Long studyId) throws PublixException;
+	Result leaveGroup(Long studyId, Long studyResultId) throws PublixException;
 
 	/**
 	 * HTTP type: Ajax POST request
@@ -117,7 +120,8 @@ public interface IPublix {
 	 * browser. The study session data are different from Play's session and
 	 * stored within the study results.
 	 */
-	Result setStudySessionData(Long studyId) throws PublixException;
+	Result setStudySessionData(Long studyId, Long studyResultId)
+			throws PublixException;
 
 	/**
 	 * HTTP type: Ajax POST request
@@ -125,7 +129,7 @@ public interface IPublix {
 	 * Persists the submitted data in the ComponentResult specified by the given
 	 * study and component ID.
 	 */
-	Result submitResultData(Long studyId, Long componentId)
+	Result submitResultData(Long studyId, Long componentId, Long studyResultId)
 			throws PublixException;
 
 	/**
@@ -136,7 +140,7 @@ public interface IPublix {
 	 * and error message.
 	 */
 	Result finishComponent(Long studyId, Long componentId, Boolean successful,
-			String errorMsg) throws PublixException;
+			String errorMsg, Long studyResultId) throws PublixException;
 
 	/**
 	 * HTTP type: Normal or Ajax GET request
@@ -145,7 +149,8 @@ public interface IPublix {
 	 * Optionally a message can be given describing the reasons for the
 	 * abortion.
 	 */
-	Result abortStudy(Long studyId, String message) throws PublixException;
+	Result abortStudy(Long studyId, String message, Long studyResultId)
+			throws PublixException;
 
 	/**
 	 * HTTP type: Normal or Ajax GET request
@@ -154,8 +159,8 @@ public interface IPublix {
 	 * or FAIL). Optionally it can be specified whether the study was successful
 	 * and an error message.
 	 */
-	Result finishStudy(Long studyId, Boolean successful, String errorMsg)
-			throws PublixException;
+	Result finishStudy(Long studyId, Boolean successful, String errorMsg,
+			Long studyResultId) throws PublixException;
 
 	/**
 	 * HTTP type: Ajax POST request

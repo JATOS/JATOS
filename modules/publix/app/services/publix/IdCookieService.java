@@ -9,6 +9,7 @@ import javax.inject.Singleton;
 
 import controllers.publix.Publix;
 import exceptions.publix.BadRequestPublixException;
+import exceptions.publix.MalformedIdCookieException;
 import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
@@ -16,6 +17,7 @@ import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.Worker;
+import play.Logger;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 
@@ -38,7 +40,8 @@ public class IdCookieService {
 	 * @return
 	 * @throws BadRequestPublixException
 	 */
-	public IdCookieContainer extractIdCookieList(Cookies cookies) {
+	public IdCookieContainer extractIdCookies() {
+		Cookies cookies = Publix.request().cookies();
 		IdCookieContainer idCookieContainer = new IdCookieContainer();
 		for (Cookie cookie : cookies) {
 			if (cookie.name().startsWith(IdCookie2.ID_COOKIE_NAME)) {
@@ -53,17 +56,36 @@ public class IdCookieService {
 	 * response object. Use Integer.MAX_VALUE as Max-Age of the cookie so it
 	 * never expires.
 	 */
-	public void writeToResponse(IdCookieContainer idCookieContainer,
+	public void writeCookieToResponse(IdCookieContainer idCookieContainer,
 			Batch batch, StudyResult studyResult,
 			ComponentResult componentResult, Worker worker) {
-		IdCookie2 oldestIdCookie = getOldestIdCookie(idCookieContainer);
+		String cookieName = null;
+		IdCookie2 cookie = idCookieContainer
+				.findWithStudyResultId(studyResult.getId());
+		if (cookie != null) {
+			cookieName = cookie.getName();
+		} else {
+			cookieName = getNewCookieName(idCookieContainer);
+		}
+
 		String cookieValue = generateIdCookieValue(batch, studyResult,
 				componentResult, worker);
-		Publix.response().setCookie(oldestIdCookie.getName(), cookieValue,
-				Integer.MAX_VALUE);
+		Publix.response().setCookie(cookieName, cookieValue, Integer.MAX_VALUE);
 	}
 
-	private IdCookie2 getOldestIdCookie(IdCookieContainer idCookieContainer) {
+	private String getNewCookieName(IdCookieContainer idCookieContainer) {
+		String cookieName;
+		if (!idCookieContainer.isFull()) {
+			// Write new cookie
+			int newIndex = idCookieContainer.getNextCookieIndex();
+			cookieName = IdCookie2.ID_COOKIE_NAME + "_" + newIndex;
+		} else {
+			cookieName = getOldestIdCookie(idCookieContainer).getName();
+		}
+		return cookieName;
+	}
+
+	public IdCookie2 getOldestIdCookie(IdCookieContainer idCookieContainer) {
 		Long oldest = Long.MAX_VALUE;
 		IdCookie2 oldestIdCookie = null;
 		for (IdCookie2 idCookie : idCookieContainer) {
@@ -73,11 +95,19 @@ public class IdCookieService {
 					oldest = creationTime;
 					oldestIdCookie = idCookie;
 				}
-			} catch (BadRequestPublixException e) {
-				// Don't care here
+			} catch (MalformedIdCookieException e) {
+				// Log and go on with the next cookie
+				Logger.warn(e.getMessage());
 			}
 		}
 		return oldestIdCookie;
+	}
+
+	public long getOldestIdCookieStudyResultId(
+			IdCookieContainer idCookieContainer)
+			throws MalformedIdCookieException {
+		IdCookie2 oldest = getOldestIdCookie(idCookieContainer);
+		return (oldest != null) ? oldest.getStudyResultId() : null;
 	}
 
 	/**
@@ -85,7 +115,7 @@ public class IdCookieService {
 	 * worker ID, study ID, study result ID, group result ID (if not exist:
 	 * null), component ID, component result ID and component position.
 	 */
-	public String generateIdCookieValue(Batch batch, StudyResult studyResult,
+	private String generateIdCookieValue(Batch batch, StudyResult studyResult,
 			ComponentResult componentResult, Worker worker) {
 		Study study = studyResult.getStudy();
 		GroupResult groupResult = studyResult.getActiveGroupResult();
@@ -136,10 +166,10 @@ public class IdCookieService {
 	 * in the cookie. Throws a BadRequestPublixException if the cookie is
 	 * malformed.
 	 */
-	public void discard(IdCookieContainer idCookieContainer, long studyResultId)
-			throws BadRequestPublixException {
+	public void discard(IdCookieContainer idCookieContainer,
+			long studyResultId) {
 		IdCookie2 idCookie = idCookieContainer
-				.getWithStudyResultId(studyResultId);
+				.findWithStudyResultId(studyResultId);
 		if (idCookie != null) {
 			Publix.response().discardCookie(idCookie.getName());
 		}

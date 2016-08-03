@@ -91,8 +91,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 				+ worker.getId());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study,
-				request().cookies());
+		publixUtils.finishAbandonedStudyResults(worker, study);
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
 

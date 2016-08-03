@@ -4,20 +4,20 @@
 
 # Publix
 GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long, batchId: Long ?= -1)
-GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
-GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null)
-GET     /publix/:studyId/group/join                      @controllers.publix.PublixInterceptor.joinGroup(studyId: Long)
-GET     /publix/:studyId/group/reassign                  @controllers.publix.PublixInterceptor.reassignGroup(studyId: Long)
-GET     /publix/:studyId/group/leave                     @controllers.publix.PublixInterceptor.leaveGroup(studyId: Long)
-POST    /publix/:studyId/studySessionData                @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long)
-GET     /publix/:studyId/nextComponent/start             @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long)
+GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null, srid: Long)
+GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null, srid: Long)
+GET     /publix/:studyId/group/join                      @controllers.publix.PublixInterceptor.joinGroup(studyId: Long, srid: Long)
+GET     /publix/:studyId/group/reassign                  @controllers.publix.PublixInterceptor.reassignGroup(studyId: Long, srid: Long)
+GET     /publix/:studyId/group/leave                     @controllers.publix.PublixInterceptor.leaveGroup(studyId: Long, srid: Long)
+POST    /publix/:studyId/studySessionData                @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long, srid: Long)
+GET     /publix/:studyId/nextComponent/start             @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long, srid: Long)
 # Start component by position
-GET     /publix/:studyId/component/start                 @controllers.publix.PublixInterceptor.startComponentByPosition(studyId: Long, position: Integer)
+GET     /publix/:studyId/component/start                 @controllers.publix.PublixInterceptor.startComponentByPosition(studyId: Long, position: Integer, srid: Long)
 # Start component by ID
-GET     /publix/:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long)
-GET     /publix/:studyId/:componentId/end                @controllers.publix.PublixInterceptor.finishComponent(studyId: Long, componentId: Long, successful: Boolean ?= true, errorMsg: String ?= null)
-GET     /publix/:studyId/:componentId/initData           @controllers.publix.PublixInterceptor.getInitData(studyId: Long, componentId: Long)
-POST    /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long)
+GET     /publix/:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long, srid: Long)
+GET     /publix/:studyId/:componentId/end                @controllers.publix.PublixInterceptor.finishComponent(studyId: Long, componentId: Long, successful: Boolean ?= true, errorMsg: String ?= null, srid: Long)
+GET     /publix/:studyId/:componentId/initData           @controllers.publix.PublixInterceptor.getInitData(studyId: Long, componentId: Long, srid: Long)
+POST    /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long, srid: Long)
 POST    /publix/:studyId/:componentId/log                @controllers.publix.PublixInterceptor.log(studyId: Long, componentId: Long)
 
 # Static resources

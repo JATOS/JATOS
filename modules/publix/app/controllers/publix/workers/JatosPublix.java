@@ -136,8 +136,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study,
-				request().cookies());
+		publixUtils.finishAbandonedStudyResults(worker, study);
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
 		return HttpHelpers
@@ -148,8 +147,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	}
 
 	@Override
-	public Result startComponent(Long studyId, Long componentId)
-			throws PublixException {
+	public Result startComponent(Long studyId, Long componentId,
+			Long studyResultId) throws PublixException {
 		LOGGER.info(".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "workerId "
 				+ session(WORKER_ID) + ", " + "logged-in user's email "
@@ -164,8 +163,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 		// Check if it's a single component show or a whole study show
 		String jatosShow = publixUtils.retrieveJatosShowFromSession();
-		StudyResult studyResult = publixUtils
-				.retrieveWorkersLastStudyResult(worker, study);
+		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
+				study, studyResultId);
 		switch (jatosShow) {
 		case RUN_STUDY:
 			break;
@@ -193,14 +192,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, e.getMessage()));
 		}
-		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult,
-				request().cookies());
+		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
 		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
 				component.getHtmlFilePath());
 	}
 
 	@Override
-	public Result startNextComponent(Long studyId) throws PublixException {
+	public Result startNextComponent(Long studyId, Long studyResultId)
+			throws PublixException {
 		LOGGER.info(".startNextComponent: studyId " + studyId + ", "
 				+ "workerId " + session(WORKER_ID) + ", "
 				+ "logged-in user's email " + session(SESSION_EMAIL));
@@ -210,15 +209,15 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-		StudyResult studyResult = publixUtils
-				.retrieveWorkersLastStudyResult(worker, study);
+		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
+				study, studyResultId);
 
 		// Check if it's a single component show or a whole study show
 		String jatosShow = publixUtils.retrieveJatosShowFromSession();
 		switch (jatosShow) {
 		case RUN_STUDY:
-			studyResult = publixUtils.retrieveWorkersLastStudyResult(worker,
-					study);
+			studyResult = publixUtils.retrieveWorkersStudyResult(worker, study,
+					studyResultId);
 			break;
 		case RUN_COMPONENT_START:
 			// Should never happen
@@ -247,7 +246,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	}
 
 	@Override
-	public Result abortStudy(Long studyId, String message)
+	public Result abortStudy(Long studyId, String message, Long studyResultId)
 			throws PublixException {
 		LOGGER.info(".abortStudy: studyId " + studyId + ", " + "workerId "
 				+ session(WORKER_ID) + ", " + "logged-in user email "
@@ -259,14 +258,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-		StudyResult studyResult = publixUtils
-				.retrieveWorkersLastStudyResult(worker, study);
+		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
+				study, studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 			groupService.finishStudyInGroup(study, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		publixUtils.discardIdCookie(studyResult, request().cookies());
+		publixUtils.discardIdCookie(studyResult);
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
@@ -279,8 +278,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	}
 
 	@Override
-	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
-			throws PublixException {
+	public Result finishStudy(Long studyId, Boolean successful, String errorMsg,
+			Long studyResultId) throws PublixException {
 		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "workerId "
 				+ session(WORKER_ID) + ", " + "logged-in user email "
 				+ session(SESSION_EMAIL) + ", " + "successful " + successful
@@ -291,14 +290,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-		StudyResult studyResult = publixUtils
-				.retrieveWorkersLastStudyResult(worker, study);
+		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
+				study, studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 			groupService.finishStudyInGroup(study, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		publixUtils.discardIdCookie(studyResult, request().cookies());
+		publixUtils.discardIdCookie(studyResult);
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);
 		} else {

@@ -227,18 +227,21 @@ var jatos = {};
 			return b;
 		})(window.location.search.substr(1).split('&'));
 
+		jatos.studyResultId = urlQueryParameter["srid"];
+		
 		readIdCookie();
 		getInitData();
 
 		/**
-		 * Reads JATOS' ID cookie and stores all key-value pairs into jatos scope.
+		 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
+		 * and stores all key-value pairs into jatos scope.
 		 */
 		function readIdCookie() {
 			var idCookieName = "JATOS_IDS";
 			var cookieArray = document.cookie.split(';');
 			for (var i = 0; i < cookieArray.length; i++) {
 				var cookie = cookieArray[i];
-				// Remove leading spaces
+				// Remove leading spaces in cookie string
 				while (cookie.charAt(0) === ' ') {
 					cookie = cookie.substring(1, cookie.length);
 				}
@@ -250,7 +253,7 @@ var jatos = {};
 					cookie.length));
 				var idArray = cookieStr.split("&");
 				var idMap = getIdsFromCookie(idArray);
-				if (idMap.studyResultId == urlQueryParameter["srid"]) {
+				if (idMap.studyResultId == jatos.studyResultId) {
 					jatos.jQuery.each(idMap, function (key, value) {
 						jatos[key] = value;
 					});
@@ -281,7 +284,7 @@ var jatos = {};
 		function getInitData() {
 			jatos.jQuery.ajax({
 				url: "/publix/" + jatos.studyId + "/" + jatos.componentId
-				+ "/initData",
+				+ "/initData" + "?srid=" + jatos.studyResultId,
 				type: "GET",
 				dataType: 'json',
 				timeout: jatos.httpTimeout,
@@ -428,7 +431,7 @@ var jatos = {};
 		submittingResultData = true;
 		jatos.jQuery.ajax({
 			url: "/publix/" + jatos.studyId + "/" + jatos.componentId
-			+ "/resultData",
+			+ "/resultData" + "?srid=" + jatos.studyResultId,
 			data: resultData,
 			processData: false,
 			type: "POST",
@@ -482,7 +485,7 @@ var jatos = {};
 			return;
 		}
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/studySessionData",
+			url: "/publix/" + jatos.studyId + "/studySessionData" + "?srid=" + jatos.studyResultId,
 			data: studySessionDataStr,
 			processData: false,
 			type: "POST",
@@ -512,7 +515,7 @@ var jatos = {};
 		startingComponent = true;
 		var onComplete = function () {
 			window.location.href = "/publix/" + jatos.studyId + "/" + componentId
-				+ "/start";
+				+ "/start" + "?srid=" + jatos.studyResultId;
 		};
 		jatos.setStudySessionData(jatos.studySessionData, onComplete);
 	};
@@ -530,7 +533,7 @@ var jatos = {};
 		startingComponent = true;
 		var onComplete = function () {
 			window.location.href = "/publix/" + jatos.studyId
-				+ "/component/start?position=" + componentPos;
+				+ "/component/start?position=" + componentPos + "&srid=" + jatos.studyResultId;
 		};
 		jatos.setStudySessionData(jatos.studySessionData, onComplete);
 	};
@@ -546,7 +549,7 @@ var jatos = {};
 		startingComponent = true;
 		var callbackWhenComplete = function () {
 			window.location.href = "/publix/" + jatos.studyId
-				+ "/nextComponent/start";
+				+ "/nextComponent/start" + "?srid=" + jatos.studyResultId;
 		};
 		jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 	};
@@ -588,7 +591,7 @@ var jatos = {};
 		}
 		endingComponent = true;
 		var onComplete = function () {
-			var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end";
+			var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
 			if (undefined === successful || undefined === errorMsg) {
 				fullUrl = url;
@@ -675,7 +678,7 @@ var jatos = {};
 		groupChannel = new WebSocket(((
 			window.location.protocol === "https:") ? "wss://" : "ws://")
 			+ window.location.host
-			+ "/publix/" + jatos.studyId + "/group/join");
+			+ "/publix/" + jatos.studyId + "/group/join" + "?srid=" + jatos.studyResultId);
 		groupChannel.onmessage = function (event) {
 			joiningGroup = false;
 			handleGroupMsg(event.data, callbacks);
@@ -844,7 +847,7 @@ var jatos = {};
 		reassigningGroup = true;
 
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/group/reassign",
+			url: "/publix/" + jatos.studyId + "/group/reassign" + "?srid=" + jatos.studyResultId,
 			processData: false,
 			type: "GET",
 			timeout: jatos.httpTimeout,
@@ -1044,7 +1047,7 @@ var jatos = {};
 		leavingGroup = true;
 
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/group/leave",
+			url: "/publix/" + jatos.studyId + "/group/leave" + "?srid=" + jatos.studyResultId,
 			processData: false,
 			type: "GET",
 			timeout: jatos.httpTimeout,
@@ -1077,7 +1080,7 @@ var jatos = {};
 			return;
 		}
 		abortingComponent = true;
-		var url = "/publix/" + jatos.studyId + "/abort";
+		var url = "/publix/" + jatos.studyId + "/abort" + "?srid=" + jatos.studyResultId;
 		var fullUrl;
 		if (undefined === message) {
 			fullUrl = url;
@@ -1113,7 +1116,7 @@ var jatos = {};
 			return;
 		}
 		abortingComponent = true;
-		var url = "/publix/" + jatos.studyId + "/abort";
+		var url = "/publix/" + jatos.studyId + "/abort" + "?srid=" + jatos.studyResultId;
 		if (undefined === message) {
 			window.location.href = url;
 		} else {
@@ -1141,16 +1144,16 @@ var jatos = {};
 			return;
 		}
 		endingComponent = true;
-		var url = "/publix/" + jatos.studyId + "/end";
+		var url = "/publix/" + jatos.studyId + "/end" + "?srid=" + jatos.studyResultId;
 		var fullUrl;
 		if (undefined === successful || undefined === errorMsg) {
 			fullUrl = url;
 		} else if (undefined === successful) {
-			fullUrl = url + "?errorMsg=" + errorMsg;
+			fullUrl = url + "&errorMsg=" + errorMsg;
 		} else if (undefined === errorMsg) {
-			fullUrl = url + "?successful=" + successful;
+			fullUrl = url + "&successful=" + successful;
 		} else {
-			fullUrl = url + "?successful=" + successful + "&errorMsg=" + errorMsg;
+			fullUrl = url + "&successful=" + successful + "&errorMsg=" + errorMsg;
 		}
 		jatos.jQuery.ajax({
 			url: fullUrl,
@@ -1185,15 +1188,15 @@ var jatos = {};
 			return;
 		}
 		endingComponent = true;
-		var url = "/publix/" + jatos.studyId + "/end";
+		var url = "/publix/" + jatos.studyId + "/end" + "?srid=" + jatos.studyResultId;
 		if (undefined === successful || undefined === errorMsg) {
 			window.location.href = url;
 		} else if (undefined === successful) {
-			window.location.href = url + "?errorMsg=" + errorMsg;
+			window.location.href = url + "&errorMsg=" + errorMsg;
 		} else if (undefined === errorMsg) {
-			window.location.href = url + "?successful=" + successful;
+			window.location.href = url + "&successful=" + successful;
 		} else {
-			window.location.href = url + "?successful=" + successful + "&errorMsg="
+			window.location.href = url + "&successful=" + successful + "&errorMsg="
 				+ errorMsg;
 		}
 	};

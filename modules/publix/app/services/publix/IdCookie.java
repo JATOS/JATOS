@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import controllers.publix.Publix;
 import exceptions.publix.BadRequestPublixException;
+import exceptions.publix.MalformedIdCookieException;
 import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
@@ -86,8 +87,9 @@ public class IdCookie {
 	/**
 	 * Get study result from ID cookie. Throws a BadRequestPublixException if
 	 * the cookie is malformed.
+	 * @throws MalformedIdCookieException 
 	 */
-	public Long getStudyResultId() throws BadRequestPublixException {
+	public Long getStudyResultId() throws MalformedIdCookieException {
 		return getCookieContentValue(STUDY_RESULT_ID);
 	}
 
@@ -96,12 +98,12 @@ public class IdCookie {
 	 * value. Throws a BadRequestPublixException if the cookie is malformed.
 	 */
 	private Long getCookieContentValue(String key)
-			throws BadRequestPublixException {
+			throws MalformedIdCookieException {
 		String valueStr = idCookieMap.get(key);
 		try {
 			return Long.valueOf(valueStr);
 		} catch (NumberFormatException e) {
-			throw new BadRequestPublixException("JATOS cookie malformed.");
+			throw new MalformedIdCookieException("JATOS cookie malformed.");
 		}
 	}
 
@@ -175,7 +177,7 @@ public class IdCookie {
 	 * in the cookie. Throws a BadRequestPublixException if the cookie is
 	 * malformed.
 	 */
-	public void discard(long studyResultId) throws BadRequestPublixException {
+	public void discard(long studyResultId) throws MalformedIdCookieException {
 		if (getStudyResultId().equals(studyResultId)) {
 			Publix.response().discardCookie(idCookie.name());
 		}

@@ -129,8 +129,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ worker.getId());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study,
-				request().cookies());
+		publixUtils.finishAbandonedStudyResults(worker, study);
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
 
@@ -138,13 +137,13 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				.retrieveFirstActiveComponent(study);
 		return HttpHelpers.redirectWithinStudy(
 				controllers.publix.routes.PublixInterceptor.startComponent(
-						studyId, firstComponent.getId()),
+						studyId, firstComponent.getId(), studyResult.getId()),
 				studyResult);
 	}
 
 	@Override
-	public Result finishStudy(Long studyId, Boolean successful, String errorMsg)
-			throws PublixException {
+	public Result finishStudy(Long studyId, Boolean successful, String errorMsg,
+			Long studyResultId) throws PublixException {
 		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "workerId "
 				+ session(WORKER_ID) + ", " + "successful " + successful + ", "
 				+ "errorMsg \"" + errorMsg + "\"");
@@ -153,8 +152,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		MTWorker worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-		StudyResult studyResult = publixUtils
-				.retrieveWorkersLastStudyResult(worker, study);
+		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
+				study, studyResultId);
 		String confirmationCode;
 		if (!PublixHelpers.studyDone(studyResult)) {
 			confirmationCode = publixUtils.finishStudyResult(successful,
@@ -163,7 +162,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
-		publixUtils.discardIdCookie(studyResult, request().cookies());
+		publixUtils.discardIdCookie(studyResult);
 		if (ControllerUtils.isAjax()) {
 			return ok(confirmationCode);
 		} else {
