@@ -21,6 +21,8 @@ POST    /publix/:studyId/:componentId/resultData         @controllers.publix.Pub
 POST    /publix/:studyId/:componentId/log                @controllers.publix.PublixInterceptor.log(studyId: Long, componentId: Long)
 
 # Static resources
+GET     /study_assets_root/*file           @controllers.publix.StudyAssets.versioned(file)
+# 'study_assets' is deprecated
 GET     /study_assets/*file                @controllers.publix.StudyAssets.versioned(file)
 GET     /public/*file                      controllers.publix.Assets.versioned(path = "/public", file)
 GET     /assets/javascripts/jatos.js       controllers.publix.Assets.jatosjs(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
