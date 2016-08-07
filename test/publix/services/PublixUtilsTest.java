@@ -359,7 +359,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		StudyResult lastStudyResult = publixUtils
-				.retrieveWorkersLastStudyResult(admin.getWorker(), study);
+				.retrieveWorkersStudyResult(admin.getWorker(), study, studyResult3.getId());
 
 		assertThat(lastStudyResult).isEqualTo(studyResult2);
 
@@ -392,8 +392,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		try {
-			publixUtils.retrieveWorkersLastStudyResult(admin.getWorker(),
-					study);
+			publixUtils.retrieveWorkersStudyResult(admin.getWorker(),
+					study, studyResult2.getId());
 			Fail.fail();
 		} catch (ForbiddenPublixException e) {
 			assertThat(e.getMessage()).isEqualTo(errorMessages
@@ -425,8 +425,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		entityManager.getTransaction().commit();
 
 		try {
-			publixUtils.retrieveWorkersLastStudyResult(admin.getWorker(),
-					study);
+			publixUtils.retrieveWorkersStudyResult(admin.getWorker(),
+					study, studyResult2.getId());
 			Fail.fail();
 		} catch (ForbiddenPublixException e) {
 			assertThat(e.getMessage()).isEqualTo(

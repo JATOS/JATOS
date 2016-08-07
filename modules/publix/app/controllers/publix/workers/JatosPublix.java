@@ -23,7 +23,7 @@ import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.publix.HttpHelpers;
+import services.publix.IdCookieService;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
@@ -139,11 +139,9 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		publixUtils.finishAbandonedStudyResults(worker, study);
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
-		return HttpHelpers
-				.redirectWithinStudy(
-						controllers.publix.routes.PublixInterceptor
-								.startComponent(studyId, componentId),
-						studyResult);
+		publixUtils.writeIdCookie(worker, batch, studyResult, null);
+		return redirect(controllers.publix.routes.PublixInterceptor
+				.startComponent(studyId, componentId, studyResult.getId()));
 	}
 
 	@Override
@@ -179,7 +177,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				// isn't a reload of the same one). Finish study after first
 				// component.
 				return redirect(controllers.publix.routes.PublixInterceptor
-						.finishStudy(studyId, true, null));
+						.finishStudy(studyId, true, null, studyResult.getId()));
 			}
 			break;
 		}
@@ -190,7 +188,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					studyResult);
 		} catch (ForbiddenReloadException e) {
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, e.getMessage()));
+					.finishStudy(studyId, false, e.getMessage(),
+							studyResult.getId()));
 		}
 		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
 		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
@@ -223,12 +222,12 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			// Should never happen
 			session(JatosPublix.JATOS_RUN, JatosPublix.RUN_COMPONENT_FINISHED);
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, null));
+					.finishStudy(studyId, false, null, studyResult.getId()));
 		case RUN_COMPONENT_FINISHED:
 			// It's already the second component (first is finished). Finish
 			// study after first component.
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, true, null));
+					.finishStudy(studyId, true, null, studyResult.getId()));
 		}
 
 		Component nextComponent = publixUtils
@@ -236,13 +235,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		if (nextComponent == null) {
 			// Study has no more components -> finish it
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, true, null));
+					.finishStudy(studyId, true, null, studyResult.getId()));
 		}
-		return HttpHelpers
-				.redirectWithinStudy(
-						controllers.publix.routes.PublixInterceptor
-								.startComponent(studyId, nextComponent.getId()),
-						studyResult);
+		return redirect(
+				controllers.publix.routes.PublixInterceptor.startComponent(
+						studyId, nextComponent.getId(), studyResult.getId()));
 	}
 
 	@Override

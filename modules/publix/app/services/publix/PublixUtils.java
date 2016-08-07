@@ -276,12 +276,16 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	public StudyResult retrieveWorkersStudyResult(Worker worker, Study study,
-			Long studyResultId) throws ForbiddenPublixException {
+			Long studyResultId) throws PublixException {
 		if (studyResultId == null) {
 			throw new ForbiddenPublixException(
 					"error retrieving study result ID");
 		}
 		StudyResult studyResult = studyResultDao.findById(studyResultId);
+		if (studyResult == null) {
+			throw new BadRequestPublixException(
+					"Study result doesn't exist.");
+		}
 		if (studyResult.getStudy().getId().equals(study.getId())) {
 			if (PublixHelpers.studyDone(studyResult)) {
 				throw new ForbiddenPublixException(errorMessages

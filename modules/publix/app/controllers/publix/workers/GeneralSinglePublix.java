@@ -19,7 +19,6 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
-import services.publix.HttpHelpers;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
 import services.publix.group.ChannelService;
@@ -99,10 +98,9 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
-		return HttpHelpers.redirectWithinStudy(
+		return redirect(
 				controllers.publix.routes.PublixInterceptor.startComponent(
-						studyId, firstComponent.getId()),
-				studyResult);
+						studyId, firstComponent.getId(), studyResult.getId()));
 	}
 
 }

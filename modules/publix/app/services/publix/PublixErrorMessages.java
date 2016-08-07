@@ -135,4 +135,9 @@ public class PublixErrorMessages {
 				+ " but this study was never started.";
 	}
 
+	public static String couldntExtractFromIdCookie(String idCookieName, String key) {
+		return "Couldn't extract " + key + " from JATOS ID cookie "
+				+ idCookieName + ".";
+	}
+
 }

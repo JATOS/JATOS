@@ -4,18 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import exceptions.publix.MalformedIdCookieException;
-import play.Logger;
-import play.Logger.ALogger;
-
 /**
  * 
  * @author Kristian Lange (2016)
  */
 @SuppressWarnings("serial")
 public class IdCookieContainer extends ArrayList<IdCookie2> {
-
-	private static final ALogger LOGGER = Logger.of(IdCookieContainer.class);
 
 	/**
 	 * Max number of ID cookies. If all cookies are used and a new study is
@@ -33,8 +27,8 @@ public class IdCookieContainer extends ArrayList<IdCookie2> {
 		if (isFull()) {
 			throw new IndexOutOfBoundsException();
 		}
-		List<Integer> exisitingIndices = this.stream().map(c -> getCookieIndex(c))
-				.collect(Collectors.toList());
+		List<Integer> exisitingIndices = this.stream()
+				.map(c -> getCookieIndex(c)).collect(Collectors.toList());
 		for (int i = 0; i < MAX_ID_COOKIES; i++) {
 			if (!exisitingIndices.contains(i)) {
 				return i;
@@ -55,13 +49,10 @@ public class IdCookieContainer extends ArrayList<IdCookie2> {
 
 	public IdCookie2 findWithStudyResultId(long studyResultId) {
 		for (IdCookie2 cookie : this) {
-			try {
-				if (cookie.getStudyResultId() == studyResultId) {
-					return cookie;
-				}
-			} catch (MalformedIdCookieException e) {
-				// Log and ignore
-				LOGGER.warn(e.getMessage());
+			Long cookieStudyResultId = cookie.getStudyResultId();
+			if (cookieStudyResultId != null
+					&& cookieStudyResultId.equals(studyResultId)) {
+				return cookie;
 			}
 		}
 		return null;

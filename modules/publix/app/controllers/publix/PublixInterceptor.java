@@ -2,6 +2,7 @@ package controllers.publix;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -14,9 +15,6 @@ import controllers.publix.workers.MTPublix;
 import controllers.publix.workers.PersonalMultiplePublix;
 import controllers.publix.workers.PersonalSinglePublix;
 import exceptions.publix.BadRequestPublixException;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.InternalServerErrorPublixException;
-import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.JatosWorker;
@@ -24,13 +22,12 @@ import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
-import play.Logger;
-import play.Logger.ALogger;
 import play.Play;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
+import services.publix.IdCookieService;
 import services.publix.PublixErrorMessages;
 
 /**
@@ -61,9 +58,14 @@ import services.publix.PublixErrorMessages;
 @PublixExceptionCatching
 public class PublixInterceptor extends Controller implements IPublix {
 
-	private static final ALogger LOGGER = Logger.of(PublixInterceptor.class);
-
 	public static final String WORKER_TYPE = "workerType";
+
+	private final IdCookieService idCookieService;
+
+	@Inject
+	public PublixInterceptor(IdCookieService idCookieService) {
+		this.idCookieService = idCookieService;
+	}
 
 	@Override
 	@Transactional
@@ -71,9 +73,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 			throws PublixException {
 		Result result = null;
 		String workerType = getWorkerTypeFromQuery();
-		// Put worker type into session so later Publix calls of this study
-		// run know it too
-		session(WORKER_TYPE, workerType);
 		switch (workerType) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
@@ -108,7 +107,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Result startComponent(Long studyId, Long componentId,
 			Long studyResultId) throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).startComponent(studyId,
@@ -142,7 +141,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Result startComponentByPosition(Long studyId, Integer position,
 			Long studyResultId) throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class)
@@ -176,7 +175,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Result startNextComponent(Long studyId, Long studyResultId)
 			throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class)
@@ -210,7 +209,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Result getInitData(Long studyId, Long componentId,
 			Long studyResultId) throws PublixException, IOException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).getInitData(studyId,
@@ -244,7 +243,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public WebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId)
 			throws BadRequestPublixException {
 		WebSocket<JsonNode> result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).joinGroup(studyId,
@@ -278,7 +277,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Result reassignGroup(Long studyId, Long studyResultId)
 			throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).reassignGroup(studyId,
@@ -310,10 +309,9 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public Result leaveGroup(Long studyId, Long studyResultId)
-			throws BadRequestPublixException, NotFoundPublixException,
-			ForbiddenPublixException, InternalServerErrorPublixException {
+			throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).leaveGroup(studyId,
@@ -347,7 +345,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Result setStudySessionData(Long studyId, Long studyResultId)
 			throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class)
@@ -381,7 +379,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Result submitResultData(Long studyId, Long componentId,
 			Long studyResultId) throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).submitResultData(studyId,
@@ -416,7 +414,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 			Boolean successful, String errorMsg, Long studyResultId)
 			throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).finishComponent(studyId,
@@ -453,7 +451,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Result abortStudy(Long studyId, String message, Long studyResultId)
 			throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).abortStudy(studyId,
@@ -487,7 +485,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg,
 			Long studyResultId) throws PublixException {
 		Result result = null;
-		switch (getWorkerTypeFromSession()) {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).finishStudy(studyId,
@@ -519,23 +517,25 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result log(Long studyId, Long componentId) throws PublixException {
-		switch (getWorkerTypeFromSession()) {
+	public Result log(Long studyId, Long componentId, Long studyResultId)
+			throws PublixException {
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
-			return instanceOfPublix(MTPublix.class).log(studyId, componentId);
+			return instanceOfPublix(MTPublix.class).log(studyId, componentId,
+					studyResultId);
 		case JatosWorker.WORKER_TYPE:
-			return instanceOfPublix(JatosPublix.class).log(studyId,
-					componentId);
+			return instanceOfPublix(JatosPublix.class).log(studyId, componentId,
+					studyResultId);
 		case PersonalMultipleWorker.WORKER_TYPE:
 			return instanceOfPublix(PersonalMultiplePublix.class).log(studyId,
-					componentId);
+					componentId, studyResultId);
 		case PersonalSingleWorker.WORKER_TYPE:
 			return instanceOfPublix(PersonalSinglePublix.class).log(studyId,
-					componentId);
+					componentId, studyResultId);
 		case GeneralSingleWorker.WORKER_TYPE:
 			return instanceOfPublix(GeneralSinglePublix.class).log(studyId,
-					componentId);
+					componentId, studyResultId);
 		default:
 			throw new BadRequestPublixException(
 					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
@@ -554,16 +554,30 @@ public class PublixInterceptor extends Controller implements IPublix {
 	 * Checks session which type of worker is doing the study. Returns a String
 	 * specifying the worker type.
 	 */
-	private String getWorkerTypeFromSession() throws BadRequestPublixException {
-		// Check if we have workerType in session
-		String workerType = session(WORKER_TYPE);
-		if (workerType != null) {
-			return workerType;
+	// private String getWorkerTypeFromSession() throws
+	// BadRequestPublixException {
+	// // Check if we have workerType in session
+	// String workerType = session(WORKER_TYPE);
+	// if (workerType != null) {
+	// return workerType;
+	// }
+	// LOGGER.warn(".getWorkerTypeFromSession: Could not find "
+	// + "a worker type in session for URI " + request().uri());
+	// throw new BadRequestPublixException(
+	// PublixErrorMessages.NO_WORKER_IN_SESSION);
+	// }
+
+	/**
+	 * Checks session which type of worker is doing the study. Returns a String
+	 * specifying the worker type.
+	 */
+	private String getWorkerTypeFromIdCookie(Long studyResultId)
+			throws BadRequestPublixException {
+		if (studyResultId == null) {
+			throw new BadRequestPublixException("Study result doesn't exist.");
 		}
-		LOGGER.warn(".getWorkerTypeFromSession: Could not find "
-				+ "a worker type in session for URI " + request().uri());
-		throw new BadRequestPublixException(
-				PublixErrorMessages.NO_WORKER_IN_SESSION);
+		return idCookieService.extractIdCookies()
+				.findWithStudyResultId(studyResultId).getWorkerType();
 	}
 
 	/**

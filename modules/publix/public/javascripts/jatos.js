@@ -228,7 +228,7 @@ var jatos = {};
 		})(window.location.search.substr(1).split('&'));
 
 		jatos.studyResultId = urlQueryParameter["srid"];
-		
+
 		readIdCookie();
 		getInitData();
 
@@ -1218,7 +1218,7 @@ var jatos = {};
 		}
 		jatos.jQuery.ajax({
 			url: "/publix/" + jatos.studyId + "/" + jatos.componentId
-			+ "/log",
+			+ "/log" + "?srid=" + jatos.studyResultId,
 			data: logMsg,
 			processData: false,
 			type: "POST",

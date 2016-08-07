@@ -23,7 +23,6 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
-import services.publix.HttpHelpers;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
@@ -135,10 +134,9 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
-		return HttpHelpers.redirectWithinStudy(
+		return redirect(
 				controllers.publix.routes.PublixInterceptor.startComponent(
-						studyId, firstComponent.getId(), studyResult.getId()),
-				studyResult);
+						studyId, firstComponent.getId(), studyResult.getId()));
 	}
 
 	@Override

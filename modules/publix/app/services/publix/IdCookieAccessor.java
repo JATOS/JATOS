@@ -32,9 +32,9 @@ import play.mvc.Http.Cookies;
  * @author Kristian Lange
  */
 @Singleton
-public class IdCookieService {
+public class IdCookieAccessor {
 
-	private static final ALogger LOGGER = Logger.of(IdCookieService.class);
+	private static final ALogger LOGGER = Logger.of(IdCookieAccessor.class);
 
 	/**
 	 * Extracts the ID cookie from all the given cookies. Stores it and it's
@@ -79,8 +79,9 @@ public class IdCookieService {
 			cookieName = getNewCookieName(idCookieContainer);
 		}
 
-		String cookieValue = generateIdCookieValue(batch, studyResult,
+		IdCookie2 idCookie = buildIdCookie(cookieName, batch, studyResult,
 				componentResult, worker);
+		String cookieValue = asString(idCookie);
 		Publix.response().setCookie(cookieName, cookieValue, Integer.MAX_VALUE);
 	}
 
@@ -116,6 +117,31 @@ public class IdCookieService {
 		return (oldest != null) ? oldest.getStudyResultId() : null;
 	}
 
+	private IdCookie2 buildIdCookie(String name, Batch batch,
+			StudyResult studyResult, ComponentResult componentResult,
+			Worker worker) {
+		Study study = studyResult.getStudy();
+		GroupResult groupResult = studyResult.getActiveGroupResult();
+		IdCookie2 idCookie = new IdCookie2();
+		idCookie.setBatchId(batch.getId());
+		// ComponentResult might not yet be created
+		if (componentResult != null) {
+			Component component = componentResult.getComponent();
+			idCookie.setComponentId(component.getId());
+			idCookie.setComponentResultId(componentResult.getId());
+			idCookie.setComponentPosition(
+					study.getComponentPosition(component));
+		}
+		idCookie.setCreationTime(System.currentTimeMillis());
+		idCookie.setGroupResultId(groupResult.getId());
+		idCookie.setName(name);
+		idCookie.setStudyId(study.getId());
+		idCookie.setStudyResultId(studyResult.getId());
+		idCookie.setWorkerId(worker.getId());
+		idCookie.setWorkerType(worker.getWorkerType());
+		return idCookie;
+	}
+
 	/**
 	 * Generates the value that will be put in the ID cookie. An ID cookie has a
 	 * worker ID, study ID, study result ID, group result ID (if not exist:
@@ -147,7 +173,7 @@ public class IdCookieService {
 			cookieMap.put(IdCookie2.COMPONENT_ID,
 					String.valueOf(component.getId()));
 		} else {
-			
+
 		}
 		return generateCookieString(cookieMap);
 	}
@@ -170,6 +196,44 @@ public class IdCookieService {
 			}
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * Takes a map and put its key-value-pairs into a string like in
+	 * key=value&key=value&... (similar to a URL query).
+	 */
+	private String asString(IdCookie2 idCookie) {
+		StringBuilder sb = new StringBuilder();
+		appendCookieEntry(sb, IdCookie2.BATCH_ID, idCookie.getBatchId(), true);
+		appendCookieEntry(sb, IdCookie2.COMPONENT_ID, idCookie.getComponentId(),
+				true);
+		appendCookieEntry(sb, IdCookie2.COMPONENT_POSITION,
+				idCookie.getComponentPosition(), true);
+		appendCookieEntry(sb, IdCookie2.COMPONENT_RESULT_ID,
+				idCookie.getComponentResultId(), true);
+		appendCookieEntry(sb, IdCookie2.CREATION_TIME,
+				idCookie.getCreationTime(), true);
+		appendCookieEntry(sb, IdCookie2.GROUP_RESULT_ID,
+				idCookie.getGroupResultId(), true);
+		appendCookieEntry(sb, IdCookie2.STUDY_ID, idCookie.getStudyId(), true);
+		appendCookieEntry(sb, IdCookie2.STUDY_RESULT_ID,
+				idCookie.getStudyResultId(), true);
+		appendCookieEntry(sb, IdCookie2.WORKER_ID, idCookie.getWorkerId(),
+				true);
+		appendCookieEntry(sb, IdCookie2.WORKER_TYPE, idCookie.getWorkerType(),
+				false);
+		return sb.toString();
+	}
+
+	private StringBuilder appendCookieEntry(StringBuilder sb, String key,
+			Object value, boolean cookieAnd) {
+		sb.append(key);
+		sb.append(IdCookie2.COOKIE_EQUALS);
+		sb.append(value);
+		if (cookieAnd) {
+			sb.append(IdCookie2.COOKIE_AND);
+		}
+		return sb;
 	}
 
 	/**

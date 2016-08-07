@@ -167,6 +167,6 @@ public interface IPublix {
 	 * 
 	 * With this method the client side can log into the server's log.
 	 */
-	Result log(Long studyId, Long componentId) throws PublixException;
+	Result log(Long studyId, Long componentId, Long studyResultId) throws PublixException;
 
 }
