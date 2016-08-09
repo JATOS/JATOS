@@ -52,7 +52,7 @@ public class GeneralSinglePublixUtilsTest
 		persistWorker(worker);
 
 		GeneralSingleWorker retrievedWorker = publixUtils
-				.retrieveTypedWorker(worker.getId().toString());
+				.retrieveTypedWorker(worker.getId());
 		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
 	}
 
@@ -61,7 +61,7 @@ public class GeneralSinglePublixUtilsTest
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		try {
 			generalSinglePublixUtils
-					.retrieveTypedWorker(admin.getWorker().getId().toString());
+					.retrieveTypedWorker(admin.getWorker().getId());
 			Fail.fail();
 		} catch (ForbiddenPublixException e) {
 			assertThat(e.getMessage()).isEqualTo(generalSingleErrorMessages

@@ -45,7 +45,7 @@ public class PersonalMultiplePublixUtilsTest
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
 		persistWorker(worker);
 
-		PersonalMultipleWorker retrievedWorker = publixUtils
+		PersonalMultipleWorker retrievedWorker = personalMultiplePublixUtils
 				.retrieveTypedWorker(worker.getId().toString());
 		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
 	}
@@ -54,7 +54,7 @@ public class PersonalMultiplePublixUtilsTest
 	public void checkRetrieveTypedWorkerWrongType()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		try {
-			publixUtils
+			personalMultiplePublixUtils
 					.retrieveTypedWorker(admin.getWorker().getId().toString());
 			Fail.fail();
 		} catch (PublixException e) {

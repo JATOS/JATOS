@@ -5,7 +5,6 @@ import javax.inject.Singleton;
 
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
-import controllers.publix.PublixInterceptor;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
@@ -23,11 +22,14 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
+import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
+import services.publix.idcookie.IdCookie;
+import services.publix.idcookie.IdCookieService;
 import services.publix.workers.MTErrorMessages;
 import services.publix.workers.MTPublixUtils;
 import services.publix.workers.MTStudyAuthorisation;
@@ -70,13 +72,14 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			MTStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator, WorkerCreator workerCreator,
 			GroupService groupService, ChannelService channelService,
-			MTErrorMessages errorMessages, StudyAssets studyAssets,
-			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
+			IdCookieService idCookieService, MTErrorMessages errorMessages,
+			StudyAssets studyAssets, JsonUtils jsonUtils,
+			ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao,
 			GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
-				channelService, errorMessages, studyAssets, jsonUtils,
-				componentResultDao, studyResultDao, groupResultDao);
+				channelService, idCookieService, errorMessages, studyAssets,
+				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
@@ -113,24 +116,23 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		}
 		MTWorker worker = mtWorkerDao.findByMTWorkerId(mtWorkerId);
 		if (worker == null) {
-			String workerType = session(PublixInterceptor.WORKER_TYPE);
+			String workerType = retrieveWorkerTypeFromQueryString();
 			boolean isRequestFromMTurkSandbox = workerType
 					.equals(MTSandboxWorker.WORKER_TYPE);
 			worker = workerCreator.createAndPersistMTWorker(mtWorkerId,
 					isRequestFromMTurkSandbox, batch);
 		}
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-		session(WORKER_ID, String.valueOf(worker.getId()));
-		session(BATCH_ID, batch.getId().toString());
 		session(STUDY_ASSETS, study.getDirName());
 		LOGGER.info(".startStudy: study (study ID " + studyId + ", batch ID "
 				+ batchId + ") " + "assigned to worker with ID "
 				+ worker.getId());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
+		idCookieService.writeIdCookie(worker, batch, studyResult);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);
@@ -142,12 +144,14 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	@Override
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg,
 			Long studyResultId) throws PublixException {
-		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "workerId "
-				+ session(WORKER_ID) + ", " + "successful " + successful + ", "
+		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
+				+ studyResultId + ", " + "successful " + successful + ", "
 				+ "errorMsg \"" + errorMsg + "\"");
+		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
-		MTWorker worker = publixUtils.retrieveTypedWorker(session(WORKER_ID));
+		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+		MTWorker worker = publixUtils
+				.retrieveTypedWorker(idCookie.getWorkerId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
@@ -160,7 +164,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}
-		publixUtils.discardIdCookie(studyResult);
+		idCookieService.discardIdCookie(studyResult.getId());
 		if (ControllerUtils.isAjax()) {
 			return ok(confirmationCode);
 		} else {
@@ -170,6 +174,26 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				return ok(views.html.publix.confirmationCode
 						.render(confirmationCode));
 			}
+		}
+	}
+
+	private String retrieveWorkerTypeFromQueryString()
+			throws BadRequestPublixException {
+		String mtWorkerId = Publix.getQueryString(MTPublix.MT_WORKER_ID);
+		if (mtWorkerId != null) {
+			return retrieveWorkerType(mtWorkerId);
+		}
+		throw new BadRequestPublixException(
+				PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+	}
+
+	public String retrieveWorkerType(String mtWorkerId) {
+		String turkSubmitTo = request().getQueryString(MTPublix.TURK_SUBMIT_TO);
+		if (turkSubmitTo != null
+				&& turkSubmitTo.toLowerCase().contains(MTPublix.SANDBOX)) {
+			return MTSandboxWorker.WORKER_TYPE;
+		} else {
+			return MTWorker.WORKER_TYPE;
 		}
 	}
 

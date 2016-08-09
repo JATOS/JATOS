@@ -23,11 +23,12 @@ import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.publix.IdCookieService;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
+import services.publix.idcookie.IdCookie;
+import services.publix.idcookie.IdCookieService;
 import services.publix.workers.JatosErrorMessages;
 import services.publix.workers.JatosPublixUtils;
 import services.publix.workers.JatosStudyAuthorisation;
@@ -90,13 +91,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator, GroupService groupService,
-			ChannelService channelService, JatosErrorMessages errorMessages,
-			StudyAssets studyAssets, JsonUtils jsonUtils,
-			ComponentResultDao componentResultDao,
+			ChannelService channelService, IdCookieService idCookieService,
+			JatosErrorMessages errorMessages, StudyAssets studyAssets,
+			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
-				channelService, errorMessages, studyAssets, jsonUtils,
-				componentResultDao, studyResultDao, groupResultDao);
+				channelService, idCookieService, errorMessages, studyAssets,
+				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
@@ -113,8 +114,6 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		JatosWorker worker = publixUtils.retrieveLoggedInUser().getWorker();
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-		session(WORKER_ID, worker.getId().toString());
-		session(BATCH_ID, batch.getId().toString());
 		session(STUDY_ASSETS, study.getDirName());
 		LOGGER.info(".startStudy: study (study ID " + studyId + ", batch ID "
 				+ batchId + ") " + "assigned to worker with ID "
@@ -136,10 +135,10 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
-		publixUtils.writeIdCookie(worker, batch, studyResult, null);
+		idCookieService.writeIdCookie(worker, batch, studyResult);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, componentId, studyResult.getId()));
 	}
@@ -148,13 +147,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Result startComponent(Long studyId, Long componentId,
 			Long studyResultId) throws PublixException {
 		LOGGER.info(".startComponent: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "workerId "
-				+ session(WORKER_ID) + ", " + "logged-in user's email "
+				+ "componentId " + componentId + ", " + "studyResultId "
+				+ studyResultId + ", " + "logged-in user's email "
 				+ session(SESSION_EMAIL));
+		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
+		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		JatosWorker worker = publixUtils
-				.retrieveTypedWorker(session(WORKER_ID));
+				.retrieveTypedWorker(idCookie.getWorkerId());
 		Component component = publixUtils.retrieveComponent(study, componentId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkComponentBelongsToStudy(study, component);
@@ -191,7 +191,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					.finishStudy(studyId, false, e.getMessage(),
 							studyResult.getId()));
 		}
-		publixUtils.writeIdCookie(worker, batch, studyResult, componentResult);
+		idCookieService.writeIdCookie(worker, batch, studyResult,
+				componentResult);
 		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
 				component.getHtmlFilePath());
 	}
@@ -200,12 +201,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	public Result startNextComponent(Long studyId, Long studyResultId)
 			throws PublixException {
 		LOGGER.info(".startNextComponent: studyId " + studyId + ", "
-				+ "workerId " + session(WORKER_ID) + ", "
+				+ "studyResultId " + studyResultId + ", "
 				+ "logged-in user's email " + session(SESSION_EMAIL));
+		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
+		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		JatosWorker worker = publixUtils
-				.retrieveTypedWorker(session(WORKER_ID));
+				.retrieveTypedWorker(idCookie.getWorkerId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
@@ -245,14 +247,15 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Override
 	public Result abortStudy(Long studyId, String message, Long studyResultId)
 			throws PublixException {
-		LOGGER.info(".abortStudy: studyId " + studyId + ", " + "workerId "
-				+ session(WORKER_ID) + ", " + "logged-in user email "
+		LOGGER.info(".abortStudy: studyId " + studyId + ", " + "studyResultId "
+				+ studyResultId + ", " + "logged-in user email "
 				+ session(SESSION_EMAIL) + ", " + "message \"" + message
 				+ "\"");
+		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
+		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		JatosWorker worker = publixUtils
-				.retrieveTypedWorker(session(WORKER_ID));
+				.retrieveTypedWorker(idCookie.getWorkerId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
@@ -262,7 +265,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			groupService.finishStudyInGroup(study, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		publixUtils.discardIdCookie(studyResult);
+		idCookieService.discardIdCookie(studyResult.getId());
 		if (ControllerUtils.isAjax()) {
 			return ok();
 		} else {
@@ -277,14 +280,15 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Override
 	public Result finishStudy(Long studyId, Boolean successful, String errorMsg,
 			Long studyResultId) throws PublixException {
-		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "workerId "
-				+ session(WORKER_ID) + ", " + "logged-in user email "
+		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
+				+ studyResultId + ", " + "logged-in user email "
 				+ session(SESSION_EMAIL) + ", " + "successful " + successful
 				+ ", " + "errorMsg \"" + errorMsg + "\"");
+		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(session(BATCH_ID));
+		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		JatosWorker worker = publixUtils
-				.retrieveTypedWorker(session(WORKER_ID));
+				.retrieveTypedWorker(idCookie.getWorkerId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
 		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
@@ -294,7 +298,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			groupService.finishStudyInGroup(study, studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
-		publixUtils.discardIdCookie(studyResult);
+		idCookieService.discardIdCookie(studyResult.getId());
 		if (ControllerUtils.isAjax()) {
 			return ok(errorMsg);
 		} else {

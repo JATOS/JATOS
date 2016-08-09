@@ -46,7 +46,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 	public void checkRetrieveTypedWorker()
 			throws NoSuchAlgorithmException, IOException, PublixException {
 		JatosWorker retrievedWorker = publixUtils
-				.retrieveTypedWorker(admin.getWorker().getId().toString());
+				.retrieveTypedWorker(admin.getWorker().getId());
 		assertThat(retrievedWorker.getId())
 				.isEqualTo(admin.getWorker().getId());
 	}
@@ -59,7 +59,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 
 		try {
 			publixUtils.retrieveTypedWorker(
-					generalSingleWorker.getId().toString());
+					generalSingleWorker.getId());
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages

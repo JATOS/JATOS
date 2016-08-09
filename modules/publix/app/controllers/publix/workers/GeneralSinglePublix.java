@@ -23,6 +23,7 @@ import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
+import services.publix.idcookie.IdCookieService;
 import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
@@ -57,12 +58,13 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 			GeneralSingleStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator, WorkerCreator workerCreator,
 			GroupService groupService, ChannelService channelService,
+			IdCookieService idCookieService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
-				channelService, errorMessages, studyAssets, jsonUtils,
-				componentResultDao, studyResultDao, groupResultDao);
+				channelService, idCookieService, errorMessages, studyAssets,
+				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
@@ -82,17 +84,15 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 		GeneralSingleWorker worker = workerCreator
 				.createAndPersistGeneralSingleWorker(batch);
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-		session(WORKER_ID, worker.getId().toString());
-		session(BATCH_ID, batch.getId().toString());
-		session(STUDY_ASSETS, study.getDirName());
 		LOGGER.info(".startStudy: study (study ID " + studyId + ", batch ID "
 				+ batchId + ") " + "assigned to worker with ID "
 				+ worker.getId());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
+		idCookieService.writeIdCookie(worker, batch, studyResult);
 
 		publixUtils.setGeneralSingleCookie(study);
 

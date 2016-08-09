@@ -16,10 +16,10 @@ import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
-import services.publix.IdCookieService;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
+import services.publix.idcookie.IdCookieService;
 
 /**
  * GeneralSinglePublix' implementation of PublixUtils
@@ -47,9 +47,9 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 	}
 
 	@Override
-	public GeneralSingleWorker retrieveTypedWorker(String workerIdStr)
+	public GeneralSingleWorker retrieveTypedWorker(Long workerId)
 			throws ForbiddenPublixException {
-		Worker worker = retrieveWorker(workerIdStr);
+		Worker worker = super.retrieveWorker(workerId);
 		if (!(worker instanceof GeneralSingleWorker)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotCorrectType(worker.getId()));

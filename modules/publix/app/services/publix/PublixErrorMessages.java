@@ -10,15 +10,16 @@ import models.common.workers.Worker;
 public class PublixErrorMessages {
 
 	public static final String ABANDONED_STUDY_BY_COOKIE = "Closed by JATOS: Too many unfinished studies open in the same browser.";
-	public static final String ABANDONED_STUDY_BY_WORKER = "Closed by JATOS: study not completed, but new study started by the same worker";
 	public static final String NO_WORKERID_IN_SESSION = "No worker ID in session. Was the study started?";
 	public static final String NO_BATCHID_IN_SESSION = "No batch ID in session. Was the study started?";
 	public static final String COMPONENTS_POSITION_NOT_NULL = "Component's positions can't be null.";
 	public static final String UNKNOWN_WORKER_TYPE = "Unknown worker type";
 	public static final String STUDY_CAN_BE_DONE_ONLY_ONCE = "Study can be done only once.";
 	public static final String SUBMITTED_DATA_UNKNOWN_FORMAT = "Submitted data have an unknown format.";
-	public static final String NO_WORKER_IN_SESSION = "Sorry this study is not available to you (any more). Maybe you tried to reload a component that wasn't allowed to be reloaded?";
+	public static final String NO_WORKER_IN_QUERY_STRING = "Missing worker ID in query string";
 	public static final String GROUP_STUDY_NOT_POSSIBLE_TWICE = "It's not possible to run a group study twice.";
+	public static final String IDCOOKIE_CONTAINER_FULL = "Can't generate a new ID cookie due to the IdCookieContainer is full. This should never happen.";
+	public static final String IDCOOKIE_CONTAINER_INDEX_OUT_OF_BOUND = "IdCookieContainer is full but a new index was requested.";
 
 	public String workerNotCorrectType(Long workerId) {
 		return "The worker with ID " + workerId
@@ -135,9 +136,22 @@ public class PublixErrorMessages {
 				+ " but this study was never started.";
 	}
 
-	public static String couldntExtractFromIdCookie(String idCookieName, String key) {
+	public static String couldntExtractFromIdCookie(String idCookieName,
+			String key) {
 		return "Couldn't extract " + key + " from JATOS ID cookie "
 				+ idCookieName + ".";
+	}
+
+	public static String couldntExtractIndexFromIdCookieName(
+			String idCookieName) {
+		return "Couldn't extract index from ID cookie's name " + idCookieName
+				+ ".";
+	}
+
+	public static String idCookieForThisStudyResultNotExists(
+			Long studyResultId) {
+		return "ID cookie for study result " + studyResultId
+				+ " doesn't exist.";
 	}
 
 }

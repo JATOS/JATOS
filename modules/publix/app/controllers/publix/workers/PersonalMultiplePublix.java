@@ -22,6 +22,7 @@ import play.mvc.Result;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
+import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalMultipleErrorMessages;
 import services.publix.workers.PersonalMultiplePublixUtils;
 import services.publix.workers.PersonalMultipleStudyAuthorisation;
@@ -50,14 +51,14 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	PersonalMultiplePublix(JPAApi jpa, PersonalMultiplePublixUtils publixUtils,
 			PersonalMultipleStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator, GroupService groupService,
-			ChannelService channelService,
+			ChannelService channelService, IdCookieService idCookieService,
 			PersonalMultipleErrorMessages errorMessages,
 			StudyAssets studyAssets, JsonUtils jsonUtils,
 			ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
-				channelService, errorMessages, studyAssets, jsonUtils,
-				componentResultDao, studyResultDao, groupResultDao);
+				channelService, idCookieService, errorMessages, studyAssets,
+				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
@@ -66,22 +67,21 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
-		String workerId = getQueryString(PERSONAL_MULTIPLE_WORKER_ID);
+		String workerIdStr = getQueryString(PERSONAL_MULTIPLE_WORKER_ID);
 		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
-				+ batchId + ", " + "workerId " + workerId);
+				+ batchId + ", " + "workerId " + workerIdStr);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		PersonalMultipleWorker worker = publixUtils
-				.retrieveTypedWorker(workerId);
+				.retrieveTypedWorker(workerIdStr);
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-		session(WORKER_ID, workerId);
-		session(BATCH_ID, batch.getId().toString());
 		session(STUDY_ASSETS, study.getDirName());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
+		idCookieService.writeIdCookie(worker, batch, studyResult);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

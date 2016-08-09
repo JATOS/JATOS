@@ -27,8 +27,8 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
-import services.publix.IdCookieService;
 import services.publix.PublixErrorMessages;
+import services.publix.idcookie.IdCookieService;
 
 /**
  * Interceptor for Publix: it intercepts requests for JATOS' public API (Publix)
@@ -57,8 +57,6 @@ import services.publix.PublixErrorMessages;
 @PublixAccessLogging
 @PublixExceptionCatching
 public class PublixInterceptor extends Controller implements IPublix {
-
-	public static final String WORKER_TYPE = "workerType";
 
 	private final IdCookieService idCookieService;
 
@@ -511,7 +509,6 @@ public class PublixInterceptor extends Controller implements IPublix {
 			throw new BadRequestPublixException(
 					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
 		}
-		session().remove(WORKER_TYPE);
 		return result;
 	}
 
@@ -554,30 +551,12 @@ public class PublixInterceptor extends Controller implements IPublix {
 	 * Checks session which type of worker is doing the study. Returns a String
 	 * specifying the worker type.
 	 */
-	// private String getWorkerTypeFromSession() throws
-	// BadRequestPublixException {
-	// // Check if we have workerType in session
-	// String workerType = session(WORKER_TYPE);
-	// if (workerType != null) {
-	// return workerType;
-	// }
-	// LOGGER.warn(".getWorkerTypeFromSession: Could not find "
-	// + "a worker type in session for URI " + request().uri());
-	// throw new BadRequestPublixException(
-	// PublixErrorMessages.NO_WORKER_IN_SESSION);
-	// }
-
-	/**
-	 * Checks session which type of worker is doing the study. Returns a String
-	 * specifying the worker type.
-	 */
 	private String getWorkerTypeFromIdCookie(Long studyResultId)
 			throws BadRequestPublixException {
 		if (studyResultId == null) {
 			throw new BadRequestPublixException("Study result doesn't exist.");
 		}
-		return idCookieService.extractIdCookies()
-				.findWithStudyResultId(studyResultId).getWorkerType();
+		return idCookieService.getIdCookie(studyResultId).getWorkerType();
 	}
 
 	/**
@@ -595,14 +574,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 		// Check for MT worker and MT Sandbox worker
 		String mtWorkerId = Publix.getQueryString(MTPublix.MT_WORKER_ID);
 		if (mtWorkerId != null) {
-			String turkSubmitTo = request()
-					.getQueryString(MTPublix.TURK_SUBMIT_TO);
-			if (turkSubmitTo != null
-					&& turkSubmitTo.toLowerCase().contains(MTPublix.SANDBOX)) {
-				return MTSandboxWorker.WORKER_TYPE;
-			} else {
-				return MTWorker.WORKER_TYPE;
-			}
+			return instanceOfPublix(MTPublix.class)
+					.retrieveWorkerType(mtWorkerId);
 		}
 		// Check for Personal Multiple Worker
 		String pmWorkerId = Publix.getQueryString(

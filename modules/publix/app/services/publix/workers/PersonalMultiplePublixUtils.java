@@ -12,9 +12,10 @@ import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.Worker;
-import services.publix.IdCookieService;
+import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
+import services.publix.idcookie.IdCookieService;
 
 /**
  * PersonalMultiplePublix' implementation of PublixUtils
@@ -38,14 +39,30 @@ public class PersonalMultiplePublixUtils
 	}
 
 	@Override
-	public PersonalMultipleWorker retrieveTypedWorker(String workerIdStr)
+	public PersonalMultipleWorker retrieveTypedWorker(Long workerId)
 			throws ForbiddenPublixException {
-		Worker worker = retrieveWorker(workerIdStr);
+		Worker worker = super.retrieveWorker(workerId);
 		if (!(worker instanceof PersonalMultipleWorker)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotCorrectType(worker.getId()));
 		}
 		return (PersonalMultipleWorker) worker;
+	}
+
+	public PersonalMultipleWorker retrieveTypedWorker(String workerIdStr)
+			throws ForbiddenPublixException {
+		if (workerIdStr == null) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.NO_WORKER_IN_QUERY_STRING);
+		}
+		long workerId;
+		try {
+			workerId = Long.parseLong(workerIdStr);
+		} catch (NumberFormatException e) {
+			throw new ForbiddenPublixException(
+					errorMessages.workerNotExist(workerIdStr));
+		}
+		return retrieveTypedWorker(workerId);
 	}
 
 }

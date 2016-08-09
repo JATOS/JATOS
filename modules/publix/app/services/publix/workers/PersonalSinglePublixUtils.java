@@ -12,9 +12,10 @@ import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
-import services.publix.IdCookieService;
+import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
+import services.publix.idcookie.IdCookieService;
 
 /**
  * PersonalSinglePublix' implementation of PublixUtils
@@ -38,14 +39,30 @@ public class PersonalSinglePublixUtils
 	}
 
 	@Override
-	public PersonalSingleWorker retrieveTypedWorker(String workerIdStr)
+	public PersonalSingleWorker retrieveTypedWorker(Long workerId)
 			throws ForbiddenPublixException {
-		Worker worker = retrieveWorker(workerIdStr);
+		Worker worker = super.retrieveWorker(workerId);
 		if (!(worker instanceof PersonalSingleWorker)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotCorrectType(worker.getId()));
 		}
 		return (PersonalSingleWorker) worker;
+	}
+
+	public PersonalSingleWorker retrieveTypedWorker(String workerIdStr)
+			throws ForbiddenPublixException {
+		if (workerIdStr == null) {
+			throw new ForbiddenPublixException(
+					PublixErrorMessages.NO_WORKER_IN_QUERY_STRING);
+		}
+		long workerId;
+		try {
+			workerId = Long.parseLong(workerIdStr);
+		} catch (NumberFormatException e) {
+			throw new ForbiddenPublixException(
+					errorMessages.workerNotExist(workerIdStr));
+		}
+		return retrieveTypedWorker(workerId);
 	}
 
 }

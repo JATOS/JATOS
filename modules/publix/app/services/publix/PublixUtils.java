@@ -13,7 +13,6 @@ import daos.common.worker.WorkerDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
-import exceptions.publix.MalformedIdCookieException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import models.common.Batch;
@@ -24,7 +23,8 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
-import play.Logger;
+import services.publix.idcookie.IdCookieContainer;
+import services.publix.idcookie.IdCookieService;
 
 /**
  * Service class with functions that are common for all classes that extend
@@ -64,26 +64,14 @@ public abstract class PublixUtils<T extends Worker> {
 	 * Like {@link #retrieveWorker(String)} but returns a concrete
 	 * implementation of the abstract Worker class
 	 */
-	public abstract T retrieveTypedWorker(String workerIdStr)
+	public abstract T retrieveTypedWorker(Long workerId)
 			throws ForbiddenPublixException;
 
 	/**
 	 * Retrieves the worker with the given worker ID from the DB.
 	 */
-	public Worker retrieveWorker(String workerIdStr)
+	public Worker retrieveWorker(Long workerId)
 			throws ForbiddenPublixException {
-		if (workerIdStr == null) {
-			throw new ForbiddenPublixException(
-					PublixErrorMessages.NO_WORKERID_IN_SESSION);
-		}
-		long workerId;
-		try {
-			workerId = Long.parseLong(workerIdStr);
-		} catch (NumberFormatException e) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerNotExist(workerIdStr));
-		}
-
 		Worker worker = workerDao.findById(workerId);
 		if (worker == null) {
 			throw new ForbiddenPublixException(
@@ -213,66 +201,35 @@ public abstract class PublixUtils<T extends Worker> {
 
 	/**
 	 * Checks if there are abandoned study results and finishes them with a
-	 * state FAIL. 1) The same worker can run only one study at the same time.
-	 * So it finishes all old study results of the given worker with a state
-	 * FAIL. 2) In the same browser can run only one study at the same time. So
-	 * it checks the ID cookie for an unfinished study run. TODO
-	 */
-	public void finishAbandonedStudyResults(Worker worker, Study study)
-			throws BadRequestPublixException {
-		// finishAllPriorStudyResultsOfWorker(worker, study);
-		checkIdCookieAndFinishAbandonedStudyResult();
-	}
-
-	/**
-	 * Finishes all StudyResults of this worker of this study that aren't 'done'
-	 * (StudyResult's state is in FINISHED, FAILED, ABORTED). Each worker can do
-	 * only one study with the same ID at the same time. E.g. this is necessary
-	 * for a JatosWorker if he starts the same study a second time without
-	 * actually finishing the prior study run.
+	 * state FAIL.
 	 * 
-	 * It should be max one StudyResult to be treated in this way since we call
-	 * this method during start of each study run, but we iterate over all
-	 * StudyResults of this worker just in case.
+	 * All studies that currently run in this Request's browser have an ID
+	 * cookie. This method checks if there is an abandoned study result and if
+	 * so finishes it. An abandoned study result happens when to many studies
+	 * are started in the same browser without finishing them. This method
+	 * should only be called during starting a study.
 	 */
-	private void finishAllPriorStudyResultsOfWorker(Worker worker,
-			Study study) {
-		List<StudyResult> studyResultList = worker.getStudyResultList();
-		for (StudyResult studyResult : studyResultList) {
-			if (study.getId().equals(studyResult.getStudy().getId())
-					&& !PublixHelpers.studyDone(studyResult)) {
-				// Should be max. one StudyResult to finish this way since we do
-				// this in every study start
-				finishStudyResult(false,
-						PublixErrorMessages.ABANDONED_STUDY_BY_WORKER,
-						studyResult);
-			}
+	public void finishAbandonedStudyResults() throws BadRequestPublixException {
+		IdCookieContainer idCookieContainer = idCookieService
+				.extractIdCookieContainer();
+		if (!idCookieContainer.isFull()) {
+			return;
 		}
-	}
 
-	/**
-	 * Gets the last StudyResult of this worker of this study. Throws an
-	 * ForbiddenPublixException if the StudyResult is already 'done' or this
-	 * worker never started a StudyResult of this study. It either returns a
-	 * StudyResult or throws an exception but never returns null.
-	 */
-	private StudyResult retrieveWorkersLastStudyResult(Worker worker,
-			Study study) throws ForbiddenPublixException {
-		int studyResultListSize = worker.getStudyResultList().size();
-		for (int i = (studyResultListSize - 1); i >= 0; i--) {
-			StudyResult studyResult = worker.getStudyResultList().get(i);
-			if (studyResult.getStudy().getId().equals(study.getId())) {
-				if (PublixHelpers.studyDone(studyResult)) {
-					throw new ForbiddenPublixException(errorMessages
-							.workerFinishedStudyAlready(worker, study.getId()));
-				} else {
-					return studyResult;
-				}
+		Long abandonedStudyResultId = idCookieService
+				.getOldestIdCookiesStudyResultId(idCookieContainer);
+		if (abandonedStudyResultId != null) {
+			StudyResult abandonedStudyResult = studyResultDao
+					.findById(abandonedStudyResultId);
+			// If the abandoned study result isn't done, finish it.
+			if (!PublixHelpers.studyDone(abandonedStudyResult)) {
+				finishStudyResult(false,
+						PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
+						abandonedStudyResult);
 			}
+			idCookieService.discardIdCookie(abandonedStudyResultId,
+					idCookieContainer);
 		}
-		// This worker never started a StudyResult of this study
-		throw new ForbiddenPublixException(
-				errorMessages.workerNeverDidStudy(worker, study.getId()));
 	}
 
 	public StudyResult retrieveWorkersStudyResult(Worker worker, Study study,
@@ -283,8 +240,7 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 		StudyResult studyResult = studyResultDao.findById(studyResultId);
 		if (studyResult == null) {
-			throw new BadRequestPublixException(
-					"Study result doesn't exist.");
+			throw new BadRequestPublixException("Study result doesn't exist.");
 		}
 		if (studyResult.getStudy().getId().equals(study.getId())) {
 			if (PublixHelpers.studyDone(studyResult)) {
@@ -493,84 +449,16 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Retrieves batch from database. If the given batch ID is null or the batch
-	 * doesn't exist it throws an ForbiddenPublixException.
+	 * Retrieves batch from database. If the batch doesn't exist it throws an
+	 * ForbiddenPublixException.
 	 */
-	public Batch retrieveBatch(String batchIdStr)
-			throws ForbiddenPublixException {
-		if (batchIdStr == null) {
-			throw new ForbiddenPublixException(
-					PublixErrorMessages.NO_BATCHID_IN_SESSION);
-		}
-		long batchId;
-		try {
-			batchId = Long.parseLong(batchIdStr);
-		} catch (NumberFormatException e) {
-			throw new ForbiddenPublixException(
-					errorMessages.batchNotExist(batchIdStr));
-		}
-
+	public Batch retrieveBatch(Long batchId) throws ForbiddenPublixException {
 		Batch batch = batchDao.findById(batchId);
 		if (batch == null) {
 			throw new ForbiddenPublixException(
 					errorMessages.batchNotExist(batchId));
 		}
 		return batch;
-	}
-
-	/**
-	 * Checks if there is an abandoned study result and if so finishes it. An
-	 * abandoned study result happens when in the same browser a second study
-	 * run is started without finishing the first one. TODO
-	 */
-	private void checkIdCookieAndFinishAbandonedStudyResult()
-			throws BadRequestPublixException {
-		IdCookieContainer idCookieContainer = idCookieService
-				.extractIdCookies();
-		if (!idCookieContainer.isFull()) {
-			return;
-		}
-
-		Long abandonedStudyResultId = null;
-		try {
-			abandonedStudyResultId = idCookieService
-					.getOldestIdCookieStudyResultId(idCookieContainer);
-		} catch (MalformedIdCookieException e) {
-			Logger.warn(e.getMessage());
-		}
-		if (abandonedStudyResultId != null) {
-			StudyResult abandonedStudyResult = studyResultDao
-					.findById(abandonedStudyResultId);
-			if (abandonedStudyResult != null
-					&& !PublixHelpers.studyDone(abandonedStudyResult)) {
-				finishStudyResult(false,
-						PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
-						abandonedStudyResult);
-			}
-		}
-	}
-
-	/**
-	 * Generates an ID cookie from the given parameters and sets it in the
-	 * response object.
-	 */
-	public void writeIdCookie(T worker, Batch batch, StudyResult studyResult,
-			ComponentResult componentResult) throws BadRequestPublixException {
-		IdCookieContainer idCookieContainer = idCookieService
-				.extractIdCookies();
-		idCookieService.writeCookieToResponse(idCookieContainer, batch,
-				studyResult, componentResult, worker);
-	}
-
-	/**
-	 * Discards the ID cookie if the given study result ID is equal to the one
-	 * in the cookie.
-	 */
-	public void discardIdCookie(StudyResult studyResult)
-			throws BadRequestPublixException {
-		IdCookieContainer idCookieContainer = idCookieService
-				.extractIdCookies();
-		idCookieService.discard(idCookieContainer, studyResult.getId());
 	}
 
 }

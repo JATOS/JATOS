@@ -22,6 +22,7 @@ import play.mvc.Result;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
+import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalSingleErrorMessages;
 import services.publix.workers.PersonalSinglePublixUtils;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
@@ -50,13 +51,13 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 	PersonalSinglePublix(JPAApi jpa, PersonalSinglePublixUtils publixUtils,
 			PersonalSingleStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator, GroupService groupService,
-			ChannelService channelService,
+			ChannelService channelService, IdCookieService idCookieService,
 			PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupService,
-				channelService, errorMessages, studyAssets, jsonUtils,
-				componentResultDao, studyResultDao, groupResultDao);
+				channelService, idCookieService, errorMessages, studyAssets,
+				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
@@ -74,14 +75,13 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		PersonalSingleWorker worker = publixUtils
 				.retrieveTypedWorker(workerIdStr);
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-		session(WORKER_ID, workerIdStr);
-		session(BATCH_ID, batch.getId().toString());
 		session(STUDY_ASSETS, study.getDirName());
 
 		groupService.finishStudyInAllPriorGroups(worker, study);
-		publixUtils.finishAbandonedStudyResults(worker, study);
+		publixUtils.finishAbandonedStudyResults();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
+		idCookieService.writeIdCookie(worker, batch, studyResult);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

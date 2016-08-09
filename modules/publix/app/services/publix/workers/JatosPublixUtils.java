@@ -16,9 +16,9 @@ import exceptions.publix.ForbiddenPublixException;
 import models.common.User;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
-import services.publix.IdCookieService;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
+import services.publix.idcookie.IdCookieService;
 
 /**
  * JatosPublix' implementation of PublixUtils (studies or components started via
@@ -46,9 +46,9 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	}
 
 	@Override
-	public JatosWorker retrieveTypedWorker(String workerIdStr)
+	public JatosWorker retrieveTypedWorker(Long workerId)
 			throws ForbiddenPublixException {
-		Worker worker = retrieveWorker(workerIdStr);
+		Worker worker = super.retrieveWorker(workerId);
 		if (!(worker instanceof JatosWorker)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotCorrectType(worker.getId()));

@@ -12,9 +12,9 @@ import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
-import services.publix.IdCookieService;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
+import services.publix.idcookie.IdCookieService;
 
 /**
  * MTPublix' implementation of PublixUtils (studies started via MTurk).
@@ -36,9 +36,9 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 	}
 
 	@Override
-	public MTWorker retrieveTypedWorker(String workerIdStr)
+	public MTWorker retrieveTypedWorker(Long workerId)
 			throws ForbiddenPublixException {
-		Worker worker = retrieveWorker(workerIdStr);
+		Worker worker = super.retrieveWorker(workerId);
 		if (!(worker instanceof MTWorker)) {
 			throw new ForbiddenPublixException(
 					errorMessages.workerNotCorrectType(worker.getId()));

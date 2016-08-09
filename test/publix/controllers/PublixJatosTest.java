@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.gui.Users;
 import controllers.publix.Publix;
-import controllers.publix.PublixInterceptor;
 import controllers.publix.workers.JatosPublix;
 import general.AbstractTest;
 import models.common.Component;
@@ -26,14 +25,13 @@ import models.common.ComponentResult.ComponentState;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
-import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 import play.mvc.Http.HeaderNames;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
-import services.publix.IdCookie;
+import services.publix.idcookie.IdCookie;
 import utils.common.JsonUtils;
 
 /**
@@ -381,7 +379,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				// .session(PublixInterceptor.WORKER_TYPE,
+				// JatosWorker.WORKER_TYPE)
 				.session(Publix.BATCH_ID, "1")
 				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
@@ -396,7 +395,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				// .session(PublixInterceptor.WORKER_TYPE,
+				// JatosWorker.WORKER_TYPE)
 				.session(Publix.BATCH_ID, "1")
 				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
@@ -410,7 +410,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				// .session(PublixInterceptor.WORKER_TYPE,
+				// JatosWorker.WORKER_TYPE)
 				.session(Publix.BATCH_ID, "1")
 				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
@@ -427,7 +428,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				// .session(PublixInterceptor.WORKER_TYPE,
+				// JatosWorker.WORKER_TYPE)
 				.session(Publix.BATCH_ID, "1")
 				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
@@ -443,7 +445,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				// .session(PublixInterceptor.WORKER_TYPE,
+				// JatosWorker.WORKER_TYPE)
 				.session(Publix.BATCH_ID, "1")
 				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
@@ -459,7 +462,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				// .session(PublixInterceptor.WORKER_TYPE,
+				// JatosWorker.WORKER_TYPE)
 				.session(Publix.BATCH_ID, "1")
 				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
@@ -476,7 +480,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				// .session(PublixInterceptor.WORKER_TYPE,
+				// JatosWorker.WORKER_TYPE)
 				.session(Publix.BATCH_ID, "1")
 				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
@@ -494,7 +499,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				// .session(PublixInterceptor.WORKER_TYPE,
+				// JatosWorker.WORKER_TYPE)
 				.session(Publix.BATCH_ID, "1")
 				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
@@ -510,7 +516,8 @@ public class PublixJatosTest extends AbstractTest {
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				.session(PublixInterceptor.WORKER_TYPE, JatosWorker.WORKER_TYPE)
+				// .session(PublixInterceptor.WORKER_TYPE,
+				// JatosWorker.WORKER_TYPE)
 				.session(Publix.BATCH_ID, "1")
 				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())

@@ -48,10 +48,10 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 		persistWorker(mtSandboxWorker);
 
 		MTWorker retrievedWorker = publixUtils
-				.retrieveTypedWorker(mtWorker.getId().toString());
+				.retrieveTypedWorker(mtWorker.getId());
 		assertThat(retrievedWorker.getId()).isEqualTo(mtWorker.getId());
 		retrievedWorker = publixUtils
-				.retrieveTypedWorker(mtSandboxWorker.getId().toString());
+				.retrieveTypedWorker(mtSandboxWorker.getId());
 		assertThat(retrievedWorker.getId()).isEqualTo(mtSandboxWorker.getId());
 
 	}
@@ -64,7 +64,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 
 		try {
 			publixUtils.retrieveTypedWorker(
-					generalSingleWorker.getId().toString());
+					generalSingleWorker.getId());
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(mtErrorMessages
