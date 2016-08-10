@@ -1,7 +1,5 @@
 package controllers.gui.actionannotations;
 
-import general.gui.RequestScope;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -9,6 +7,11 @@ import java.lang.annotation.Target;
 
 import javax.inject.Inject;
 
+import controllers.gui.Authentication;
+import controllers.gui.Users;
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
+import daos.common.UserDao;
+import general.common.RequestScope;
 import models.common.User;
 import play.libs.F;
 import play.libs.F.Promise;
@@ -17,10 +20,6 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
 import utils.common.ControllerUtils;
-import controllers.gui.Authentication;
-import controllers.gui.Users;
-import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import daos.common.UserDao;
 
 /**
  * For all actions in a controller that are annotated with @Authenticated check

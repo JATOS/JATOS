@@ -11,7 +11,7 @@ import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
-import general.gui.RequestScope;
+import general.common.RequestScope;
 import models.common.User;
 import models.common.workers.JatosWorker;
 import play.data.validation.ValidationError;

@@ -1,5 +1,6 @@
 package general.gui;
 
+import general.common.RequestScope;
 import models.gui.Messages;
 import utils.common.JsonUtils;
 
@@ -20,7 +21,7 @@ public class RequestScopeMessaging {
 		Messages messages = ((Messages) RequestScope.get(MESSAGES));
 		return JsonUtils.asJson(messages);
 	}
-	
+
 	private static Messages getOrCreate() {
 		Messages messages = ((Messages) RequestScope.get(MESSAGES));
 		if (messages == null) {

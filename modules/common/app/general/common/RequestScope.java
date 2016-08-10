@@ -1,4 +1,4 @@
-package general.gui;
+package general.common;
 
 import play.mvc.Http;
 
