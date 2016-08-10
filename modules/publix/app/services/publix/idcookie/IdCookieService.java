@@ -7,7 +7,10 @@ import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.IdCookieContainerFullException;
 import exceptions.publix.InternalServerErrorPublixException;
 import models.common.Batch;
+import models.common.Component;
 import models.common.ComponentResult;
+import models.common.GroupResult;
+import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.Worker;
 import services.publix.PublixErrorMessages;
@@ -51,26 +54,91 @@ public class IdCookieService {
 	 * response object.
 	 */
 	public void writeIdCookie(Worker worker, Batch batch,
-			StudyResult studyResult) throws BadRequestPublixException,
-			InternalServerErrorPublixException {
+			StudyResult studyResult) throws InternalServerErrorPublixException {
 		writeIdCookie(worker, batch, studyResult, null);
 	}
 
 	/**
 	 * Generates an ID cookie from the given parameters and sets it in the
-	 * response object.
+	 * Response object. Checks if there is an existing ID cookie with the same
+	 * study result ID and if so overwrites it. If there isn't it checks if the
+	 * max number of ID cookies is reached and if so overwrites the oldest one -
+	 * or if not writes a new one.
 	 */
 	public void writeIdCookie(Worker worker, Batch batch,
 			StudyResult studyResult, ComponentResult componentResult)
-			throws BadRequestPublixException,
-			InternalServerErrorPublixException {
+			throws InternalServerErrorPublixException {
 		IdCookieContainer idCookieContainer = idCookieAccessor.extract();
 		try {
-			idCookieAccessor.write(idCookieContainer, batch, studyResult,
-					componentResult, worker);
+			String newIdCookieName = null;
+
+			// Check if there is an existing IdCookie for this StudyResult
+			IdCookie existingIdCookie = idCookieContainer
+					.findWithStudyResultId(studyResult.getId());
+			if (existingIdCookie != null) {
+				newIdCookieName = existingIdCookie.getName();
+			} else {
+				newIdCookieName = getNewIdCookieName(idCookieContainer);
+			}
+
+			IdCookie newIdCookie = buildIdCookie(newIdCookieName, batch,
+					studyResult, componentResult, worker);
+
+			idCookieAccessor.write(newIdCookie);
 		} catch (IdCookieContainerFullException e) {
 			throw new InternalServerErrorPublixException(e.getMessage());
 		}
+	}
+
+	/**
+	 * Generates the name for a new IdCookie: If the max number of IdCookies is
+	 * reached it reuses the name of the oldest IdCookie. If not it creates a
+	 * new name.
+	 */
+	private String getNewIdCookieName(IdCookieContainer idCookieContainer)
+			throws IdCookieContainerFullException {
+		if (idCookieContainer.isFull()) {
+			throw new IdCookieContainerFullException(
+					PublixErrorMessages.IDCOOKIE_CONTAINER_FULL);
+		}
+		int newIndex = idCookieContainer.getNextAvailableIdCookieIndex();
+		return IdCookie.ID_COOKIE_NAME + "_" + newIndex;
+	}
+
+	/**
+	 * Builds an IdCookie from the given parameters. It accepts null values for
+	 * ComponentResult and GroupResult (stored in StudyResult). All others must
+	 * not be null.
+	 */
+	private IdCookie buildIdCookie(String name, Batch batch,
+			StudyResult studyResult, ComponentResult componentResult,
+			Worker worker) {
+		IdCookie idCookie = new IdCookie();
+		Study study = studyResult.getStudy();
+
+		// ComponentResult might not yet be created
+		if (componentResult != null) {
+			Component component = componentResult.getComponent();
+			idCookie.setComponentId(component.getId());
+			idCookie.setComponentResultId(componentResult.getId());
+			idCookie.setComponentPosition(
+					study.getComponentPosition(component));
+		}
+
+		// Might not have a GroupResult because it's not a group study
+		GroupResult groupResult = studyResult.getActiveGroupResult();
+		if (groupResult != null) {
+			idCookie.setGroupResultId(groupResult.getId());
+		}
+
+		idCookie.setBatchId(batch.getId());
+		idCookie.setCreationTime(System.currentTimeMillis());
+		idCookie.setName(name);
+		idCookie.setStudyId(study.getId());
+		idCookie.setStudyResultId(studyResult.getId());
+		idCookie.setWorkerId(worker.getId());
+		idCookie.setWorkerType(worker.getWorkerType());
+		return idCookie;
 	}
 
 	/**

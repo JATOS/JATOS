@@ -6,15 +6,8 @@ import java.util.Map;
 import javax.inject.Singleton;
 
 import controllers.publix.Publix;
-import exceptions.publix.IdCookieContainerFullException;
 import exceptions.publix.IdCookieMalformedException;
-import models.common.Batch;
-import models.common.Component;
-import models.common.ComponentResult;
-import models.common.GroupResult;
-import models.common.Study;
-import models.common.StudyResult;
-import models.common.workers.Worker;
+import general.common.RequestScope;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http.Cookie;
@@ -37,16 +30,36 @@ public class IdCookieAccessor {
 
 	private static final ALogger LOGGER = Logger.of(IdCookieAccessor.class);
 
+	public static final String CURRENT_ID_COOKIE_CONTAINER = "currentIdCookieContainer";
+
 	public static final String COOKIE_EQUALS = "=";
 	public static final String COOKIE_AND = "&";
 
 	/**
-	 * Extracts the ID cookie from all the Request's cookies. Stores them into
-	 * an {@link IdCookieContainer}. If a cookie is malformed it is discarded
-	 * right away (removed from the Response.
+	 * Returns the IdCookieContainer containing all IdCookies of this Request.
+	 * Additionally it stores this IdCookieContainer in the RequestScope. All
+	 * subsequent calls of this method will get the IdCookieContainer from the
+	 * RequestScope.
 	 */
 	public IdCookieContainer extract() {
-		Cookies cookies = Publix.request().cookies();
+		if (RequestScope.has(CURRENT_ID_COOKIE_CONTAINER)) {
+			return (IdCookieContainer) RequestScope
+					.get(CURRENT_ID_COOKIE_CONTAINER);
+		} else {
+			IdCookieContainer idCookieContainer = extractFromCookies(
+					Publix.request().cookies());
+			RequestScope.put(CURRENT_ID_COOKIE_CONTAINER, idCookieContainer);
+			return idCookieContainer;
+		}
+	}
+
+	/**
+	 * Extracts all ID cookies from all the HTTP cookies (originating in the
+	 * Request or Response) and stores them into an {@link IdCookieContainer}.
+	 * If a cookie is malformed it is discarded right away (removed from the
+	 * Response.
+	 */
+	private IdCookieContainer extractFromCookies(Cookies cookies) {
 		IdCookieContainer idCookieContainer = new IdCookieContainer();
 		for (Cookie cookie : cookies) {
 			if (cookie.name().startsWith(IdCookie.ID_COOKIE_NAME)) {
@@ -97,8 +110,7 @@ public class IdCookieAccessor {
 	 * name. If the last char is not a number than an IdCookieMalformedException
 	 * is thrown.
 	 */
-	private int getCookieIndex(String name)
-			throws IdCookieMalformedException {
+	private int getCookieIndex(String name) throws IdCookieMalformedException {
 		char lastChar = name.charAt(name.length() - 1);
 		int index = Character.getNumericValue(lastChar);
 		if (index < 0) {
@@ -109,7 +121,7 @@ public class IdCookieAccessor {
 		return Character.getNumericValue(lastChar);
 
 	}
-	
+
 	/**
 	 * Extract and returns a Map with the given Cookie's key-value pairs.
 	 */
@@ -211,106 +223,33 @@ public class IdCookieAccessor {
 		IdCookie idCookie = idCookieContainer
 				.findWithStudyResultId(studyResultId);
 		if (idCookie != null) {
+			idCookieContainer.remove(idCookie);
+			RequestScope.put(CURRENT_ID_COOKIE_CONTAINER, idCookieContainer);
 			Publix.response().discardCookie(idCookie.getName());
 		}
 	}
 
 	/**
-	 * Generates an ID cookie from the given parameters and sets it in the
-	 * Response object. Uses Integer.MAX_VALUE as Max-Age for the cookie so it
-	 * never expires. Checks if there is an existing ID cookie with the same
-	 * study result ID and if so overwrites it. If there isn't it checks if the
-	 * max number of ID cookies is reached and if so overwrites the oldest one -
-	 * or if not writes a new one.
-	 * 
-	 * @throws IdCookieContainerFullException
-	 *             if the IdCookieContainer is full.
+	 * Puts the given IdCookie in the Response. Additionally it stores the
+	 * IdCookie in the RequestScope. Uses Integer.MAX_VALUE as Max-Age for the
+	 * cookie so it never expires.
 	 */
-	public void write(IdCookieContainer idCookieContainer, Batch batch,
-			StudyResult studyResult, ComponentResult componentResult,
-			Worker worker) throws IdCookieContainerFullException {
-		String newIdCookieName = null;
-		String existingIdCookieName = getExistingIdCookieName(idCookieContainer,
-				studyResult);
-		if (existingIdCookieName != null) {
-			newIdCookieName = existingIdCookieName;
-		} else {
-			newIdCookieName = getNewIdCookieName(idCookieContainer);
-		}
+	public void write(IdCookie newIdCookie) {
+		IdCookieContainer idCookieContainer = extract();
 
-		IdCookie newIdCookie = buildIdCookie(newIdCookieName, batch,
-				studyResult, componentResult, worker);
+		// Put new IdCookie into Response
 		String cookieValue = asCookieString(newIdCookie);
-		Publix.response().setCookie(newIdCookieName, cookieValue,
+		Publix.response().setCookie(newIdCookie.getName(), cookieValue,
 				Integer.MAX_VALUE, "/");
-	}
 
-	/**
-	 * Checks if there is an IdCookie in the container with the given
-	 * StudyResult's ID. Returns the IdCookie or null otherwise.
-	 */
-	private String getExistingIdCookieName(IdCookieContainer idCookieContainer,
-			StudyResult studyResult) {
-		String existingIdCookieName = null;
-		IdCookie exitingIdCookie = idCookieContainer
-				.findWithStudyResultId(studyResult.getId());
-		if (exitingIdCookie != null) {
-			existingIdCookieName = exitingIdCookie.getName();
-		}
-		return existingIdCookieName;
-	}
+		// Put new IdCookie into IdCookieContainer
+		IdCookie existingIdCookie = idCookieContainer
+				.findWithStudyResultId(newIdCookie.getStudyResultId());
+		idCookieContainer.remove(existingIdCookie);
+		idCookieContainer.add(newIdCookie);
 
-	/**
-	 * Generates the name for a new IdCookie: If the max number of IdCookies is
-	 * reached it reuses the name of the oldest IdCookie. If not it creates a
-	 * new name.
-	 * 
-	 * @throws IdCookieContainerFullException
-	 */
-	private String getNewIdCookieName(IdCookieContainer idCookieContainer)
-			throws IdCookieContainerFullException {
-		if (idCookieContainer.isFull()) {
-			throw new IdCookieContainerFullException(
-					PublixErrorMessages.IDCOOKIE_CONTAINER_FULL);
-		}
-		int newIndex = idCookieContainer.getNextAvailableIdCookieIndex();
-		return IdCookie.ID_COOKIE_NAME + "_" + newIndex;
-	}
-
-	/**
-	 * Builds an IdCookie from the given parameters. It accepts null values for
-	 * ComponentResult and GroupResult (stored in StudyResult). All others must
-	 * not be null.
-	 */
-	private IdCookie buildIdCookie(String name, Batch batch,
-			StudyResult studyResult, ComponentResult componentResult,
-			Worker worker) {
-		IdCookie idCookie = new IdCookie();
-		Study study = studyResult.getStudy();
-
-		// ComponentResult might not yet be created
-		if (componentResult != null) {
-			Component component = componentResult.getComponent();
-			idCookie.setComponentId(component.getId());
-			idCookie.setComponentResultId(componentResult.getId());
-			idCookie.setComponentPosition(
-					study.getComponentPosition(component));
-		}
-
-		// Might not have a GroupResult because it's not a group study
-		GroupResult groupResult = studyResult.getActiveGroupResult();
-		if (groupResult != null) {
-			idCookie.setGroupResultId(groupResult.getId());
-		}
-
-		idCookie.setBatchId(batch.getId());
-		idCookie.setCreationTime(System.currentTimeMillis());
-		idCookie.setName(name);
-		idCookie.setStudyId(study.getId());
-		idCookie.setStudyResultId(studyResult.getId());
-		idCookie.setWorkerId(worker.getId());
-		idCookie.setWorkerType(worker.getWorkerType());
-		return idCookie;
+		// Put changed IdCookieContainer into RequestScope
+		RequestScope.put(CURRENT_ID_COOKIE_CONTAINER, idCookieContainer);
 	}
 
 	/**
@@ -349,5 +288,4 @@ public class IdCookieAccessor {
 		}
 		return sb;
 	}
-
 }
