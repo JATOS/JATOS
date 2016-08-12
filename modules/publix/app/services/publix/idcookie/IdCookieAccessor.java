@@ -16,16 +16,18 @@ import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieMalformedException;
 
 /**
- * This class accesses JATOS' ID cookies in the HTTP Request or Response. It
- * stores the extracted {@link IdCookies} in a {@link IdCookieCollection}.
- * Additionally it puts the {@link IdCookieCollection} in the
- * {@link RequestScope}.
+ * This class offers a simple interface to extract, write and discard IdCookies.
  * 
- * Each browser can run up to idCookieCollection.MAX_ID_COOKIES ID studies at
+ * Internally this class accesses JATOS' ID cookies in the HTTP Request or
+ * Response. It stores the extracted {@link IdCookies} in a
+ * {@link IdCookieCollection}. Additionally it puts the
+ * {@link IdCookieCollection} in the {@link RequestScope} for easier retrieval
+ * in subsequent calls within the same Request.
+ * 
+ * Each browser can run up to IdCookieCollection.MAX_ID_COOKIES ID studies at
  * the same time. This means that there are the same number of ID cookies stored
  * in the browser as studies are currently running (although part of them might
- * be abandoned). The ID cookies are distinguished by the suffix which is a '_'
- * and a number 0-9.
+ * be abandoned).
  * 
  * @author Kristian Lange (2016)
  */
@@ -38,9 +40,9 @@ public class IdCookieAccessor {
 	protected static final String COOKIE_AND = "&";
 
 	/**
-	 * Returns the idCookieCollection containing all IdCookies of this Request.
+	 * Returns the IdCookieCollection containing all IdCookies of this Request.
 	 * Additionally it stores this idCookieCollection in the RequestScope. All
-	 * subsequent calls of this method will get the idCookieCollection from the
+	 * subsequent calls of this method will get the IdCookieCollection from the
 	 * RequestScope.
 	 */
 	protected IdCookieCollection extract()
@@ -57,10 +59,9 @@ public class IdCookieAccessor {
 	}
 
 	/**
-	 * Extracts all ID cookies from all the HTTP cookies (originating in the
-	 * Request or Response) and stores them into an {@link IdCookieCollection}.
-	 * If a cookie is malformed it is discarded right away (removed from the
-	 * Response.
+	 * Extracts all ID cookies from all the HTTP cookies and stores them into an
+	 * {@link IdCookieCollection}. If a cookie is malformed it is discarded
+	 * right away (removed from the Response).
 	 */
 	private IdCookieCollection extractFromCookies(Cookies cookies)
 			throws IdCookieAlreadyExistsException {
@@ -167,7 +168,7 @@ public class IdCookieAccessor {
 	 *            Name of the cookie
 	 * @return
 	 * @throws MalformedIdCookieException
-	 *             Throws a MalformedIdCookieException if the cookie is
+	 *             Throws a MalformedIdCookieException if the a cookie value is
 	 *             malformed.
 	 */
 	private Long getValueAsLong(Map<String, String> cookieMap, String key,
@@ -200,7 +201,7 @@ public class IdCookieAccessor {
 	 *            Name of the cookie
 	 * @return
 	 * @throws MalformedIdCookieException
-	 *             Throws a MalformedIdCookieException if the cookie is
+	 *             Throws a MalformedIdCookieException if the cookie value is
 	 *             malformed.
 	 */
 	private Integer getValueAsInt(Map<String, String> cookieMap, String key,

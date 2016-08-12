@@ -17,11 +17,11 @@ import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieCollectionFullException;
 
 /**
- * Service class for ID cookie handling. It generates, extracts and discards ID
- * cookies. An ID cookie is used by the JATOS server to tell jatos.js about
- * several IDs the current study run has (e.g. worker ID, study ID, study result
- * ID). This cookie is created when the study run is started and discarded when
- * it's done.
+ * Service class for JATOS ID cookie handling. It generates, extracts and
+ * discards ID cookies. An ID cookie is used by the JATOS server to tell
+ * jatos.js about several IDs the current study run has (e.g. worker ID, study
+ * ID, study result ID). This cookie is created when the study run is started
+ * and discarded when it's done.
  * 
  * @author Kristian Lange (2016)
  */

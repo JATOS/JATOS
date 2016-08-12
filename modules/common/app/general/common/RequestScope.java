@@ -22,6 +22,10 @@ public class RequestScope {
 		return (get(key) != null);
 	}
 
+	/**
+	 * Stores the given key-value pair in the request scope. If it's already
+	 * stored it gets overwritten.
+	 */
 	public static void put(String key, Object value) {
 		Http.Context.current().args.put(key, value);
 	}

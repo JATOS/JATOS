@@ -1,15 +1,15 @@
 package services.publix.idcookie;
 
 /**
- * Model for an ID cookie. Stores several IDs that are relevant during a study
- * run, e.g. study result ID, worker ID, worker type.
+ * Model for an ID cookie. Stores several JATOS IDs that are relevant during a
+ * study run, e.g. study result ID, worker ID, worker type.
  * 
- * ID cookies are used to provide those IDs to jatos.js and subsequent the
+ * ID cookies are used to provide those IDs to jatos.js and subsequent to the
  * components JavaScript.
  * 
  * Additionally the cookies are used to pass on information between Publix calls
- * (e.g. between Publix.startStudy and Publix.startComponent). Since we are
- * RESTful we can't have a state on the server side except in the DB.
+ * e.g. between Publix.startStudy and Publix.startComponent. (Since we are
+ * RESTful we can't have a state on the server side except in the DB).
  * 
  * @author Kristian Lange (2016)
  */
@@ -34,8 +34,22 @@ public class IdCookie {
 	public static final String COMPONENT_POSITION = "componentPos";
 	public static final String CREATION_TIME = "creationTime";
 
+	/**
+	 * Name of this IdCookie. Every name starts with {@value #ID_COOKIE_NAME}
+	 */
 	private String name;
+
+	/**
+	 * Every IdCookie has an index. It is the last char of its name and from
+	 * intervall [0-9].
+	 */
 	private int index;
+
+	/**
+	 * Timestamp of when this IdCookie was created.
+	 */
+	private Long creationTime;
+
 	private Long workerId;
 	private String workerType;
 	private Long batchId;
@@ -45,7 +59,6 @@ public class IdCookie {
 	private Long componentId;
 	private Long componentResultId;
 	private Integer componentPosition;
-	private Long creationTime;
 
 	public String getName() {
 		return name;
@@ -54,7 +67,7 @@ public class IdCookie {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	public int getIndex() {
 		return index;
 	}
