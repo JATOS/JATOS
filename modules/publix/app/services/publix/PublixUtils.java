@@ -23,7 +23,6 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
-import services.publix.idcookie.IdCookieContainer;
 import services.publix.idcookie.IdCookieService;
 
 /**
@@ -209,15 +208,13 @@ public abstract class PublixUtils<T extends Worker> {
 	 * are started in the same browser without finishing them. This method
 	 * should only be called during starting a study.
 	 */
-	public void finishAbandonedStudyResults() throws BadRequestPublixException {
-		IdCookieContainer idCookieContainer = idCookieService
-				.extractIdCookieContainer();
-		if (!idCookieContainer.isFull()) {
+	public void finishAbandonedStudyResults() throws PublixException {
+		if (!idCookieService.maxIdCookiesReached()) {
 			return;
 		}
 
 		Long abandonedStudyResultId = idCookieService
-				.getOldestIdCookiesStudyResultId(idCookieContainer);
+				.getStudyResultIdFromOldestIdCookie();
 		if (abandonedStudyResultId != null) {
 			StudyResult abandonedStudyResult = studyResultDao
 					.findById(abandonedStudyResultId);
@@ -227,8 +224,7 @@ public abstract class PublixUtils<T extends Worker> {
 						PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
 						abandonedStudyResult);
 			}
-			idCookieService.discardIdCookie(abandonedStudyResultId,
-					idCookieContainer);
+			idCookieService.discardIdCookie(abandonedStudyResultId);
 		}
 	}
 

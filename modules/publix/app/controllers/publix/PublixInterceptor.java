@@ -239,7 +239,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public WebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId)
-			throws BadRequestPublixException {
+			throws PublixException {
 		WebSocket<JsonNode> result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
@@ -552,7 +552,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	 * specifying the worker type.
 	 */
 	private String getWorkerTypeFromIdCookie(Long studyResultId)
-			throws BadRequestPublixException {
+			throws PublixException {
 		if (studyResultId == null) {
 			throw new BadRequestPublixException("Study result doesn't exist.");
 		}

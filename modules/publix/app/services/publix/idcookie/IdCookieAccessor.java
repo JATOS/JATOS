@@ -6,22 +6,26 @@ import java.util.Map;
 import javax.inject.Singleton;
 
 import controllers.publix.Publix;
-import exceptions.publix.IdCookieMalformedException;
 import general.common.RequestScope;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 import services.publix.PublixErrorMessages;
+import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
+import services.publix.idcookie.exception.IdCookieMalformedException;
 
 /**
- * This class provides methods to retrieve IdCookies from the HTTP Request and
- * writes them into the HTTP Response. It stores the extracted IdCookies in a
- * CookieContainer.
+ * This class accesses JATOS' ID cookies in the HTTP Request or Response. It
+ * stores the extracted {@link IdCookies} in a {@link IdCookieCollection}.
+ * Additionally it puts the {@link IdCookieCollection} in the
+ * {@link RequestScope}.
  * 
- * Each browser can run up to 10 studies at the same time. This means that there
- * are up to 10 ID cookies stored in the browser. The ID cookies are
- * distinguished by the suffix which is a '_' and a number 0-9.
+ * Each browser can run up to idCookieCollection.MAX_ID_COOKIES ID studies at
+ * the same time. This means that there are the same number of ID cookies stored
+ * in the browser as studies are currently running (although part of them might
+ * be abandoned). The ID cookies are distinguished by the suffix which is a '_'
+ * and a number 0-9.
  * 
  * @author Kristian Lange (2016)
  */
@@ -30,42 +34,42 @@ public class IdCookieAccessor {
 
 	private static final ALogger LOGGER = Logger.of(IdCookieAccessor.class);
 
-	public static final String CURRENT_ID_COOKIE_CONTAINER = "currentIdCookieContainer";
-
-	public static final String COOKIE_EQUALS = "=";
-	public static final String COOKIE_AND = "&";
+	protected static final String COOKIE_EQUALS = "=";
+	protected static final String COOKIE_AND = "&";
 
 	/**
-	 * Returns the IdCookieContainer containing all IdCookies of this Request.
-	 * Additionally it stores this IdCookieContainer in the RequestScope. All
-	 * subsequent calls of this method will get the IdCookieContainer from the
+	 * Returns the idCookieCollection containing all IdCookies of this Request.
+	 * Additionally it stores this idCookieCollection in the RequestScope. All
+	 * subsequent calls of this method will get the idCookieCollection from the
 	 * RequestScope.
 	 */
-	public IdCookieContainer extract() {
-		if (RequestScope.has(CURRENT_ID_COOKIE_CONTAINER)) {
-			return (IdCookieContainer) RequestScope
-					.get(CURRENT_ID_COOKIE_CONTAINER);
+	protected IdCookieCollection extract()
+			throws IdCookieAlreadyExistsException {
+		String requestScopeName = IdCookieCollection.class.getSimpleName();
+		if (RequestScope.has(requestScopeName)) {
+			return (IdCookieCollection) RequestScope.get(requestScopeName);
 		} else {
-			IdCookieContainer idCookieContainer = extractFromCookies(
+			IdCookieCollection idCookieCollection = extractFromCookies(
 					Publix.request().cookies());
-			RequestScope.put(CURRENT_ID_COOKIE_CONTAINER, idCookieContainer);
-			return idCookieContainer;
+			RequestScope.put(requestScopeName, idCookieCollection);
+			return idCookieCollection;
 		}
 	}
 
 	/**
 	 * Extracts all ID cookies from all the HTTP cookies (originating in the
-	 * Request or Response) and stores them into an {@link IdCookieContainer}.
+	 * Request or Response) and stores them into an {@link IdCookieCollection}.
 	 * If a cookie is malformed it is discarded right away (removed from the
 	 * Response.
 	 */
-	private IdCookieContainer extractFromCookies(Cookies cookies) {
-		IdCookieContainer idCookieContainer = new IdCookieContainer();
+	private IdCookieCollection extractFromCookies(Cookies cookies)
+			throws IdCookieAlreadyExistsException {
+		IdCookieCollection idCookieCollection = new IdCookieCollection();
 		for (Cookie cookie : cookies) {
 			if (cookie.name().startsWith(IdCookie.ID_COOKIE_NAME)) {
 				try {
 					IdCookie idCookie = buildIdCookie(cookie);
-					idCookieContainer.add(idCookie);
+					idCookieCollection.add(idCookie);
 				} catch (IdCookieMalformedException e) {
 					LOGGER.warn(e.getMessage());
 					Publix.response().discardCookie(cookie.name());
@@ -73,7 +77,7 @@ public class IdCookieAccessor {
 				}
 			}
 		}
-		return idCookieContainer;
+		return idCookieCollection;
 	}
 
 	private IdCookie buildIdCookie(Cookie cookie)
@@ -218,13 +222,15 @@ public class IdCookieAccessor {
 	 * Discards the ID cookie that corresponds to the given study result ID. If
 	 * there is no such ID cookie it does nothing.
 	 */
-	public void discard(IdCookieContainer idCookieContainer,
-			long studyResultId) {
-		IdCookie idCookie = idCookieContainer
+	protected void discard(long studyResultId)
+			throws IdCookieAlreadyExistsException {
+		IdCookieCollection idCookieCollection = extract();
+		IdCookie idCookie = idCookieCollection
 				.findWithStudyResultId(studyResultId);
 		if (idCookie != null) {
-			idCookieContainer.remove(idCookie);
-			RequestScope.put(CURRENT_ID_COOKIE_CONTAINER, idCookieContainer);
+			idCookieCollection.remove(idCookie);
+			RequestScope.put(IdCookieCollection.class.getSimpleName(),
+					idCookieCollection);
 			Publix.response().discardCookie(idCookie.getName());
 		}
 	}
@@ -234,22 +240,20 @@ public class IdCookieAccessor {
 	 * IdCookie in the RequestScope. Uses Integer.MAX_VALUE as Max-Age for the
 	 * cookie so it never expires.
 	 */
-	public void write(IdCookie newIdCookie) {
-		IdCookieContainer idCookieContainer = extract();
+	protected void write(IdCookie newIdCookie)
+			throws IdCookieAlreadyExistsException {
+		IdCookieCollection idCookieCollection = extract();
 
 		// Put new IdCookie into Response
 		String cookieValue = asCookieString(newIdCookie);
 		Publix.response().setCookie(newIdCookie.getName(), cookieValue,
 				Integer.MAX_VALUE, "/");
 
-		// Put new IdCookie into IdCookieContainer
-		IdCookie existingIdCookie = idCookieContainer
-				.findWithStudyResultId(newIdCookie.getStudyResultId());
-		idCookieContainer.remove(existingIdCookie);
-		idCookieContainer.add(newIdCookie);
+		idCookieCollection.put(newIdCookie);
 
-		// Put changed IdCookieContainer into RequestScope
-		RequestScope.put(CURRENT_ID_COOKIE_CONTAINER, idCookieContainer);
+		// Put changed idCookieCollection into RequestScope
+		RequestScope.put(IdCookieCollection.class.getSimpleName(),
+				idCookieCollection);
 	}
 
 	/**

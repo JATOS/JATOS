@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import exceptions.publix.BadRequestPublixException;
-import exceptions.publix.IdCookieContainerFullException;
 import exceptions.publix.InternalServerErrorPublixException;
 import models.common.Batch;
 import models.common.Component;
@@ -14,6 +13,8 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.Worker;
 import services.publix.PublixErrorMessages;
+import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
+import services.publix.idcookie.exception.IdCookieCollectionFullException;
 
 /**
  * Service class for ID cookie handling. It generates, extracts and discards ID
@@ -34,13 +35,19 @@ public class IdCookieService {
 		this.idCookieAccessor = idCookieAccessor;
 	}
 
-	public IdCookieContainer extractIdCookieContainer() {
-		return idCookieAccessor.extract();
+	private IdCookieCollection getIdCookieCollection()
+			throws InternalServerErrorPublixException {
+		try {
+			return idCookieAccessor.extract();
+		} catch (IdCookieAlreadyExistsException e) {
+			throw new InternalServerErrorPublixException(e.getMessage());
+		}
 	}
 
 	public IdCookie getIdCookie(Long studyResultId)
-			throws BadRequestPublixException {
-		IdCookie idCookie = extractIdCookieContainer()
+			throws BadRequestPublixException,
+			InternalServerErrorPublixException {
+		IdCookie idCookie = getIdCookieCollection()
 				.findWithStudyResultId(studyResultId);
 		if (idCookie == null) {
 			throw new BadRequestPublixException(PublixErrorMessages
@@ -68,24 +75,25 @@ public class IdCookieService {
 	public void writeIdCookie(Worker worker, Batch batch,
 			StudyResult studyResult, ComponentResult componentResult)
 			throws InternalServerErrorPublixException {
-		IdCookieContainer idCookieContainer = idCookieAccessor.extract();
+		IdCookieCollection idCookieCollection = getIdCookieCollection();
 		try {
 			String newIdCookieName = null;
 
 			// Check if there is an existing IdCookie for this StudyResult
-			IdCookie existingIdCookie = idCookieContainer
+			IdCookie existingIdCookie = idCookieCollection
 					.findWithStudyResultId(studyResult.getId());
 			if (existingIdCookie != null) {
 				newIdCookieName = existingIdCookie.getName();
 			} else {
-				newIdCookieName = getNewIdCookieName(idCookieContainer);
+				newIdCookieName = getNewIdCookieName(idCookieCollection);
 			}
 
 			IdCookie newIdCookie = buildIdCookie(newIdCookieName, batch,
 					studyResult, componentResult, worker);
 
 			idCookieAccessor.write(newIdCookie);
-		} catch (IdCookieContainerFullException e) {
+		} catch (IdCookieCollectionFullException
+				| IdCookieAlreadyExistsException e) {
 			throw new InternalServerErrorPublixException(e.getMessage());
 		}
 	}
@@ -95,13 +103,13 @@ public class IdCookieService {
 	 * reached it reuses the name of the oldest IdCookie. If not it creates a
 	 * new name.
 	 */
-	private String getNewIdCookieName(IdCookieContainer idCookieContainer)
-			throws IdCookieContainerFullException {
-		if (idCookieContainer.isFull()) {
-			throw new IdCookieContainerFullException(
-					PublixErrorMessages.IDCOOKIE_CONTAINER_FULL);
+	private String getNewIdCookieName(IdCookieCollection idCookieCollection)
+			throws IdCookieCollectionFullException {
+		if (idCookieCollection.isFull()) {
+			throw new IdCookieCollectionFullException(
+					PublixErrorMessages.IDCOOKIE_COLLECTION_FULL);
 		}
-		int newIndex = idCookieContainer.getNextAvailableIdCookieIndex();
+		int newIndex = idCookieCollection.getNextAvailableIdCookieIndex();
 		return IdCookie.ID_COOKIE_NAME + "_" + newIndex;
 	}
 
@@ -145,31 +153,41 @@ public class IdCookieService {
 	 * Discards the ID cookie if the given study result ID is equal to the one
 	 * in the cookie.
 	 */
-	public void discardIdCookie(Long studyResultId,
-			IdCookieContainer idCookieContainer)
-			throws BadRequestPublixException {
-		idCookieAccessor.discard(idCookieContainer, studyResultId);
-	}
-
-	/**
-	 * Discards the ID cookie if the given study result ID is equal to the one
-	 * in the cookie.
-	 */
 	public void discardIdCookie(Long studyResultId)
-			throws BadRequestPublixException {
-		IdCookieContainer idCookieContainer = idCookieAccessor.extract();
-		idCookieAccessor.discard(idCookieContainer, studyResultId);
+			throws BadRequestPublixException,
+			InternalServerErrorPublixException {
+		try {
+			idCookieAccessor.discard(studyResultId);
+		} catch (IdCookieAlreadyExistsException e) {
+			throw new InternalServerErrorPublixException(e.getMessage());
+
+		}
 	}
 
 	/**
-	 * Checks the creation time of each IdCookie in the given IdCookieContainer
-	 * and returns the oldest one. Returns null if the IdCookieContainer is
+	 * Returns true if the max number of IdCookies have been reached and false
+	 * otherwise.
+	 */
+	public boolean maxIdCookiesReached()
+			throws InternalServerErrorPublixException {
+		try {
+			return idCookieAccessor.extract().isFull();
+		} catch (IdCookieAlreadyExistsException e) {
+			throw new InternalServerErrorPublixException(e.getMessage());
+		}
+	}
+
+	/**
+	 * Checks the creation time of each IdCookie in the given IdCookieCollection
+	 * and returns the oldest one. Returns null if the IdCookieCollection is
 	 * empty.
 	 */
-	public IdCookie getOldestIdCookie(IdCookieContainer idCookieContainer) {
+	public IdCookie getOldestIdCookie()
+			throws InternalServerErrorPublixException {
+		IdCookieCollection idCookieCollection = getIdCookieCollection();
 		Long oldest = Long.MAX_VALUE;
 		IdCookie oldestIdCookie = null;
-		for (IdCookie idCookie : idCookieContainer) {
+		for (IdCookie idCookie : idCookieCollection.getAll()) {
 			Long creationTime = idCookie.getCreationTime();
 			if (creationTime != null && creationTime < oldest) {
 				oldest = creationTime;
@@ -180,13 +198,13 @@ public class IdCookieService {
 	}
 
 	/**
-	 * Checks the creation time of each IdCookie in the given IdCookieContainer
+	 * Checks the creation time of each IdCookie in the given IdCookieCollection
 	 * and returns the study result ID of the oldest one. Returns null if the
-	 * IdCookieContainer is empty.
+	 * IdCookieCollection is empty.
 	 */
-	public long getOldestIdCookiesStudyResultId(
-			IdCookieContainer idCookieContainer) {
-		IdCookie oldest = getOldestIdCookie(idCookieContainer);
+	public long getStudyResultIdFromOldestIdCookie()
+			throws InternalServerErrorPublixException {
+		IdCookie oldest = getOldestIdCookie();
 		return (oldest != null) ? oldest.getStudyResultId() : null;
 	}
 
