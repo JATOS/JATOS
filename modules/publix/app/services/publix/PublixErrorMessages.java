@@ -150,13 +150,15 @@ public class PublixErrorMessages {
 
 	public static String idCookieForThisStudyResultNotExists(
 			Long studyResultId) {
-		return "ID cookie for study result " + studyResultId
-				+ " doesn't exist.";
+		return "JATOS isn't allowed to run a study with the study result ID "
+				+ studyResultId + " . Maybe it was closed automatically by "
+				+ "JATOS because you started other studies in the same browser "
+				+ "in the meantime.";
 	}
-	
+
 	public static String idCookieExistsAlready(Long studyResultId) {
-		return "An IdCookie with study result ID "
-				+ studyResultId + " exists already.";
+		return "An IdCookie with study result ID " + studyResultId
+				+ " exists already.";
 	}
 
 }
