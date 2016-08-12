@@ -15,10 +15,8 @@ import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
 import models.common.Study;
 import models.common.StudyResult;
-import models.common.workers.Worker;
 import play.db.jpa.JPAApi;
 import services.publix.PublixErrorMessages;
-import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 
 /**
@@ -212,9 +210,10 @@ public class GroupService {
 	 * Moves the given StudyResult in its group into history and closes the
 	 * group channel which includes sending a left message to all group members.
 	 */
-	public void finishStudyInGroup(Study study, StudyResult studyResult)
+	public void finishStudyResultInGroup(StudyResult studyResult)
 			throws InternalServerErrorPublixException {
 		GroupResult groupResult = studyResult.getActiveGroupResult();
+		Study study = studyResult.getStudy();
 		if (study.isGroupStudy() && groupResult != null) {
 			moveToHistory(studyResult);
 			checkAndFinishGroup(groupResult);
@@ -236,30 +235,6 @@ public class GroupService {
 		studyResult.setHistoryGroupResult(groupResult);
 		groupResultDao.update(groupResult);
 		studyResultDao.update(studyResult);
-	}
-
-	/**
-	 * Moves all StudyResults of the given worker and the given study in their
-	 * groups to the history member list, if this study is a group study and the
-	 * study run is not done yet (StudyResult's state is in FINISHED, FAILED,
-	 * ABORTED). E.g. this is necessary for a JatosWorker if he starts the same
-	 * study a second time without actually finishing the prior study run.
-	 * 
-	 * It should be max one StudyResult to be treated in this way since we call
-	 * this method during start of each study run, but we iterate over all
-	 * StudyResults of this worker just in case.
-	 */
-	public void finishStudyInAllPriorGroups(Worker worker, Study study)
-			throws InternalServerErrorPublixException {
-		List<StudyResult> studyResultList = worker.getStudyResultList();
-		for (StudyResult studyResult : studyResultList) {
-			if (study.getId().equals(studyResult.getStudy().getId())
-					&& !PublixHelpers.studyDone(studyResult)
-					&& study.isGroupStudy()) {
-				// Should be max. one StudyResult
-				finishStudyInGroup(study, studyResult);
-			}
-		}
 	}
 
 }

@@ -19,6 +19,7 @@ import play.mvc.Http.Cookie;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
+import services.publix.group.GroupService;
 import services.publix.idcookie.IdCookieService;
 
 /**
@@ -36,12 +37,12 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
 
 	@Inject
 	GeneralSinglePublixUtils(ResultCreator resultCreator,
-			IdCookieService idCookieService,
+			IdCookieService idCookieService, GroupService groupService,
 			GeneralSingleErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
 			ComponentResultDao componentResultDao, WorkerDao workerDao,
 			BatchDao batchDao) {
-		super(resultCreator, idCookieService, errorMessages, studyDao,
+		super(resultCreator, idCookieService, groupService, errorMessages, studyDao,
 				studyResultDao, componentDao, componentResultDao, workerDao,
 				batchDao);
 	}

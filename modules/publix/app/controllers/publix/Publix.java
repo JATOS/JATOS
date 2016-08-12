@@ -399,7 +399,7 @@ public abstract class Publix<T extends Worker> extends Controller
 				study, studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
-			groupService.finishStudyInGroup(study, studyResult);
+			groupService.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
 		if (ControllerUtils.isAjax()) {
@@ -425,7 +425,7 @@ public abstract class Publix<T extends Worker> extends Controller
 				study, studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
-			groupService.finishStudyInGroup(study, studyResult);
+			groupService.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
 		if (ControllerUtils.isAjax()) {

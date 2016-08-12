@@ -128,7 +128,6 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				+ batchId + ") " + "assigned to worker with ID "
 				+ worker.getId());
 
-		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAbandonedStudyResults();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
@@ -160,7 +159,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		if (!PublixHelpers.studyDone(studyResult)) {
 			confirmationCode = publixUtils.finishStudyResult(successful,
 					errorMsg, studyResult);
-			groupService.finishStudyInGroup(study, studyResult);
+			groupService.finishStudyResultInGroup(studyResult);
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}

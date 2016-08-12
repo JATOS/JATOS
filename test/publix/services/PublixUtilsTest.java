@@ -293,7 +293,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	@Test
 	public void checkFinishAbandonedStudyResults() throws IOException,
-			NoSuchAlgorithmException, BadRequestPublixException {
+			NoSuchAlgorithmException, PublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
 

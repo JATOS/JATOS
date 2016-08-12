@@ -134,7 +134,6 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			throw new ForbiddenPublixException(
 					JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
 		}
-		groupService.finishStudyInAllPriorGroups(worker, study);
 		publixUtils.finishAbandonedStudyResults();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
@@ -262,7 +261,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				study, studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
-			groupService.finishStudyInGroup(study, studyResult);
+			groupService.finishStudyResultInGroup(studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
@@ -295,7 +294,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				study, studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
-			groupService.finishStudyInGroup(study, studyResult);
+			groupService.finishStudyResultInGroup(studyResult);
 			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());

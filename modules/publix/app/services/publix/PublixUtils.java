@@ -23,6 +23,7 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
+import services.publix.group.GroupService;
 import services.publix.idcookie.IdCookieService;
 
 /**
@@ -35,6 +36,7 @@ public abstract class PublixUtils<T extends Worker> {
 
 	private final ResultCreator resultCreator;
 	private final IdCookieService idCookieService;
+	private final GroupService groupService;
 	protected final PublixErrorMessages errorMessages;
 	private final StudyDao studyDao;
 	private final StudyResultDao studyResultDao;
@@ -44,12 +46,14 @@ public abstract class PublixUtils<T extends Worker> {
 	private final BatchDao batchDao;
 
 	public PublixUtils(ResultCreator resultCreator,
-			IdCookieService idCookieService, PublixErrorMessages errorMessages,
-			StudyDao studyDao, StudyResultDao studyResultDao,
-			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			WorkerDao workerDao, BatchDao batchDao) {
+			IdCookieService idCookieService, GroupService groupService,
+			PublixErrorMessages errorMessages, StudyDao studyDao,
+			StudyResultDao studyResultDao, ComponentDao componentDao,
+			ComponentResultDao componentResultDao, WorkerDao workerDao,
+			BatchDao batchDao) {
 		this.resultCreator = resultCreator;
 		this.idCookieService = idCookieService;
+		this.groupService = groupService;
 		this.errorMessages = errorMessages;
 		this.studyDao = studyDao;
 		this.studyResultDao = studyResultDao;
@@ -220,6 +224,7 @@ public abstract class PublixUtils<T extends Worker> {
 					.findById(abandonedStudyResultId);
 			// If the abandoned study result isn't done, finish it.
 			if (!PublixHelpers.studyDone(abandonedStudyResult)) {
+				groupService.finishStudyResultInGroup(abandonedStudyResult);
 				finishStudyResult(false,
 						PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
 						abandonedStudyResult);

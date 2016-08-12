@@ -14,6 +14,7 @@ import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
+import services.publix.group.GroupService;
 import services.publix.idcookie.IdCookieService;
 
 /**
@@ -26,13 +27,13 @@ public class MTPublixUtils extends PublixUtils<MTWorker> {
 
 	@Inject
 	MTPublixUtils(ResultCreator resultCreator, IdCookieService idCookieService,
-			MTErrorMessages errorMessages, StudyDao studyDao,
-			StudyResultDao studyResultDao, ComponentDao componentDao,
-			ComponentResultDao componentResultDao, WorkerDao workerDao,
-			BatchDao batchDao) {
-		super(resultCreator, idCookieService, errorMessages, studyDao,
-				studyResultDao, componentDao, componentResultDao, workerDao,
-				batchDao);
+			GroupService groupService, MTErrorMessages errorMessages,
+			StudyDao studyDao, StudyResultDao studyResultDao,
+			ComponentDao componentDao, ComponentResultDao componentResultDao,
+			WorkerDao workerDao, BatchDao batchDao) {
+		super(resultCreator, idCookieService, groupService, errorMessages,
+				studyDao, studyResultDao, componentDao, componentResultDao,
+				workerDao, batchDao);
 	}
 
 	@Override
