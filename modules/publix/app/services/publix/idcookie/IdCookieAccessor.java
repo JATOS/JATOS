@@ -116,15 +116,14 @@ public class IdCookieAccessor {
 	 * is thrown.
 	 */
 	private int getCookieIndex(String name) throws IdCookieMalformedException {
-		char lastChar = name.charAt(name.length() - 1);
-		int index = Character.getNumericValue(lastChar);
-		if (index < 0) {
+		String lastChar = name.substring(name.length() - 1);
+		try {
+			return Integer.valueOf(lastChar);
+		} catch (NumberFormatException e) {
 			throw new IdCookieMalformedException(PublixErrorMessages
 					.couldntExtractIndexFromIdCookieName(name));
 
 		}
-		return Character.getNumericValue(lastChar);
-
 	}
 
 	/**
