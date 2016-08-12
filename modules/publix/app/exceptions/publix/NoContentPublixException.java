@@ -2,6 +2,11 @@ package exceptions.publix;
 
 import org.apache.http.HttpStatus;
 
+/**
+ * It causes the request to return with an HTTP status 204 (No Content).
+ * 
+ * @author Kristian Lange
+ */
 @SuppressWarnings("serial")
 public class NoContentPublixException extends PublixException {
 

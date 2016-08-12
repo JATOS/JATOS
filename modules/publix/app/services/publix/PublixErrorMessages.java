@@ -18,8 +18,8 @@ public class PublixErrorMessages {
 	public static final String SUBMITTED_DATA_UNKNOWN_FORMAT = "Submitted data have an unknown format.";
 	public static final String NO_WORKER_IN_QUERY_STRING = "Missing worker ID in query string";
 	public static final String GROUP_STUDY_NOT_POSSIBLE_TWICE = "It's not possible to run a group study twice.";
-	public static final String IDCOOKIE_CONTAINER_FULL = "Can't generate a new ID cookie due to the IdCookieContainer is full. This should never happen.";
-	public static final String IDCOOKIE_CONTAINER_INDEX_OUT_OF_BOUND = "IdCookieContainer is full but a new index was requested.";
+	public static final String IDCOOKIE_COLLECTION_FULL = "Can't generate a new ID cookie due to max number is reached. This should never happen.";
+	public static final String IDCOOKIE_COLLECTION_INDEX_OUT_OF_BOUND = "Max number of ID cookies is reached but a new index was requested.";
 
 	public String workerNotCorrectType(Long workerId) {
 		return "The worker with ID " + workerId
@@ -152,6 +152,11 @@ public class PublixErrorMessages {
 			Long studyResultId) {
 		return "ID cookie for study result " + studyResultId
 				+ " doesn't exist.";
+	}
+	
+	public static String idCookieExistsAlready(Long studyResultId) {
+		return "An IdCookie with study result ID "
+				+ studyResultId + " exists already.";
 	}
 
 }

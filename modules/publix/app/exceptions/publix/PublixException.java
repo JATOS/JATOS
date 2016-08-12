@@ -8,6 +8,12 @@ import utils.common.ControllerUtils;
 
 import com.google.common.net.MediaType;
 
+/**
+ * Causes a request to return with a HTTP return type that is defined in the
+ * child classes of this abstract class.
+ * 
+ * @author Kristian Lange
+ */
 @SuppressWarnings("serial")
 public abstract class PublixException extends Exception {
 

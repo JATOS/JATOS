@@ -2,6 +2,12 @@ package exceptions.publix;
 
 import org.apache.http.HttpStatus;
 
+/**
+ * It causes the request to return with an HTTP status 415 (Unsupported Media
+ * Type).
+ * 
+ * @author Kristian Lange
+ */
 @SuppressWarnings("serial")
 public class UnsupportedMediaTypePublixException extends PublixException {
 
