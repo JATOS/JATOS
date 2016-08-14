@@ -105,6 +105,8 @@ public class IdCookieAccessor {
 				IdCookie.COMPONENT_RESULT_ID, false, cookie.name()));
 		idCookie.setComponentPosition(getValueAsInt(cookieMap,
 				IdCookie.COMPONENT_POSITION, false, cookie.name()));
+		idCookie.setStudyAssets(getValueAsString(cookieMap,
+				IdCookie.STUDY_ASSETS, cookie.name()));
 		idCookie.setCreationTime(getValueAsLong(cookieMap,
 				IdCookie.CREATION_TIME, true, cookie.name()));
 		return idCookie;
@@ -271,6 +273,8 @@ public class IdCookieAccessor {
 				idCookie.getComponentResultId(), true);
 		appendCookieEntry(sb, IdCookie.CREATION_TIME,
 				idCookie.getCreationTime(), true);
+		appendCookieEntry(sb, IdCookie.STUDY_ASSETS,
+				idCookie.getStudyAssets(), true);
 		appendCookieEntry(sb, IdCookie.GROUP_RESULT_ID,
 				idCookie.getGroupResultId(), true);
 		appendCookieEntry(sb, IdCookie.STUDY_ID, idCookie.getStudyId(), true);

@@ -77,8 +77,9 @@ public class PublixJatosTest extends AbstractTest {
 						+ study.getFirstComponent().getId() + "/start");
 
 		// Check that worker ID is in session
-		assertThat(result.session().get(Publix.WORKER_ID))
-				.isEqualTo(admin.getWorker().getId().toString());
+		// TODO
+//		assertThat(result.session().get(Publix.WORKER_ID))
+//				.isEqualTo(admin.getWorker().getId().toString());
 
 		// Check JATOS_RUN still in session
 		assertThat(result.session().get(JatosPublix.JATOS_RUN))
@@ -378,11 +379,6 @@ public class PublixJatosTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
-				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				// .session(PublixInterceptor.WORKER_TYPE,
-				// JatosWorker.WORKER_TYPE)
-				.session(Publix.BATCH_ID, "1")
-				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 		return result;
@@ -394,11 +390,6 @@ public class PublixJatosTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
-				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				// .session(PublixInterceptor.WORKER_TYPE,
-				// JatosWorker.WORKER_TYPE)
-				.session(Publix.BATCH_ID, "1")
-				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		return route(request, 10000);
 	}
@@ -409,11 +400,6 @@ public class PublixJatosTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
-				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				// .session(PublixInterceptor.WORKER_TYPE,
-				// JatosWorker.WORKER_TYPE)
-				.session(Publix.BATCH_ID, "1")
-				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's session data.");
 		result = route(request, 10000);
@@ -427,11 +413,6 @@ public class PublixJatosTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
-				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				// .session(PublixInterceptor.WORKER_TYPE,
-				// JatosWorker.WORKER_TYPE)
-				.session(Publix.BATCH_ID, "1")
-				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 		return result;
@@ -444,11 +425,6 @@ public class PublixJatosTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
-				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				// .session(PublixInterceptor.WORKER_TYPE,
-				// JatosWorker.WORKER_TYPE)
-				.session(Publix.BATCH_ID, "1")
-				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText(msg);
 		result = route(request, 10000);
@@ -461,11 +437,6 @@ public class PublixJatosTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
-				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				// .session(PublixInterceptor.WORKER_TYPE,
-				// JatosWorker.WORKER_TYPE)
-				.session(Publix.BATCH_ID, "1")
-				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's our session data.");
 		result = route(request, 10000);
@@ -479,11 +450,6 @@ public class PublixJatosTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
-				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				// .session(PublixInterceptor.WORKER_TYPE,
-				// JatosWorker.WORKER_TYPE)
-				.session(Publix.BATCH_ID, "1")
-				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's a test result data.");
 		result = route(request, 10000);
@@ -498,11 +464,6 @@ public class PublixJatosTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
-				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				// .session(PublixInterceptor.WORKER_TYPE,
-				// JatosWorker.WORKER_TYPE)
-				.session(Publix.BATCH_ID, "1")
-				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.cookie(cookies.get(IdCookie.ID_COOKIE_NAME));
 		result = route(request, 10000);
@@ -515,11 +476,6 @@ public class PublixJatosTest extends AbstractTest {
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
 				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
-				.session(Publix.WORKER_ID, admin.getWorker().getId().toString())
-				// .session(PublixInterceptor.WORKER_TYPE,
-				// JatosWorker.WORKER_TYPE)
-				.session(Publix.BATCH_ID, "1")
-				.session(Publix.STUDY_ASSETS, study.getDirName())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.cookie(cookies.get(IdCookie.ID_COOKIE_NAME));
 		result = route(request, 10000);

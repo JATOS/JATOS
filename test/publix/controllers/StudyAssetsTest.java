@@ -71,8 +71,7 @@ public class StudyAssetsTest extends AbstractTest {
 				.versioned(studyClone.getDirName() + "/"
 						+ studyClone.getFirstComponent().getHtmlFilePath());
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
-						studyClone.getDirName());
+				.uri(call.url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(OK);
 
@@ -97,8 +96,7 @@ public class StudyAssetsTest extends AbstractTest {
 		Call call = controllers.publix.routes.StudyAssets
 				.versioned(studyClone.getDirName() + "/non_existend_file");
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
-						studyClone.getDirName());
+				.uri(call.url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(NOT_FOUND);
 
@@ -116,8 +114,7 @@ public class StudyAssetsTest extends AbstractTest {
 				.versioned("wrong_study_dir/"
 						+ studyClone.getFirstComponent().getHtmlFilePath());
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
-						studyClone.getDirName());
+				.uri(call.url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(FORBIDDEN);
 
@@ -134,8 +131,7 @@ public class StudyAssetsTest extends AbstractTest {
 				.versioned(studyClone.getDirName() + "/"
 						+ studyClone.getFirstComponent().getHtmlFilePath());
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
-						"another_study_dir");
+				.uri(call.url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(FORBIDDEN);
 
@@ -154,8 +150,7 @@ public class StudyAssetsTest extends AbstractTest {
 		Call call = controllers.publix.routes.StudyAssets.versioned(
 				studyClone.getDirName() + "/../../conf/application.conf");
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url()).session(controllers.publix.Publix.STUDY_ASSETS,
-						studyClone.getDirName());
+				.uri(call.url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(NOT_FOUND);
 

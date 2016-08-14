@@ -75,7 +75,6 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		PersonalSingleWorker worker = publixUtils
 				.retrieveTypedWorker(workerIdStr);
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-		session(STUDY_ASSETS, study.getDirName());
 
 		publixUtils.finishAbandonedStudyResults();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,

@@ -44,6 +44,10 @@ public class IdCookieService {
 		}
 	}
 
+	/**
+	 * Returns the IdCookie that corresponds to the given study result ID. If
+	 * the cookie doesn't exist it throws a BadRequestPublixException.
+	 */
 	public IdCookie getIdCookie(Long studyResultId)
 			throws BadRequestPublixException,
 			InternalServerErrorPublixException {
@@ -54,6 +58,20 @@ public class IdCookieService {
 					.idCookieForThisStudyResultNotExists(studyResultId));
 		}
 		return idCookie;
+	}
+
+	/**
+	 * Returns true if the study assets of at least one ID cookie is equal to
+	 * the given study assets. Otherwise returns false.
+	 */
+	public boolean oneIdCookieHasThisStudyAssets(String studyAssets)
+			throws InternalServerErrorPublixException {
+		for (IdCookie idCookie : getIdCookieCollection().getAll()) {
+			if (idCookie.getStudyAssets().equals(studyAssets)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -141,6 +159,7 @@ public class IdCookieService {
 
 		idCookie.setBatchId(batch.getId());
 		idCookie.setCreationTime(System.currentTimeMillis());
+		idCookie.setStudyAssets(study.getDirName());
 		idCookie.setName(name);
 		idCookie.setStudyId(study.getId());
 		idCookie.setStudyResultId(studyResult.getId());

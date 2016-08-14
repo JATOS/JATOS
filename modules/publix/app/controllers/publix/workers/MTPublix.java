@@ -123,7 +123,6 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 					isRequestFromMTurkSandbox, batch);
 		}
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-		session(STUDY_ASSETS, study.getDirName());
 		LOGGER.info(".startStudy: study (study ID " + studyId + ", batch ID "
 				+ batchId + ") " + "assigned to worker with ID "
 				+ worker.getId());

@@ -51,10 +51,6 @@ import utils.common.JsonUtils;
 public abstract class Publix<T extends Worker> extends Controller
 		implements IPublix {
 
-	public static final String WORKER_ID = "workerId";
-	public static final String BATCH_ID = "batchId";
-	public static final String STUDY_ASSETS = "studyAssets";
-
 	private static final ALogger LOGGER = Logger.of(Publix.class);
 
 	protected final JPAApi jpa;

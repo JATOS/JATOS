@@ -32,6 +32,7 @@ public class IdCookie {
 	public static final String COMPONENT_ID = "componentId";
 	public static final String COMPONENT_RESULT_ID = "componentResultId";
 	public static final String COMPONENT_POSITION = "componentPos";
+	public static final String STUDY_ASSETS = "studyAssets";
 	public static final String CREATION_TIME = "creationTime";
 
 	/**
@@ -49,6 +50,11 @@ public class IdCookie {
 	 * Timestamp of when this IdCookie was created.
 	 */
 	private Long creationTime;
+	
+	/**
+	 * Name of the directory where the study's assets are stored
+	 */
+	private String studyAssets;
 
 	private Long workerId;
 	private String workerType;
@@ -59,7 +65,15 @@ public class IdCookie {
 	private Long componentId;
 	private Long componentResultId;
 	private Integer componentPosition;
+	
+	public String getStudyAssets() {
+		return studyAssets;
+	}
 
+	public void setStudyAssets(String studyAssets) {
+		this.studyAssets = studyAssets;
+	}
+	
 	public String getName() {
 		return name;
 	}

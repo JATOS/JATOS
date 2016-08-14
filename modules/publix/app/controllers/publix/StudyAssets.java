@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.NotFoundPublixException;
+import exceptions.publix.PublixException;
 import general.common.Common;
 import general.common.MessagesStrings;
 import play.Logger;
@@ -15,6 +16,7 @@ import play.Logger.ALogger;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
+import services.publix.idcookie.IdCookieService;
 import utils.common.ControllerUtils;
 import utils.common.IOUtils;
 
@@ -36,13 +38,15 @@ public class StudyAssets extends Controller {
 	public static final String URL_STUDY_ASSETS = "study_assets";
 
 	private final IOUtils ioUtils;
+	private final IdCookieService idCookieService;
 	private final Common common;
 	private final PublixErrorMessages errorMessages;
 
 	@Inject
-	StudyAssets(IOUtils ioUtils, Common common,
+	StudyAssets(IOUtils ioUtils, IdCookieService idCookieService, Common common,
 			PublixErrorMessages errorMessages) {
 		this.ioUtils = ioUtils;
+		this.idCookieService = idCookieService;
 		this.common = common;
 		this.errorMessages = errorMessages;
 	}
@@ -59,7 +63,7 @@ public class StudyAssets extends Controller {
 			file = ioUtils.getExistingFileSecurely(
 					common.getStudyAssetsRootPath(), filePath);
 			LOGGER.info(".versioned: loading file " + file.getPath() + ".");
-		} catch (ForbiddenPublixException e) {
+		} catch (PublixException e) {
 			String errorMsg = e.getMessage();
 			LOGGER.info(".versioned: " + errorMsg);
 			if (ControllerUtils.isAjax()) {
@@ -84,21 +88,25 @@ public class StudyAssets extends Controller {
 
 	/**
 	 * Throws a ForbiddenPublixException if this request is not allowed to
-	 * access the study assets given in the filePath. For comparison it needs
-	 * the study assets directory name of this study and it gets it from the
-	 * session.
+	 * access the study assets given in the filePath. It compares the study
+	 * assets that are within the given filePath with all study assets that are
+	 * stored in the JATOS ID cookies. If at least one of them has the study
+	 * assets then the filePath is allowed. If not a ForbiddenPublixException is
+	 * thrown.
+	 * 
+	 * Drawback: It can't compare with the ID cookie that actually belongs to
+	 * this study run since it has no way of find out which it is (we have no
+	 * study result ID). But since all ID cookie originate in the same browser
+	 * one can assume this worker is allowed to access the study assets.
 	 */
-	private void checkProperAssets(String filePath)
-			throws ForbiddenPublixException {
-		String properStudyAssets;
-		if (session(Publix.STUDY_ASSETS) != null) {
-			properStudyAssets = session(Publix.STUDY_ASSETS);
-		} else {
+	private void checkProperAssets(String filePath) throws PublixException {
+		String[] filePathArray = filePath.split("/");
+		if (filePathArray.length == 0) {
 			throw new ForbiddenPublixException(
 					errorMessages.studyAssetsNotAllowedOutsideRun(filePath));
 		}
-
-		if (!filePath.startsWith(properStudyAssets + File.separator)) {
+		String studyAssets = filePathArray[0];
+		if (!idCookieService.oneIdCookieHasThisStudyAssets(studyAssets)) {
 			throw new ForbiddenPublixException(
 					errorMessages.studyAssetsNotAllowedOutsideRun(filePath));
 		}
