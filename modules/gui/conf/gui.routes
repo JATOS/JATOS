@@ -93,5 +93,5 @@ GET     /jatos/:studyId/:componentId/export/allResultData  @controllers.gui.Impo
 GET     /jatos/:studyId/:componentId/export                @controllers.gui.ImportExport.exportComponent(studyId: Long, componentId: Long)
 
 
-# Static resources
+### Static resources ###
 GET     /public/*file             controllers.gui.Assets.versioned(path = "/public", file)

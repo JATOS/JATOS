@@ -1,8 +1,10 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
+# Order is important!
 # ~~~~
 
-# Publix
+### Publix ###
+
 GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long, batchId: Long ?= -1)
 GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, successful: Boolean ?= true, errorMsg: String ?= null, srid: Long)
 GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, message: String ?= null, srid: Long)
@@ -20,10 +22,12 @@ GET     /publix/:studyId/:componentId/initData           @controllers.publix.Pub
 POST    /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long, srid: Long)
 POST    /publix/:studyId/:componentId/log                @controllers.publix.PublixInterceptor.log(studyId: Long, componentId: Long, srid: Long)
 
-# Static resources
-GET     /study_assets_root/*file           @controllers.publix.StudyAssets.versioned(file)
-# 'study_assets' is deprecated
-GET     /study_assets/*file                @controllers.publix.StudyAssets.versioned(file)
+
+### Static resources ###
 GET     /public/*file                      controllers.publix.Assets.versioned(path = "/public", file)
-GET     /assets/javascripts/jatos.js       controllers.publix.Assets.jatosjs(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")
+
+# For all other files: try to load them as study assets
+GET     /study_assets_root/*file           @controllers.publix.StudyAssets.versioned(file)
+GET     /study_assets/*file                @controllers.publix.StudyAssets.versioned(file)
+GET     /*file                             @controllers.publix.StudyAssets.versioned(file)
 
