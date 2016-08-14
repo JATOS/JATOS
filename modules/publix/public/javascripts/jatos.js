@@ -1085,7 +1085,7 @@ var jatos = {};
 		if (undefined === message) {
 			fullUrl = url;
 		} else {
-			fullUrl = url + "?message=" + message;
+			fullUrl = url + "&message=" + message;
 		}
 		jatos.jQuery.ajax({
 			url: fullUrl,
@@ -1120,7 +1120,7 @@ var jatos = {};
 		if (undefined === message) {
 			window.location.href = url;
 		} else {
-			window.location.href = url + "?message=" + message;
+			window.location.href = url + "&message=" + message;
 		}
 	};
 
