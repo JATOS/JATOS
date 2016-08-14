@@ -2,6 +2,7 @@ package models.gui;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +33,9 @@ public class StudyProperties {
 	public static final String COMMENTS = "comments";
 	public static final String GROUP_STUDY = "groupStudy";
 	public static final String LOCKED = "locked";
+
+	public static final String[] INVALID_DIRNAMES = { "jatos", "publix",
+			"public", "assets", "study_assets_root", "study_assets" };
 
 	private Long studyId;
 
@@ -188,6 +192,11 @@ public class StudyProperties {
 		Pattern pattern = Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME);
 		Matcher matcher = pattern.matcher(dirName);
 		if (dirName != null && matcher.find()) {
+			errorList.add(new ValidationError(DIRNAME,
+					MessagesStrings.INVALID_DIR_NAME));
+		}
+		if (dirName != null
+				&& Arrays.asList(INVALID_DIRNAMES).contains(dirName)) {
 			errorList.add(new ValidationError(DIRNAME,
 					MessagesStrings.INVALID_DIR_NAME));
 		}
