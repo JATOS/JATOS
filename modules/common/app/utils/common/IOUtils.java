@@ -38,7 +38,7 @@ public class IOUtils {
 	 * names '/', '\n', '\r', * '//', '\t', '\0', '\f', '`', '?', '*', '\\',
 	 * '<', '>', '|', '\"', ':', '~', '!', '§', '$', '%', '&'
 	 */
-	public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&]";
+	public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&^°]";
 
 	private static final int MAX_FILENAME_LENGTH = 100;
 
