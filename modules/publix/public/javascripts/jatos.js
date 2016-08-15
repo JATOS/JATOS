@@ -248,9 +248,9 @@ var jatos = {};
 				if (cookie.indexOf(idCookieName) !== 0) {
 					continue;
 				}
-				var cookieStr = decodeURI(cookie.substr(
+				var cookieStr = cookie.substr(
 					cookie.indexOf(idCookieName) + idCookieName.length + 3,
-					cookie.length));
+					cookie.length);
 				var idArray = cookieStr.split("&");
 				var idMap = getIdsFromCookie(idArray);
 				if (idMap.studyResultId == jatos.studyResultId) {
@@ -268,7 +268,8 @@ var jatos = {};
 			var idMap = {};
 			idArray.forEach(function (entry) {
 				var keyValuePair = entry.split("=");
-				idMap[keyValuePair[0]] = keyValuePair[1];
+				var value = decodeURIComponent(keyValuePair[1]);
+				idMap[keyValuePair[0]] = value; 
 			});
 			return idMap;
 		}
