@@ -11,6 +11,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
+import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieMalformedException;
@@ -146,7 +147,7 @@ public class IdCookieAccessor {
 	 */
 	private String getValueAsString(Map<String, String> cookieMap, String key,
 			String cookieName) throws IdCookieMalformedException {
-		String value = cookieMap.get(key);
+		String value = HttpHelpers.urlDecode(cookieMap.get(key));
 		if (value == null) {
 			throw new IdCookieMalformedException(PublixErrorMessages
 					.couldntExtractFromIdCookie(cookieName, key));

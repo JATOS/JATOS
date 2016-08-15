@@ -1,5 +1,9 @@
 package services.publix;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+
 import org.w3c.dom.Document;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -42,6 +46,26 @@ public class HttpHelpers {
 		// No supported format
 		throw new UnsupportedMediaTypePublixException(
 				PublixErrorMessages.SUBMITTED_DATA_UNKNOWN_FORMAT);
+	}
+
+	public static String urlEncode(String str) {
+		String encodedStr = "";
+		try {
+			encodedStr = URLEncoder.encode(str, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// Do nothing
+		}
+		return encodedStr;
+	}
+	
+	public static String urlDecode(String str) {
+		String decodedStr = "";
+		try {
+			decodedStr = URLDecoder.decode(str, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// Do nothing
+		}
+		return decodedStr;
 	}
 
 }

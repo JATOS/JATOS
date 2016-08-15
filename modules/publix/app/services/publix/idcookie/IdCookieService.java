@@ -12,6 +12,7 @@ import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.Worker;
+import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieCollectionFullException;
@@ -159,7 +160,7 @@ public class IdCookieService {
 
 		idCookie.setBatchId(batch.getId());
 		idCookie.setCreationTime(System.currentTimeMillis());
-		idCookie.setStudyAssets(study.getDirName());
+		idCookie.setStudyAssets(HttpHelpers.urlEncode(study.getDirName()));
 		idCookie.setName(name);
 		idCookie.setStudyId(study.getId());
 		idCookie.setStudyResultId(studyResult.getId());
