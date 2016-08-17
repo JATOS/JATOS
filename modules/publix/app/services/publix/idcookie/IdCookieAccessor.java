@@ -147,12 +147,12 @@ public class IdCookieAccessor {
 	 */
 	private String getValueAsString(Map<String, String> cookieMap, String key,
 			String cookieName) throws IdCookieMalformedException {
-		String value = HttpHelpers.urlDecode(cookieMap.get(key));
-		if (value == null) {
+		try {
+			return HttpHelpers.urlDecode(cookieMap.get(key));
+		} catch (Exception e) {
 			throw new IdCookieMalformedException(PublixErrorMessages
 					.couldntExtractFromIdCookie(cookieName, key));
 		}
-		return value;
 	}
 
 	/**
@@ -274,8 +274,8 @@ public class IdCookieAccessor {
 				idCookie.getComponentResultId(), true);
 		appendCookieEntry(sb, IdCookie.CREATION_TIME,
 				idCookie.getCreationTime(), true);
-		appendCookieEntry(sb, IdCookie.STUDY_ASSETS,
-				idCookie.getStudyAssets(), true);
+		appendCookieEntry(sb, IdCookie.STUDY_ASSETS, idCookie.getStudyAssets(),
+				true);
 		appendCookieEntry(sb, IdCookie.GROUP_RESULT_ID,
 				idCookie.getGroupResultId(), true);
 		appendCookieEntry(sb, IdCookie.STUDY_ID, idCookie.getStudyId(), true);

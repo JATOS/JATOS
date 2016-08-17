@@ -59,7 +59,7 @@ public class HttpHelpers {
 	}
 	
 	public static String urlDecode(String str) {
-		String decodedStr = "";
+		String decodedStr = null;
 		try {
 			decodedStr = URLDecoder.decode(str, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
