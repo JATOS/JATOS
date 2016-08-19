@@ -69,7 +69,9 @@ public class IdCookieAccessor {
 			throws IdCookieAlreadyExistsException {
 		IdCookieCollection idCookieCollection = new IdCookieCollection();
 		for (Cookie cookie : cookies) {
-			if (cookie.name().startsWith(IdCookie.ID_COOKIE_NAME)) {
+			// Cookie names are case insensitive
+			if (cookie.name().toLowerCase()
+					.startsWith(IdCookie.ID_COOKIE_NAME.toLowerCase())) {
 				try {
 					IdCookie idCookie = buildIdCookie(cookie);
 					idCookieCollection.add(idCookie);
