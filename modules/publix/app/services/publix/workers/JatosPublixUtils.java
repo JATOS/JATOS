@@ -5,6 +5,7 @@ import javax.inject.Singleton;
 
 import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix;
+import controllers.publix.workers.JatosPublix.JatosRun;
 import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -12,6 +13,7 @@ import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
+import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.User;
 import models.common.workers.JatosWorker;
@@ -77,17 +79,22 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	}
 
 	/**
-	 * Retrieves the kind of jatos run, whole study or single component, this
-	 * is. This information was stored in the session in the prior action.
+	 * Retrieves the JatosRun object that maps to the jatos run parameter in the
+	 * session.
 	 */
-	public String retrieveJatosShowFromSession()
-			throws ForbiddenPublixException {
-		String jatosShow = Publix.session(JatosPublix.JATOS_RUN);
-		if (jatosShow == null) {
+	public JatosRun retrieveJatosRunFromSession()
+			throws ForbiddenPublixException, BadRequestPublixException {
+		String sessionValue = Publix.session(JatosPublix.SESSION_JATOS_RUN);
+		if (sessionValue == null) {
 			throw new ForbiddenPublixException(
 					JatosErrorMessages.STUDY_OR_COMPONENT_NEVER_STARTED_FROM_JATOS);
 		}
-		return jatosShow;
+		try {
+			return JatosRun.valueOf(sessionValue);
+		} catch (IllegalArgumentException | NullPointerException e) {
+			throw new BadRequestPublixException(
+					JatosErrorMessages.MALFORMED_JATOS_RUN_SESSION_PARAMETER);
+		}
 	}
 
 }

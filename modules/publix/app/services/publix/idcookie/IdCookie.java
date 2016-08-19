@@ -1,5 +1,7 @@
 package services.publix.idcookie;
 
+import controllers.publix.workers.JatosPublix.JatosRun;
+
 /**
  * Model for an ID cookie. Stores several JATOS IDs that are relevant during a
  * study run, e.g. study result ID, worker ID, worker type.
@@ -33,6 +35,7 @@ public class IdCookie {
 	public static final String COMPONENT_RESULT_ID = "componentResultId";
 	public static final String COMPONENT_POSITION = "componentPos";
 	public static final String STUDY_ASSETS = "studyAssets";
+	public static final String JATOS_RUN = "jatosRun";
 	public static final String CREATION_TIME = "creationTime";
 
 	/**
@@ -50,11 +53,18 @@ public class IdCookie {
 	 * Timestamp of when this IdCookie was created.
 	 */
 	private Long creationTime;
-	
+
 	/**
 	 * Name of the directory where the study's assets are stored
 	 */
 	private String studyAssets;
+
+	/**
+	 * State of a study run with a JatosWorker. If this run doesn't belong to a
+	 * JatosWorker this field is null. It's mainly used to distinguish between a
+	 * full study run and just a component run.
+	 */
+	private JatosRun jatosRun;
 
 	private Long workerId;
 	private String workerType;
@@ -65,7 +75,7 @@ public class IdCookie {
 	private Long componentId;
 	private Long componentResultId;
 	private Integer componentPosition;
-	
+
 	public String getStudyAssets() {
 		return studyAssets;
 	}
@@ -73,7 +83,15 @@ public class IdCookie {
 	public void setStudyAssets(String studyAssets) {
 		this.studyAssets = studyAssets;
 	}
-	
+
+	public JatosRun getJatosRun() {
+		return jatosRun;
+	}
+
+	public void setJatosRun(JatosRun jatosRun) {
+		this.jatosRun = jatosRun;
+	}
+
 	public String getName() {
 		return name;
 	}

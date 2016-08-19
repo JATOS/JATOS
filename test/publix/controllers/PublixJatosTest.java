@@ -16,8 +16,8 @@ import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.gui.Users;
-import controllers.publix.Publix;
 import controllers.publix.workers.JatosPublix;
+import controllers.publix.workers.JatosPublix.JatosRun;
 import general.AbstractTest;
 import models.common.Component;
 import models.common.ComponentResult;
@@ -78,12 +78,12 @@ public class PublixJatosTest extends AbstractTest {
 
 		// Check that worker ID is in session
 		// TODO
-//		assertThat(result.session().get(Publix.WORKER_ID))
-//				.isEqualTo(admin.getWorker().getId().toString());
+		// assertThat(result.session().get(Publix.WORKER_ID))
+		// .isEqualTo(admin.getWorker().getId().toString());
 
-		// Check JATOS_RUN still in session
-		assertThat(result.session().get(JatosPublix.JATOS_RUN))
-				.isEqualTo(JatosPublix.RUN_STUDY);
+		// Check JATOS_RUN is removed from session
+		assertThat(result.session().get(JatosPublix.SESSION_JATOS_RUN))
+				.isEqualTo(null);
 
 		// Check study result
 		assertThat(admin.getWorker().getStudyResultList().size()).isEqualTo(1);
@@ -278,9 +278,6 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(result.header("Location"))
 				.isEqualTo("/jatos/" + study.getId());
 
-		// Check that 'jatos_run' is removed from Play's session
-		assertThat(result.session().get(JatosPublix.JATOS_RUN)).isNull();
-
 		// Check that ID cookie is removed
 		assertThat(result.cookie(IdCookie.ID_COOKIE_NAME).value()).isEmpty();
 
@@ -343,9 +340,6 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(result.header("Location"))
 				.isEqualTo("/jatos/" + study.getId());
 
-		// Check that 'jatos_run' is removed from Play's session
-		assertThat(result.session().get(JatosPublix.JATOS_RUN)).isNull();
-
 		// Check that ID cookie is removed
 		assertThat(result.cookie(IdCookie.ID_COOKIE_NAME).value()).isEmpty();
 
@@ -368,7 +362,8 @@ public class PublixJatosTest extends AbstractTest {
 				+ JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
+				.session(JatosPublix.SESSION_JATOS_RUN,
+						JatosRun.RUN_STUDY.name());
 		return route(request);
 	}
 
@@ -378,7 +373,6 @@ public class PublixJatosTest extends AbstractTest {
 				+ position;
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 		return result;
@@ -389,7 +383,6 @@ public class PublixJatosTest extends AbstractTest {
 				+ "/start";
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		return route(request, 10000);
 	}
@@ -399,7 +392,6 @@ public class PublixJatosTest extends AbstractTest {
 		String url = "/publix/" + study.getId() + "/nextComponent/start";
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's session data.");
 		result = route(request, 10000);
@@ -412,7 +404,6 @@ public class PublixJatosTest extends AbstractTest {
 				+ "/initData";
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 		return result;
@@ -424,7 +415,6 @@ public class PublixJatosTest extends AbstractTest {
 				+ study.getComponent(3).getId() + "/log";
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
 				.session("email", admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText(msg);
 		result = route(request, 10000);
@@ -436,7 +426,6 @@ public class PublixJatosTest extends AbstractTest {
 		String url = "/publix/" + study.getId() + "/studySessionData";
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
 				.session("email", admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's our session data.");
 		result = route(request, 10000);
@@ -449,7 +438,6 @@ public class PublixJatosTest extends AbstractTest {
 				+ study.getFirstComponent().getId() + "/resultData";
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
 				.session("email", admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's a test result data.");
 		result = route(request, 10000);
@@ -463,7 +451,6 @@ public class PublixJatosTest extends AbstractTest {
 				+ successful + "&errorMsg=" + errorMsg;
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.cookie(cookies.get(IdCookie.ID_COOKIE_NAME));
 		result = route(request, 10000);
@@ -475,7 +462,6 @@ public class PublixJatosTest extends AbstractTest {
 		String url = "/publix/" + study.getId() + "/abort?message=" + abortMsg;
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.cookie(cookies.get(IdCookie.ID_COOKIE_NAME));
 		result = route(request, 10000);

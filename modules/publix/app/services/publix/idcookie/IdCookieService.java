@@ -3,6 +3,7 @@ package services.publix.idcookie;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.publix.workers.JatosPublix.JatosRun;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.InternalServerErrorPublixException;
 import models.common.Batch;
@@ -81,7 +82,27 @@ public class IdCookieService {
 	 */
 	public void writeIdCookie(Worker worker, Batch batch,
 			StudyResult studyResult) throws InternalServerErrorPublixException {
-		writeIdCookie(worker, batch, studyResult, null);
+		writeIdCookie(worker, batch, studyResult, null, null);
+	}
+
+	/**
+	 * Generates an ID cookie from the given parameters and sets it in the
+	 * response object.
+	 */
+	public void writeIdCookie(Worker worker, Batch batch,
+			StudyResult studyResult, ComponentResult componentResult)
+			throws InternalServerErrorPublixException {
+		writeIdCookie(worker, batch, studyResult, componentResult, null);
+	}
+
+	/**
+	 * Generates an ID cookie from the given parameters and sets it in the
+	 * response object.
+	 */
+	public void writeIdCookie(Worker worker, Batch batch,
+			StudyResult studyResult, JatosRun jatosRun)
+			throws InternalServerErrorPublixException {
+		writeIdCookie(worker, batch, studyResult, null, jatosRun);
 	}
 
 	/**
@@ -92,8 +113,8 @@ public class IdCookieService {
 	 * or if not writes a new one.
 	 */
 	public void writeIdCookie(Worker worker, Batch batch,
-			StudyResult studyResult, ComponentResult componentResult)
-			throws InternalServerErrorPublixException {
+			StudyResult studyResult, ComponentResult componentResult,
+			JatosRun jatosRun) throws InternalServerErrorPublixException {
 		IdCookieCollection idCookieCollection = getIdCookieCollection();
 		try {
 			String newIdCookieName = null;
@@ -108,7 +129,7 @@ public class IdCookieService {
 			}
 
 			IdCookie newIdCookie = buildIdCookie(newIdCookieName, batch,
-					studyResult, componentResult, worker);
+					studyResult, componentResult, worker, jatosRun);
 
 			idCookieAccessor.write(newIdCookie);
 		} catch (IdCookieCollectionFullException
@@ -139,7 +160,7 @@ public class IdCookieService {
 	 */
 	private IdCookie buildIdCookie(String name, Batch batch,
 			StudyResult studyResult, ComponentResult componentResult,
-			Worker worker) {
+			Worker worker, JatosRun jatosRun) {
 		IdCookie idCookie = new IdCookie();
 		Study study = studyResult.getStudy();
 
@@ -166,6 +187,7 @@ public class IdCookieService {
 		idCookie.setStudyResultId(studyResult.getId());
 		idCookie.setWorkerId(worker.getId());
 		idCookie.setWorkerType(worker.getWorkerType());
+		idCookie.setJatosRun(jatosRun);
 		return idCookie;
 	}
 

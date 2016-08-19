@@ -9,6 +9,8 @@ import org.fest.assertions.Fail;
 import org.junit.Test;
 
 import controllers.publix.workers.JatosPublix;
+import controllers.publix.workers.JatosPublix.JatosRun;
+import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 import models.common.workers.GeneralSingleWorker;
@@ -68,24 +70,24 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 	}
 
 	@Test
-	public void checkRetrieveJatosShowFromSession()
-			throws ForbiddenPublixException {
+	public void checkRetrieveJatosRunFromSession()
+			throws ForbiddenPublixException, BadRequestPublixException {
 		mockContext();
-		Http.Context.current().session().put(JatosPublix.JATOS_RUN,
-				JatosPublix.RUN_STUDY);
+		Http.Context.current().session().put(JatosPublix.SESSION_JATOS_RUN,
+				JatosRun.RUN_STUDY.name());
 
-		String jatosShow = jatosPublixUtils.retrieveJatosShowFromSession();
+		JatosRun jatosRun = jatosPublixUtils.retrieveJatosRunFromSession();
 
-		assertThat(jatosShow).isEqualTo(JatosPublix.RUN_STUDY);
+		assertThat(jatosRun).isEqualTo(JatosRun.RUN_STUDY);
 	}
 
 	@Test
-	public void checkRetrieveJatosShowFromSessionFail()
+	public void checkRetrieveJatosRunFromSessionFail()
 			throws ForbiddenPublixException {
 		mockContext();
 
 		try {
-			jatosPublixUtils.retrieveJatosShowFromSession();
+			jatosPublixUtils.retrieveJatosRunFromSession();
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage()).isEqualTo(

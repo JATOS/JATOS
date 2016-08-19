@@ -100,7 +100,7 @@ public class Components extends Controller {
 			jatosGuiExceptionThrower.throwStudy(errorMsg,
 					Http.Status.BAD_REQUEST, studyId);
 		}
-		session("jatos_run", "single_component_start");
+		session("jatos_run", "RUN_COMPONENT_START");
 		session("run_component_id", componentId.toString());
 		// Redirect to jatos-publix: start study
 		String startComponentUrl = "/publix/" + study.getId() + "/start?"

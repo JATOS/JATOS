@@ -341,7 +341,7 @@ public class Studies extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
-		session("jatos_run", "full_study");
+		session("jatos_run", "RUN_STUDY");
 		String startStudyUrl = "/publix/" + study.getId() + "/start?"
 				+ "batchId" + "=" + batchId + "&" + "jatosWorkerId" + "="
 				+ loggedInUser.getWorker().getId();

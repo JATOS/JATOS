@@ -37,50 +37,48 @@ import utils.common.JsonUtils;
 
 /**
  * Implementation of JATOS' public API for studies and components that are
- * started via JATOS' UI (show study or show component). A JATOS run is done by
- * a JatosWorker.
+ * started via JATOS' UI (run study or run component). A JATOS run is done by a
+ * JatosWorker.
+ * 
+ * Between the UI and Publix a session variable is used to pass on the
+ * information whether it is a study run or a component run. In case it is a
+ * component run there is a second session variable which contains the component
+ * ID.
  * 
  * @author Kristian Lange
  */
 @Singleton
 public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
+	private static final ALogger LOGGER = Logger.of(JatosPublix.class);
+	
 	/**
 	 * Parameter name that is used in a URL query string for an JATOS run.
 	 */
 	public static final String JATOS_WORKER_ID = "jatosWorkerId";
 
-	/**
-	 * Name of the session variable that stores the kind of JATOS run.
-	 */
-	public static final String JATOS_RUN = "jatos_run";
+	public enum JatosRun {
+		RUN_STUDY, // A full study run
+		RUN_COMPONENT_START, // Single component run just started
+		RUN_COMPONENT_FINISHED; // Single component run in finished state
+	};
 
 	/**
-	 * Kind of JATOS run: full study.
+	 * Name of a key in the session. It stores what will be mapped to JatosRun.
 	 */
-	public static final String RUN_STUDY = "full_study";
+	public static final String SESSION_JATOS_RUN = "jatos_run";
 
 	/**
-	 * Kind of JATOS run: single component. It also indicates that the component
-	 * isn't finished.
+	 * Name of a key in the session. In case of a component JATOS run the
+	 * Component ID is stored in the session with this key.
 	 */
-	public static final String RUN_COMPONENT_START = "single_component_start";
+	public static final String SESSION_RUN_COMPONENT_ID = "run_component_id";
 
 	/**
-	 * Kind of JATOS run: single component. It also indicates that the component
-	 * is already finished.
+	 * Name of a key in the session. It stores the email address of the logged
+	 * in user.
 	 */
-	public static final String RUN_COMPONENT_FINISHED = "single_component_finished";
-
-	/**
-	 * In case of a component JATOS run the Component ID is stored in the
-	 * session together with JATOS_RUN. It uses this name.
-	 */
-	public static final String RUN_COMPONENT_ID = "run_component_id";
-
 	public static final String SESSION_EMAIL = "email";
-
-	private static final ALogger LOGGER = Logger.of(JatosPublix.class);
 
 	private final JatosPublixUtils publixUtils;
 	private final JatosStudyAuthorisation studyAuthorisation;
@@ -119,15 +117,16 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ worker.getId());
 
 		Long componentId = null;
-		String jatosShow = publixUtils.retrieveJatosShowFromSession();
-		switch (jatosShow) {
+		JatosRun jatosRun = publixUtils.retrieveJatosRunFromSession();
+		Publix.session().remove(SESSION_JATOS_RUN);
+		switch (jatosRun) {
 		case RUN_STUDY:
 			componentId = publixUtils.retrieveFirstActiveComponent(study)
 					.getId();
 			break;
 		case RUN_COMPONENT_START:
-			componentId = Long.valueOf(session(RUN_COMPONENT_ID));
-			session().remove(RUN_COMPONENT_ID);
+			componentId = Long.valueOf(session(SESSION_RUN_COMPONENT_ID));
+			session().remove(SESSION_RUN_COMPONENT_ID);
 			break;
 		case RUN_COMPONENT_FINISHED:
 			throw new ForbiddenPublixException(
@@ -136,7 +135,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		publixUtils.finishAbandonedStudyResults();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
-		idCookieService.writeIdCookie(worker, batch, studyResult);
+		idCookieService.writeIdCookie(worker, batch, studyResult, jatosRun);
 		return redirect(controllers.publix.routes.PublixInterceptor
 				.startComponent(studyId, componentId, studyResult.getId()));
 	}
@@ -158,14 +157,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
 		// Check if it's a single component show or a whole study show
-		String jatosShow = publixUtils.retrieveJatosShowFromSession();
 		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
 				study, studyResultId);
-		switch (jatosShow) {
+		JatosRun jatosRun = idCookie.getJatosRun();
+		switch (jatosRun) {
 		case RUN_STUDY:
 			break;
 		case RUN_COMPONENT_START:
-			session(JatosPublix.JATOS_RUN, JatosPublix.RUN_COMPONENT_FINISHED);
+			jatosRun = JatosRun.RUN_COMPONENT_FINISHED;
 			break;
 		case RUN_COMPONENT_FINISHED:
 			ComponentResult lastComponentResult = publixUtils
@@ -190,7 +189,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 							studyResult.getId()));
 		}
 		idCookieService.writeIdCookie(worker, batch, studyResult,
-				componentResult);
+				componentResult, jatosRun);
 		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
 				component.getHtmlFilePath());
 	}
@@ -212,15 +211,15 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				study, studyResultId);
 
 		// Check if it's a single component show or a whole study show
-		String jatosShow = publixUtils.retrieveJatosShowFromSession();
-		switch (jatosShow) {
+		JatosRun jatosRun = idCookie.getJatosRun();
+		switch (jatosRun) {
 		case RUN_STUDY:
 			studyResult = publixUtils.retrieveWorkersStudyResult(worker, study,
 					studyResultId);
 			break;
 		case RUN_COMPONENT_START:
 			// Should never happen
-			session(JatosPublix.JATOS_RUN, JatosPublix.RUN_COMPONENT_FINISHED);
+			jatosRun = JatosRun.RUN_COMPONENT_FINISHED;
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, null, studyResult.getId()));
 		case RUN_COMPONENT_FINISHED:
@@ -229,6 +228,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, true, null, studyResult.getId()));
 		}
+		idCookieService.writeIdCookie(worker, batch, studyResult, jatosRun);
 
 		Component nextComponent = publixUtils
 				.retrieveNextActiveComponent(studyResult);
@@ -261,7 +261,6 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 			groupService.finishStudyResultInGroup(studyResult);
-			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
 		if (ControllerUtils.isAjax()) {
@@ -294,7 +293,6 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 			groupService.finishStudyResultInGroup(studyResult);
-			Publix.session().remove(JatosPublix.JATOS_RUN);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
 		if (ControllerUtils.isAjax()) {

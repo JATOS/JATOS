@@ -17,6 +17,7 @@ import org.junit.Test;
 import controllers.gui.Users;
 import controllers.publix.StudyAssets;
 import controllers.publix.workers.JatosPublix;
+import controllers.publix.workers.JatosPublix.JatosRun;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import general.AbstractTest;
@@ -84,7 +85,8 @@ public class StudyAssetsTest extends AbstractTest {
 				+ JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.session(JatosPublix.JATOS_RUN, JatosPublix.RUN_STUDY);
+				.session(JatosPublix.SESSION_JATOS_RUN,
+						JatosRun.RUN_STUDY.name());
 		route(request);
 	}
 

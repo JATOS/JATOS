@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.inject.Singleton;
 
 import controllers.publix.Publix;
+import controllers.publix.workers.JatosPublix.JatosRun;
 import general.common.RequestScope;
 import play.Logger;
 import play.Logger.ALogger;
@@ -108,9 +109,25 @@ public class IdCookieAccessor {
 				IdCookie.COMPONENT_POSITION, false, cookie.name()));
 		idCookie.setStudyAssets(getValueAsString(cookieMap,
 				IdCookie.STUDY_ASSETS, cookie.name()));
+		idCookie.setJatosRun(valueOfJatosRun(cookieMap, cookie));
 		idCookie.setCreationTime(getValueAsLong(cookieMap,
 				IdCookie.CREATION_TIME, true, cookie.name()));
 		return idCookie;
+	}
+
+	/**
+	 * Maps the IdCookie value for a JATOS run to the enum {@link JatosRun}. If
+	 * the value can't be matched to an instance of JatosRun then null is
+	 * returned.
+	 */
+	private JatosRun valueOfJatosRun(Map<String, String> cookieMap,
+			Cookie cookie) throws IdCookieMalformedException {
+		try {
+			return JatosRun.valueOf(getValueAsString(cookieMap,
+					IdCookie.JATOS_RUN, cookie.name()));
+		} catch (IllegalArgumentException | NullPointerException e) {
+			return null;
+		}
 	}
 
 	/**
@@ -276,6 +293,7 @@ public class IdCookieAccessor {
 				idCookie.getCreationTime(), true);
 		appendCookieEntry(sb, IdCookie.STUDY_ASSETS, idCookie.getStudyAssets(),
 				true);
+		appendCookieEntry(sb, IdCookie.JATOS_RUN, idCookie.getJatosRun(), true);
 		appendCookieEntry(sb, IdCookie.GROUP_RESULT_ID,
 				idCookie.getGroupResultId(), true);
 		appendCookieEntry(sb, IdCookie.STUDY_ID, idCookie.getStudyId(), true);
