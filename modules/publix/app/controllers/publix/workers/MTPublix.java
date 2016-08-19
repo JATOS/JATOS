@@ -138,8 +138,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	}
 
 	@Override
-	public Result finishStudy(Long studyId, Boolean successful, String errorMsg,
-			Long studyResultId) throws PublixException {
+	public Result finishStudy(Long studyId, Long studyResultId,
+			Boolean successful, String errorMsg) throws PublixException {
 		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
 				+ studyResultId + ", " + "successful " + successful + ", "
 				+ "errorMsg \"" + errorMsg + "\"");

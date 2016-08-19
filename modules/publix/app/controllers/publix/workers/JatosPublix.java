@@ -52,7 +52,7 @@ import utils.common.JsonUtils;
 public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	private static final ALogger LOGGER = Logger.of(JatosPublix.class);
-	
+
 	/**
 	 * Parameter name that is used in a URL query string for an JATOS run.
 	 */
@@ -173,7 +173,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				// isn't a reload of the same one). Finish study after first
 				// component.
 				return redirect(controllers.publix.routes.PublixInterceptor
-						.finishStudy(studyId, true, null, studyResult.getId()));
+						.finishStudy(studyId, studyResult.getId(),  true, null));
 			}
 			break;
 		}
@@ -184,8 +184,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 					studyResult);
 		} catch (ForbiddenReloadException e) {
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, e.getMessage(),
-							studyResult.getId()));
+					.finishStudy(studyId, studyResult.getId(), false, e.getMessage()));
 		}
 		idCookieService.writeIdCookie(worker, batch, studyResult,
 				componentResult, jatosRun);
@@ -220,12 +219,12 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			// Should never happen
 			jatosRun = JatosRun.RUN_COMPONENT_FINISHED;
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, null, studyResult.getId()));
+					.finishStudy(studyId, studyResult.getId(), false, null));
 		case RUN_COMPONENT_FINISHED:
 			// It's already the second component (first is finished). Finish
 			// study after first component.
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, true, null, studyResult.getId()));
+					.finishStudy(studyId, studyResult.getId(), true, null));
 		}
 		idCookieService.writeIdCookie(worker, batch, studyResult, jatosRun);
 
@@ -234,7 +233,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		if (nextComponent == null) {
 			// Study has no more components -> finish it
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, true, null, studyResult.getId()));
+					.finishStudy(studyId, studyResult.getId(), true, null));
 		}
 		return redirect(
 				controllers.publix.routes.PublixInterceptor.startComponent(
@@ -242,7 +241,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	}
 
 	@Override
-	public Result abortStudy(Long studyId, String message, Long studyResultId)
+	public Result abortStudy(Long studyId, Long studyResultId, String message)
 			throws PublixException {
 		LOGGER.info(".abortStudy: studyId " + studyId + ", " + "studyResultId "
 				+ studyResultId + ", " + "logged-in user email "
@@ -274,8 +273,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	}
 
 	@Override
-	public Result finishStudy(Long studyId, Boolean successful, String errorMsg,
-			Long studyResultId) throws PublixException {
+	public Result finishStudy(Long studyId, Long studyResultId,
+			Boolean successful, String errorMsg) throws PublixException {
 		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
 				+ studyResultId + ", " + "logged-in user email "
 				+ session(SESSION_EMAIL) + ", " + "successful " + successful

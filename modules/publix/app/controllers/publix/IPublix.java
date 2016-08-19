@@ -140,8 +140,8 @@ public interface IPublix {
 	 * Optionally it can be specified whether the component was successful and
 	 * and error message.
 	 */
-	Result finishComponent(Long studyId, Long componentId, Boolean successful,
-			String errorMsg, Long studyResultId) throws PublixException;
+	Result finishComponent(Long studyId, Long componentId, Long studyResultId,
+			Boolean successful, String errorMsg) throws PublixException;
 
 	/**
 	 * HTTP type: Normal or Ajax GET request
@@ -150,7 +150,7 @@ public interface IPublix {
 	 * Optionally a message can be given describing the reasons for the
 	 * abortion.
 	 */
-	Result abortStudy(Long studyId, String message, Long studyResultId)
+	Result abortStudy(Long studyId, Long studyResultId, String message)
 			throws PublixException;
 
 	/**
@@ -160,8 +160,8 @@ public interface IPublix {
 	 * or FAIL). Optionally it can be specified whether the study was successful
 	 * and an error message.
 	 */
-	Result finishStudy(Long studyId, Boolean successful, String errorMsg,
-			Long studyResultId) throws PublixException;
+	Result finishStudy(Long studyId, Long studyResultId, Boolean successful,
+			String errorMsg) throws PublixException;
 
 	/**
 	 * HTTP type: Ajax POST request

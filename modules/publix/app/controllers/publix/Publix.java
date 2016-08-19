@@ -105,8 +105,8 @@ public abstract class Publix<T extends Worker> extends Controller
 					studyResult);
 		} catch (ForbiddenReloadException e) {
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, e.getMessage(),
-							studyResult.getId()));
+					.finishStudy(studyId, studyResult.getId(), false,
+							e.getMessage()));
 		}
 		idCookieService.writeIdCookie(worker, batch, studyResult,
 				componentResult);
@@ -141,7 +141,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		if (nextComponent == null) {
 			// Study has no more components -> finish it
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, true, null, studyResult.getId()));
+					.finishStudy(studyId, studyResult.getId(), true, null));
 		}
 		return redirect(
 				controllers.publix.routes.PublixInterceptor.startComponent(
@@ -168,8 +168,8 @@ public abstract class Publix<T extends Worker> extends Controller
 					.retrieveStartedComponentResult(component, studyResult);
 		} catch (ForbiddenReloadException e) {
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, e.getMessage(),
-							studyResult.getId()));
+					.finishStudy(studyId, studyResult.getId(), false,
+							e.getMessage()));
 		}
 		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
 		studyResultDao.update(studyResult);
@@ -330,7 +330,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			String error = PublixErrorMessages.componentNeverStarted(studyId,
 					componentId, "submitResultData");
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, error, studyResult.getId()));
+					.finishStudy(studyId, studyResult.getId(), false, error));
 		}
 
 		String resultData = HttpHelpers
@@ -343,7 +343,7 @@ public abstract class Publix<T extends Worker> extends Controller
 
 	@Override
 	public Result finishComponent(Long studyId, Long componentId,
-			Boolean successful, String errorMsg, Long studyResultId)
+			Long studyResultId, Boolean successful, String errorMsg)
 			throws PublixException {
 		LOGGER.info(".finishComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "studyResultId "
@@ -365,7 +365,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			String error = PublixErrorMessages.componentNeverStarted(studyId,
 					componentId, "submitResultData");
 			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, false, error, studyResult.getId()));
+					.finishStudy(studyId, studyResult.getId(), false, error));
 		}
 
 		if (successful) {
@@ -380,7 +380,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	}
 
 	@Override
-	public Result abortStudy(Long studyId, String message, Long studyResultId)
+	public Result abortStudy(Long studyId, Long studyResultId, String message)
 			throws PublixException {
 		LOGGER.info(".abortStudy: studyId " + studyId + ", " + ", "
 				+ "studyResultId " + studyResultId + ", " + "message \""
@@ -406,8 +406,8 @@ public abstract class Publix<T extends Worker> extends Controller
 	}
 
 	@Override
-	public Result finishStudy(Long studyId, Boolean successful, String errorMsg,
-			Long studyResultId) throws PublixException {
+	public Result finishStudy(Long studyId, Long studyResultId,
+			Boolean successful, String errorMsg) throws PublixException {
 		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
 				+ studyResultId + ", " + "successful " + successful + ", "
 				+ "errorMsg \"" + errorMsg + "\"");

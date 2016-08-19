@@ -409,33 +409,33 @@ public class PublixInterceptor extends Controller implements IPublix {
 	@Override
 	@Transactional
 	public Result finishComponent(Long studyId, Long componentId,
-			Boolean successful, String errorMsg, Long studyResultId)
+			Long studyResultId, Boolean successful, String errorMsg)
 			throws PublixException {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).finishComponent(studyId,
-					componentId, successful, errorMsg, studyResultId);
+					componentId, studyResultId, successful, errorMsg);
 			break;
 		case JatosWorker.WORKER_TYPE:
 			result = instanceOfPublix(JatosPublix.class).finishComponent(
-					studyId, componentId, successful, errorMsg, studyResultId);
+					studyId, componentId, studyResultId, successful, errorMsg);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
 			result = instanceOfPublix(PersonalMultiplePublix.class)
-					.finishComponent(studyId, componentId, successful, errorMsg,
-							studyResultId);
+					.finishComponent(studyId, componentId, studyResultId,
+							successful, errorMsg);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
 			result = instanceOfPublix(PersonalSinglePublix.class)
-					.finishComponent(studyId, componentId, successful, errorMsg,
-							studyResultId);
+					.finishComponent(studyId, componentId, studyResultId,
+							successful, errorMsg);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
 			result = instanceOfPublix(GeneralSinglePublix.class)
-					.finishComponent(studyId, componentId, successful, errorMsg,
-							studyResultId);
+					.finishComponent(studyId, componentId, studyResultId,
+							successful, errorMsg);
 			break;
 		default:
 			throw new BadRequestPublixException(
@@ -446,30 +446,30 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result abortStudy(Long studyId, String message, Long studyResultId)
+	public Result abortStudy(Long studyId, Long studyResultId, String message)
 			throws PublixException {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).abortStudy(studyId,
-					message, studyResultId);
+					studyResultId, message);
 			break;
 		case JatosWorker.WORKER_TYPE:
 			result = instanceOfPublix(JatosPublix.class).abortStudy(studyId,
-					message, studyResultId);
+					studyResultId, message);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
 			result = instanceOfPublix(PersonalMultiplePublix.class)
-					.abortStudy(studyId, message, studyResultId);
+					.abortStudy(studyId, studyResultId, message);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
 			result = instanceOfPublix(PersonalSinglePublix.class)
-					.abortStudy(studyId, message, studyResultId);
+					.abortStudy(studyId, studyResultId, message);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
 			result = instanceOfPublix(GeneralSinglePublix.class)
-					.abortStudy(studyId, message, studyResultId);
+					.abortStudy(studyId, studyResultId, message);
 			break;
 		default:
 			throw new BadRequestPublixException(
@@ -480,30 +480,30 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public Result finishStudy(Long studyId, Boolean successful, String errorMsg,
-			Long studyResultId) throws PublixException {
+	public Result finishStudy(Long studyId, Long studyResultId,
+			Boolean successful, String errorMsg) throws PublixException {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).finishStudy(studyId,
-					successful, errorMsg, studyResultId);
+					studyResultId, successful, errorMsg);
 			break;
 		case JatosWorker.WORKER_TYPE:
 			result = instanceOfPublix(JatosPublix.class).finishStudy(studyId,
-					successful, errorMsg, studyResultId);
+					studyResultId, successful, errorMsg);
 			break;
 		case PersonalMultipleWorker.WORKER_TYPE:
 			result = instanceOfPublix(PersonalMultiplePublix.class)
-					.finishStudy(studyId, successful, errorMsg, studyResultId);
+					.finishStudy(studyId, studyResultId, successful, errorMsg);
 			break;
 		case PersonalSingleWorker.WORKER_TYPE:
 			result = instanceOfPublix(PersonalSinglePublix.class)
-					.finishStudy(studyId, successful, errorMsg, studyResultId);
+					.finishStudy(studyId, studyResultId, successful, errorMsg);
 			break;
 		case GeneralSingleWorker.WORKER_TYPE:
 			result = instanceOfPublix(GeneralSinglePublix.class)
-					.finishStudy(studyId, successful, errorMsg, studyResultId);
+					.finishStudy(studyId, studyResultId, successful, errorMsg);
 			break;
 		default:
 			throw new BadRequestPublixException(
