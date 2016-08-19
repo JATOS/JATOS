@@ -1,6 +1,5 @@
 package services.publix.workers;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import exceptions.publix.ForbiddenPublixException;
@@ -20,20 +19,12 @@ import services.publix.StudyAuthorisation;
 public class GeneralSingleStudyAuthorisation
 		extends StudyAuthorisation<GeneralSingleWorker> {
 
-	private final GeneralSingleErrorMessages errorMessages;
-
-	@Inject
-	GeneralSingleStudyAuthorisation(GeneralSingleErrorMessages errorMessages) {
-		super(errorMessages);
-		this.errorMessages = errorMessages;
-	}
-
 	@Override
 	public void checkWorkerAllowedToStartStudy(GeneralSingleWorker worker,
 			Study study, Batch batch) throws ForbiddenPublixException {
 		if (!batch.isActive()) {
 			throw new ForbiddenPublixException(
-					errorMessages.batchInactive(batch.getId()));
+					PublixErrorMessages.batchInactive(batch.getId()));
 		}
 		checkMaxTotalWorkers(batch, worker);
 		checkWorkerAllowedToDoStudy(worker, study, batch);
@@ -44,8 +35,8 @@ public class GeneralSingleStudyAuthorisation
 			Study study, Batch batch) throws ForbiddenPublixException {
 		// Check if worker type is allowed
 		if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType(),
+			throw new ForbiddenPublixException(PublixErrorMessages
+					.workerTypeNotAllowed(worker.getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}
 		// General single workers can't repeat the same study

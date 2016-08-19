@@ -9,12 +9,6 @@ import models.common.workers.Worker;
 
 public abstract class StudyAuthorisation<T extends Worker> {
 
-	private PublixErrorMessages errorMessages;
-
-	public StudyAuthorisation(PublixErrorMessages errorMessages) {
-		this.errorMessages = errorMessages;
-	}
-
 	/**
 	 * Checks whether the given worker is allowed to start this study in this
 	 * batch. If the worker has no permission an ForbiddenPublixException is
@@ -44,8 +38,8 @@ public abstract class StudyAuthorisation<T extends Worker> {
 		int potentialWorkerNumber = workerSet.size();
 		if (batch.getMaxTotalWorkers() != null
 				&& potentialWorkerNumber > batch.getMaxTotalWorkers()) {
-			throw new ForbiddenPublixException(
-					errorMessages.batchMaxTotalWorkerReached(batch.getId()));
+			throw new ForbiddenPublixException(PublixErrorMessages
+					.batchMaxTotalWorkerReached(batch.getId()));
 		}
 	}
 

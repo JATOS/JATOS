@@ -23,6 +23,7 @@ import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
@@ -83,7 +84,6 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	private final JatosPublixUtils publixUtils;
 	private final JatosStudyAuthorisation studyAuthorisation;
 	private final ResultCreator resultCreator;
-	private final JatosErrorMessages errorMessages;
 
 	@Inject
 	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
@@ -99,7 +99,6 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
-		this.errorMessages = errorMessages;
 	}
 
 	@Override
@@ -268,7 +267,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		} else {
 			if (message != null) {
 				Controller.flash("info",
-						errorMessages.studyFinishedWithMessage(message));
+						PublixErrorMessages.studyFinishedWithMessage(message));
 			}
 			return redirect("/jatos/" + study.getId());
 		}
@@ -300,7 +299,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		} else {
 			if (errorMsg != null) {
 				Controller.flash("info",
-						errorMessages.studyFinishedWithMessage(errorMsg));
+						PublixErrorMessages.studyFinishedWithMessage(errorMsg));
 			}
 			return redirect("/jatos/" + study.getId());
 		}

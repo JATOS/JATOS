@@ -37,12 +37,12 @@ import services.publix.idcookie.IdCookieService;
  * MechTurk, Personal Multiple workers).
  * 
  * When a study is started the implementation to use is determined by parameters
- * in the request's query string. Then the worker type is put into the session
- * and used in subsequent requests of the same study run.
+ * in the request's query string. Then the worker type is put into JATOS' ID
+ * cookie (IdCookie) and used in subsequent requests of the same study run.
  * 
  * 1. Requests coming from MechTurk or MechTurk Sandbox will be forwarded to
  * MTPublix. They use MTWorker and MTSandboxWorker.<br>
- * 2. Requests coming from Jatos' UI run (if clicked on show study/component
+ * 2. Requests coming from Jatos' UI run (if clicked on run study/component
  * button) run will be forwarded to JatosPublix. They use JatosWorker.<br>
  * 3. Requests coming from a Personal Multiple run will be forwarded to
  * PersonalMultiplePublix. They use PersonalMultipleWorker.<br>
@@ -548,8 +548,8 @@ public class PublixInterceptor extends Controller implements IPublix {
 	}
 
 	/**
-	 * Checks session which type of worker is doing the study. Returns a String
-	 * specifying the worker type.
+	 * Checks JATOS' ID cookie for which type of worker is doing the study.
+	 * Returns a String specifying the worker type.
 	 */
 	private String getWorkerTypeFromIdCookie(Long studyResultId)
 			throws PublixException {
@@ -574,8 +574,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		// Check for MT worker and MT Sandbox worker
 		String mtWorkerId = Publix.getQueryString(MTPublix.MT_WORKER_ID);
 		if (mtWorkerId != null) {
-			return instanceOfPublix(MTPublix.class)
-					.retrieveWorkerType(mtWorkerId);
+			return instanceOfPublix(MTPublix.class).retrieveWorkerType();
 		}
 		// Check for Personal Multiple Worker
 		String pmWorkerId = Publix.getQueryString(

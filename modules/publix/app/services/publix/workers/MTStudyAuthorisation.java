@@ -1,6 +1,5 @@
 package services.publix.workers;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import exceptions.publix.ForbiddenPublixException;
@@ -20,20 +19,12 @@ import services.publix.StudyAuthorisation;
 @Singleton
 public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 
-	private final MTErrorMessages errorMessages;
-
-	@Inject
-	MTStudyAuthorisation(MTErrorMessages errorMessages) {
-		super(errorMessages);
-		this.errorMessages = errorMessages;
-	}
-
 	@Override
 	public void checkWorkerAllowedToStartStudy(MTWorker worker, Study study,
 			Batch batch) throws ForbiddenPublixException {
 		if (!batch.isActive()) {
 			throw new ForbiddenPublixException(
-					errorMessages.batchInactive(batch.getId()));
+					PublixErrorMessages.batchInactive(batch.getId()));
 		}
 		if (!(worker instanceof MTSandboxWorker)
 				&& PublixHelpers.didStudyAlready(worker, study)) {
@@ -49,8 +40,8 @@ public class MTStudyAuthorisation extends StudyAuthorisation<MTWorker> {
 			Batch batch) throws ForbiddenPublixException {
 		// Check if worker type is allowed
 		if (!batch.hasAllowedWorkerType(MTWorker.WORKER_TYPE)) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType(),
+			throw new ForbiddenPublixException(PublixErrorMessages
+					.workerTypeNotAllowed(worker.getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}
 		// Sandbox workers can repeat studies

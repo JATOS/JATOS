@@ -56,7 +56,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage())
-					.isEqualTo(PublixErrorMessages.NO_WORKERID_IN_SESSION);
+					.isEqualTo(PublixErrorMessages.workerNotExist("null"));
 		}
 
 		// Worker doesn't exist
@@ -65,7 +65,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			Fail.fail();
 		} catch (PublixException e) {
 			assertThat(e.getMessage())
-					.isEqualTo(errorMessages.workerNotExist("2"));
+					.isEqualTo(PublixErrorMessages.workerNotExist("2"));
 		}
 	}
 
@@ -196,9 +196,9 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			publixUtils.startComponent(study.getFirstComponent(), studyResult);
 			Fail.fail();
 		} catch (ForbiddenReloadException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.componentNotAllowedToReload(study.getId(),
-							study.getFirstComponent().getId()));
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.componentNotAllowedToReload(
+							study.getId(), study.getFirstComponent().getId()));
 		}
 		entityManager.getTransaction().commit();
 
@@ -292,8 +292,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	}
 
 	@Test
-	public void checkFinishAbandonedStudyResults() throws IOException,
-			NoSuchAlgorithmException, PublixException {
+	public void checkFinishAbandonedStudyResults()
+			throws IOException, NoSuchAlgorithmException, PublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -311,14 +311,14 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		// TODO changed with new ID cookies
 		publixUtils.finishAbandonedStudyResults();
 
-//		assertThat(studyResult1.getStudyState())
-//				.isEqualTo(StudyResult.StudyState.FAIL);
-//		assertThat(studyResult1.getErrorMsg())
-//				.isEqualTo(PublixErrorMessages.ABANDONED_STUDY_BY_WORKER);
-//		assertThat(studyResult2.getStudyState())
-//				.isEqualTo(StudyResult.StudyState.FAIL);
-//		assertThat(studyResult2.getErrorMsg())
-//				.isEqualTo(PublixErrorMessages.ABANDONED_STUDY_BY_WORKER);
+		// assertThat(studyResult1.getStudyState())
+		// .isEqualTo(StudyResult.StudyState.FAIL);
+		// assertThat(studyResult1.getErrorMsg())
+		// .isEqualTo(PublixErrorMessages.ABANDONED_STUDY_BY_WORKER);
+		// assertThat(studyResult2.getStudyState())
+		// .isEqualTo(StudyResult.StudyState.FAIL);
+		// assertThat(studyResult2.getErrorMsg())
+		// .isEqualTo(PublixErrorMessages.ABANDONED_STUDY_BY_WORKER);
 
 		// Clean-up
 		removeStudy(study);
@@ -387,7 +387,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 					studyResult2.getId());
 			Fail.fail();
 		} catch (ForbiddenPublixException e) {
-			assertThat(e.getMessage()).isEqualTo(errorMessages
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
 					.workerNeverDidStudy(admin.getWorker(), study.getId()));
 		}
 
@@ -419,9 +419,9 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 					studyResult2.getId());
 			Fail.fail();
 		} catch (ForbiddenPublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.workerFinishedStudyAlready(admin.getWorker(),
-							study.getId()));
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.workerFinishedStudyAlready(
+							admin.getWorker(), study.getId()));
 		}
 
 		// Clean-up
@@ -455,8 +455,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			publixUtils.retrieveFirstActiveComponent(study);
 			Fail.fail();
 		} catch (NotFoundPublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.studyHasNoActiveComponents(study.getId()));
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
+					.studyHasNoActiveComponents(study.getId()));
 		}
 
 		// Clean-up
@@ -518,7 +518,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			Fail.fail();
 		} catch (NotFoundPublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.componentNotExist(study.getId(), 999l));
+					PublixErrorMessages.componentNotExist(study.getId(), 999l));
 		}
 
 		// Clean-up
@@ -543,7 +543,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			Fail.fail();
 		} catch (BadRequestPublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.componentNotBelongToStudy(study.getId(),
+					PublixErrorMessages.componentNotBelongToStudy(study.getId(),
 							clone.getFirstComponent().getId()));
 		}
 
@@ -566,8 +566,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 					study.getFirstComponent().getId());
 			Fail.fail();
 		} catch (ForbiddenPublixException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(errorMessages.componentNotActive(study.getId(),
+			assertThat(e.getMessage()).isEqualTo(
+					PublixErrorMessages.componentNotActive(study.getId(),
 							study.getFirstComponent().getId()));
 		}
 
@@ -617,8 +617,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			publixUtils.retrieveComponentByPosition(study.getId(), 999);
 			Fail.fail();
 		} catch (NotFoundPublixException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.noComponentAtPosition(study.getId(), 999));
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
+					.noComponentAtPosition(study.getId(), 999));
 		}
 
 		// Clean-up
@@ -649,7 +649,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			Fail.fail();
 		} catch (NotFoundPublixException e) {
 			assertThat(e.getMessage())
-					.isEqualTo(errorMessages.studyNotExist(999l));
+					.isEqualTo(PublixErrorMessages.studyNotExist(999l));
 		}
 
 		// Clean-up
@@ -688,7 +688,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 			Fail.fail();
 		} catch (BadRequestPublixException e) {
 			assertThat(e.getMessage()).isEqualTo(
-					errorMessages.componentNotBelongToStudy(study.getId(),
+					PublixErrorMessages.componentNotBelongToStudy(study.getId(),
 							clone.getFirstComponent().getId()));
 		}
 

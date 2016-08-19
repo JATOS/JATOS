@@ -101,7 +101,7 @@ public class GroupService {
 			throws NoContentPublixException, ForbiddenPublixException {
 		GroupResult currentGroupResult = studyResult.getActiveGroupResult();
 		if (currentGroupResult == null) {
-			throw new ForbiddenPublixException(errorMessages
+			throw new ForbiddenPublixException(PublixErrorMessages
 					.groupStudyResultNotMember(studyResult.getId()));
 		}
 		List<GroupResult> groupResultList = groupResultDao

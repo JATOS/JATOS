@@ -17,7 +17,6 @@ import models.common.StudyResult.StudyState;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import services.publix.PublixErrorMessages;
-import services.publix.workers.MTErrorMessages;
 import services.publix.workers.MTStudyAuthorisation;
 
 /**
@@ -25,13 +24,10 @@ import services.publix.workers.MTStudyAuthorisation;
  */
 public class MTStudyAuthorisationTest extends AbstractTest {
 
-	private MTErrorMessages mtErrorMessages;
 	private MTStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
-		mtErrorMessages = application.injector()
-				.instanceOf(MTErrorMessages.class);
 		studyAuthorisation = application.injector()
 				.instanceOf(MTStudyAuthorisation.class);
 	}
@@ -150,7 +146,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 					batch);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(mtErrorMessages
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
 					.workerTypeNotAllowed(mtWorker.getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}
@@ -161,7 +157,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 					study, batch);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(mtErrorMessages
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
 					.workerTypeNotAllowed(mtSandboxWorker.getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}

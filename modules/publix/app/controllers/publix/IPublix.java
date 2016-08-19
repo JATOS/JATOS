@@ -9,21 +9,22 @@ import play.mvc.Result;
 import play.mvc.WebSocket;
 
 /**
- * Interface to Publix the public API of JATOS. With these actions/methods the
- * studies and components (running in the browser / on the client side) can
- * communicate (start, finish components/studies, retrieve/persist data) with
- * the JATOS server (running on the server side).
+ * Interface to Publix the public, RESTful API of JATOS. With these methods the
+ * studies and components (running in the browser) can communicate (e.g. start,
+ * finish components/studies, retrieve/persist data, join a group) with the
+ * JATOS server (running on the server side).
  * 
- * The Publix can be seen as a state machine. State is stored in the
- * StudyResults and ComponentResults. The methods of Publix react differently
- * based on the state.
+ * The Publix can be seen as a state machine (it's RESTful). State is stored in
+ * the StudyResults, ComponentResults, and GroupResult. The methods of Publix
+ * react differently based on the state.
  * 
  * @author Kristian Lange
  */
 public interface IPublix {
 
 	/**
-	 * HTTP type: Normal GET request<br>
+	 * HTTP type: Normal GET request
+	 * 
 	 * Starts the study within a batch. Then automatically starts it's first
 	 * component.
 	 */
@@ -167,6 +168,7 @@ public interface IPublix {
 	 * 
 	 * With this method the client side can log into the server's log.
 	 */
-	Result log(Long studyId, Long componentId, Long studyResultId) throws PublixException;
+	Result log(Long studyId, Long componentId, Long studyResultId)
+			throws PublixException;
 
 }

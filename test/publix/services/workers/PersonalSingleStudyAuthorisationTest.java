@@ -16,7 +16,6 @@ import models.common.Study;
 import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalSingleWorker;
 import services.publix.PublixErrorMessages;
-import services.publix.workers.PersonalSingleErrorMessages;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
 
 /**
@@ -24,13 +23,10 @@ import services.publix.workers.PersonalSingleStudyAuthorisation;
  */
 public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 
-	private PersonalSingleErrorMessages personalSingleErrorMessages;
 	private PersonalSingleStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
-		personalSingleErrorMessages = application.injector()
-				.instanceOf(PersonalSingleErrorMessages.class);
 		studyAuthorisation = application.injector()
 				.instanceOf(PersonalSingleStudyAuthorisation.class);
 	}
@@ -105,7 +101,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			ForbiddenPublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
-		
+
 		Batch batch = study.getDefaultBatch();
 		batch.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		PersonalSingleWorker worker = new PersonalSingleWorker();
@@ -116,7 +112,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 					batch);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(personalSingleErrorMessages
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
 					.workerTypeNotAllowed(worker.getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}

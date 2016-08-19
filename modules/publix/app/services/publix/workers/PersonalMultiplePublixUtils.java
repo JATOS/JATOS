@@ -61,7 +61,7 @@ public class PersonalMultiplePublixUtils
 			workerId = Long.parseLong(workerIdStr);
 		} catch (NumberFormatException e) {
 			throw new ForbiddenPublixException(
-					errorMessages.workerNotExist(workerIdStr));
+					PublixErrorMessages.workerNotExist(workerIdStr));
 		}
 		return retrieveTypedWorker(workerId);
 	}

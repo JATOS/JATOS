@@ -78,7 +78,7 @@ public abstract class PublixUtils<T extends Worker> {
 		Worker worker = workerDao.findById(workerId);
 		if (worker == null) {
 			throw new ForbiddenPublixException(
-					errorMessages.workerNotExist(workerId));
+					PublixErrorMessages.workerNotExist(workerId));
 		}
 		return worker;
 	}
@@ -104,8 +104,10 @@ public abstract class PublixUtils<T extends Worker> {
 					// component and study with FAIL
 					finishComponentResult(lastComponentResult,
 							ComponentState.FAIL);
-					String errorMsg = errorMessages.componentNotAllowedToReload(
-							studyResult.getStudy().getId(), component.getId());
+					String errorMsg = PublixErrorMessages
+							.componentNotAllowedToReload(
+									studyResult.getStudy().getId(),
+									component.getId());
 					// exceptionalFinishStudy(studyResult, errorMsg);
 					throw new ForbiddenReloadException(errorMsg);
 				}
@@ -245,7 +247,7 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 		if (studyResult.getStudy().getId().equals(study.getId())) {
 			if (PublixHelpers.studyDone(studyResult)) {
-				throw new ForbiddenPublixException(errorMessages
+				throw new ForbiddenPublixException(PublixErrorMessages
 						.workerFinishedStudyAlready(worker, study.getId()));
 			} else {
 				return studyResult;
@@ -324,8 +326,8 @@ public abstract class PublixUtils<T extends Worker> {
 			component = study.getNextComponent(component);
 		}
 		if (component == null) {
-			throw new NotFoundPublixException(
-					errorMessages.studyHasNoActiveComponents(study.getId()));
+			throw new NotFoundPublixException(PublixErrorMessages
+					.studyHasNoActiveComponents(study.getId()));
 		}
 		return component;
 	}
@@ -368,15 +370,15 @@ public abstract class PublixUtils<T extends Worker> {
 			ForbiddenPublixException {
 		Component component = componentDao.findById(componentId);
 		if (component == null) {
-			throw new NotFoundPublixException(errorMessages
+			throw new NotFoundPublixException(PublixErrorMessages
 					.componentNotExist(study.getId(), componentId));
 		}
 		if (!component.getStudy().getId().equals(study.getId())) {
-			throw new BadRequestPublixException(errorMessages
+			throw new BadRequestPublixException(PublixErrorMessages
 					.componentNotBelongToStudy(study.getId(), componentId));
 		}
 		if (!component.isActive()) {
-			throw new ForbiddenPublixException(errorMessages
+			throw new ForbiddenPublixException(PublixErrorMessages
 					.componentNotActive(study.getId(), componentId));
 		}
 		return component;
@@ -393,7 +395,7 @@ public abstract class PublixUtils<T extends Worker> {
 		try {
 			component = study.getComponent(position);
 		} catch (IndexOutOfBoundsException e) {
-			throw new NotFoundPublixException(errorMessages
+			throw new NotFoundPublixException(PublixErrorMessages
 					.noComponentAtPosition(study.getId(), position));
 		}
 		return component;
@@ -407,7 +409,7 @@ public abstract class PublixUtils<T extends Worker> {
 		Study study = studyDao.findById(studyId);
 		if (study == null) {
 			throw new NotFoundPublixException(
-					errorMessages.studyNotExist(studyId));
+					PublixErrorMessages.studyNotExist(studyId));
 		}
 		return study;
 	}
@@ -420,7 +422,7 @@ public abstract class PublixUtils<T extends Worker> {
 			throws PublixException {
 		if (!component.getStudy().equals(study)) {
 			throw new BadRequestPublixException(
-					errorMessages.componentNotBelongToStudy(study.getId(),
+					PublixErrorMessages.componentNotBelongToStudy(study.getId(),
 							component.getId()));
 		}
 	}
@@ -432,7 +434,7 @@ public abstract class PublixUtils<T extends Worker> {
 			throws ForbiddenPublixException {
 		if (!study.isGroupStudy()) {
 			throw new ForbiddenPublixException(
-					errorMessages.studyNotGroupStudy(study.getId()));
+					PublixErrorMessages.studyNotGroupStudy(study.getId()));
 		}
 	}
 
@@ -457,7 +459,7 @@ public abstract class PublixUtils<T extends Worker> {
 		Batch batch = batchDao.findById(batchId);
 		if (batch == null) {
 			throw new ForbiddenPublixException(
-					errorMessages.batchNotExist(batchId));
+					PublixErrorMessages.batchNotExist(batchId));
 		}
 		return batch;
 	}

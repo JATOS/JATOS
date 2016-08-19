@@ -20,13 +20,9 @@ import services.publix.StudyAuthorisation;
 public class PersonalSingleStudyAuthorisation
 		extends StudyAuthorisation<PersonalSingleWorker> {
 
-	private final PersonalSingleErrorMessages errorMessages;
-
 	@Inject
 	PersonalSingleStudyAuthorisation(
 			PersonalSingleErrorMessages errorMessages) {
-		super(errorMessages);
-		this.errorMessages = errorMessages;
 	}
 
 	@Override
@@ -34,7 +30,7 @@ public class PersonalSingleStudyAuthorisation
 			Study study, Batch batch) throws ForbiddenPublixException {
 		if (!batch.isActive()) {
 			throw new ForbiddenPublixException(
-					errorMessages.batchInactive(batch.getId()));
+					PublixErrorMessages.batchInactive(batch.getId()));
 		}
 		// Personal Single Runs are used only once - don't start if worker has a
 		// study result
@@ -51,8 +47,8 @@ public class PersonalSingleStudyAuthorisation
 			Study study, Batch batch) throws ForbiddenPublixException {
 		// Check if worker type is allowed
 		if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {
-			throw new ForbiddenPublixException(
-					errorMessages.workerTypeNotAllowed(worker.getUIWorkerType(),
+			throw new ForbiddenPublixException(PublixErrorMessages
+					.workerTypeNotAllowed(worker.getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}
 		// Personal single workers can't repeat the same study

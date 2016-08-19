@@ -15,7 +15,7 @@ import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalMultipleWorker;
-import services.publix.workers.PersonalMultipleErrorMessages;
+import services.publix.PublixErrorMessages;
 import services.publix.workers.PersonalMultipleStudyAuthorisation;
 
 /**
@@ -23,13 +23,10 @@ import services.publix.workers.PersonalMultipleStudyAuthorisation;
  */
 public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 
-	private PersonalMultipleErrorMessages personalMultipleErrorMessages;
 	private PersonalMultipleStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
-		personalMultipleErrorMessages = application.injector()
-				.instanceOf(PersonalMultipleErrorMessages.class);
 		studyAuthorisation = application.injector()
 				.instanceOf(PersonalMultipleStudyAuthorisation.class);
 	}
@@ -71,7 +68,7 @@ public class PersonalMultipleStudyAuthorisationTest extends AbstractTest {
 					batch);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(personalMultipleErrorMessages
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
 					.workerTypeNotAllowed(worker.getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}

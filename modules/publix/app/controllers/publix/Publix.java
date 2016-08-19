@@ -327,7 +327,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		ComponentResult componentResult = publixUtils
 				.retrieveCurrentComponentResult(studyResult);
 		if (componentResult == null) {
-			String error = errorMessages.componentNeverStarted(studyId,
+			String error = PublixErrorMessages.componentNeverStarted(studyId,
 					componentId, "submitResultData");
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, error, studyResult.getId()));
@@ -362,7 +362,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		ComponentResult componentResult = publixUtils
 				.retrieveCurrentComponentResult(studyResult);
 		if (componentResult == null) {
-			String error = errorMessages.componentNeverStarted(studyId,
+			String error = PublixErrorMessages.componentNeverStarted(studyId,
 					componentId, "submitResultData");
 			return redirect(controllers.publix.routes.PublixInterceptor
 					.finishStudy(studyId, false, error, studyResult.getId()));

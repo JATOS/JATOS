@@ -40,15 +40,13 @@ public class StudyAssets extends Controller {
 	private final IOUtils ioUtils;
 	private final IdCookieService idCookieService;
 	private final Common common;
-	private final PublixErrorMessages errorMessages;
 
 	@Inject
-	StudyAssets(IOUtils ioUtils, IdCookieService idCookieService, Common common,
-			PublixErrorMessages errorMessages) {
+	StudyAssets(IOUtils ioUtils, IdCookieService idCookieService,
+			Common common) {
 		this.ioUtils = ioUtils;
 		this.idCookieService = idCookieService;
 		this.common = common;
-		this.errorMessages = errorMessages;
 	}
 
 	/**
@@ -102,13 +100,13 @@ public class StudyAssets extends Controller {
 	private void checkProperAssets(String filePath) throws PublixException {
 		String[] filePathArray = filePath.split("/");
 		if (filePathArray.length == 0) {
-			throw new ForbiddenPublixException(
-					errorMessages.studyAssetsNotAllowedOutsideRun(filePath));
+			throw new ForbiddenPublixException(PublixErrorMessages
+					.studyAssetsNotAllowedOutsideRun(filePath));
 		}
 		String studyAssets = filePathArray[0];
 		if (!idCookieService.oneIdCookieHasThisStudyAssets(studyAssets)) {
-			throw new ForbiddenPublixException(
-					errorMessages.studyAssetsNotAllowedOutsideRun(filePath));
+			throw new ForbiddenPublixException(PublixErrorMessages
+					.studyAssetsNotAllowedOutsideRun(filePath));
 		}
 	}
 

@@ -14,7 +14,7 @@ import general.AbstractTest;
 import models.common.Batch;
 import models.common.Study;
 import play.mvc.Http;
-import services.publix.workers.JatosErrorMessages;
+import services.publix.PublixErrorMessages;
 import services.publix.workers.JatosStudyAuthorisation;
 
 /**
@@ -22,13 +22,10 @@ import services.publix.workers.JatosStudyAuthorisation;
  */
 public class JatosStudyAuthorisationTest extends AbstractTest {
 
-	private JatosErrorMessages jatosErrorMessages;
 	private JatosStudyAuthorisation studyAuthorisation;
 
 	@Override
 	public void before() throws Exception {
-		jatosErrorMessages = application.injector()
-				.instanceOf(JatosErrorMessages.class);
 		studyAuthorisation = application.injector()
 				.instanceOf(JatosStudyAuthorisation.class);
 	}
@@ -59,7 +56,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 			throws NoSuchAlgorithmException, IOException {
 		Study study = importExampleStudy();
 		addStudy(study);
-		
+
 		// Remove Jatos worker from allowed worker types
 		Batch batch = study.getDefaultBatch();
 		batch.removeAllowedWorkerType(admin.getWorker().getWorkerType());
@@ -70,7 +67,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 					study, batch);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
 					.workerTypeNotAllowed(admin.getWorker().getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}
@@ -96,7 +93,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 					study, batch);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
 					.workerNotAllowedStudy(admin.getWorker(), study.getId()));
 		}
 
@@ -119,7 +116,7 @@ public class JatosStudyAuthorisationTest extends AbstractTest {
 					study, batch);
 			Fail.fail();
 		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(jatosErrorMessages
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
 					.workerNotAllowedStudy(admin.getWorker(), study.getId()));
 		}
 
