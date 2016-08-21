@@ -40,6 +40,7 @@ public class IdCookie {
 
 	/**
 	 * Name of this IdCookie. Every name starts with {@value #ID_COOKIE_NAME}
+	 * and ends with '_' + the ID cookie's index.
 	 */
 	private String name;
 
@@ -186,6 +187,51 @@ public class IdCookie {
 
 	public void setCreationTime(Long creationTime) {
 		this.creationTime = creationTime;
+	}
+
+	public boolean equals(Object other) {
+		if (other == this)
+			return true;
+		if (other == null)
+			return false;
+		if (getClass() != other.getClass())
+			return false;
+		IdCookie otherIdCookie = (IdCookie) other;
+		return ((name == otherIdCookie.name
+				|| (name != null && name.equals(otherIdCookie.name)))
+				&& index == otherIdCookie.index
+				&& (creationTime == otherIdCookie.creationTime
+						|| (creationTime != null && creationTime
+								.equals(otherIdCookie.creationTime)))
+				&& (studyAssets == otherIdCookie.studyAssets
+						|| (studyAssets != null && studyAssets
+								.equals(otherIdCookie.studyAssets)))
+				&& (jatosRun == otherIdCookie.jatosRun || (jatosRun != null
+						&& jatosRun.equals(otherIdCookie.jatosRun)))
+				&& (workerId == otherIdCookie.workerId || (workerId != null
+						&& workerId.equals(otherIdCookie.workerId)))
+				&& (workerType == otherIdCookie.workerType
+						|| (workerType != null
+								&& workerType.equals(otherIdCookie.workerType)))
+				&& (batchId == otherIdCookie.batchId || (batchId != null
+						&& batchId.equals(otherIdCookie.batchId)))
+				&& (groupResultId == otherIdCookie.groupResultId
+						|| (groupResultId != null && groupResultId
+								.equals(otherIdCookie.groupResultId)))
+				&& (studyId == otherIdCookie.studyId || (studyId != null
+						&& studyId.equals(otherIdCookie.studyId)))
+				&& (studyResultId == otherIdCookie.studyResultId
+						|| (studyResultId != null && studyResultId
+								.equals(otherIdCookie.studyResultId)))
+				&& (componentId == otherIdCookie.componentId
+						|| (componentId != null && componentId
+								.equals(otherIdCookie.componentId)))
+				&& (componentResultId == otherIdCookie.componentResultId
+						|| (componentResultId != null && componentResultId
+								.equals(otherIdCookie.componentResultId)))
+				&& (componentPosition == otherIdCookie.componentPosition
+						|| (componentPosition != null && componentPosition
+								.equals(otherIdCookie.componentPosition))));
 	}
 
 }
