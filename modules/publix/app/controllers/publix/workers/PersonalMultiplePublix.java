@@ -19,6 +19,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
+import services.publix.HttpHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
@@ -67,7 +68,8 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
-		String workerIdStr = getQueryString(PERSONAL_MULTIPLE_WORKER_ID);
+		String workerIdStr = HttpHelpers
+				.getQueryString(PERSONAL_MULTIPLE_WORKER_ID);
 		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
 				+ batchId + ", " + "workerId " + workerIdStr);
 		Study study = publixUtils.retrieveStudy(studyId);

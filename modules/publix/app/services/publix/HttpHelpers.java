@@ -9,6 +9,7 @@ import org.w3c.dom.Document;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import exceptions.publix.UnsupportedMediaTypePublixException;
+import play.mvc.Http;
 import play.mvc.Http.RequestBody;
 import utils.common.XMLUtils;
 
@@ -66,6 +67,18 @@ public class HttpHelpers {
 			// Do nothing
 		}
 		return decodedStr;
+	}
+	
+	/**
+	 * Gets the value of to the given key in request's query string and trims
+	 * whitespace.
+	 */
+	public static String getQueryString(String key) {
+		String value = Http.Context.current().request().getQueryString(key);
+		if (value != null) {
+			value = value.trim();
+		}
+		return value;
 	}
 
 }

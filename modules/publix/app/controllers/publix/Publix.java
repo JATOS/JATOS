@@ -451,16 +451,4 @@ public abstract class Publix<T extends Worker> extends Controller
 		return ok();
 	}
 
-	/**
-	 * Gets the value of to the given key in request's query string and trims
-	 * whitespace.
-	 */
-	public static String getQueryString(String key) {
-		String value = request().getQueryString(key);
-		if (value != null) {
-			value = value.trim();
-		}
-		return value;
-	}
-
 }

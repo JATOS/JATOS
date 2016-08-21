@@ -22,6 +22,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
+import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
@@ -90,8 +91,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
 		// Get MTurk query parameters
-		String mtWorkerId = getQueryString(MT_WORKER_ID);
-		String mtAssignmentId = getQueryString(ASSIGNMENT_ID);
+		String mtWorkerId = HttpHelpers.getQueryString(MT_WORKER_ID);
+		String mtAssignmentId = HttpHelpers.getQueryString(ASSIGNMENT_ID);
 		// String mtHitId = getQueryString(HIT_ID);
 		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
 				+ batchId);
@@ -175,7 +176,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	private String retrieveWorkerTypeFromQueryString()
 			throws BadRequestPublixException {
-		String mtWorkerId = Publix.getQueryString(MTPublix.MT_WORKER_ID);
+		String mtWorkerId = HttpHelpers.getQueryString(MTPublix.MT_WORKER_ID);
 		if (mtWorkerId != null) {
 			return retrieveWorkerType();
 		}
