@@ -7,9 +7,10 @@ import java.util.stream.Collectors;
 
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
+import services.publix.idcookie.exception.IdCookieCollectionFullException;
 
 /**
- * Wrapper around an ArrayList for IdCookies. Adds some useful methods. The
+ * Wrapper around a collection of IdCookies. Adds some useful methods. The
  * number of IdCookies are limited to to {@value #MAX_ID_COOKIES}.
  * 
  * @author Kristian Lange (2016)
@@ -24,10 +25,14 @@ public class IdCookieCollection {
 	 */
 	public static final int MAX_ID_COOKIES = 10;
 
+	/**
+	 * Internally we use a map to store the cookies: Each IdCookie has a unique
+	 * study result ID. We map the study result ID to the actually cookie.
+	 */
 	private HashMap<Long, IdCookie> idCookieMap = new HashMap<>();
 
 	protected boolean isFull() {
-		return idCookieMap.size() >= MAX_ID_COOKIES;
+		return size() >= MAX_ID_COOKIES;
 	}
 
 	protected int size() {
@@ -36,7 +41,9 @@ public class IdCookieCollection {
 
 	/**
 	 * Stores the given IdCookie. If an IdCookie with the same study result ID
-	 * is already stored an IdCookieAlreadyExistsException is thrown.
+	 * is already stored an IdCookieAlreadyExistsException is thrown. If the max
+	 * number of cookies is reached an IdCookieCollectionFullException is
+	 * thrown.
 	 */
 	protected IdCookie add(IdCookie idCookie)
 			throws IdCookieAlreadyExistsException {
@@ -49,9 +56,15 @@ public class IdCookieCollection {
 
 	/**
 	 * Stores the given IdCookie. If an IdCookie with the same study result ID
-	 * is already stored it gets overwritten.
+	 * is already stored it gets overwritten. If the max number of cookies is
+	 * reached an IdCookieCollectionFullException is thrown.
 	 */
-	protected IdCookie put(IdCookie idCookie) {
+	protected IdCookie put(IdCookie idCookie)
+			throws IdCookieCollectionFullException {
+		if (isFull() && !idCookieMap.containsKey(idCookie.getStudyResultId())) {
+			throw new IdCookieCollectionFullException(
+					PublixErrorMessages.IDCOOKIE_COLLECTION_FULL);
+		}
 		return idCookieMap.put(idCookie.getStudyResultId(), idCookie);
 	}
 

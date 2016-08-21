@@ -15,6 +15,7 @@ import play.mvc.Http.Cookies;
 import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
+import services.publix.idcookie.exception.IdCookieCollectionFullException;
 import services.publix.idcookie.exception.IdCookieMalformedException;
 
 /**
@@ -263,7 +264,8 @@ public class IdCookieAccessor {
 	 * cookie so it never expires.
 	 */
 	protected void write(IdCookie newIdCookie)
-			throws IdCookieAlreadyExistsException {
+			throws IdCookieAlreadyExistsException,
+			IdCookieCollectionFullException {
 		IdCookieCollection idCookieCollection = extract();
 
 		// Put new IdCookie into Response
@@ -282,7 +284,7 @@ public class IdCookieAccessor {
 	 * Takes an IdCookie and put its fields into a String for an cookie value:
 	 * key=value&key=value&... (similar to a URL query).
 	 */
-	private String asCookieString(IdCookie idCookie) {
+	protected String asCookieString(IdCookie idCookie) {
 		StringBuilder sb = new StringBuilder();
 		appendCookieEntry(sb, IdCookie.BATCH_ID, idCookie.getBatchId(), true);
 		appendCookieEntry(sb, IdCookie.COMPONENT_ID, idCookie.getComponentId(),
