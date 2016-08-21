@@ -42,7 +42,7 @@ public class GeneralSinglePublixUtilsTest
 
 	@Override
 	public void after() throws Exception {
-		super.before();
+		super.after();
 	}
 
 	@Test

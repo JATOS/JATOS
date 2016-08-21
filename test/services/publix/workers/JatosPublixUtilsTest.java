@@ -41,7 +41,7 @@ public class JatosPublixUtilsTest extends PublixUtilsTest<JatosWorker> {
 
 	@Override
 	public void after() throws Exception {
-		super.before();
+		super.after();
 	}
 
 	@Test

@@ -36,7 +36,7 @@ public class PersonalSinglePublixUtilsTest
 
 	@Override
 	public void after() throws Exception {
-		super.before();
+		super.after();
 	}
 
 	@Test

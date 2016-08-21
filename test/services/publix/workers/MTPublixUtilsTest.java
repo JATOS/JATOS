@@ -36,7 +36,7 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 
 	@Override
 	public void after() throws Exception {
-		super.before();
+		super.after();
 	}
 
 	@Test
