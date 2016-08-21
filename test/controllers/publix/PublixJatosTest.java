@@ -31,7 +31,6 @@ import play.mvc.Http.Cookies;
 import play.mvc.Http.HeaderNames;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
-import services.publix.HttpHelpers;
 import services.publix.idcookie.IdCookie;
 import utils.common.JsonUtils;
 
@@ -315,7 +314,7 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Start first component
 		// studyResult -> STARTED, componentResult -> STARTED
-//		result.
+		// result.
 		result = startComponent(study, study.getFirstComponent());
 
 		Cookies cookies = result.cookies();
@@ -386,7 +385,7 @@ public class PublixJatosTest extends AbstractTest {
 				+ "/start";
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-//				.cookie(cookie);
+				// .cookie(cookie);
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		return route(request, 10000);
 	}
