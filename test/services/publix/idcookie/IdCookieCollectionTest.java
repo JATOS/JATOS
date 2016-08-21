@@ -4,22 +4,12 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import org.junit.Test;
 
-import general.AbstractTest;
-import services.publix.idcookie.IdCookieCollection;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 
 /**
  * @author Kristian Lange (2016)
  */
-public class IdCookieCollectionTest extends AbstractTest {
-
-	@Override
-	public void before() throws Exception {
-	}
-
-	@Override
-	public void after() throws Exception {
-	}
+public class IdCookieCollectionTest {
 
 	@Test
 	public void simpleCheck() {
@@ -118,7 +108,7 @@ public class IdCookieCollectionTest extends AbstractTest {
 	public void checkFindWithStudyResultId() {
 		IdCookieCollection idCookieCollection = new IdCookieCollection();
 		assertThat(idCookieCollection.findWithStudyResultId(1l) == null);
-		
+
 		IdCookie idCookie = createIdCookie(1l, 0);
 		idCookieCollection.put(idCookie);
 		assertThat(
