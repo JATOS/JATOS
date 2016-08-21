@@ -30,6 +30,10 @@ public class IdCookieCollection {
 		return idCookieMap.size() >= MAX_ID_COOKIES;
 	}
 
+	protected int size() {
+		return idCookieMap.size();
+	}
+
 	/**
 	 * Stores the given IdCookie. If an IdCookie with the same study result ID
 	 * is already stored an IdCookieAlreadyExistsException is thrown.
@@ -82,8 +86,18 @@ public class IdCookieCollection {
 				PublixErrorMessages.IDCOOKIE_COLLECTION_INDEX_OUT_OF_BOUND);
 	}
 
+	/**
+	 * Returns the IdCookie to which the specified study result ID is mapped, or
+	 * null if nothing maps to the ID.
+	 */
 	protected IdCookie findWithStudyResultId(long studyResultId) {
 		return idCookieMap.get(studyResultId);
+	}
+
+	@Override
+	public String toString() {
+		return idCookieMap.keySet().stream().map(key -> key.toString())
+				.collect(Collectors.joining(", "));
 	}
 
 }
