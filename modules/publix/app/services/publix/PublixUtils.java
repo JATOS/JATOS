@@ -225,7 +225,8 @@ public abstract class PublixUtils<T extends Worker> {
 			StudyResult abandonedStudyResult = studyResultDao
 					.findById(abandonedStudyResultId);
 			// If the abandoned study result isn't done, finish it.
-			if (!PublixHelpers.studyDone(abandonedStudyResult)) {
+			if (abandonedStudyResult != null
+					&& !PublixHelpers.studyDone(abandonedStudyResult)) {
 				groupService.finishStudyResultInGroup(abandonedStudyResult);
 				finishStudyResult(false,
 						PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
