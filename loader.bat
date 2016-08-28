@@ -15,8 +15,11 @@ set JATOS_HOME=%JATOS_HOME:~0,-1%
 set LOCAL_JRE=jre\win32_jre
 
 rem Detect if we were double clicked
-for %%x in (%cmdcmdline%) do if %%~x==/c set DOUBLECLICKED=1
-if defined DOUBLECLICKED (
+set DOUBLECLICKED=0
+echo %cmdcmdline% | find /i "%~0" >nul
+if not errorlevel 1 set DOUBLECLICKED=1
+
+if _%DOUBLECLICKED%_==_1_ (
   call :start
   exit
 )
@@ -38,9 +41,15 @@ exit /b
 rem ### Functions ###
 
 :start
+  rem # Check if JATOS is already running
+  wmic process where "name like '%%java%%'" get commandline | findstr /i /c:"jatos" > NUL && (
+    echo JATOS already running
+    if _%DOUBLECLICKED%_==_1_ pause
+    goto:eof
+  )
   IF EXIST "%JATOS_HOME%\RUNNING_PID" (
     echo JATOS already running
-	if defined DOUBLECLICKED pause
+    if _%DOUBLECLICKED%_==_1_ pause
     goto:eof
   )
 
@@ -60,19 +69,20 @@ rem ### Functions ###
 
   rem # Start JATOS with configuration file and application secret
   set JATOS_OPTS=-Dconfig.file="conf/production.conf" -Dplay.crypto.secret=!SECRET! -Dhttp.port=%port% -Dhttp.address=%address%
-  if defined DOUBLECLICKED (
+  if _%DOUBLECLICKED%_==_1_ (
     set JATOS_OPTS=-Dpidfile.path="NUL" %JATOS_OPTS%
   ) else (
     set JATOS_OPTS=-Dpidfile.path="%JATOS_HOME%\RUNNING_PID" %JATOS_OPTS%
   )
+
   set "APP_CLASSPATH=%JATOS_HOME%\lib\*"
   set "APP_MAIN_CLASS=play.core.server.NettyServer"
-  set CMD=%JAVACMD% %JATOS_OPTS% -cp "%APP_CLASSPATH%" %APP_MAIN_CLASS%
+  set CMD="%JAVACMD%" %JATOS_OPTS% -cp "%APP_CLASSPATH%" %APP_MAIN_CLASS%
   cd %JATOS_HOME%
-  if defined DOUBLECLICKED (
-    start /b %CMD% > nul
+  if _%DOUBLECLICKED%_==_1_ (
+    start /b call %CMD% > nul
   ) else (
-    start /b %CMD% > nul
+    start /b call %CMD% > nul
   )
   
   echo To use JATOS type %address%:%port% in your browser's address bar
@@ -103,8 +113,8 @@ rem ### Functions ###
   )
   if not "%JAVA_HOME%"=="" (
     if exist "%JAVA_HOME%\bin\java.exe" (
-	  set "JAVACMD=%JAVA_HOME%\bin\java.exe"
-	)
+      set "JAVACMD=%JAVA_HOME%\bin\java.exe"
+    )
   )
   
   if "%JAVACMD%"=="" set JAVACMD=java
@@ -127,10 +137,9 @@ rem ### Functions ###
     echo your environment variables to see if "java.exe" is
     echo available via JAVA_HOME or PATH.
     echo.
-	
-	if defined DOUBLECLICKED pause
+
+    if _%DOUBLECLICKED%_==_1_ pause
     exit /b 1
   )
-  goto:eof
+  exit /b 0
   
-
