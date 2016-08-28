@@ -30,6 +30,7 @@ import utils.common.IOUtils;
 public class StudyAssets extends Controller {
 
 	private static final ALogger LOGGER = Logger.of(StudyAssets.class);
+	private static final String URL_PATH_SEPARATOR = "/";
 
 	/**
 	 * Identifying part of any URL that indicates an access to the study assets
@@ -53,11 +54,12 @@ public class StudyAssets extends Controller {
 	 * Action called while routing. Translates the given file path from the URL
 	 * into a file path of the OS's file system and returns the file.
 	 */
-	public Result versioned(String filePath) {
+	public Result versioned(String urlPath) {
 		File file;
 		try {
-			filePath = filePath.replace("/", File.separator);
-			checkProperAssets(filePath);
+			checkProperAssets(urlPath);
+			String filePath = urlPath.replace(URL_PATH_SEPARATOR,
+					File.separator);
 			file = ioUtils.getExistingFileSecurely(
 					common.getStudyAssetsRootPath(), filePath);
 			LOGGER.info(".versioned: loading file " + file.getPath() + ".");
@@ -72,9 +74,8 @@ public class StudyAssets extends Controller {
 		} catch (IOException e) {
 			LOGGER.info(".versioned: failed loading from path "
 					+ common.getStudyAssetsRootPath() + File.separator
-					+ filePath);
-			String errorMsg = "Resource \"" + filePath
-					+ "\" couldn't be found.";
+					+ urlPath);
+			String errorMsg = "Resource \"" + urlPath + "\" couldn't be found.";
 			if (ControllerUtils.isAjax()) {
 				return notFound(errorMsg);
 			} else {
@@ -86,7 +87,7 @@ public class StudyAssets extends Controller {
 
 	/**
 	 * Throws a ForbiddenPublixException if this request is not allowed to
-	 * access the study assets given in the filePath. It compares the study
+	 * access the study assets given in the URL path. It compares the study
 	 * assets that are within the given filePath with all study assets that are
 	 * stored in the JATOS ID cookies. If at least one of them has the study
 	 * assets then the filePath is allowed. If not a ForbiddenPublixException is
@@ -97,16 +98,16 @@ public class StudyAssets extends Controller {
 	 * study result ID). But since all ID cookie originate in the same browser
 	 * one can assume this worker is allowed to access the study assets.
 	 */
-	private void checkProperAssets(String filePath) throws PublixException {
-		String[] filePathArray = filePath.split("/");
+	private void checkProperAssets(String urlPath) throws PublixException {
+		String[] filePathArray = urlPath.split(URL_PATH_SEPARATOR);
 		if (filePathArray.length == 0) {
 			throw new ForbiddenPublixException(PublixErrorMessages
-					.studyAssetsNotAllowedOutsideRun(filePath));
+					.studyAssetsNotAllowedOutsideRun(urlPath));
 		}
 		String studyAssets = filePathArray[0];
 		if (!idCookieService.oneIdCookieHasThisStudyAssets(studyAssets)) {
 			throw new ForbiddenPublixException(PublixErrorMessages
-					.studyAssetsNotAllowedOutsideRun(filePath));
+					.studyAssetsNotAllowedOutsideRun(urlPath));
 		}
 	}
 
