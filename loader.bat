@@ -53,7 +53,7 @@ rem ### Functions ###
     goto:eof
   )
 
-  echo Starting JATOS
+  echo Starting JATOS ... please wait
   rem # Generate application secret for the Play framework
   rem # If it's the first start, create a new secret, otherwise load it from the file.
   IF NOT EXIST "%JATOS_HOME%\play.crypto.secret" (
