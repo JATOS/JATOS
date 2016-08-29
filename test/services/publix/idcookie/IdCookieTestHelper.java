@@ -1,5 +1,6 @@
 package services.publix.idcookie;
 
+import controllers.publix.workers.JatosPublix.JatosRun;
 import models.common.workers.JatosWorker;
 
 /**
@@ -16,7 +17,7 @@ public class IdCookieTestHelper {
 		idCookie.setCreationTime(System.currentTimeMillis());
 		idCookie.setGroupResultId(1l);
 		idCookie.setIndex(0);
-		idCookie.setJatosRun(null);
+		idCookie.setJatosRun(JatosRun.RUN_STUDY);
 		idCookie.setName("JATOS_IDS_0");
 		idCookie.setStudyAssets("test_study_assets");
 		idCookie.setStudyId(1l);
