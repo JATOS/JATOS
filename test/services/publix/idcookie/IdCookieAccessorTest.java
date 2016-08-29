@@ -212,4 +212,29 @@ public class IdCookieAccessorTest extends AbstractTest {
 				.isTrue();
 	}
 
+	@Test
+	public void checkDiscard() throws IdCookieAlreadyExistsException {
+		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		List<Cookie> cookieList = new ArrayList<>();
+		cookieList.add(buildCookie(idCookie1));
+
+		mockContext(cookieList);
+
+		// extract() puts it in the RequestScope too
+		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+		assertThat(idCookieCollection.size()).isEqualTo(1);
+
+		idCookieAccessor.discard(1l);
+
+		// Check in RequestScope
+		idCookieCollection = (IdCookieCollection) RequestScope
+				.get(IdCookieCollection.class.getSimpleName());
+		assertThat(idCookieCollection.size()).isEqualTo(0);
+
+		// Check in Response object
+		// TODO How to check response?
+		// assertThat(Http.Context.current.get().response().cookie("JATOS_IDS_0"))
+		// .isNull();
+	}
+
 }
