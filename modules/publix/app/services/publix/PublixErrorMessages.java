@@ -34,7 +34,8 @@ public class PublixErrorMessages {
 				+ studyId + ".";
 	}
 
-	public static String workerFinishedStudyAlready(Worker worker, Long studyId) {
+	public static String workerFinishedStudyAlready(Worker worker,
+			Long studyId) {
 		return "Worker " + worker.getId() + " finished study " + studyId
 				+ " already.";
 	}
@@ -71,7 +72,8 @@ public class PublixErrorMessages {
 		return "The batch (ID: " + batchId + ") is inactive.";
 	}
 
-	public static String componentNotAllowedToReload(Long studyId, Long componentId) {
+	public static String componentNotAllowedToReload(Long studyId,
+			Long componentId) {
 		return "It's not allowed to reload this component (ID: " + componentId
 				+ "). Unfortunately it is neccessary to finish "
 				+ "this study (ID: " + studyId + ") at this point.";
@@ -90,7 +92,8 @@ public class PublixErrorMessages {
 				+ " doesn't exist.";
 	}
 
-	public static String componentNotBelongToStudy(Long studyId, Long componentId) {
+	public static String componentNotBelongToStudy(Long studyId,
+			Long componentId) {
 		return "There is no study with ID " + studyId
 				+ " that has a component with ID " + componentId + ".";
 	}
@@ -132,7 +135,8 @@ public class PublixErrorMessages {
 
 	public static String studyAssetsNotAllowedOutsideRun(String filePath) {
 		return "You tried to access the file " + filePath
-				+ " but this study was never started.";
+				+ " but it seems you have no access rights."
+				+ " Maybe this study was never started?";
 	}
 
 	public static String couldntExtractFromIdCookie(String idCookieName,

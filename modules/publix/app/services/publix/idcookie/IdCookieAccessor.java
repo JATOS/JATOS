@@ -95,7 +95,7 @@ public class IdCookieAccessor {
 		idCookie.setWorkerId(getValueAsLong(cookieMap, IdCookie.WORKER_ID, true,
 				cookie.name()));
 		idCookie.setWorkerType(getValueAsString(cookieMap, IdCookie.WORKER_TYPE,
-				cookie.name()));
+				true, cookie.name()));
 		idCookie.setBatchId(getValueAsLong(cookieMap, IdCookie.BATCH_ID, true,
 				cookie.name()));
 		idCookie.setGroupResultId(getValueAsLong(cookieMap,
@@ -111,7 +111,7 @@ public class IdCookieAccessor {
 		idCookie.setComponentPosition(getValueAsInt(cookieMap,
 				IdCookie.COMPONENT_POSITION, false, cookie.name()));
 		idCookie.setStudyAssets(getValueAsString(cookieMap,
-				IdCookie.STUDY_ASSETS, cookie.name()));
+				IdCookie.STUDY_ASSETS, true, cookie.name()));
 		idCookie.setJatosRun(valueOfJatosRun(cookieMap, cookie));
 		idCookie.setCreationTime(getValueAsLong(cookieMap,
 				IdCookie.CREATION_TIME, true, cookie.name()));
@@ -127,7 +127,7 @@ public class IdCookieAccessor {
 			Cookie cookie) throws IdCookieMalformedException {
 		try {
 			return JatosRun.valueOf(getValueAsString(cookieMap,
-					IdCookie.JATOS_RUN, cookie.name()));
+					IdCookie.JATOS_RUN, false, cookie.name()));
 		} catch (IllegalArgumentException | NullPointerException e) {
 			return null;
 		}
@@ -151,28 +151,61 @@ public class IdCookieAccessor {
 
 	/**
 	 * Extract and returns a Map with the given Cookie's key-value pairs.
+	 * 
+	 * @throws IdCookieMalformedException
 	 */
-	private Map<String, String> getCookiesKeyValuePairs(Cookie cookie) {
+	private Map<String, String> getCookiesKeyValuePairs(Cookie cookie)
+			throws IdCookieMalformedException {
 		Map<String, String> cookieKeyValuePairs = new HashMap<>();
-		for (String pair : cookie.value().split(COOKIE_AND)) {
-			String[] pairArray = pair.split(COOKIE_EQUALS);
-			cookieKeyValuePairs.put(pairArray[0], pairArray[1]);
+		for (String pairStr : cookie.value().split(COOKIE_AND)) {
+			addKeyValuePair(cookieKeyValuePairs, pairStr);
 		}
 		return cookieKeyValuePairs;
+	}
+
+	private void addKeyValuePair(Map<String, String> cookieKeyValuePairs,
+			String pairStr) throws IdCookieMalformedException {
+		String[] pairArray = pairStr.split(COOKIE_EQUALS);
+		String key;
+		String value;
+		// Every pair should have 2 elements (a key and a value)
+		if (pairArray.length == 0) {
+			throw new IdCookieMalformedException(
+					"Couldn't extract key from ID cookie.");
+		} else if (pairArray.length == 1) {
+			key = pairArray[0];
+			value = "";
+		} else if (pairArray.length == 2) {
+			key = pairArray[0];
+			value = pairArray[1];
+		} else {
+			throw new IdCookieMalformedException(
+					"Wrong number of '&' in ID cookie.");
+		}
+		cookieKeyValuePairs.put(key, value);
 	}
 
 	/**
 	 * Searches the given map the given key and returns the corresponding value
 	 * as String. Throws a MalformedIdCookieException if the key doesn't exist.
+	 * If strict is true and the value is "" it throws an
+	 * MalformedIdCookieException.
 	 */
 	private String getValueAsString(Map<String, String> cookieMap, String key,
-			String cookieName) throws IdCookieMalformedException {
+			boolean strict, String cookieName)
+			throws IdCookieMalformedException {
+		String valueStr;
 		try {
-			return HttpHelpers.urlDecode(cookieMap.get(key));
+			valueStr = HttpHelpers.urlDecode(cookieMap.get(key));
 		} catch (Exception e) {
 			throw new IdCookieMalformedException(PublixErrorMessages
 					.couldntExtractFromIdCookie(cookieName, key));
 		}
+		if (strict && valueStr.trim() == "") {
+			throw new IdCookieMalformedException(PublixErrorMessages
+					.couldntExtractFromIdCookie(cookieName, key));
+		}
+		return valueStr;
 	}
 
 	/**
