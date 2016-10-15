@@ -229,7 +229,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 			<a class="navbar-brand" href="@controllers.gui.routes.Home.home">
 				<img src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")" alt="JATOS logo" height="25pt">
 			</a>
-			<a class="navbar-brand" href="@controllers.gui.routes.Home.home">JATOS</a>
+			<a id="jatosBrandName" class="navbar-brand" href="@controllers.gui.routes.Home.home">JATOS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
 		</div>
 		<div class="navbar-collapse collapse" id="jatos-navbar-collapse">
 			<ul class="nav navbar-nav navbar-left">
@@ -351,6 +351,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 @views.html.gui.user.createUserModal()
 
 <script>
+setBrand();
 var messagesRequestScope = @Html(general.gui.RequestScopeMessaging.getAsJson());
 showMessages(messagesRequestScope);
 var messagesFlashScope = @Html(general.gui.FlashScopeMessaging.getAsJson());
@@ -358,6 +359,21 @@ showMessages(messagesFlashScope);
 var breadcrumbs = @Html(breadcrumbs);
 showBreadcrumbs(breadcrumbs);
 fillSidebar();
+
+function setBrand() {
+	if (window.location.href.indexOf("localhost") == -1
+			&& window.location.href.indexOf("127.0.0.1") == -1) {
+		$(".navbar-brand img").attr("src", "@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")");
+		$("#jatosBrandName").html("JATOS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
+		$("#jatosHeader").removeClass('navbar-inverse');
+		$("#jatosHeader").addClass('navbar-default');
+	} else {
+		$(".navbar-brand img").attr("src", "@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_grey.svg")");
+		$("#jatosBrandName").text("JATOS local");
+		$("#jatosHeader").removeClass('navbar-default');
+		$("#jatosHeader").addClass('navbar-inverse');
+	};
+}
 
 function showMessages(messages) {
 	if (messages != null) {
@@ -574,7 +590,6 @@ function fillSidebarStudyList(studyArray) {
 		listItem = listItem + componentsStr;
 		$('#sidebarStudyList').append(listItem);
 	});
-	
 }
 
 </script>
