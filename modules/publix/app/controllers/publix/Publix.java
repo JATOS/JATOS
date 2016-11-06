@@ -99,6 +99,9 @@ public abstract class Publix<T extends Worker> extends Controller
 		Component component = publixUtils.retrieveComponent(study, componentId);
 		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
 				study, studyResultId);
+		publixUtils.setPreStudyStateByComponentId(studyResult, study,
+				componentId);
+
 		ComponentResult componentResult = null;
 		try {
 			componentResult = publixUtils.startComponent(component,
@@ -108,6 +111,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					.finishStudy(studyId, studyResult.getId(), false,
 							e.getMessage()));
 		}
+
 		idCookieService.writeIdCookie(worker, batch, studyResult,
 				componentResult);
 		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
@@ -171,7 +175,9 @@ public abstract class Publix<T extends Worker> extends Controller
 					.finishStudy(studyId, studyResult.getId(), false,
 							e.getMessage()));
 		}
-		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
+		if (studyResult.getStudyState() != StudyState.PRE) {
+			studyResult.setStudyState(StudyState.DATA_RETRIEVED);
+		}
 		studyResultDao.update(studyResult);
 		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
 		componentResultDao.update(componentResult);

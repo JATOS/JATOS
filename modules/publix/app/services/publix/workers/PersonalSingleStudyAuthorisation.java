@@ -6,6 +6,7 @@ import javax.inject.Singleton;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
+import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalSingleWorker;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
@@ -33,8 +34,10 @@ public class PersonalSingleStudyAuthorisation
 					PublixErrorMessages.batchInactive(batch.getId()));
 		}
 		// Personal Single Runs are used only once - don't start if worker has a
-		// study result
-		if (!worker.getStudyResultList().isEmpty()) {
+		// study result (although it is in state PRE) 
+		if (!worker.getStudyResultList().isEmpty()
+				&& worker.getStudyResultList().get(0)
+						.getStudyState() != StudyState.PRE) {
 			throw new ForbiddenPublixException(
 					PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}

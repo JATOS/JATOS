@@ -74,6 +74,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		String workerType = getWorkerTypeFromQuery();
 		switch (workerType) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).startStudy(studyId,
 					batchId);
@@ -108,6 +109,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).startComponent(studyId,
 					componentId, studyResultId);
@@ -142,6 +144,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class)
 					.startComponentByPosition(studyId, position, studyResultId);
@@ -176,6 +179,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class)
 					.startNextComponent(studyId, studyResultId);
@@ -210,6 +214,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).getInitData(studyId,
 					componentId, studyResultId);
@@ -244,6 +249,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		WebSocket<JsonNode> result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).joinGroup(studyId,
 					studyResultId);
@@ -278,6 +284,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).reassignGroup(studyId,
 					studyResultId);
@@ -312,6 +319,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).leaveGroup(studyId,
 					studyResultId);
@@ -346,6 +354,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class)
 					.setStudySessionData(studyId, studyResultId);
@@ -380,6 +389,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).submitResultData(studyId,
 					componentId, studyResultId);
@@ -415,6 +425,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).finishComponent(studyId,
 					componentId, studyResultId, successful, errorMsg);
@@ -452,6 +463,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).abortStudy(studyId,
 					studyResultId, message);
@@ -486,6 +498,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 		Result result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			result = instanceOfPublix(MTPublix.class).finishStudy(studyId,
 					studyResultId, successful, errorMsg);
@@ -519,6 +532,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 			throws PublixException {
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
 		case MTSandboxWorker.WORKER_TYPE:
 			return instanceOfPublix(MTPublix.class).log(studyId, componentId,
 					studyResultId);

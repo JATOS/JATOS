@@ -64,30 +64,49 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 		this.resultCreator = resultCreator;
 	}
 
+	/**
+	 * {@inheritDoc}<br>
+	 * <br>
+	 * 
+	 * Only a general single run or a personal single run has the special
+	 * StudyState PRE. Only with the corresponding workers (GeneralSingleWorker
+	 * and PersonalSingleWorker) it's possible to have a preview of the study.
+	 * To get into the preview mode one has to add 'pre' to the URL query
+	 * string. In the preview mode a worker can start the study (with 'pre') and
+	 * start the first component as often as he wants. The study result switches
+	 * into 'STARTED' and back to normal behavior by starting the study without
+	 * the 'pre' in the query string or by going on and start a component
+	 * different then the first.
+	 */
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
 		String workerIdStr = HttpHelpers
 				.getQueryString(PERSONAL_SINGLE_WORKER_ID);
-		LOGGER.info(
-				".startStudy: studyId " + studyId + ", " + "batchId " + batchId
-						+ ", " + PERSONAL_SINGLE_WORKER_ID + " " + workerIdStr);
+		boolean pre = HttpHelpers.getQueryString("pre") != null;
+		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
+				+ batchId + ", " + PERSONAL_SINGLE_WORKER_ID + " " + workerIdStr
+				+ ", " + "pre " + pre);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		PersonalSingleWorker worker = publixUtils
 				.retrieveTypedWorker(workerIdStr);
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
-		publixUtils.finishAbandonedStudyResults();
-		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
-				worker);
-		idCookieService.writeIdCookie(worker, batch, studyResult);
+		StudyResult studyResult;
+		if (worker.getStudyResultList().isEmpty()) {
+			publixUtils.finishAbandonedStudyResults();
+			studyResult = resultCreator.createStudyResult(study, batch, worker);
+			idCookieService.writeIdCookie(worker, batch, studyResult);
+		} else {
+			studyResult = worker.getLastStudyResult();
+		}
+		publixUtils.setPreStudyStateByPre(pre, studyResult);
 
-		Component firstComponent = publixUtils
-				.retrieveFirstActiveComponent(study);
+		Component component = publixUtils.retrieveFirstActiveComponent(study);
 		return redirect(
 				controllers.publix.routes.PublixInterceptor.startComponent(
-						studyId, firstComponent.getId(), studyResult.getId()));
+						studyId, component.getId(), studyResult.getId()));
 	}
 
 }

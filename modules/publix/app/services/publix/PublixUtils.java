@@ -465,4 +465,30 @@ public abstract class PublixUtils<T extends Worker> {
 		return batch;
 	}
 
+	/**
+	 * Sets the StudyResult's StudyState either to PRE (if pre is true) or START
+	 * (if pre is false).
+	 */
+	public void setPreStudyStateByPre(boolean pre, StudyResult studyResult) {
+		if (pre) {
+			studyResult.setStudyState(StudyState.PRE);
+		} else {
+			studyResult.setStudyState(StudyState.STARTED);
+		}
+	}
+
+	/**
+	 * Sets the StudyResult's StudyState to STARTED if the the study is
+	 * currently in state PRE and the study result moved away from the first
+	 * component (this means the given componentId isn't the first component's
+	 * one).
+	 */
+	public void setPreStudyStateByComponentId(StudyResult studyResult,
+			Study study, Long componentId) {
+		if (studyResult.getStudyState() == StudyState.PRE
+				&& !study.getFirstComponent().getId().equals(componentId)) {
+			studyResult.setStudyState(StudyState.STARTED);
+		}
+	}
+
 }

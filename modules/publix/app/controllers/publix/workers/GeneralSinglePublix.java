@@ -19,11 +19,13 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
+import services.publix.HttpHelpers;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
 import services.publix.idcookie.IdCookieService;
+import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
@@ -41,17 +43,13 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 
 	private static final ALogger LOGGER = Logger.of(GeneralSinglePublix.class);
 
-	/**
-	 * Cookie name where all study's UUIDs are stored.
-	 */
-	public static final String COOKIE = "JATOS_GENERALSINGLE_UUIDS";
-
 	public static final String GENERALSINGLE = "generalSingle";
 
 	private final GeneralSinglePublixUtils publixUtils;
 	private final GeneralSingleStudyAuthorisation studyAuthorisation;
 	private final ResultCreator resultCreator;
 	private final WorkerCreator workerCreator;
+	private final GeneralSingleCookieService generalSingleCookieService;
 
 	@Inject
 	GeneralSinglePublix(JPAApi jpa, GeneralSinglePublixUtils publixUtils,
@@ -59,6 +57,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 			ResultCreator resultCreator, WorkerCreator workerCreator,
 			GroupService groupService, ChannelService channelService,
 			IdCookieService idCookieService,
+			GeneralSingleCookieService generalSingleCookieService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
@@ -69,31 +68,51 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;
 		this.workerCreator = workerCreator;
+		this.generalSingleCookieService = generalSingleCookieService;
 	}
 
+	/**
+	 * {@inheritDoc}<br><br>
+	 * 
+	 * Only a general single run or a personal single run has the special
+	 * StudyState PRE. Only with the corresponding workers (GeneralSingleWorker
+	 * and PersonalSingleWorker) it's possible to have a preview of the study.
+	 * To get into the preview mode one has to add 'pre' to the URL query
+	 * string. In the preview mode a worker can start the study (with 'pre') and
+	 * start the first component as often as he wants. The study result switches
+	 * into 'STARTED' and back to normal behavior by starting the study without
+	 * the 'pre' in the query string or by going on and start a component
+	 * different then the first.
+	 */
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
+		boolean pre = HttpHelpers.getQueryString("pre") != null;
 		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
-				+ batchId);
+				+ batchId + ", " + "pre " + pre);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
-		publixUtils.checkStudyInGeneralSingleCookie(study,
-				request().cookie(GeneralSinglePublix.COOKIE));
+		Long workerId = generalSingleCookieService.retrieveWorkerByStudy(study);
 
-		GeneralSingleWorker worker = workerCreator
-				.createAndPersistGeneralSingleWorker(batch);
-		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-		LOGGER.info(".startStudy: study (study ID " + studyId + ", batch ID "
-				+ batchId + ") " + "assigned to worker with ID "
-				+ worker.getId());
+		StudyResult studyResult;
+		if (workerId != null) {
+			studyResult = publixUtils.retrievePreStudyResult(workerId);
+		} else {
+			GeneralSingleWorker worker = workerCreator
+					.createAndPersistGeneralSingleWorker(batch);
+			studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study,
+					batch);
+			LOGGER.info(
+					".startStudy: study (study ID " + studyId + ", batch ID "
+							+ batchId + ") " + "assigned to worker with ID "
+							+ worker.getId() + ", " + "pre " + pre);
 
-		publixUtils.finishAbandonedStudyResults();
-		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
-				worker);
-		idCookieService.writeIdCookie(worker, batch, studyResult);
-
-		publixUtils.setGeneralSingleCookie(study);
+			publixUtils.finishAbandonedStudyResults();
+			studyResult = resultCreator.createStudyResult(study, batch, worker);
+			idCookieService.writeIdCookie(worker, batch, studyResult);
+			generalSingleCookieService.set(study, worker);
+		}
+		publixUtils.setPreStudyStateByPre(pre, studyResult);
 
 		Component firstComponent = publixUtils
 				.retrieveFirstActiveComponent(study);

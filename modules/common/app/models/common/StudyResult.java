@@ -57,6 +57,8 @@ public class StudyResult {
 	private Timestamp endDate;
 
 	public enum StudyState {
+		PRE, // Preview of study (exists only in PersonalSingleWorker and
+				// GeneralSingleWorker)
 		STARTED, // Study was started
 		DATA_RETRIEVED, // Study's jsonData were retrieved
 		FINISHED, // Study successfully finished
