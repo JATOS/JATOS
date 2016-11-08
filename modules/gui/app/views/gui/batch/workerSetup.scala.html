@@ -257,7 +257,7 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 				<h4 class="modal-title">Link for Worker</h4>
 			</div>
 			<div class="modal-body">
-				<button type="button" class="btn btn-default btn-sm copyButton">Copy</button>
+				<!-- Filled dynamically -->
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -618,7 +618,7 @@ function showPersonalSingleLinkModal(url) {
 	var title = "Personal Single Run";
 	var preText = "This address will start the run.";
 	var postText = "Copy & paste it or press \"Run\" to start it right away.";
-	showLinkModal(title, preText, url, postText);
+	showLinkModal(title, preText, url, true, postText);
 }
 
 $('#personalMultipleWorkerPanel').on('click', '.linkButton', function() {
@@ -632,7 +632,7 @@ function showPersonalMultipleLinkModal(url) {
 	var title = "Personal Multiple Run";
 	var preText = "This address will start the run.";
 	var postText = "Copy & paste it or press \"Run\" to start it right away.";
-	showLinkModal(title, preText, url, postText);
+	showLinkModal(title, preText, url, false, postText);
 }
 
 $('#generalSingleWorkerPanel').on('click', '.linkButton', function() {
@@ -640,22 +640,39 @@ $('#generalSingleWorkerPanel').on('click', '.linkButton', function() {
 	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "generalSingle";
 	var preText = "This address will start the run.";
 	var postText = "Copy & paste it or press \"Run\" to start a run right away.";
-	showLinkModal(title, preText, url, postText);
+	showLinkModal(title, preText, url, true, postText);
 });
 
-function showLinkModal(title, preText, url, postText) {
-	$('#workerRunLinkModal .runButton').data(url);
+function showLinkModal(title, preText, url, preCheckbox, postText) {
 	var htmlPreText = '<p>' + preText + '</p>';
 	var htmlUrl = '<div class="well linkUrl">' + url + '</div>';
+	var htmlPreCheckbox = '<div class="checkbox"><label><input type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use this link multiple times if they don\'t get past the first component."></span></label></div>'
 	var htmlPostText = '<p>' + postText + '</p>';
+	var htmlBody;
+	if (preCheckbox) {
+		htmlBody = htmlPreText + htmlUrl + htmlPreCheckbox + htmlPostText;
+	} else {
+		htmlBody = htmlPreText + htmlUrl + htmlPostText;
+	}
 	$('#workerRunLinkModal').find('.modal-title').text(title);
-	$('#workerRunLinkModal').find('.modal-body').html(htmlPreText + htmlUrl + htmlPostText);
+	$('#workerRunLinkModal').find('.modal-body').html(htmlBody);
+	$('#workerRunLinkModal').find('.linkUrl').data("linkUrl", url);
 	$('#workerRunLinkModal').modal('show');
 }
 
 $('#workerRunLinkModal').on('click', '.runButton', function() {
 	var url = $('#workerRunLinkModal .linkUrl').text();
 	window.open(url);
+});
+
+$('#workerRunLinkModal').on('click', 'input', function(e) {
+	var linkUrl = $('#workerRunLinkModal').find('.linkUrl').data("linkUrl");
+	var checkbox = $('#workerRunLinkModal input');
+	if (checkbox.prop("checked")) {
+		$('#workerRunLinkModal').find('.linkUrl').text(linkUrl + "&pre");
+	} else {
+		$('#workerRunLinkModal').find('.linkUrl').text(linkUrl);
+	}
 });
 
 $('#jatosWorkerPanel').on('click', '.runButton', function() {
