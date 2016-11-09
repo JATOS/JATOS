@@ -163,23 +163,33 @@ public abstract class AbstractTest {
 	}
 
 	/**
-	 * Mocks Play's Http.Context
+	 * Mocks Play's Http.Context without cookies
 	 */
 	protected void mockContext() {
 		Cookies cookies = mock(Cookies.class);
 		mockContext(cookies);
 	}
-	
+
 	/**
-	 * Mocks Play's Http.Context with cookies
+	 * Mocks Play's Http.Context with one cookie that can be retrieved by
+	 * cookies.get(name)
+	 */
+	protected void mockContext(Cookie cookie) {
+		Cookies cookies = mock(Cookies.class);
+		when(cookies.get(cookie.name())).thenReturn(cookie);
+		mockContext(cookies);
+	}
+
+	/**
+	 * Mocks Play's Http.Context with cookies. The cookies can be retrieved by
+	 * cookieList.iterator()
 	 */
 	protected void mockContext(List<Cookie> cookieList) {
 		Cookies cookies = mock(Cookies.class);
 		when(cookies.iterator()).thenReturn(cookieList.iterator());
 		mockContext(cookies);
 	}
-	
-	
+
 	private void mockContext(Cookies cookies) {
 		Map<String, String> flashData = Collections.emptyMap();
 		Map<String, Object> argData = Collections.emptyMap();

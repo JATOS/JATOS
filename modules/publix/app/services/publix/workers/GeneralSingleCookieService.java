@@ -4,7 +4,6 @@ import javax.inject.Singleton;
 
 import controllers.publix.Publix;
 import controllers.publix.workers.GeneralSinglePublix;
-import exceptions.publix.ForbiddenPublixException;
 import models.common.Study;
 import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
@@ -27,52 +26,69 @@ import play.mvc.Http.Cookie;
 @Singleton
 public class GeneralSingleCookieService {
 
-	private static final String COOKIE_NAME = "JATOS_GENERALSINGLE_UUIDS";
+	public static final String COOKIE_NAME = "JATOS_GENERALSINGLE_UUIDS";
 
 	/**
 	 * Delimiter in cookie's string used to separate study's UUID from worker ID
 	 */
-	private static final String COOKIE_TUPLE_DELIMITER = "=";
+	public static final String COOKIE_TUPLE_DELIMITER = "=";
 
 	/**
 	 * Delimiter in cookie's string used to separate entries (tuples of study
 	 * UUID and worker ID)
 	 */
-	private static final String COOKIE_LIST_DELIMITER = "&";
+	public static final String COOKIE_LIST_DELIMITER = "&";
 
 	/**
 	 * Returns the GeneralSingleWorker that belongs to the given study - or
 	 * returns null if it doen't exists. If the study was run before the study
 	 * UUID has been stored together with the worker ID in the cookie.
 	 */
-	public Long retrieveWorkerByStudy(Study study)
-			throws ForbiddenPublixException {
-		Cookie generalSingleCookie = GeneralSinglePublix.request()
-				.cookie(COOKIE_NAME);
+	public Long retrieveWorkerByStudy(Study study) {
+		Cookie generalSingleCookie = Publix.request().cookies()
+				.get(COOKIE_NAME);
 		if (generalSingleCookie == null) {
 			return null;
 		}
 		String[] studiesArray = generalSingleCookie.value()
 				.split(COOKIE_LIST_DELIMITER);
 		for (String studyStr : studiesArray) {
-			String[] uuidAndWorker = studyStr.split(COOKIE_TUPLE_DELIMITER);
-			String studyUuid = uuidAndWorker[0];
-			try {
-				Long workerId = Long.valueOf(uuidAndWorker[1]);
-				if (study.getUuid().equals(studyUuid)) {
-					return workerId;
-				}
-			} catch (NumberFormatException e) {
-				return null;
+			Long workerId = retrieveWorkerIdFromCookieStudyString(study,
+					studyStr);
+			if (workerId != null) {
+				return workerId;
 			}
 		}
 		return null;
 	}
 
+	private Long retrieveWorkerIdFromCookieStudyString(Study study,
+			String studyStr) {
+		String[] uuidAndWorker = studyStr.split(COOKIE_TUPLE_DELIMITER);
+		if (uuidAndWorker.length != 2) {
+			// Ignore malformed cookie values
+			return null;
+		}
+		String studyUuid = uuidAndWorker[0];
+		try {
+			Long workerId = Long.valueOf(uuidAndWorker[1]);
+			if (study.getUuid().equals(studyUuid)) {
+				// Only return the workerId if its UUID is the one of the given
+				// study
+				return workerId;
+			}
+		} catch (NumberFormatException e) {
+			// Ignore malformed cookie values
+			return null;
+		}
+		return null;
+	}
+
 	/**
-	 * Sets the cookie in the response that contains all General Single studies
-	 * done by this worker so far and adds the given study (and worker). This
-	 * cookie is HTTP only and has an expiry date in the far future.
+	 * Sets the cookie in the response. The cookie will contain all
+	 * GeneralSingle studies done by this worker so far and adds the given study
+	 * (and worker). This cookie is HTTP only and has an expire date in the far
+	 * future.
 	 */
 	public void set(Study study, Worker worker) {
 		Cookie oldCookie = GeneralSinglePublix.request().cookie(COOKIE_NAME);
