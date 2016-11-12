@@ -1,10 +1,12 @@
 package services.gui;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -39,8 +41,8 @@ public class WorkerService {
 	private final BatchDao batchDao;
 
 	@Inject
-	WorkerService(StudyResultDao studyResultDao,
-			WorkerDao workerDao, BatchDao batchDao) {
+	WorkerService(StudyResultDao studyResultDao, WorkerDao workerDao,
+			BatchDao batchDao) {
 		this.studyResultDao = studyResultDao;
 		this.workerDao = workerDao;
 		this.batchDao = batchDao;
@@ -57,30 +59,66 @@ public class WorkerService {
 	}
 
 	/**
-	 * Creates, validates and persists a PersonalSingleWorker.
+	 * Creates, validates and persists PersonalSingleWorkers.
+	 * 
+	 * @param comment
+	 *            Each worker will get this label
+	 * @param amount
+	 *            The number of workers to be created
+	 * @param batch
+	 *            Each worker will belong to this batch
+	 * @return
+	 * @throws BadRequestException
 	 */
-	public PersonalSingleWorker createAndPersistPersonalSingleWorker(
-			String comment, Batch batch) throws BadRequestException {
-		PersonalSingleWorker worker = new PersonalSingleWorker(comment);
-		validateWorker(worker);
-		batch.addWorker(worker);
-		workerDao.create(worker);
-		batchDao.update(batch);
-		return worker;
+	public List<PersonalSingleWorker> createAndPersistPersonalSingleWorker(
+			String comment, int amount, Batch batch)
+			throws BadRequestException {
+		Function<String, PersonalSingleWorker> workerConstructor = (
+				c) -> new PersonalSingleWorker(c);
+		return createAndPersistWorker(comment, amount, batch, workerConstructor);
 	}
 
 	/**
-	 * Creates, validates and persists a PersonalMultipleWorker (worker for a
-	 * Personal Multiple Run).
+	 * Creates, validates and persists PersonalMultipleWorker.
+	 * 
+	 * @param comment
+	 *            Each worker will get this label
+	 * @param amount
+	 *            The number of workers to be created
+	 * @param batch
+	 *            Each worker will belong to this batch
+	 * @return
+	 * @throws BadRequestException
 	 */
-	public PersonalMultipleWorker createAndPersistPersonalMultipleWorker(
-			String comment, Batch batch) throws BadRequestException {
-		PersonalMultipleWorker worker = new PersonalMultipleWorker(comment);
-		validateWorker(worker);
-		batch.addWorker(worker);
-		workerDao.create(worker);
-		batchDao.update(batch);
-		return worker;
+	public List<PersonalMultipleWorker> createAndPersistPersonalMultipleWorker(
+			String comment, int amount, Batch batch)
+			throws BadRequestException {
+		Function<String, PersonalMultipleWorker> workerConstructor = (
+				c) -> new PersonalMultipleWorker(c);
+		return createAndPersistWorker(comment, amount, batch,
+				workerConstructor);
+	}
+
+	/**
+	 * The actual creation of PersonalSingleWorker and PersonalMultipleWorker is
+	 * the same - they just need a different constructor which is passed via
+	 * workerConstructor.
+	 */
+	private <T extends Worker> List<T> createAndPersistWorker(String comment,
+			int amount, Batch batch, Function<String, T> workerConstructor)
+			throws BadRequestException {
+		amount = amount <= 1 ? 1 : amount;
+		List<T> workerList = new ArrayList<>();
+		while (amount > 0) {
+			T worker = workerConstructor.apply(comment);
+			validateWorker(worker);
+			batch.addWorker(worker);
+			workerDao.create(worker);
+			batchDao.update(batch);
+			workerList.add(worker);
+			amount--;
+		}
+		return workerList;
 	}
 
 	private void validateWorker(Worker worker) throws BadRequestException {
@@ -90,7 +128,7 @@ public class WorkerService {
 			throw new BadRequestException(errorMsg);
 		}
 	}
-	
+
 	/**
 	 * Retrieves the count of StudyResults for each worker type in a map (
 	 * workerType -> count).
@@ -109,7 +147,7 @@ public class WorkerService {
 		putCountToMap.accept(MTSandboxWorker.WORKER_TYPE);
 		return resultsPerWorker;
 	}
-	
+
 	/**
 	 * Get all workers (PersonalSingleWorker, PersonalMultipleWorker,
 	 * GeneralSingle, MTWorker, MTSandboxWorker and JatosWorker) that belong to

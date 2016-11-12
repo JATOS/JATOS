@@ -3,6 +3,7 @@ package controllers.gui;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -10,8 +11,8 @@ import javax.inject.Singleton;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
@@ -23,13 +24,13 @@ import general.gui.RequestScopeMessaging;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
+import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
 import play.db.jpa.Transactional;
+import play.libs.F.Function3;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.gui.BatchService;
@@ -38,7 +39,6 @@ import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 import services.gui.WorkerService;
-import utils.common.ControllerUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -306,56 +306,40 @@ public class Batches extends Controller {
 	}
 
 	/**
-	 * Ajax POST request: Creates a PersonalSingleWorker and the URL that can be
-	 * used for this kind of run.
+	 * Ajax POST request: Creates PersonalSingleWorkers and returns their worker
+	 * IDs
 	 */
 	@Transactional
 	public Result createPersonalSingleRun(Long studyId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(".createPersonalSingleRun: studyId " + studyId + ", "
 				+ "batchId " + batchId);
-		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		Batch batch = batchDao.findById(batchId);
-		try {
-			checker.checkStandardForStudy(study, studyId, loggedInUser);
-			checker.checkStudyLocked(study);
-			checker.checkStandardForBatch(batch, study, batchId);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwAjax(e);
-		}
-
-		JsonNode json = request().body().asJson();
-		if (json == null) {
-			String errorMsg = MessagesStrings
-					.studyCreationOfPersonalSingleRunFailed(studyId);
-			return badRequest(errorMsg);
-		}
-		String comment = json.findPath(PersonalSingleWorker.COMMENT).asText()
-				.trim();
-		PersonalSingleWorker worker;
-		try {
-			worker = workerService.createAndPersistPersonalSingleWorker(comment,
-					batch);
-		} catch (BadRequestException e) {
-			return badRequest(e.getMessage());
-		}
-
-		String url = ControllerUtils.getRequestUrl() + "/publix/"
-				+ study.getId() + "/start?" + "batchId=" + batchId + "&"
-				+ "personalSingleWorkerId" + "=" + worker.getId();
-		return ok(url);
+		Function3<String, Integer, Batch, List<? extends Worker>> createAndPersistWorker = workerService::createAndPersistPersonalSingleWorker;
+		return createPersonalRun(studyId, batchId, createAndPersistWorker);
 	}
 
 	/**
-	 * Ajax POST request: Creates a PersonalMultipleWorker and returns the URL
-	 * that can be used for a personal multiple run.
+	 * Ajax POST request: Creates PersonalMultipleWorker and returns their
+	 * worker IDs
 	 */
 	@Transactional
 	public Result createPersonalMultipleRun(Long studyId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(".createPersonalMultipleRun: studyId " + studyId + ", "
 				+ "batchId " + batchId);
+		Function3<String, Integer, Batch, List<? extends Worker>> createAndPersistWorker = workerService::createAndPersistPersonalMultipleWorker;
+		return createPersonalRun(studyId, batchId, createAndPersistWorker);
+	}
+
+	/**
+	 * This method creates either PersonalSingleWorker or
+	 * PersonalMultipleWorker. Both workers are very similar and can be created
+	 * the same way (with the exception of the actual creation for which a
+	 * function reference is passed).
+	 */
+	private Result createPersonalRun(Long studyId, Long batchId,
+			Function3<String, Integer, Batch, List<? extends Worker>> createAndPersistWorker)
+			throws JatosGuiException {
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
@@ -368,25 +352,21 @@ public class Batches extends Controller {
 		}
 
 		JsonNode json = request().body().asJson();
-		if (json == null) {
-			String errorMsg = MessagesStrings
-					.studyCreationOfPersonalMultipleRunFailed(studyId);
-			return badRequest(errorMsg);
-		}
-		String comment = json.findPath(PersonalMultipleWorker.COMMENT).asText()
-				.trim();
-		PersonalMultipleWorker worker;
+		String comment = json.findPath("comment").asText().trim();
+		int amount = json.findPath("amount").asInt();
+		List<Long> workerIdList = null;
 		try {
-			worker = workerService
-					.createAndPersistPersonalMultipleWorker(comment, batch);
+			List<? extends Worker> workerList = createAndPersistWorker
+					.apply(comment, amount, batch);
+			workerIdList = workerList.stream().map(w -> w.getId())
+					.collect(Collectors.toList());
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
+		} catch (Throwable e) {
+			return internalServerError();
 		}
 
-		String url = ControllerUtils.getRequestUrl() + "/publix/"
-				+ study.getId() + "/start?" + "batchId=" + batchId + "&"
-				+ "personalMultipleWorkerId" + "=" + worker.getId();
-		return ok(url);
+		return ok(JsonUtils.asJsonNode(workerIdList));
 	}
 
 }

@@ -2,22 +2,21 @@ package controllers.gui;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.OK;
+import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import controllers.gui.Users;
 import general.AbstractTest;
 import models.common.Study;
-import models.common.workers.PersonalSingleWorker;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import utils.common.JsonUtils;
 
 /**
- * Testing actions of controller.Studies.
+ * Testing actions of controller.Batches.
  * 
  * @author Kristian Lange
  */
@@ -39,18 +38,22 @@ public class BatchesControllerTest extends AbstractTest {
 	public void callCreatePersonalSingleRun() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
-		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
-				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
+		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
+				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyJson(jsonNode)
-				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Batches
-						.createPersonalSingleRun(studyClone.getId(),
-								studyClone.getDefaultBatch().getId())
+				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
+						controllers.gui.routes.Batches
+								.createPersonalSingleRun(studyClone.getId(),
+										studyClone.getDefaultBatch().getId())
 								.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
+		assertThat(result.contentType()).isEqualTo("application/json");
+		jsonNode = JsonUtils.OBJECTMAPPER.readTree(contentAsString(result));
+		assertThat(jsonNode.isArray()).isTrue();
+		assertThat(jsonNode.size()).isEqualTo(10);
 
 		// Clean up
 		removeStudy(studyClone);
@@ -60,18 +63,22 @@ public class BatchesControllerTest extends AbstractTest {
 	public void callCreatePersonalMultipleRun() throws Exception {
 		Study studyClone = cloneAndPersistStudy(studyTemplate);
 
-		JsonNode jsonNode = JsonUtils.OBJECTMAPPER.readTree("{ \""
-				+ PersonalSingleWorker.COMMENT + "\": \"testcomment\" }");
+		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
+				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyJson(jsonNode)
-				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Batches
-						.createPersonalMultipleRun(studyClone.getId(),
-								studyClone.getDefaultBatch().getId())
-						.url());
+				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
+						controllers.gui.routes.Batches
+								.createPersonalMultipleRun(studyClone.getId(),
+										studyClone.getDefaultBatch().getId())
+								.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
+		assertThat(result.contentType()).isEqualTo("application/json");
+		jsonNode = JsonUtils.OBJECTMAPPER.readTree(contentAsString(result));
+		assertThat(jsonNode.isArray()).isTrue();
+		assertThat(jsonNode.size()).isEqualTo(10);
 
 		// Clean up
 		removeStudy(studyClone);

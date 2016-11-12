@@ -224,45 +224,56 @@ study: common.Study, jatosUrl: java.net.URL, studyResultCountsPerWorker: java.ut
 <div class="modal fade" id="confirmModalRun" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal">
-					<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
-				</button>
-				<h4 class="modal-title">Create run</h4>
-			</div>
-			<div class="modal-body">
-				<p class="modalText">You're about to create a worker.</p>
-				<div class="input-group">
-					<input type="text" class="comment form-control" placeholder="Comment">
+			<form method="post" action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+					</button>
+					<h4 class="modal-title">Create runs</h4>
 				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button type="button" class="confirmed btn btn-batch">Create</button>
-			</div>
+				<div class="modal-body">
+					<p class="modalText">You're about to create workers.</p>
+					<div class="form-group row">
+						<label class="control-label col-xs-3" for="comment">Comment&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Use the comment to destinguish the worker(s) from others."></span></label>
+						<div class="col-xs-9">
+							<input class="comment form-control" type="text" placeholder="Comment">
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-xs-3" for="amount">Amount&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the number of workers you want to create."></span></label>
+						<div class="col-xs-3">
+							<input class="amount form-control col-xs-3" type="number" min="1" max="100" value="1">
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="button" class="confirmed btn btn-batch">Create</button>
+				</div>
+			</form>
 		</div>
 	</div>
 </div>
 
 <!-- Show Modal with link to run of study for specified worker -->
-<div class="modal fade" id="workerRunLinkModal" data-backdrop="static"
-	data-keyboard="false" tabindex="-1" role="dialog"
-	aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
+<div id="workerRunLinkModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal">
-					<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
-				</button>
-				<h4 class="modal-title">Link for Worker</h4>
-			</div>
-			<div class="modal-body">
-				<!-- Filled dynamically -->
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-				<button type="button" class="btn btn-default runButton" data-dismiss="modal">Run</button>
-			</div>
+			<form action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+					</button>
+					<h4 class="modal-title">Link for Worker</h4>
+				</div>
+				<div class="modal-body">
+					<!-- Filled dynamically -->
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-default runButton" data-dismiss="modal">Run</button>
+				</div>
+			</form>
 		</div>
 	</div>
 </div>
@@ -552,6 +563,7 @@ function fillConfirmModalRun(title, text) {
 	$('#confirmModalRun').find('.modal-title').html(title);
 	$('#confirmModalRun').find('.modalText').html(text);
 	$('#confirmModalRun').find('.comment').val("");
+	$('#confirmModalRun').find('.amount').val(1);
 	// Focus on comment input field in modal
 	$('#confirmModalRun').on('shown.bs.modal', function () {
 		$('#confirmModalRun').find('.comment').focus();
@@ -559,94 +571,111 @@ function fillConfirmModalRun(title, text) {
 	$('#confirmModalRun').modal('show');
 }
 
-$('#personalSingleWorkerPanel').on('click', '.addButton', function() {
-	fillConfirmModalRun("Create Personal Single Run",
-			"You're about to create a worker for a Personal Single Run. Use a comment to distinguish this worker from others.");
+$('#personalSingleWorkerPanel').on('click', '.addButton', function(e) {
+	var text = "You're about to create Personal Single workers. Use a comment to distinguish these workers from others.";
+	fillConfirmModalRun("Create Personal Single Run", text);
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
-		var comment = $('#confirmModalRun').find('.comment').val();
-		var jsonData = JSON.stringify({ @common.workers.PersonalSingleWorker.COMMENT: comment });
-		$.ajax({
-			type: 'POST',
-			url: '@controllers.gui.routes.Batches.createPersonalSingleRun(study.getId(), batchId)',
-			contentType: "application/json; charset=utf-8",
-			dataType: 'text',
-			data: jsonData,
-			success: function(url) {
-				loadWorkers();
-				showPersonalSingleLinkModal(url);
-			},
-			error : function(err) {
-				showError(err.responseText);
-			}
-		});
+		var url = '@controllers.gui.routes.Batches.createPersonalSingleRun(study.getId(), batchId)';
+		postCreatePersonalWorkers(url, showPersonalSingleLinkModal);
 	});
 });
 
 $('#personalMultipleWorkerPanel').on('click', '.addButton', function() {
-	fillConfirmModalRun("Create Personal Multiple Run",
-			"You're about to create a Personal Multiple Worker. Use a comment to distinguish this worker from others.");
+	var text = "You're about to create Personal Multiple workers. Use a comment to distinguish these workers from others.";
+	fillConfirmModalRun("Create Personal Multiple Run", text);
 	$('#confirmModalRun').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmModalRun').modal('hide');
-		var comment = $('#confirmModalRun').find('.comment').val();
-		var jsonData = JSON.stringify({ @common.workers.PersonalMultipleWorker.COMMENT: comment });
-		$.ajax({
-			type: 'POST',
-			url: '@controllers.gui.routes.Batches.createPersonalMultipleRun(study.getId(), batchId)',
-			contentType: "application/json; charset=utf-8",
-			dataType: 'text',
-			data: jsonData,
-			success: function(url) {
-				loadWorkers();
-				showPersonalMultipleLinkModal(url);
-			},
-			error : function(err) {
-				showError(err.responseText);
-			}
-		});
+		var url = '@controllers.gui.routes.Batches.createPersonalMultipleRun(study.getId(), batchId)';
+		postCreatePersonalWorkers(url, showPersonalMultipleLinkModal);
 	});
 });
+
+function postCreatePersonalWorkers(url, showModal) {
+	var jsonData = {};
+	jsonData['comment'] = $('#confirmModalRun').find('.comment').val();
+	jsonData['amount'] = $('#confirmModalRun').find('.amount').val();
+	$.ajax({
+		type: 'POST',
+		url: url,
+		contentType: "application/json; charset=utf-8",
+		dataType: 'text',
+		data: JSON.stringify(jsonData),
+		success: function(workerIds) {
+			loadWorkers();
+			showModal($.parseJSON(workerIds));
+		},
+		error : function(err) {
+			showError(err.responseText);
+		}
+	});
+}
 
 $('#personalSingleWorkerPanel').on('click', '.linkButton', function() {
 	var tr = $(this).closest('tr');
 	var rowData = personalSingleWorkerTable.row(tr).data();
-	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalSingleWorkerId=" + rowData[0];
-	showPersonalSingleLinkModal(url);
+	var workerId = rowData[0];
+	var workerIds = [workerId];
+	showPersonalSingleLinkModal(workerIds);
 });
 
-function showPersonalSingleLinkModal(url) {
+function showPersonalSingleLinkModal(workerIds) {
 	var title = "Personal Single Run";
-	var preText = "This address will start the run.";
-	var postText = "Copy & paste it or press \"Run\" to start it right away.";
-	showLinkModal(title, preText, url, true, postText);
+	var preText, postText;
+	if (workerIds.length > 1) {
+		preText = "Each of these URLs will start a run.";
+		postText = "Copy & paste to hand them to your workers.";
+	} else {
+		preText = "This URL will start the run.";
+		postText = "Copy & paste to hand it to your worker - or press \"Run\" to start it right away.";
+	}
+	var urls = [];
+	$.each(workerIds, function(i, workerId) {
+		urls.push("@jatosUrl.toString()" + "/publix/@study.getId()/start?"
+			+ "batchId=@batchId&" + "personalSingleWorkerId=" + workerId);
+	});
+	showLinkModal(title, preText, urls, true, postText);
 }
 
 $('#personalMultipleWorkerPanel').on('click', '.linkButton', function() {
 	var tr = $(this).closest('tr');
-	var rowData = personalMultipleWorkerTable.row(tr).data();
-	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "personalMultipleWorkerId=" + rowData[0];
-	showPersonalMultipleLinkModal(url);
+	var rowData = personalMultipleWorkerTable.row(tr).data()
+	var workerId = rowData[0];
+	var workerIds = [workerId];
+	showPersonalMultipleLinkModal(workerIds);
 });
 
-function showPersonalMultipleLinkModal(url) {
+function showPersonalMultipleLinkModal(workerIds) {
 	var title = "Personal Multiple Run";
-	var preText = "This address will start the run.";
-	var postText = "Copy & paste it or press \"Run\" to start it right away.";
-	showLinkModal(title, preText, url, false, postText);
+	var preText, postText;
+	if (workerIds.length > 1) {
+		preText = "Each of these URLs will start a run.";
+		postText = "Copy & paste to hand them to your workers.";
+	} else {
+		preText = "This URL will start the run.";
+		postText = "Copy & paste to hand it to your worker - or press \"Run\" to start it right away.";
+	}
+	var urls = [];
+	$.each(workerIds, function(i, workerId) {
+		urls.push("@jatosUrl.toString()" + "/publix/@study.getId()/start?"
+			+ "batchId=@batchId&" + "personalMultipleWorkerId=" + workerId);
+	});
+	showLinkModal(title, preText, urls, false, postText);
 }
 
 $('#generalSingleWorkerPanel').on('click', '.linkButton', function() {
 	var title = "General Single Run";
-	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" + "batchId=@batchId&" + "generalSingle";
-	var preText = "This address will start the run.";
-	var postText = "Copy & paste it or press \"Run\" to start a run right away.";
-	showLinkModal(title, preText, url, true, postText);
+	var url = "@jatosUrl.toString()" + "/publix/@study.getId()/start?" +
+		"batchId=@batchId&" + "generalSingle";
+	var preText = "This URL will start the run.";
+	var postText = "Copy & paste to hand it to your worker - or press \"Run\" to start it right away.";
+	showLinkModal(title, preText, [url], true, postText);
 });
 
-function showLinkModal(title, preText, url, preCheckbox, postText) {
+function showLinkModal(title, preText, urls, preCheckbox, postText) {
 	var htmlPreText = '<p>' + preText + '</p>';
-	var htmlUrl = '<div class="well linkUrl">' + url + '</div>';
-	var htmlPreCheckbox = '<div class="checkbox"><label><input type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use this link multiple times if they don\'t get past the first component."></span></label></div>'
+	var htmlUrl = '<div class="well linkUrls">' + generateHtmlUrlList(urls) + '</div>';
+	var htmlPreCheckbox = '<div class="checkbox"><label><input class="preCheckbox" type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use this link multiple times if they don\'t get past the first component."></span></label></div>'
 	var htmlPostText = '<p>' + postText + '</p>';
 	var htmlBody;
 	if (preCheckbox) {
@@ -654,25 +683,46 @@ function showLinkModal(title, preText, url, preCheckbox, postText) {
 	} else {
 		htmlBody = htmlPreText + htmlUrl + htmlPostText;
 	}
+	if (urls.length > 1) {
+		$('#workerRunLinkModal').find('.runButton').hide();
+	} else {
+		$('#workerRunLinkModal').find('.runButton').show();
+	}
 	$('#workerRunLinkModal').find('.modal-title').text(title);
 	$('#workerRunLinkModal').find('.modal-body').html(htmlBody);
-	$('#workerRunLinkModal').find('.linkUrl').data("linkUrl", url);
+	$('#workerRunLinkModal').find('.linkUrls').data("linkUrls", urls);
 	$('#workerRunLinkModal').modal('show');
 }
 
+function generateHtmlUrlList(urls) {
+	var html = '<ul class="list-unstyled">';
+	$.each(urls, function(i, url) {
+		html += '<li>' + url + '</li>';
+	});
+	html += '</ul>';
+	return html;
+}
+
 $('#workerRunLinkModal').on('click', '.runButton', function() {
-	var url = $('#workerRunLinkModal .linkUrl').text();
+	// The run button is only shown if there is only one link in the list
+	// The we can safely assume that we have only one link here
+	var url = $('#workerRunLinkModal .linkUrls').text();
 	window.open(url);
 });
 
-$('#workerRunLinkModal').on('click', 'input', function(e) {
-	var linkUrl = $('#workerRunLinkModal').find('.linkUrl').data("linkUrl");
+$('#workerRunLinkModal').on('click', '.preCheckbox', function(e) {
+	var urls = $('#workerRunLinkModal').find('.linkUrls').data("linkUrls");
 	var checkbox = $('#workerRunLinkModal input');
-	if (checkbox.prop("checked")) {
-		$('#workerRunLinkModal').find('.linkUrl').text(linkUrl + "&pre");
-	} else {
-		$('#workerRunLinkModal').find('.linkUrl').text(linkUrl);
-	}
+	var newUrls = [];
+	$.each(urls, function(i, url) {
+		if (checkbox.prop("checked")) {
+			newUrls.push(url + "&pre");
+		} else {
+			newUrls.push(url);
+		}
+	});
+	var htmlLinkList = generateHtmlUrlList(newUrls);
+	$('#workerRunLinkModal').find('.linkUrls').html(htmlLinkList);
 });
 
 $('#jatosWorkerPanel').on('click', '.runButton', function() {
