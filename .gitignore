@@ -26,3 +26,4 @@ play-fork-run.sbt
 play-fork-run.sbtold
 sbt-ui.sbt
 sbt-ui.sbtold
+.cache-main
