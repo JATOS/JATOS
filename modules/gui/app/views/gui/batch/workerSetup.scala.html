@@ -439,14 +439,14 @@ function fillJatosRow(worker) {
 			? worker.lastStudyResult.studyState : "none started yet";
 	if ("@loggedInUser.getEmail()" == worker.userEmail) {
 		jatosWorkerTable.row.add([
-			worker.id,
+			generateWorkerLink(worker.id),
 			worker.userEmail,
 			lastStudyState,
 			'<button type="button" class="btn btn-batch runButton">Run</button>'
 		]);
 	} else {
 		jatosWorkerTable.row.add([
-			worker.id,
+			generateWorkerLink(worker.id),
 			worker.userEmail,
 			lastStudyState,
 			''
@@ -458,7 +458,7 @@ function fillPersonalSingleRow(worker) {
 	var lastStudyState = worker.lastStudyResult != null
 			? worker.lastStudyResult.studyState : "not started yet";
 	personalSingleWorkerTable.row.add([
-		worker.id,
+		generateWorkerLink(worker.id),
 		worker.comment,
 		lastStudyState,
 		'<button type="button" class="btn btn-batch linkButton">Link</button>'
@@ -469,7 +469,7 @@ function fillPersonalMultipleRow(worker) {
 	var lastStudyState = worker.lastStudyResult != null
 			? worker.lastStudyResult.studyState : "none started yet";
 	personalMultipleWorkerTable.row.add([
-		worker.id,
+		generateWorkerLink(worker.id),
 		worker.comment,
 		lastStudyState,
 		'<button type="button" class="btn btn-batch linkButton">Link</button>'
@@ -481,7 +481,7 @@ function fillMtRow(worker) {
 	var lastStudyState = worker.lastStudyResult != null
 			? worker.lastStudyResult.studyState : "not started yet";
 	mtWorkerTable.row.add([
-		worker.id,
+		generateWorkerLink(worker.id),
 		worker.mtWorkerId,
 		workerType,
 		lastStudyState
@@ -492,9 +492,13 @@ function fillGeneralSingleRow(worker) {
 	var lastStudyState = worker.lastStudyResult != null
 			? worker.lastStudyResult.studyState : "not started yet";
 	generalSingleWorkerTable.row.add([
-		worker.id,
+		generateWorkerLink(worker.id),
 		lastStudyState
 	]);
+}
+
+function generateWorkerLink(workerId) {
+	return '<a href="/jatos/worker/' + workerId + '/results">' + workerId + '</a>';
 }
 
 function toggleTablePagination(tableElement) {
