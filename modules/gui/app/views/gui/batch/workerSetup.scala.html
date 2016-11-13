@@ -301,9 +301,14 @@ function initWorkerTable(tableElement) {
 		"bFilter": false,
 		"filter": false,
 		"columnDefs": [ {
+			"targets": "_all",
 			"searchable": false,
-			"orderable": false,
-			"targets": "_all"
+			"orderable": false
+		}, {
+			"targets": [0],
+			"render": function( data, type, row ) {
+				return '<a href="/jatos/worker/' + data + '/results">' + data + '</a>';
+			}
 		} ],
 		"bLengthChange": false,
 		"info": false,
@@ -439,14 +444,14 @@ function fillJatosRow(worker) {
 			? worker.lastStudyResult.studyState : "none started yet";
 	if ("@loggedInUser.getEmail()" == worker.userEmail) {
 		jatosWorkerTable.row.add([
-			generateWorkerLink(worker.id),
+			worker.id,
 			worker.userEmail,
 			lastStudyState,
 			'<button type="button" class="btn btn-batch runButton">Run</button>'
 		]);
 	} else {
 		jatosWorkerTable.row.add([
-			generateWorkerLink(worker.id),
+			worker.id,
 			worker.userEmail,
 			lastStudyState,
 			''
@@ -458,7 +463,7 @@ function fillPersonalSingleRow(worker) {
 	var lastStudyState = worker.lastStudyResult != null
 			? worker.lastStudyResult.studyState : "not started yet";
 	personalSingleWorkerTable.row.add([
-		generateWorkerLink(worker.id),
+		worker.id,
 		worker.comment,
 		lastStudyState,
 		'<button type="button" class="btn btn-batch linkButton">Link</button>'
@@ -469,7 +474,7 @@ function fillPersonalMultipleRow(worker) {
 	var lastStudyState = worker.lastStudyResult != null
 			? worker.lastStudyResult.studyState : "none started yet";
 	personalMultipleWorkerTable.row.add([
-		generateWorkerLink(worker.id),
+		worker.id,
 		worker.comment,
 		lastStudyState,
 		'<button type="button" class="btn btn-batch linkButton">Link</button>'
@@ -481,7 +486,7 @@ function fillMtRow(worker) {
 	var lastStudyState = worker.lastStudyResult != null
 			? worker.lastStudyResult.studyState : "not started yet";
 	mtWorkerTable.row.add([
-		generateWorkerLink(worker.id),
+		worker.id,
 		worker.mtWorkerId,
 		workerType,
 		lastStudyState
@@ -492,13 +497,9 @@ function fillGeneralSingleRow(worker) {
 	var lastStudyState = worker.lastStudyResult != null
 			? worker.lastStudyResult.studyState : "not started yet";
 	generalSingleWorkerTable.row.add([
-		generateWorkerLink(worker.id),
+		worker.id,
 		lastStudyState
 	]);
-}
-
-function generateWorkerLink(workerId) {
-	return '<a href="/jatos/worker/' + workerId + '/results">' + workerId + '</a>';
 }
 
 function toggleTablePagination(tableElement) {
@@ -679,7 +680,7 @@ $('#generalSingleWorkerPanel').on('click', '.linkButton', function() {
 function showLinkModal(title, preText, urls, preCheckbox, postText) {
 	var htmlPreText = '<p>' + preText + '</p>';
 	var htmlUrl = '<div class="well linkUrls">' + generateHtmlUrlList(urls) + '</div>';
-	var htmlPreCheckbox = '<div class="checkbox"><label><input class="preCheckbox" type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use this link multiple times if they don\'t get past the first component."></span></label></div>'
+	var htmlPreCheckbox = '<div class="checkbox"><p><label><input class="preCheckbox" type="checkbox">Allow preview&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Workers can use this link multiple times if they don\'t get past the first component."></span></label></p></div>'
 	var htmlPostText = '<p>' + postText + '</p>';
 	var htmlBody;
 	if (preCheckbox) {
