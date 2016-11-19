@@ -25,16 +25,16 @@ import models.common.ComponentResult.ComponentState;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
-import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
-import play.mvc.Http.Cookies;
 import play.mvc.Http.HeaderNames;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
-import services.publix.idcookie.IdCookie;
 import utils.common.JsonUtils;
 
 /**
+ * Integration test that does a whole run with the JatosWorker, calls all the
+ * endpoints of a run with a JatosWorker
+ * 
  * @author Kristian Lange
  */
 public class PublixJatosTest extends AbstractTest {
@@ -67,19 +67,19 @@ public class PublixJatosTest extends AbstractTest {
 		// Start study:
 		// studyResult -> STARTED
 		Result result = startStudy(study);
+		Cookie idCookie = result.cookie("JATOS_IDS_0");
+		StudyResult studyResult = admin.getWorker().getLastStudyResult();
 
 		// Check HTTP status is redirect
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 
 		// Check redirect URL
 		assertThat(result.header("Location"))
-				.isEqualTo("/publix/" + study.getId() + "/"
-						+ study.getFirstComponent().getId() + "/start");
+				.startsWith("/publix/" + study.getId() + "/"
+						+ study.getFirstComponent().getId() + "/start?srid=");
 
-		// Check that worker ID is in session
-		// TODO
-		// assertThat(result.session().get(Publix.WORKER_ID))
-		// .isEqualTo(admin.getWorker().getId().toString());
+		// Check that ID cookie exists
+		assertThat(idCookie.value()).isNotEmpty();
 
 		// Check JATOS_RUN is removed from session
 		assertThat(result.session().get(JatosPublix.SESSION_JATOS_RUN))
@@ -87,7 +87,6 @@ public class PublixJatosTest extends AbstractTest {
 
 		// Check study result
 		assertThat(admin.getWorker().getStudyResultList().size()).isEqualTo(1);
-		StudyResult studyResult = admin.getWorker().getLastStudyResult();
 		assertThat(studyResult.getStudy()).isEqualTo(study);
 		assertThat(studyResult.getWorker()).isEqualTo(admin.getWorker());
 		assertThat(studyResult.getWorkerId())
@@ -100,12 +99,13 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Start first component
 		// studyResult -> STARTED, componentResult -> STARTED
-		result = startComponent(study, study.getFirstComponent());
-		Cookies cookies = result.cookies();
+		result = startComponent(studyResult, study.getFirstComponent(),
+				idCookie);
+		idCookie = result.cookie("JATOS_IDS_0");
 		studyResultDao.refresh(studyResult);
 
 		assertThat(result.status()).isEqualTo(OK);
-		checkIdCookie(result, admin.getWorker(), study, studyResult, 1);
+		assertThat(idCookie.value()).isNotEmpty();
 
 		// And check a random line of the JS code
 		assertThat(contentAsString(result))
@@ -122,7 +122,7 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Send request to get InitData:
 		// studyResult -> DATA_RETRIEVED, componentResult -> DATA_RETRIEVED
-		result = initData(study, study.getFirstComponent());
+		result = initData(studyResult, study.getFirstComponent(), idCookie);
 
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(firstComponentResult);
@@ -144,7 +144,7 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Send request submitResultData:
 		// studyResult -> DATA_RETRIEVED, componentResult -> RESULTDATA_POSTED
-		result = submitResultData(study);
+		result = submitResultData(studyResult, idCookie);
 
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(firstComponentResult);
@@ -161,7 +161,7 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Send request setStudySessionData:
 		// studyResult -> DATA_RETRIEVED, componentResult -> RESULTDATA_POSTED
-		result = setStudySessionData(study);
+		result = setStudySessionData(studyResult, idCookie);
 
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(firstComponentResult);
@@ -178,7 +178,8 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Send request startNextComponent: studyResult -> DATA_RETRIEVED,
 		// old componentResult -> FINISHED, new componentResult -> STARTED
-		result = startNextComponent(study);
+		result = startNextComponent(studyResult, idCookie);
+		idCookie = result.cookie("JATOS_IDS_0");
 
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(firstComponentResult);
@@ -187,20 +188,20 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 
 		// Check redirect URL
-		assertThat(result.header("Location"))
-				.endsWith("/publix/" + study.getId() + "/"
-						+ study.getComponent(2).getId() + "/start");
+		assertThat(result.header("Location")).endsWith(
+				"/publix/" + study.getId() + "/" + study.getComponent(2).getId()
+						+ "/start?srid=" + studyResult.getId());
 
 		// ***
 		// Start 2. component by ID, studyResult -> DATA_RETRIEVED
 		// old componentResult -> FINISHED, new componentResult -> STARTED
-		result = startComponent(study, study.getComponent(2));
+		result = startComponent(studyResult, study.getComponent(2), idCookie);
+		idCookie = result.cookie("JATOS_IDS_0");
 
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(firstComponentResult);
 
 		assertThat(result.status()).isEqualTo(OK);
-		checkIdCookie(result, admin.getWorker(), study, studyResult, 2);
 
 		// And check a random line of the JS code
 		assertThat(contentAsString(result))
@@ -219,13 +220,13 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Start 3. component by position, studyResult -> DATA_RETRIEVED
 		// old componentResult -> FINISHED, new componentResult -> STARTED
-		result = startComponentByPosition(study, 3);
+		result = startComponentByPosition(studyResult, 3, idCookie);
+		idCookie = result.cookie("JATOS_IDS_0");
 
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(firstComponentResult);
 
 		assertThat(result.status()).isEqualTo(OK);
-		checkIdCookie(result, admin.getWorker(), study, studyResult, 3);
 
 		// And check a random line of the JS code
 		assertThat(contentAsString(result))
@@ -239,7 +240,7 @@ public class PublixJatosTest extends AbstractTest {
 
 		// ***
 		// Log error
-		result = logError(study, "This is an error message.");
+		result = logError(studyResult, "This is an error message.", idCookie);
 
 		assertThat(result.status()).isEqualTo(OK);
 		// TODO check that error msg appears in log - how?
@@ -247,7 +248,7 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Send request to get InitData: prior session data should be there
 		// studyResult -> DATA_RETRIEVED, componentResult -> DATA_RETRIEVED
-		result = initData(study, study.getComponent(3));
+		result = initData(studyResult, study.getComponent(3), idCookie);
 
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(firstComponentResult);
@@ -265,8 +266,9 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Send request to end study not successfully with error message
 		// studyResult -> FAIL, componentResult -> FINISHED
-		result = endStudy(study, cookies, false,
+		result = endStudy(studyResult, idCookie, false,
 				"This%20is%20an%20error%20message.");
+		idCookie = result.cookie("JATOS_IDS_0");
 
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(firstComponentResult);
@@ -279,7 +281,7 @@ public class PublixJatosTest extends AbstractTest {
 				.isEqualTo("/jatos/" + study.getId());
 
 		// Check that ID cookie is removed
-		assertThat(result.cookie(IdCookie.ID_COOKIE_NAME).value()).isEmpty();
+		assertThat(idCookie.value()).isEmpty();
 
 		// Check results
 		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.FAIL);
@@ -306,6 +308,10 @@ public class PublixJatosTest extends AbstractTest {
 		// Start study:
 		// studyResult -> STARTED
 		Result result = startStudy(study);
+		Cookie idCookie = result.cookie("JATOS_IDS_0");
+		StudyResult studyResult = admin.getWorker().getLastStudyResult();
+		studyResultDao.refresh(studyResult);
+
 		assertThat(result.header("Location").contains("srid="));
 
 		// Check HTTP status is redirect
@@ -315,10 +321,10 @@ public class PublixJatosTest extends AbstractTest {
 		// Start first component
 		// studyResult -> STARTED, componentResult -> STARTED
 		// result.
-		result = startComponent(study, study.getFirstComponent());
-
-		Cookies cookies = result.cookies();
-		StudyResult studyResult = admin.getWorker().getLastStudyResult();
+		result = startComponent(studyResult, study.getFirstComponent(),
+				idCookie);
+		idCookie = result.cookie("JATOS_IDS_0");
+		studyResult = admin.getWorker().getLastStudyResult();
 		studyResultDao.refresh(studyResult);
 
 		assertThat(result.status()).isEqualTo(OK);
@@ -329,9 +335,9 @@ public class PublixJatosTest extends AbstractTest {
 		// ***
 		// Send request to end study
 		// studyResult -> ABORTED, componentResult -> ABORTED
-		result = abortStudy(study, cookies,
+		result = abortStudy(studyResult, idCookie,
 				"This%20is%20an%20abort%20message.");
-
+		idCookie = result.cookie("JATOS_IDS_0");
 		studyResultDao.refresh(studyResult);
 		componentResultDao.refresh(firstComponentResult);
 
@@ -343,7 +349,7 @@ public class PublixJatosTest extends AbstractTest {
 				.isEqualTo("/jatos/" + study.getId());
 
 		// Check that ID cookie is removed
-		assertThat(result.cookie(IdCookie.ID_COOKIE_NAME).value()).isEmpty();
+		assertThat(idCookie.value()).isEmpty();
 
 		// Check results
 		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.ABORTED);
@@ -369,120 +375,119 @@ public class PublixJatosTest extends AbstractTest {
 		return route(request);
 	}
 
-	private Result startComponentByPosition(Study study, int position) {
+	private Result startComponentByPosition(StudyResult studyResult,
+			int position, Cookie idCookie) {
 		Result result;
-		String url = "/publix/" + study.getId() + "/component/start?position="
-				+ position;
+		String url = "/publix/" + studyResult.getStudy().getId()
+				+ "/component/start?position=" + position + "&srid="
+				+ studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session("email", admin.getEmail())
+				.session("email", admin.getEmail()).cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 		return result;
 	}
 
-	private Result startComponent(Study study, Component component) {
-		String url = "/publix/" + study.getId() + "/" + component.getId()
-				+ "/start";
+	private Result startComponent(StudyResult studyResult, Component component,
+			Cookie idCookie) {
+		String url = "/publix/" + studyResult.getStudy().getId() + "/"
+				+ component.getId() + "/start?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Users.SESSION_EMAIL, admin.getEmail())
-				// .cookie(cookie);
+				.session(Users.SESSION_EMAIL, admin.getEmail()).cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		return route(request, 10000);
 	}
 
-	private Result startNextComponent(Study study) {
+	private Result startNextComponent(StudyResult studyResult,
+			Cookie idCookie) {
 		Result result;
-		String url = "/publix/" + study.getId() + "/nextComponent/start";
+		String url = "/publix/" + studyResult.getStudy().getId()
+				+ "/nextComponent/start?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session("email", admin.getEmail())
+				.session("email", admin.getEmail()).cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's session data.");
 		result = route(request, 10000);
 		return result;
 	}
 
-	private Result initData(Study study, Component component) {
+	private Result initData(StudyResult studyResult, Component component,
+			Cookie idCookie) {
 		Result result;
-		String url = "/publix/" + study.getId() + "/" + component.getId()
-				+ "/initData";
+		String url = "/publix/" + studyResult.getStudy().getId() + "/"
+				+ component.getId() + "/initData?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session("email", admin.getEmail())
+				.session("email", admin.getEmail()).cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
 		return result;
 	}
 
-	private Result logError(Study study, String msg) {
+	private Result logError(StudyResult studyResult, String msg,
+			Cookie idCookie) {
 		Result result;
-		String url = "/publix/" + study.getId() + "/"
-				+ study.getComponent(3).getId() + "/log";
+		String url = "/publix/" + studyResult.getStudy().getId() + "/"
+				+ studyResult.getStudy().getComponent(3).getId() + "/log?srid="
+				+ studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
-				.session("email", admin.getEmail())
+				.session("email", admin.getEmail()).cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText(msg);
 		result = route(request, 10000);
 		return result;
 	}
 
-	private Result setStudySessionData(Study study) {
+	private Result setStudySessionData(StudyResult studyResult,
+			Cookie idCookie) {
 		Result result;
-		String url = "/publix/" + study.getId() + "/studySessionData";
+		String url = "/publix/" + studyResult.getStudy().getId()
+				+ "/studySessionData?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
-				.session("email", admin.getEmail())
+				.session("email", admin.getEmail()).cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's our session data.");
 		result = route(request, 10000);
 		return result;
 	}
 
-	private Result submitResultData(Study study) {
+	private Result submitResultData(StudyResult studyResult, Cookie idCookie) {
 		Result result;
-		String url = "/publix/" + study.getId() + "/"
-				+ study.getFirstComponent().getId() + "/resultData";
+		String url = "/publix/" + studyResult.getStudy().getId() + "/"
+				+ studyResult.getStudy().getFirstComponent().getId()
+				+ "/resultData?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
-				.session("email", admin.getEmail())
+				.session("email", admin.getEmail()).cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's a test result data.");
 		result = route(request, 10000);
 		return result;
 	}
 
-	private Result endStudy(Study study, Cookies cookies, boolean successful,
-			String errorMsg) {
+	private Result endStudy(StudyResult studyResult, Cookie idCookie,
+			boolean successful, String errorMsg) {
 		Result result;
-		String url = "/publix/" + study.getId() + "/end?successful="
-				+ successful + "&errorMsg=" + errorMsg;
+		String url = "/publix/" + studyResult.getStudy().getId() + "/end?srid="
+				+ studyResult.getId() + "&successful=" + successful
+				+ "&errorMsg=" + errorMsg;
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
-				.cookie(cookies.get(IdCookie.ID_COOKIE_NAME));
+				.cookie(idCookie);
 		result = route(request, 10000);
 		return result;
 	}
 
-	private Result abortStudy(Study study, Cookies cookies, String abortMsg) {
+	private Result abortStudy(StudyResult studyResult, Cookie idCookie,
+			String abortMsg) {
 		Result result;
-		String url = "/publix/" + study.getId() + "/abort?message=" + abortMsg;
+		String url = "/publix/" + studyResult.getStudy().getId()
+				+ "/abort?srid=" + studyResult.getId() + "&message=" + abortMsg;
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session("email", admin.getEmail())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
-				.cookie(cookies.get(IdCookie.ID_COOKIE_NAME));
+				.cookie(idCookie);
 		result = route(request, 10000);
 		return result;
-	}
-
-	private void checkIdCookie(Result result, Worker worker, Study study,
-			StudyResult studyResult, int componentPosition) {
-		Cookie idCookie = result.cookie(IdCookie.ID_COOKIE_NAME);
-		assertThat(idCookie.value()).contains("workerId=" + worker.getId());
-		assertThat(idCookie.value()).contains(
-				"componentId=" + study.getComponent(componentPosition).getId());
-		assertThat(idCookie.value())
-				.contains("componentPos=" + componentPosition);
-		assertThat(idCookie.value()).contains("studyId=" + study.getId());
-		assertThat(idCookie.value())
-				.contains("studyResultId=" + studyResult.getId());
-		assertThat(idCookie.value()).contains("componentResultId");
 	}
 
 	private void checkStates(StudyResult studyResult, StudyState studyState,
