@@ -24,6 +24,7 @@ import general.AbstractTest;
 import general.common.MessagesStrings;
 import models.common.Study;
 import play.mvc.Call;
+import play.mvc.Http.Cookie;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
@@ -66,13 +67,14 @@ public class StudyAssetsTest extends AbstractTest {
 	@Test
 	public void testVersioned() throws IOException, PublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
-		startStudy(studyClone);
+		Result startStudyResult = startStudy(studyClone);
+		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
 		Call call = controllers.publix.routes.StudyAssets
 				.versioned(studyClone.getDirName() + "/"
 						+ studyClone.getFirstComponent().getHtmlFilePath());
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url());
+				.uri(call.url()).cookie(idCookie);
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(OK);
 
@@ -80,25 +82,26 @@ public class StudyAssetsTest extends AbstractTest {
 		removeStudy(studyClone);
 	}
 
-	private void startStudy(Study studyClone) {
+	private Result startStudy(Study studyClone) {
 		String url = "/publix/" + studyClone.getId() + "/start?"
 				+ JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.session(JatosPublix.SESSION_JATOS_RUN,
 						JatosRun.RUN_STUDY.name());
-		route(request);
+		return route(request);
 	}
 
 	@Test
 	public void testVersionedNotFound() throws IOException, PublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
-		startStudy(studyClone);
+		Result startStudyResult = startStudy(studyClone);
+		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
 		Call call = controllers.publix.routes.StudyAssets
 				.versioned(studyClone.getDirName() + "/non_existend_file");
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url());
+				.uri(call.url()).cookie(idCookie);
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(NOT_FOUND);
 
@@ -110,13 +113,14 @@ public class StudyAssetsTest extends AbstractTest {
 	public void testVersionedWrongStudyDir()
 			throws IOException, PublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
-		startStudy(studyClone);
+		Result startStudyResult = startStudy(studyClone);
+		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
 		Call call = controllers.publix.routes.StudyAssets
 				.versioned("wrong_study_dir/"
 						+ studyClone.getFirstComponent().getHtmlFilePath());
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url());
+				.uri(call.url()).cookie(idCookie);
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(FORBIDDEN);
 
@@ -127,13 +131,15 @@ public class StudyAssetsTest extends AbstractTest {
 	@Test
 	public void testVersionedWrongAssets() throws IOException, PublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
-		startStudy(studyClone);
+		Result startStudyResult = startStudy(studyClone);
+		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
+		// Started studyClone but ask for asset of studyExample
 		Call call = controllers.publix.routes.StudyAssets
-				.versioned(studyClone.getDirName() + "/"
-						+ studyClone.getFirstComponent().getHtmlFilePath());
+				.versioned(studyExample.getDirName() + "/"
+						+ studyExample.getFirstComponent().getHtmlFilePath());
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url());
+				.uri(call.url()).cookie(idCookie);
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(FORBIDDEN);
 
@@ -145,14 +151,15 @@ public class StudyAssetsTest extends AbstractTest {
 	public void testVersionedPathTraversalAttack()
 			throws IOException, PublixException {
 		Study studyClone = cloneAndPersistStudy(studyExample);
-		startStudy(studyClone);
+		Result startStudyResult = startStudy(studyClone);
+		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
 		// Although this file exists, it shouldn't be found since all '/..' are
 		// removed
 		Call call = controllers.publix.routes.StudyAssets.versioned(
 				studyClone.getDirName() + "/../../conf/application.conf");
 		RequestBuilder request = new RequestBuilder().method(Helpers.GET)
-				.uri(call.url());
+				.uri(call.url()).cookie(idCookie);
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(NOT_FOUND);
 
