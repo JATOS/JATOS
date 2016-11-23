@@ -1,1 +1,0 @@
-web: target/universal/stage/bin/jatos -Dconfig.file="conf/heroku.conf" -Dhttp.port=${PORT} -Ddb.default.url=${CLEARDB_DATABASE_URL}
