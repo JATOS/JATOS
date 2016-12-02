@@ -48,9 +48,9 @@ public class HttpUtils {
 
 	public static boolean isLocalhost() {
 		String referer = Controller.request().getHeader("referer");
-		return Controller.request().host().contains("//localhost")
+		return Controller.request().host().contains("localhost")
 				|| Controller.request().host().contains("127.0.0.1")
-				|| referer != null && (referer.contains("//localhost")
+				|| referer != null && (referer.contains("localhost")
 				|| referer.contains("127.0.0.1"));
 	}
 
