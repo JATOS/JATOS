@@ -12,11 +12,11 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
-import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieCollectionFullException;
 import services.publix.idcookie.exception.IdCookieMalformedException;
+import utils.common.HttpUtils;
 
 /**
  * This class offers a simple interface to extract, write and discard IdCookies.
@@ -196,7 +196,7 @@ public class IdCookieAccessor {
 			throws IdCookieMalformedException {
 		String valueStr;
 		try {
-			valueStr = HttpHelpers.urlDecode(cookieMap.get(key));
+			valueStr = HttpUtils.urlDecode(cookieMap.get(key));
 		} catch (Exception e) {
 			throw new IdCookieMalformedException(PublixErrorMessages
 					.couldntExtractFromIdCookie(cookieName, key));

@@ -39,6 +39,7 @@ import services.gui.JatosGuiExceptionThrower;
 import services.gui.ResultRemover;
 import services.gui.ResultService;
 import services.gui.UserService;
+import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -105,7 +106,7 @@ public class StudyResults extends Controller {
 		String dataUrl = controllers.gui.routes.StudyResults
 				.tableDataByStudy(study.getId()).url();
 		return ok(views.html.gui.result.studyResults.render(loggedInUser,
-				breadcrumbs, study, dataUrl));
+				breadcrumbs, HttpUtils.isLocalhost(), study, dataUrl));
 	}
 
 	/**
@@ -136,7 +137,7 @@ public class StudyResults extends Controller {
 				.tableDataByBatch(study.getId(), batch.getId(), workerType)
 				.url();
 		return ok(views.html.gui.result.studyResults.render(loggedInUser,
-				breadcrumbs, study, dataUrl));
+				breadcrumbs, HttpUtils.isLocalhost(), study, dataUrl));
 	}
 
 	/**
@@ -157,7 +158,7 @@ public class StudyResults extends Controller {
 		String breadcrumbs = breadcrumbsService.generateForWorker(worker,
 				BreadcrumbsService.RESULTS);
 		return ok(views.html.gui.result.workersStudyResults.render(loggedInUser,
-				breadcrumbs, worker));
+				breadcrumbs, HttpUtils.isLocalhost(), worker));
 	}
 
 	/**

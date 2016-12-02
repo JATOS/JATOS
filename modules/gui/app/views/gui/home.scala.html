@@ -1,6 +1,7 @@
-@(studyList: List[common.Study], loggedInUser: common.User, breadcrumbs: String)
+@(studyList: List[common.Study], loggedInUser: common.User, breadcrumbs: String,
+	localhost: Boolean)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <div class="jumbotron text-center hidden-xs hidden-sm">
 	<img src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/images/jatos_logo_color.svg")" alt="JATOS logo" height="100">

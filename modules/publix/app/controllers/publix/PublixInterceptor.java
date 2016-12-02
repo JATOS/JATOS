@@ -27,9 +27,9 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
-import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.IdCookieService;
+import utils.common.HttpUtils;
 
 /**
  * Interceptor for Publix: it intercepts requests for JATOS' public API (Publix)
@@ -581,30 +581,30 @@ public class PublixInterceptor extends Controller implements IPublix {
 	 */
 	private String getWorkerTypeFromQuery() throws BadRequestPublixException {
 		// Check for JATOS worker
-		String jatosWorkerId = HttpHelpers
+		String jatosWorkerId = HttpUtils
 				.getQueryString(JatosPublix.JATOS_WORKER_ID);
 		if (jatosWorkerId != null) {
 			return JatosWorker.WORKER_TYPE;
 		}
 		// Check for MT worker and MT Sandbox worker
-		String mtWorkerId = HttpHelpers.getQueryString(MTPublix.MT_WORKER_ID);
+		String mtWorkerId = HttpUtils.getQueryString(MTPublix.MT_WORKER_ID);
 		if (mtWorkerId != null) {
 			return instanceOfPublix(MTPublix.class).retrieveWorkerType();
 		}
 		// Check for Personal Multiple Worker
-		String pmWorkerId = HttpHelpers.getQueryString(
+		String pmWorkerId = HttpUtils.getQueryString(
 				PersonalMultiplePublix.PERSONAL_MULTIPLE_WORKER_ID);
 		if (pmWorkerId != null) {
 			return PersonalMultipleWorker.WORKER_TYPE;
 		}
 		// Check for Personal Single Worker
-		String personalSingleWorkerId = HttpHelpers
+		String personalSingleWorkerId = HttpUtils
 				.getQueryString(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID);
 		if (personalSingleWorkerId != null) {
 			return PersonalSingleWorker.WORKER_TYPE;
 		}
 		// Check for General Single Worker
-		String generalSingle = HttpHelpers
+		String generalSingle = HttpUtils
 				.getQueryString(GeneralSinglePublix.GENERALSINGLE);
 		if (generalSingle != null) {
 			return GeneralSingleWorker.WORKER_TYPE;

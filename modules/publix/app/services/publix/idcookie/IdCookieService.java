@@ -13,10 +13,10 @@ import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.workers.Worker;
-import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieCollectionFullException;
+import utils.common.HttpUtils;
 
 /**
  * Service class for JATOS ID cookie handling. It generates, extracts and
@@ -181,7 +181,7 @@ public class IdCookieService {
 
 		idCookie.setBatchId(batch.getId());
 		idCookie.setCreationTime(System.currentTimeMillis());
-		idCookie.setStudyAssets(HttpHelpers.urlEncode(study.getDirName()));
+		idCookie.setStudyAssets(HttpUtils.urlEncode(study.getDirName()));
 		idCookie.setName(name);
 		idCookie.setStudyId(study.getId());
 		idCookie.setStudyResultId(studyResult.getId());

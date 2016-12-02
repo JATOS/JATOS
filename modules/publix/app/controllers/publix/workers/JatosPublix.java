@@ -33,7 +33,7 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.JatosErrorMessages;
 import services.publix.workers.JatosPublixUtils;
 import services.publix.workers.JatosStudyAuthorisation;
-import utils.common.ControllerUtils;
+import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -261,7 +261,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			groupService.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			return ok();
 		} else {
 			if (message != null) {
@@ -293,7 +293,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			groupService.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			return ok(errorMsg);
 		} else {
 			if (errorMsg != null) {

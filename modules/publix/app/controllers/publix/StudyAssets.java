@@ -17,7 +17,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.IdCookieService;
-import utils.common.ControllerUtils;
+import utils.common.HttpUtils;
 import utils.common.IOUtils;
 
 /**
@@ -66,7 +66,7 @@ public class StudyAssets extends Controller {
 		} catch (PublixException e) {
 			String errorMsg = e.getMessage();
 			LOGGER.info(".versioned: " + errorMsg);
-			if (ControllerUtils.isAjax()) {
+			if (HttpUtils.isAjax()) {
 				return forbidden(errorMsg);
 			} else {
 				return forbidden(views.html.publix.error.render(errorMsg));
@@ -76,7 +76,7 @@ public class StudyAssets extends Controller {
 					+ common.getStudyAssetsRootPath() + File.separator
 					+ urlPath);
 			String errorMsg = "Resource \"" + urlPath + "\" couldn't be found.";
-			if (ControllerUtils.isAjax()) {
+			if (HttpUtils.isAjax()) {
 				return notFound(errorMsg);
 			} else {
 				return notFound(views.html.publix.error.render(errorMsg));

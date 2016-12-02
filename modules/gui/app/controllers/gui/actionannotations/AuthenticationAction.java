@@ -19,7 +19,7 @@ import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
-import utils.common.ControllerUtils;
+import utils.common.HttpUtils;
 
 /**
  * For all actions in a controller that are annotated with @Authenticated check
@@ -52,7 +52,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 			loggedInUser = userDao.findByEmail(email);
 		}
 		if (loggedInUser == null) {
-			if (ControllerUtils.isAjax()) {
+			if (HttpUtils.isAjax()) {
 				call = Promise.pure(forbidden("Not logged in"));
 			} else {
 				call = Promise.pure(redirect(

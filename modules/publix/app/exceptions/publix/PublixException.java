@@ -4,7 +4,7 @@ import org.apache.http.HttpStatus;
 
 import play.mvc.Result;
 import play.mvc.Results;
-import utils.common.ControllerUtils;
+import utils.common.HttpUtils;
 
 import com.google.common.net.MediaType;
 
@@ -30,7 +30,7 @@ public abstract class PublixException extends Exception {
 	}
 
 	public Result getSimpleResult() {
-		if (!ControllerUtils.isAjax()) {
+		if (!HttpUtils.isAjax()) {
 			return Results.status(httpStatus,
 					views.html.publix.error.render(getMessage()));
 		} else {

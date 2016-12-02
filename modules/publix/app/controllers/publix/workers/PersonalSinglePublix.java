@@ -19,7 +19,6 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
-import services.publix.HttpHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
@@ -27,6 +26,7 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalSingleErrorMessages;
 import services.publix.workers.PersonalSinglePublixUtils;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
+import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -81,9 +81,9 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
-		String workerIdStr = HttpHelpers
+		String workerIdStr = HttpUtils
 				.getQueryString(PERSONAL_SINGLE_WORKER_ID);
-		boolean pre = HttpHelpers.getQueryString("pre") != null;
+		boolean pre = HttpUtils.getQueryString("pre") != null;
 		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
 				+ batchId + ", " + PERSONAL_SINGLE_WORKER_ID + " " + workerIdStr
 				+ ", " + "pre " + pre);

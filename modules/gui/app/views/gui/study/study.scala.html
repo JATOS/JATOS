@@ -1,8 +1,8 @@
-@(loggedInUser: common.User, breadcrumbs: String,
-study: common.Study, workerSet: Set[common.workers.Worker],
-studyResultsCount: Integer)
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
+	study: common.Study, workerSet: Set[common.workers.Worker],
+	studyResultsCount: Integer)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <!-- Toolbar -->
 <div id="studyToolbar" class="btn-toolbar" role="toolbar">

@@ -5,6 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
+import exceptions.gui.JatosGuiException;
 import play.Logger;
 import play.libs.F;
 import play.libs.F.Promise;
@@ -13,10 +15,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
-import utils.common.ControllerUtils;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
-import exceptions.gui.JatosGuiException;
-import general.gui.FlashScopeMessaging;
+import utils.common.HttpUtils;
 
 /**
  * For all actions in a controller that is annotated with @JatosGui catch
@@ -47,13 +46,14 @@ public class GuiExceptionAction extends Action<GuiExceptionCatching> {
 		} catch (Exception e) {
 			Logger.error("Exception during call " + Controller.request().uri()
 					+ ": " + e.getMessage(), e);
-			if (ControllerUtils.isAjax()) {
+			if (HttpUtils.isAjax()) {
 				call = Promise
-						.<Result> pure(internalServerError(e.getMessage()));
+						.<Result>pure(internalServerError(e.getMessage()));
 			} else {
-				FlashScopeMessaging.error("Internal JATOS error during "
-						+ Controller.request().uri() + ": " + e.getMessage());
-				call = Promise.pure(redirect(controllers.gui.routes.Home.home()));
+				call = Promise.<Result>pure(
+						internalServerError("Internal JATOS error during "
+								+ Controller.request().uri() + ": "
+								+ e.toString()));
 			}
 		}
 		return call;

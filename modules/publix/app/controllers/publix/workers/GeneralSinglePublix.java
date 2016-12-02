@@ -19,7 +19,6 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
-import services.publix.HttpHelpers;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
 import services.publix.group.ChannelService;
@@ -29,6 +28,7 @@ import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
+import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -72,7 +72,8 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 	}
 
 	/**
-	 * {@inheritDoc}<br><br>
+	 * {@inheritDoc}<br>
+	 * <br>
 	 * 
 	 * Only a general single run or a personal single run has the special
 	 * StudyState PRE. Only with the corresponding workers (GeneralSingleWorker
@@ -87,7 +88,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 	@Override
 	public Result startStudy(Long studyId, Long batchId)
 			throws PublixException {
-		boolean pre = HttpHelpers.getQueryString("pre") != null;
+		boolean pre = HttpUtils.getQueryString("pre") != null;
 		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
 				+ batchId + ", " + "pre " + pre);
 		Study study = publixUtils.retrieveStudy(studyId);

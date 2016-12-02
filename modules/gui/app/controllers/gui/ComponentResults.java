@@ -34,6 +34,7 @@ import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.ResultRemover;
 import services.gui.UserService;
+import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -97,8 +98,10 @@ public class ComponentResults extends Controller {
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = breadcrumbsService.generateForComponent(study,
 				component, BreadcrumbsService.RESULTS);
-		return status(httpStatus, views.html.gui.result.componentResults
-				.render(loggedInUser, breadcrumbs, study, component));
+		return status(httpStatus,
+				views.html.gui.result.componentResults.render(loggedInUser,
+						breadcrumbs, HttpUtils.isLocalhost(), study,
+						component));
 	}
 
 	@Transactional

@@ -25,6 +25,7 @@ import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 import utils.common.HashUtils;
+import utils.common.HttpUtils;
 
 /**
  * Controller with actions concerning users
@@ -65,7 +66,7 @@ public class Users extends Controller {
 		User user = checkStandard(email, loggedInUser);
 		String breadcrumbs = breadcrumbsService.generateForUser(user);
 		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
-				user));
+				HttpUtils.isLocalhost(), user));
 	}
 
 	/**

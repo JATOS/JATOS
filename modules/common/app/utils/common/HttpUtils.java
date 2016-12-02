@@ -1,20 +1,24 @@
 package utils.common;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Controller;
+import play.mvc.Http;
 
 /**
  * Utility class for all JATOS Controllers.
  * 
  * @author Kristian Lange
  */
-public class ControllerUtils {
+public class HttpUtils {
 
-	private static final ALogger LOGGER = Logger.of(ControllerUtils.class);
+	private static final ALogger LOGGER = Logger.of(HttpUtils.class);
 
 	/**
 	 * Check if the request was made via Ajax or not.
@@ -42,6 +46,14 @@ public class ControllerUtils {
 		return null;
 	}
 
+	public static boolean isLocalhost() {
+		String referer = Controller.request().getHeader("referer");
+		return Controller.request().host().contains("//localhost")
+				|| Controller.request().host().contains("127.0.0.1")
+				|| referer != null && (referer.contains("//localhost")
+				|| referer.contains("127.0.0.1"));
+	}
+
 	/**
 	 * Returns the request's protocol, either 'http' or 'https'. It determines
 	 * the protocol by looking at three things: 1) it checks if the HTTP header
@@ -62,6 +74,38 @@ public class ControllerUtils {
 						.startsWith("https");
 		return isXForwardedProtoHttps || isRefererProtoHttps
 				|| Controller.request().secure() ? "https" : "http";
+	}
+
+	public static String urlEncode(String str) {
+		String encodedStr = "";
+		try {
+			encodedStr = URLEncoder.encode(str, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// Do nothing
+		}
+		return encodedStr;
+	}
+
+	public static String urlDecode(String str) {
+		String decodedStr = null;
+		try {
+			decodedStr = URLDecoder.decode(str, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// Do nothing
+		}
+		return decodedStr;
+	}
+
+	/**
+	 * Gets the value of to the given key in request's query string and trims
+	 * whitespace.
+	 */
+	public static String getQueryString(String key) {
+		String value = Http.Context.current().request().getQueryString(key);
+		if (value != null) {
+			value = value.trim();
+		}
+		return value;
 	}
 
 }

@@ -1,6 +1,7 @@
-@(loggedInUser: common.User, breadcrumbs: String, study: common.Study, dataUrl: String)
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
+	study: common.Study, dataUrl: String)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <!-- Toolbar -->
 <div id="resultsToolbar" class="btn-toolbar pull-right" role="toolbar">

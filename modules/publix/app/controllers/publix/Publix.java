@@ -28,7 +28,6 @@ import play.db.jpa.JPAApi;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
-import services.publix.HttpHelpers;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
@@ -38,7 +37,7 @@ import services.publix.group.GroupService;
 import services.publix.group.WebSocketBuilder;
 import services.publix.idcookie.IdCookie;
 import services.publix.idcookie.IdCookieService;
-import utils.common.ControllerUtils;
+import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -307,8 +306,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
 				study, studyResultId);
-		String studySessionData = HttpHelpers
-				.getDataFromRequestBody(request().body());
+		String studySessionData = request().body().asText();
 		studyResult.setStudySessionData(studySessionData);
 		studyResultDao.update(studyResult);
 		return ok();
@@ -339,8 +337,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					.finishStudy(studyId, studyResult.getId(), false, error));
 		}
 
-		String resultData = HttpHelpers
-				.getDataFromRequestBody(request().body());
+		String resultData = request().body().asText();
 		componentResult.setData(resultData);
 		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
 		componentResultDao.update(componentResult);
@@ -404,7 +401,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			groupService.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			return ok();
 		} else {
 			return ok(views.html.publix.abort.render());
@@ -430,7 +427,7 @@ public abstract class Publix<T extends Worker> extends Controller
 			groupService.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			return ok();
 		} else {
 			if (!successful) {

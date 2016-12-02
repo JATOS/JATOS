@@ -41,6 +41,7 @@ import services.gui.JatosGuiExceptionThrower;
 import services.gui.StudyService;
 import services.gui.UserService;
 import services.gui.WorkerService;
+import utils.common.HttpUtils;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -107,8 +108,10 @@ public class Studies extends Controller {
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study);
 		int studyResultCount = studyResultDao.countByStudy(study);
-		return status(httpStatus, views.html.gui.study.study.render(
-				loggedInUser, breadcrumbs, study, workerSet, studyResultCount));
+		return status(httpStatus,
+				views.html.gui.study.study.render(loggedInUser, breadcrumbs,
+						HttpUtils.isLocalhost(), study, workerSet,
+						studyResultCount));
 	}
 
 	@Transactional
@@ -383,8 +386,8 @@ public class Studies extends Controller {
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.WORKER_SETUP);
-		return status(httpStatus, views.html.gui.study.studysWorkers
-				.render(loggedInUser, breadcrumbs, study));
+		return status(httpStatus, views.html.gui.study.studysWorkers.render(
+				loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), study));
 	}
 
 	@Transactional

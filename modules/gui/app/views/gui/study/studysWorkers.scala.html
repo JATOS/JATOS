@@ -1,6 +1,7 @@
-@(loggedInUser: common.User, breadcrumbs: String, study: common.Study)
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
+	study: common.Study)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <!-- Workers table -->
 <table id="workersTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">

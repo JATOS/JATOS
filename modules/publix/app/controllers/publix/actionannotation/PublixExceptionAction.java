@@ -16,7 +16,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
-import utils.common.ControllerUtils;
+import utils.common.HttpUtils;
 
 /**
  * For all actions in a controller that is annotated with PublixAction catch
@@ -52,7 +52,7 @@ public class PublixExceptionAction extends Action<PublixExceptionCatching> {
 			// Log exception with stack trace
 			Logger.error("Exception during call " + Controller.request().uri()
 					+ ": " + e.getMessage(), e);
-			if (ControllerUtils.isAjax()) {
+			if (HttpUtils.isAjax()) {
 				call = Promise
 						.<Result> pure(internalServerError(e.getMessage()));
 			} else {

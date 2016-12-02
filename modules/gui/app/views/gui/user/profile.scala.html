@@ -1,6 +1,7 @@
-@(loggedInUser: common.User, breadcrumbs: String, user: common.User)
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
+	user: common.User)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <div id="toolbar" class="btn-group">
 	<button id="editProfile" type="button" class="btn btn-primary">Edit Profile</button>

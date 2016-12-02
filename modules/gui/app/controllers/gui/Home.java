@@ -22,6 +22,7 @@ import play.mvc.Result;
 import services.gui.BreadcrumbsService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
+import utils.common.HttpUtils;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -67,7 +68,7 @@ public class Home extends Controller {
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		String breadcrumbs = breadcrumbsService.generateForHome();
 		return status(httpStatus, views.html.gui.home.render(studyList,
-				loggedInUser, breadcrumbs));
+				loggedInUser, breadcrumbs, HttpUtils.isLocalhost()));
 	}
 
 	@Transactional

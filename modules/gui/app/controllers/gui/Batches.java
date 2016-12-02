@@ -39,6 +39,7 @@ import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 import services.gui.WorkerService;
+import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -100,7 +101,7 @@ public class Batches extends Controller {
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
 				BreadcrumbsService.BATCH_MANAGER);
 		return ok(views.html.gui.batch.batchManager.render(loggedInUser,
-				breadcrumbs, study));
+				breadcrumbs, HttpUtils.isLocalhost(), study));
 	}
 
 	/**

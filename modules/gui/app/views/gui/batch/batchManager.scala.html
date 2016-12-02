@@ -1,6 +1,7 @@
-@(loggedInUser: common.User, breadcrumbs: String, study: common.Study)
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean,
+	study: common.Study)
 
-@views.html.gui.main(loggedInUser, breadcrumbs){
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <div class="btn-group">
 	<button id="createBatchButton" type="button" class="btn btn-batch">New Batch</button>

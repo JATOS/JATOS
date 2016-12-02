@@ -6,11 +6,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import play.api.mvc.Call;
-import play.mvc.Http;
-import play.mvc.Result;
-import play.mvc.Results;
-import utils.common.ControllerUtils;
 import controllers.gui.Home;
 import controllers.gui.Studies;
 import exceptions.gui.BadRequestException;
@@ -19,6 +14,11 @@ import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import general.gui.FlashScopeMessaging;
 import general.gui.RequestScopeMessaging;
+import play.api.mvc.Call;
+import play.mvc.Http;
+import play.mvc.Result;
+import play.mvc.Results;
+import utils.common.HttpUtils;
 
 /**
  * Class with convenience methods to throw a {@link JatosGuiException}. It
@@ -65,7 +65,8 @@ public class JatosGuiExceptionThrower {
 	 * a simple text) with the exception's message. The HTTP's status code is
 	 * taken from the parameter.
 	 */
-	public void throwAjax(Exception e, int httpStatus) throws JatosGuiException {
+	public void throwAjax(Exception e, int httpStatus)
+			throws JatosGuiException {
 		Result result = Results.status(httpStatus, e.getMessage());
 		throw new JatosGuiException(result, e.getMessage());
 	}
@@ -78,7 +79,7 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwRedirect(Exception e, Call call) throws JatosGuiException {
 		Result result;
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			int statusCode = getHttpStatusFromException(e);
 			result = Results.status(statusCode, e.getMessage());
 		} else {
@@ -96,7 +97,7 @@ public class JatosGuiExceptionThrower {
 	public void throwHome(String errorMsg, int httpStatus)
 			throws JatosGuiException {
 		Result result;
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
@@ -114,7 +115,7 @@ public class JatosGuiExceptionThrower {
 	public void throwHome(Exception e) throws JatosGuiException {
 		Result result;
 		int httpStatus = getHttpStatusFromException(e);
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
@@ -130,7 +131,7 @@ public class JatosGuiExceptionThrower {
 	 */
 	public void throwResult(Exception e, Result result)
 			throws JatosGuiException {
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			int httpStatus = getHttpStatusFromException(e);
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
@@ -147,12 +148,11 @@ public class JatosGuiExceptionThrower {
 	public void throwStudy(String errorMsg, int httpStatus, Long studyId)
 			throws JatosGuiException {
 		Result result;
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			result = Results.status(httpStatus, errorMsg);
 		} else {
 			RequestScopeMessaging.error(errorMsg);
-			result = studiesProvider.get().study(studyId,
-					httpStatus);
+			result = studiesProvider.get().study(studyId, httpStatus);
 		}
 		throw new JatosGuiException(result, errorMsg);
 	}
@@ -163,16 +163,14 @@ public class JatosGuiExceptionThrower {
 	 * view. If it's a Ajax request, it just returns the exception's message.
 	 * The HTTP status code is determined by the exception type.
 	 */
-	public void throwStudy(Exception e, Long studyId)
-			throws JatosGuiException {
+	public void throwStudy(Exception e, Long studyId) throws JatosGuiException {
 		Result result;
 		int httpStatus = getHttpStatusFromException(e);
-		if (ControllerUtils.isAjax()) {
+		if (HttpUtils.isAjax()) {
 			result = Results.status(httpStatus, e.getMessage());
 		} else {
 			RequestScopeMessaging.error(e.getMessage());
-			result = studiesProvider.get().study(studyId,
-					httpStatus);
+			result = studiesProvider.get().study(studyId, httpStatus);
 		}
 		throw new JatosGuiException(result, e.getMessage());
 	}

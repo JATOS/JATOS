@@ -11,8 +11,8 @@ import javax.inject.Singleton;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.worker.WorkerDao;
@@ -35,7 +35,7 @@ import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
 import services.gui.WorkerService;
-import utils.common.ControllerUtils;
+import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -148,7 +148,7 @@ public class Workers extends Controller {
 			jatosGuiExceptionThrower.throwStudy(e, studyId);
 		}
 
-		URL jatosURL = ControllerUtils.getRequestUrl();
+		URL jatosURL = HttpUtils.getRequestUrl();
 		Map<String, Integer> studyResultCountsPerWorker = workerService
 				.retrieveStudyResultCountsPerWorker(batch);
 		String breadcrumbs = breadcrumbsService.generateForBatch(study, batch,
@@ -156,7 +156,8 @@ public class Workers extends Controller {
 		String allowedWorkerTypes = JsonUtils
 				.asJson(batch.getAllowedWorkerTypes());
 		return ok(views.html.gui.batch.workerSetup.render(loggedInUser,
-				breadcrumbs, batch.getId(), allowedWorkerTypes, study, jatosURL,
+				breadcrumbs, HttpUtils.isLocalhost(), batch.getId(),
+				allowedWorkerTypes, study, jatosURL,
 				studyResultCountsPerWorker));
 	}
 
