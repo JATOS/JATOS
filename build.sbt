@@ -2,15 +2,11 @@ import com.typesafe.config._
 
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
+import com.typesafe.sbt.packager.docker._
+
 // Settings that are common to all modules are in project/Common.scala
 
 name := "JATOS"
-
-// Maintainer used for all packaging
-maintainer := "Kristian Lange"
-
-// Exposing the Play ports for Docker
-dockerExposedPorts in Docker := Seq(9000, 9443)
 
 Common.settings
 
@@ -24,7 +20,22 @@ libraryDependencies ++= Seq(
 	javaWs
 )
 
-javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
+// Docker commands to run in Dockerfile
+dockerCommands := Seq(
+	Cmd("FROM", "java:8-jre"),
+	Cmd("MAINTAINER", "Kristian Lange"),
+	Cmd("WORKDIR", "/opt/docker"),
+	Cmd("ADD", "opt /opt"),
+	Cmd("EXPOSE", "9000 9443"),
+	ExecCmd("RUN", "mkdir", "-p", "/opt/docker/logs"),
+	ExecCmd("RUN", "chown", "-R", "daemon:daemon", "."),
+	Cmd("VOLUME", "/opt/docker/logs"),
+	Cmd("RUN", "bash -l -c 'echo export JATOS_SECRET=$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1) >> /etc/bash.bashrc'"),
+	Cmd("USER", "daemon"),
+	ExecCmd("ENTRYPOINT", "bin/jatos", "-Dconfig.file=conf/production.conf", "-J-server")
+)
+
+javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")	
 
 initialize := {
 	val _ = initialize.value
