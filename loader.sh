@@ -11,6 +11,7 @@ port="9000"
 # Get JATOS directory
 dir="$( cd "$( dirname "$0" )" && pwd )"
 pidfile="$dir/RUNNING_PID"
+args=${@:2}
 
 function start() {
 	checkAlreadyRunning
@@ -31,14 +32,14 @@ function start() {
 	chmod u+x "$dir/bin/jatos"
 	
 	# Start JATOS with configuration file and application secret
-	"$dir/bin/jatos" -Dconfig.file="$dir/conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address -J-server > /dev/null &
+	"$dir/bin/jatos" -Dconfig.file="$dir/conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address -J-server $args > /dev/null &
 	
 	echo "...started"
-	echo "To use JATOS type $address:$port in your browser's address bar"
+	printAddressAndPort
 }
 
 function stop() {
-	if [ ! -f "$pidfile" ] || ! kill -0 $(cat "$pidfile") 2>1 >/dev/null
+	if [ ! -f "$pidfile" ] || ! kill -0 $(cat "$pidfile") 2>&1 >/dev/null
 	then
 		echo "JATOS not running"
 		exit 1
@@ -50,7 +51,7 @@ function stop() {
 }
 
 function checkAlreadyRunning() {
-	if [ -f "$pidfile" ] && kill -0 $(cat "$pidfile") 2>1 >/dev/null
+	if [ -f "$pidfile" ] && kill -0 $(cat "$pidfile") 2>&1 >/dev/null
 	then
 		echo "There seems to be a running JATOS."
 		exit 1
@@ -93,6 +94,26 @@ function checkJava() {
 			exit 1
 		fi
 	fi
+}
+
+function printAddressAndPort() {
+	usedAddress=$address
+	usedPort=$port
+
+	for i in $args ; do
+		case "$i" in
+		-Dhttp.address=*)
+			array=(${i//=/ })
+			usedAddress=${array[1]}
+			;;
+		-Dhttp.port=*)
+			array=(${i//=/ })
+			usedPort=${array[1]}
+			;;
+		esac
+	done
+
+	echo "To use JATOS type $usedAddress:$usedPort in your browser's address bar"
 }
 
 case "$1" in
