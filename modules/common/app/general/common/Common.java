@@ -84,7 +84,8 @@ public class Common {
 				File.separator);
 
 		// If relative path add JATOS' base path as prefix
-		if (!tempStudyAssetsRootPath.startsWith(File.separator)) {
+		
+		if (!(new File(tempStudyAssetsRootPath).isAbsolute())) {
 			tempStudyAssetsRootPath = this.basepath + File.separator
 					+ tempStudyAssetsRootPath;
 		}
