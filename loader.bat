@@ -14,10 +14,9 @@ set JATOS_HOME=%~dp0
 set JATOS_HOME=%JATOS_HOME:~0,-1%
 set LOCAL_JRE=jre\win32_jre
 
-rem Detect if we were double clicked
-set DOUBLECLICKED=0
-echo %cmdcmdline% | find /i "%~0" >nul
-if not errorlevel 1 set DOUBLECLICKED=1
+rem Detect if we were double clicked, although theoretically A user could
+rem manually run cmd /c
+for %%x in (!cmdcmdline!) do if %%~x==/c set DOUBLECLICKED=1
 
 if _%DOUBLECLICKED%_==_1_ (
   call :start
@@ -26,7 +25,7 @@ if _%DOUBLECLICKED%_==_1_ (
 
 rem If we were started from CMD, evaluate start parameter
 if "%1"=="start" (
-  call :start
+  call :start %*
   exit /b
 ) else if "%1"=="stop" (
   call :stop
@@ -54,6 +53,16 @@ rem ### Functions ###
   )
 
   echo Starting JATOS ... please wait
+
+  rem We use the value of the JAVA_OPTS environment variable if defined, rather than the config.
+  set _JAVA_OPTS=%JAVA_OPTS%
+  if "!_JAVA_OPTS!"=="" set _JAVA_OPTS=!CFG_OPTS!
+
+  rem We keep in _JAVA_PARAMS all -J-prefixed and -D-prefixed arguments
+  rem "-J" is stripped, "-D" is left as is, and everything is appended to JAVA_OPTS
+  set _JAVA_PARAMS=
+  call :getparams %*
+
   rem # Generate application secret for the Play framework
   rem # If it's the first start, create a new secret, otherwise load it from the file.
   IF NOT EXIST "%JATOS_HOME%\play.crypto.secret" (
@@ -77,13 +86,9 @@ rem ### Functions ###
 
   set "APP_CLASSPATH=%JATOS_HOME%\lib\*"
   set "APP_MAIN_CLASS=play.core.server.NettyServer"
-  set CMD="%JAVACMD%" %JATOS_OPTS% -cp "%APP_CLASSPATH%" %APP_MAIN_CLASS%
+  set CMD="%JAVACMD%" %JATOS_OPTS% !_JAVA_OPTS! -cp "%APP_CLASSPATH%" %APP_MAIN_CLASS%
   cd %JATOS_HOME%
-  if _%DOUBLECLICKED%_==_1_ (
-    start /b call %CMD% > nul
-  ) else (
-    start /b call %CMD% > nul
-  )
+  start /b call %CMD% > nul
   
   echo To use JATOS type %address%:%port% in your browser's address bar
   goto:eof
@@ -98,6 +103,7 @@ rem ### Functions ###
   taskkill /pid %PID% /f
   if errorlevel 1 (
     echo ...failed
+    del "%JATOS_HOME%\RUNNING_PID"
   ) else (
     del "%JATOS_HOME%\RUNNING_PID"
     echo ...stopped
@@ -142,4 +148,48 @@ rem ### Functions ###
     exit /b 1
   )
   exit /b 0
-  
+
+:getparams
+  :param_loop
+  call set _PARAM1=%%1
+  set "_TEST_PARAM=%~1"
+  if ["!_PARAM1!"]==[""] goto param_afterloop
+
+  rem ignore arguments that do not start with '-'
+  if "%_TEST_PARAM:~0,1%"=="-" goto param_java_check
+  shift
+  goto param_loop
+
+  :param_java_check
+  if "!_TEST_PARAM:~0,2!"=="-J" (
+    rem strip -J prefix
+    set _JAVA_PARAMS=!_JAVA_PARAMS! !_TEST_PARAM:~2!
+    shift
+    goto param_loop
+  )
+
+  if "!_TEST_PARAM:~0,2!"=="-D" (
+    rem test if this was double-quoted property "-Dprop=42"
+    for /F "delims== tokens=1,*" %%G in ("!_TEST_PARAM!") DO (
+      if not ["%%H"] == [""] (
+        set _JAVA_PARAMS=!_JAVA_PARAMS! !_PARAM1!
+      ) else if [%2] neq [] (
+        rem it was a normal property: -Dprop=42 or -Drop="42"
+        call set _PARAM1=%%1=%%2
+        set _JAVA_PARAMS=!_JAVA_PARAMS! !_PARAM1!
+        shift
+      )
+    )
+  ) else (
+    if "!_TEST_PARAM!"=="-main" (
+      call set CUSTOM_MAIN_CLASS=%%2
+      shift
+    )
+  )
+  shift
+  goto param_loop
+
+  :param_afterloop
+  set _JAVA_OPTS=!_JAVA_OPTS! !_JAVA_PARAMS!
+  exit /b 0
+
