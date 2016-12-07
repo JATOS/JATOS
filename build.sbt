@@ -27,6 +27,7 @@ dockerCommands := Seq(
 	Cmd("WORKDIR", "/opt/docker"),
 	Cmd("ADD", "opt /opt"),
 	Cmd("EXPOSE", "9000 9443"),
+	Cmd("RUN", "apt-get update -y && apt-get install vim -y"),
 	ExecCmd("RUN", "mkdir", "-p", "/opt/docker/logs"),
 	ExecCmd("RUN", "chown", "-R", "daemon:daemon", "."),
 	Cmd("VOLUME", "/opt/docker/logs"),
@@ -87,10 +88,10 @@ sources in (Compile, doc) := Seq.empty
 publishArtifact in (Compile, packageDoc) := false
 
 // Add loader.sh to distribution
-mappings in Universal += file(baseDirectory.value + "/loader.sh") -> ("loader.sh")
+mappings in Universal in packageBin += file(baseDirectory.value + "/loader.sh") -> ("loader.sh")
 
 // Add loader.sh to distribution
-mappings in Universal += file(baseDirectory.value + "/loader.bat") -> ("loader.bat")
+mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> ("loader.bat")
 
 // Add conf/production.conf to distribution
 mappings in Universal += file(baseDirectory.value + "/conf/production.conf") -> ("conf/production.conf")
@@ -106,9 +107,9 @@ mappings in Universal := (mappings in Universal).value filter {
 }
 
 // Don't include jatos.bat to distribution
-mappings in Universal := (mappings in Universal).value filter {
-	case (file, path) => ! path.endsWith("jatos.bat")
-}
+//mappings in Universal := (mappings in Universal).value filter {
+//	case (file, path) => ! path.endsWith("jatos.bat")
+//}
 
 // Don't include Java docs to distribution
 mappings in Universal := (mappings in Universal).value filter { 
