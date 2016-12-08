@@ -3,19 +3,19 @@
 
 @echo off
 
-rem Change IP address and port here
+rem # Change IP address and port here
 set address=127.0.0.1
 set port=9000
 
-rem Don't change after here unless you know what you're doing
+rem # Don't change after here unless you know what you're doing
 rem ###################################
 
 set JATOS_HOME=%~dp0
 set JATOS_HOME=%JATOS_HOME:~0,-1%
 set LOCAL_JRE=jre\win32_jre
 
-rem Detect if we were double clicked, although theoretically A user could
-rem manually run cmd /c
+rem # Detect if we were double clicked, although theoretically A user could
+rem # manually run cmd /c
 for %%x in (!cmdcmdline!) do if %%~x==/c set DOUBLECLICKED=1
 
 if _%DOUBLECLICKED%_==_1_ (
@@ -23,7 +23,7 @@ if _%DOUBLECLICKED%_==_1_ (
   exit
 )
 
-rem If we were started from CMD, evaluate start parameter
+rem # If we were started from CMD, evaluate start parameter
 if "%1"=="start" (
   call :start %*
   exit /b
@@ -46,20 +46,19 @@ rem ### Functions ###
     if _%DOUBLECLICKED%_==_1_ pause
     goto:eof
   )
+  rem # If there is an old RUNNING_PID file of an earlier JATOS run that wasn't orderly closed delete it
   IF EXIST "%JATOS_HOME%\RUNNING_PID" (
-    echo JATOS already running
-    if _%DOUBLECLICKED%_==_1_ pause
-    goto:eof
+    del "%JATOS_HOME%\RUNNING_PID"
   )
 
   echo Starting JATOS ... please wait
 
-  rem We use the value of the JAVA_OPTS environment variable if defined, rather than the config.
+  rem # We use the value of the JAVA_OPTS environment variable if defined, rather than the config.
   set _JAVA_OPTS=%JAVA_OPTS%
   if "!_JAVA_OPTS!"=="" set _JAVA_OPTS=!CFG_OPTS!
 
-  rem We keep in _JAVA_PARAMS all -J-prefixed and -D-prefixed arguments
-  rem "-J" is stripped, "-D" is left as is, and everything is appended to JAVA_OPTS
+  rem # We keep in _JAVA_PARAMS all -J-prefixed and -D-prefixed arguments
+  rem # "-J" is stripped, "-D" is left as is, and everything is appended to JAVA_OPTS
   set _JAVA_PARAMS=
   call :getparams %*
 
@@ -102,8 +101,8 @@ rem ### Functions ###
   set /p PID=<"%JATOS_HOME%\RUNNING_PID"
   taskkill /pid %PID% /f
   if errorlevel 1 (
-    echo ...failed
     del "%JATOS_HOME%\RUNNING_PID"
+	echo ...failed
   ) else (
     del "%JATOS_HOME%\RUNNING_PID"
     echo ...stopped
@@ -111,8 +110,8 @@ rem ### Functions ###
   goto:eof
   
 :checkjava
-  rem Java's path can be defined in PATH or JAVA_HOME
-  rem Don't confuse JAVA_HOME with JATOS_HOME
+  rem # Java's path can be defined in PATH or JAVA_HOME
+  rem # Don't confuse JAVA_HOME with JATOS_HOME
   if exist "%JATOS_HOME%\%LOCAL_JRE%" (
     set "JAVA_HOME=%JATOS_HOME%\%LOCAL_JRE%"
 	echo JATOS uses local JRE
@@ -125,7 +124,7 @@ rem ### Functions ###
   
   if "%JAVACMD%"=="" set JAVACMD=java
 
-  rem Detect if this java is ok to use.
+  rem # Detect if this java is ok to use.
   for /F %%j in ('"%JAVACMD%" -version  2^>^&1') do (
     if %%~j==Java set JAVAINSTALLED=1
     if %%~j==openjdk set JAVAINSTALLED=1
@@ -155,26 +154,26 @@ rem ### Functions ###
   set "_TEST_PARAM=%~1"
   if ["!_PARAM1!"]==[""] goto param_afterloop
 
-  rem ignore arguments that do not start with '-'
+  rem # ignore arguments that do not start with '-'
   if "%_TEST_PARAM:~0,1%"=="-" goto param_java_check
   shift
   goto param_loop
 
   :param_java_check
   if "!_TEST_PARAM:~0,2!"=="-J" (
-    rem strip -J prefix
+    rem # strip -J prefix
     set _JAVA_PARAMS=!_JAVA_PARAMS! !_TEST_PARAM:~2!
     shift
     goto param_loop
   )
 
   if "!_TEST_PARAM:~0,2!"=="-D" (
-    rem test if this was double-quoted property "-Dprop=42"
+    rem # test if this was double-quoted property "-Dprop=42"
     for /F "delims== tokens=1,*" %%G in ("!_TEST_PARAM!") DO (
       if not ["%%H"] == [""] (
         set _JAVA_PARAMS=!_JAVA_PARAMS! !_PARAM1!
       ) else if [%2] neq [] (
-        rem it was a normal property: -Dprop=42 or -Drop="42"
+        rem # it was a normal property: -Dprop=42 or -Drop="42"
         call set _PARAM1=%%1=%%2
         set _JAVA_PARAMS=!_JAVA_PARAMS! !_PARAM1!
         shift
