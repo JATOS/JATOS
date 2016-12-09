@@ -176,6 +176,12 @@ rem ### Functions ###
         rem # it was a normal property: -Dprop=42 or -Drop="42"
         call set _PARAM1=%%1=%%2
         set _JAVA_PARAMS=!_JAVA_PARAMS! !_PARAM1!
+        rem # Overwrite global variables address and port if we have them
+        if "%1%" == "-Dhttp.port" (
+          set port=%2%
+        ) else if "%1%" == "-Dhttp.address" (
+          set address=%2%
+        )
         shift
       )
     )
