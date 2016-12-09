@@ -107,9 +107,9 @@ mappings in Universal := (mappings in Universal).value filter {
 }
 
 // Don't include jatos.bat to distribution
-//mappings in Universal := (mappings in Universal).value filter {
-//	case (file, path) => ! path.endsWith("jatos.bat")
-//}
+mappings in Universal := (mappings in Universal).value filter {
+	case (file, path) => ! path.endsWith("jatos.bat")
+}
 
 // Don't include Java docs to distribution
 mappings in Universal := (mappings in Universal).value filter { 
