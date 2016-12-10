@@ -51,13 +51,6 @@ public class ComponentResult {
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
 	private Timestamp endDate;
 
-	/**
-	 * Time and date when the component was last seen. jatos.js sends a periodic
-	 * heart beat and the time of the last one is saved here.
-	 */
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
-	private Timestamp lastSeenDate;
-
 	public enum ComponentState {
 		STARTED, // Component was started
 		DATA_RETRIEVED, // Component's jsonData were retrieved
@@ -151,14 +144,6 @@ public class ComponentResult {
 
 	public Timestamp getEndDate() {
 		return this.endDate;
-	}
-
-	public Timestamp getLastSeenDate() {
-		return lastSeenDate;
-	}
-
-	public void setLastSeenDate(Timestamp lastSeenDate) {
-		this.lastSeenDate = lastSeenDate;
 	}
 
 	public void setComponentState(ComponentState state) {

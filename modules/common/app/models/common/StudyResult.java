@@ -56,6 +56,13 @@ public class StudyResult {
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
 	private Timestamp endDate;
 
+	/**
+	 * Time and date when the study was last seen (server time). jatos.js sends
+	 * a periodic heart beat and the time of the last one is saved here.
+	 */
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss")
+	private Timestamp lastSeenDate;
+
 	public enum StudyState {
 		PRE, // Preview of study (exists only in PersonalSingleWorker and
 				// GeneralSingleWorker)
@@ -192,6 +199,14 @@ public class StudyResult {
 
 	public Timestamp getEndDate() {
 		return this.endDate;
+	}
+
+	public Timestamp getLastSeenDate() {
+		return lastSeenDate;
+	}
+
+	public void setLastSeenDate(Timestamp lastSeenDate) {
+		this.lastSeenDate = lastSeenDate;
 	}
 
 	public void setStudyState(StudyState state) {

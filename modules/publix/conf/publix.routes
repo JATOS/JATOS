@@ -11,6 +11,7 @@ GET     /publix/:studyId/abort                           @controllers.publix.Pub
 GET     /publix/:studyId/group/join                      @controllers.publix.PublixInterceptor.joinGroup(studyId: Long, srid: Long)
 GET     /publix/:studyId/group/reassign                  @controllers.publix.PublixInterceptor.reassignGroup(studyId: Long, srid: Long)
 GET     /publix/:studyId/group/leave                     @controllers.publix.PublixInterceptor.leaveGroup(studyId: Long, srid: Long)
+POST    /publix/:studyId/heartbeat                       @controllers.publix.PublixInterceptor.heartbeat(studyId: Long, srid: Long)
 POST    /publix/:studyId/studySessionData                @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long, srid: Long)
 GET     /publix/:studyId/nextComponent/start             @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long, srid: Long)
 # Start component by position
