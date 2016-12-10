@@ -384,6 +384,41 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
+	public Result heartbeat(Long studyId, Long studyResultId)
+			throws PublixException {
+		Result result = null;
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
+		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
+		case MTSandboxWorker.WORKER_TYPE:
+			result = instanceOfPublix(MTPublix.class).heartbeat(studyId,
+					studyResultId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = instanceOfPublix(JatosPublix.class).heartbeat(studyId,
+					studyResultId);
+			break;
+		case PersonalMultipleWorker.WORKER_TYPE:
+			result = instanceOfPublix(PersonalMultiplePublix.class)
+					.heartbeat(studyId, studyResultId);
+			break;
+		case PersonalSingleWorker.WORKER_TYPE:
+			result = instanceOfPublix(PersonalSinglePublix.class)
+					.heartbeat(studyId, studyResultId);
+			break;
+		case GeneralSingleWorker.WORKER_TYPE:
+			result = instanceOfPublix(GeneralSinglePublix.class)
+					.heartbeat(studyId, studyResultId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		}
+		return result;
+	}
+
+	@Override
+	@Transactional
 	public Result submitResultData(Long studyId, Long componentId,
 			Long studyResultId) throws PublixException {
 		Result result = null;

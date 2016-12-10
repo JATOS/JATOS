@@ -1,6 +1,8 @@
 package controllers.publix;
 
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.Date;
 
 import javax.inject.Singleton;
 
@@ -308,6 +310,21 @@ public abstract class Publix<T extends Worker> extends Controller
 				study, studyResultId);
 		String studySessionData = request().body().asText();
 		studyResult.setStudySessionData(studySessionData);
+		studyResultDao.update(studyResult);
+		return ok();
+	}
+
+	@Override
+	public Result heartbeat(Long studyId, Long studyResultId)
+			throws PublixException {
+		LOGGER.debug(".heartbeat: studyId " + studyId + ", " + "studyResultId "
+				+ studyResultId);
+		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
+		Study study = publixUtils.retrieveStudy(studyId);
+		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
+				study, studyResultId);
+		studyResult.setLastSeenDate(new Timestamp(new Date().getTime()));
 		studyResultDao.update(studyResult);
 		return ok();
 	}

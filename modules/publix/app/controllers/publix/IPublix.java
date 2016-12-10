@@ -127,6 +127,15 @@ public interface IPublix {
 	/**
 	 * HTTP type: Ajax POST request
 	 * 
+	 * Heartbeat of a study result: when was the study run last seen. jatos.js
+	 * periodically sends an Ajax request to this endpoint. The time when this
+	 * request arrives is stored in StudyResult's lastSeenDate field.
+	 */
+	Result heartbeat(Long studyId, Long studyResultId) throws PublixException;
+
+	/**
+	 * HTTP type: Ajax POST request
+	 * 
 	 * Persists the submitted data in the ComponentResult specified by the given
 	 * study and component ID.
 	 */
