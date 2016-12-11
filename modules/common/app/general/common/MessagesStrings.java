@@ -87,7 +87,7 @@ public class MessagesStrings {
 	public static final String RESULTS_INFO = "Select a result for export or deletion by clicking anywhere on its row.";
 	public static final String RESULTS_DATA = "Click on the + icon to open the result's data";
 	public static final String RESULTS_START_TIME = "Time according to the JATOS server";
-	public static final String RESULTS_LAST_SEEN_TIME = "Time according to the JATOS server";
+	public static final String RESULTS_LAST_SEEN_TIME = "Time of the last heartbeat according to the JATOS server";
 	public static final String RESULTS_WORKER_TYPE = "Type of worker, e.g. "
 			+ MTWorker.UI_WORKER_TYPE + ", "
 			+ PersonalMultipleWorker.UI_WORKER_TYPE + ", "
