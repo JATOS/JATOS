@@ -131,6 +131,11 @@ var jatos = {};
 	 * WebSocket support by the browser is needed for group channel.
 	 */
 	var webSocketSupported = 'WebSocket' in window;
+	/**
+	 * Web worker initialized in initJatos() that sends a periodic Ajax request
+	 * back to the JATOS server.
+	 */
+	var heartbeatWorker;
 
 	/**
 	 * State booleans. If true jatos.js is in this state. Several states can be true
@@ -230,7 +235,11 @@ var jatos = {};
 
 		readIdCookie();
 		getInitData();
-
+		
+		if (window.Worker) {
+			heartbeatWorker = new Worker("/public/lib/jatos-publix/javascripts/heartbeat.js");
+			heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
+		}
 		/**
 		 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
 		 * and stores all key-value pairs into jatos scope.
@@ -367,6 +376,21 @@ var jatos = {};
 			onJatosLoad();
 		}
 	}
+
+	/**
+	 * A web worker used in jatos.js to send periodic Ajax requests back to the
+	 * JATOS server. With this function one can set the period with which the
+	 * heartbeat is send.
+	 * 
+	 * @param {Number}
+	 *            heartbeatPeriod - in milliseconds (Integer)
+	 */
+	jatos.setHeartbeatPeriod = function (heartbeatPeriod) {
+		if (typeof heartbeatPeriod === 'number' && heartbeatWorker) {
+			heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId,
+					heartbeatPeriod]);
+		}
+	};
 
 	/**
 	 * Defines callback function that is to be called when jatos.js finished its
