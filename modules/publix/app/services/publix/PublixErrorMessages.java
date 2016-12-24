@@ -19,6 +19,8 @@ public class PublixErrorMessages {
 	public static final String GROUP_STUDY_NOT_POSSIBLE_TWICE = "It's not possible to run a group study twice.";
 	public static final String IDCOOKIE_COLLECTION_FULL = "Can't generate a new ID cookie due to max number is reached. This should never happen.";
 	public static final String IDCOOKIE_COLLECTION_INDEX_OUT_OF_BOUND = "Max number of ID cookies is reached but a new index was requested.";
+	public static final String STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY = "Study result doesn't belong to this study.";
+	public static final String STUDY_RESULT_DOESN_T_EXIST = "Study result doesn't exist.";
 
 	public String workerNotCorrectType(Long workerId) {
 		return "The worker with ID " + workerId

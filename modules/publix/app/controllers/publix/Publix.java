@@ -98,8 +98,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		Component component = publixUtils.retrieveComponent(study, componentId);
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		publixUtils.setPreStudyStateByComponentId(studyResult, study,
 				componentId);
 
@@ -138,8 +138,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
 		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
 		Study study = publixUtils.retrieveStudy(studyId);
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 
 		Component nextComponent = publixUtils
 				.retrieveNextActiveComponent(studyResult);
@@ -165,8 +165,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		Component component = publixUtils.retrieveComponent(study, componentId);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkComponentBelongsToStudy(study, component);
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		ComponentResult componentResult;
 		try {
 			componentResult = publixUtils
@@ -222,8 +222,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkStudyIsGroupStudy(study);
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		groupService.checkHistoryGroupResult(studyResult);
 
 		if (studyResult.getActiveGroupResult() != null) {
@@ -252,8 +252,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkStudyIsGroupStudy(study);
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		groupService.checkHistoryGroupResult(studyResult);
 
 		GroupResult currentGroupResult = studyResult.getActiveGroupResult();
@@ -277,8 +277,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		publixUtils.checkStudyIsGroupStudy(study);
 		GroupResult groupResult = studyResult.getActiveGroupResult();
 		if (groupResult == null) {
@@ -306,8 +306,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		String studySessionData = request().body().asText();
 		studyResult.setStudySessionData(studySessionData);
 		studyResultDao.update(studyResult);
@@ -322,8 +322,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		studyResult.setLastSeenDate(new Timestamp(new Date().getTime()));
 		studyResultDao.update(studyResult);
 		return ok();
@@ -343,8 +343,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		ComponentResult componentResult = publixUtils
 				.retrieveCurrentComponentResult(studyResult);
 		if (componentResult == null) {
@@ -377,8 +377,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 		publixUtils.checkComponentBelongsToStudy(study, component);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		ComponentResult componentResult = publixUtils
 				.retrieveCurrentComponentResult(studyResult);
 		if (componentResult == null) {
@@ -411,8 +411,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
 			groupService.finishStudyResultInGroup(studyResult);
@@ -437,8 +437,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
 			groupService.finishStudyResultInGroup(studyResult);

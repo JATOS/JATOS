@@ -108,7 +108,6 @@ public abstract class PublixUtils<T extends Worker> {
 							.componentNotAllowedToReload(
 									studyResult.getStudy().getId(),
 									component.getId());
-					// exceptionalFinishStudy(studyResult, errorMsg);
 					throw new ForbiddenReloadException(errorMsg);
 				}
 			} else {
@@ -236,7 +235,7 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 	}
 
-	public StudyResult retrieveWorkersStudyResult(Worker worker, Study study,
+	public StudyResult retrieveStudyResult(Worker worker, Study study,
 			Long studyResultId) throws PublixException {
 		if (studyResultId == null) {
 			throw new ForbiddenPublixException(
@@ -244,19 +243,26 @@ public abstract class PublixUtils<T extends Worker> {
 		}
 		StudyResult studyResult = studyResultDao.findById(studyResultId);
 		if (studyResult == null) {
-			throw new BadRequestPublixException("Study result doesn't exist.");
+			throw new BadRequestPublixException(
+					PublixErrorMessages.STUDY_RESULT_DOESN_T_EXIST);
 		}
-		if (studyResult.getStudy().getId().equals(study.getId())) {
-			if (PublixHelpers.studyDone(studyResult)) {
-				throw new ForbiddenPublixException(PublixErrorMessages
-						.workerFinishedStudyAlready(worker, study.getId()));
-			} else {
-				return studyResult;
-			}
-		} else {
+		// Check that the given worker actually did this study result
+		if (!worker.getStudyResultList().contains(studyResult)) {
+			throw new ForbiddenPublixException(PublixErrorMessages
+					.workerNeverDidStudy(worker, study.getId()));
+		}
+		// Check that this study result belongs to the given study
+		if (!studyResult.getStudy().getId().equals(study.getId())) {
 			throw new ForbiddenPublixException(
-					"Study result doesn't belong to this study.");
+					PublixErrorMessages.STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY);
 		}
+		// Check that this study result isn't finished
+		if (PublixHelpers.studyDone(studyResult)) {
+			throw new ForbiddenPublixException(PublixErrorMessages
+					.workerFinishedStudyAlready(worker, study.getId()));
+		}
+		return studyResult;
+
 	}
 
 	/**

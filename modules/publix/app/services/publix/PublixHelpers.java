@@ -29,8 +29,8 @@ public abstract class PublixHelpers {
 	}
 
 	/**
-	 * Checks if the worker ever did this study independent of the study
-	 * result's state.
+	 * Checks if the worker ever did this study (independent of the study
+	 * result's state).
 	 */
 	public static boolean didStudyAlready(Worker worker, Study study) {
 		for (StudyResult studyResult : worker.getStudyResultList()) {

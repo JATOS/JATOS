@@ -150,8 +150,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 				.retrieveTypedWorker(idCookie.getWorkerId());
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-		StudyResult studyResult = publixUtils.retrieveWorkersStudyResult(worker,
-				study, studyResultId);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
 		String confirmationCode;
 		if (!PublixHelpers.studyDone(studyResult)) {
 			confirmationCode = publixUtils.finishStudyResult(successful,
