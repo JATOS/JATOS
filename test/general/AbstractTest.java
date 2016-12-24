@@ -313,8 +313,8 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 	}
 
-	protected void addStudyResult(Study study, Batch batch, Worker worker,
-			StudyState state) {
+	protected StudyResult addStudyResult(Study study, Batch batch,
+			Worker worker, StudyState state) {
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study, batch,
 				worker);
@@ -322,6 +322,21 @@ public abstract class AbstractTest {
 		// Have to set worker manually in test - don't know why
 		studyResult.setWorker(worker);
 		entityManager.getTransaction().commit();
+		return studyResult;
+	}
+
+	protected StudyResult addStudyResult(Study study, Worker worker) {
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = resultCreator.createStudyResult(study,
+				study.getDefaultBatch(), worker);
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(worker);
+		entityManager.getTransaction().commit();
+		return studyResult;
+	}
+	
+	protected StudyResult addStudyResult(Study study) {
+		return addStudyResult(study, admin.getWorker());
 	}
 
 }

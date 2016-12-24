@@ -82,7 +82,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		StudyResult studyResult = createTestStudyResult(study);
+		StudyResult studyResult = addStudyResult(study);
 
 		entityManager.getTransaction().begin();
 		ComponentResult componentResult2 = publixUtils
@@ -408,8 +408,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		StudyResult studyResult1 = createTestStudyResult(study);
-		StudyResult studyResult2 = createTestStudyResult(study);
+		StudyResult studyResult1 = addStudyResult(study);
+		StudyResult studyResult2 = addStudyResult(study);
 
 		StudyResult persistedStudyResult1 = publixUtils.retrieveStudyResult(
 				admin.getWorker(), study, studyResult1.getId());
@@ -420,16 +420,6 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		// Clean-up
 		removeStudy(study);
-	}
-
-	private StudyResult createTestStudyResult(Study study) {
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
-		return studyResult;
 	}
 
 	/**
@@ -443,7 +433,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		StudyResult studyResult1 = createTestStudyResult(study);
+		StudyResult studyResult1 = addStudyResult(study);
 
 		// We need a second study
 		entityManager.getTransaction().begin();
@@ -476,7 +466,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		StudyResult studyResult1 = createTestStudyResult(study);
+		StudyResult studyResult1 = addStudyResult(study);
 
 		// Create another worker (type is not important here)
 		JatosWorker worker = new JatosWorker();
@@ -528,7 +518,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		StudyResult studyResult1 = createTestStudyResult(study);
+		StudyResult studyResult1 = addStudyResult(study);
 
 		entityManager.getTransaction().begin();
 		publixUtils.finishStudyResult(true, null, studyResult1);
@@ -631,11 +621,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		addStudy(study);
 
 		// Start a study and the first component
+		StudyResult studyResult = addStudyResult(study);
 		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
 		publixUtils.startComponent(study.getFirstComponent(), studyResult);
 		entityManager.getTransaction().commit();
 

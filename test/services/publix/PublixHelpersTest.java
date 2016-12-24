@@ -14,7 +14,6 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.JatosWorker;
-import models.common.workers.Worker;
 import services.publix.workers.JatosPublixUtils;
 
 /**
@@ -45,8 +44,7 @@ public class PublixHelpersTest extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		StudyResult studyResult = createTestStudyResult(study,
-				admin.getWorker());
+		StudyResult studyResult = addStudyResult(study, admin.getWorker());
 
 		// Study results in state FINISHED, ABORTED, or FAIL must return true
 		studyResult.setStudyState(StudyState.FINISHED);
@@ -75,16 +73,6 @@ public class PublixHelpersTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	private StudyResult createTestStudyResult(Study study, Worker worker) {
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), worker);
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(worker);
-		entityManager.getTransaction().commit();
-		return studyResult;
-	}
-
 	/**
 	 * Test PublixUtils.didStudyAlready(): normal functioning
 	 */
@@ -97,7 +85,7 @@ public class PublixHelpersTest extends AbstractTest {
 				.isFalse();
 
 		// Create a result for the admin's worker
-		createTestStudyResult(study, admin.getWorker());
+		addStudyResult(study, admin.getWorker());
 
 		assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study))
 				.isTrue();
@@ -114,8 +102,7 @@ public class PublixHelpersTest extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		StudyResult studyResult = createTestStudyResult(study,
-				admin.getWorker());
+		StudyResult studyResult = addStudyResult(study, admin.getWorker());
 
 		// FINISHED, ABORTED, FAIL must return true
 		studyResult.setStudyState(StudyState.FINISHED);
