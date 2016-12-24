@@ -20,12 +20,12 @@ import models.common.ComponentResult.ComponentState;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
+import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
-import services.publix.PublixErrorMessages;
-import services.publix.PublixHelpers;
-import services.publix.PublixUtils;
 
 /**
+ * Tests for class PublixUtils
+ * 
  * @author Kristian Lange
  */
 public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
@@ -47,40 +47,42 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		assertThat(a).isEqualTo(2);
 	}
 
+	/**
+	 * Check normal functioning of PublixUtils.retrieveWorker()
+	 */
 	@Test
-	public void checkRetrieveWorker()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		// Worker ID is null
-		try {
-			publixUtils.retrieveWorker(null);
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(PublixErrorMessages.workerNotExist("null"));
-		}
+	public void checkRetrieveWorker() throws IOException, PublixException {
+		Worker worker = publixUtils.retrieveWorker(admin.getWorker().getId());
+		assertThat(worker).isNotNull();
+		assertThat(worker).isEqualTo(admin.getWorker());
+	}
 
-		// Worker doesn't exist
+	/**
+	 * Test PublixUtils.retrieveWorker(): if worker doesn't exist a
+	 * ForbiddenPublixException should be thrown
+	 */
+	@Test
+	public void checkRetrieveWorkerNotExist()
+			throws IOException, PublixException {
 		try {
 			publixUtils.retrieveWorker(2l);
 			Fail.fail();
-		} catch (PublixException e) {
+		} catch (ForbiddenPublixException e) {
 			assertThat(e.getMessage())
 					.isEqualTo(PublixErrorMessages.workerNotExist("2"));
 		}
 	}
 
+	/**
+	 * Test PublixUtils.startComponent() normal functioning
+	 */
 	@Test
 	public void checkStartComponent() throws NoSuchAlgorithmException,
 			IOException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
+		StudyResult studyResult = createTestStudyResult(study);
 
 		entityManager.getTransaction().begin();
 		ComponentResult componentResult2 = publixUtils
@@ -101,10 +103,14 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.startComponent(): after starting a second component in
+	 * the same study run, the first component result should be finished
+	 * automatically
+	 */
 	@Test
 	public void checkStartComponentFinishPriorComponentResult()
-			throws NoSuchAlgorithmException, IOException,
-			ForbiddenReloadException {
+			throws IOException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -137,10 +143,13 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.startComponent(): after reloading the same component a
+	 * new component result should be created and the old one should be finished
+	 */
 	@Test
 	public void checkStartComponentFinishReloadableComponentResult()
-			throws NoSuchAlgorithmException, IOException,
-			ForbiddenReloadException {
+			throws IOException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -173,10 +182,14 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.startComponent(): if one tries to reload a
+	 * non-reloadable component, an ForbiddenReloadException should be thrown
+	 * and the first component result should be finished
+	 */
 	@Test
 	public void checkStartComponentNotReloadable()
-			throws NoSuchAlgorithmException, IOException,
-			ForbiddenReloadException {
+			throws IOException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -212,9 +225,12 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.abortStudy(): check normal functioning (e.g. all study
+	 * and component data should be empty also they were filled before)
+	 */
 	@Test
-	public void checkAbortStudy() throws IOException, NoSuchAlgorithmException,
-			ForbiddenReloadException {
+	public void checkAbortStudy() throws IOException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -252,12 +268,17 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.finishStudyResult(): normal functioning and finish
+	 * successful
+	 */
 	@Test
-	public void checkFinishStudyResultSuccessful() throws IOException,
-			NoSuchAlgorithmException, ForbiddenReloadException {
+	public void checkFinishStudyResultSuccessful()
+			throws IOException, ForbiddenReloadException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
+		// Start a study and two of its components
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
 				study.getDefaultBatch(), admin.getWorker());
@@ -275,14 +296,19 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		publixUtils.finishStudyResult(true, "error message", studyResult);
 		entityManager.getTransaction().commit();
 
+		// Check component results
 		assertThat(componentResult1.getComponentState())
 				.isEqualTo(ComponentState.FINISHED);
 		assertThat(componentResult1.getData()).isEqualTo("test data 1");
 		assertThat(componentResult2.getComponentState())
 				.isEqualTo(ComponentState.FINISHED);
 		assertThat(componentResult2.getData()).isEqualTo("test data 2");
+
+		// Check study result
 		assertThat(studyResult.getStudyState())
 				.isEqualTo(StudyResult.StudyState.FINISHED);
+		// Not possible to check confirmation code because it depends on the
+		// worker and can be null
 		assertThat(studyResult.getErrorMsg()).isEqualTo("error message");
 		assertThat(studyResult.getEndDate()).isNotNull();
 		assertThat(studyResult.getStudySessionData()).isNullOrEmpty();
@@ -291,9 +317,58 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.finishStudyResult(): call the method with functioning
+	 * and finish successful
+	 */
 	@Test
+	public void checkFinishStudyResultFailed()
+			throws IOException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		addStudy(study);
+
+		// Start a study and two of its components
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = resultCreator.createStudyResult(study,
+				study.getDefaultBatch(), admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		ComponentResult componentResult1 = publixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		componentResult1.setData("test data 1");
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getComponent(2), studyResult);
+		componentResult2.setData("test data 2");
+		entityManager.getTransaction().commit();
+
+		entityManager.getTransaction().begin();
+		publixUtils.finishStudyResult(false, "error message", studyResult);
+		entityManager.getTransaction().commit();
+
+		// Check component results: first one should be finished last one
+		// started (but not failed)
+		assertThat(componentResult1.getComponentState())
+				.isEqualTo(ComponentState.FINISHED);
+		assertThat(componentResult1.getData()).isEqualTo("test data 1");
+		assertThat(componentResult2.getComponentState())
+				.isEqualTo(ComponentState.STARTED);
+		assertThat(componentResult2.getData()).isEqualTo("test data 2");
+
+		// Check study result
+		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.FAIL);
+		assertThat(studyResult.getConfirmationCode()).isNull();
+		assertThat(studyResult.getErrorMsg()).isEqualTo("error message");
+		assertThat(studyResult.getEndDate()).isNotNull();
+		assertThat(studyResult.getStudySessionData()).isNullOrEmpty();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	// TODO this is probably handled by the cookie service
+	// @Test
 	public void checkFinishAbandonedStudyResults()
-			throws IOException, NoSuchAlgorithmException, PublixException {
+			throws IOException, PublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -324,71 +399,65 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Checks the normal functioning of PublixUtils.retrieveStudyResult():
+	 * should return the correct study result
+	 */
 	@Test
-	public void checkRetrieveWorkersLastStudyResult()
-			throws IOException, NoSuchAlgorithmException, PublixException {
+	public void checkRetrieveStudyResult() throws IOException, PublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
-		entityManager.getTransaction().begin();
-		Study clone = studyService.clone(study);
-		studyService.createAndPersistStudy(admin, clone);
-		entityManager.getTransaction().commit();
+		StudyResult studyResult1 = createTestStudyResult(study);
+		StudyResult studyResult2 = createTestStudyResult(study);
 
-		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult1.setWorker(admin.getWorker());
-		StudyResult studyResult2 = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult2.setWorker(admin.getWorker());
-		StudyResult studyResult3 = resultCreator.createStudyResult(clone,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult3.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
-
-		StudyResult lastStudyResult = publixUtils.retrieveWorkersStudyResult(
-				admin.getWorker(), study, studyResult3.getId());
-
-		assertThat(lastStudyResult).isEqualTo(studyResult2);
+		StudyResult persistedStudyResult1 = publixUtils.retrieveStudyResult(
+				admin.getWorker(), study, studyResult1.getId());
+		assertThat(persistedStudyResult1).isEqualTo(studyResult1);
+		StudyResult persistedStudyResult2 = publixUtils.retrieveStudyResult(
+				admin.getWorker(), study, studyResult2.getId());
+		assertThat(persistedStudyResult2).isEqualTo(studyResult2);
 
 		// Clean-up
 		removeStudy(study);
-		removeStudy(clone);
 	}
 
+	private StudyResult createTestStudyResult(Study study) {
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = resultCreator.createStudyResult(study,
+				study.getDefaultBatch(), admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		entityManager.getTransaction().commit();
+		return studyResult;
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveStudyResult(): It should throw an
+	 * ForbiddenPublixException if the requested study result doesn't belong to
+	 * the given study
+	 */
 	@Test
-	public void checkRetrieveWorkersLastStudyResultNeverDidStudy()
-			throws IOException, NoSuchAlgorithmException, PublixException {
+	public void checkRetrieveStudyResultNotFromThisStudy()
+			throws IOException, PublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
+		StudyResult studyResult1 = createTestStudyResult(study);
+
+		// We need a second study
 		entityManager.getTransaction().begin();
 		Study clone = studyService.clone(study);
 		studyService.createAndPersistStudy(admin, clone);
 		entityManager.getTransaction().commit();
 
-		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = resultCreator.createStudyResult(clone,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult1.setWorker(admin.getWorker());
-		StudyResult studyResult2 = resultCreator.createStudyResult(clone,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult2.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
-
 		try {
-			publixUtils.retrieveWorkersStudyResult(admin.getWorker(), study,
-					studyResult2.getId());
+			publixUtils.retrieveStudyResult(admin.getWorker(), clone,
+					studyResult1.getId());
 			Fail.fail();
 		} catch (ForbiddenPublixException e) {
-			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-					.workerNeverDidStudy(admin.getWorker(), study.getId()));
+			assertThat(e.getMessage()).isEqualTo(
+					PublixErrorMessages.STUDY_RESULT_DOESN_T_BELONG_TO_THIS_STUDY);
 		}
 
 		// Clean-up
@@ -396,27 +465,78 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(clone);
 	}
 
+	/**
+	 * Tests PublixUtils.retrieveStudyResult(): Any study result is associated
+	 * with a worker. If the wrong worker wants to retrieve the result a
+	 * ForbiddenPublixException must be thrown.
+	 */
 	@Test
-	public void checkRetrieveWorkersLastStudyResultAlreadyFinished()
-			throws IOException, NoSuchAlgorithmException, PublixException {
+	public void checkRetrieveStudyResultNotFromThisWorker()
+			throws IOException, PublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
+		StudyResult studyResult1 = createTestStudyResult(study);
+
+		// Create another worker (type is not important here)
+		JatosWorker worker = new JatosWorker();
+		persistWorker(worker);
+
+		try {
+			publixUtils.retrieveStudyResult(worker, study,
+					studyResult1.getId());
+			Fail.fail();
+		} catch (ForbiddenPublixException e) {
+			assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
+					.workerNeverDidStudy(worker, study.getId()));
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveStudyResult(): should throw a
+	 * BadRequestPublixException if the study result isn't present in the DB
+	 */
+	@Test
+	public void checkRetrieveStudyResultNeverDidStudy()
+			throws IOException, PublixException {
+		Study study = importExampleStudy();
+		addStudy(study);
+
+		// Never started any study
+		try {
+			publixUtils.retrieveStudyResult(admin.getWorker(), study, 1l);
+			Fail.fail();
+		} catch (BadRequestPublixException e) {
+			assertThat(e.getMessage())
+					.isEqualTo(PublixErrorMessages.STUDY_RESULT_DOESN_T_EXIST);
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveStudyResult(): should throw a
+	 * ForbiddenPublixException if the study result is already done
+	 */
+	@Test
+	public void checkRetrieveStudyResultAlreadyFinished()
+			throws IOException, PublixException {
+		Study study = importExampleStudy();
+		addStudy(study);
+
+		StudyResult studyResult1 = createTestStudyResult(study);
+
 		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult1.setWorker(admin.getWorker());
-		StudyResult studyResult2 = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult2.setWorker(admin.getWorker());
-		publixUtils.finishStudyResult(true, null, studyResult2);
+		publixUtils.finishStudyResult(true, null, studyResult1);
 		entityManager.getTransaction().commit();
 
 		try {
-			publixUtils.retrieveWorkersStudyResult(admin.getWorker(), study,
-					studyResult2.getId());
+			publixUtils.retrieveStudyResult(admin.getWorker(), study,
+					studyResult1.getId());
 			Fail.fail();
 		} catch (ForbiddenPublixException e) {
 			assertThat(e.getMessage())
@@ -428,9 +548,12 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Tests PublixUtils.retrieveFirstActiveComponent(): normal functioning
+	 */
 	@Test
-	public void checkRetrieveFirstActiveComponent() throws IOException,
-			NoSuchAlgorithmException, NotFoundPublixException {
+	public void checkRetrieveFirstActiveComponent()
+			throws IOException, NotFoundPublixException {
 		Study study = importExampleStudy();
 		study.getFirstComponent().setActive(false);
 		addStudy(study);
@@ -442,9 +565,12 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Tests PublixUtils.retrieveFirstActiveComponent(): if there is no active
+	 * component an NotFoundPublixException should be thrown
+	 */
 	@Test
-	public void checkRetrieveFirstActiveComponentNonActive() throws IOException,
-			NoSuchAlgorithmException, NotFoundPublixException {
+	public void checkRetrieveFirstActiveComponentNotFound() throws IOException {
 		Study study = importExampleStudy();
 		for (Component component : study.getComponentList()) {
 			component.setActive(false);
@@ -463,16 +589,16 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.retrieveNextActiveComponent(): normal functioning
+	 */
 	@Test
 	public void checkRetrieveNextActiveComponent()
-			throws IOException, NoSuchAlgorithmException,
-			NotFoundPublixException, ForbiddenReloadException {
+			throws IOException, ForbiddenReloadException {
 		Study study = importExampleStudy();
-		for (Component component : study.getComponentList()) {
-			component.setActive(false);
-		}
 		addStudy(study);
 
+		// Start a study and the first component
 		entityManager.getTransaction().begin();
 		StudyResult studyResult = resultCreator.createStudyResult(study,
 				study.getDefaultBatch(), admin.getWorker());
@@ -483,13 +609,48 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 		Component component = publixUtils
 				.retrieveNextActiveComponent(studyResult);
-		// Since the 2. component is not active ...
+		// Next component is the 2nd
+		assertThat(component).isEqualTo(study.getComponent(2));
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Test PublixUtils.retrieveNextActiveComponent(): no next active component
+	 * can be found
+	 */
+	@Test
+	public void checkRetrieveNextActiveComponentNotFound()
+			throws IOException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		// Inactivate all components
+		for (Component component : study.getComponentList()) {
+			component.setActive(false);
+		}
+		addStudy(study);
+
+		// Start a study and the first component
+		entityManager.getTransaction().begin();
+		StudyResult studyResult = resultCreator.createStudyResult(study,
+				study.getDefaultBatch(), admin.getWorker());
+		// Have to set worker manually in test - don't know why
+		studyResult.setWorker(admin.getWorker());
+		publixUtils.startComponent(study.getFirstComponent(), studyResult);
+		entityManager.getTransaction().commit();
+
+		Component component = publixUtils
+				.retrieveNextActiveComponent(studyResult);
+		// Since all components are not active it should be null
 		assertThat(component).isNull();
 
 		// Clean-up
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.retrieveComponent(): normal functioning
+	 */
 	@Test
 	public void checkRetrieveComponent()
 			throws IOException, NotFoundPublixException,
@@ -498,6 +659,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		study.getLastComponent().setStudy(study);
 		addStudy(study);
 
+		// Retrieve last component
 		Component component = publixUtils.retrieveComponent(study,
 				study.getLastComponent().getId());
 		assertThat(component).isEqualTo(study.getLastComponent());
@@ -506,9 +668,12 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.retrieveComponent(): If an component with this ID
+	 * doesn't exist for this study an NotFoundPublixException should be thrown
+	 */
 	@Test
-	public void checkRetrieveComponentWrongId()
-			throws IOException, NotFoundPublixException,
+	public void checkRetrieveComponentWrongId() throws IOException,
 			BadRequestPublixException, ForbiddenPublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
@@ -525,10 +690,13 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.retrieveComponent(): If the component doesn't belong to
+	 * this study an BadRequestPublixException should be thrown
+	 */
 	@Test
-	public void checkRetrieveComponentWrongComponent()
-			throws IOException, NotFoundPublixException,
-			BadRequestPublixException, ForbiddenPublixException {
+	public void checkRetrieveComponentNotOfThisStudy() throws IOException,
+			NotFoundPublixException, ForbiddenPublixException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -552,10 +720,13 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(clone);
 	}
 
+	/**
+	 * Test PublixUtils.retrieveComponent(): If the component isn't active an
+	 * ForbiddenPublixException should be thrown
+	 */
 	@Test
-	public void checkRetrieveComponentNotActive()
-			throws IOException, NotFoundPublixException,
-			BadRequestPublixException, ForbiddenPublixException {
+	public void checkRetrieveComponentNotActive() throws IOException,
+			NotFoundPublixException, BadRequestPublixException {
 		Study study = importExampleStudy();
 		study.getFirstComponent().setActive(false);
 		study.getFirstComponent().setStudy(study);
@@ -575,6 +746,9 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test retrieveComponentByPosition(): normal functioning
+	 */
 	@Test
 	public void checkRetrieveComponentByPosition()
 			throws IOException, PublixException {
@@ -589,6 +763,10 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test retrieveComponentByPosition(): if the position parameter must is
+	 * null a BadRequestPublixException must be thrown
+	 */
 	@Test
 	public void checkRetrieveComponentByPositionNull()
 			throws IOException, PublixException {
@@ -607,6 +785,10 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test retrieveComponentByPosition(): if there is no component at this
+	 * position an NotFoundPublixException should be thrown
+	 */
 	@Test
 	public void checkRetrieveComponentByPositionWrong()
 			throws IOException, PublixException {
@@ -625,6 +807,9 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.retrieveStudy(): normal functioning
+	 */
 	@Test
 	public void checkRetrieveStudy()
 			throws NotFoundPublixException, IOException {
@@ -638,9 +823,12 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * Test PublixUtils.retrieveStudy(): if a study with this ID doesn't exist
+	 * in DB a NotFoundPublixException should be thrown
+	 */
 	@Test
-	public void checkRetrieveStudyNotFound()
-			throws NotFoundPublixException, IOException {
+	public void checkRetrieveStudyNotFound() throws IOException {
 		Study study = importExampleStudy();
 		addStudy(study);
 
@@ -656,6 +844,10 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * PublixUtils.checkComponentBelongsToStudy(): normal functioning - if the
+	 * component belongs to the study the method should just return
+	 */
 	@Test
 	public void checkComponentBelongsToStudy()
 			throws IOException, PublixException {
@@ -670,6 +862,10 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
+	/**
+	 * PublixUtils.checkComponentBelongsToStudy(): if the component does not
+	 * belong to the study the method should throw a BadRequestPublixException
+	 */
 	@Test
 	public void checkComponentBelongsToStudyFail()
 			throws IOException, PublixException {
@@ -682,6 +878,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		studyService.createAndPersistStudy(admin, clone);
 		entityManager.getTransaction().commit();
 
+		// Check if component of 'clone' belongs to 'study'
 		try {
 			publixUtils.checkComponentBelongsToStudy(study,
 					clone.getFirstComponent());
@@ -695,158 +892,6 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		// Clean-up
 		removeStudy(study);
 		removeStudy(clone);
-	}
-
-	@Test
-	public void checkFinishedStudyAlready() throws IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
-
-		// FINISHED, ABORTED, FAIL must return true
-		studyResult.setStudyState(StudyState.FINISHED);
-		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
-				.isTrue();
-		studyResult.setStudyState(StudyState.ABORTED);
-		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
-				.isTrue();
-		studyResult.setStudyState(StudyState.FAIL);
-		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
-				.isTrue();
-
-		// DATA_RETRIEVED, STARTED must return false
-		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
-		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
-				.isFalse();
-		studyResult.setStudyState(StudyState.STARTED);
-		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
-				.isFalse();
-
-		// Clean-up
-		removeStudy(study);
-	}
-
-	@Test
-	public void checkFinishedStudyAlreadyWrong() throws IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
-		entityManager.getTransaction().begin();
-		Study clone = studyService.clone(study);
-		studyService.createAndPersistStudy(admin, clone);
-		entityManager.getTransaction().commit();
-
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(clone,
-				study.getDefaultBatch(), admin.getWorker());
-		studyResult.setStudyState(StudyState.FINISHED);
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
-
-		assertThat(PublixHelpers.finishedStudyAlready(admin.getWorker(), study))
-				.isFalse();
-
-		// Clean-up
-		removeStudy(study);
-		removeStudy(clone);
-	}
-
-	@Test
-	public void checkDidStudyAlready() throws IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
-		assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study))
-				.isFalse();
-
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
-
-		assertThat(PublixHelpers.didStudyAlready(admin.getWorker(), study))
-				.isTrue();
-
-		// Clean-up
-		removeStudy(study);
-	}
-
-	@Test
-	public void checkStudyDone() throws IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
-
-		// FINISHED, ABORTED, FAIL must return true
-		studyResult.setStudyState(StudyState.FINISHED);
-		assertThat(PublixHelpers.studyDone(studyResult)).isTrue();
-		studyResult.setStudyState(StudyState.ABORTED);
-		assertThat(PublixHelpers.studyDone(studyResult)).isTrue();
-		studyResult.setStudyState(StudyState.FAIL);
-		assertThat(PublixHelpers.studyDone(studyResult)).isTrue();
-
-		// DATA_RETRIEVED, STARTED must return false
-		studyResult.setStudyState(StudyState.DATA_RETRIEVED);
-		assertThat(PublixHelpers.studyDone(studyResult)).isFalse();
-		studyResult.setStudyState(StudyState.STARTED);
-		assertThat(PublixHelpers.studyDone(studyResult)).isFalse();
-
-		// Clean-up
-		removeStudy(study);
-	}
-
-	@Test
-	public void checkComponentDone()
-			throws IOException, ForbiddenReloadException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		ComponentResult componentResult = publixUtils
-				.startComponent(study.getFirstComponent(), studyResult);
-		// Have to set study manually in test - don't know why
-		componentResult.getComponent().setStudy(study);
-		entityManager.getTransaction().commit();
-
-		// A component is done if state FINISHED, ABORTED, FAIL, or RELOADED
-		componentResult.setComponentState(ComponentState.FINISHED);
-		assertThat(PublixHelpers.componentDone(componentResult)).isTrue();
-		componentResult.setComponentState(ComponentState.ABORTED);
-		assertThat(PublixHelpers.componentDone(componentResult)).isTrue();
-		componentResult.setComponentState(ComponentState.FAIL);
-		assertThat(PublixHelpers.componentDone(componentResult)).isTrue();
-		componentResult.setComponentState(ComponentState.RELOADED);
-		assertThat(PublixHelpers.componentDone(componentResult)).isTrue();
-
-		// Not done if
-		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
-		assertThat(PublixHelpers.componentDone(componentResult)).isFalse();
-		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
-		assertThat(PublixHelpers.componentDone(componentResult)).isFalse();
-		componentResult.setComponentState(ComponentState.STARTED);
-		assertThat(PublixHelpers.componentDone(componentResult)).isFalse();
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 }
