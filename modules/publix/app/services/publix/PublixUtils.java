@@ -210,8 +210,9 @@ public abstract class PublixUtils<T extends Worker> {
 	 * All studies that currently run in this Request's browser have an ID
 	 * cookie. This method checks if there is an abandoned study result and if
 	 * so finishes it. An abandoned study result happens when to many studies
-	 * are started in the same browser without finishing them. This method
-	 * should only be called during starting a study.
+	 * are started in the same browser without finishing them. The abandoned one
+	 * to be deleted is the oldest ID cookie. This method should only be called
+	 * during starting a study.
 	 */
 	public void finishAbandonedStudyResults() throws PublixException {
 		if (!idCookieService.maxIdCookiesReached()) {
@@ -292,8 +293,8 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Returns the last ComponentResult of this studyResult if it's not 'done'.
-	 * Returns null if such ComponentResult doesn't exists.
+	 * Returns the last ComponentResult of this studyResult but only if it's not
+	 * 'done'. Returns null if such ComponentResult doesn't exists.
 	 */
 	public ComponentResult retrieveCurrentComponentResult(
 			StudyResult studyResult) {
@@ -306,8 +307,8 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Gets the ComponentResult from the storage or if it doesn't exist yet
-	 * starts one.
+	 * Gets the current ComponentResult from the storage or if it doesn't exist
+	 * yet starts one for the given component.
 	 */
 	public ComponentResult retrieveStartedComponentResult(Component component,
 			StudyResult studyResult) throws ForbiddenReloadException {
@@ -484,7 +485,7 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Sets the StudyResult's StudyState to STARTED if the the study is
+	 * Sets the StudyResult's StudyState to STARTED if the study is
 	 * currently in state PRE and the study result moved away from the first
 	 * component (this means the given componentId isn't the first component's
 	 * one).

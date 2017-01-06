@@ -4,6 +4,8 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.fest.assertions.Fail;
 import org.junit.Test;
@@ -11,9 +13,11 @@ import org.junit.Test;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.InternalServerErrorPublixException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import general.AbstractTest;
+import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
@@ -22,6 +26,12 @@ import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
+import play.mvc.Http.Cookie;
+import services.publix.idcookie.IdCookie;
+import services.publix.idcookie.IdCookieAccessor;
+import services.publix.idcookie.IdCookieCollection;
+import services.publix.idcookie.IdCookieService;
+import services.publix.idcookie.IdCookieTestHelper;
 
 /**
  * Tests for class PublixUtils
@@ -32,9 +42,15 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	protected PublixUtils<T> publixUtils;
 	protected PublixErrorMessages errorMessages;
+	private IdCookieAccessor idCookieAccessor;
+	private IdCookieService idCookieService;
 
 	@Override
 	public void before() throws Exception {
+		idCookieAccessor = application.injector()
+				.instanceOf(IdCookieAccessor.class);
+		idCookieService = application.injector()
+				.instanceOf(IdCookieService.class);
 	}
 
 	@Override
@@ -365,38 +381,114 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		removeStudy(study);
 	}
 
-	// TODO this is probably handled by the cookie service
-	// @Test
-	public void checkFinishAbandonedStudyResults()
+	/**
+	 * Test PublixUtils.finishAbandonedStudyResults: if there are exactly the
+	 * max allowed number of ID cookies than the oldest cookie should be deleted
+	 */
+	@Test
+	public void checkFinishAbandonedStudyResultsEqualAllowed()
 			throws IOException, PublixException {
-		Study study = importExampleStudy();
-		addStudy(study);
+		List<Cookie> cookieList = generateIdCookieList(
+				IdCookieCollection.MAX_ID_COOKIES);
+		mockContext(cookieList);
 
-		entityManager.getTransaction().begin();
-		StudyResult studyResult1 = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult1.setWorker(admin.getWorker());
-		StudyResult studyResult2 = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult2.setWorker(admin.getWorker());
-		entityManager.getTransaction().commit();
-
-		// TODO changed with new ID cookies
 		publixUtils.finishAbandonedStudyResults();
 
-		// assertThat(studyResult1.getStudyState())
-		// .isEqualTo(StudyResult.StudyState.FAIL);
-		// assertThat(studyResult1.getErrorMsg())
-		// .isEqualTo(PublixErrorMessages.ABANDONED_STUDY_BY_WORKER);
-		// assertThat(studyResult2.getStudyState())
-		// .isEqualTo(StudyResult.StudyState.FAIL);
-		// assertThat(studyResult2.getErrorMsg())
-		// .isEqualTo(PublixErrorMessages.ABANDONED_STUDY_BY_WORKER);
+		// Check that oldest Id cookie is gone (the one with ID 1l)
+		try {
+			idCookieService.getIdCookie(1l);
+			Fail.fail();
+		} catch (BadRequestPublixException e) {
+			// just throwing the exception is enough
+		}
 
-		// Clean-up
-		removeStudy(study);
+		// Check that all other ID cookies are still there
+		checkRangeOfIdCookiesExist(2, IdCookieCollection.MAX_ID_COOKIES);
+	}
+
+	private Cookie buildCookie(IdCookie idCookie) {
+		String cookieValue = idCookieAccessor.asCookieString(idCookie);
+		Cookie cookie = new Cookie(idCookie.getName(), cookieValue,
+				Integer.MAX_VALUE, "/", "", false, false);
+		return cookie;
+	}
+
+	/**
+	 * Test PublixUtils.finishAbandonedStudyResults: if there are more ID
+	 * cookies than the max allowed number than the oldest cookie should be
+	 * deleted (this case should actually never happen in live - there shouldn't
+	 * be more than the max allowed number of ID cookies).
+	 */
+	@Test
+	public void checkFinishAbandonedStudyResultsMoreThanAllowed()
+			throws IOException, PublixException {
+		List<Cookie> cookieList = generateIdCookieList(
+				IdCookieCollection.MAX_ID_COOKIES + 1);
+		mockContext(cookieList);
+
+		publixUtils.finishAbandonedStudyResults();
+
+		// Check that oldest Id cookie is gone (the one with ID 1l)
+		try {
+			idCookieService.getIdCookie(1l);
+			Fail.fail();
+		} catch (BadRequestPublixException e) {
+			// just throwing the exception is enough
+		}
+
+		// Check that all other ID cookies are still there
+		checkRangeOfIdCookiesExist(2, IdCookieCollection.MAX_ID_COOKIES + 1);
+	}
+
+	/**
+	 * Test PublixUtils.finishAbandonedStudyResults: if there are less ID
+	 * cookies than the max allowed number than all ID cookies should be kept
+	 */
+	@Test
+	public void checkFinishAbandonedStudyResultsNoDeleting()
+			throws IOException, PublixException {
+		List<Cookie> cookieList = generateIdCookieList(
+				IdCookieCollection.MAX_ID_COOKIES - 1);
+		mockContext(cookieList);
+
+		publixUtils.finishAbandonedStudyResults();
+
+		// Check that all ID cookies are still there
+		checkRangeOfIdCookiesExist(1, IdCookieCollection.MAX_ID_COOKIES - 1);
+	}
+
+	/**
+	 * Test PublixUtils.finishAbandonedStudyResults: function should work even
+	 * if there are no ID cookies yet
+	 */
+	@Test
+	public void checkFinishAbandonedStudyResultsEmpty()
+			throws IOException, PublixException {
+		// Generate empty ID cookie list
+		List<Cookie> cookieList = new ArrayList<>();
+		mockContext(cookieList);
+
+		publixUtils.finishAbandonedStudyResults();
+
+		// Check that there is still no ID cookie
+		assertThat(idCookieService.getOldestIdCookie()).isNull();
+	}
+
+	private void checkRangeOfIdCookiesExist(int from, int to)
+			throws BadRequestPublixException,
+			InternalServerErrorPublixException {
+		for (long i = from; i <= to; i++) {
+			idCookieService.getIdCookie(i);
+		}
+	}
+
+	private List<Cookie> generateIdCookieList(int size) {
+		List<Cookie> cookieList = new ArrayList<>();
+		for (long i = 1l; i <= size; i++) {
+			IdCookie idCookie = IdCookieTestHelper.buildDummyIdCookie(i);
+			cookieList.add(buildCookie(idCookie));
+		}
+		return cookieList;
 	}
 
 	/**
@@ -533,6 +625,216 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 					.isEqualTo(PublixErrorMessages.workerFinishedStudyAlready(
 							admin.getWorker(), study.getId()));
 		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveLastComponentResult(): check that the last
+	 * component result is returned
+	 */
+	@Test
+	public void checkRetrieveLastComponentResult()
+			throws IOException, PublixException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		// Create two component results
+		entityManager.getTransaction().begin();
+		publixUtils.startComponent(study.getFirstComponent(), studyResult);
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getComponent(2), studyResult);
+		entityManager.getTransaction().commit();
+
+		// Check that the second result is returned
+		ComponentResult retrievedComponentResult = publixUtils
+				.retrieveLastComponentResult(studyResult);
+		assertThat(retrievedComponentResult).isEqualTo(componentResult2);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveLastComponentResult(): if no component result
+	 * exist null should be returned
+	 */
+	@Test
+	public void checkRetrieveLastComponentResultEmpty()
+			throws IOException, PublixException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		// Check that null is returned
+		ComponentResult retrievedComponentResult = publixUtils
+				.retrieveLastComponentResult(studyResult);
+		assertThat(retrievedComponentResult).isNull();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveLastComponent(): check that the last component
+	 * is returned
+	 */
+	@Test
+	public void checkRetrieveLastComponent()
+			throws IOException, PublixException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		// Create two component results
+		entityManager.getTransaction().begin();
+		publixUtils.startComponent(study.getFirstComponent(), studyResult);
+		publixUtils.startComponent(study.getComponent(2), studyResult);
+		entityManager.getTransaction().commit();
+
+		// Check that the second result is returned
+		Component retrievedComponent = publixUtils
+				.retrieveLastComponent(studyResult);
+		assertThat(retrievedComponent).isEqualTo(study.getComponent(2));
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveLastComponent(): if no component exist null
+	 * should be returned
+	 */
+	@Test
+	public void checkRetrieveLastComponentEmpty()
+			throws IOException, PublixException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		// Check that null is returned
+		Component retrievedComponent = publixUtils
+				.retrieveLastComponent(studyResult);
+		assertThat(retrievedComponent).isNull();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveCurrentComponentResult(): check that the last
+	 * component result is returned if it is not 'done'
+	 */
+	@Test
+	public void checkRetrieveCurrentComponentResult()
+			throws IOException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		// Create two component results
+		entityManager.getTransaction().begin();
+		publixUtils.startComponent(study.getFirstComponent(), studyResult);
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getComponent(2), studyResult);
+		entityManager.getTransaction().commit();
+
+		// Check that the second result is returned
+		ComponentResult retrievedComponentResult = publixUtils
+				.retrieveCurrentComponentResult(studyResult);
+		assertThat(retrievedComponentResult).isEqualTo(componentResult2);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveCurrentComponentResult(): check that null is
+	 * returned if the last component result is 'done'
+	 */
+	@Test
+	public void checkRetrieveCurrentComponentResultIfDone()
+			throws IOException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		// Create two component results
+		entityManager.getTransaction().begin();
+		publixUtils.startComponent(study.getFirstComponent(), studyResult);
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getComponent(2), studyResult);
+		componentResult2.setComponentState(ComponentState.FINISHED);
+		entityManager.getTransaction().commit();
+
+		// Check that null is returned
+		ComponentResult retrievedComponentResult = publixUtils
+				.retrieveCurrentComponentResult(studyResult);
+		assertThat(retrievedComponentResult).isNull();
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveStartedComponentResult(): check that the last
+	 * component result is returned if it is not 'done'
+	 */
+	@Test
+	public void checkRetrieveStartedComponentResult()
+			throws IOException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		// Create two component results
+		entityManager.getTransaction().begin();
+		publixUtils.startComponent(study.getFirstComponent(), studyResult);
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getComponent(2), studyResult);
+		entityManager.getTransaction().commit();
+
+		// Check that the second result is returned since it is not 'done'
+		ComponentResult retrievedComponentResult = publixUtils
+				.retrieveStartedComponentResult(study.getComponent(3),
+						studyResult);
+		assertThat(retrievedComponentResult).isEqualTo(componentResult2);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * Tests PublixUtils.retrieveStartedComponentResult(): check that a new
+	 * component result is returned if the last one is 'done'
+	 */
+	@Test
+	public void checkRetrieveStartedComponentResultDone()
+			throws IOException, ForbiddenReloadException {
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		// Create two component results
+		entityManager.getTransaction().begin();
+		publixUtils.startComponent(study.getFirstComponent(), studyResult);
+		ComponentResult componentResult2 = publixUtils
+				.startComponent(study.getComponent(2), studyResult);
+		componentResult2.setComponentState(ComponentState.FINISHED);
+		entityManager.getTransaction().commit();
+
+		// Check that a new component result for the 2rd component is returned
+		// since the last one is 'done'
+		entityManager.getTransaction().begin();
+		ComponentResult retrievedComponentResult = publixUtils
+				.retrieveStartedComponentResult(study.getComponent(2),
+						studyResult);
+		entityManager.getTransaction().commit();
+		assertThat(retrievedComponentResult).isNotEqualTo(componentResult2);
+		assertThat(retrievedComponentResult.getComponent())
+				.isEqualTo(study.getComponent(2));
 
 		// Clean-up
 		removeStudy(study);
@@ -836,7 +1138,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	 * component belongs to the study the method should just return
 	 */
 	@Test
-	public void checkComponentBelongsToStudy()
+	public void checkCheckComponentBelongsToStudy()
 			throws IOException, PublixException {
 		Study study = importExampleStudy();
 		study.getFirstComponent().setStudy(study);
@@ -854,7 +1156,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	 * belong to the study the method should throw a BadRequestPublixException
 	 */
 	@Test
-	public void checkComponentBelongsToStudyFail()
+	public void checkCheckComponentBelongsToStudyFail()
 			throws IOException, PublixException {
 		Study study = importExampleStudy();
 		study.getFirstComponent().setStudy(study);
@@ -879,6 +1181,189 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		// Clean-up
 		removeStudy(study);
 		removeStudy(clone);
+	}
+
+	/**
+	 * PublixUtils.checkStudyIsGroupStudy()
+	 */
+	@Test
+	public void checkCheckStudyIsGroupStudy()
+			throws IOException, PublixException {
+		Study study = importExampleStudy();
+		study.setGroupStudy(true);
+		addStudy(study);
+
+		// Since it's a group study the method should just return
+		publixUtils.checkStudyIsGroupStudy(study);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * PublixUtils.checkStudyIsGroupStudy()
+	 */
+	@Test
+	public void checkCheckStudyIsGroupStudyFalse()
+			throws IOException, PublixException {
+		Study study = importExampleStudy();
+		study.setGroupStudy(false);
+		addStudy(study);
+
+		// Since it's not a group study the method should just throw an
+		// exception
+		try {
+			publixUtils.checkStudyIsGroupStudy(study);
+			Fail.fail();
+		} catch (ForbiddenPublixException e) {
+			// Just an exception is fine
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * PublixUtils.retrieveBatchByIdOrDefault(): get default batch if batch ID
+	 * is -1
+	 */
+	@Test
+	public void checkRetrieveBatchByIdOrDefaultDefault()
+			throws IOException, PublixException {
+		Study study = importExampleStudy();
+		addStudy(study);
+
+		Batch retrievedBatch = publixUtils.retrieveBatchByIdOrDefault(-1l,
+				study);
+		assertThat(retrievedBatch).isEqualTo(study.getDefaultBatch());
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * PublixUtils.retrieveBatchByIdOrDefault(): get batch specified by ID
+	 */
+	@Test
+	public void checkRetrieveBatchByIdOrDefaultById()
+			throws IOException, PublixException {
+		Study study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		Batch batch2 = batchService.clone(study.getDefaultBatch());
+		batch2.setTitle("Test Title");
+		batchService.createAndPersistBatch(batch2, study, admin);
+		entityManager.getTransaction().commit();
+
+		Batch retrievedBatch = publixUtils
+				.retrieveBatchByIdOrDefault(batch2.getId(), study);
+		assertThat(retrievedBatch).isEqualTo(batch2);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * PublixUtils.retrieveBatch(): get batch specified by ID
+	 */
+	@Test
+	public void checkRetrieveBatch() throws IOException, PublixException {
+		Study study = importExampleStudy();
+		addStudy(study);
+
+		entityManager.getTransaction().begin();
+		Batch batch2 = batchService.clone(study.getDefaultBatch());
+		batch2.setTitle("Test Title");
+		batchService.createAndPersistBatch(batch2, study, admin);
+		entityManager.getTransaction().commit();
+
+		Batch retrievedBatch = publixUtils.retrieveBatch(batch2.getId());
+		assertThat(retrievedBatch).isEqualTo(batch2);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * PublixUtils.retrieveBatch(): if a batch with the specified ID doesn't
+	 * exist throw an ForbiddenPublixException
+	 */
+	@Test
+	public void checkRetrieveBatchFail() throws IOException, PublixException {
+		Study study = importExampleStudy();
+		addStudy(study);
+
+		try {
+			publixUtils.retrieveBatch(999l);
+			Fail.fail();
+		} catch (ForbiddenPublixException e) {
+			// Just an exception is fine
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * PublixUtils.setPreStudyStateByPre()
+	 */
+	@Test
+	public void checkSetPreStudyStateByPre()
+			throws IOException, PublixException {
+		Study study = importExampleStudy();
+		addStudy(study);
+
+		StudyResult studyResult = addStudyResult(study);
+
+		publixUtils.setPreStudyStateByPre(true, studyResult);
+		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.PRE);
+		publixUtils.setPreStudyStateByPre(false, studyResult);
+		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * PublixUtils.setPreStudyStateByComponentId(): should set study result's to
+	 * STARTED only and only if the state is originally in PRE and it is not the
+	 * first component
+	 */
+	@Test
+	public void checkSetPreStudyStateByComponentId()
+			throws IOException, PublixException {
+		Study study = importExampleStudy();
+		addStudy(study);
+
+		StudyResult studyResult = addStudyResult(study);
+
+		// PRE && first => stays in PRE
+		studyResult.setStudyState(StudyState.PRE);
+		publixUtils.setPreStudyStateByComponentId(studyResult, study,
+				study.getFirstComponent().getId());
+		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.PRE);
+
+		// STARTED && first => keeps state
+		studyResult.setStudyState(StudyState.STARTED);
+		publixUtils.setPreStudyStateByComponentId(studyResult, study,
+				study.getFirstComponent().getId());
+		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
+
+		// PRE && second => changes to STARTED
+		studyResult.setStudyState(StudyState.PRE);
+		publixUtils.setPreStudyStateByComponentId(studyResult, study,
+				study.getComponent(2).getId());
+		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
+
+		// STARTED && second => keeps state
+		studyResult.setStudyState(StudyState.STARTED);
+		publixUtils.setPreStudyStateByComponentId(studyResult, study,
+				study.getComponent(2).getId());
+		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
+
+		// Clean-up
+		removeStudy(study);
 	}
 
 }

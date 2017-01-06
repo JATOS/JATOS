@@ -31,7 +31,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 	public void after() throws Exception {
 	}
 
-	public Cookie buildCookie(IdCookie idCookie) {
+	private Cookie buildCookie(IdCookie idCookie) {
 		String cookieValue = idCookieAccessor.asCookieString(idCookie);
 		Cookie cookie = new Cookie(idCookie.getName(), cookieValue,
 				Integer.MAX_VALUE, "/", "", false, false);

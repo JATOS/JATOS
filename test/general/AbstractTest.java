@@ -334,7 +334,7 @@ public abstract class AbstractTest {
 		entityManager.getTransaction().commit();
 		return studyResult;
 	}
-	
+
 	protected StudyResult addStudyResult(Study study) {
 		return addStudyResult(study, admin.getWorker());
 	}

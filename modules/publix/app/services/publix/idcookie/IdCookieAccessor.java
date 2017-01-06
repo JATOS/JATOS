@@ -317,7 +317,7 @@ public class IdCookieAccessor {
 	 * Takes an IdCookie and put its fields into a String for an cookie value:
 	 * key=value&key=value&... (similar to a URL query).
 	 */
-	protected String asCookieString(IdCookie idCookie) {
+	public String asCookieString(IdCookie idCookie) {
 		StringBuilder sb = new StringBuilder();
 		appendCookieEntry(sb, IdCookie.BATCH_ID, idCookie.getBatchId(), true);
 		appendCookieEntry(sb, IdCookie.COMPONENT_ID, idCookie.getComponentId(),
