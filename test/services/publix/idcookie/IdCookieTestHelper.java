@@ -1,14 +1,24 @@
 package services.publix.idcookie;
 
+import javax.inject.Inject;
+
 import controllers.publix.workers.JatosPublix.JatosRun;
 import models.common.workers.JatosWorker;
+import play.mvc.Http.Cookie;
 
 /**
  * @author Kristian Lange (2016)
  */
 public class IdCookieTestHelper {
 
-	public static IdCookie buildDummyIdCookie() {
+	private final IdCookieSerialiser idCookieSerialiser;
+
+	@Inject
+	public IdCookieTestHelper(IdCookieSerialiser idCookieSerialiser) {
+		this.idCookieSerialiser = idCookieSerialiser;
+	}
+
+	public IdCookie buildDummyIdCookie() {
 		IdCookie idCookie = new IdCookie();
 		idCookie.setBatchId(1l);
 		idCookie.setComponentId(1l);
@@ -27,10 +37,17 @@ public class IdCookieTestHelper {
 		return idCookie;
 	}
 
-	public static IdCookie buildDummyIdCookie(Long studyResultId) {
+	public IdCookie buildDummyIdCookie(Long studyResultId) {
 		IdCookie idCookie = buildDummyIdCookie();
 		idCookie.setStudyResultId(studyResultId);
 		return idCookie;
+	}
+
+	public Cookie buildCookie(IdCookie idCookie) {
+		String cookieValue = idCookieSerialiser.asCookieValueString(idCookie);
+		Cookie cookie = new Cookie(idCookie.getName(), cookieValue,
+				Integer.MAX_VALUE, "/", "", false, false);
+		return cookie;
 	}
 
 }

@@ -20,31 +20,27 @@ import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 public class IdCookieAccessorTest extends AbstractTest {
 
 	private IdCookieAccessor idCookieAccessor;
+	private IdCookieTestHelper idCookieTestHelper;
 
 	@Override
 	public void before() throws Exception {
-		idCookieAccessor = application.injector()
+		this.idCookieAccessor = application.injector()
 				.instanceOf(IdCookieAccessor.class);
+		this.idCookieTestHelper = application.injector()
+				.instanceOf(IdCookieTestHelper.class);
 	}
 
 	@Override
 	public void after() throws Exception {
 	}
 
-	private Cookie buildCookie(IdCookie idCookie) {
-		String cookieValue = idCookieAccessor.asCookieString(idCookie);
-		Cookie cookie = new Cookie(idCookie.getName(), cookieValue,
-				Integer.MAX_VALUE, "/", "", false, false);
-		return cookie;
-	}
-
 	@Test
 	public void checkExtractSize() throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
-		IdCookie idCookie2 = IdCookieTestHelper.buildDummyIdCookie(2l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
 		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(buildCookie(idCookie1));
-		cookieList.add(buildCookie(idCookie2));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
 
 		mockContext(cookieList);
 
@@ -69,9 +65,9 @@ public class IdCookieAccessorTest extends AbstractTest {
 	@Test
 	public void checkExtractCheckValues()
 			throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
 		mockContext(cookieList);
 
@@ -107,10 +103,10 @@ public class IdCookieAccessorTest extends AbstractTest {
 	@Test
 	public void checkExtractMalformedIndex()
 			throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		idCookie1.setName("JATOS_IDS"); // No index
 		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
 		mockContext(cookieList);
 
@@ -122,10 +118,10 @@ public class IdCookieAccessorTest extends AbstractTest {
 	@Test
 	public void checkExtractMalformedIdStrict()
 			throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		idCookie1.setBatchId(null);
 		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
 		mockContext(cookieList);
 
@@ -137,10 +133,10 @@ public class IdCookieAccessorTest extends AbstractTest {
 	@Test
 	public void checkExtractMalformedIdNotStrict()
 			throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		idCookie1.setComponentId(null); // Not necessary
 		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
 		mockContext(cookieList);
 
@@ -152,10 +148,10 @@ public class IdCookieAccessorTest extends AbstractTest {
 	@Test
 	public void checkExtractMalformedName()
 			throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		idCookie1.setName("FOO_0"); // Wrong name but with index
 		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
 		mockContext(cookieList);
 
@@ -167,10 +163,10 @@ public class IdCookieAccessorTest extends AbstractTest {
 	@Test
 	public void checkExtractMalformedStudyAssets()
 			throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		idCookie1.setStudyAssets(""); // Malformed study assets
 		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
 		mockContext(cookieList);
 
@@ -181,10 +177,10 @@ public class IdCookieAccessorTest extends AbstractTest {
 
 	@Test
 	public void checkExtractJatosRun() throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		idCookie1.setJatosRun(null); // JatosRun can be null
 		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
 		mockContext(cookieList);
 
@@ -195,7 +191,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 	@Test
 	public void checkExtractFromRequestScope()
 			throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		IdCookieCollection idCookieCollection = new IdCookieCollection();
 		idCookieCollection.add(idCookie1);
 
@@ -214,9 +210,9 @@ public class IdCookieAccessorTest extends AbstractTest {
 
 	@Test
 	public void checkDiscard() throws IdCookieAlreadyExistsException {
-		IdCookie idCookie1 = IdCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
 		mockContext(cookieList);
 

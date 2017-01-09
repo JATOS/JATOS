@@ -28,7 +28,6 @@ import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
 import services.publix.idcookie.IdCookie;
-import services.publix.idcookie.IdCookieAccessor;
 import services.publix.idcookie.IdCookieCollection;
 import services.publix.idcookie.IdCookieService;
 import services.publix.idcookie.IdCookieTestHelper;
@@ -42,15 +41,15 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 
 	protected PublixUtils<T> publixUtils;
 	protected PublixErrorMessages errorMessages;
-	private IdCookieAccessor idCookieAccessor;
 	private IdCookieService idCookieService;
+	private IdCookieTestHelper idCookieTestHelper;
 
 	@Override
 	public void before() throws Exception {
-		idCookieAccessor = application.injector()
-				.instanceOf(IdCookieAccessor.class);
-		idCookieService = application.injector()
+		this.idCookieService = application.injector()
 				.instanceOf(IdCookieService.class);
+		this.idCookieTestHelper = application.injector()
+				.instanceOf(IdCookieTestHelper.class);
 	}
 
 	@Override
@@ -406,13 +405,6 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 		checkRangeOfIdCookiesExist(2, IdCookieCollection.MAX_ID_COOKIES);
 	}
 
-	private Cookie buildCookie(IdCookie idCookie) {
-		String cookieValue = idCookieAccessor.asCookieString(idCookie);
-		Cookie cookie = new Cookie(idCookie.getName(), cookieValue,
-				Integer.MAX_VALUE, "/", "", false, false);
-		return cookie;
-	}
-
 	/**
 	 * Test PublixUtils.finishAbandonedStudyResults: if there are more ID
 	 * cookies than the max allowed number than the oldest cookie should be
@@ -485,8 +477,8 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	private List<Cookie> generateIdCookieList(int size) {
 		List<Cookie> cookieList = new ArrayList<>();
 		for (long i = 1l; i <= size; i++) {
-			IdCookie idCookie = IdCookieTestHelper.buildDummyIdCookie(i);
-			cookieList.add(buildCookie(idCookie));
+			IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(i);
+			cookieList.add(idCookieTestHelper.buildCookie(idCookie));
 		}
 		return cookieList;
 	}
