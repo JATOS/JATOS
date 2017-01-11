@@ -53,11 +53,15 @@ public class IdCookieService {
 		return idCookie;
 	}
 
-	private IdCookieCollection getIdCookieCollection()
+	/**
+	 * Returns the whole IdCookieCollection
+	 */
+	public IdCookieCollection getIdCookieCollection()
 			throws InternalServerErrorPublixException {
 		try {
 			return idCookieAccessor.extract();
 		} catch (IdCookieAlreadyExistsException e) {
+			// Should never happen or something is seriously wrong
 			throw new InternalServerErrorPublixException(e.getMessage());
 		}
 	}
@@ -108,9 +112,10 @@ public class IdCookieService {
 	/**
 	 * Generates an ID cookie from the given parameters and sets it in the
 	 * Response object. Checks if there is an existing ID cookie with the same
-	 * study result ID and if so overwrites it. If there isn't it checks if the
-	 * max number of ID cookies is reached and if so overwrites the oldest one -
-	 * or if not writes a new one.
+	 * study result ID and if so overwrites it. If there isn't it writes a new
+	 * one. It expects a free spot in the cookie collection and if not throws an
+	 * InternalServerErrorPublixException (should never happen). The deletion of
+	 * the oldest cookie must have happened beforehand.
 	 */
 	public void writeIdCookie(Worker worker, Batch batch,
 			StudyResult studyResult, ComponentResult componentResult,
@@ -134,6 +139,7 @@ public class IdCookieService {
 			idCookieAccessor.write(newIdCookie);
 		} catch (IdCookieCollectionFullException
 				| IdCookieAlreadyExistsException e) {
+			// Should never happen since we check in front
 			throw new InternalServerErrorPublixException(e.getMessage());
 		}
 	}
@@ -202,7 +208,6 @@ public class IdCookieService {
 			idCookieAccessor.discard(studyResultId);
 		} catch (IdCookieAlreadyExistsException e) {
 			throw new InternalServerErrorPublixException(e.getMessage());
-
 		}
 	}
 
@@ -244,7 +249,7 @@ public class IdCookieService {
 	 * and returns the study result ID of the oldest one. Returns null if the
 	 * IdCookieCollection is empty.
 	 */
-	public long getStudyResultIdFromOldestIdCookie()
+	public Long getStudyResultIdFromOldestIdCookie()
 			throws InternalServerErrorPublixException {
 		IdCookie oldest = getOldestIdCookie();
 		return (oldest != null) ? oldest.getStudyResultId() : null;

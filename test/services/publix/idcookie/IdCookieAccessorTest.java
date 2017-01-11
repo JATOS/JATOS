@@ -7,10 +7,8 @@ import java.util.List;
 
 import org.junit.Test;
 
-import controllers.publix.workers.JatosPublix.JatosRun;
 import general.AbstractTest;
 import general.common.RequestScope;
-import models.common.workers.JatosWorker;
 import play.mvc.Http.Cookie;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 
@@ -75,29 +73,9 @@ public class IdCookieAccessorTest extends AbstractTest {
 		assertThat(idCookieCollection.size()).isEqualTo(1);
 		IdCookie idCookie1Extracted = idCookieCollection
 				.findWithStudyResultId(1l);
-		checkDefaultIdCookie(idCookie1Extracted);
+		idCookieTestHelper.checkDummyIdCookie(idCookie1Extracted);
 		assertThat(RequestScope.has(IdCookieCollection.class.getSimpleName()))
 				.isTrue();
-	}
-
-	private void checkDefaultIdCookie(IdCookie idCookie1Extracted) {
-		assertThat(idCookie1Extracted.getBatchId()).isEqualTo(1l);
-		assertThat(idCookie1Extracted.getComponentId()).isEqualTo(1l);
-		assertThat(idCookie1Extracted.getComponentPosition()).isEqualTo(1);
-		assertThat(idCookie1Extracted.getComponentResultId()).isEqualTo(1l);
-		assertThat(idCookie1Extracted.getCreationTime()).isGreaterThan(0l);
-		assertThat(idCookie1Extracted.getGroupResultId()).isEqualTo(1l);
-		assertThat(idCookie1Extracted.getIndex()).isEqualTo(0);
-		assertThat(idCookie1Extracted.getJatosRun())
-				.isEqualTo(JatosRun.RUN_STUDY);
-		assertThat(idCookie1Extracted.getName()).isEqualTo("JATOS_IDS_0");
-		assertThat(idCookie1Extracted.getStudyAssets())
-				.isEqualTo("test_study_assets");
-		assertThat(idCookie1Extracted.getStudyId()).isEqualTo(1l);
-		assertThat(idCookie1Extracted.getStudyResultId()).isEqualTo(1l);
-		assertThat(idCookie1Extracted.getWorkerId()).isEqualTo(1l);
-		assertThat(idCookie1Extracted.getWorkerType())
-				.isEqualTo(JatosWorker.WORKER_TYPE);
 	}
 
 	@Test
@@ -203,7 +181,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		assertThat(idCookieCollection.size()).isEqualTo(1);
 		IdCookie idCookie1Extracted = idCookieCollection
 				.findWithStudyResultId(1l);
-		checkDefaultIdCookie(idCookie1Extracted);
+		idCookieTestHelper.checkDummyIdCookie(idCookie1Extracted);
 		assertThat(RequestScope.has(IdCookieCollection.class.getSimpleName()))
 				.isTrue();
 	}

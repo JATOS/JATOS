@@ -58,6 +58,11 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	 */
 	public static final String JATOS_WORKER_ID = "jatosWorkerId";
 
+	/**
+	 * Distinguish between study run and component run. In case of an component
+	 * run additionally distinguish between the start or whether it is already
+	 * finished.
+	 */
 	public enum JatosRun {
 		RUN_STUDY, // A full study run
 		RUN_COMPONENT_START, // Single component run just started

@@ -1,5 +1,7 @@
 package services.publix.idcookie;
 
+import static org.fest.assertions.Assertions.assertThat;
+
 import javax.inject.Inject;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
@@ -41,6 +43,26 @@ public class IdCookieTestHelper {
 		IdCookie idCookie = buildDummyIdCookie();
 		idCookie.setStudyResultId(studyResultId);
 		return idCookie;
+	}
+	
+	public void checkDummyIdCookie(IdCookie idCookie) {
+		assertThat(idCookie.getBatchId()).isEqualTo(1l);
+		assertThat(idCookie.getComponentId()).isEqualTo(1l);
+		assertThat(idCookie.getComponentPosition()).isEqualTo(1);
+		assertThat(idCookie.getComponentResultId()).isEqualTo(1l);
+		assertThat(idCookie.getCreationTime()).isGreaterThan(0l);
+		assertThat(idCookie.getGroupResultId()).isEqualTo(1l);
+		assertThat(idCookie.getIndex()).isEqualTo(0);
+		assertThat(idCookie.getJatosRun())
+				.isEqualTo(JatosRun.RUN_STUDY);
+		assertThat(idCookie.getName()).isEqualTo("JATOS_IDS_0");
+		assertThat(idCookie.getStudyAssets())
+				.isEqualTo("test_study_assets");
+		assertThat(idCookie.getStudyId()).isEqualTo(1l);
+		assertThat(idCookie.getStudyResultId()).isEqualTo(1l);
+		assertThat(idCookie.getWorkerId()).isEqualTo(1l);
+		assertThat(idCookie.getWorkerType())
+				.isEqualTo(JatosWorker.WORKER_TYPE);
 	}
 
 	public Cookie buildCookie(IdCookie idCookie) {

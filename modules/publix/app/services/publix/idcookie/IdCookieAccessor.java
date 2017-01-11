@@ -58,13 +58,13 @@ public class IdCookieAccessor {
 	 */
 	protected IdCookieCollection extract()
 			throws IdCookieAlreadyExistsException {
-		String requestScopeName = IdCookieCollection.class.getSimpleName();
-		if (RequestScope.has(requestScopeName)) {
-			return (IdCookieCollection) RequestScope.get(requestScopeName);
+		String idCookiesInRequestScopeName = IdCookieCollection.class.getSimpleName();
+		if (RequestScope.has(idCookiesInRequestScopeName)) {
+			return (IdCookieCollection) RequestScope.get(idCookiesInRequestScopeName);
 		} else {
 			IdCookieCollection idCookieCollection = extractFromCookies(
 					Publix.request().cookies());
-			RequestScope.put(requestScopeName, idCookieCollection);
+			RequestScope.put(idCookiesInRequestScopeName, idCookieCollection);
 			return idCookieCollection;
 		}
 	}

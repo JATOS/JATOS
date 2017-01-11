@@ -2,6 +2,7 @@ package services.publix.idcookie;
 
 import static org.fest.assertions.Assertions.assertThat;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,9 @@ import org.junit.Test;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.InternalServerErrorPublixException;
 import general.AbstractTest;
+import models.common.Study;
+import models.common.StudyResult;
+import models.common.workers.JatosWorker;
 import play.mvc.Http.Cookie;
 
 /**
@@ -114,6 +118,273 @@ public class IdCookieServiceTest extends AbstractTest {
 
 		assertThat(idCookieService
 				.oneIdCookieHasThisStudyAssets("test_study_assets")).isFalse();
+	}
+
+	/**
+	 * IdCookieService.writeIdCookie(): Check for proper IdCookie name and
+	 * values.
+	 */
+	@Test
+	public void checkWriteIdCookie() throws IOException,
+			InternalServerErrorPublixException, BadRequestPublixException {
+		List<Cookie> cookieList = new ArrayList<>();
+		mockContext(cookieList);
+
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(),
+				studyResult);
+
+		IdCookie idCookie = idCookieService.getIdCookie(studyResult.getId());
+		assertThat(idCookie).isNotNull();
+		// Check naming
+		assertThat(idCookie.getName())
+				.startsWith(IdCookie.ID_COOKIE_NAME + "_");
+		// Check proper ID cookie values
+		assertThat(idCookie.getBatchId()).isEqualTo(1l);
+		assertThat(idCookie.getComponentId()).isNull();
+		assertThat(idCookie.getComponentPosition()).isNull();
+		assertThat(idCookie.getComponentResultId()).isNull();
+		assertThat(idCookie.getCreationTime()).isGreaterThan(0l);
+		assertThat(idCookie.getGroupResultId()).isNull();
+		assertThat(idCookie.getIndex()).isEqualTo(0);
+		assertThat(idCookie.getJatosRun()).isNull();
+		assertThat(idCookie.getName()).isEqualTo("JATOS_IDS_0");
+		assertThat(idCookie.getStudyAssets()).isEqualTo("basic_example_study");
+		assertThat(idCookie.getStudyId()).isEqualTo(1l);
+		assertThat(idCookie.getStudyResultId()).isEqualTo(1l);
+		assertThat(idCookie.getWorkerId()).isEqualTo(1l);
+		assertThat(idCookie.getWorkerType()).isEqualTo(JatosWorker.WORKER_TYPE);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * IdCookieService.writeIdCookie(): If the new IdCookie has the same ID as
+	 * an existing one it should be overwritten. Additionally check for proper
+	 * IdCookie name and values.
+	 */
+	@Test
+	public void checkWriteIdCookieOverwriteWithSameId() throws IOException,
+			InternalServerErrorPublixException, BadRequestPublixException {
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2222l);
+		List<Cookie> cookieList = new ArrayList<>();
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
+		mockContext(cookieList);
+
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(),
+				studyResult);
+
+		// Check that the old IdCookie for the study result ID 1l is overwritten
+		IdCookie idCookie = idCookieService.getIdCookie(studyResult.getId());
+		assertThat(idCookie).isNotNull();
+		assertThat(idCookieService.getIdCookieCollection().size()).isEqualTo(2);
+		assertThat(idCookie.getStudyAssets()).isEqualTo("basic_example_study");
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * IdCookieService.writeIdCookie(): If none of the existing IdCookies has
+	 * the ID of the new one and the max cookie number is not yet reached write
+	 * a new IdCookie.
+	 */
+	@Test
+	public void checkWriteIdCookieWriteNewCookie() throws IOException,
+			InternalServerErrorPublixException, BadRequestPublixException {
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1111l);
+		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2222l);
+		List<Cookie> cookieList = new ArrayList<>();
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
+		mockContext(cookieList);
+
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(),
+				studyResult);
+
+		// Check that a new IdCookie is written
+		IdCookie idCookie = idCookieService.getIdCookie(studyResult.getId());
+		assertThat(idCookie).isNotNull();
+		assertThat(idCookieService.getIdCookieCollection().size()).isEqualTo(3);
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * IdCookieService.writeIdCookie(): If none of the existing IdCookies has
+	 * the ID of the new one and the max cookie number is already reached an
+	 * InternalServerErrorPublixException should be thrown.
+	 */
+	@Test
+	public void checkWriteIdCookieOverwriteOldest()
+			throws IOException, BadRequestPublixException {
+		List<Cookie> cookieList = new ArrayList<>();
+		// Create max IdCookies with study result IDs starting from 100l
+		for (long i = 100l; i < (100l
+				+ IdCookieCollection.MAX_ID_COOKIES); i++) {
+			IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(i);
+			cookieList.add(idCookieTestHelper.buildCookie(idCookie));
+		}
+		mockContext(cookieList);
+
+		Study study = importExampleStudy();
+		addStudy(study);
+		StudyResult studyResult = addStudyResult(study);
+
+		try {
+			idCookieService.writeIdCookie(admin.getWorker(),
+					studyResult.getBatch(), studyResult);
+			Fail.fail();
+		} catch (InternalServerErrorPublixException e) {
+			// check throwing is enough
+		}
+
+		// Clean-up
+		removeStudy(study);
+	}
+
+	/**
+	 * IdCookieService.discardIdCookie(): just check removal of the IdCookie
+	 * (this method is just a wrapper and the actual method is tested elsewhere)
+	 */
+	@Test
+	public void checkDiscardIdCookie() throws BadRequestPublixException,
+			InternalServerErrorPublixException {
+		IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(1l);
+		List<Cookie> cookieList = new ArrayList<>();
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie));
+		mockContext(cookieList);
+
+		idCookieService.discardIdCookie(1l);
+
+		// Check that IdCookie is gone
+		try {
+			idCookieService.getIdCookie(1l);
+			Fail.fail();
+		} catch (BadRequestPublixException e) {
+			// check throwing is enough
+		}
+	}
+
+	/**
+	 * IdCookieService.maxIdCookiesReached(): max reached
+	 */
+	@Test
+	public void checkMaxIdCookiesReachedMaxReached()
+			throws InternalServerErrorPublixException {
+		// Create max IdCookies
+		List<Cookie> cookieList = new ArrayList<>();
+		for (long i = 1l; i < (IdCookieCollection.MAX_ID_COOKIES + 1); i++) {
+			IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(i);
+			cookieList.add(idCookieTestHelper.buildCookie(idCookie));
+		}
+		mockContext(cookieList);
+
+		assertThat(idCookieService.maxIdCookiesReached()).isTrue();
+	}
+
+	/**
+	 * IdCookieService.maxIdCookiesReached(): not reached
+	 */
+	@Test
+	public void checkMaxIdCookiesReachedMaxNotReached()
+			throws InternalServerErrorPublixException {
+		// Just create one (< max ID cookies)
+		IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(1l);
+		List<Cookie> cookieList = new ArrayList<>();
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie));
+		mockContext(cookieList);
+
+		assertThat(idCookieService.maxIdCookiesReached()).isFalse();
+	}
+
+	/**
+	 * IdCookieService.getOldestIdCookie(): check that the oldest IdCookie is
+	 * retrieved
+	 */
+	@Test
+	public void checkGetOldestIdCookie()
+			throws InternalServerErrorPublixException {
+		// Create a couple of IdCookie: the oldest will be the one that was
+		// first added to the list
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
+		IdCookie idCookie3 = idCookieTestHelper.buildDummyIdCookie(3l);
+		List<Cookie> cookieList = new ArrayList<>();
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie3));
+		mockContext(cookieList);
+
+		IdCookie retrievedIdCookie = idCookieService.getOldestIdCookie();
+		assertThat(retrievedIdCookie).isEqualTo(idCookie1);
+	}
+
+	/**
+	 * IdCookieService.getOldestIdCookie(): if there is no IdCookie it should
+	 * return null
+	 */
+	@Test
+	public void checkGetOldestIdCookieEmpty()
+			throws InternalServerErrorPublixException {
+		List<Cookie> cookieList = new ArrayList<>();
+		mockContext(cookieList);
+
+		IdCookie retrievedIdCookie = idCookieService.getOldestIdCookie();
+		assertThat(retrievedIdCookie).isNull();
+	}
+
+	/**
+	 * IdCookieService.getStudyResultIdFromOldestIdCookie(): return study result
+	 * Id
+	 */
+	@Test
+	public void checkGetStudyResultIdFromOldestIdCookie()
+			throws InternalServerErrorPublixException {
+		// Create a couple of IdCookie: the oldest will be the one that was
+		// first added to the list
+		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
+		IdCookie idCookie3 = idCookieTestHelper.buildDummyIdCookie(3l);
+		List<Cookie> cookieList = new ArrayList<>();
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
+		cookieList.add(idCookieTestHelper.buildCookie(idCookie3));
+		mockContext(cookieList);
+
+		Long studyResultId = idCookieService
+				.getStudyResultIdFromOldestIdCookie();
+		assertThat(studyResultId).isEqualTo(1l);
+	}
+
+	/**
+	 * IdCookieService.getStudyResultIdFromOldestIdCookie(): if there is no
+	 * IdCookie it should return null
+	 */
+	@Test
+	public void checkGetStudyResultIdFromOldestIdCookieEmpty()
+			throws InternalServerErrorPublixException {
+		List<Cookie> cookieList = new ArrayList<>();
+		mockContext(cookieList);
+
+		Long studyResultId = idCookieService
+				.getStudyResultIdFromOldestIdCookie();
+		assertThat(studyResultId).isNull();
 	}
 
 }
