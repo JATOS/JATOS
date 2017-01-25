@@ -14,6 +14,7 @@ import exceptions.publix.ForbiddenReloadException;
 import general.AbstractTest;
 import models.common.Study;
 import models.common.StudyResult;
+import models.common.workers.JatosWorker;
 import play.mvc.Call;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
@@ -23,7 +24,8 @@ import services.gui.StudyService;
 import services.publix.workers.JatosPublixUtils;
 
 /**
- * Testing actions if study is locked
+ * A study can be locked. Then it shouldn't be possible to change its
+ * properties, or its component's properties, or its batch's properties.
  * 
  * @author Kristian Lange
  */
@@ -57,6 +59,201 @@ public class LockedStudyControllerTest extends AbstractTest {
 		if (statusCode == Http.Status.SEE_OTHER) {
 			assertThat(result.redirectLocation()).isEqualTo(redirectPath);
 		}
+	}
+
+	/**
+	 * Check that Batches.submitCreated() doesn't work if study is locked
+	 */
+	@Test
+	public void callBatchesSubmitCreated() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Batches
+				.submitCreated(studyClone.getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Batches.submitEditedProperties() doesn't work if study is
+	 * locked
+	 */
+	@Test
+	public void callBatchesSubmitEditedProperties() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Batches.submitEditedProperties(
+				studyClone.getId(), studyClone.getDefaultBatch().getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Batches.toggleActive() doesn't work if study is locked
+	 */
+	@Test
+	public void callBatchesToggleActive() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Batches.toggleActive(
+				studyClone.getId(), studyClone.getDefaultBatch().getId(), true);
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Batches.toggleAllowedWorkerType() doesn't work if study is
+	 * locked
+	 */
+	@Test
+	public void callBatchesToggleAllowedWorkerType() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Batches.toggleAllowedWorkerType(
+				studyClone.getId(), studyClone.getDefaultBatch().getId(),
+				JatosWorker.WORKER_TYPE, true);
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Batches.remove() doesn't work if study is locked
+	 * 
+	 * TODO returns a 404 - complete mystery; although the method works
+	 */
+	// @Test
+	public void callBatchesRemove() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Batches.remove(studyClone.getId(),
+				studyClone.getDefaultBatch().getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Batches.createPersonalSingleRun() doesn't work if study is
+	 * locked
+	 */
+	@Test
+	public void callBatchesCreatePersonalSingleRun() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Batches.createPersonalSingleRun(
+				studyClone.getId(), studyClone.getDefaultBatch().getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Batches.createPersonalMultipleRun() doesn't work if study is
+	 * locked
+	 */
+	@Test
+	public void callBatchesCreatePersonalMultipleRun() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Batches.createPersonalMultipleRun(
+				studyClone.getId(), studyClone.getDefaultBatch().getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Components.submitCreated() doesn't work if study is locked
+	 */
+	@Test
+	public void callComponentsSubmitCreated() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Components
+				.submitCreated(studyClone.getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Components.submitEdited() doesn't work if study is locked
+	 */
+	@Test
+	public void callComponentsSubmitEdited() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Components.submitEdited(
+				studyClone.getId(), studyClone.getFirstComponent().getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Components.toggleActive() doesn't work if study is locked
+	 */
+	@Test
+	public void callComponentsToggleActive() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Components.toggleActive(
+				studyClone.getId(), studyClone.getFirstComponent().getId(),
+				true);
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Components.cloneComponent() doesn't work if study is locked
+	 * 
+	 * TODO returns a 404 - complete mystery; although the method works
+	 */
+	// @Test
+	public void callComponentsCloneComponent() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Components.cloneComponent(
+				studyClone.getId(), studyClone.getFirstComponent().getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that Components.remove() doesn't work if study is locked
+	 * 
+	 * TODO returns a 404 - complete mystery; although the method works
+	 */
+	// @Test
+	public void callComponentsRemove() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.Components.remove(studyClone.getId(),
+				studyClone.getFirstComponent().getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that ImportExport.importComponent() doesn't work if study is locked
+	 */
+	@Test
+	public void callImportExportImportComponent() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.ImportExport
+				.importComponent(studyClone.getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
+	}
+
+	/**
+	 * Check that ImportExport.importComponentConfirmed() doesn't work if study
+	 * is locked
+	 */
+	@Test
+	public void callImportExportImportComponentConfirmed() throws Exception {
+		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		lockStudy(studyClone);
+		Call call = controllers.gui.routes.ImportExport
+				.importComponentConfirmed(studyClone.getId());
+		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
+		removeStudy(studyClone);
 	}
 
 	@Test
