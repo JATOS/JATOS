@@ -75,7 +75,7 @@ function setBrand() {
 @for(error <- form.globalErrors) {
 	$('#password').after('<p class="text-danger">@error.message</p>');
 }
-@if(flash.contains(general.gui.FlashScopeMessaging.SUCCESS)) {
+@if(flash.containsKey(general.gui.FlashScopeMessaging.SUCCESS)) {
 	$('#password').after('<p class="text-success">@flash.get(general.gui.FlashScopeMessaging.SUCCESS)</p>');
 }
 </script>
