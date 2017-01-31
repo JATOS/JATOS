@@ -1,5 +1,5 @@
 /*
-* jQuery File Download Plugin v1.4.3 
+* jQuery File Download Plugin v1.4.5
 *
 * http://www.johnculviner.com
 *
@@ -67,21 +67,29 @@ $.extend({
             prepareCallback: function (url) { },
 
             //
-            //a function to call after a file download dialog/ribbon has appeared
+            //a function to call after a file download successfully completed
             //Args:
             //  url - the original url attempted
             //
             successCallback: function (url) { },
 
             //
-            //a function to call after a file download dialog/ribbon has appeared
+            //a function to call after a file download request was canceled
+            //Args:
+            //  url - the original url attempted
+            //
+            abortCallback: function (url) { },
+
+            //
+            //a function to call after a file download failed
             //Args:
             //  responseHtml    - the html that came back in response to the file download. this won't necessarily come back depending on the browser.
             //                      in less than IE9 a cross domain error occurs because 500+ errors cause a cross domain issue due to IE subbing out the
             //                      server's error message with a "helpful" IE built in message
             //  url             - the original url attempted
+            //  error           - original error cautch from exception
             //
-            failCallback: function (responseHtml, url) { },
+            failCallback: function (responseHtml, url, error) { },
 
             //
             // the HTTP method to use. Defaults to "GET".
@@ -117,7 +125,7 @@ $.extend({
             //
             //if specified it will be used when attempting to clear the above name value pair
             //useful for when downloads are being served on a subdomain (e.g. downloads.example.com)
-            //	
+            //
             cookieDomain: null,
 
             //
@@ -132,7 +140,7 @@ $.extend({
             //It is recommended that on the server, htmlentity decoding is done irrespective.
             //
             encodeHTMLEntities: true
-            
+
         }, options);
 
         var deferred = new $.Deferred();
@@ -203,7 +211,19 @@ $.extend({
                 deferred.resolve(url);
             },
 
-            onFail: function (responseHtml, url) {
+            onAbort: function (url) {
+
+                //remove the perparing message if it was specified
+                if ($preparingDialog) {
+                    $preparingDialog.dialog('close');
+                };
+
+                settings.abortCallback(url);
+
+                deferred.reject(url);
+            },
+
+            onFail: function (responseHtml, url, error) {
 
                 //remove the perparing message if it was specified
                 if ($preparingDialog) {
@@ -215,8 +235,8 @@ $.extend({
                     $("<div>").html(settings.failMessageHtml).dialog(settings.dialogOptions);
                 }
 
-                settings.failCallback(responseHtml, url);
-                
+                settings.failCallback(responseHtml, url, error);
+
                 deferred.reject(responseHtml, url);
             }
         };
@@ -283,6 +303,12 @@ $.extend({
                 $.each(settings.data.replace(/\+/g, ' ').split("&"), function () {
 
                     var kvp = this.split("=");
+
+                    //Issue: When value contains sign '=' then the kvp array does have more than 2 items. We have to join value back
+                    var k = kvp[0];
+                    kvp.shift();
+                    var v = kvp.join("=");
+                    kvp = [k, v];
 
                     var key = settings.encodeHTMLEntities ? htmlSpecialCharsEntityEncode(decodeURIComponent(kvp[0])) : decodeURIComponent(kvp[0]);
                     if (key) {
@@ -380,7 +406,7 @@ $.extend({
                                 } else {
                                     throw e;
                                 }
-                            } 
+                            }
                         }
 
                         if (isFailure) {
@@ -389,7 +415,7 @@ $.extend({
                                 internalCallbacks.onFail(formDoc.body.innerHTML, fileUrl);
                                 cleanUp(true);
                             }, 100);
-                            
+
                             return;
                         }
                     }
@@ -397,7 +423,7 @@ $.extend({
                 catch (err) {
 
                     //500 error less than IE9
-                    internalCallbacks.onFail('', fileUrl);
+                    internalCallbacks.onFail('', fileUrl, err);
 
                     cleanUp(true);
 
@@ -438,7 +464,7 @@ $.extend({
                         }
                     }
                 }
-                
+
                 //iframe cleanup appears to randomly cause the download to fail
                 //not doing it seems better than failure...
                 //if ($iframe) {
@@ -457,10 +483,11 @@ $.extend({
         var promise = deferred.promise();
         promise.abort = function() {
             cleanUp();
-            $iframe.remove();
+            $iframe.attr('src', '').html('');
+            internalCallbacks.onAbort(fileUrl);
         };
         return promise;
     }
 });
 
-})(jQuery, this);
+})(jQuery, this || window);
