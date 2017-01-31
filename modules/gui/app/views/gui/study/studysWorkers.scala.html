@@ -27,9 +27,11 @@ $(document).ready(function() {
 					showError("Couldn't read components data.")
 			}
 		},
+		"dom": 'ftip',
 		"order": [[ 0, "desc" ]],
 		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
 		"pageLength": 10,
+		"pagingType": "simple_numbers",
 		"columns": [
 			{
 				"data": "id",
@@ -43,7 +45,10 @@ $(document).ready(function() {
 				"render": getUIWorkerTypeWithGlyphicon
 			},
 			{ "data": getOther }
-		]
+		],
+		"language": {
+			"search": "Filter:"
+		}
 	});
 	
 	function getOther(data, type, dataToSet) {

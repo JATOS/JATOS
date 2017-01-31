@@ -80,9 +80,13 @@ public class MessagesStrings {
 	public static final String UNSUPPORTED_COMPONENT_VERSION = "This component is from an unsupported version of JATOS.";
 
 	// Results
-	public static final String RESULTS_EXPORT_DATA = "Select results and export them as a text file to your local file system";
+	public static final String RESULTS_COLUMN_VISIBILITY = "Show/hide columns";
+	public static final String RESULTS_SELECT_ALL = "Select all results (including the ones on different table pages)";
+	public static final String RESULTS_SELECT_FILTERED = "Select only the filtered results (including the ones on different table pages)";
+	public static final String RESULTS_DESELECT_ALL = "Deselect all results";
+	public static final String RESULTS_EXPORT_DATA = "Export selected results as a text file to your local file system";
 	public static final String RESULTS_EXPORT_ALL_DATA = "Export all results as a text file to your local file system";
-	public static final String RESULTS_DELETE = "Select results and delete them";
+	public static final String RESULTS_DELETE = "Delete selected results";
 	public static final String RESULTS_DELETE_ALL = "Delete all results";
 	public static final String RESULTS_INFO = "Select a result for export or deletion by clicking anywhere on its row.";
 	public static final String RESULTS_DATA = "Click on the + icon to open the result's data";

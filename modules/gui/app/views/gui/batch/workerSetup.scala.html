@@ -299,24 +299,31 @@ loadWorkers();
 function initWorkerTable(tableElement) {
 	return $(tableElement).DataTable({
 		"pageLength": paginationLength,
-		"bFilter": false,
-		"filter": false,
-		"columnDefs": [ {
-			"targets": "_all",
-			"searchable": false,
-			"orderable": false
-		}, {
-			"targets": [0],
-			"render": function( data, type, row ) {
-				return '<a href="/jatos/worker/' + data + '/results">' + data + '</a>';
+		"dom": 'tp',
+		"columnDefs": [
+			{
+				"targets": "_all",
+				"sorting": false,
+				"searchable": false,
+				"orderable": false
+			},
+			{
+				"targets": [0],
+				"sorting": false,
+				"searchable": false,
+				"orderable": false,	
+				"render": function( data, type, row ) {
+					return '<a href="/jatos/worker/' + data + '/results">' + data + '</a>';
+				}
 			}
-		} ],
-		"bLengthChange": false,
+		],
+		"pageLength": 10,
+		"pagingType": "simple_numbers",
+		"lengthChange": false,
 		"info": false,
-		"sPaginationType": "simple_numbers",
 		"order" : [],
-		"oLanguage": {
-			"sEmptyTable": "No workers yet"
+		"language": {
+			"emptyTable": "No workers yet"
 		}
 	});
 }

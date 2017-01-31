@@ -3,30 +3,6 @@
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
-<!-- Toolbar -->
-<div id="resultsToolbar" class="btn-toolbar pull-right" role="toolbar">
-	<div class="btn-group" aria-hidden="true">
-		<button type="button" class="exportResultData btn btn-default btn-sm"
-			data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_EXPORT_DATA">
-			Export Selected
-		</button>
-		<button type="button" class="exportAllResultData btn btn-default btn-sm"
-			data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA">
-			Export All
-		</button>
-	</div>
-	<div class="btn-group" aria-hidden="true">
-		<button type="button" class="remove btn btn-danger btn-sm"
-			data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DELETE">
-			Delete Selected
-		</button>
-		<button type="button" class="removeAll btn btn-danger btn-sm"
-			data-toggle="tooltip" data-placement="top" title="@general.common.MessagesStrings.RESULTS_DELETE_ALL">
-			Delete All
-		</button>
-	</div>
-</div>
-
 <!-- Results table -->
 <table id="resultsTable" class="table table-hover table-row-border" cellpadding="0" cellspacing="0" border="0" width="100%">
 	<thead>
@@ -78,6 +54,7 @@ $(document).ready(function() {
 					showError("Couldn't read results data.")
 			}
 		},
+		"dom": '<"pull-right"B>lfrtip',
 		"order": [[ 2, "desc" ]],
 		"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
 		"pageLength": 10,
@@ -136,32 +113,72 @@ $(document).ready(function() {
 				"data": getMessages,
 				"width": "20%"
 			}
-		]
-	});
-	var tableTools = new $.fn.dataTable.TableTools(resultsTable, {
-		"sRowSelect": "multi",
-		"sRowSelector": "td:not(:first-child):not(:last-child)",
-		"aButtons": [
+		],
+		buttons: [
 			{
-				"sExtends": "select_all",
-				"sButtonText": "Select All"
+				"extend": "colvis",
+				"text": "Column Visibilty",
+				"titleAttr": '@general.common.MessagesStrings.RESULTS_COLUMN_VISIBILITY'
 			},
 			{
-				"sExtends": "select_all",
-				"sButtonText": "Select Filtered",
-				"fnClick": function (nButton, oConfig, oFlash) {
-					var oTT = TableTools.fnGetInstance('resultsTable');
-					var rows = $("#myTable").dataTable().$('tr', {"filter":"applied"});
-					oTT.fnSelectAll(rows);
-				}
+				"extend": "selectAll",
+				"text": "Select All",
+				"titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_ALL'
 			},
 			{
-				"sExtends": "select_none",
-				"sButtonText": "Deselect All",
+				"extends": "selectAll",
+				"text": "Select Filtered",
+				"action": function(e, dt, node, config) {
+					dt.rows({ search: 'applied' }).select();
+				},
+				"titleAttr": '@general.common.MessagesStrings.RESULTS_SELECT_FILTERED'
+			},
+			{
+				"extend": "selectNone",
+				"text": "Deselect All",
+				"action": function(e, dt, node, config) {
+					dt.rows().deselect();
+				},
+				"titleAttr": '@general.common.MessagesStrings.RESULTS_DESELECT_ALL'
+			},
+			{
+				"text": "Export Selected",
+				"action": exportSelectedResultData,
+				"titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_DATA'
+			},
+			{
+				"text": "Export All",
+				"action": exportAllSelectedResultData,
+				"titleAttr": '@general.common.MessagesStrings.RESULTS_EXPORT_ALL_DATA'
+			},
+			{
+				"text": "Delete Selected",
+				"action": deleteSelectedResults,
+				"className": 'btn btn-danger',
+				"titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE'
+			},
+			{
+				"text": "Delete All",
+				"action": deleteAllResults,
+				"className": 'btn btn-danger',
+				"titleAttr": '@general.common.MessagesStrings.RESULTS_DELETE_ALL'
 			}
-		]
+		],
+		"language": {
+			"search": "Filter Results:"
+		}
 	});
-	$(tableTools.fnContainer()).appendTo('div.btn-toolbar');
+	
+	// Necessary - otherwise the button doesn't work with manually selected rows
+	resultsTable.on('draw', toggleDeselectAllButton);
+	
+	function toggleDeselectAllButton() {
+		if (resultsTable.rows('.selected').any()) {
+			resultsTable.buttons(['.buttons-select-none']).enable();
+		} else {
+			resultsTable.buttons(['.buttons-select-none']).disable();
+		}
+	}
 
 	function getMTWorkerId(data, type, full, meta) {
 		if (data.MTSandboxWorker) {
@@ -184,6 +201,12 @@ $(document).ready(function() {
 		}
 		return messages.join("");
 	}
+	
+	$('#resultsTable tbody').on( 'click', 'td:not(:first-child)', function () {
+		var tr = $(this).closest('tr');
+		tr.toggleClass('selected');
+		toggleDeselectAllButton();
+	});
 
 	$('#resultsTable tbody').on('click', 'td.details-control', function() {
 		var tr = $(this).closest('tr');
@@ -199,126 +222,124 @@ $(document).ready(function() {
 		$(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
 				.toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 	});
-});
 
-$('#resultsToolbar').on('click', '.exportResultData', function() {
-	var oTT = TableTools.fnGetInstance('resultsTable');
-	var selectedTrs = oTT.fnGetSelected();
-	var ids = [];
-	selectedTrs.forEach(function(selectedTr) {
-		var rowData = resultsTable.row(selectedTr).data();
-		ids.push(rowData.id);
-	});
-	if (ids.length == 0) {
-		showError("No results selected");
-		return;
-	}
-	var url = '/jatos/studyResult/export/resultData'
-		+ '?studyResultIds=' + ids.join(", ");
-	// Using johnculviner's jQuery.fileDownload plugin to detect a fail
-	$.fileDownload(url).fail(function () {
-		showError("Export of results failed");
-	});
-	return false; //this is critical to stop the click event which will trigger a normal file download
-});
-
-$('#resultsToolbar').on('click', '.exportAllResultData', function() {
-	var url = "@controllers.gui.routes.ImportExport.exportDataOfAllStudyResults(study.getId())";
-	// Using johnculviner's jQuery.fileDownload plugin to detect a fail
-	$.fileDownload(url).fail(function () {
-		showError("Export of results failed");
-	});
-	return false; //this is critical to stop the click event which will trigger a normal file download
-});
-
-$('#resultsToolbar').on('click', '.remove', function() {
-	var oTT = TableTools.fnGetInstance('resultsTable');
-	var selectedTrs = oTT.fnGetSelected();
-	var ids = [];
-	selectedTrs.forEach(function(selectedTr) {
-		var rowData = resultsTable.row(selectedTr).data();
-		ids.push(rowData.id);
-	});
-	if (ids.length <= 0) {
-		showError("No results selected");
-		return;
-	}
-	var title = "Confirm Delete";
-	var htmlText = "<p>You are about to delete the study results "
-		+ "(ID " + ids.join(", ") + ") " 
-		+ "<b>with all their component results</b>.</p>"
-		+ "<p>Do you want to proceed?</p>";
-	askConfirmation(title, htmlText, 'Delete', function() {
-		var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
-		$.ajax({
-			url : url,
-			type : 'DELETE',
-			success : function(result) {
-				selectedTrs.forEach(function(selectedTr) {
-					resultsTable.row(selectedTr).remove().draw();
-				});
-			},
-			error : function(err) {
-				showError(err.responseText);
-			}
+	function exportSelectedResultData(e, dt, node, config) {	
+		var selectedTrs = resultsTable.rows('.selected').nodes();
+		var ids = [];
+		$.each(selectedTrs, function(index, selectedTr) {
+			var rowData = resultsTable.row(selectedTr).data();
+			ids.push(rowData.id);
 		});
-	});
-});
-
-$('#resultsToolbar').on('click', '.removeAll', function() {
-	var title = "Confirm Delete";
-	var htmlText = "<p>You are about to delete <b>ALL</b> study results "
-		+ "<b>with all their component results</b>.</p>"
-		+ "<p>Do you want to proceed?</p>";
-	askConfirmation(title, htmlText, 'Delete', function() {
-		var url = "@controllers.gui.routes.StudyResults.removeAllOfStudy(study.getId())";
-		$.ajax({
-			url : url,
-			type : 'DELETE',
-			success : function(result) {
-				resultsTable.ajax.reload();
-			},
-			error : function(err) {
-				showError(err.responseText);
-			}
-		});
-	});
-});
-
-function childRowFormat(data) {
-	// `data` is the original data object for the row
-	var html = [];
-	html.push('<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
-		'<tr class="info">',
-		'<td><b>Result ID</b></td>',
-		'<td><b>Comp. ID</b></td>',
-		'<td><b>Component Title</b></td>',
-		'<td><b>Start Time (Server)</b></td>',
-		'<td><b>Duration</b></td>',
-		'<td><b>State</b></td>',
-		'</tr>');
-		if (data.componentResults.length > 0) {
-			data.componentResults.forEach(function(componentResult) {
-				var duration = (componentResult.duration) ? componentResult.duration : "not yet";
-				html.push('<tr class="info">',
-					'<td>' + componentResult.id + '</td>',
-					'<td>' + componentResult.componentId + '</td>',
-					'<td>' + componentResult.componentTitle + '</td>',
-					'<td>' + componentResult.startDate + '</td>',
-					'<td>' + duration + '</td>',
-					'<td>' + componentResult.componentState + '</td>',
-					'</tr><tr class="info">',
-					'<td colspan="6"><pre class="details-data">' + componentResult.data + '</pre></td>',
-					'</tr>');
-			});
-		} else {
-			html.push('<tr class="info">',
-				'<td colspan="6">empty</td>',
-				'</tr>');
+		if (ids.length == 0) {
+			showError("No results selected");
+			return;
 		}
-		html.push('</table>');
-	return html.join("");
-}
+		var url = '/jatos/studyResult/export/resultData'
+			+ '?studyResultIds=' + ids.join(", ");
+		// Using johnculviner's jQuery.fileDownload plugin to detect a fail
+		$.fileDownload(url).fail(function () {
+			showError("Export of results failed");
+		});
+	}
+
+	function exportAllSelectedResultData(e, dt, node, config) {
+		var url = "@controllers.gui.routes.ImportExport.exportDataOfAllStudyResults(study.getId())";
+		// Using johnculviner's jQuery.fileDownload plugin to detect a fail
+		$.fileDownload(url).fail(function () {
+			showError("Export of results failed");
+		});
+	}
+
+	function deleteSelectedResults(e, dt, node, config) {
+		var selectedTrs = resultsTable.rows('.selected').nodes();
+		var ids = [];
+		$.each(selectedTrs, function(index, selectedTr) {
+			var rowData = resultsTable.row(selectedTr).data();
+			ids.push(rowData.id);
+		});
+		if (ids.length <= 0) {
+			showError("No results selected");
+			return;
+		}
+		var title = "Confirm Delete";
+		var htmlText = "<p>You are about to delete the study results "
+			+ "(ID " + ids.join(", ") + ") " 
+			+ "<b>with all their component results</b> (cannot be undone).</p>"
+			+ "<p>Do you want to proceed?</p>";
+		askConfirmation(title, htmlText, 'Delete', function() {
+			var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
+			$.ajax({
+				url : url,
+				type : 'DELETE',
+				success : function(result) {
+					$.each(selectedTrs, function(index, selectedTr) {
+						resultsTable.row(selectedTr).remove().draw();
+					});
+				},
+				error : function(err) {
+					showError(err.responseText);
+				}
+			});
+		});
+	}
+	
+	function deleteAllResults(e, dt, node, config) {
+		var title = "Confirm Delete";
+		var htmlText = "<p>You are about to delete <b>ALL</b> study results "
+			+ "<b>with all their component results</b> (cannot be undone).</p>"
+			+ "<p>Do you want to proceed?</p>";
+		askConfirmation(title, htmlText, 'Delete', function() {
+			var url = "@controllers.gui.routes.StudyResults.removeAllOfStudy(study.getId())";
+			$.ajax({
+				url : url,
+				type : 'DELETE',
+				success : function(result) {
+					resultsTable.ajax.reload();
+				},
+				error : function(err) {
+					showError(err.responseText);
+				}
+			});
+		});
+	}
+
+	function childRowFormat(data) {
+		// `data` is the original data object for the row
+		var html = [];
+		html.push('<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
+			'<tr class="info">',
+			'<td><b>Comp. Result ID</b></td>',
+			'<td><b>Comp. ID</b></td>',
+			'<td><b>Component Title</b></td>',
+			'<td><b>Start Time (Server)</b></td>',
+			'<td><b>Duration</b></td>',
+			'<td><b>State</b></td>',
+			'</tr>');
+			if (data.componentResults.length > 0) {
+				data.componentResults.forEach(function(componentResult) {
+					var duration = (componentResult.duration) ? componentResult.duration : "not yet";
+					html.push('<tr class="info">',
+						'<td>' + componentResult.id + '</td>',
+						'<td>' + componentResult.componentId + '</td>',
+						'<td>' + componentResult.componentTitle + '</td>',
+						'<td>' + componentResult.startDate + '</td>',
+						'<td>' + duration + '</td>',
+						'<td>' + componentResult.componentState + '</td>',
+						'</tr><tr class="info">',
+						'<td colspan="6"><pre class="details-data">' + componentResult.data + '</pre></td>',
+						'</tr>');
+				});
+			} else {
+				html.push('<tr class="info">',
+					'<td colspan="6">empty</td>',
+					'</tr>');
+			}
+			html.push('</table>');
+		return html.join("");
+	}
+
+});
+
 
 </script>
 
