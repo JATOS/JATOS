@@ -9,7 +9,7 @@ includeFilter in (Assets, LessKeys.less) := "*.less"
 excludeFilter in (Assets, LessKeys.less) := "_*.less"
 
 libraryDependencies ++= Seq(
-	"org.webjars" % "bootstrap" % "3.3.4"
+	"org.webjars" % "bootstrap" % "3.3.7"
 )
 
 // Compile the project before generating Eclipse files, so that .class files for views and routes are present
