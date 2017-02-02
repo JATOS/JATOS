@@ -165,7 +165,7 @@ var jatos = {};
 	// a component's jQuery version. Afterwards initialise (jatos.js will always be
 	// initialised - even if jatos.onLoad() is never called).
 	jatos.jQuery = {};
-	getScript('/public/lib/jatos-publix/javascripts/jquery-1.11.1.min.js', function () {
+	getScript('/public/lib/jatos-publix/javascripts/jquery-1.12.4.min.js', function () {
 		jatos.jQuery = jQuery.noConflict(true);
 		loadScripts(initJatos);
 	});
