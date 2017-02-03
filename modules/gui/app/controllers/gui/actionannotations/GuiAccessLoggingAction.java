@@ -4,12 +4,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.CompletionStage;
 
 import controllers.gui.Users;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import play.Logger;
 import play.Logger.ALogger;
-import play.libs.F;
 import play.mvc.Action;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -33,7 +33,7 @@ public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 
 	private ALogger guiLogger = Logger.of("gui_access");
 
-	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
+	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();
 		guiLogger.info(request.method() + " " + request.uri() + " ("
 				+ Controller.session(Users.SESSION_EMAIL) + ")");

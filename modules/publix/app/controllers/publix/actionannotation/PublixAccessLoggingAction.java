@@ -4,11 +4,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.CompletionStage;
 
 import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging;
 import play.Logger;
 import play.Logger.ALogger;
-import play.libs.F;
 import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Http.Request;
@@ -31,7 +31,7 @@ public class PublixAccessLoggingAction extends Action<PublixAccessLogging> {
 
 	private ALogger logger = Logger.of("publix_access");
 
-	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
+	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();
 		logger.info(request.method() + " " + request.uri());
 		return delegate.call(ctx);

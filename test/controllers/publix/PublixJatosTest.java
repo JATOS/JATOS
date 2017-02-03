@@ -74,7 +74,7 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 
 		// Check redirect URL
-		assertThat(result.header("Location"))
+		assertThat(result.header("Location").get())
 				.startsWith("/publix/" + study.getId() + "/"
 						+ study.getFirstComponent().getId() + "/start?srid=");
 
@@ -188,7 +188,7 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 
 		// Check redirect URL
-		assertThat(result.header("Location")).endsWith(
+		assertThat(result.header("Location").get()).endsWith(
 				"/publix/" + study.getId() + "/" + study.getComponent(2).getId()
 						+ "/start?srid=" + studyResult.getId());
 
@@ -312,7 +312,7 @@ public class PublixJatosTest extends AbstractTest {
 		StudyResult studyResult = admin.getWorker().getLastStudyResult();
 		studyResultDao.refresh(studyResult);
 
-		assertThat(result.header("Location").contains("srid="));
+		assertThat(result.header("Location").get()).contains("srid=");
 
 		// Check HTTP status is redirect
 		assertThat(result.status()).isEqualTo(SEE_OTHER);

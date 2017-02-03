@@ -1,7 +1,7 @@
 <configuration>
 
 	<conversionRule conversionWord="coloredLevel"
-		converterClass="play.api.Logger$ColoredLevel" />
+		converterClass="play.api.libs.logback.ColoredLevel" />
 
 	<appender name="FILE"
 		class="ch.qos.logback.core.rolling.RollingFileAppender">

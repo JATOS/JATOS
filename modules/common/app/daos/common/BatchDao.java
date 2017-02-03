@@ -1,9 +1,10 @@
 package daos.common;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import models.common.Batch;
-import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO of Batch entity
@@ -12,6 +13,11 @@ import play.db.jpa.JPA;
  */
 @Singleton
 public class BatchDao extends AbstractDao {
+
+	@Inject
+	BatchDao(JPAApi jpa) {
+		super(jpa);
+	}
 
 	public void create(Batch batch) {
 		persist(batch);
@@ -26,7 +32,7 @@ public class BatchDao extends AbstractDao {
 	}
 
 	public Batch findById(Long id) {
-		return JPA.em().find(Batch.class, id);
+		return jpa.em().find(Batch.class, id);
 	}
 
 }

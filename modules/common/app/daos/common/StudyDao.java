@@ -2,12 +2,13 @@ package daos.common;
 
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.common.Study;
 import models.common.User;
-import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO of Study entity
@@ -16,6 +17,11 @@ import play.db.jpa.JPA;
  */
 @Singleton
 public class StudyDao extends AbstractDao {
+
+	@Inject
+	StudyDao(JPAApi jpa) {
+		super(jpa);
+	}
 
 	public void create(Study study) {
 		persist(study);
@@ -30,12 +36,12 @@ public class StudyDao extends AbstractDao {
 	}
 
 	public Study findById(Long id) {
-		return JPA.em().find(Study.class, id);
+		return jpa.em().find(Study.class, id);
 	}
 
 	public Study findByUuid(String uuid) {
 		String queryStr = "SELECT s FROM Study s WHERE " + "s.uuid=:uuid";
-		TypedQuery<Study> query = JPA.em().createQuery(queryStr, Study.class);
+		TypedQuery<Study> query = jpa.em().createQuery(queryStr, Study.class);
 		query.setParameter("uuid", uuid);
 		// There can be only one study with this UUID
 		query.setMaxResults(1);
@@ -49,18 +55,18 @@ public class StudyDao extends AbstractDao {
 	 */
 	public List<Study> findByTitle(String title) {
 		String queryStr = "SELECT s FROM Study s WHERE s.title=:title";
-		TypedQuery<Study> query = JPA.em().createQuery(queryStr, Study.class);
+		TypedQuery<Study> query = jpa.em().createQuery(queryStr, Study.class);
 		return query.setParameter("title", title).getResultList();
 	}
 
 	public List<Study> findAll() {
-		TypedQuery<Study> query = JPA.em().createQuery("SELECT s FROM Study s",
+		TypedQuery<Study> query = jpa.em().createQuery("SELECT s FROM Study s",
 				Study.class);
 		return query.getResultList();
 	}
 
 	public List<Study> findAllByUser(User user) {
-		TypedQuery<Study> query = JPA.em().createQuery(
+		TypedQuery<Study> query = jpa.em().createQuery(
 				"SELECT s FROM Study s INNER JOIN s.userList u WHERE u = :user",
 				Study.class);
 		query.setParameter("user", user);

@@ -189,7 +189,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. part: Call importStudy()
 		File studyFile = getExampleStudyFile();
-		FilePart filePart = new FilePart(Study.STUDY, studyFile.getName(),
+		FilePart<File> filePart = new FilePart(Study.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
@@ -268,7 +268,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. call: importStudy()
 		File studyFile = getExampleStudyFile();
-		FilePart filePart = new FilePart(Study.STUDY, studyFile.getName(),
+		FilePart<File> filePart = new FilePart(Study.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
@@ -318,7 +318,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. call: importStudy()
 		File studyFile = getExampleStudyFile();
-		FilePart filePart = new FilePart(Study.STUDY, studyFile.getName(),
+		FilePart<File> filePart = new FilePart(Study.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
@@ -368,7 +368,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. call
 		File studyFile = getExampleStudyFile();
-		FilePart filePart = new FilePart(Study.STUDY, studyFile.getName(),
+		FilePart<File> filePart = new FilePart(Study.STUDY, studyFile.getName(),
 				"multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());

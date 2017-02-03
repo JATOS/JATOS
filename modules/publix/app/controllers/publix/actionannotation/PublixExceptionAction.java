@@ -4,13 +4,13 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import controllers.publix.actionannotation.PublixExceptionAction.PublixExceptionCatching;
 import exceptions.publix.InternalServerErrorPublixException;
 import exceptions.publix.PublixException;
 import play.Logger;
-import play.libs.F;
-import play.libs.F.Promise;
 import play.mvc.Action;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -32,31 +32,31 @@ public class PublixExceptionAction extends Action<PublixExceptionCatching> {
 	public @interface PublixExceptionCatching {
 	}
 
-	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
-		Promise<Result> call;
+	public CompletionStage<Result> call(Http.Context ctx) {
+		CompletionStage<Result> call;
 		try {
 			call = delegate.call(ctx);
-		} catch (InternalServerErrorPublixException e) {
-			Result result = e.getSimpleResult();
-			// Log exception with stack trace
-			Logger.info("PublixException during call "
-					+ Controller.request().uri() + ": " + e.getMessage(), e);
-			call = Promise.pure(result);
-		} catch (PublixException e) {
-			Result result = e.getSimpleResult();
-			// Log exception without stack trace
-			Logger.info("PublixException during call "
-					+ Controller.request().uri() + ": " + e.getMessage());
-			call = Promise.pure(result);
+//		} catch (InternalServerErrorPublixException e) {
+//			Result result = e.getSimpleResult();
+//			// Log exception with stack trace
+//			Logger.info("PublixException during call "
+//					+ Controller.request().uri() + ": " + e.getMessage(), e);
+//			call = CompletableFuture.completedFuture(result);
+//		} catch (PublixException e) {
+//			Result result = e.getSimpleResult();
+//			// Log exception without stack trace
+//			Logger.info("PublixException during call "
+//					+ Controller.request().uri() + ": " + e.getMessage());
+//			call = CompletableFuture.completedFuture(result);
 		} catch (Exception e) {
 			// Log exception with stack trace
 			Logger.error("Exception during call " + Controller.request().uri()
 					+ ": " + e.getMessage(), e);
 			if (HttpUtils.isAjax()) {
-				call = Promise
-						.<Result> pure(internalServerError(e.getMessage()));
+				call = CompletableFuture
+						.completedFuture(internalServerError(e.getMessage()));
 			} else {
-				call = Promise.<Result> pure(
+				call = CompletableFuture.completedFuture(
 						internalServerError(views.html.publix.error
 								.render("Internal JATOS error during "
 										+ Controller.request().uri() + ": "

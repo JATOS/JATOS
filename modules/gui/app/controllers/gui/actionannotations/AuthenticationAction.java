@@ -4,6 +4,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 
@@ -13,8 +15,6 @@ import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import daos.common.UserDao;
 import general.common.RequestScope;
 import models.common.User;
-import play.libs.F;
-import play.libs.F.Promise;
 import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -44,8 +44,8 @@ public class AuthenticationAction extends Action<Authenticated> {
 		this.userDao = userService;
 	}
 
-	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
-		Promise<Result> call;
+	public CompletionStage<Result> call(Http.Context ctx) {
+		CompletionStage<Result> call;
 		String email = ctx.session().get(Users.SESSION_EMAIL);
 		User loggedInUser = null;
 		if (email != null) {
@@ -53,9 +53,10 @@ public class AuthenticationAction extends Action<Authenticated> {
 		}
 		if (loggedInUser == null) {
 			if (HttpUtils.isAjax()) {
-				call = Promise.pure(forbidden("Not logged in"));
+				call = CompletableFuture
+						.completedFuture(forbidden("Not logged in"));
 			} else {
-				call = Promise.pure(redirect(
+				call = CompletableFuture.completedFuture(redirect(
 						controllers.gui.routes.Authentication.login()));
 			}
 		} else {

@@ -2,6 +2,7 @@ package daos.common.worker;
 
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
@@ -9,6 +10,7 @@ import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO for MTWorker entity
@@ -17,6 +19,11 @@ import play.db.jpa.JPA;
  */
 @Singleton
 public class MTWorkerDao extends WorkerDao {
+
+	@Inject
+	MTWorkerDao(JPAApi jpa) {
+		super(jpa);
+	}
 
 	/**
 	 * Create MTWorker. Distinguishes between normal MechTurk and Sandbox
@@ -40,7 +47,7 @@ public class MTWorkerDao extends WorkerDao {
 	public MTWorker findByMTWorkerId(String mtWorkerId) {
 		String queryStr = "SELECT w FROM Worker w WHERE "
 				+ "upper(w.mtWorkerId)=:mtWorkerId";
-		TypedQuery<Worker> query = JPA.em().createQuery(queryStr, Worker.class);
+		TypedQuery<Worker> query = jpa.em().createQuery(queryStr, Worker.class);
 		query.setParameter("mtWorkerId", mtWorkerId);
 		query.setMaxResults(1);
 		List<Worker> workerList = query.getResultList();

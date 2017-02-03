@@ -78,7 +78,7 @@ public class ImportExportService {
 		this.componentDao = componentDao;
 	}
 
-	public ObjectNode importComponent(Study study, FilePart filePart)
+	public ObjectNode importComponent(Study study, FilePart<File> filePart)
 			throws IOException {
 		if (filePart == null) {
 			throw new IOException(MessagesStrings.FILE_MISSING);

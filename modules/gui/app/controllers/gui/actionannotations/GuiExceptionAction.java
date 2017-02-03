@@ -4,12 +4,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import exceptions.gui.JatosGuiException;
 import play.Logger;
-import play.libs.F;
-import play.libs.F.Promise;
 import play.mvc.Action;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -34,23 +34,25 @@ public class GuiExceptionAction extends Action<GuiExceptionCatching> {
 	public @interface GuiExceptionCatching {
 	}
 
-	public F.Promise<Result> call(Http.Context ctx) throws Throwable {
-		Promise<Result> call;
+	public CompletionStage<Result> call(Http.Context ctx) {
+		CompletionStage<Result> call;
 		try {
 			call = delegate.call(ctx);
-		} catch (JatosGuiException e) {
-			Logger.info("JatosGuiException during call "
-					+ Controller.request().uri() + ": " + e.getMessage());
-			Result result = e.getSimpleResult();
-			call = Promise.pure(result);
+//		} catch (JatosGuiException e) {
+//			Logger.info("JatosGuiException during call "
+//					+ Controller.request().uri() + ": " + e.getMessage());
+//			Result result = e.getSimpleResult();
+//			call = CompletableFuture
+//					.completedFuture(result);
 		} catch (Exception e) {
 			Logger.error("Exception during call " + Controller.request().uri()
 					+ ": " + e.getMessage(), e);
 			if (HttpUtils.isAjax()) {
-				call = Promise
-						.<Result>pure(internalServerError(e.getMessage()));
+				call = CompletableFuture
+						.completedFuture(internalServerError(e.getMessage()));
 			} else {
-				call = Promise.<Result>pure(
+				call = CompletableFuture
+						.completedFuture(
 						internalServerError("Internal JATOS error during "
 								+ Controller.request().uri() + ": "
 								+ e.toString()));

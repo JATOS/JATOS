@@ -25,8 +25,8 @@ import models.common.workers.PersonalSingleWorker;
 import play.Play;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
+import play.mvc.LegacyWebSocket;
 import play.mvc.Result;
-import play.mvc.WebSocket;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.IdCookieService;
 import utils.common.HttpUtils;
@@ -244,9 +244,9 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
-	public WebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId)
+	public LegacyWebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId)
 			throws PublixException {
-		WebSocket<JsonNode> result = null;
+		LegacyWebSocket<JsonNode> result = null;
 		switch (getWorkerTypeFromIdCookie(studyResultId)) {
 		case MTWorker.WORKER_TYPE:
 			// Handle MTWorker like MTSandboxWorker

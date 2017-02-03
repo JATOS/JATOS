@@ -2,13 +2,14 @@ package daos.common;
 
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.TypedQuery;
 
 import models.common.Batch;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
-import play.db.jpa.JPA;
+import play.db.jpa.JPAApi;
 
 /**
  * DAO for GroupResult
@@ -17,6 +18,11 @@ import play.db.jpa.JPA;
  */
 @Singleton
 public class GroupResultDao extends AbstractDao {
+
+	@Inject
+	GroupResultDao(JPAApi jpa) {
+		super(jpa);
+	}
 
 	public void create(GroupResult groupResult) {
 		persist(groupResult);
@@ -35,20 +41,20 @@ public class GroupResultDao extends AbstractDao {
 	}
 
 	public GroupResult findById(Long id) {
-		return JPA.em().find(GroupResult.class, id);
+		return jpa.em().find(GroupResult.class, id);
 	}
 
 	public List<GroupResult> findAllByBatch(Batch batch) {
 		String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch";
-		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
+		TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr,
 				GroupResult.class);
 		return query.setParameter("batch", batch).getResultList();
 	}
-	
+
 	public List<GroupResult> findAllStartedByBatch(Batch batch) {
 		String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch "
 				+ "AND gr.groupState=:groupState ";
-		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
+		TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr,
 				GroupResult.class);
 		return query.setParameter("batch", batch)
 				.setParameter("groupState", GroupState.STARTED).getResultList();
@@ -65,7 +71,7 @@ public class GroupResultDao extends AbstractDao {
 				+ "AND gr.groupState=:groupState "
 				+ "AND (b.maxActiveMembers is null OR size(gr.activeMemberList) < b.maxActiveMembers) "
 				+ "AND (b.maxTotalMembers is null OR ((size(gr.activeMemberList) + size(gr.historyMemberList)) < b.maxTotalMembers))";
-		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
+		TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr,
 				GroupResult.class);
 		query.setParameter("batch", batch);
 		query.setParameter("groupState", GroupState.STARTED);
@@ -74,7 +80,7 @@ public class GroupResultDao extends AbstractDao {
 
 	public List<GroupResult> findAllNotFinished() {
 		String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.groupState <> :groupState";
-		TypedQuery<GroupResult> query = JPA.em().createQuery(queryStr,
+		TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr,
 				GroupResult.class);
 		query.setParameter("groupState", GroupState.FINISHED);
 		return query.getResultList();

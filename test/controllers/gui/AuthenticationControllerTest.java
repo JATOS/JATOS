@@ -58,7 +58,7 @@ public class AuthenticationControllerTest extends AbstractTest {
 				.uri(controllers.gui.routes.Authentication.logout().url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
-		assertThat(result.redirectLocation()).contains("login");
+		assertThat(result.redirectLocation().get()).contains("login");
 		assertThat(!result.session().containsKey(Users.SESSION_EMAIL));
 	}
 

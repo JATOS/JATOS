@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import daos.common.worker.WorkerDao;
@@ -103,7 +103,7 @@ public class ImportExport extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 
 		// Get file from request
-		FilePart filePart = request().body().asMultipartFormData()
+		FilePart<Object> filePart = request().body().asMultipartFormData()
 				.getFile(Study.STUDY);
 
 		if (filePart == null) {
@@ -118,8 +118,9 @@ public class ImportExport extends Controller {
 
 		JsonNode responseJson = null;
 		try {
+			File file = (File) filePart.getFile();
 			responseJson = importExportService.importStudy(loggedInUser,
-					filePart.getFile());
+					file);
 		} catch (ForbiddenException | IOException e) {
 			importExportService.cleanupAfterStudyImport();
 			jatosGuiExceptionThrower.throwAjax(e);

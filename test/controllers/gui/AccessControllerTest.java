@@ -1,6 +1,7 @@
 package controllers.gui;
 
 import static org.fest.assertions.Assertions.assertThat;
+import static org.fest.assertions.Assertions.*;
 import static play.mvc.Http.Status.FORBIDDEN;
 import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.contentAsString;
@@ -61,7 +62,7 @@ public class AccessControllerTest extends AbstractTest {
 	private void checkDeniedAccess(Call call, String method) {
 		Result result = route(call);
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
-		assertThat(result.redirectLocation()).contains("/jatos/login");
+		assertThat(result.redirectLocation().get()).contains("/jatos/login");
 	}
 
 	/**

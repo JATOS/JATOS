@@ -5,8 +5,8 @@ import java.io.IOException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import exceptions.publix.PublixException;
+import play.mvc.LegacyWebSocket;
 import play.mvc.Result;
-import play.mvc.WebSocket;
 
 /**
  * Interface to Publix the public, RESTful API of JATOS. With these methods the
@@ -85,7 +85,7 @@ public interface IPublix {
 	 * @return WebSocket that transports JSON strings.
 	 * @throws PublixException
 	 */
-	WebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId)
+	LegacyWebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId)
 			throws PublixException;
 
 	/**

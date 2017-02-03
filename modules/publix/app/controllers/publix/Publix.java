@@ -13,6 +13,7 @@ import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.InternalServerErrorPublixException;
 import exceptions.publix.NotFoundPublixException;
 import exceptions.publix.PublixException;
 import models.common.Batch;
@@ -28,8 +29,8 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Controller;
+import play.mvc.LegacyWebSocket;
 import play.mvc.Result;
-import play.mvc.WebSocket;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
@@ -188,7 +189,8 @@ public abstract class Publix<T extends Worker> extends Controller
 
 	@Override
 	// Due to returning a WebSocket and not a Result we don't throw exceptions
-	public WebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId) {
+	public LegacyWebSocket<JsonNode> joinGroup(Long studyId,
+			Long studyResultId) {
 		LOGGER.info(".joinGroup: studyId " + studyId + ", " + "studyResultId "
 				+ studyResultId);
 		// The @Transactional annotation can only be used with Actions.
@@ -196,21 +198,32 @@ public abstract class Publix<T extends Worker> extends Controller
 		// it manually. Additionally we have to catch the PublixExceptions
 		// manually because the PublixAction wouldn't send a rejected WebSocket
 		// but normal HTTP responses.
-		try {
-			StudyResult studyResult = jpa.withTransaction(() -> {
+		StudyResult studyResult = jpa.withTransaction(() -> {
+			try {
 				return joinGroupTransactional(studyId, studyResultId);
-			});
-			// openGroupChannel has to be outside of the transaction
-			return channelService.openGroupChannel(studyResult);
-		} catch (NotFoundPublixException e) {
-			LOGGER.info(".joinGroup: " + e.getMessage());
-			return WebSocketBuilder.reject(notFound());
-		} catch (ForbiddenPublixException e) {
-			LOGGER.info(".joinGroup: " + e.getMessage());
-			return WebSocketBuilder.reject(forbidden());
-		} catch (Throwable e) {
-			LOGGER.error(".joinGroup: ", e);
-			return WebSocketBuilder.reject(internalServerError());
+			} catch (NotFoundPublixException e) {
+				LOGGER.info(".joinGroup: " + e.getMessage());
+				// return WebSocketBuilder.reject(notFound());
+				return null;
+			} catch (ForbiddenPublixException e) {
+				LOGGER.info(".joinGroup: " + e.getMessage());
+				// return WebSocketBuilder.reject(forbidden());
+				return null;
+			} catch (Throwable e) {
+				LOGGER.error(".joinGroup: ", e);
+				// return WebSocketBuilder.reject(internalServerError());
+				return null;
+			}
+		});
+		// openGroupChannel has to be outside of the transaction
+		if (studyResult != null) {
+			try {
+				return channelService.openGroupChannel(studyResult);
+			} catch (InternalServerErrorPublixException e) {
+				return WebSocketBuilder.reject(internalServerError()); 
+			}
+		} else {
+			return WebSocketBuilder.reject(internalServerError()); 
 		}
 	}
 

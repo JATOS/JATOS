@@ -1,12 +1,13 @@
 package general;
 
+import java.util.concurrent.CompletableFuture;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import play.Logger;
 import play.Logger.ALogger;
 import play.inject.ApplicationLifecycle;
-import play.libs.F;
 
 /**
  * @author Kristian Lange (2015)
@@ -22,7 +23,7 @@ public class OnStartStop {
 
 		lifecycle.addStopHook(() -> {
 			LOGGER.info("JATOS shutdown");
-			return F.Promise.pure(null);
+			return CompletableFuture.completedFuture(null);
 		});
 	}
 

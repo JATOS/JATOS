@@ -15,7 +15,7 @@ import models.common.GroupResult;
 import models.common.StudyResult;
 import play.Logger;
 import play.Logger.ALogger;
-import play.mvc.WebSocket;
+import play.mvc.LegacyWebSocket;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
@@ -55,7 +55,7 @@ public class ChannelService {
 	/**
 	 * Opens a new group channel WebSocket for the given StudyResult.
 	 */
-	public WebSocket<JsonNode> openGroupChannel(StudyResult studyResult)
+	public LegacyWebSocket<JsonNode> openGroupChannel(StudyResult studyResult)
 			throws InternalServerErrorPublixException {
 		GroupResult groupResult = studyResult.getActiveGroupResult();
 		if (groupResult == null) {

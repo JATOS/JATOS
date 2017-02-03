@@ -1,12 +1,14 @@
 package services.publix.group;
 
-import play.mvc.Result;
-import play.mvc.WebSocket;
-import services.publix.group.akka.actors.GroupChannel;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import akka.actor.ActorRef;
 import akka.actor.Props;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import play.mvc.LegacyWebSocket;
+import play.mvc.Result;
+import play.mvc.WebSocket.In;
+import play.mvc.WebSocket.Out;
+import services.publix.group.akka.actors.GroupChannel;
 
 /**
  * Builds new WebSockets for group channel.
@@ -15,9 +17,9 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class WebSocketBuilder {
 
-	public static WebSocket<JsonNode> withGroupChannel(long studyResultId,
+	public static LegacyWebSocket<JsonNode> withGroupChannel(long studyResultId,
 			ActorRef groupDispatcher) {
-		return new WebSocket<JsonNode>() {
+		return new LegacyWebSocket<JsonNode>() {
 			public void onReady(In<JsonNode> in, Out<JsonNode> out) {
 			}
 
@@ -47,8 +49,8 @@ public class WebSocketBuilder {
 	 *            The Result that will be returned.
 	 * @return A rejected WebSocket.
 	 */
-	public static <T> WebSocket<T> reject(final Result result) {
-		return new WebSocket<T>() {
+	public static <T> LegacyWebSocket<T> reject(final Result result) {
+		return new LegacyWebSocket<T>() {
 			public void onReady(In<T> in, Out<T> out) {
 			}
 
