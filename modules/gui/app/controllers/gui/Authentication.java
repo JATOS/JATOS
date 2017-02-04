@@ -3,7 +3,6 @@ package controllers.gui;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import general.common.MessagesStrings;
@@ -21,7 +20,6 @@ import utils.common.HashUtils;
  * 
  * @author Kristian Lange
  */
-@GuiExceptionCatching
 @GuiAccessLogging
 @Singleton
 public class Authentication extends Controller {

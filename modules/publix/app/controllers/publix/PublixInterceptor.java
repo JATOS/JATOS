@@ -8,7 +8,6 @@ import javax.inject.Singleton;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging;
-import controllers.publix.actionannotation.PublixExceptionAction.PublixExceptionCatching;
 import controllers.publix.workers.GeneralSinglePublix;
 import controllers.publix.workers.JatosPublix;
 import controllers.publix.workers.MTPublix;
@@ -56,7 +55,6 @@ import utils.common.HttpUtils;
  */
 @Singleton
 @PublixAccessLogging
-@PublixExceptionCatching
 public class PublixInterceptor extends Controller implements IPublix {
 
 	private final IdCookieService idCookieService;

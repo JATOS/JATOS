@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
@@ -50,7 +49,6 @@ import utils.common.JsonUtils;
  * 
  * @author Kristian Lange
  */
-@GuiExceptionCatching
 @GuiAccessLogging
 @Authenticated
 @Singleton

@@ -7,7 +7,6 @@ import javax.inject.Singleton;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import daos.common.StudyDao;
 import exceptions.gui.JatosGuiException;
 import general.common.MessagesStrings;
@@ -31,7 +30,6 @@ import utils.common.JsonUtils;
  * 
  * @author Kristian Lange
  */
-@GuiExceptionCatching
 @GuiAccessLogging
 @Authenticated
 @Singleton

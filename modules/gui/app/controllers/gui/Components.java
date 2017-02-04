@@ -6,7 +6,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
@@ -39,7 +38,6 @@ import utils.common.JsonUtils;
  * 
  * @author Kristian Lange
  */
-@GuiExceptionCatching
 @GuiAccessLogging
 @Authenticated
 @Singleton

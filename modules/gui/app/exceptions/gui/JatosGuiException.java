@@ -1,7 +1,6 @@
 package exceptions.gui;
 
 import play.mvc.Result;
-import controllers.gui.actionannotations.GuiExceptionAction;
 
 /**
  * Exception for any kind of exceptional behaviour within one of JATOS' GUI

@@ -6,7 +6,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import controllers.gui.actionannotations.GuiExceptionAction.GuiExceptionCatching;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -32,7 +31,6 @@ import utils.common.HttpUtils;
  *
  * @author Kristian Lange
  */
-@GuiExceptionCatching
 @GuiAccessLogging
 @Authenticated
 @Singleton
