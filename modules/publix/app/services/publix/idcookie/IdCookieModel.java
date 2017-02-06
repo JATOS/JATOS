@@ -15,7 +15,7 @@ import controllers.publix.workers.JatosPublix.JatosRun;
  * 
  * @author Kristian Lange (2016)
  */
-public class IdCookie {
+public class IdCookieModel {
 
 	/**
 	 * Every ID cookie name starts with this String.
@@ -196,7 +196,7 @@ public class IdCookie {
 			return false;
 		if (getClass() != other.getClass())
 			return false;
-		IdCookie otherIdCookie = (IdCookie) other;
+		IdCookieModel otherIdCookie = (IdCookieModel) other;
 		return ((name == otherIdCookie.name
 				|| (name != null && name.equals(otherIdCookie.name)))
 				&& index == otherIdCookie.index

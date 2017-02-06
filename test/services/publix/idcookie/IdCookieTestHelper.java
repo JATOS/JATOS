@@ -20,8 +20,8 @@ public class IdCookieTestHelper {
 		this.idCookieSerialiser = idCookieSerialiser;
 	}
 
-	public IdCookie buildDummyIdCookie() {
-		IdCookie idCookie = new IdCookie();
+	public IdCookieModel buildDummyIdCookie() {
+		IdCookieModel idCookie = new IdCookieModel();
 		idCookie.setBatchId(1l);
 		idCookie.setComponentId(1l);
 		idCookie.setComponentPosition(1);
@@ -39,13 +39,13 @@ public class IdCookieTestHelper {
 		return idCookie;
 	}
 
-	public IdCookie buildDummyIdCookie(Long studyResultId) {
-		IdCookie idCookie = buildDummyIdCookie();
+	public IdCookieModel buildDummyIdCookie(Long studyResultId) {
+		IdCookieModel idCookie = buildDummyIdCookie();
 		idCookie.setStudyResultId(studyResultId);
 		return idCookie;
 	}
 	
-	public void checkDummyIdCookie(IdCookie idCookie) {
+	public void checkDummyIdCookie(IdCookieModel idCookie) {
 		assertThat(idCookie.getBatchId()).isEqualTo(1l);
 		assertThat(idCookie.getComponentId()).isEqualTo(1l);
 		assertThat(idCookie.getComponentPosition()).isEqualTo(1);
@@ -65,7 +65,7 @@ public class IdCookieTestHelper {
 				.isEqualTo(JatosWorker.WORKER_TYPE);
 	}
 
-	public Cookie buildCookie(IdCookie idCookie) {
+	public Cookie buildCookie(IdCookieModel idCookie) {
 		String cookieValue = idCookieSerialiser.asCookieValueString(idCookie);
 		Cookie cookie = new Cookie(idCookie.getName(), cookieValue,
 				Integer.MAX_VALUE, "/", "", false, false);

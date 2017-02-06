@@ -15,6 +15,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.data.DynamicForm;
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -44,14 +45,17 @@ public class Users extends Controller {
 	private final Checker checker;
 	private final UserService userService;
 	private final BreadcrumbsService breadcrumbsService;
+	private final FormFactory formFactory;
 
 	@Inject
 	Users(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-			UserService userService, BreadcrumbsService breadcrumbsService) {
+			UserService userService, BreadcrumbsService breadcrumbsService,
+			FormFactory formFactory) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.userService = userService;
 		this.breadcrumbsService = breadcrumbsService;
+		this.formFactory = formFactory;
 	}
 
 	/**
@@ -73,14 +77,14 @@ public class Users extends Controller {
 	@Transactional
 	public Result submit() {
 		LOGGER.info(".submit");
-		Form<User> form = Form.form(User.class).bindFromRequest();
+		Form<User> form = formFactory.form(User.class).bindFromRequest();
 
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
 		}
 
 		User newUser = form.get();
-		DynamicForm requestData = Form.form().bindFromRequest();
+		DynamicForm requestData = formFactory.form().bindFromRequest();
 		String password = requestData.get(User.PASSWORD);
 		String passwordRepeat = requestData.get(User.PASSWORD_REPEAT);
 		List<ValidationError> errorList = userService.validateNewUser(newUser,
@@ -103,14 +107,14 @@ public class Users extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		User user = checkStandard(email, loggedInUser);
 
-		Form<User> form = Form.form(User.class).bindFromRequest();
+		Form<User> form = formFactory.form(User.class).bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
 		}
 		// Update user in database
 		// Do not update 'email' since it's the ID and should stay
 		// unaltered. For the password we have an extra form.
-		DynamicForm requestData = Form.form().bindFromRequest();
+		DynamicForm requestData = formFactory.form().bindFromRequest();
 		String name = requestData.get(User.NAME);
 		userService.updateName(user, name);
 		return redirect(controllers.gui.routes.Users.profile(email));
@@ -124,9 +128,9 @@ public class Users extends Controller {
 		LOGGER.info(".submitChangedPassword: " + "email " + email);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		User user = checkStandard(email, loggedInUser);
-		Form<User> form = Form.form(User.class).fill(user);
+		Form<User> form = formFactory.form(User.class).fill(user);
 
-		DynamicForm requestData = Form.form().bindFromRequest();
+		DynamicForm requestData = formFactory.form().bindFromRequest();
 		String newPassword = requestData.get(User.PASSWORD);
 		String newPasswordRepeat = requestData.get(User.PASSWORD_REPEAT);
 		String oldPasswordHash = HashUtils

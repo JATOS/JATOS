@@ -10,6 +10,7 @@ import general.gui.FlashScopeMessaging;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
+import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -29,10 +30,12 @@ public class Authentication extends Controller {
 	public static final String LOGGED_IN_USER = "loggedInUser";
 
 	private final UserDao userDao;
+	private final FormFactory formFactory;
 
 	@Inject
-	Authentication(UserDao userDao) {
+	Authentication(UserDao userDao, FormFactory formFactory) {
 		this.userDao = userDao;
+		this.formFactory = formFactory;
 	}
 
 	/**
@@ -41,7 +44,7 @@ public class Authentication extends Controller {
 	public Result login() {
 		LOGGER.info(".login");
 		return ok(views.html.gui.auth.login
-				.render(Form.form(Authentication.Login.class)));
+				.render(formFactory.form(Authentication.Login.class)));
 	}
 
 	/**
@@ -49,7 +52,7 @@ public class Authentication extends Controller {
 	 */
 	@Transactional
 	public Result authenticate() {
-		Form<Login> loginForm = Form.form(Login.class).bindFromRequest();
+		Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest();
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");
 		String passwordHash = HashUtils.getHashMDFive(password);

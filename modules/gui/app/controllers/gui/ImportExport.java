@@ -31,6 +31,7 @@ import play.Logger.ALogger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
+import play.mvc.Http.Cookie;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 import services.gui.Checker;
@@ -180,10 +181,9 @@ public class ImportExport extends Controller {
 
 		String zipFileName = ioUtils.generateFileName(study.getTitle(),
 				IOUtils.ZIP_FILE_SUFFIX);
-		response().setContentType("application/x-download");
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + zipFileName);
-		return ok(zipFile);
+		return ok(zipFile).as("application/x-download");
 	}
 
 	/**
@@ -216,12 +216,11 @@ public class ImportExport extends Controller {
 					Http.Status.INTERNAL_SERVER_ERROR);
 		}
 
-		response().setContentType("application/x-download");
 		String filename = ioUtils.generateFileName(component.getTitle(),
 				IOUtils.COMPONENT_FILE_SUFFIX);
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
-		return ok(componentAsJson);
+		return ok(componentAsJson).as("application/x-download");
 	}
 
 	/**
@@ -240,7 +239,7 @@ public class ImportExport extends Controller {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStudyLocked(study);
 
-			FilePart filePart = request().body().asMultipartFormData()
+			FilePart<Object> filePart = request().body().asMultipartFormData()
 					.getFile(Component.COMPONENT);
 			json = importExportService.importComponent(study, filePart);
 		} catch (ForbiddenException | BadRequestException | IOException e) {
@@ -402,7 +401,7 @@ public class ImportExport extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		prepareResponseForExport();
-		return ok(resultDataAsStr);
+		return ok(resultDataAsStr).as("application/x-download");
 	}
 
 	/**
@@ -435,7 +434,7 @@ public class ImportExport extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		prepareResponseForExport();
-		return ok(resultDataAsStr);
+		return ok(resultDataAsStr).as("application/x-download");
 	}
 
 	/**
@@ -445,13 +444,16 @@ public class ImportExport extends Controller {
 	 * the plugin regards it as a fail.
 	 */
 	private void prepareResponseForExport() {
-		response().setContentType("application/x-download");
 		String dateForFile = DATE_FORMATER_FILE.format(new Date());
 		String filename = "results_" + dateForFile + "."
 				+ IOUtils.TXT_FILE_SUFFIX;
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
-		response().setCookie(JQDOWNLOAD_COOKIE_NAME, JQDOWNLOAD_COOKIE_CONTENT);
+		// Set transient cookie with no domain or path constraints 
+		Cookie cookie = new Cookie(JQDOWNLOAD_COOKIE_NAME,
+				JQDOWNLOAD_COOKIE_CONTENT, null, "/", null, false,
+				false);
+		response().setCookie(cookie);
 	}
 
 }

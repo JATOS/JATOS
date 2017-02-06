@@ -29,7 +29,7 @@ public class IdCookieCollection {
 	 * Internally we use a map to store the cookies: Each IdCookie has a unique
 	 * study result ID. We map the study result ID to the actually cookie.
 	 */
-	private HashMap<Long, IdCookie> idCookieMap = new HashMap<>();
+	private HashMap<Long, IdCookieModel> idCookieMap = new HashMap<>();
 
 	protected boolean isFull() {
 		return size() >= MAX_ID_COOKIES;
@@ -45,7 +45,7 @@ public class IdCookieCollection {
 	 * number of cookies is reached an IdCookieCollectionFullException is
 	 * thrown.
 	 */
-	protected IdCookie add(IdCookie idCookie)
+	protected IdCookieModel add(IdCookieModel idCookie)
 			throws IdCookieAlreadyExistsException {
 		if (idCookieMap.containsKey(idCookie.getStudyResultId())) {
 			throw new IdCookieAlreadyExistsException(PublixErrorMessages
@@ -59,7 +59,7 @@ public class IdCookieCollection {
 	 * is already stored it gets overwritten. If the max number of cookies is
 	 * reached an IdCookieCollectionFullException is thrown.
 	 */
-	protected IdCookie put(IdCookie idCookie)
+	protected IdCookieModel put(IdCookieModel idCookie)
 			throws IdCookieCollectionFullException {
 		if (isFull() && !idCookieMap.containsKey(idCookie.getStudyResultId())) {
 			throw new IdCookieCollectionFullException(
@@ -68,11 +68,11 @@ public class IdCookieCollection {
 		return idCookieMap.put(idCookie.getStudyResultId(), idCookie);
 	}
 
-	protected IdCookie remove(IdCookie idCookie) {
+	protected IdCookieModel remove(IdCookieModel idCookie) {
 		return idCookieMap.remove(idCookie.getStudyResultId());
 	}
 
-	protected Collection<IdCookie> getAll() {
+	protected Collection<IdCookieModel> getAll() {
 		return idCookieMap.values();
 	}
 
@@ -103,7 +103,7 @@ public class IdCookieCollection {
 	 * Returns the IdCookie to which the specified study result ID is mapped, or
 	 * null if nothing maps to the ID.
 	 */
-	protected IdCookie findWithStudyResultId(long studyResultId) {
+	protected IdCookieModel findWithStudyResultId(long studyResultId) {
 		return idCookieMap.get(studyResultId);
 	}
 

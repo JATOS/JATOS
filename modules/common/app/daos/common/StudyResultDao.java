@@ -10,7 +10,6 @@ import javax.persistence.TypedQuery;
 import models.common.Batch;
 import models.common.Study;
 import models.common.StudyResult;
-import play.db.jpa.JPA;
 import play.db.jpa.JPAApi;
 
 /**

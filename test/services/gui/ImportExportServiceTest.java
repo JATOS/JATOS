@@ -63,7 +63,7 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// First component of the study is the one in the component file
 		File componentFile = getExampleComponentFile();
-		FilePart filePart = new FilePart(Component.COMPONENT,
+		FilePart<File> filePart = new FilePart<File>(Component.COMPONENT,
 				componentFile.getName(), "multipart/form-data", componentFile);
 
 		// Call importComponent()
@@ -129,7 +129,7 @@ public class ImportExportServiceTest extends AbstractTest {
 		Study study = importExampleStudy();
 		addStudy(study);
 		File componentFile = getExampleComponentFile();
-		FilePart filePart = new FilePart(Component.COMPONENT,
+		FilePart<File> filePart = new FilePart<File>(Component.COMPONENT,
 				componentFile.getName(), "multipart/form-data", componentFile);
 
 		// Remove the last component (so we can import it again later on)
@@ -184,13 +184,12 @@ public class ImportExportServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void importNewStudy()
-			throws Exception {
+	public void importNewStudy() throws Exception {
 
 		// Import 1. part: Call importStudy()
 		File studyFile = getExampleStudyFile();
-		FilePart<File> filePart = new FilePart(Study.STUDY, studyFile.getName(),
-				"multipart/form-data", studyFile);
+		FilePart<File> filePart = new FilePart<File>(Study.STUDY,
+				studyFile.getName(), "multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
 
@@ -255,8 +254,7 @@ public class ImportExportServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void importStudyOverwritePropertiesAndAssets()
-			throws Exception {
+	public void importStudyOverwritePropertiesAndAssets() throws Exception {
 		// Import study and alter it, so we have something to overwrite later on
 		Study study = importExampleStudy();
 		alterStudy(study);
@@ -268,8 +266,8 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. call: importStudy()
 		File studyFile = getExampleStudyFile();
-		FilePart<File> filePart = new FilePart(Study.STUDY, studyFile.getName(),
-				"multipart/form-data", studyFile);
+		FilePart<File> filePart = new FilePart<File>(Study.STUDY,
+				studyFile.getName(), "multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
 
@@ -304,8 +302,7 @@ public class ImportExportServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void importStudyOverwritePropertiesNotAssets()
-			throws Exception {
+	public void importStudyOverwritePropertiesNotAssets() throws Exception {
 		// Import study, so we have something to overwrite
 		Study study = importExampleStudy();
 		alterStudy(study);
@@ -318,8 +315,8 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. call: importStudy()
 		File studyFile = getExampleStudyFile();
-		FilePart<File> filePart = new FilePart(Study.STUDY, studyFile.getName(),
-				"multipart/form-data", studyFile);
+		FilePart<File> filePart = new FilePart<File>(Study.STUDY,
+				studyFile.getName(), "multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
 
@@ -354,8 +351,7 @@ public class ImportExportServiceTest extends AbstractTest {
 	}
 
 	@Test
-	public void importStudyOverwriteAssetsNotProperties()
-			throws Exception {
+	public void importStudyOverwriteAssetsNotProperties() throws Exception {
 		// Import study and alter it, so we have something to overwrite
 		Study study = importExampleStudy();
 		alterStudy(study);
@@ -368,8 +364,8 @@ public class ImportExportServiceTest extends AbstractTest {
 
 		// Import 1. call
 		File studyFile = getExampleStudyFile();
-		FilePart<File> filePart = new FilePart(Study.STUDY, studyFile.getName(),
-				"multipart/form-data", studyFile);
+		FilePart<File> filePart = new FilePart<File>(Study.STUDY,
+				studyFile.getName(), "multipart/form-data", studyFile);
 		ObjectNode jsonNode = importExportService.importStudy(admin,
 				filePart.getFile());
 

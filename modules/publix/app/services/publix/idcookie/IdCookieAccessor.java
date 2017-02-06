@@ -49,7 +49,7 @@ public class IdCookieAccessor {
 	public IdCookieAccessor(IdCookieSerialiser idCookieSerialiser) {
 		this.idCookieSerialiser = idCookieSerialiser;
 	}
-	
+
 	/**
 	 * Returns the IdCookieCollection containing all IdCookies of this Request.
 	 * Additionally it stores this idCookieCollection in the RequestScope. All
@@ -58,9 +58,11 @@ public class IdCookieAccessor {
 	 */
 	protected IdCookieCollection extract()
 			throws IdCookieAlreadyExistsException {
-		String idCookiesInRequestScopeName = IdCookieCollection.class.getSimpleName();
+		String idCookiesInRequestScopeName = IdCookieCollection.class
+				.getSimpleName();
 		if (RequestScope.has(idCookiesInRequestScopeName)) {
-			return (IdCookieCollection) RequestScope.get(idCookiesInRequestScopeName);
+			return (IdCookieCollection) RequestScope
+					.get(idCookiesInRequestScopeName);
 		} else {
 			IdCookieCollection idCookieCollection = extractFromCookies(
 					Publix.request().cookies());
@@ -80,9 +82,9 @@ public class IdCookieAccessor {
 		for (Cookie cookie : cookies) {
 			// Cookie names are case insensitive
 			if (cookie.name().toLowerCase()
-					.startsWith(IdCookie.ID_COOKIE_NAME.toLowerCase())) {
+					.startsWith(IdCookieModel.ID_COOKIE_NAME.toLowerCase())) {
 				try {
-					IdCookie idCookie = buildIdCookie(cookie);
+					IdCookieModel idCookie = buildIdCookie(cookie);
 					idCookieCollection.add(idCookie);
 				} catch (IdCookieMalformedException e) {
 					LOGGER.warn(e.getMessage());
@@ -94,35 +96,35 @@ public class IdCookieAccessor {
 		return idCookieCollection;
 	}
 
-	private IdCookie buildIdCookie(Cookie cookie)
+	private IdCookieModel buildIdCookie(Cookie cookie)
 			throws IdCookieMalformedException {
-		IdCookie idCookie = new IdCookie();
+		IdCookieModel idCookie = new IdCookieModel();
 		Map<String, String> cookieMap = getCookiesKeyValuePairs(cookie);
 		idCookie.setName(cookie.name());
 		idCookie.setIndex(getCookieIndex(cookie.name()));
-		idCookie.setWorkerId(getValueAsLong(cookieMap, IdCookie.WORKER_ID, true,
-				cookie.name()));
-		idCookie.setWorkerType(getValueAsString(cookieMap, IdCookie.WORKER_TYPE,
+		idCookie.setWorkerId(getValueAsLong(cookieMap, IdCookieModel.WORKER_ID,
 				true, cookie.name()));
-		idCookie.setBatchId(getValueAsLong(cookieMap, IdCookie.BATCH_ID, true,
-				cookie.name()));
+		idCookie.setWorkerType(getValueAsString(cookieMap,
+				IdCookieModel.WORKER_TYPE, true, cookie.name()));
+		idCookie.setBatchId(getValueAsLong(cookieMap, IdCookieModel.BATCH_ID,
+				true, cookie.name()));
 		idCookie.setGroupResultId(getValueAsLong(cookieMap,
-				IdCookie.GROUP_RESULT_ID, false, cookie.name()));
-		idCookie.setStudyId(getValueAsLong(cookieMap, IdCookie.STUDY_ID, true,
-				cookie.name()));
+				IdCookieModel.GROUP_RESULT_ID, false, cookie.name()));
+		idCookie.setStudyId(getValueAsLong(cookieMap, IdCookieModel.STUDY_ID,
+				true, cookie.name()));
 		idCookie.setStudyResultId(getValueAsLong(cookieMap,
-				IdCookie.STUDY_RESULT_ID, true, cookie.name()));
-		idCookie.setComponentId(getValueAsLong(cookieMap, IdCookie.COMPONENT_ID,
-				false, cookie.name()));
+				IdCookieModel.STUDY_RESULT_ID, true, cookie.name()));
+		idCookie.setComponentId(getValueAsLong(cookieMap,
+				IdCookieModel.COMPONENT_ID, false, cookie.name()));
 		idCookie.setComponentResultId(getValueAsLong(cookieMap,
-				IdCookie.COMPONENT_RESULT_ID, false, cookie.name()));
+				IdCookieModel.COMPONENT_RESULT_ID, false, cookie.name()));
 		idCookie.setComponentPosition(getValueAsInt(cookieMap,
-				IdCookie.COMPONENT_POSITION, false, cookie.name()));
+				IdCookieModel.COMPONENT_POSITION, false, cookie.name()));
 		idCookie.setStudyAssets(getValueAsString(cookieMap,
-				IdCookie.STUDY_ASSETS, true, cookie.name()));
+				IdCookieModel.STUDY_ASSETS, true, cookie.name()));
 		idCookie.setJatosRun(valueOfJatosRun(cookieMap, cookie));
 		idCookie.setCreationTime(getValueAsLong(cookieMap,
-				IdCookie.CREATION_TIME, true, cookie.name()));
+				IdCookieModel.CREATION_TIME, true, cookie.name()));
 		return idCookie;
 	}
 
@@ -135,7 +137,7 @@ public class IdCookieAccessor {
 			Cookie cookie) throws IdCookieMalformedException {
 		try {
 			return JatosRun.valueOf(getValueAsString(cookieMap,
-					IdCookie.JATOS_RUN, false, cookie.name()));
+					IdCookieModel.JATOS_RUN, false, cookie.name()));
 		} catch (IllegalArgumentException | NullPointerException e) {
 			return null;
 		}
@@ -289,7 +291,7 @@ public class IdCookieAccessor {
 	protected void discard(long studyResultId)
 			throws IdCookieAlreadyExistsException {
 		IdCookieCollection idCookieCollection = extract();
-		IdCookie idCookie = idCookieCollection
+		IdCookieModel idCookie = idCookieCollection
 				.findWithStudyResultId(studyResultId);
 		if (idCookie != null) {
 			idCookieCollection.remove(idCookie);
@@ -304,15 +306,17 @@ public class IdCookieAccessor {
 	 * IdCookie in the RequestScope. Uses Integer.MAX_VALUE as Max-Age for the
 	 * cookie so it never expires.
 	 */
-	protected void write(IdCookie newIdCookie)
+	protected void write(IdCookieModel newIdCookie)
 			throws IdCookieAlreadyExistsException,
 			IdCookieCollectionFullException {
 		IdCookieCollection idCookieCollection = extract();
 
 		// Put new IdCookie into Response
-		String cookieValue = idCookieSerialiser.asCookieValueString(newIdCookie);
-		Publix.response().setCookie(newIdCookie.getName(), cookieValue,
-				Integer.MAX_VALUE, "/");
+		String cookieValue = idCookieSerialiser
+				.asCookieValueString(newIdCookie);
+		Cookie cookie = new Cookie(newIdCookie.getName(), cookieValue,
+				Integer.MAX_VALUE, "/", null, false, false);
+		Publix.response().setCookie(cookie);
 
 		idCookieCollection.put(newIdCookie);
 

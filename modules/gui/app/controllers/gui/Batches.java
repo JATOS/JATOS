@@ -28,6 +28,7 @@ import models.gui.BatchProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
+import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.libs.F.Function3;
 import play.mvc.Controller;
@@ -63,13 +64,15 @@ public class Batches extends Controller {
 	private final StudyDao studyDao;
 	private final BatchDao batchDao;
 	private final StudyResultDao studyResultDao;
+	private final FormFactory formFactory;
 
 	@Inject
 	Batches(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
 			JsonUtils jsonUtils, UserService userService,
 			WorkerService workerService, BatchService batchService,
 			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-			BatchDao batchDao, StudyResultDao studyResultDao) {
+			BatchDao batchDao, StudyResultDao studyResultDao,
+			FormFactory formFactory) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.jsonUtils = jsonUtils;
@@ -80,6 +83,7 @@ public class Batches extends Controller {
 		this.studyDao = studyDao;
 		this.batchDao = batchDao;
 		this.studyResultDao = studyResultDao;
+		this.formFactory = formFactory;
 	}
 
 	/**
@@ -141,7 +145,7 @@ public class Batches extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		Form<BatchProperties> form = Form.form(BatchProperties.class)
+		Form<BatchProperties> form = formFactory.form(BatchProperties.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
@@ -197,7 +201,7 @@ public class Batches extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		Form<BatchProperties> form = Form.form(BatchProperties.class)
+		Form<BatchProperties> form = formFactory.form(BatchProperties.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());

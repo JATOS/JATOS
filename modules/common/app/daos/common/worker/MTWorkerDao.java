@@ -9,7 +9,6 @@ import javax.persistence.TypedQuery;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
-import play.db.jpa.JPA;
 import play.db.jpa.JPAApi;
 
 /**

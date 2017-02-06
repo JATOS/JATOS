@@ -3,6 +3,7 @@ package controllers.publix;
 import java.io.IOException;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,7 +22,7 @@ import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
-import play.Play;
+import play.Application;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.LegacyWebSocket;
@@ -58,10 +59,13 @@ import utils.common.HttpUtils;
 public class PublixInterceptor extends Controller implements IPublix {
 
 	private final IdCookieService idCookieService;
+	private final Provider<Application> application;
 
 	@Inject
-	public PublixInterceptor(IdCookieService idCookieService) {
+	public PublixInterceptor(IdCookieService idCookieService,
+			Provider<Application> application) {
 		this.idCookieService = idCookieService;
+		this.application = application;
 	}
 
 	@Override
@@ -592,7 +596,7 @@ public class PublixInterceptor extends Controller implements IPublix {
 	 * inherit from Publix.
 	 */
 	private <T extends Publix<?>> T instanceOfPublix(Class<T> publixClass) {
-		return Play.application().injector().instanceOf(publixClass);
+		return application.get().injector().instanceOf(publixClass);
 	}
 
 	/**

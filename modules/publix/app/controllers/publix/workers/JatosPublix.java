@@ -28,7 +28,7 @@ import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
-import services.publix.idcookie.IdCookie;
+import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.JatosErrorMessages;
 import services.publix.workers.JatosPublixUtils;
@@ -151,7 +151,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ "componentId " + componentId + ", " + "studyResultId "
 				+ studyResultId + ", " + "logged-in user's email "
 				+ session(SESSION_EMAIL));
-		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
+		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		JatosWorker worker = publixUtils
@@ -204,7 +204,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		LOGGER.info(".startNextComponent: studyId " + studyId + ", "
 				+ "studyResultId " + studyResultId + ", "
 				+ "logged-in user's email " + session(SESSION_EMAIL));
-		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
+		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		JatosWorker worker = publixUtils
@@ -253,7 +253,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ studyResultId + ", " + "logged-in user email "
 				+ session(SESSION_EMAIL) + ", " + "message \"" + message
 				+ "\"");
-		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
+		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		JatosWorker worker = publixUtils
@@ -285,7 +285,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				+ studyResultId + ", " + "logged-in user email "
 				+ session(SESSION_EMAIL) + ", " + "successful " + successful
 				+ ", " + "errorMsg \"" + errorMsg + "\"");
-		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
+		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		JatosWorker worker = publixUtils

@@ -12,13 +12,10 @@ import javax.inject.Singleton;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.lang3.StringUtils;
 
 import general.common.Common;
 import general.common.MessagesStrings;
-import play.mvc.Results.Chunks;
-import play.mvc.Results.StringChunks;
 
 /**
  * Utility class that handles access to the system's file system.
@@ -106,7 +103,7 @@ public class IOUtils {
 		if (!fullPath.isAbsolute()) {
 			MessagesStrings.pathNotAbsolute(fullPathStr);
 		}
-		
+
 		// Normalize so that any ".." gets removed
 		// (e.g. "/foo/bar/baz/../attack" -> "/foo/bar/attack")
 		// and check that the normalized path is equal to the original one
@@ -419,36 +416,6 @@ public class IOUtils {
 			throw new IOException(MessagesStrings
 					.htmlFileNotRenamed(oldHtmlFilePath, newHtmlFilePath));
 		}
-	}
-
-	/**
-	 * Reads logs/application.log file in reverse order and returns it as Chunks
-	 * <String>. It reads maximal to line lineLimit.
-	 */
-	public Chunks<String> readApplicationLog(final int lineLimit) {
-		Chunks<String> chunks = new StringChunks() {
-			@Override
-			public void onReady(play.mvc.Results.Chunks.Out<String> out) {
-				File logFile = new File(
-						common.getBasepath() + "/logs/application.log");
-				try (ReversedLinesFileReader reader = new ReversedLinesFileReader(
-						logFile)) {
-					String content = reader.readLine();
-					int lineNumber = 1;
-					while (content != null && lineNumber <= lineLimit) {
-						out.write(content);
-						out.write(System.lineSeparator());
-						content = reader.readLine();
-						lineNumber++;
-					}
-				} catch (IOException e) {
-					out.write(MessagesStrings.COULDNT_OPEN_LOG);
-				} finally {
-					out.close();
-				}
-			}
-		};
-		return chunks;
 	}
 
 }

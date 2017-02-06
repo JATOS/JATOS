@@ -44,15 +44,15 @@ public class IdCookieServiceTest extends AbstractTest {
 	@Test
 	public void checkGetIdCookie() throws BadRequestPublixException,
 			InternalServerErrorPublixException {
-		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
+		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
 		mockContext(cookieList);
 
 		// Get IdCookie for study result ID 1l
-		IdCookie idCookie = idCookieService.getIdCookie(1l);
+		IdCookieModel idCookie = idCookieService.getIdCookie(1l);
 		assertThat(idCookie).isNotNull();
 		assertThat(idCookie.getStudyResultId()).isEqualTo(1l);
 
@@ -69,7 +69,7 @@ public class IdCookieServiceTest extends AbstractTest {
 	@Test
 	public void checkGetIdCookieNotFound()
 			throws InternalServerErrorPublixException {
-		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		mockContext(cookieList);
@@ -89,9 +89,9 @@ public class IdCookieServiceTest extends AbstractTest {
 	@Test
 	public void checkOneIdCookieHasThisStudyAssets()
 			throws InternalServerErrorPublixException {
-		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		idCookie1.setStudyAssets("test_study_assets1");
-		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
+		IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
 		idCookie2.setStudyAssets("test_study_assets2");
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
@@ -137,11 +137,11 @@ public class IdCookieServiceTest extends AbstractTest {
 		idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(),
 				studyResult);
 
-		IdCookie idCookie = idCookieService.getIdCookie(studyResult.getId());
+		IdCookieModel idCookie = idCookieService.getIdCookie(studyResult.getId());
 		assertThat(idCookie).isNotNull();
 		// Check naming
 		assertThat(idCookie.getName())
-				.startsWith(IdCookie.ID_COOKIE_NAME + "_");
+				.startsWith(IdCookieModel.ID_COOKIE_NAME + "_");
 		// Check proper ID cookie values
 		assertThat(idCookie.getBatchId()).isEqualTo(1l);
 		assertThat(idCookie.getComponentId()).isNull();
@@ -170,8 +170,8 @@ public class IdCookieServiceTest extends AbstractTest {
 	@Test
 	public void checkWriteIdCookieOverwriteWithSameId() throws IOException,
 			InternalServerErrorPublixException, BadRequestPublixException {
-		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2222l);
+		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2222l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
@@ -185,7 +185,7 @@ public class IdCookieServiceTest extends AbstractTest {
 				studyResult);
 
 		// Check that the old IdCookie for the study result ID 1l is overwritten
-		IdCookie idCookie = idCookieService.getIdCookie(studyResult.getId());
+		IdCookieModel idCookie = idCookieService.getIdCookie(studyResult.getId());
 		assertThat(idCookie).isNotNull();
 		assertThat(idCookieService.getIdCookieCollection().size()).isEqualTo(2);
 		assertThat(idCookie.getStudyAssets()).isEqualTo("basic_example_study");
@@ -202,8 +202,8 @@ public class IdCookieServiceTest extends AbstractTest {
 	@Test
 	public void checkWriteIdCookieWriteNewCookie() throws IOException,
 			InternalServerErrorPublixException, BadRequestPublixException {
-		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1111l);
-		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2222l);
+		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1111l);
+		IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2222l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
@@ -217,7 +217,7 @@ public class IdCookieServiceTest extends AbstractTest {
 				studyResult);
 
 		// Check that a new IdCookie is written
-		IdCookie idCookie = idCookieService.getIdCookie(studyResult.getId());
+		IdCookieModel idCookie = idCookieService.getIdCookie(studyResult.getId());
 		assertThat(idCookie).isNotNull();
 		assertThat(idCookieService.getIdCookieCollection().size()).isEqualTo(3);
 
@@ -237,7 +237,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		// Create max IdCookies with study result IDs starting from 100l
 		for (long i = 100l; i < (100l
 				+ IdCookieCollection.MAX_ID_COOKIES); i++) {
-			IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(i);
+			IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(i);
 			cookieList.add(idCookieTestHelper.buildCookie(idCookie));
 		}
 		mockContext(cookieList);
@@ -265,7 +265,7 @@ public class IdCookieServiceTest extends AbstractTest {
 	@Test
 	public void checkDiscardIdCookie() throws BadRequestPublixException,
 			InternalServerErrorPublixException {
-		IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(1l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie));
 		mockContext(cookieList);
@@ -290,7 +290,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		// Create max IdCookies
 		List<Cookie> cookieList = new ArrayList<>();
 		for (long i = 1l; i < (IdCookieCollection.MAX_ID_COOKIES + 1); i++) {
-			IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(i);
+			IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(i);
 			cookieList.add(idCookieTestHelper.buildCookie(idCookie));
 		}
 		mockContext(cookieList);
@@ -305,7 +305,7 @@ public class IdCookieServiceTest extends AbstractTest {
 	public void checkMaxIdCookiesReachedMaxNotReached()
 			throws InternalServerErrorPublixException {
 		// Just create one (< max ID cookies)
-		IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(1l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie));
 		mockContext(cookieList);
@@ -322,16 +322,16 @@ public class IdCookieServiceTest extends AbstractTest {
 			throws InternalServerErrorPublixException {
 		// Create a couple of IdCookie: the oldest will be the one that was
 		// first added to the list
-		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
-		IdCookie idCookie3 = idCookieTestHelper.buildDummyIdCookie(3l);
+		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
+		IdCookieModel idCookie3 = idCookieTestHelper.buildDummyIdCookie(3l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie3));
 		mockContext(cookieList);
 
-		IdCookie retrievedIdCookie = idCookieService.getOldestIdCookie();
+		IdCookieModel retrievedIdCookie = idCookieService.getOldestIdCookie();
 		assertThat(retrievedIdCookie).isEqualTo(idCookie1);
 	}
 
@@ -345,7 +345,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		mockContext(cookieList);
 
-		IdCookie retrievedIdCookie = idCookieService.getOldestIdCookie();
+		IdCookieModel retrievedIdCookie = idCookieService.getOldestIdCookie();
 		assertThat(retrievedIdCookie).isNull();
 	}
 
@@ -358,9 +358,9 @@ public class IdCookieServiceTest extends AbstractTest {
 			throws InternalServerErrorPublixException {
 		// Create a couple of IdCookie: the oldest will be the one that was
 		// first added to the list
-		IdCookie idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		IdCookie idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
-		IdCookie idCookie3 = idCookieTestHelper.buildDummyIdCookie(3l);
+		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
+		IdCookieModel idCookie3 = idCookieTestHelper.buildDummyIdCookie(3l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));

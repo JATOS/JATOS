@@ -27,7 +27,7 @@ import models.common.StudyResult.StudyState;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import play.mvc.Http.Cookie;
-import services.publix.idcookie.IdCookie;
+import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieCollection;
 import services.publix.idcookie.IdCookieService;
 import services.publix.idcookie.IdCookieTestHelper;
@@ -477,7 +477,7 @@ public abstract class PublixUtilsTest<T extends Worker> extends AbstractTest {
 	private List<Cookie> generateIdCookieList(int size) {
 		List<Cookie> cookieList = new ArrayList<>();
 		for (long i = 1l; i <= size; i++) {
-			IdCookie idCookie = idCookieTestHelper.buildDummyIdCookie(i);
+			IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(i);
 			cookieList.add(idCookieTestHelper.buildCookie(idCookie));
 		}
 		return cookieList;

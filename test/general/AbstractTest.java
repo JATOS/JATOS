@@ -42,7 +42,6 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.mvc.Http;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
-import play.test.FakeApplication;
 import play.test.Helpers;
 import play.test.TestServer;
 import services.gui.BatchService;
@@ -100,7 +99,7 @@ public abstract class AbstractTest {
 
 	@Before
 	public void startApp() throws Exception {
-		ClassLoader classLoader = FakeApplication.class.getClassLoader();
+		ClassLoader classLoader = Helpers.fakeApplication().classloader();
 		application = new GuiceApplicationBuilder().in(classLoader)
 				.in(Mode.TEST).build();
 		Helpers.start(application);

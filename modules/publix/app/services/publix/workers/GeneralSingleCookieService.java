@@ -93,8 +93,9 @@ public class GeneralSingleCookieService {
 	public void set(Study study, Worker worker) {
 		Cookie oldCookie = GeneralSinglePublix.request().cookie(COOKIE_NAME);
 		String newCookieValue = addStudy(study, worker, oldCookie);
-		Publix.response().setCookie(COOKIE_NAME, newCookieValue,
-				Integer.MAX_VALUE, "/", "", false, true);
+		Cookie newCookie = new Cookie(COOKIE_NAME, newCookieValue,
+				Integer.MAX_VALUE, "/", null, false, true);
+		Publix.response().setCookie(newCookie);
 	}
 
 	/**

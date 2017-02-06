@@ -7,8 +7,6 @@ import static play.test.Helpers.route;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
@@ -18,11 +16,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import general.AbstractTest;
 import models.common.Study;
-import play.api.libs.Files.TemporaryFile;
 import play.api.mvc.AnyContentAsMultipartFormData;
-import play.api.mvc.MultipartFormData;
-import play.api.mvc.MultipartFormData.FilePart;
-import play.libs.Scala;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import services.gui.ImportExportService;
@@ -281,9 +275,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		addStudy(study);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(
-						Users.SESSION_EMAIL, admin
-								.getEmail())
+				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport.exportComponent(
 						study.getId(), study.getComponent(1).getId()).url());
 		Result result = route(request);
@@ -312,15 +304,16 @@ public class ImportExportControllerTest extends AbstractTest {
 				.uri(controllers.gui.routes.ImportExport.importStudy().url());
 
 		// Tried with a mock but get Scala scala.MatchError
-//		AnyContentAsMultipartFormData any = getMultiPartFormDataForFileUpload(
-//				studyZipBkp, Study.STUDY, "application/zip");
-//		RequestBuilder mockReqBuilder = mock(RequestBuilder.class);
-//		when(mockReqBuilder.bodyAsAnyContent()).thenReturn(any);
-//		when(mockReqBuilder.session()).thenReturn(
-//				ImmutableMap.of(Users.SESSION_EMAIL, admin.getEmail()));
-//		when(mockReqBuilder.method()).thenReturn(Helpers.POST);
-//		when(mockReqBuilder.build()).thenReturn(requestBuilder.build());
-//		Result result = route(mockReqBuilder);
+		// AnyContentAsMultipartFormData any =
+		// getMultiPartFormDataForFileUpload(
+		// studyZipBkp, Study.STUDY, "application/zip");
+		// RequestBuilder mockReqBuilder = mock(RequestBuilder.class);
+		// when(mockReqBuilder.bodyAsAnyContent()).thenReturn(any);
+		// when(mockReqBuilder.session()).thenReturn(
+		// ImmutableMap.of(Users.SESSION_EMAIL, admin.getEmail()));
+		// when(mockReqBuilder.method()).thenReturn(Helpers.POST);
+		// when(mockReqBuilder.build()).thenReturn(requestBuilder.build());
+		// Result result = route(mockReqBuilder);
 
 		// Old version from Play 2.3.8
 		// Result result = callAction(
@@ -335,7 +328,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		if (studyZipBkp.exists()) {
 			studyZipBkp.delete();
 		}
-//		return result;
+		// return result;
 		return null;
 	}
 
@@ -345,16 +338,18 @@ public class ImportExportControllerTest extends AbstractTest {
 
 	private AnyContentAsMultipartFormData getMultiPartFormDataForFileUpload(
 			File file, String filePartKey, String contentType) {
-//		FilePart<TemporaryFile> part = new MultipartFormData.FilePart<>(
-//				filePartKey, file.getName(), Scala.Option(contentType),
-//				new TemporaryFile(file));
-//		List<FilePart<TemporaryFile>> fileParts = new ArrayList<>();
-//		fileParts.add(part);
-//		scala.collection.immutable.List<FilePart<TemporaryFile>> files = scala.collection.JavaConversions
-//				.asScalaBuffer(fileParts).toList();
-//		MultipartFormData<TemporaryFile> formData = new MultipartFormData<TemporaryFile>(
-//				null, files, null, null);
-//		return new AnyContentAsMultipartFormData(formData);
+		// FilePart<TemporaryFile> part = new MultipartFormData.FilePart<>(
+		// filePartKey, file.getName(), Scala.Option(contentType),
+		// new TemporaryFile(file));
+		// List<FilePart<TemporaryFile>> fileParts = new ArrayList<>();
+		// fileParts.add(part);
+		// scala.collection.immutable.List<FilePart<TemporaryFile>> files =
+		// scala.collection.JavaConversions
+		// .asScalaBuffer(fileParts).toList();
+		// MultipartFormData<TemporaryFile> formData = new
+		// MultipartFormData<TemporaryFile>(
+		// null, files, null, null);
+		// return new AnyContentAsMultipartFormData(formData);
 		return null;
 	}
 

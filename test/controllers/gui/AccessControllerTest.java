@@ -1,7 +1,6 @@
 package controllers.gui;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.fest.assertions.Assertions.*;
 import static play.mvc.Http.Status.FORBIDDEN;
 import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.contentAsString;
@@ -11,8 +10,6 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import controllers.gui.Authentication;
-import controllers.gui.Users;
 import exceptions.publix.ForbiddenReloadException;
 import general.AbstractTest;
 import general.common.RequestScope;

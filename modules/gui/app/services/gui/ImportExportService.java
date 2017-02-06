@@ -78,28 +78,29 @@ public class ImportExportService {
 		this.componentDao = componentDao;
 	}
 
-	public ObjectNode importComponent(Study study, FilePart<File> filePart)
+	public ObjectNode importComponent(Study study, FilePart<?> filePart)
 			throws IOException {
 		if (filePart == null) {
 			throw new IOException(MessagesStrings.FILE_MISSING);
 		}
+		File file = (File) filePart.getFile();
 
 		// Remember component's file name
 		Controller.session(ImportExportService.SESSION_TEMP_COMPONENT_FILE,
-				filePart.getFile().getName());
+				file.getName());
 
 		// If wrong key the upload comes from the wrong form
 		if (!filePart.getKey().equals(Component.COMPONENT)) {
 			throw new IOException(MessagesStrings.NO_COMPONENT_UPLOAD);
 		}
 
-		Component uploadedComponent = unmarshalComponent(filePart.getFile());
+		Component uploadedComponent = unmarshalComponent(file);
 		boolean componentExists = componentDao
 				.findByUuid(uploadedComponent.getUuid(), study) != null;
 
 		// Move uploaded component file to Java's tmp folder
-		Path source = filePart.getFile().toPath();
-		Path target = getTempComponentFile(filePart.getFile().getName())
+		Path source = file.toPath();
+		Path target = getTempComponentFile(file.getName())
 				.toPath();
 		Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
 

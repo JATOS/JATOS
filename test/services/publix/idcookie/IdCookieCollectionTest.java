@@ -18,8 +18,8 @@ public class IdCookieCollectionTest {
 		assertThat(a).isEqualTo(2);
 	}
 
-	private IdCookie createIdCookie(long studyResultId, int index) {
-		IdCookie idCookie = new IdCookie();
+	private IdCookieModel createIdCookie(long studyResultId, int index) {
+		IdCookieModel idCookie = new IdCookieModel();
 		idCookie.setStudyResultId(studyResultId);
 		idCookie.setIndex(index);
 		return idCookie;
@@ -87,7 +87,7 @@ public class IdCookieCollectionTest {
 	public void checkRemove() throws IdCookieCollectionFullException {
 		IdCookieCollection idCookieCollection = new IdCookieCollection();
 		assertThat(idCookieCollection.size()).isEqualTo(0);
-		IdCookie idCookie1 = createIdCookie(1l, 0);
+		IdCookieModel idCookie1 = createIdCookie(1l, 0);
 		idCookieCollection.put(idCookie1);
 		assertThat(idCookieCollection.size()).isEqualTo(1);
 		idCookieCollection.remove(idCookie1);
@@ -135,7 +135,7 @@ public class IdCookieCollectionTest {
 		IdCookieCollection idCookieCollection = new IdCookieCollection();
 		assertThat(idCookieCollection.findWithStudyResultId(1l)).isNull();
 
-		IdCookie idCookie = createIdCookie(1l, 0);
+		IdCookieModel idCookie = createIdCookie(1l, 0);
 		idCookieCollection.put(idCookie);
 		assertThat(idCookieCollection.findWithStudyResultId(1l))
 				.isEqualTo(idCookie);

@@ -20,9 +20,9 @@ import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
 import services.gui.JatosGuiExceptionThrower;
+import services.gui.LogFileReader;
 import services.gui.UserService;
 import utils.common.HttpUtils;
-import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 /**
@@ -37,23 +37,23 @@ public class Home extends Controller {
 
 	private static final ALogger LOGGER = Logger.of(Home.class);
 
-	private final IOUtils ioUtils;
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final JsonUtils jsonUtils;
 	private final UserService userService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final StudyDao studyDao;
+	private final LogFileReader logFileReader;
 
 	@Inject
-	Home(IOUtils ioUtils, JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			JsonUtils jsonUtils, UserService userService,
-			BreadcrumbsService breadcrumbsService, StudyDao studyDao) {
-		this.ioUtils = ioUtils;
+	Home(JatosGuiExceptionThrower jatosGuiExceptionThrower, JsonUtils jsonUtils,
+			UserService userService, BreadcrumbsService breadcrumbsService,
+			StudyDao studyDao, LogFileReader logFileReader) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.jsonUtils = jsonUtils;
 		this.userService = userService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
+		this.logFileReader = logFileReader;
 	}
 
 	/**
@@ -89,8 +89,11 @@ public class Home extends Controller {
 	}
 
 	/**
-	 * Returns a Chunks<String> with the content of the log file only if admin
-	 * is logged in. It limits the number of lines to the given lineLimit.
+	 * Returns the content of the log file in reverse order and as
+	 * 'Transfer-Encoding:chunked'. It does so only if admin is logged in. It
+	 * limits the number of lines to the given lineLimit. If the log file can't
+	 * be read it still returns with OK but instead of the file content with an
+	 * error message.
 	 */
 	@Transactional
 	public Result log(Integer lineLimit) throws JatosGuiException {
@@ -101,6 +104,6 @@ public class Home extends Controller {
 					MessagesStrings.ONLY_ADMIN_CAN_SEE_LOGS,
 					Http.Status.FORBIDDEN);
 		}
-		return ok(ioUtils.readApplicationLog(lineLimit));
+		return ok().chunked(logFileReader.read(lineLimit));
 	}
 }

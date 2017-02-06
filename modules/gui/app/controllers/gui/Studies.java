@@ -29,6 +29,7 @@ import models.gui.StudyProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -69,6 +70,7 @@ public class Studies extends Controller {
 	private final ComponentResultDao componentResultDao;
 	private final JsonUtils jsonUtils;
 	private final IOUtils ioUtils;
+	private final FormFactory formFactory;
 
 	@Inject
 	Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
@@ -77,7 +79,7 @@ public class Studies extends Controller {
 			StudyDao studyDao, ComponentDao componentDao,
 			StudyResultDao studyResultDao, UserDao userDao,
 			ComponentResultDao componentResultDao, JsonUtils jsonUtils,
-			IOUtils ioUtils) {
+			IOUtils ioUtils, FormFactory formFactory) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.studyService = studyService;
@@ -91,6 +93,7 @@ public class Studies extends Controller {
 		this.userDao = userDao;
 		this.jsonUtils = jsonUtils;
 		this.ioUtils = ioUtils;
+		this.formFactory = formFactory;
 	}
 
 	/**
@@ -125,7 +128,7 @@ public class Studies extends Controller {
 		LOGGER.info(".submitCreated");
 		User loggedInUser = userService.retrieveLoggedInUser();
 
-		Form<StudyProperties> form = Form.form(StudyProperties.class)
+		Form<StudyProperties> form = formFactory.form(StudyProperties.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
@@ -174,7 +177,7 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		Form<StudyProperties> form = Form.form(StudyProperties.class)
+		Form<StudyProperties> form = formFactory.form(StudyProperties.class)
 				.bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());

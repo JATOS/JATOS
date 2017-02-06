@@ -28,7 +28,7 @@ import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
 import services.publix.group.ChannelService;
 import services.publix.group.GroupService;
-import services.publix.idcookie.IdCookie;
+import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.MTErrorMessages;
 import services.publix.workers.MTPublixUtils;
@@ -143,7 +143,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
 				+ studyResultId + ", " + "successful " + successful + ", "
 				+ "errorMsg \"" + errorMsg + "\"");
-		IdCookie idCookie = idCookieService.getIdCookie(studyResultId);
+		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
 		MTWorker worker = publixUtils

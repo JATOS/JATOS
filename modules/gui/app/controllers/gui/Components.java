@@ -21,6 +21,7 @@ import models.gui.ComponentProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
+import play.data.FormFactory;
 import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
@@ -55,18 +56,20 @@ public class Components extends Controller {
 	private final UserService userService;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
+	private final FormFactory formFactory;
 
 	@Inject
 	Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			Checker checker, ComponentService componentService,
 			UserService userService, StudyDao studyDao,
-			ComponentDao componentDao) {
+			ComponentDao componentDao, FormFactory formFactory) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.componentService = componentService;
 		this.userService = userService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
+		this.formFactory = formFactory;
 	}
 
 	/**
@@ -118,8 +121,8 @@ public class Components extends Controller {
 		User loggedInUser = userService.retrieveLoggedInUser();
 		checkStudyAndLocked(studyId, study, loggedInUser);
 
-		Form<ComponentProperties> form = Form.form(ComponentProperties.class)
-				.bindFromRequest();
+		Form<ComponentProperties> form = formFactory
+				.form(ComponentProperties.class).bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
 		}
@@ -166,8 +169,8 @@ public class Components extends Controller {
 		checkStudyAndLockedAndComponent(studyId, componentId, study,
 				loggedInUser, component);
 
-		Form<ComponentProperties> form = Form.form(ComponentProperties.class)
-				.bindFromRequest();
+		Form<ComponentProperties> form = formFactory
+				.form(ComponentProperties.class).bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
 		}
