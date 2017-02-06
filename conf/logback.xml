@@ -13,8 +13,7 @@
 			<maxHistory>30</maxHistory>
 		</rollingPolicy>
 		<encoder>
-			<pattern>%date [%level] from %logger{5} in %thread -
-				%message%n%xException</pattern>
+			<pattern>%date [%level] - %logger{5} - %message%n%xException</pattern>
 		</encoder>
 	</appender>
 
