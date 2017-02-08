@@ -12,7 +12,7 @@ libraryDependencies ++= Seq(
 	evolutions,
 	"org.hibernate" % "hibernate-entitymanager" % "5.1.0.Final",
 	"mysql" % "mysql-connector-java" % "5.1.40",
-	"org.jsoup" % "jsoup" % "1.8.1",
+	"org.jsoup" % "jsoup" % "1.10.2",
 	"commons-io" % "commons-io" % "2.4"
 )
 
