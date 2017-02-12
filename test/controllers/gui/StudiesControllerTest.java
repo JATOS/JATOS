@@ -11,19 +11,32 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Guice;
 
-import controllers.gui.Users;
-import general.AbstractTest;
+import controllers.ControllerTestHelper;
+import daos.common.StudyDao;
 import general.common.MessagesStrings;
 import models.common.Study;
+import models.common.User;
 import models.gui.StudyProperties;
+import play.Application;
+import play.ApplicationLoader;
+import play.Environment;
+import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
+import play.test.Helpers;
 import services.gui.BreadcrumbsService;
 import utils.common.JsonUtils;
 
@@ -32,36 +45,54 @@ import utils.common.JsonUtils;
  * 
  * @author Kristian Lange
  */
-public class StudiesControllerTest extends AbstractTest {
+public class StudiesControllerTest {
 
-	private static Study studyTemplate;
+	@Inject
+	private static Application fakeApplication;
 
-	@Override
-	public void before() throws Exception {
-		studyTemplate = importExampleStudy();
+	@Inject
+	private ControllerTestHelper controllerTestHelper;
+
+	@Inject
+	private JPAApi jpaApi;
+
+	@Inject
+	private StudyDao studyDao;
+
+	@Before
+	public void startApp() throws Exception {
+		fakeApplication = Helpers.fakeApplication();
+
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+
+		Helpers.start(fakeApplication);
 	}
 
-	@Override
-	public void after() throws Exception {
-		ioUtils.removeStudyAssetsDir(studyTemplate.getDirName());
+	@After
+	public void stopApp() throws Exception {
+		// Clean up
+		controllerTestHelper.removeAllStudies();
+
+		Helpers.stop(fakeApplication);
+		controllerTestHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
 	public void callIndex() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.study(studyClone.getId())
-						.url());
+				.uri(controllers.gui.routes.Studies.study(study.getId()).url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(OK);
-		assertThat(result.charset()).isEqualTo("utf-8");
-		assertThat(result.contentType()).isEqualTo("text/html");
+		assertThat(result.charset().get()).isEqualTo("utf-8");
+		assertThat(result.contentType().get()).isEqualTo("text/html");
 		assertThat(contentAsString(result)).contains("Components");
-
-		// Clean up
-		removeStudy(studyClone);
 	}
 
 	@Test
@@ -72,6 +103,8 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, "dirName_submit");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
+
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -84,17 +117,18 @@ public class StudiesControllerTest extends AbstractTest {
 		assertThat(contentAsString(result)).isNotEmpty();
 		Long studyId = Long.valueOf(contentAsString(result));
 
-		Study study = studyDao.findById(studyId);
-		assertEquals("Title Test", study.getTitle());
-		assertEquals("Description test.", study.getDescription());
-		assertEquals("dirName_submit", study.getDirName());
-		assertEquals("{}", study.getJsonData());
-		assertThat((study.getComponentList().isEmpty()));
-		assertThat((study.getUserList().contains(admin)));
-		assertThat((!study.isLocked()));
-
-		// Clean up
-		removeStudy(study);
+		// It all has to be within the transaction because there are lazy
+		// fetches in Study
+		jpaApi.withTransaction(() -> {
+			Study study = studyDao.findById(studyId);
+			assertEquals("Title Test", study.getTitle());
+			assertEquals("Description test.", study.getDescription());
+			assertEquals("dirName_submit", study.getDirName());
+			assertEquals("{}", study.getJsonData());
+			assertThat((study.getComponentList().isEmpty()));
+			assertThat((study.getUserList().contains(admin)));
+			assertThat((!study.isLocked()));
+		});
 	}
 
 	@Test
@@ -107,13 +141,14 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test <i>.");
 		formMap.put(StudyProperties.DIRNAME, "%.test");
 		formMap.put(StudyProperties.JSON_DATA, "{");
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
-		assertThat(result.contentType()).isEqualTo("application/json");
+		assertThat(result.contentType().get()).isEqualTo("application/json");
 		JsonNode node = JsonUtils.OBJECTMAPPER
 				.readTree(contentAsString(result));
 		assertThat(node.get(StudyProperties.TITLE).toString())
@@ -130,13 +165,15 @@ public class StudiesControllerTest extends AbstractTest {
 
 	@Test
 	public void callSubmitCreatedStudyAssetsDirExists() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
 		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
-		formMap.put(StudyProperties.DIRNAME, studyClone.getDirName());
+		formMap.put(StudyProperties.DIRNAME, study.getDirName());
 		formMap.put(StudyProperties.JSON_DATA, "{}");
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -144,53 +181,50 @@ public class StudiesControllerTest extends AbstractTest {
 		Result result = route(request);
 
 		assertThat(contentAsString(result)).contains(
-				"{\"dirName\":[\"Study assets' directory (basic_example_study_clone) couldn't be created because it already exists.\"]}");
-
-		// Cleanup
-		removeStudy(studyClone);
+				"{\"dirName\":[\"Study assets' directory (basic_example_study) couldn't be created because it already exists.\"]}");
 	}
 
 	@Test
 	public void callProperties() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies
-						.properties(studyClone.getId()).url());
+				.uri(controllers.gui.routes.Studies.properties(study.getId())
+						.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
-		assertThat(result.charset()).isEqualTo("utf-8");
-		assertThat(result.contentType()).isEqualTo("application/json");
+		assertThat(result.charset().get()).isEqualTo("UTF-8");
+		assertThat(result.contentType().get()).isEqualTo("application/json");
 
 		// Check properties in JSON
 		JsonNode node = JsonUtils.OBJECTMAPPER
 				.readTree(contentAsString(result));
 		assertThat(node.get(StudyProperties.TITLE).toString())
-				.isEqualTo("\"" + studyClone.getTitle() + "\"");
+				.isEqualTo("\"" + study.getTitle() + "\"");
 		assertThat(node.get(StudyProperties.COMMENTS).toString())
 				.isEqualTo("null");
 		assertThat(node.get(StudyProperties.DESCRIPTION).toString())
-				.isEqualTo("\"" + studyClone.getDescription() + "\"");
+				.isEqualTo("\"" + study.getDescription() + "\"");
 		assertThat(node.get(StudyProperties.DIRNAME).toString())
-				.isEqualTo("\"" + studyClone.getDirName() + "\"");
+				.isEqualTo("\"" + study.getDirName() + "\"");
 		assertThat(node.get(StudyProperties.UUID).toString())
-				.isEqualTo("\"" + studyClone.getUuid() + "\"");
+				.isEqualTo("\"" + study.getUuid() + "\"");
 		assertThat(node.get(StudyProperties.JSON_DATA).toString())
 				.isEqualTo("\"{\\\"totalStudySlides\\\":17}\"");
 		assertThat(node.get(StudyProperties.LOCKED).toString())
-				.isEqualTo(String.valueOf(studyClone.isLocked()));
+				.isEqualTo(String.valueOf(study.isLocked()));
 		assertThat(node.get(StudyProperties.GROUP_STUDY).toString())
-				.isEqualTo(String.valueOf(studyClone.isGroupStudy()));
-
-		// Clean up
-		removeStudy(studyClone);
+				.isEqualTo(String.valueOf(study.isGroupStudy()));
 	}
 
 	@Test
 	public void callSubmitEdited() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
@@ -198,60 +232,61 @@ public class StudiesControllerTest extends AbstractTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, "dirName_submitEdited");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies
-						.submitEdited(studyClone.getId()).url());
+				.uri(controllers.gui.routes.Studies.submitEdited(study.getId())
+						.url());
 		Result result = route(request);
 
 		assertEquals(OK, result.status());
 
-		// TODO It would be nice to test the edited study here (somehow can't
-		// find edited study in DB)
-		// Study study = studyDao.findById(studyClone.getId());
-
-		// Clean up
-		// Weird: Can't get the edited study from DB but the edited assets dir
-		// is there
-		ioUtils.removeStudyAssetsDir("dirName_submitEdited");
-		removeStudy(studyClone);
+		// Check that edited properties are stored
+		Study editedStudy = jpaApi.withTransaction(() -> {
+			return studyDao.findById(study.getId());
+		});
+		assertEquals("Title Test", editedStudy.getTitle());
+		assertEquals("Description test.", editedStudy.getDescription());
+		assertEquals("Comments test.", editedStudy.getComments());
+		assertEquals("dirName_submitEdited", editedStudy.getDirName());
+		assertEquals("{}", editedStudy.getJsonData());
+		assertThat((!editedStudy.isLocked()));
 	}
 
 	@Test
 	public void callSwapLock() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies
-						.toggleLock(studyClone.getId()).url());
+				.uri(controllers.gui.routes.Studies.toggleLock(study.getId())
+						.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(contentAsString(result)).contains("true");
-
-		// Clean up
-		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callRemove() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("DELETE")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.remove(studyClone.getId())
+				.uri(controllers.gui.routes.Studies.remove(study.getId())
 						.url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(OK);
-
-		// Clean up not necessary since we call remove action
 	}
 
 	@Test
 	public void callCloneStudy() throws Exception {
-		Study study = cloneAndPersistStudy(studyTemplate);
-
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies.cloneStudy(study.getId())
@@ -259,76 +294,65 @@ public class StudiesControllerTest extends AbstractTest {
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
-
-		// Clean up
-		ioUtils.removeStudyAssetsDir(study.getDirName() + "_clone");
-		removeStudy(study);
 	}
 
 	@Test
 	public void callChangeUser() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
-						.submitChangedUsers(studyClone.getId()).url());
+						.submitChangedUsers(study.getId()).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
-
-		// Clean up
-		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSubmitChangedUsers() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
-						.submitChangedUsers(studyClone.getId()).url());
+						.submitChangedUsers(study.getId()).url());
 		Result result = route(request);
 
 		assertEquals(OK, result.status());
-
-		// Clean up
-		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callSubmitChangedUsersZeroUsers() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of("bla", "blu"))
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
-						.submitChangedUsers(studyClone.getId()).url());
+						.submitChangedUsers(study.getId()).url());
 		Result result = route(request);
 
 		assertThat(contentAsString(result))
 				.contains("An study should have at least one user.");
-
-		// Clean up
-		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callChangeComponentOrder() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 		// Move first component to second position
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-				.session(Users.SESSION_EMAIL,
-						admin.getEmail())
+				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
-						.changeComponentOrder(studyClone.getId(),
-								studyClone.getComponentList().get(0).getId(),
-								"2")
+						.changeComponentOrder(study.getId(),
+								study.getComponentList().get(0).getId(), "2")
 						.url());
 		Result result = route(request);
 
@@ -337,54 +361,45 @@ public class StudiesControllerTest extends AbstractTest {
 		// Move second component to first position
 		request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-				.session(Users.SESSION_EMAIL,
-						admin.getEmail())
+				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
-						.changeComponentOrder(studyClone.getId(),
-								studyClone.getComponentList().get(1).getId(),
-								"1")
+						.changeComponentOrder(study.getId(),
+								study.getComponentList().get(1).getId(), "1")
 						.url());
 		result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
-
-		// Clean up
-		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callShowStudy() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies
-						.runStudy(studyClone.getId(), -1l).url());
+				.uri(controllers.gui.routes.Studies.runStudy(study.getId(), -1l)
+						.url());
 		Result result = route(request);
 
 		assertEquals(SEE_OTHER, result.status());
-
-		// Clean up
-		removeStudy(studyClone);
 	}
 
 	@Test
 	public void callWorkers() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.workers(studyClone.getId())
+				.uri(controllers.gui.routes.Studies.workers(study.getId())
 						.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(contentAsString(result))
 				.contains(BreadcrumbsService.WORKER_SETUP);
-
-		// Clean up
-		removeStudy(studyClone);
 	}
 
 }

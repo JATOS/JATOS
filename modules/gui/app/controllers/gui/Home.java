@@ -104,6 +104,7 @@ public class Home extends Controller {
 					MessagesStrings.ONLY_ADMIN_CAN_SEE_LOGS,
 					Http.Status.FORBIDDEN);
 		}
-		return ok().chunked(logFileReader.read(lineLimit));
+		return ok().chunked(logFileReader.read(lineLimit))
+				.as("text/plain; charset=utf-8");
 	}
 }

@@ -4,23 +4,40 @@ import static org.fest.assertions.Assertions.assertThat;
 import static play.test.Helpers.route;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
+import javax.inject.Inject;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import controllers.gui.Users;
+import com.google.inject.Guice;
+
+import controllers.ControllerTestHelper;
+import daos.common.StudyDao;
+import daos.common.UserDao;
 import exceptions.publix.ForbiddenReloadException;
-import general.AbstractTest;
 import models.common.Study;
 import models.common.StudyResult;
+import models.common.User;
 import models.common.workers.JatosWorker;
+import play.Application;
+import play.ApplicationLoader;
+import play.Environment;
+import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Call;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.StudyService;
+import services.gui.UserService;
+import services.publix.ResultCreator;
 import services.publix.workers.JatosPublixUtils;
 
 /**
@@ -29,36 +46,72 @@ import services.publix.workers.JatosPublixUtils;
  * 
  * @author Kristian Lange
  */
-public class LockedStudyControllerTest extends AbstractTest {
+public class LockedStudyControllerTest {
 
+	@Inject
+	private static Application fakeApplication;
+
+	@Inject
+	private ControllerTestHelper controllerTestHelper;
+
+	@Inject
+	private JPAApi jpaApi;
+
+	@Inject
+	private StudyDao studyDao;
+
+	@Inject
+	private UserDao userDao;
+
+	@Inject
+	private StudyService studyService;
+
+	@Inject
+	private ResultCreator resultCreator;
+
+	@Inject
 	private JatosPublixUtils jatosPublixUtils;
-	private static Study studyTemplate;
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 
-	@Override
-	public void before() throws Exception {
-		jatosPublixUtils = application.injector()
-				.instanceOf(JatosPublixUtils.class);
-		studyTemplate = importExampleStudy();
+	@Before
+	public void startApp() throws Exception {
+		fakeApplication = Helpers.fakeApplication();
+
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+
+		Helpers.start(fakeApplication);
 	}
 
-	@Override
-	public void after() throws Exception {
-		ioUtils.removeStudyAssetsDir(studyTemplate.getDirName());
+	@After
+	public void stopApp() throws Exception {
+		// Clean up
+		controllerTestHelper.removeAllStudies();
+
+		Helpers.stop(fakeApplication);
+		controllerTestHelper.removeStudyAssetsRootDir();
 	}
 
-	private void checkDenyLocked(Call call, int statusCode, String redirectPath,
-			String method) {
+	/**
+	 * Checks that the given Call and method cause a JatosGuiException with the
+	 * HTTP status 403.
+	 */
+	private void checkForbiddenBecauseLocked(Call call, String method) {
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method(method)
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(call.url());
-		Result result = route(request);
+		controllerTestHelper.assertJatosGuiException(request,
+				Http.Status.FORBIDDEN);
+	}
 
-		assertThat(result.status()).isEqualTo(statusCode);
-		if (statusCode == Http.Status.SEE_OTHER) {
-			assertThat(result.redirectLocation()).isEqualTo(redirectPath);
-		}
+	private void lockStudy(Study study) {
+		jpaApi.withTransaction(() -> {
+			study.setLocked(true);
+			studyDao.update(study);
+		});
 	}
 
 	/**
@@ -66,12 +119,11 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callBatchesSubmitCreated() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
-		Call call = controllers.gui.routes.Batches
-				.submitCreated(studyClone.getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
+		Call call = controllers.gui.routes.Batches.submitCreated(study.getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -80,12 +132,12 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callBatchesSubmitEditedProperties() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.submitEditedProperties(
-				studyClone.getId(), studyClone.getDefaultBatch().getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+				study.getId(), study.getDefaultBatch().getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -93,12 +145,12 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callBatchesToggleActive() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
-		Call call = controllers.gui.routes.Batches.toggleActive(
-				studyClone.getId(), studyClone.getDefaultBatch().getId(), true);
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
+		Call call = controllers.gui.routes.Batches.toggleActive(study.getId(),
+				study.getDefaultBatch().getId(), true);
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -107,28 +159,26 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callBatchesToggleAllowedWorkerType() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.toggleAllowedWorkerType(
-				studyClone.getId(), studyClone.getDefaultBatch().getId(),
+				study.getId(), study.getDefaultBatch().getId(),
 				JatosWorker.WORKER_TYPE, true);
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
 	 * Check that Batches.remove() doesn't work if study is locked
-	 * 
-	 * TODO returns a 404 - complete mystery; although the method works
 	 */
-	// @Test
+	@Test
 	public void callBatchesRemove() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
-		Call call = controllers.gui.routes.Batches.remove(studyClone.getId(),
-				studyClone.getDefaultBatch().getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
+		Call call = controllers.gui.routes.Batches.remove(study.getId(),
+				study.getDefaultBatch().getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -137,12 +187,12 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callBatchesCreatePersonalSingleRun() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.createPersonalSingleRun(
-				studyClone.getId(), studyClone.getDefaultBatch().getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+				study.getId(), study.getDefaultBatch().getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -151,12 +201,12 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callBatchesCreatePersonalMultipleRun() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.createPersonalMultipleRun(
-				studyClone.getId(), studyClone.getDefaultBatch().getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+				study.getId(), study.getDefaultBatch().getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -164,12 +214,12 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callComponentsSubmitCreated() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.Components
-				.submitCreated(studyClone.getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+				.submitCreated(study.getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -177,12 +227,12 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callComponentsSubmitEdited() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
-		Call call = controllers.gui.routes.Components.submitEdited(
-				studyClone.getId(), studyClone.getFirstComponent().getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
+		Call call = controllers.gui.routes.Components
+				.submitEdited(study.getId(), study.getFirstComponent().getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -190,43 +240,38 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callComponentsToggleActive() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.Components.toggleActive(
-				studyClone.getId(), studyClone.getFirstComponent().getId(),
-				true);
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+				study.getId(), study.getFirstComponent().getId(), true);
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
 	 * Check that Components.cloneComponent() doesn't work if study is locked
-	 * 
-	 * TODO returns a 404 - complete mystery; although the method works
 	 */
-	// @Test
+	@Test
 	public void callComponentsCloneComponent() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.Components.cloneComponent(
-				studyClone.getId(), studyClone.getFirstComponent().getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+				study.getId(), study.getFirstComponent().getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
 	 * Check that Components.remove() doesn't work if study is locked
-	 * 
-	 * TODO returns a 404 - complete mystery; although the method works
 	 */
-	// @Test
+	@Test
 	public void callComponentsRemove() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
-		Call call = controllers.gui.routes.Components.remove(studyClone.getId(),
-				studyClone.getFirstComponent().getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
+		Call call = controllers.gui.routes.Components.remove(study.getId(),
+				study.getFirstComponent().getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -234,12 +279,12 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callImportExportImportComponent() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.ImportExport
-				.importComponent(studyClone.getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+				.importComponent(study.getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	/**
@@ -248,64 +293,72 @@ public class LockedStudyControllerTest extends AbstractTest {
 	 */
 	@Test
 	public void callImportExportImportComponentConfirmed() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.ImportExport
-				.importComponentConfirmed(studyClone.getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+				.importComponentConfirmed(study.getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	@Test
 	public void callStudiesSubmitEdited() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
-		Call call = controllers.gui.routes.Studies
-				.submitEdited(studyClone.getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
+		Call call = controllers.gui.routes.Studies.submitEdited(study.getId());
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	@Test
 	public void callStudiesRemove() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
-		Call call = controllers.gui.routes.Studies.remove(studyClone.getId());
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.DELETE);
-		removeStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
+		Call call = controllers.gui.routes.Studies.remove(study.getId());
+		checkForbiddenBecauseLocked(call, Helpers.DELETE);
 	}
 
 	@Test
 	public void callStudiesChangeComponentOrder() throws Exception {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		lockStudy(study);
 		Call call = controllers.gui.routes.Studies.changeComponentOrder(
-				studyClone.getId(), studyClone.getComponent(1).getId(),
+				study.getId(), study.getComponent(1).getId(),
 				StudyService.COMPONENT_POSITION_DOWN);
-		checkDenyLocked(call, Http.Status.FORBIDDEN, null, Helpers.POST);
-		removeStudy(studyClone);
+		checkForbiddenBecauseLocked(call, Helpers.POST);
 	}
 
 	@Test
 	public void callExportComponentResults()
 			throws IOException, ForbiddenReloadException {
-		Study studyClone = cloneAndPersistStudy(studyTemplate);
-		lockStudy(studyClone);
+		// Create a study with a StudyResult
+		jpaApi.withTransaction(() -> {
+			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			Study study;
+			try {
+				study = controllerTestHelper.importExampleStudy(admin,
+						fakeApplication);
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
+			study.setLocked(true);
+			studyService.createAndPersistStudy(admin, study);
 
-		// Create some results
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(studyClone,
-				studyClone.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		// Have to set study manually in test - don't know why
-		studyClone.getFirstComponent().setStudy(studyClone);
-		jatosPublixUtils.startComponent(studyClone.getFirstComponent(),
-				studyResult);
-		jatosPublixUtils.startComponent(studyClone.getFirstComponent(),
-				studyResult);
-		entityManager.getTransaction().commit();
+			StudyResult studyResult = resultCreator.createStudyResult(study,
+					study.getDefaultBatch(), admin.getWorker());
+			try {
+				jatosPublixUtils.startComponent(study.getFirstComponent(),
+						studyResult);
+				jatosPublixUtils.startComponent(study.getFirstComponent(),
+						studyResult);
+			} catch (ForbiddenReloadException e) {
+				e.printStackTrace();
+			}
+		});
 
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport
@@ -313,9 +366,6 @@ public class LockedStudyControllerTest extends AbstractTest {
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(Http.Status.OK);
-
-		// Clean up
-		removeStudy(studyClone);
 	}
 
 }

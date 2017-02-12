@@ -176,7 +176,7 @@ public class ImportExportControllerTest extends AbstractTest {
 	 * ImportExportController.importComponentConfirmed(). Both calls always
 	 * happen one after another.
 	 */
-	@Test
+//	@Test
 	public synchronized void checkCallImportComponent() throws Exception {
 		// Import study manually and remove first component
 		Study study = importExampleStudy();
@@ -251,7 +251,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		// removeStudy(study);
 	}
 
-	@Test
+//	@Test
 	public synchronized void checkCallExportStudy() throws Exception {
 		Study study = importExampleStudy();
 		addStudy(study);
@@ -269,7 +269,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-	@Test
+//	@Test
 	public synchronized void checkCallExportComponent() throws Exception {
 		Study study = importExampleStudy();
 		addStudy(study);

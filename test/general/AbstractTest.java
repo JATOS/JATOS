@@ -199,16 +199,17 @@ public abstract class AbstractTest {
 		Http.Context context = new Http.Context(id, header, request, flashData,
 				flashData, argData);
 		Http.Context.current.set(context);
-		JPA.bindForSync(entityManager);
+		// JPA.bindForSync(entityManager);
 	}
 
 	private void checkAdmin() {
-		entityManager.getTransaction().begin();
-		admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-		if (admin == null) {
-			admin = userService.createAndPersistAdmin();
-		}
-		entityManager.getTransaction().commit();
+		jpa.withTransaction(entityManager -> {
+			admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			if (admin == null) {
+				admin = userService.createAndPersistAdmin();
+			}
+			return null;
+		});
 	}
 
 	protected void removeStudyAssetsRootDir() throws IOException {
@@ -265,20 +266,30 @@ public abstract class AbstractTest {
 
 	protected synchronized Study cloneAndPersistStudy(Study studyToBeCloned)
 			throws IOException {
-		entityManager.getTransaction().begin();
-		Study studyClone = studyService.clone(studyToBeCloned);
-		studyService.createAndPersistStudy(admin, studyClone);
-		entityManager.getTransaction().commit();
+		return jpa.withTransaction(entityManager -> {
+			return cloneAndPersistStudy2(studyToBeCloned);
+		});
+	}
+
+	private Study cloneAndPersistStudy2(Study studyToBeCloned) {
+		Study studyClone = null;
+		try {
+			studyClone = studyService.clone(studyToBeCloned);
+			studyService.createAndPersistStudy(admin, studyClone);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return studyClone;
 	}
 
 	protected synchronized User createAndPersistUser(String email, String name,
 			String password) {
-		User user = new User(email, name);
-		entityManager.getTransaction().begin();
-		userService.createAndPersistUser(user, password);
-		entityManager.getTransaction().commit();
-		return user;
+		return jpa.withTransaction(entityManager -> {
+			User user = new User(email, name);
+			userService.createAndPersistUser(user, password);
+			return user;
+		});
 	}
 
 	protected synchronized void removeStudy(Study study) throws IOException {

@@ -5,67 +5,94 @@ import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
-import models.common.User;
+import javax.inject.Inject;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.google.inject.Guice;
+
+import controllers.ControllerTestHelper;
+import models.common.User;
+import play.Application;
+import play.ApplicationLoader;
+import play.Environment;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http;
-import play.mvc.Result;
 import play.mvc.Http.RequestBuilder;
+import play.mvc.Result;
+import play.test.Helpers;
 import services.gui.BreadcrumbsService;
-import controllers.gui.Users;
-import general.AbstractTest;
 
 /**
  * Testing actions of controller.gui.Home.
  * 
  * @author Kristian Lange
  */
-public class HomeControllerTest extends AbstractTest {
+public class HomeControllerTest {
 
-	@Override
-	public void before() throws Exception {
-		// Nothing additional to AbstractGuiTest to to do before test
+	@Inject
+	private static Application fakeApplication;
+
+	@Inject
+	private ControllerTestHelper controllerTestHelper;
+
+	@Before
+	public void startApp() throws Exception {
+		fakeApplication = Helpers.fakeApplication();
+
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+
+		Helpers.start(fakeApplication);
 	}
 
-	@Override
-	public void after() throws Exception {
-		// Nothing additional to AbstractGuiTest to to do after test
+	@After
+	public void stopApp() throws Exception {
+		Helpers.stop(fakeApplication);
+		controllerTestHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
 	public void callHome() throws Exception {
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Home.home().url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
-		assertThat(result.charset()).isEqualTo("utf-8");
-		assertThat(result.contentType()).isEqualTo("text/html");
+		assertThat(result.charset().get()).isEqualTo("utf-8");
+		assertThat(result.contentType().get()).isEqualTo("text/html");
 		assertThat(contentAsString(result)).contains(BreadcrumbsService.HOME);
 	}
 
 	@Test
 	public void callLog() throws Exception {
+		User admin = controllerTestHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Home.log(1000).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
-		assertThat(result.charset()).isEqualTo("utf-8");
-		assertThat(result.contentType()).isEqualTo("text/plain");
-		assertThat(contentAsString(result))
-				.contains("JATOS has started");
+		assertThat(result.charset().get()).isEqualTo("utf-8");
+		assertThat(result.contentType().get()).isEqualTo("text/plain");
+		assertThat(result.body()).isNotNull();
+	}
 
-		User testUser = createAndPersistUser("bla@bla.com", "Bla", "bla");
-		request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, testUser.getEmail())
+	@Test
+	public void callLogNotAsAdmin() throws Exception {
+		User notAdminUser = controllerTestHelper
+				.createAndPersistUser("bla@bla.com", "Bla", "bla");
+		RequestBuilder request = new RequestBuilder().method("GET")
+				.session(Users.SESSION_EMAIL, notAdminUser.getEmail())
 				.uri(controllers.gui.routes.Home.log(1000).url());
-		result = route(request);
-
-		assertThat(result.status()).isEqualTo(Http.Status.FORBIDDEN);
+		controllerTestHelper.assertJatosGuiException(request,
+				Http.Status.FORBIDDEN);
 	}
 
 }

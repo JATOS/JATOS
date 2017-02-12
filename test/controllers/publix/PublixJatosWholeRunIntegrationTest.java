@@ -10,41 +10,90 @@ import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
 import java.io.IOException;
+import java.util.List;
 
+import javax.inject.Inject;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Guice;
 
+import akka.stream.Materializer;
+import controllers.ControllerTestHelper;
 import controllers.gui.Users;
 import controllers.publix.workers.JatosPublix;
 import controllers.publix.workers.JatosPublix.JatosRun;
-import general.AbstractTest;
+import daos.common.StudyResultDao;
+import daos.common.UserDao;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
+import models.common.User;
+import models.common.workers.JatosWorker;
+import models.common.workers.Worker;
+import play.Application;
+import play.ApplicationLoader;
+import play.Environment;
+import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.HeaderNames;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
+import play.test.Helpers;
 import utils.common.JsonUtils;
 
 /**
- * Integration test that does a whole run with the JatosWorker, calls all the
- * endpoints of a run with a JatosWorker
+ * Integration test that does a whole run with the JatosWorker (calls all the
+ * endpoints of a run with a JatosWorker)
  * 
  * @author Kristian Lange
  */
-public class PublixJatosTest extends AbstractTest {
+public class PublixJatosWholeRunIntegrationTest {
 
-	@Override
-	public void before() throws Exception {
+	@Inject
+	private static Application fakeApplication;
+
+	@Inject
+	private ControllerTestHelper controllerTestHelper;
+
+	@Inject
+	private JPAApi jpaApi;
+
+	@Inject
+	private StudyResultDao studyResultDao;
+
+	@Inject
+	private UserDao userDao;
+
+	@Inject
+	private Materializer materializer;
+
+	@Before
+	public void startApp() throws Exception {
+		fakeApplication = Helpers.fakeApplication();
+
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+
+		Helpers.start(fakeApplication);
 	}
 
-	@Override
-	public void after() throws Exception {
+	@After
+	public void stopApp() throws Exception {
+		// Clean up
+		controllerTestHelper.removeAllStudies();
+
+		Helpers.stop(fakeApplication);
+		controllerTestHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
@@ -60,15 +109,17 @@ public class PublixJatosTest extends AbstractTest {
 	 */
 	@Test
 	public void runWholeStudy() throws IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 
-		// ***
+		// *************************************************************
 		// Start study:
 		// studyResult -> STARTED
-		Result result = startStudy(study);
+		Result result = startStudy(study, admin);
 		Cookie idCookie = result.cookie("JATOS_IDS_0");
-		StudyResult studyResult = admin.getWorker().getLastStudyResult();
+		List<StudyResult> studyResultList = retrieveStudyResultList(admin);
+		StudyResult studyResult = getLastStudyResult(studyResultList);
 
 		// Check HTTP status is redirect
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
@@ -86,7 +137,7 @@ public class PublixJatosTest extends AbstractTest {
 				.isEqualTo(null);
 
 		// Check study result
-		assertThat(admin.getWorker().getStudyResultList().size()).isEqualTo(1);
+		assertThat(studyResultList.size()).isEqualTo(1);
 		assertThat(studyResult.getStudy()).isEqualTo(study);
 		assertThat(studyResult.getWorker()).isEqualTo(admin.getWorker());
 		assertThat(studyResult.getWorkerId())
@@ -96,36 +147,39 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(studyResult.getStudyState()).isEqualTo(StudyState.STARTED);
 		assertThat(studyResult.getStartDate()).isNotNull();
 
-		// ***
+		// *************************************************************
 		// Start first component
 		// studyResult -> STARTED, componentResult -> STARTED
-		result = startComponent(studyResult, study.getFirstComponent(),
+		result = startComponent(studyResult, study.getFirstComponent(), admin,
 				idCookie);
 		idCookie = result.cookie("JATOS_IDS_0");
-		studyResultDao.refresh(studyResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(idCookie.value()).isNotEmpty();
 
 		// And check a random line of the JS code
-		assertThat(contentAsString(result))
+		assertThat(contentAsString(result, materializer))
 				.contains("jatos.onLoad(function() {");
 
 		// Check ComponentResult and StudyResult
 		assertThat(studyResult.getComponentResultList().size()).isEqualTo(1);
-		ComponentResult firstComponentResult = studyResult
-				.getComponentResultList().get(0);
+		// ComponentResult firstComponentResult = studyResult
+		// .getComponentResultList().get(0);
+		ComponentResult firstComponentResult = retrieveComponentResult(
+				studyResult.getId(), 0);
 		checkStates(studyResult, StudyState.STARTED, firstComponentResult,
 				ComponentState.STARTED);
-		checkComponentResultAfterStart(study, studyResult, 1, 1);
+		checkComponentResultAfterStart(study, studyResult, admin, 1, 1);
 
-		// ***
+		// *************************************************************
 		// Send request to get InitData:
 		// studyResult -> DATA_RETRIEVED, componentResult -> DATA_RETRIEVED
-		result = initData(studyResult, study.getFirstComponent(), idCookie);
+		result = initData(studyResult, study.getFirstComponent(), admin,
+				idCookie);
 
-		studyResultDao.refresh(studyResult);
-		componentResultDao.refresh(firstComponentResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
 		// Check InitData in response
 		assertThat(result.status()).isEqualTo(OK);
@@ -141,13 +195,13 @@ public class PublixJatosTest extends AbstractTest {
 		checkStates(studyResult, StudyState.DATA_RETRIEVED,
 				firstComponentResult, ComponentState.DATA_RETRIEVED);
 
-		// ***
+		// *************************************************************
 		// Send request submitResultData:
 		// studyResult -> DATA_RETRIEVED, componentResult -> RESULTDATA_POSTED
-		result = submitResultData(studyResult, idCookie);
+		result = submitResultData(studyResult, admin, idCookie);
 
-		studyResultDao.refresh(studyResult);
-		componentResultDao.refresh(firstComponentResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
 		// Check response
 		assertThat(result.status()).isEqualTo(OK);
@@ -158,13 +212,13 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(firstComponentResult.getData())
 				.isEqualTo("That's a test result data.");
 
-		// ***
+		// *************************************************************
 		// Send request setStudySessionData:
 		// studyResult -> DATA_RETRIEVED, componentResult -> RESULTDATA_POSTED
-		result = setStudySessionData(studyResult, idCookie);
+		result = setStudySessionData(studyResult, admin, idCookie);
 
-		studyResultDao.refresh(studyResult);
-		componentResultDao.refresh(firstComponentResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
 		// Check response
 		assertThat(result.status()).isEqualTo(OK);
@@ -175,14 +229,14 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(studyResult.getStudySessionData())
 				.isEqualTo("That's our session data.");
 
-		// ***
+		// *************************************************************
 		// Send request startNextComponent: studyResult -> DATA_RETRIEVED,
 		// old componentResult -> FINISHED, new componentResult -> STARTED
-		result = startNextComponent(studyResult, idCookie);
+		result = startNextComponent(studyResult, admin, idCookie);
 		idCookie = result.cookie("JATOS_IDS_0");
 
-		studyResultDao.refresh(studyResult);
-		componentResultDao.refresh(firstComponentResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
 		// Check response
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
@@ -192,19 +246,20 @@ public class PublixJatosTest extends AbstractTest {
 				"/publix/" + study.getId() + "/" + study.getComponent(2).getId()
 						+ "/start?srid=" + studyResult.getId());
 
-		// ***
+		// *************************************************************
 		// Start 2. component by ID, studyResult -> DATA_RETRIEVED
 		// old componentResult -> FINISHED, new componentResult -> STARTED
-		result = startComponent(studyResult, study.getComponent(2), idCookie);
+		result = startComponent(studyResult, study.getComponent(2), admin,
+				idCookie);
 		idCookie = result.cookie("JATOS_IDS_0");
 
-		studyResultDao.refresh(studyResult);
-		componentResultDao.refresh(firstComponentResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
 		assertThat(result.status()).isEqualTo(OK);
 
 		// And check a random line of the JS code
-		assertThat(contentAsString(result))
+		assertThat(contentAsString(result, materializer))
 				.contains("jatos.onLoad(function() {");
 
 		// Check old and new ComponentResult and StudyResult
@@ -215,43 +270,44 @@ public class PublixJatosTest extends AbstractTest {
 				secondComponentResult, ComponentState.STARTED);
 		checkStates(studyResult, StudyState.DATA_RETRIEVED,
 				firstComponentResult, ComponentState.FINISHED);
-		checkComponentResultAfterStart(study, studyResult, 2, 2);
+		checkComponentResultAfterStart(study, studyResult, admin, 2, 2);
 
-		// ***
+		// *************************************************************
 		// Start 3. component by position, studyResult -> DATA_RETRIEVED
 		// old componentResult -> FINISHED, new componentResult -> STARTED
-		result = startComponentByPosition(studyResult, 3, idCookie);
+		result = startComponentByPosition(studyResult, admin, 3, idCookie);
 		idCookie = result.cookie("JATOS_IDS_0");
 
-		studyResultDao.refresh(studyResult);
-		componentResultDao.refresh(firstComponentResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
 		assertThat(result.status()).isEqualTo(OK);
 
 		// And check a random line of the JS code
-		assertThat(contentAsString(result))
+		assertThat(contentAsString(result, materializer))
 				.contains("jatos.onLoad(function() {");
 
 		// Check old and new ComponentResult and StudyResult
 		assertThat(firstComponentResult.getEndDate()).isNotNull();
 		checkStates(studyResult, StudyState.DATA_RETRIEVED,
 				firstComponentResult, ComponentState.FINISHED);
-		checkComponentResultAfterStart(study, studyResult, 3, 3);
+		checkComponentResultAfterStart(study, studyResult, admin, 3, 3);
 
-		// ***
+		// *************************************************************
 		// Log error
-		result = logError(studyResult, "This is an error message.", idCookie);
+		result = logError(studyResult, admin, "This is an error message.",
+				idCookie);
 
 		assertThat(result.status()).isEqualTo(OK);
 		// TODO check that error msg appears in log - how?
 
-		// ***
+		// *************************************************************
 		// Send request to get InitData: prior session data should be there
 		// studyResult -> DATA_RETRIEVED, componentResult -> DATA_RETRIEVED
-		result = initData(studyResult, study.getComponent(3), idCookie);
+		result = initData(studyResult, study.getComponent(3), admin, idCookie);
 
-		studyResultDao.refresh(studyResult);
-		componentResultDao.refresh(firstComponentResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
 		// Check InitData in response: is session data still there?
 		assertThat(result.status()).isEqualTo(OK);
@@ -263,21 +319,21 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(json.get("componentList")).isNotNull();
 		assertThat(json.get("componentProperties")).isNotNull();
 
-		// ***
+		// *************************************************************
 		// Send request to end study not successfully with error message
 		// studyResult -> FAIL, componentResult -> FINISHED
-		result = endStudy(studyResult, idCookie, false,
+		result = endStudy(studyResult, admin, idCookie, false,
 				"This%20is%20an%20error%20message.");
 		idCookie = result.cookie("JATOS_IDS_0");
 
-		studyResultDao.refresh(studyResult);
-		componentResultDao.refresh(firstComponentResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
 		// Check response: HTTP status is redirect (it's a JATOS worker run)
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 
 		// Check redirect URL
-		assertThat(result.header("Location"))
+		assertThat(result.header("Location").get())
 				.isEqualTo("/jatos/" + study.getId());
 
 		// Check that ID cookie is removed
@@ -291,9 +347,6 @@ public class PublixJatosTest extends AbstractTest {
 		// Check the abort message is in flash storage
 		assertThat(result.flash().get("info")).isEqualTo(
 				"Study finished with message: This is an error message.");
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	/**
@@ -301,51 +354,50 @@ public class PublixJatosTest extends AbstractTest {
 	 */
 	@Test
 	public void startAndAbortStudy() throws IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
+		Study study = controllerTestHelper
+				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		User admin = controllerTestHelper.getAdmin();
 
-		// ***
+		// *************************************************************
 		// Start study:
 		// studyResult -> STARTED
-		Result result = startStudy(study);
+		Result result = startStudy(study, admin);
 		Cookie idCookie = result.cookie("JATOS_IDS_0");
-		StudyResult studyResult = admin.getWorker().getLastStudyResult();
-		studyResultDao.refresh(studyResult);
+		List<StudyResult> studyResultList = retrieveStudyResultList(admin);
+		StudyResult studyResult = getLastStudyResult(studyResultList);
 
 		assertThat(result.header("Location").get()).contains("srid=");
 
 		// Check HTTP status is redirect
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 
-		// ***
+		// *************************************************************
 		// Start first component
 		// studyResult -> STARTED, componentResult -> STARTED
 		// result.
-		result = startComponent(studyResult, study.getFirstComponent(),
+		result = startComponent(studyResult, study.getFirstComponent(), admin,
 				idCookie);
 		idCookie = result.cookie("JATOS_IDS_0");
-		studyResult = admin.getWorker().getLastStudyResult();
-		studyResultDao.refresh(studyResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		ComponentResult firstComponentResult = retrieveComponentResult(
+				studyResult.getId(), 0);
 
 		assertThat(result.status()).isEqualTo(OK);
 
-		ComponentResult firstComponentResult = studyResult
-				.getComponentResultList().get(0);
-
-		// ***
+		// *************************************************************
 		// Send request to end study
 		// studyResult -> ABORTED, componentResult -> ABORTED
-		result = abortStudy(studyResult, idCookie,
+		result = abortStudy(studyResult, admin, idCookie,
 				"This%20is%20an%20abort%20message.");
 		idCookie = result.cookie("JATOS_IDS_0");
-		studyResultDao.refresh(studyResult);
-		componentResultDao.refresh(firstComponentResult);
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
 
 		// Check response: HTTP status is redirect (it's a JATOS worker run)
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 
 		// Check redirect URL
-		assertThat(result.header("Location"))
+		assertThat(result.header("Location").get())
 				.isEqualTo("/jatos/" + study.getId());
 
 		// Check that ID cookie is removed
@@ -359,13 +411,9 @@ public class PublixJatosTest extends AbstractTest {
 		// Check the abort message is in flash storage
 		assertThat(result.flash().get("info")).isEqualTo(
 				"Study finished with message: This is an abort message.");
-
-		// Clean-up
-		removeStudy(study);
-
 	}
 
-	private Result startStudy(Study study) {
+	private Result startStudy(Study study, User admin) {
 		String url = "/publix/" + study.getId() + "/start?"
 				+ JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
@@ -375,7 +423,7 @@ public class PublixJatosTest extends AbstractTest {
 		return route(request);
 	}
 
-	private Result startComponentByPosition(StudyResult studyResult,
+	private Result startComponentByPosition(StudyResult studyResult, User admin,
 			int position, Cookie idCookie) {
 		Result result;
 		String url = "/publix/" + studyResult.getStudy().getId()
@@ -389,7 +437,7 @@ public class PublixJatosTest extends AbstractTest {
 	}
 
 	private Result startComponent(StudyResult studyResult, Component component,
-			Cookie idCookie) {
+			User admin, Cookie idCookie) {
 		String url = "/publix/" + studyResult.getStudy().getId() + "/"
 				+ component.getId() + "/start?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
@@ -398,7 +446,7 @@ public class PublixJatosTest extends AbstractTest {
 		return route(request, 10000);
 	}
 
-	private Result startNextComponent(StudyResult studyResult,
+	private Result startNextComponent(StudyResult studyResult, User admin,
 			Cookie idCookie) {
 		Result result;
 		String url = "/publix/" + studyResult.getStudy().getId()
@@ -412,7 +460,7 @@ public class PublixJatosTest extends AbstractTest {
 	}
 
 	private Result initData(StudyResult studyResult, Component component,
-			Cookie idCookie) {
+			User admin, Cookie idCookie) {
 		Result result;
 		String url = "/publix/" + studyResult.getStudy().getId() + "/"
 				+ component.getId() + "/initData?srid=" + studyResult.getId();
@@ -423,7 +471,7 @@ public class PublixJatosTest extends AbstractTest {
 		return result;
 	}
 
-	private Result logError(StudyResult studyResult, String msg,
+	private Result logError(StudyResult studyResult, User admin, String msg,
 			Cookie idCookie) {
 		Result result;
 		String url = "/publix/" + studyResult.getStudy().getId() + "/"
@@ -437,7 +485,7 @@ public class PublixJatosTest extends AbstractTest {
 		return result;
 	}
 
-	private Result setStudySessionData(StudyResult studyResult,
+	private Result setStudySessionData(StudyResult studyResult, User admin,
 			Cookie idCookie) {
 		Result result;
 		String url = "/publix/" + studyResult.getStudy().getId()
@@ -450,7 +498,8 @@ public class PublixJatosTest extends AbstractTest {
 		return result;
 	}
 
-	private Result submitResultData(StudyResult studyResult, Cookie idCookie) {
+	private Result submitResultData(StudyResult studyResult, User admin,
+			Cookie idCookie) {
 		Result result;
 		String url = "/publix/" + studyResult.getStudy().getId() + "/"
 				+ studyResult.getStudy().getFirstComponent().getId()
@@ -463,8 +512,8 @@ public class PublixJatosTest extends AbstractTest {
 		return result;
 	}
 
-	private Result endStudy(StudyResult studyResult, Cookie idCookie,
-			boolean successful, String errorMsg) {
+	private Result endStudy(StudyResult studyResult, User admin,
+			Cookie idCookie, boolean successful, String errorMsg) {
 		Result result;
 		String url = "/publix/" + studyResult.getStudy().getId() + "/end?srid="
 				+ studyResult.getId() + "&successful=" + successful
@@ -477,8 +526,8 @@ public class PublixJatosTest extends AbstractTest {
 		return result;
 	}
 
-	private Result abortStudy(StudyResult studyResult, Cookie idCookie,
-			String abortMsg) {
+	private Result abortStudy(StudyResult studyResult, User admin,
+			Cookie idCookie, String abortMsg) {
 		Result result;
 		String url = "/publix/" + studyResult.getStudy().getId()
 				+ "/abort?srid=" + studyResult.getId() + "&message=" + abortMsg;
@@ -498,14 +547,14 @@ public class PublixJatosTest extends AbstractTest {
 	}
 
 	private void checkComponentResultAfterStart(Study study,
-			StudyResult studyResult, int componentPosition,
+			StudyResult studyResult, User admin, int componentPosition,
 			int componentResultListSize) {
 		assertThat(studyResult.getComponentResultList().size())
 				.isEqualTo(componentResultListSize);
 
 		// Get the last component result
-		ComponentResult componentResult = studyResult.getComponentResultList()
-				.get(componentResultListSize - 1);
+		ComponentResult componentResult = retrieveComponentResult(
+				studyResult.getId(), componentResultListSize - 1);
 
 		assertThat(componentResult.getComponent())
 				.isEqualTo(study.getComponent(componentPosition));
@@ -517,5 +566,57 @@ public class PublixJatosTest extends AbstractTest {
 		assertThat(componentResult.getComponentState())
 				.isEqualTo(ComponentState.STARTED);
 		assertThat(componentResult.getStartDate()).isNotNull();
+	}
+
+	private List<StudyResult> retrieveStudyResultList(User user) {
+		return jpaApi.withTransaction(() -> {
+			User admin = userDao.findByEmail(user.getEmail());
+			JatosWorker worker = admin.getWorker();
+			List<StudyResult> studyResultList = worker.getStudyResultList();
+			controllerTestHelper.fetchTheLazyOnes(studyResultList);
+			return worker.getStudyResultList();
+		});
+	}
+
+	private StudyResult retrieveStudyResult(long studyResultId) {
+		return jpaApi.withTransaction(() -> {
+			StudyResult studyResult = studyResultDao.findById(studyResultId);
+			controllerTestHelper.fetchTheLazyOnes(studyResult.getStudy());
+			controllerTestHelper.fetchTheLazyOnes(
+					studyResult.getStudy().getFirstComponent());
+			controllerTestHelper.fetchTheLazyOnes(studyResult.getWorker());
+			controllerTestHelper.fetchTheLazyOnes(studyResult.getBatch());
+			controllerTestHelper
+					.fetchTheLazyOnes(studyResult.getComponentResultList());
+			return studyResult;
+		});
+	}
+
+	private ComponentResult retrieveComponentResult(long studyResultId,
+			int index) {
+		return jpaApi.withTransaction(() -> {
+			StudyResult studyResult = studyResultDao.findById(studyResultId);
+			ComponentResult componentResult = studyResult
+					.getComponentResultList().get(index);
+			controllerTestHelper.fetchTheLazyOnes(componentResult);
+			StudyResult componentResultsStudyResult = componentResult
+					.getStudyResult();
+			controllerTestHelper.fetchTheLazyOnes(componentResultsStudyResult);
+			Worker worker = componentResultsStudyResult.getWorker();
+			controllerTestHelper.fetchTheLazyOnes(worker);
+			Component component = componentResult.getComponent();
+			controllerTestHelper.fetchTheLazyOnes(component);
+			return componentResult;
+		});
+	}
+
+	public StudyResult getLastStudyResult(List<StudyResult> studyResultList) {
+		if (!studyResultList.isEmpty()) {
+			StudyResult unfetchedStudyResult = studyResultList
+					.get(studyResultList.size() - 1);
+			return retrieveStudyResult(unfetchedStudyResult.getId());
+		} else {
+			return null;
+		}
 	}
 }
