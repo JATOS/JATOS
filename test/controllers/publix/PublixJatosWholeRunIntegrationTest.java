@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import akka.stream.Materializer;
 import controllers.gui.Users;
@@ -58,6 +59,8 @@ import utils.common.JsonUtils;
  */
 public class PublixJatosWholeRunIntegrationTest {
 
+	private Injector injector;
+
 	@Inject
 	private static Application fakeApplication;
 
@@ -82,7 +85,8 @@ public class PublixJatosWholeRunIntegrationTest {
 
 		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
 				.builder(new ApplicationLoader.Context(Environment.simple()));
-		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 
 		Helpers.start(fakeApplication);
 	}
@@ -109,8 +113,7 @@ public class PublixJatosWholeRunIntegrationTest {
 	 */
 	@Test
 	public void runWholeStudy() throws IOException {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 
 		// *************************************************************
@@ -354,8 +357,7 @@ public class PublixJatosWholeRunIntegrationTest {
 	 */
 	@Test
 	public void startAndAbortStudy() throws IOException {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 
 		// *************************************************************
@@ -586,8 +588,7 @@ public class PublixJatosWholeRunIntegrationTest {
 					studyResult.getStudy().getFirstComponent());
 			testHelper.fetchTheLazyOnes(studyResult.getWorker());
 			testHelper.fetchTheLazyOnes(studyResult.getBatch());
-			testHelper
-					.fetchTheLazyOnes(studyResult.getComponentResultList());
+			testHelper.fetchTheLazyOnes(studyResult.getComponentResultList());
 			return studyResult;
 		});
 	}

@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import daos.common.ComponentDao;
 import general.TestHelper;
@@ -46,6 +47,8 @@ import utils.common.JsonUtils;
  */
 public class ComponentsControllerTest {
 
+	private Injector injector;
+
 	@Inject
 	private static Application fakeApplication;
 
@@ -64,7 +67,8 @@ public class ComponentsControllerTest {
 
 		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
 				.builder(new ApplicationLoader.Context(Environment.simple()));
-		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 
 		Helpers.start(fakeApplication);
 	}
@@ -84,8 +88,7 @@ public class ComponentsControllerTest {
 	@Test
 	public void callRunComponent() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
@@ -111,8 +114,7 @@ public class ComponentsControllerTest {
 	@Test
 	public void callRunComponentNoHtml() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		jpaApi.withTransaction(() -> {
 			study.getComponent(1).setHtmlFilePath(null);
@@ -127,8 +129,7 @@ public class ComponentsControllerTest {
 								.url());
 		// Empty html path must lead to an JatosGuiException with a HTTP status
 		// of 400
-		testHelper.assertJatosGuiException(request,
-				Http.Status.BAD_REQUEST);
+		testHelper.assertJatosGuiException(request, Http.Status.BAD_REQUEST);
 	}
 
 	/**
@@ -137,8 +138,7 @@ public class ComponentsControllerTest {
 	@Test
 	public void callProperties() throws IOException {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
@@ -186,8 +186,7 @@ public class ComponentsControllerTest {
 	@Test
 	public void callSubmitCreated() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentProperties.TITLE, "Title Test");
@@ -212,8 +211,7 @@ public class ComponentsControllerTest {
 	@Test
 	public void callSubmitEdited() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentProperties.TITLE, "Title Test");
@@ -240,8 +238,7 @@ public class ComponentsControllerTest {
 	@Test
 	public void callSubmitValidationError() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Map<String, String> form = new HashMap<String, String>();
 		form.put(ComponentProperties.TITLE, "");
@@ -274,8 +271,7 @@ public class ComponentsControllerTest {
 	@Test
 	public void callChangeProperty() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
 						controllers.gui.routes.Components
@@ -290,8 +286,7 @@ public class ComponentsControllerTest {
 	@Test
 	public void callCloneComponent() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Components.cloneComponent(
@@ -304,8 +299,7 @@ public class ComponentsControllerTest {
 	@Test
 	public void callRemove() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		RequestBuilder request = new RequestBuilder().method("DELETE")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Components

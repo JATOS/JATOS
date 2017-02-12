@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import daos.common.StudyDao;
 import general.TestHelper;
@@ -47,6 +48,8 @@ import utils.common.JsonUtils;
  */
 public class StudiesControllerTest {
 
+	private Injector injector;
+
 	@Inject
 	private static Application fakeApplication;
 
@@ -65,7 +68,8 @@ public class StudiesControllerTest {
 
 		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
 				.builder(new ApplicationLoader.Context(Environment.simple()));
-		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 
 		Helpers.start(fakeApplication);
 	}
@@ -81,8 +85,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callIndex() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
@@ -165,8 +168,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitCreatedStudyAssetsDirExists() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
 		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
@@ -186,8 +188,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callProperties() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
@@ -223,8 +224,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitEdited() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
@@ -256,8 +256,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSwapLock() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -271,8 +270,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callRemove() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("DELETE")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -284,8 +282,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callCloneStudy() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -298,8 +295,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callChangeUser() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -312,8 +308,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitChangedUsers() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
@@ -327,8 +322,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitChangedUsersZeroUsers() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of("bla", "blu"))
@@ -343,8 +337,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callChangeComponentOrder() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		// Move first component to second position
 		RequestBuilder request = new RequestBuilder().method("POST")
@@ -373,8 +366,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callShowStudy() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
@@ -388,8 +380,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callWorkers() throws Exception {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())

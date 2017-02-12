@@ -20,6 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import akka.stream.Materializer;
 import controllers.gui.Users;
@@ -54,6 +55,8 @@ import services.gui.UserService;
  */
 public class StudyAssetsTest {
 
+	private Injector injector;
+	
 	@Inject
 	private static Application fakeApplication;
 
@@ -84,7 +87,8 @@ public class StudyAssetsTest {
 
 		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
 				.builder(new ApplicationLoader.Context(Environment.simple()));
-		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 
 		Helpers.start(fakeApplication);
 	}
@@ -115,7 +119,7 @@ public class StudyAssetsTest {
 	@Test
 	public void testVersioned() throws IOException, PublixException {
 		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+				.createAndPersistExampleStudyForAdmin(injector);
 
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
@@ -143,7 +147,7 @@ public class StudyAssetsTest {
 	@Test
 	public void testVersionedNotFound() throws IOException, PublixException {
 		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+				.createAndPersistExampleStudyForAdmin(injector);
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
@@ -159,7 +163,7 @@ public class StudyAssetsTest {
 	public void testVersionedWrongStudyDir()
 			throws IOException, PublixException {
 		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+				.createAndPersistExampleStudyForAdmin(injector);
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
@@ -175,7 +179,7 @@ public class StudyAssetsTest {
 	@Test
 	public void testVersionedWrongAssets() throws IOException, PublixException {
 		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+				.createAndPersistExampleStudyForAdmin(injector);
 		Study otherStudy = cloneStudy(study);
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
@@ -207,7 +211,7 @@ public class StudyAssetsTest {
 	public void testVersionedPathTraversalAttack()
 			throws IOException, PublixException {
 		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+				.createAndPersistExampleStudyForAdmin(injector);
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
@@ -227,7 +231,7 @@ public class StudyAssetsTest {
 		testHelper.mockContext();
 
 		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+				.createAndPersistExampleStudyForAdmin(injector);
 
 		Result result = studyAssets.retrieveComponentHtmlFile(
 				study.getDirName(),
@@ -245,7 +249,7 @@ public class StudyAssetsTest {
 	public void testRetrieveComponentHtmlFileNotFound()
 			throws IOException, PublixException {
 		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+				.createAndPersistExampleStudyForAdmin(injector);
 
 		try {
 			studyAssets.retrieveComponentHtmlFile(study.getDirName(),

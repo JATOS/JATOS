@@ -18,13 +18,14 @@ import org.apache.commons.io.FileUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 
+import com.google.inject.Injector;
+
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.JatosGuiException;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
-import play.Application;
 import play.Logger;
 import play.api.mvc.RequestHeader;
 import play.db.jpa.JPAApi;
@@ -88,7 +89,7 @@ public class TestHelper {
 			return fetchTheLazyOnes(admin);
 		});
 	}
-	
+
 	/**
 	 * Creates and persist user if an user with this email doesn't exist
 	 * already.
@@ -105,13 +106,13 @@ public class TestHelper {
 		});
 	}
 
-	public Study createAndPersistExampleStudyForAdmin(Application application)
+	public Study createAndPersistExampleStudyForAdmin(Injector injector)
 			throws IOException {
 		return jpaApi.withTransaction(() -> {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			Study exampleStudy;
 			try {
-				exampleStudy = importExampleStudy(admin, application);
+				exampleStudy = importExampleStudy(admin, injector);
 				studyService.createAndPersistStudy(admin, exampleStudy);
 				return exampleStudy;
 			} catch (IOException e) {
@@ -120,15 +121,15 @@ public class TestHelper {
 		});
 	}
 
-	public Study importExampleStudy(User user, Application application)
+	public Study importExampleStudy(User user, Injector injector)
 			throws IOException {
 		File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
 		File[] studyFileList = ioUtils.findFiles(tempUnzippedStudyDir, "",
 				IOUtils.STUDY_FILE_SUFFIX);
 		File studyFile = studyFileList[0];
-		UploadUnmarshaller<Study> uploadUnmarshaller = application.injector()
-				.instanceOf(StudyUploadUnmarshaller.class);
+		UploadUnmarshaller<Study> uploadUnmarshaller = injector
+				.getInstance(StudyUploadUnmarshaller.class);
 		Study importedStudy = uploadUnmarshaller.unmarshalling(studyFile);
 		studyFile.delete();
 
@@ -189,7 +190,7 @@ public class TestHelper {
 					.isEqualTo(httpStatus);
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public <T> T fetchTheLazyOnes(T obj) {
 		Hibernate.initialize(obj);
@@ -199,7 +200,7 @@ public class TestHelper {
 		}
 		return obj;
 	}
-	
+
 	public void mockContext() {
 		Cookies cookies = mock(Cookies.class);
 		mockContext(cookies);

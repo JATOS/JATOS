@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import general.TestHelper;
 import models.common.Study;
@@ -34,6 +35,8 @@ import utils.common.JsonUtils;
  */
 public class BatchesControllerTest {
 
+	private Injector injector;
+
 	@Inject
 	private static Application fakeApplication;
 
@@ -46,7 +49,8 @@ public class BatchesControllerTest {
 
 		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
 				.builder(new ApplicationLoader.Context(Environment.simple()));
-		Guice.createInjector(builder.applicationModule()).injectMembers(this);
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 
 		Helpers.start(fakeApplication);
 	}
@@ -63,8 +67,7 @@ public class BatchesControllerTest {
 	@Test
 	public void callCreatePersonalSingleRun() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
 				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
@@ -85,8 +88,7 @@ public class BatchesControllerTest {
 	@Test
 	public void callCreatePersonalMultipleRun() throws Exception {
 		User admin = testHelper.getAdmin();
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(fakeApplication);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
 				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
