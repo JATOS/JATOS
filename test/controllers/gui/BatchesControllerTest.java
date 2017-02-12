@@ -14,7 +14,7 @@ import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
 
-import controllers.ControllerTestHelper;
+import general.TestHelper;
 import models.common.Study;
 import models.common.User;
 import play.Application;
@@ -38,7 +38,7 @@ public class BatchesControllerTest {
 	private static Application fakeApplication;
 
 	@Inject
-	private ControllerTestHelper controllerTestHelper;
+	private TestHelper testHelper;
 
 	@Before
 	public void startApp() throws Exception {
@@ -54,16 +54,16 @@ public class BatchesControllerTest {
 	@After
 	public void stopApp() throws Exception {
 		// Clean up
-		controllerTestHelper.removeAllStudies();
+		testHelper.removeAllStudies();
 
 		Helpers.stop(fakeApplication);
-		controllerTestHelper.removeStudyAssetsRootDir();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
 	public void callCreatePersonalSingleRun() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
@@ -84,8 +84,8 @@ public class BatchesControllerTest {
 
 	@Test
 	public void callCreatePersonalMultipleRun() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		JsonNode jsonNode = JsonUtils.OBJECTMAPPER

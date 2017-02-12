@@ -13,7 +13,7 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 
-import controllers.ControllerTestHelper;
+import general.TestHelper;
 import models.common.User;
 import play.Application;
 import play.ApplicationLoader;
@@ -37,7 +37,7 @@ public class HomeControllerTest {
 	private static Application fakeApplication;
 
 	@Inject
-	private ControllerTestHelper controllerTestHelper;
+	private TestHelper testHelper;
 
 	@Before
 	public void startApp() throws Exception {
@@ -53,12 +53,12 @@ public class HomeControllerTest {
 	@After
 	public void stopApp() throws Exception {
 		Helpers.stop(fakeApplication);
-		controllerTestHelper.removeStudyAssetsRootDir();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
 	public void callHome() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Home.home().url());
@@ -72,7 +72,7 @@ public class HomeControllerTest {
 
 	@Test
 	public void callLog() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Home.log(1000).url());
@@ -86,12 +86,12 @@ public class HomeControllerTest {
 
 	@Test
 	public void callLogNotAsAdmin() throws Exception {
-		User notAdminUser = controllerTestHelper
+		User notAdminUser = testHelper
 				.createAndPersistUser("bla@bla.com", "Bla", "bla");
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, notAdminUser.getEmail())
 				.uri(controllers.gui.routes.Home.log(1000).url());
-		controllerTestHelper.assertJatosGuiException(request,
+		testHelper.assertJatosGuiException(request,
 				Http.Status.FORBIDDEN);
 	}
 

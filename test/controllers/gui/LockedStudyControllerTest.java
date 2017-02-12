@@ -16,10 +16,10 @@ import org.junit.rules.ExpectedException;
 
 import com.google.inject.Guice;
 
-import controllers.ControllerTestHelper;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.publix.ForbiddenReloadException;
+import general.TestHelper;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
@@ -52,7 +52,7 @@ public class LockedStudyControllerTest {
 	private static Application fakeApplication;
 
 	@Inject
-	private ControllerTestHelper controllerTestHelper;
+	private TestHelper testHelper;
 
 	@Inject
 	private JPAApi jpaApi;
@@ -89,10 +89,10 @@ public class LockedStudyControllerTest {
 	@After
 	public void stopApp() throws Exception {
 		// Clean up
-		controllerTestHelper.removeAllStudies();
+		testHelper.removeAllStudies();
 
 		Helpers.stop(fakeApplication);
-		controllerTestHelper.removeStudyAssetsRootDir();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	/**
@@ -100,10 +100,10 @@ public class LockedStudyControllerTest {
 	 * HTTP status 403.
 	 */
 	private void checkForbiddenBecauseLocked(Call call, String method) {
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method(method)
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(call.url());
-		controllerTestHelper.assertJatosGuiException(request,
+		testHelper.assertJatosGuiException(request,
 				Http.Status.FORBIDDEN);
 	}
 
@@ -119,7 +119,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callBatchesSubmitCreated() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.submitCreated(study.getId());
@@ -132,7 +132,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callBatchesSubmitEditedProperties() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.submitEditedProperties(
@@ -145,7 +145,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callBatchesToggleActive() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.toggleActive(study.getId(),
@@ -159,7 +159,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callBatchesToggleAllowedWorkerType() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.toggleAllowedWorkerType(
@@ -173,7 +173,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callBatchesRemove() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.remove(study.getId(),
@@ -187,7 +187,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callBatchesCreatePersonalSingleRun() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.createPersonalSingleRun(
@@ -201,7 +201,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callBatchesCreatePersonalMultipleRun() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Batches.createPersonalMultipleRun(
@@ -214,7 +214,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callComponentsSubmitCreated() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Components
@@ -227,7 +227,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callComponentsSubmitEdited() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Components
@@ -240,7 +240,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callComponentsToggleActive() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Components.toggleActive(
@@ -253,7 +253,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callComponentsCloneComponent() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Components.cloneComponent(
@@ -266,7 +266,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callComponentsRemove() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Components.remove(study.getId(),
@@ -279,7 +279,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callImportExportImportComponent() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.ImportExport
@@ -293,7 +293,7 @@ public class LockedStudyControllerTest {
 	 */
 	@Test
 	public void callImportExportImportComponentConfirmed() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.ImportExport
@@ -303,7 +303,7 @@ public class LockedStudyControllerTest {
 
 	@Test
 	public void callStudiesSubmitEdited() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Studies.submitEdited(study.getId());
@@ -312,7 +312,7 @@ public class LockedStudyControllerTest {
 
 	@Test
 	public void callStudiesRemove() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Studies.remove(study.getId());
@@ -321,7 +321,7 @@ public class LockedStudyControllerTest {
 
 	@Test
 	public void callStudiesChangeComponentOrder() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		lockStudy(study);
 		Call call = controllers.gui.routes.Studies.changeComponentOrder(
@@ -338,7 +338,7 @@ public class LockedStudyControllerTest {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			Study study;
 			try {
-				study = controllerTestHelper.importExampleStudy(admin,
+				study = testHelper.importExampleStudy(admin,
 						fakeApplication);
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
@@ -358,7 +358,7 @@ public class LockedStudyControllerTest {
 			}
 		});
 
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport

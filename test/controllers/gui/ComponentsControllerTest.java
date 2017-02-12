@@ -21,8 +21,8 @@ import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
 
-import controllers.ControllerTestHelper;
 import daos.common.ComponentDao;
+import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
@@ -50,7 +50,7 @@ public class ComponentsControllerTest {
 	private static Application fakeApplication;
 
 	@Inject
-	private ControllerTestHelper controllerTestHelper;
+	private TestHelper testHelper;
 
 	@Inject
 	private JPAApi jpaApi;
@@ -72,10 +72,10 @@ public class ComponentsControllerTest {
 	@After
 	public void stopApp() throws Exception {
 		// Clean up
-		controllerTestHelper.removeAllStudies();
+		testHelper.removeAllStudies();
 
 		Helpers.stop(fakeApplication);
-		controllerTestHelper.removeStudyAssetsRootDir();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	/**
@@ -83,8 +83,8 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callRunComponent() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
@@ -110,8 +110,8 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callRunComponentNoHtml() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		jpaApi.withTransaction(() -> {
@@ -127,7 +127,7 @@ public class ComponentsControllerTest {
 								.url());
 		// Empty html path must lead to an JatosGuiException with a HTTP status
 		// of 400
-		controllerTestHelper.assertJatosGuiException(request,
+		testHelper.assertJatosGuiException(request,
 				Http.Status.BAD_REQUEST);
 	}
 
@@ -136,8 +136,8 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callProperties() throws IOException {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
@@ -185,8 +185,8 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitCreated() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		Map<String, String> form = new HashMap<String, String>();
@@ -211,8 +211,8 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitEdited() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		Map<String, String> form = new HashMap<String, String>();
@@ -239,8 +239,8 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitValidationError() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		Map<String, String> form = new HashMap<String, String>();
@@ -273,8 +273,8 @@ public class ComponentsControllerTest {
 
 	@Test
 	public void callChangeProperty() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
@@ -289,8 +289,8 @@ public class ComponentsControllerTest {
 
 	@Test
 	public void callCloneComponent() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -303,8 +303,8 @@ public class ComponentsControllerTest {
 
 	@Test
 	public void callRemove() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
-		Study study = controllerTestHelper
+		User admin = testHelper.getAdmin();
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		RequestBuilder request = new RequestBuilder().method("DELETE")
 				.session(Users.SESSION_EMAIL, admin.getEmail())

@@ -17,7 +17,7 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 
-import controllers.ControllerTestHelper;
+import general.TestHelper;
 import models.common.User;
 import play.Application;
 import play.ApplicationLoader;
@@ -40,7 +40,7 @@ public class AuthenticationControllerTest {
 	private static Application fakeApplication;
 
 	@Inject
-	private ControllerTestHelper controllerTestHelper;
+	private TestHelper testHelper;
 
 	@Before
 	public void startApp() throws Exception {
@@ -56,7 +56,7 @@ public class AuthenticationControllerTest {
 	@After
 	public void stopApp() throws Exception {
 		Helpers.stop(fakeApplication);
-		controllerTestHelper.removeStudyAssetsRootDir();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	/**
@@ -64,7 +64,7 @@ public class AuthenticationControllerTest {
 	 */
 	@Test
 	public void callLogin() {
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Authentication.login().url());
@@ -81,7 +81,7 @@ public class AuthenticationControllerTest {
 	 */
 	@Test
 	public void callLogout() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Authentication.logout().url());

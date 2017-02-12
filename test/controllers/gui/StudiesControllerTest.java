@@ -22,8 +22,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 
-import controllers.ControllerTestHelper;
 import daos.common.StudyDao;
+import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
@@ -51,7 +51,7 @@ public class StudiesControllerTest {
 	private static Application fakeApplication;
 
 	@Inject
-	private ControllerTestHelper controllerTestHelper;
+	private TestHelper testHelper;
 
 	@Inject
 	private JPAApi jpaApi;
@@ -73,18 +73,18 @@ public class StudiesControllerTest {
 	@After
 	public void stopApp() throws Exception {
 		// Clean up
-		controllerTestHelper.removeAllStudies();
+		testHelper.removeAllStudies();
 
 		Helpers.stop(fakeApplication);
-		controllerTestHelper.removeStudyAssetsRootDir();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
 	public void callIndex() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies.study(study.getId()).url());
@@ -104,7 +104,7 @@ public class StudiesControllerTest {
 		formMap.put(StudyProperties.DIRNAME, "dirName_submit");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
 
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -141,7 +141,7 @@ public class StudiesControllerTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test <i>.");
 		formMap.put(StudyProperties.DIRNAME, "%.test");
 		formMap.put(StudyProperties.JSON_DATA, "{");
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -165,7 +165,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitCreatedStudyAssetsDirExists() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
@@ -173,7 +173,7 @@ public class StudiesControllerTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, study.getDirName());
 		formMap.put(StudyProperties.JSON_DATA, "{}");
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -186,10 +186,10 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callProperties() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies.properties(study.getId())
@@ -223,7 +223,7 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitEdited() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		Map<String, String> formMap = new HashMap<String, String>();
@@ -232,7 +232,7 @@ public class StudiesControllerTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, "dirName_submitEdited");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -256,9 +256,9 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSwapLock() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies.toggleLock(study.getId())
@@ -271,9 +271,9 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callRemove() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("DELETE")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies.remove(study.getId())
@@ -284,9 +284,9 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callCloneStudy() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies.cloneStudy(study.getId())
@@ -298,9 +298,9 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callChangeUser() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
@@ -312,9 +312,9 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitChangedUsers() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -327,9 +327,9 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callSubmitChangedUsersZeroUsers() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of("bla", "blu"))
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -343,9 +343,9 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callChangeComponentOrder() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		// Move first component to second position
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
@@ -373,9 +373,9 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callShowStudy() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
 				.session(Users.SESSION_EMAIL, admin.getEmail())
@@ -388,9 +388,9 @@ public class StudiesControllerTest {
 
 	@Test
 	public void callWorkers() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Users.SESSION_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies.workers(study.getId())

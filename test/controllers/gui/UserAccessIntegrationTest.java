@@ -14,10 +14,10 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 
-import controllers.ControllerTestHelper;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.publix.ForbiddenReloadException;
+import general.TestHelper;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
@@ -50,7 +50,7 @@ public class UserAccessIntegrationTest {
 	private static Application fakeApplication;
 
 	@Inject
-	private ControllerTestHelper controllerTestHelper;
+	private TestHelper testHelper;
 
 	@Inject
 	private JPAApi jpaApi;
@@ -81,15 +81,15 @@ public class UserAccessIntegrationTest {
 	@After
 	public void stopApp() throws Exception {
 		// Clean up
-		controllerTestHelper.removeAllStudies();
+		testHelper.removeAllStudies();
 
 		Helpers.stop(fakeApplication);
-		controllerTestHelper.removeStudyAssetsRootDir();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
 	public void callStudiesIndex() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 
 		Call call = controllers.gui.routes.Studies.study(study.getId());
@@ -99,7 +99,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesProperties() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.properties(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -114,7 +114,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callProperties() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.properties(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -123,7 +123,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesSubmitEdited() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.submitEdited(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.POST);
@@ -135,7 +135,7 @@ public class UserAccessIntegrationTest {
 	 */
 	@Test
 	public void callStudiesSwapLock() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.toggleLock(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.POST);
@@ -144,7 +144,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesRemove() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.remove(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.DELETE);
@@ -153,7 +153,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesCloneStudy() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.cloneStudy(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -162,7 +162,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesUsers() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.users(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -171,7 +171,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callUsers() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.users(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -180,7 +180,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesSubmitChangedUsers() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies
 				.submitChangedUsers(study.getId());
@@ -190,7 +190,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesTableDataByStudy() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies
 				.tableDataByStudy(study.getId());
@@ -200,7 +200,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesChangeComponentOrder() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.changeComponentOrder(
 				study.getId(), study.getComponentList().get(0).getId(),
@@ -211,7 +211,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesRunStudy() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.runStudy(study.getId(), -1l);
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -220,7 +220,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudiesWorkers() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Studies.workers(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -229,7 +229,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentsRunComponent() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Components.runComponent(
 				study.getId(), study.getComponent(1).getId(), -1l);
@@ -239,7 +239,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentsSubmitCreated() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Components
 				.submitCreated(study.getId());
@@ -249,7 +249,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentsSubmitEdited() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Components
 				.submitEdited(study.getId(), study.getComponent(1).getId());
@@ -259,7 +259,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentsProperties() throws IOException {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Components.properties(study.getId(),
 				study.getComponent(1).getId());
@@ -269,7 +269,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentsChangeProperty() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Components.toggleActive(
 				study.getId(), study.getComponent(1).getId(), true);
@@ -279,7 +279,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentsCloneComponent() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Components
 				.cloneComponent(study.getId(), study.getComponent(1).getId());
@@ -289,7 +289,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentsRemove() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Components.remove(study.getId(),
 				study.getComponent(1).getId());
@@ -317,7 +317,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callImportExportImportComponent() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.ImportExport
 				.importComponent(study.getId());
@@ -327,7 +327,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callImportExportExportComponent() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.ImportExport
 				.exportComponent(study.getId(), study.getComponent(1).getId());
@@ -337,7 +337,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callImportExportExportStudy() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.ImportExport
 				.exportStudy(study.getId());
@@ -347,7 +347,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentResultsIndex() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.ComponentResults
 				.componentResults(study.getId(), study.getComponent(1).getId());
@@ -357,7 +357,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentResultsRemove() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		StudyResult studyResult = createTwoComponentResults(study);
 		ComponentResult componentResult = studyResult.getComponentResultList()
@@ -369,7 +369,7 @@ public class UserAccessIntegrationTest {
 		// Logged-in user must be an user of the study to which the
 		// ComponentResult belongs that is to be deleted - if not an HTTP 403 is
 		// expected
-		User someUser = controllerTestHelper.createAndPersistUser("bla@bla.com",
+		User someUser = testHelper.createAndPersistUser("bla@bla.com",
 				"Bla", "bla");
 		checkThatCallIsForbidden(call, Helpers.DELETE, someUser);
 	}
@@ -393,7 +393,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentResultsRemoveAllOfComponent() throws IOException {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.ComponentResults
 				.removeAllOfComponent(study.getId(),
@@ -404,7 +404,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callComponentResultsTableDataByComponent() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.ComponentResults
 				.tableDataByComponent(study.getId(),
@@ -422,7 +422,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudyResultsIndex() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.StudyResults
 				.studysStudyResults(study.getId());
@@ -438,7 +438,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callStudyResultsTableDataByStudy() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.StudyResults
 				.tableDataByStudy(study.getId());
@@ -461,7 +461,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callUsersProfile() throws Exception {
-		User someUser = controllerTestHelper.createAndPersistUser("bla@bla.com",
+		User someUser = testHelper.createAndPersistUser("bla@bla.com",
 				"Bla", "bla");
 		Call call = controllers.gui.routes.Users.profile(someUser.getEmail());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -476,7 +476,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callUsersSubmitEditedProfile() throws Exception {
-		User someUser = controllerTestHelper.createAndPersistUser("bla@bla.com",
+		User someUser = testHelper.createAndPersistUser("bla@bla.com",
 				"Bla", "bla");
 		Call call = controllers.gui.routes.Users
 				.submitEditedProfile(someUser.getEmail());
@@ -487,7 +487,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callUsersSubmitChangedPassword() throws Exception {
-		User someUser = controllerTestHelper.createAndPersistUser("bla@bla.com",
+		User someUser = testHelper.createAndPersistUser("bla@bla.com",
 				"Bla", "bla");
 		Call call = controllers.gui.routes.Users
 				.submitChangedPassword(someUser.getEmail());
@@ -497,7 +497,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callWorkersIndex() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		Call call = controllers.gui.routes.StudyResults
 				.workersStudyResults(admin.getWorker().getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -505,7 +505,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callWorkersRemove() throws Exception {
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		Call call = controllers.gui.routes.Workers
 				.remove(admin.getWorker().getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.DELETE);
@@ -514,7 +514,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesRunManager() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Batches.batchManager(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
@@ -523,7 +523,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesBatchesByStudy() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Batches
 				.batchesByStudy(study.getId());
@@ -533,7 +533,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesAllowedWorkers() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Workers.workerSetup(study.getId(),
 				study.getDefaultBatch().getId());
@@ -543,7 +543,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesSubmitCreated() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Batches.submitCreated(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.POST);
@@ -552,7 +552,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesBatch() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Workers.workerSetup(study.getId(),
 				study.getDefaultBatch().getId());
@@ -562,7 +562,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesProperties() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Batches.properties(study.getId(),
 				study.getDefaultBatch().getId());
@@ -572,7 +572,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesSubmitEditedProperties() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Batches.submitEditedProperties(
 				study.getId(), study.getDefaultBatch().getId());
@@ -582,7 +582,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesChangeProperty() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Batches.toggleActive(study.getId(),
 				study.getDefaultBatch().getId(), true);
@@ -592,7 +592,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesRemove() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Batches.remove(study.getId(),
 				study.getDefaultBatch().getId());
@@ -602,7 +602,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesCreatePersonalSingleRun() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Batches
 				.createPersonalSingleRun(study.getId(), -1l);
@@ -612,7 +612,7 @@ public class UserAccessIntegrationTest {
 
 	@Test
 	public void callBatchesCreatePersonalMultipleRun() throws Exception {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
 		Call call = controllers.gui.routes.Batches
 				.createPersonalMultipleRun(study.getId(), -1l);
@@ -637,7 +637,7 @@ public class UserAccessIntegrationTest {
 	 * session). This should trigger a JatosGuiException with a 403 HTTP code.
 	 */
 	private void checkNotTheRightUser(Call call, Long studyId, String method) {
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		// We have to get the study from the database again because it's
 		// detached (Hibernate)
 		jpaApi.withTransaction(() -> {
@@ -653,11 +653,11 @@ public class UserAccessIntegrationTest {
 	 * user in the session for authentication.
 	 */
 	private void checkThatCallLeadsToRedirect(Call call, String method) {
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method(method)
 				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(call.url());
 
-		controllerTestHelper.assertJatosGuiException(request,
+		testHelper.assertJatosGuiException(request,
 				Http.Status.SEE_OTHER);
 	}
 
@@ -669,7 +669,7 @@ public class UserAccessIntegrationTest {
 	private void checkThatCallIsForbidden(Call call, String method, User user) {
 		RequestBuilder request = new RequestBuilder().method(method)
 				.session(Users.SESSION_EMAIL, user.getEmail()).uri(call.url());
-		controllerTestHelper.assertJatosGuiException(request,
+		testHelper.assertJatosGuiException(request,
 				Http.Status.FORBIDDEN);
 	}
 

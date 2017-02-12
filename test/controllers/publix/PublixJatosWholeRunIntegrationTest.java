@@ -22,12 +22,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
 
 import akka.stream.Materializer;
-import controllers.ControllerTestHelper;
 import controllers.gui.Users;
 import controllers.publix.workers.JatosPublix;
 import controllers.publix.workers.JatosPublix.JatosRun;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
+import general.TestHelper;
 import models.common.Component;
 import models.common.ComponentResult;
 import models.common.ComponentResult.ComponentState;
@@ -62,7 +62,7 @@ public class PublixJatosWholeRunIntegrationTest {
 	private static Application fakeApplication;
 
 	@Inject
-	private ControllerTestHelper controllerTestHelper;
+	private TestHelper testHelper;
 
 	@Inject
 	private JPAApi jpaApi;
@@ -90,10 +90,10 @@ public class PublixJatosWholeRunIntegrationTest {
 	@After
 	public void stopApp() throws Exception {
 		// Clean up
-		controllerTestHelper.removeAllStudies();
+		testHelper.removeAllStudies();
 
 		Helpers.stop(fakeApplication);
-		controllerTestHelper.removeStudyAssetsRootDir();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
@@ -109,9 +109,9 @@ public class PublixJatosWholeRunIntegrationTest {
 	 */
 	@Test
 	public void runWholeStudy() throws IOException {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 
 		// *************************************************************
 		// Start study:
@@ -354,9 +354,9 @@ public class PublixJatosWholeRunIntegrationTest {
 	 */
 	@Test
 	public void startAndAbortStudy() throws IOException {
-		Study study = controllerTestHelper
+		Study study = testHelper
 				.createAndPersistExampleStudyForAdmin(fakeApplication);
-		User admin = controllerTestHelper.getAdmin();
+		User admin = testHelper.getAdmin();
 
 		// *************************************************************
 		// Start study:
@@ -573,7 +573,7 @@ public class PublixJatosWholeRunIntegrationTest {
 			User admin = userDao.findByEmail(user.getEmail());
 			JatosWorker worker = admin.getWorker();
 			List<StudyResult> studyResultList = worker.getStudyResultList();
-			controllerTestHelper.fetchTheLazyOnes(studyResultList);
+			testHelper.fetchTheLazyOnes(studyResultList);
 			return worker.getStudyResultList();
 		});
 	}
@@ -581,12 +581,12 @@ public class PublixJatosWholeRunIntegrationTest {
 	private StudyResult retrieveStudyResult(long studyResultId) {
 		return jpaApi.withTransaction(() -> {
 			StudyResult studyResult = studyResultDao.findById(studyResultId);
-			controllerTestHelper.fetchTheLazyOnes(studyResult.getStudy());
-			controllerTestHelper.fetchTheLazyOnes(
+			testHelper.fetchTheLazyOnes(studyResult.getStudy());
+			testHelper.fetchTheLazyOnes(
 					studyResult.getStudy().getFirstComponent());
-			controllerTestHelper.fetchTheLazyOnes(studyResult.getWorker());
-			controllerTestHelper.fetchTheLazyOnes(studyResult.getBatch());
-			controllerTestHelper
+			testHelper.fetchTheLazyOnes(studyResult.getWorker());
+			testHelper.fetchTheLazyOnes(studyResult.getBatch());
+			testHelper
 					.fetchTheLazyOnes(studyResult.getComponentResultList());
 			return studyResult;
 		});
@@ -598,14 +598,14 @@ public class PublixJatosWholeRunIntegrationTest {
 			StudyResult studyResult = studyResultDao.findById(studyResultId);
 			ComponentResult componentResult = studyResult
 					.getComponentResultList().get(index);
-			controllerTestHelper.fetchTheLazyOnes(componentResult);
+			testHelper.fetchTheLazyOnes(componentResult);
 			StudyResult componentResultsStudyResult = componentResult
 					.getStudyResult();
-			controllerTestHelper.fetchTheLazyOnes(componentResultsStudyResult);
+			testHelper.fetchTheLazyOnes(componentResultsStudyResult);
 			Worker worker = componentResultsStudyResult.getWorker();
-			controllerTestHelper.fetchTheLazyOnes(worker);
+			testHelper.fetchTheLazyOnes(worker);
 			Component component = componentResult.getComponent();
-			controllerTestHelper.fetchTheLazyOnes(component);
+			testHelper.fetchTheLazyOnes(component);
 			return componentResult;
 		});
 	}
