@@ -100,8 +100,7 @@ public class ImportExportService {
 
 		// Move uploaded component file to Java's tmp folder
 		Path source = file.toPath();
-		Path target = getTempComponentFile(file.getName())
-				.toPath();
+		Path target = getTempComponentFile(file.getName()).toPath();
 		Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
 
 		// Create JSON response
@@ -112,7 +111,7 @@ public class ImportExportService {
 	}
 
 	public void importComponentConfirmed(Study study,
-			String tempComponentFileName) throws Exception {
+			String tempComponentFileName) throws IOException {
 		File componentFile = getTempComponentFile(tempComponentFileName);
 		if (componentFile == null) {
 			LOGGER.warn(".importComponentConfirmed: unzipping failed, "
@@ -178,7 +177,7 @@ public class ImportExportService {
 	}
 
 	public void importStudyConfirmed(User loggedInUser, JsonNode json)
-			throws Exception {
+			throws IOException, ForbiddenException, BadRequestException {
 		if (json == null) {
 			LOGGER.error(".importStudyConfirmed: JSON is null");
 			throw new IOException(MessagesStrings.IMPORT_OF_STUDY_FAILED);
