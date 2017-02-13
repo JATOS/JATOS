@@ -167,8 +167,6 @@ public class PublixJatosWholeRunIntegrationTest {
 
 		// Check ComponentResult and StudyResult
 		assertThat(studyResult.getComponentResultList().size()).isEqualTo(1);
-		// ComponentResult firstComponentResult = studyResult
-		// .getComponentResultList().get(0);
 		ComponentResult firstComponentResult = retrieveComponentResult(
 				studyResult.getId(), 0);
 		checkStates(studyResult, StudyState.STARTED, firstComponentResult,
@@ -376,7 +374,6 @@ public class PublixJatosWholeRunIntegrationTest {
 		// *************************************************************
 		// Start first component
 		// studyResult -> STARTED, componentResult -> STARTED
-		// result.
 		result = startComponent(studyResult, study.getFirstComponent(), admin,
 				idCookie);
 		idCookie = result.cookie("JATOS_IDS_0");
