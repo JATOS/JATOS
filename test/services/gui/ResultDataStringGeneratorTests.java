@@ -3,21 +3,35 @@ package services.gui;
 import static org.fest.assertions.Assertions.assertThat;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
-import org.fest.assertions.Fail;
+import javax.inject.Inject;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import daos.common.StudyDao;
+import daos.common.StudyResultDao;
+import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import exceptions.publix.ForbiddenReloadException;
-import general.AbstractTest;
+import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
-import services.gui.ResultDataStringGenerator;
+import models.common.User;
+import play.ApplicationLoader;
+import play.Environment;
+import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
+import services.publix.ResultCreator;
 import services.publix.workers.JatosPublixUtils;
 
 /**
@@ -25,21 +39,47 @@ import services.publix.workers.JatosPublixUtils;
  * 
  * @author Kristian Lange
  */
-public class ResultDataStringGeneratorTests extends AbstractTest {
+public class ResultDataStringGeneratorTests {
 
+	private Injector injector;
+
+	@Inject
+	private TestHelper testHelper;
+
+	@Inject
+	private JPAApi jpaApi;
+
+	@Inject
 	private ResultDataStringGenerator resultDataStringGenerator;
+
+	@Inject
 	private JatosPublixUtils jatosPublixUtils;
 
-	@Override
-	public void before() throws Exception {
-		resultDataStringGenerator = application.injector()
-				.instanceOf(ResultDataStringGenerator.class);
-		jatosPublixUtils = application.injector()
-				.instanceOf(JatosPublixUtils.class);
+	@Inject
+	private ResultCreator resultCreator;
+
+	@Inject
+	private StudyDao studyDao;
+
+	@Inject
+	private StudyResultDao studyResultDao;
+
+	@Inject
+	private UserDao userDao;
+
+	@Before
+	public void startApp() throws Exception {
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 	}
 
-	@Override
-	public void after() throws Exception {
+	@After
+	public void stopApp() throws Exception {
+		// Clean up
+		testHelper.removeAllStudies();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
@@ -48,15 +88,24 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		assertThat(a).isEqualTo(2);
 	}
 
+	/**
+	 * Test ResultDataStringGenerator.forWorker()
+	 */
 	@Test
-	public void checkForWorker() throws IOException, ForbiddenException,
-			BadRequestException, ForbiddenReloadException {
-		Study study = importExampleStudy();
-		addStudy(study);
-		createTwoStudyResults(study);
+	public void checkForWorker() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		String resultData = resultDataStringGenerator.forWorker(admin,
-				admin.getWorker());
+		String resultData = jpaApi.withTransaction(() -> {
+			try {
+				createTwoStudyResults(study.getId());
+				User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+				return resultDataStringGenerator.forWorker(admin,
+						admin.getWorker());
+			} catch (ForbiddenException | BadRequestException
+					| ForbiddenReloadException e) {
+				throw new RuntimeException(e);
+			}
+		});
 		assertThat(resultData)
 				.isEqualTo("1. StudyResult, 1. Component, 1. ComponentResult\n"
 						+ "1. StudyResult, 1. Component, 2. ComponentResult\n"
@@ -64,19 +113,25 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 						+ "2. StudyResult, 1. Component, 2. ComponentResult\n"
 						+ "2. StudyResult, 2. Component, 1. ComponentResult\n"
 						+ "2. StudyResult, 2. Component, 2. ComponentResult");
-
-		// Clean-up
-		removeStudy(study);
 	}
 
+	/**
+	 * Test ResultDataStringGenerator.forStudy()
+	 */
 	@Test
-	public void checkForStudy() throws IOException, ForbiddenException,
-			BadRequestException, ForbiddenReloadException {
-		Study study = importExampleStudy();
-		addStudy(study);
-		createTwoStudyResults(study);
+	public void checkForStudy() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		String resultData = resultDataStringGenerator.forStudy(admin, study);
+		String resultData = jpaApi.withTransaction(() -> {
+			try {
+				createTwoStudyResults(study.getId());
+				User admin = testHelper.getAdmin();
+				return resultDataStringGenerator.forStudy(admin, study);
+			} catch (ForbiddenException | BadRequestException
+					| ForbiddenReloadException e) {
+				throw new RuntimeException(e);
+			}
+		});
 		assertThat(resultData)
 				.isEqualTo("1. StudyResult, 1. Component, 1. ComponentResult\n"
 						+ "1. StudyResult, 1. Component, 2. ComponentResult\n"
@@ -84,120 +139,104 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 						+ "2. StudyResult, 1. Component, 2. ComponentResult\n"
 						+ "2. StudyResult, 2. Component, 1. ComponentResult\n"
 						+ "2. StudyResult, 2. Component, 2. ComponentResult");
-
-		// Clean-up
-		removeStudy(study);
 	}
 
+	/**
+	 * Test ResultDataStringGenerator.forComponent()
+	 */
 	@Test
-	public void checkForComponent() throws IOException, ForbiddenException,
-			BadRequestException, ForbiddenReloadException {
-		Study study = importExampleStudy();
-		addStudy(study);
-		createTwoStudyResults(study);
+	public void checkForComponent() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		String resultData = resultDataStringGenerator.forComponent(admin,
-				study.getFirstComponent());
+		String resultData = jpaApi.withTransaction(() -> {
+			try {
+				createTwoStudyResults(study.getId());
+				User admin = testHelper.getAdmin();
+				return resultDataStringGenerator.forComponent(admin,
+						study.getFirstComponent());
+			} catch (ForbiddenException | BadRequestException
+					| ForbiddenReloadException e) {
+				throw new RuntimeException(e);
+			}
+		});
 		assertThat(resultData)
 				.isEqualTo("1. StudyResult, 1. Component, 1. ComponentResult\n"
 						+ "1. StudyResult, 1. Component, 2. ComponentResult\n"
 						+ "2. StudyResult, 1. Component, 1. ComponentResult\n"
 						+ "2. StudyResult, 1. Component, 2. ComponentResult");
-
-		// Clean-up
-		removeStudy(study);
 	}
 
+	/**
+	 * Test ResultDataStringGenerator.fromListOfComponentResultIds()
+	 */
 	@Test
 	public void checkFromListOfComponentResultIds()
 			throws BadRequestException, ForbiddenException, IOException,
 			NotFoundException, ForbiddenReloadException {
-		Study study = importExampleStudy();
-		addStudy(study);
-		createTwoComponentResultsWithData(study);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		String resultData = resultDataStringGenerator
-				.fromListOfComponentResultIds("1, 2", admin);
+		String resultData = jpaApi.withTransaction(() -> {
+			try {
+				User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+				String componentResultIds;
+				componentResultIds = createTwoComponentResultsWithData(
+						study.getId());
+				return resultDataStringGenerator.fromListOfComponentResultIds(
+						componentResultIds, admin);
+			} catch (BadRequestException | NotFoundException
+					| ForbiddenException | ForbiddenReloadException e) {
+				throw new RuntimeException(e);
+			}
+		});
 		assertThat(resultData).isEqualTo(
 				"Thats a first component result.\nThats a second component result.");
-
-		// Clean-up
-		removeStudy(study);
 	}
 
-	private void createTwoComponentResultsWithData(Study study)
-			throws ForbiddenReloadException {
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		ComponentResult componentResult1 = jatosPublixUtils
-				.startComponent(study.getFirstComponent(), studyResult);
-		componentResult1.setData("Thats a first component result.");
-		// Have to set study manually in test - don't know why
-		componentResult1.getComponent().setStudy(study);
-		ComponentResult componentResult2 = jatosPublixUtils
-				.startComponent(study.getFirstComponent(), studyResult);
-		componentResult2.setData("Thats a second component result.");
-		// Have to set study manually in test - don't know why
-		componentResult2.getComponent().setStudy(study);
-		entityManager.getTransaction().commit();
-	}
-
+	/**
+	 * Test ResultDataStringGenerator.fromListOfComponentResultIds() without any
+	 * result data
+	 */
 	@Test
 	public void checkFromListOfComponentResultIdsEmpty()
 			throws BadRequestException, ForbiddenException, IOException,
 			ForbiddenReloadException {
-		Study study = importExampleStudy();
-		addStudy(study);
-		createTwoComponentResultsWithoutData(study);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		try {
-			resultDataStringGenerator.fromListOfComponentResultIds("1, 2",
-					admin);
-		} catch (NotFoundException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(MessagesStrings.componentResultNotExist(1l));
-		}
-
-		// Clean-up
-		removeStudy(study);
+		jpaApi.withTransaction(() -> {
+			try {
+				String componentResultIds = createTwoComponentResultsWithoutData(
+						study.getId());
+				User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+				resultDataStringGenerator.fromListOfComponentResultIds(
+						componentResultIds, admin);
+			} catch (NotFoundException e) {
+				assertThat(e.getMessage())
+						.isEqualTo(MessagesStrings.componentResultNotExist(1l));
+			} catch (BadRequestException | ForbiddenException
+					| ForbiddenReloadException e) {
+				throw new RuntimeException(e);
+			}
+		});
 	}
 
-	private void createTwoComponentResultsWithoutData(Study study)
-			throws ForbiddenReloadException {
-		entityManager.getTransaction().begin();
-		StudyResult studyResult = resultCreator.createStudyResult(study,
-				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult.setWorker(admin.getWorker());
-		ComponentResult componentResult = jatosPublixUtils
-				.startComponent(study.getFirstComponent(), studyResult);
-		// Have to set study manually in test - don't know why
-		componentResult.getComponent().setStudy(study);
-		componentResult = jatosPublixUtils
-				.startComponent(study.getFirstComponent(), studyResult);
-		// Have to set study manually in test - don't know why
-		componentResult.getComponent().setStudy(study);
-		entityManager.getTransaction().commit();
-	}
-
+	/**
+	 * Test ResultDataStringGenerator.fromListOfStudyResultIds()
+	 */
 	@Test
-	public void checkFromListOfStudyResultIds()
-			throws IOException, BadRequestException, NotFoundException,
-			ForbiddenException, ForbiddenReloadException {
-		Study study = importExampleStudy();
-		addStudy(study);
-		createTwoStudyResults(study);
+	public void checkFromListOfStudyResultIds() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		String resultData = null;
-		try {
-			resultData = resultDataStringGenerator
-					.fromListOfStudyResultIds("1, 2", admin);
-		} catch (NotFoundException e) {
-			Fail.fail();
-		}
+		String resultData = jpaApi.withTransaction(() -> {
+			try {
+				String ids = createTwoStudyResults(study.getId());
+				User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+				return resultDataStringGenerator.fromListOfStudyResultIds(ids,
+						admin);
+			} catch (NotFoundException | BadRequestException
+					| ForbiddenException | ForbiddenReloadException e) {
+				throw new RuntimeException(e);
+			}
+		});
 		assertThat(resultData)
 				.isEqualTo("1. StudyResult, 1. Component, 1. ComponentResult\n"
 						+ "1. StudyResult, 1. Component, 2. ComponentResult\n"
@@ -205,18 +244,78 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 						+ "2. StudyResult, 1. Component, 2. ComponentResult\n"
 						+ "2. StudyResult, 2. Component, 1. ComponentResult\n"
 						+ "2. StudyResult, 2. Component, 2. ComponentResult");
-
-		// Clean-up
-		removeStudy(study);
 	}
 
-	private void createTwoStudyResults(Study study)
+	/**
+	 * Test ResultDataStringGenerator.fromListOfStudyResultIds() without any
+	 * results
+	 */
+	@Test
+	public void checkFromListOfStudyResultIdsEmpty() {
+		testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+		// Never added any results
+		jpaApi.withTransaction(() -> {
+			try {
+				User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+				resultDataStringGenerator.fromListOfStudyResultIds("1, 2",
+						admin);
+			} catch (NotFoundException e) {
+				assertThat(e.getMessage())
+						.isEqualTo(MessagesStrings.studyResultNotExist(1l));
+			} catch (BadRequestException | ForbiddenException e) {
+				throw new RuntimeException(e);
+			}
+		});
+	}
+
+	private String createTwoComponentResultsWithData(long studyId)
 			throws ForbiddenReloadException {
-		entityManager.getTransaction().begin();
+		// Create StudyResult
+		Study study = studyDao.findById(studyId);
+		User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+		StudyResult studyResult = resultCreator.createStudyResult(study,
+				study.getDefaultBatch(), admin.getWorker());
+
+		// Create 2 ComponentResults
+		studyResult = studyResultDao.findById(studyResult.getId());
+		study = studyResult.getStudy();
+		ComponentResult componentResult1 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		componentResult1.setData("Thats a first component result.");
+		ComponentResult componentResult2 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		componentResult2.setData("Thats a second component result.");
+		return componentResult1.getId() + ", " + componentResult2.getId();
+	}
+
+	private String createTwoComponentResultsWithoutData(long studyId)
+			throws ForbiddenReloadException {
+		// Create StudyResult
+		Study study = studyDao.findById(studyId);
+		User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+		StudyResult studyResult = resultCreator.createStudyResult(study,
+				study.getDefaultBatch(), admin.getWorker());
+
+		// Create 2 ComponentResults without data
+		studyResult = studyResultDao.findById(studyResult.getId());
+		study = studyResult.getStudy();
+		ComponentResult componentResult1 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		ComponentResult componentResult2 = jatosPublixUtils
+				.startComponent(study.getFirstComponent(), studyResult);
+		return componentResult1.getId() + ", " + componentResult2.getId();
+	}
+
+	private String createTwoStudyResults(long studyId)
+			throws ForbiddenReloadException {
+		Study study = studyDao.findById(studyId);
+		User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+
+		// Create first StudyResult with two ComponentResults for the first
+		// Component
 		StudyResult studyResult1 = resultCreator.createStudyResult(study,
 				study.getDefaultBatch(), admin.getWorker());
-		// Have to set worker manually in test - don't know why
-		studyResult1.setWorker(admin.getWorker());
 		ComponentResult componentResult11 = jatosPublixUtils
 				.startComponent(study.getFirstComponent(), studyResult1);
 		componentResult11
@@ -226,10 +325,10 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		componentResult12
 				.setData("1. StudyResult, 1. Component, 2. ComponentResult");
 
+		// Create second StudyResult with four ComponentResults (two each for
+		// the first two Components)
 		StudyResult studyResult2 = resultCreator.createStudyResult(study,
 				study.getBatchList().get(0), admin.getWorker());
-		// // Have to set worker manually in test - don't know why
-		studyResult2.setWorker(admin.getWorker());
 		ComponentResult componentResult211 = jatosPublixUtils
 				.startComponent(study.getFirstComponent(), studyResult2);
 		componentResult211
@@ -247,33 +346,7 @@ public class ResultDataStringGeneratorTests extends AbstractTest {
 		componentResult222
 				.setData("2. StudyResult, 2. Component, 2. ComponentResult");
 
-		// Have to set study manually in test - don't know why
-		componentResult11.getComponent().setStudy(study);
-		componentResult12.getComponent().setStudy(study);
-		componentResult211.getComponent().setStudy(study);
-		componentResult212.getComponent().setStudy(study);
-		componentResult221.getComponent().setStudy(study);
-		componentResult222.getComponent().setStudy(study);
-		entityManager.getTransaction().commit();
-	}
-
-	@Test
-	public void checkFromListOfStudyResultIdsEmpty()
-			throws NoSuchAlgorithmException, IOException, BadRequestException,
-			ForbiddenException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
-		// Never added any results
-		try {
-			resultDataStringGenerator.fromListOfStudyResultIds("1, 2", admin);
-		} catch (NotFoundException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(MessagesStrings.studyResultNotExist(1l));
-		}
-
-		// Clean-up
-		removeStudy(study);
+		return studyResult1.getId() + ", " + studyResult2.getId();
 	}
 
 }
