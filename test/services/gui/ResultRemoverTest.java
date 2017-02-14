@@ -52,16 +52,13 @@ public class ResultRemoverTest {
 	private JPAApi jpaApi;
 
 	@Inject
+	private ResultTestHelper resultTestHelper;
+
+	@Inject
 	private ResultRemover resultRemover;
 
 	@Inject
-	private ResultCreator resultCreator;
-
-	@Inject
 	private ResultService resultService;
-
-	@Inject
-	private JatosPublixUtils jatosPublixUtils;
 
 	@Inject
 	private UserDao userDao;
@@ -97,7 +94,7 @@ public class ResultRemoverTest {
 	public void checkRemoveComponentResults() {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		String ids = createTwoComponentResults(study.getId());
+		String ids = resultTestHelper.createTwoComponentResults(study.getId());
 
 		// Now remove both ComponentResults
 		jpaApi.withTransaction(() -> {
@@ -129,7 +126,7 @@ public class ResultRemoverTest {
 			NotFoundException, ForbiddenReloadException {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		String ids = createTwoComponentResults(study.getId());
+		String ids = resultTestHelper.createTwoComponentResults(study.getId());
 
 		// Now try to remove the results but one of the result IDs doesn't exist
 		jpaApi.withTransaction(() -> {
@@ -164,7 +161,7 @@ public class ResultRemoverTest {
 	public void checkRemoveStudyResults() {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		String ids = createTwoStudyResults(study.getId());
+		String ids = resultTestHelper.createTwoStudyResults(study.getId());
 
 		// Now remove both StudyResults
 		jpaApi.withTransaction(() -> {
@@ -191,7 +188,7 @@ public class ResultRemoverTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		// Create some StudyResults
-		createTwoStudyResults(study.getId());
+		resultTestHelper.createTwoStudyResults(study.getId());
 
 		// Remove all StudyResults
 		jpaApi.withTransaction(() -> {
@@ -217,7 +214,7 @@ public class ResultRemoverTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		// Create some StudyResults
-		createTwoStudyResults(study.getId());
+		resultTestHelper.createTwoStudyResults(study.getId());
 
 		// And now try to remove them with the wrong user
 		jpaApi.withTransaction(() -> {
@@ -248,7 +245,7 @@ public class ResultRemoverTest {
 			throws BadRequestException, IOException, ForbiddenReloadException {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		createTwoStudyResults(study.getId());
+		resultTestHelper.createTwoStudyResults(study.getId());
 
 		// Lock study
 		jpaApi.withTransaction(() -> {
@@ -275,90 +272,6 @@ public class ResultRemoverTest {
 			List<StudyResult> studyResultList = studyResultDao
 					.findAllByStudy(study);
 			assertThat(studyResultList.size()).isEqualTo(2);
-		});
-	}
-
-	private String createTwoComponentResults(long studyId) {
-		return jpaApi.withTransaction(() -> {
-			try {
-				Study study = studyDao.findById(studyId);
-				User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-
-				StudyResult studyResult = resultCreator.createStudyResult(study,
-						study.getDefaultBatch(), admin.getWorker());
-				// Have to set worker manually in test - don't know why TODO
-				// studyResult.setWorker(admin.getWorker());
-				// Have to set study manually in test - don't know why TODO
-				// study.getFirstComponent().setStudy(study);
-				ComponentResult componentResult1 = jatosPublixUtils
-						.startComponent(study.getFirstComponent(), studyResult);
-				ComponentResult componentResult2 = jatosPublixUtils
-						.startComponent(study.getFirstComponent(), studyResult);
-				String ids = componentResult1.getId() + ", "
-						+ componentResult2.getId();
-
-				// Check that we have 2 results
-				List<Long> idList = resultService.extractResultIds(ids);
-				List<ComponentResult> componentResultList = resultService
-						.getComponentResults(idList);
-				assertThat(componentResultList.size()).isEqualTo(2);
-				return ids;
-			} catch (ForbiddenReloadException | BadRequestException
-					| NotFoundException e) {
-				throw new RuntimeException(e);
-			}
-		});
-	}
-
-	private String createTwoStudyResults(long studyId) {
-		return jpaApi.withTransaction(() -> {
-			try {
-				Study study = studyDao.findById(studyId);
-				User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-
-				StudyResult studyResult1 = resultCreator.createStudyResult(
-						study, study.getDefaultBatch(), admin.getWorker());
-				// Have to set worker manually in test - don't know why TODO
-				// studyResult1.setWorker(admin.getWorker());
-				ComponentResult componentResult11 = jatosPublixUtils
-						.startComponent(study.getFirstComponent(),
-								studyResult1);
-				componentResult11.setData(
-						"First ComponentResult's data of the first StudyResult.");
-				ComponentResult componentResult12 = jatosPublixUtils
-						.startComponent(study.getFirstComponent(),
-								studyResult1);
-				componentResult12.setData(
-						"Second ComponentResult's data of the first StudyResult.");
-
-				StudyResult studyResult2 = resultCreator.createStudyResult(
-						study, study.getBatchList().get(0), admin.getWorker());
-				// Have to set worker manually in test - don't know why TODO
-				// studyResult2.setWorker(admin.getWorker());
-				ComponentResult componentResult21 = jatosPublixUtils
-						.startComponent(study.getFirstComponent(),
-								studyResult1);
-				componentResult21.setData(
-						"First ComponentResult's data of the second StudyResult.");
-				ComponentResult componentResult22 = jatosPublixUtils
-						.startComponent(study.getFirstComponent(),
-								studyResult1);
-				componentResult22.setData(
-						"Second ComponentResult's data of the second StudyResult.");
-
-				String ids = studyResult1.getId() + ", " + studyResult2.getId();
-
-				// Check that we have 2 results
-				List<Long> idList = resultService.extractResultIds(ids);
-				List<StudyResult> studyResultList = resultService
-						.getStudyResults(idList);
-				assertThat(studyResultList.size()).isEqualTo(2);
-
-				return ids;
-			} catch (ForbiddenReloadException | BadRequestException
-					| NotFoundException e) {
-				throw new RuntimeException(e);
-			}
 		});
 	}
 
