@@ -3,38 +3,79 @@ package services.gui;
 import static org.fest.assertions.Assertions.assertThat;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
+import java.io.UncheckedIOException;
+
+import javax.inject.Inject;
 
 import org.fest.assertions.Fail;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import daos.common.StudyDao;
+import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
-import general.AbstractTest;
+import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import models.gui.StudyProperties;
+import play.ApplicationLoader;
+import play.Environment;
+import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
+import utils.common.IOUtils;
 
 /**
  * Tests StudyService
  * 
  * @author Kristian Lange
  */
-public class StudyServiceTest extends AbstractTest {
+public class StudyServiceTest {
+
+	private Injector injector;
+
+	@Inject
+	private TestHelper testHelper;
+
+	@Inject
+	private JPAApi jpaApi;
+
+	@Inject
+	private UserDao userDao;
+
+	@Inject
+	private StudyDao studyDao;
+
+	@Inject
+	private StudyService studyService;
+
+	@Inject
+	private IOUtils ioUtils;
 
 	@Rule
 	public ExpectedException exception = ExpectedException.none();
 
-	@Override
-	public void before() throws Exception {
+	@Before
+	public void startApp() throws Exception {
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 	}
 
-	@Override
-	public void after() throws Exception {
+	@After
+	public void stopApp() throws Exception {
+		// Clean up
+		testHelper.removeAllStudies();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
@@ -43,51 +84,54 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(a).isEqualTo(2);
 	}
 
-	@Test
-	public void checkCloneStudy() throws NoSuchAlgorithmException, IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
-		Study clone = cloneAndPersistStudy(study);
-		Study cloneInDb = studyDao.findByUuid(clone.getUuid());
-
-		// Equal
-		assertThat(cloneInDb.getComponentList().size())
-				.isEqualTo(study.getComponentList().size());
-		assertThat(cloneInDb.getFirstComponent().getTitle())
-				.isEqualTo(study.getFirstComponent().getTitle());
-		assertThat(cloneInDb.getLastComponent().getTitle())
-				.isEqualTo(study.getLastComponent().getTitle());
-		assertThat(cloneInDb.getDate()).isEqualTo(study.getDate());
-		assertThat(cloneInDb.getDescription())
-				.isEqualTo(study.getDescription());
-		assertThat(cloneInDb.getComments()).isEqualTo(study.getComments());
-		assertThat(cloneInDb.getJsonData()).isEqualTo(study.getJsonData());
-		assertThat(cloneInDb.getUserList()).containsOnly(admin);
-		assertThat(cloneInDb.getTitle())
-				.isEqualTo(study.getTitle() + " (clone)");
-
-		// Not equal
-		assertThat(cloneInDb.isLocked()).isFalse();
-		assertThat(cloneInDb.getId()).isNotEqualTo(study.getId());
-		assertThat(cloneInDb.getId()).isPositive();
-		assertThat(cloneInDb.getDirName())
-				.isEqualTo(study.getDirName() + "_clone");
-		assertThat(cloneInDb.getUuid()).isNotEqualTo(study.getUuid());
-		assertThat(cloneInDb.getUuid()).isNotEmpty();
-
-		assertThat(ioUtils.checkStudyAssetsDirExists(cloneInDb.getDirName()))
-				.isTrue();
-
-		// Clean-up
-		removeStudy(study);
-		removeStudy(clone);
+	private Study cloneAndPersistStudy(Study studyToBeCloned) {
+		return jpaApi.withTransaction(() -> {
+			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			try {
+				Study studyClone = studyService.clone(studyToBeCloned);
+				studyService.createAndPersistStudy(admin, studyClone);
+				return studyClone;
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		});
 	}
 
 	@Test
-	public void checkUpdateStudy()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
+	public void checkCloneStudy() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+		Study clone = cloneAndPersistStudy(study);
+
+		// Equal
+		assertThat(clone.getComponentList().size())
+				.isEqualTo(study.getComponentList().size());
+		assertThat(clone.getFirstComponent().getTitle())
+				.isEqualTo(study.getFirstComponent().getTitle());
+		assertThat(clone.getLastComponent().getTitle())
+				.isEqualTo(study.getLastComponent().getTitle());
+		assertThat(clone.getDate()).isEqualTo(study.getDate());
+		assertThat(clone.getDescription()).isEqualTo(study.getDescription());
+		assertThat(clone.getComments()).isEqualTo(study.getComments());
+		assertThat(clone.getJsonData()).isEqualTo(study.getJsonData());
+		assertThat(clone.getUserList()).containsOnly(testHelper.getAdmin());
+		assertThat(clone.getTitle()).isEqualTo(study.getTitle() + " (clone)");
+
+		// Not equal
+		assertThat(clone.isLocked()).isFalse();
+		assertThat(clone.getId()).isNotEqualTo(study.getId());
+		assertThat(clone.getId()).isPositive();
+		assertThat(clone.getDirName()).isEqualTo(study.getDirName() + "_clone");
+		assertThat(clone.getUuid()).isNotEqualTo(study.getUuid());
+		assertThat(clone.getUuid()).isNotEmpty();
+
+		assertThat(ioUtils.checkStudyAssetsDirExists(clone.getDirName()))
+				.isTrue();
+	}
+
+	@Test
+	public void checkUpdateStudy() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		StudyProperties updatedProps = new StudyProperties();
 		updatedProps.setDescription("Changed description");
@@ -113,180 +157,85 @@ public class StudyServiceTest extends AbstractTest {
 		assertThat(study.getLastComponent().getTitle())
 				.isEqualTo("Quit button");
 		assertThat(study.getId()).isEqualTo(studyId);
-		assertThat(study.getUserList()).contains(admin);
+		assertThat(study.getUserList()).contains(testHelper.getAdmin());
 		assertThat(study.getUuid())
 				.isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
-	public void checkExchangeUsers()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
+	public void checkExchangeUsers() {
+		testHelper.mockContext();
 
-		User userBla = createAndPersistUser("bla@bla.com", "Bla", "bla");
-		createAndPersistUser("blu@blu.com", "Blu", "blu");
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		entityManager.getTransaction().begin();
-		try {
-			String[] userList = { "admin", "bla@bla.com" };
-			studyService.exchangeUsers(study, userList);
-		} catch (BadRequestException e) {
-			Fail.fail();
-		}
-		entityManager.getTransaction().commit();
+		User userBla = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+				"bla");
+		testHelper.createAndPersistUser("blu@blu.com", "Blu", "blu");
 
-		entityManager.getTransaction().begin();
-		Study studyInDb = studyDao.findByUuid(study.getUuid());
-		assertThat(studyInDb.getUserList()).containsOnly(userBla, admin);
-		entityManager.getTransaction().commit();
+		// Exchange users of the study with admin and userBla
+		jpaApi.withTransaction(() -> {
+			try {
+				String[] userList = { UserService.ADMIN_EMAIL,
+						userBla.getEmail() };
+				studyService.exchangeUsers(study, userList);
+			} catch (BadRequestException e) {
+				Fail.fail();
+			}
+		});
 
-		// Empty user list
-		entityManager.getTransaction().begin();
-		try {
-			String[] userList = {};
-			studyService.exchangeUsers(study, userList);
-			Fail.fail();
-		} catch (BadRequestException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(MessagesStrings.STUDY_AT_LEAST_ONE_USER);
-		}
-		entityManager.getTransaction().commit();
+		// Check that study's users are admin and userBla
+		jpaApi.withTransaction(() -> {
+			Study s = studyDao.findByUuid(study.getUuid());
+			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			assertThat(s.getUserList()).containsOnly(userBla, admin);
+		});
 
-		// Not existent user
-		entityManager.getTransaction().begin();
-		try {
-			String[] userList = { "not_exist", "admin" };
-			studyService.exchangeUsers(study, userList);
-			Fail.fail();
-		} catch (BadRequestException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(MessagesStrings.userNotExist("not_exist"));
-		}
-		entityManager.getTransaction().commit();
+		// Exchange users with empty user list should fail
+		jpaApi.withTransaction(() -> {
+			try {
+				String[] userList = {};
+				studyService.exchangeUsers(study, userList);
+				Fail.fail();
+			} catch (BadRequestException e) {
+				assertThat(e.getMessage())
+						.isEqualTo(MessagesStrings.STUDY_AT_LEAST_ONE_USER);
+			}
+		});
 
-		// Clean-up
-		removeStudy(study);
+		// Exchange users with non existent user should fail
+		jpaApi.withTransaction(() -> {
+			try {
+				String[] userList = { "not_exist", "admin" };
+				studyService.exchangeUsers(study, userList);
+				Fail.fail();
+			} catch (BadRequestException e) {
+				assertThat(e.getMessage())
+						.isEqualTo(MessagesStrings.userNotExist("not_exist"));
+			}
+		});
 	}
 
 	@Test
-	public void testCheckStudyLocked()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
+	public void checkChangeComponentPosition() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		try {
-			checker.checkStudyLocked(study);
-		} catch (ForbiddenException e) {
-			Fail.fail();
-		}
+		// Change position of component from first to third
+		checkChangeToPosition(1, 3, study.getId());
 
-		study.setLocked(true);
-		try {
-			checker.checkStudyLocked(study);
-			Fail.fail();
-		} catch (ForbiddenException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(MessagesStrings.studyLocked(study.getId()));
-		}
-
-		// Clean-up
-		removeStudy(study);
-	}
-
-	@Test
-	public void testCheckStandardForStudy()
-			throws NoSuchAlgorithmException, IOException {
-		try {
-			checker.checkStandardForStudy(null, 1l, admin);
-			Fail.fail();
-		} catch (ForbiddenException e) {
-			Fail.fail();
-		} catch (BadRequestException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(MessagesStrings.studyNotExist(1l));
-		}
-
-		Study study = importExampleStudy();
-		addStudy(study);
-		try {
-			checker.checkStandardForStudy(study, study.getId(), admin);
-		} catch (ForbiddenException e) {
-			Fail.fail();
-		} catch (BadRequestException e) {
-			Fail.fail();
-		}
-
-		study.getUserList().remove(admin);
-		try {
-			checker.checkStandardForStudy(study, study.getId(), admin);
-			Fail.fail();
-		} catch (ForbiddenException e) {
-			assertThat(e.getMessage())
-					.isEqualTo(MessagesStrings.studyNotUser(admin.getName(),
-							admin.getEmail(), study.getId(), study.getTitle()));
-		} catch (BadRequestException e) {
-			Fail.fail();
-		}
-
-		// Clean-up
-		removeStudy(study);
-	}
-
-	@Test
-	public void checkChangeComponentPosition()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
-		// First component to third position
-		Component component = study.getFirstComponent();
-		try {
-			entityManager.getTransaction().begin();
-			studyService.changeComponentPosition("3", study, component);
-			entityManager.getTransaction().commit();
-		} catch (BadRequestException e) {
-			Fail.fail();
-		}
-		assertThat(study.getComponent(3)).isEqualTo(component);
-
-		// Back to first
-		try {
-			entityManager.getTransaction().begin();
-			studyService.changeComponentPosition("1", study, component);
-			entityManager.getTransaction().commit();
-		} catch (BadRequestException e) {
-			Fail.fail();
-		}
-		assertThat(study.getComponent(1)).isEqualTo(component);
+		// And back to first
+		checkChangeToPosition(3, 1, study.getId());
 
 		// First component to first position -> still first
-		try {
-			entityManager.getTransaction().begin();
-			studyService.changeComponentPosition("1", study, component);
-			entityManager.getTransaction().commit();
-		} catch (BadRequestException e) {
-			Fail.fail();
-		}
-		assertThat(study.getComponent(1)).isEqualTo(component);
+		checkChangeToPosition(1, 1, study.getId());
 
 		// Last component to last position -> still last
-		component = study.getLastComponent();
-		try {
-			entityManager.getTransaction().begin();
-			studyService.changeComponentPosition("7", study, component);
-			entityManager.getTransaction().commit();
-		} catch (BadRequestException e) {
-			Fail.fail();
-		}
-		assertThat(study.getLastComponent()).isEqualTo(component);
+		int lastPostion = study.getComponentPosition(study.getLastComponent());
+		checkChangeToPosition(lastPostion, lastPostion, study.getId());
 
 		// NumberFormatException
 		try {
-			studyService.changeComponentPosition("bla", study, component);
+			studyService.changeComponentPosition("bla", study,
+					study.getFirstComponent());
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage()).isEqualTo(
@@ -294,37 +243,54 @@ public class StudyServiceTest extends AbstractTest {
 		}
 
 		// IndexOutOfBoundsException
-		try {
-			studyService.changeComponentPosition("100", study, component);
-			Fail.fail();
-		} catch (BadRequestException e) {
-			assertThat(e.getMessage()).isEqualTo(MessagesStrings
-					.studyReorderUnknownPosition("100", study.getId()));
-		}
-
-		// Clean-up
-		removeStudy(study);
+		jpaApi.withTransaction(() -> {
+			Study s = studyDao.findById(study.getId());
+			try {
+				studyService.changeComponentPosition("100", s,
+						s.getFirstComponent());
+				Fail.fail();
+			} catch (BadRequestException e) {
+				assertThat(e.getMessage()).isEqualTo(MessagesStrings
+						.studyReorderUnknownPosition("100", s.getId()));
+			}
+		});
 	}
 
 	@Test
-	public void checkRenameStudyAssetsDir()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
+	public void checkRenameStudyAssetsDir() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		String oldDirName = study.getDirName();
 
-		entityManager.getTransaction().begin();
-		studyService.renameStudyAssetsDir(study, "changed_dirname");
-		entityManager.getTransaction().commit();
+		jpaApi.withTransaction(() -> {
+			try {
+				studyService.renameStudyAssetsDir(study, "changed_dirname");
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		});
 
-		assertThat(study.getDirName()).isEqualTo("changed_dirname");
-		assertThat(ioUtils.checkStudyAssetsDirExists("changed_dirname"))
-				.isTrue();
-		assertThat(ioUtils.checkStudyAssetsDirExists(oldDirName)).isFalse();
+		jpaApi.withTransaction(() -> {
+			Study s = studyDao.findById(study.getId());
+			assertThat(s.getDirName()).isEqualTo("changed_dirname");
+			assertThat(ioUtils.checkStudyAssetsDirExists("changed_dirname"))
+					.isTrue();
+			assertThat(ioUtils.checkStudyAssetsDirExists(oldDirName)).isFalse();
+		});
+	}
 
-		// Clean-up
-		removeStudy(study);
+	private void checkChangeToPosition(int fromPosition, int toPosition,
+			long studyId) {
+		jpaApi.withTransaction(() -> {
+			Study s = studyDao.findById(studyId);
+			Component c = s.getComponent(fromPosition);
+			try {
+				studyService.changeComponentPosition("" + toPosition, s, c);
+			} catch (BadRequestException e) {
+				Fail.fail();
+			}
+			assertThat(s.getComponent(toPosition)).isEqualTo(c);
+		});
 	}
 
 }
