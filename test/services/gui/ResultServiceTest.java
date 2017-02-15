@@ -16,7 +16,6 @@ import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
@@ -59,9 +58,6 @@ public class ResultServiceTest {
 
 	@Inject
 	private UserDao userDao;
-
-	@Inject
-	private StudyResultDao studyResultDao;
 
 	@Before
 	public void startApp() throws Exception {

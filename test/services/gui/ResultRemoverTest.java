@@ -33,8 +33,6 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
-import services.publix.ResultCreator;
-import services.publix.workers.JatosPublixUtils;
 
 /**
  * Tests ResultRemover

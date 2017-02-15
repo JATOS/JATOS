@@ -106,8 +106,7 @@ public class TestHelper {
 		});
 	}
 
-	public Study createAndPersistExampleStudyForAdmin(Injector injector)
-			throws IOException {
+	public Study createAndPersistExampleStudyForAdmin(Injector injector) {
 		return jpaApi.withTransaction(() -> {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			Study exampleStudy;

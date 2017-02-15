@@ -2,37 +2,20 @@ package services.gui;
 
 import static org.fest.assertions.Assertions.assertThat;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import org.fest.assertions.Fail;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
 import daos.common.StudyDao;
-import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
-import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import exceptions.publix.ForbiddenReloadException;
-import general.TestHelper;
-import general.common.MessagesStrings;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
-import play.ApplicationLoader;
-import play.Environment;
 import play.db.jpa.JPAApi;
-import play.inject.guice.GuiceApplicationBuilder;
-import play.inject.guice.GuiceApplicationLoader;
 import services.publix.ResultCreator;
 import services.publix.workers.JatosPublixUtils;
 

@@ -16,10 +16,12 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
 import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.Component;
 import models.common.Study;
+import models.common.User;
 import play.ApplicationLoader;
 import play.Environment;
 import play.inject.guice.GuiceApplicationBuilder;
@@ -77,7 +79,7 @@ public class CheckerTest {
 			Fail.fail();
 		}
 
-		long nonExistentStudyId = 2l;
+		long nonExistentStudyId = 11111l;
 		try {
 			checker.checkStandardForComponents(nonExistentStudyId,
 					component.getId(), component);
@@ -105,6 +107,62 @@ public class CheckerTest {
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage())
 					.isEqualTo(MessagesStrings.componentNotExist(null));
+		}
+	}
+
+	@Test
+	public void testCheckStudyLocked() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+		try {
+			checker.checkStudyLocked(study);
+		} catch (ForbiddenException e) {
+			Fail.fail();
+		}
+
+		study.setLocked(true);
+		try {
+			checker.checkStudyLocked(study);
+			Fail.fail();
+		} catch (ForbiddenException e) {
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.studyLocked(study.getId()));
+		}
+	}
+
+	@Test
+	public void testCheckStandardForStudy() {
+		User admin = testHelper.getAdmin();
+
+		try {
+			checker.checkStandardForStudy(null, 1l, admin);
+			Fail.fail();
+		} catch (ForbiddenException e) {
+			Fail.fail();
+		} catch (BadRequestException e) {
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.studyNotExist(1l));
+		}
+
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+		try {
+			checker.checkStandardForStudy(study, study.getId(), admin);
+		} catch (ForbiddenException e) {
+			Fail.fail();
+		} catch (BadRequestException e) {
+			Fail.fail();
+		}
+
+		study.getUserList().remove(admin);
+		try {
+			checker.checkStandardForStudy(study, study.getId(), admin);
+			Fail.fail();
+		} catch (ForbiddenException e) {
+			assertThat(e.getMessage())
+					.isEqualTo(MessagesStrings.studyNotUser(admin.getName(),
+							admin.getEmail(), study.getId(), study.getTitle()));
+		} catch (BadRequestException e) {
+			Fail.fail();
 		}
 	}
 
