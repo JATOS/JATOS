@@ -7,33 +7,52 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.UUID;
 
+import javax.inject.Inject;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import general.AbstractTest;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import general.TestHelper;
 import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
+import play.ApplicationLoader;
+import play.Environment;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.Cookie;
 
 /**
  * @author Kristian Lange
  */
-public class GeneralSingleCookieServiceTest extends AbstractTest {
+public class GeneralSingleCookieServiceTest {
 
 	/**
 	 * Dummy cookie value for three study runs with worker IDs 3, 4, 5
 	 */
 	private static final String DUMMY_COOKIE = "82be1411-9044-46ad-b0b6-8ce703792107=3&148a1fb1-8a2c-4d4b-ac4f-d63ff1f7037c=4&2998f8b2-8fda-4266-9806-88ad752f6ed3=5";
 
+	private Injector injector;
+
+	@Inject
+	private TestHelper testHelper;
+
+	@Inject
 	private GeneralSingleCookieService generalSingleCookieService;
 
-	@Override
-	public void before() throws Exception {
-		generalSingleCookieService = application.injector()
-				.instanceOf(GeneralSingleCookieService.class);
+	@Before
+	public void startApp() throws Exception {
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 	}
 
-	@Override
-	public void after() throws Exception {
+	@After
+	public void stopApp() throws Exception {
 	}
 
 	@Test
@@ -134,7 +153,7 @@ public class GeneralSingleCookieServiceTest extends AbstractTest {
 	private void putCookieInContext(String cookieValue) {
 		Cookie cookie = new Cookie(GeneralSingleCookieService.COOKIE_NAME,
 				cookieValue, Integer.MAX_VALUE, "/", "", false, true);
-		mockContext(cookie);
+		testHelper.mockContext(cookie);
 	}
 
 }
