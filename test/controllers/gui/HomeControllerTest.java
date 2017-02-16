@@ -52,6 +52,9 @@ public class HomeControllerTest {
 
 	@After
 	public void stopApp() throws Exception {
+		// Clean up
+		testHelper.removeAllStudies();
+
 		Helpers.stop(fakeApplication);
 		testHelper.removeStudyAssetsRootDir();
 	}

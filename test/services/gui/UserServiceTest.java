@@ -86,11 +86,11 @@ public class UserServiceTest {
 		// Unknown user should throw NotFoundException
 		jpaApi.withTransaction(() -> {
 			try {
-				userService.retrieveUser("bla");
+				userService.retrieveUser("user-not-exist");
 				Fail.fail();
 			} catch (NotFoundException e) {
-				assertThat(e.getMessage())
-						.isEqualTo(MessagesStrings.userNotExist("bla"));
+				assertThat(e.getMessage()).isEqualTo(
+						MessagesStrings.userNotExist("user-not-exist"));
 			}
 		});
 	}
@@ -108,7 +108,7 @@ public class UserServiceTest {
 
 	@Test
 	public void checkValidateNewUser() {
-		User testUser = new User("bla@bla.com", "Bla", "bla");
+		User testUser = new User("george@bla.com", "Bla", "bla");
 
 		jpaApi.withTransaction(() -> {
 			List<ValidationError> errorList = userService

@@ -5,6 +5,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import daos.common.StudyDao;
 import daos.common.UserDao;
@@ -22,6 +23,7 @@ import services.publix.workers.JatosPublixUtils;
 /**
  * @author Kristian Lange
  */
+@Singleton
 public class ResultTestHelper {
 
 	@Inject

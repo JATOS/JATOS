@@ -10,9 +10,7 @@ import javax.inject.Inject;
 import org.fest.assertions.Fail;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -59,9 +57,6 @@ public class StudyServiceTest {
 
 	@Inject
 	private IOUtils ioUtils;
-
-	@Rule
-	public ExpectedException exception = ExpectedException.none();
 
 	@Before
 	public void startApp() throws Exception {

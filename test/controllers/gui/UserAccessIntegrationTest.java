@@ -486,7 +486,6 @@ public class UserAccessIntegrationTest {
 				.submitEditedProfile(someUser.getEmail());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.POST);
 		checkThatCallLeadsToRedirect(call, Helpers.POST);
-
 	}
 
 	@Test
