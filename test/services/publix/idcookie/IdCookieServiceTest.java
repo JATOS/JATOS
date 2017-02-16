@@ -6,35 +6,71 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.fest.assertions.Fail;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import daos.common.UserDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.InternalServerErrorPublixException;
-import general.AbstractTest;
+import general.TestHelper;
 import models.common.Study;
 import models.common.StudyResult;
+import models.common.User;
 import models.common.workers.JatosWorker;
+import play.ApplicationLoader;
+import play.Environment;
+import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.Cookie;
+import services.gui.UserService;
+import services.publix.ResultCreator;
 
 /**
  * @author Kristian Lange (2017)
  */
-public class IdCookieServiceTest extends AbstractTest {
+public class IdCookieServiceTest {
 
+	private Injector injector;
+
+	@Inject
+	private TestHelper testHelper;
+
+	@Inject
+	private JPAApi jpaApi;
+
+	@Inject
 	private IdCookieService idCookieService;
+
+	@Inject
 	private IdCookieTestHelper idCookieTestHelper;
 
-	@Override
-	public void before() throws Exception {
-		this.idCookieService = application.injector()
-				.instanceOf(IdCookieService.class);
-		this.idCookieTestHelper = application.injector()
-				.instanceOf(IdCookieTestHelper.class);
+	@Inject
+	private ResultCreator resultCreator;
+
+	@Inject
+	private UserDao userDao;
+
+	@Before
+	public void startApp() throws Exception {
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 	}
 
-	@Override
-	public void after() throws Exception {
+	@After
+	public void stopApp() throws Exception {
+		// Clean up
+		testHelper.removeAllStudies();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	/**
@@ -49,7 +85,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		// Get IdCookie for study result ID 1l
 		IdCookieModel idCookie = idCookieService.getIdCookie(1l);
@@ -72,7 +108,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		try {
 			idCookieService.getIdCookie(2l);
@@ -96,7 +132,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		assertThat(idCookieService
 				.oneIdCookieHasThisStudyAssets("test_study_assets1")).isTrue();
@@ -114,7 +150,7 @@ public class IdCookieServiceTest extends AbstractTest {
 	public void checkOneIdCookieHasThisStudyAssetsEmptyList()
 			throws InternalServerErrorPublixException {
 		List<Cookie> cookieList = new ArrayList<>();
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		assertThat(idCookieService
 				.oneIdCookieHasThisStudyAssets("test_study_assets")).isFalse();
@@ -128,22 +164,24 @@ public class IdCookieServiceTest extends AbstractTest {
 	public void checkWriteIdCookie() throws IOException,
 			InternalServerErrorPublixException, BadRequestPublixException {
 		List<Cookie> cookieList = new ArrayList<>();
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
-		Study study = importExampleStudy();
-		addStudy(study);
-		StudyResult studyResult = addStudyResult(study);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+		StudyResult studyResult = createAndPersistStudyResult(study);
 
+		User admin = testHelper.getAdmin();
 		idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(),
 				studyResult);
 
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResult.getId());
+		IdCookieModel idCookie = idCookieService
+				.getIdCookie(studyResult.getId());
 		assertThat(idCookie).isNotNull();
 		// Check naming
 		assertThat(idCookie.getName())
 				.startsWith(IdCookieModel.ID_COOKIE_NAME + "_");
 		// Check proper ID cookie values
-		assertThat(idCookie.getBatchId()).isEqualTo(1l);
+		assertThat(idCookie.getBatchId())
+				.isEqualTo(studyResult.getBatch().getId());
 		assertThat(idCookie.getComponentId()).isNull();
 		assertThat(idCookie.getComponentPosition()).isNull();
 		assertThat(idCookie.getComponentResultId()).isNull();
@@ -153,13 +191,10 @@ public class IdCookieServiceTest extends AbstractTest {
 		assertThat(idCookie.getJatosRun()).isNull();
 		assertThat(idCookie.getName()).isEqualTo("JATOS_IDS_0");
 		assertThat(idCookie.getStudyAssets()).isEqualTo("basic_example_study");
-		assertThat(idCookie.getStudyId()).isEqualTo(1l);
-		assertThat(idCookie.getStudyResultId()).isEqualTo(1l);
-		assertThat(idCookie.getWorkerId()).isEqualTo(1l);
+		assertThat(idCookie.getStudyId()).isEqualTo(study.getId());
+		assertThat(idCookie.getStudyResultId()).isEqualTo(studyResult.getId());
+		assertThat(idCookie.getWorkerId()).isEqualTo(admin.getWorker().getId());
 		assertThat(idCookie.getWorkerType()).isEqualTo(JatosWorker.WORKER_TYPE);
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	/**
@@ -170,28 +205,27 @@ public class IdCookieServiceTest extends AbstractTest {
 	@Test
 	public void checkWriteIdCookieOverwriteWithSameId() throws IOException,
 			InternalServerErrorPublixException, BadRequestPublixException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+		StudyResult studyResult = createAndPersistStudyResult(study);
+
+		IdCookieModel idCookie1 = idCookieTestHelper
+				.buildDummyIdCookie(studyResult.getId());
 		IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2222l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
-		Study study = importExampleStudy();
-		addStudy(study);
-		StudyResult studyResult = addStudyResult(study);
-
+		User admin = testHelper.getAdmin();
 		idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(),
 				studyResult);
 
 		// Check that the old IdCookie for the study result ID 1l is overwritten
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResult.getId());
+		IdCookieModel idCookie = idCookieService
+				.getIdCookie(studyResult.getId());
 		assertThat(idCookie).isNotNull();
 		assertThat(idCookieService.getIdCookieCollection().size()).isEqualTo(2);
 		assertThat(idCookie.getStudyAssets()).isEqualTo("basic_example_study");
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	/**
@@ -207,22 +241,20 @@ public class IdCookieServiceTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
-		Study study = importExampleStudy();
-		addStudy(study);
-		StudyResult studyResult = addStudyResult(study);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+		StudyResult studyResult = createAndPersistStudyResult(study);
 
+		User admin = testHelper.getAdmin();
 		idCookieService.writeIdCookie(admin.getWorker(), studyResult.getBatch(),
 				studyResult);
 
 		// Check that a new IdCookie is written
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResult.getId());
+		IdCookieModel idCookie = idCookieService
+				.getIdCookie(studyResult.getId());
 		assertThat(idCookie).isNotNull();
 		assertThat(idCookieService.getIdCookieCollection().size()).isEqualTo(3);
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	/**
@@ -240,22 +272,19 @@ public class IdCookieServiceTest extends AbstractTest {
 			IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(i);
 			cookieList.add(idCookieTestHelper.buildCookie(idCookie));
 		}
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
-		Study study = importExampleStudy();
-		addStudy(study);
-		StudyResult studyResult = addStudyResult(study);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+		StudyResult studyResult = createAndPersistStudyResult(study);
 
 		try {
+			User admin = testHelper.getAdmin();
 			idCookieService.writeIdCookie(admin.getWorker(),
 					studyResult.getBatch(), studyResult);
 			Fail.fail();
 		} catch (InternalServerErrorPublixException e) {
 			// check throwing is enough
 		}
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	/**
@@ -268,7 +297,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(1l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie));
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		idCookieService.discardIdCookie(1l);
 
@@ -293,7 +322,7 @@ public class IdCookieServiceTest extends AbstractTest {
 			IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(i);
 			cookieList.add(idCookieTestHelper.buildCookie(idCookie));
 		}
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		assertThat(idCookieService.maxIdCookiesReached()).isTrue();
 	}
@@ -308,7 +337,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(1l);
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie));
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		assertThat(idCookieService.maxIdCookiesReached()).isFalse();
 	}
@@ -329,7 +358,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie3));
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieModel retrievedIdCookie = idCookieService.getOldestIdCookie();
 		assertThat(retrievedIdCookie).isEqualTo(idCookie1);
@@ -343,7 +372,7 @@ public class IdCookieServiceTest extends AbstractTest {
 	public void checkGetOldestIdCookieEmpty()
 			throws InternalServerErrorPublixException {
 		List<Cookie> cookieList = new ArrayList<>();
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieModel retrievedIdCookie = idCookieService.getOldestIdCookie();
 		assertThat(retrievedIdCookie).isNull();
@@ -365,7 +394,7 @@ public class IdCookieServiceTest extends AbstractTest {
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie3));
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		Long studyResultId = idCookieService
 				.getStudyResultIdFromOldestIdCookie();
@@ -380,11 +409,20 @@ public class IdCookieServiceTest extends AbstractTest {
 	public void checkGetStudyResultIdFromOldestIdCookieEmpty()
 			throws InternalServerErrorPublixException {
 		List<Cookie> cookieList = new ArrayList<>();
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		Long studyResultId = idCookieService
 				.getStudyResultIdFromOldestIdCookie();
 		assertThat(studyResultId).isNull();
+	}
+
+	private StudyResult createAndPersistStudyResult(Study study) {
+		StudyResult studyResult = jpaApi.withTransaction(() -> {
+			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			return resultCreator.createStudyResult(study,
+					study.getDefaultBatch(), admin.getWorker());
+		});
+		return studyResult;
 	}
 
 }

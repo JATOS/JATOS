@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -30,6 +31,7 @@ import play.Logger;
 import play.api.mvc.RequestHeader;
 import play.db.jpa.JPAApi;
 import play.mvc.Http;
+import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 import play.mvc.Http.RequestBuilder;
 import services.gui.BatchService;
@@ -200,8 +202,31 @@ public class TestHelper {
 		return obj;
 	}
 
+	/**
+	 * Mocks Play's Http.Context without cookies
+	 */
 	public void mockContext() {
 		Cookies cookies = mock(Cookies.class);
+		mockContext(cookies);
+	}
+
+	/**
+	 * Mocks Play's Http.Context with one cookie that can be retrieved by
+	 * cookies.get(name)
+	 */
+	public void mockContext(Cookie cookie) {
+		Cookies cookies = mock(Cookies.class);
+		when(cookies.get(cookie.name())).thenReturn(cookie);
+		mockContext(cookies);
+	}
+
+	/**
+	 * Mocks Play's Http.Context with cookies. The cookies can be retrieved by
+	 * cookieList.iterator()
+	 */
+	public void mockContext(List<Cookie> cookieList) {
+		Cookies cookies = mock(Cookies.class);
+		when(cookies.iterator()).thenReturn(cookieList.iterator());
 		mockContext(cookies);
 	}
 

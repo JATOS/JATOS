@@ -8,6 +8,8 @@ import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 import services.publix.idcookie.exception.IdCookieCollectionFullException;
 
 /**
+ * Tests class IdCookieCollection
+ * 
  * @author Kristian Lange (2016)
  */
 public class IdCookieCollectionTest {

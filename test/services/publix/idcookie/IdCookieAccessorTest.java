@@ -5,31 +5,52 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import general.AbstractTest;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import general.TestHelper;
 import general.common.RequestScope;
+import play.ApplicationLoader;
+import play.Environment;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.Cookie;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 
 /**
+ * Tests class IdCookieAccessor
+ * 
  * @author Kristian Lange
  */
-public class IdCookieAccessorTest extends AbstractTest {
+public class IdCookieAccessorTest {
 
+	private Injector injector;
+
+	@Inject
+	private TestHelper testHelper;
+
+	@Inject
 	private IdCookieAccessor idCookieAccessor;
+
+	@Inject
 	private IdCookieTestHelper idCookieTestHelper;
 
-	@Override
-	public void before() throws Exception {
-		this.idCookieAccessor = application.injector()
-				.instanceOf(IdCookieAccessor.class);
-		this.idCookieTestHelper = application.injector()
-				.instanceOf(IdCookieTestHelper.class);
+	@Before
+	public void startApp() throws Exception {
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 	}
 
-	@Override
-	public void after() throws Exception {
+	@After
+	public void stopApp() throws Exception {
 	}
 
 	@Test
@@ -40,7 +61,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
 		assertThat(idCookieCollection.size()).isEqualTo(2);
@@ -54,7 +75,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 	public void checkExtractEmpty() throws IdCookieAlreadyExistsException {
 		List<Cookie> cookieList = new ArrayList<>();
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
 		assertThat(idCookieCollection.size()).isEqualTo(0);
@@ -67,7 +88,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
 		assertThat(idCookieCollection.size()).isEqualTo(1);
@@ -86,7 +107,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
 		// Since cookie is malformed it should be removed
@@ -101,7 +122,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
 		// Since cookie is malformed it should be removed
@@ -116,7 +137,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
 		// Component ID is not necessary
@@ -131,7 +152,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
 		// Since cookie is malformed it should be removed
@@ -146,7 +167,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
 		// Since cookie is malformed it should be removed
@@ -160,7 +181,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
 		assertThat(idCookieCollection.size()).isEqualTo(1);
@@ -192,7 +213,7 @@ public class IdCookieAccessorTest extends AbstractTest {
 		List<Cookie> cookieList = new ArrayList<>();
 		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		mockContext(cookieList);
+		testHelper.mockContext(cookieList);
 
 		// extract() puts it in the RequestScope too
 		IdCookieCollection idCookieCollection = idCookieAccessor.extract();

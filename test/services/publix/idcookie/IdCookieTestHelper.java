@@ -3,6 +3,7 @@ package services.publix.idcookie;
 import static org.fest.assertions.Assertions.assertThat;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
 import models.common.workers.JatosWorker;
@@ -11,6 +12,7 @@ import play.mvc.Http.Cookie;
 /**
  * @author Kristian Lange (2016)
  */
+@Singleton
 public class IdCookieTestHelper {
 
 	private final IdCookieSerialiser idCookieSerialiser;
