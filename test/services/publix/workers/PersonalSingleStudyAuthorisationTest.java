@@ -5,66 +5,101 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
+import javax.inject.Inject;
+
 import org.fest.assertions.Fail;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
-import general.AbstractTest;
+import general.TestHelper;
 import models.common.Batch;
 import models.common.Study;
+import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.PersonalSingleWorker;
+import play.ApplicationLoader;
+import play.Environment;
+import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import services.publix.PublixErrorMessages;
-import services.publix.workers.PersonalSingleStudyAuthorisation;
+import services.publix.ResultCreator;
 
 /**
  * @author Kristian Lange
  */
-public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
+public class PersonalSingleStudyAuthorisationTest {
 
+	private Injector injector;
+
+	@Inject
+	private TestHelper testHelper;
+
+	@Inject
+	private JPAApi jpaApi;
+
+	@Inject
+	private WorkerDao workerDao;
+
+	@Inject
+	private ResultCreator resultCreator;
+
+	@Inject
 	private PersonalSingleStudyAuthorisation studyAuthorisation;
 
-	@Override
-	public void before() throws Exception {
-		studyAuthorisation = application.injector()
-				.instanceOf(PersonalSingleStudyAuthorisation.class);
+	@Before
+	public void startApp() throws Exception {
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 	}
 
-	@Override
-	public void after() throws Exception {
+	@After
+	public void stopApp() throws Exception {
+		// Clean up
+		testHelper.removeAllStudies();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
 	public void checkWorkerAllowedToStartStudy()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		Study study = importExampleStudy();
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-		addStudy(study);
+
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		persistWorker(worker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(worker);
+		});
 
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
 	public void checkWorkerAllowedToStartStudyFail()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		Study study = importExampleStudy();
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-		addStudy(study);
+
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		persistWorker(worker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(worker);
+		});
 
 		// Doesn't start if there is an StudyResult already
-		addStudyResult(study, batch, worker, StudyState.FINISHED);
+		createStudyResult(study, batch, worker, StudyState.FINISHED);
 
 		try {
 			studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study,
@@ -74,38 +109,35 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			assertThat(e.getMessage())
 					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
 	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
 			IOException, ForbiddenPublixException {
-		Study study = importExampleStudy();
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-		addStudy(study);
+
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		persistWorker(worker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(worker);
+		});
 
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
 	public void checkWorkerAllowedToWrongWorkerType()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
 		batch.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
+
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		persistWorker(worker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(worker);
+		});
 
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
@@ -116,25 +148,24 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 					.workerTypeNotAllowed(worker.getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
 	public void checkWorkerAllowedToDoStudyFinishedStudy()
 			throws NoSuchAlgorithmException, IOException,
 			ForbiddenPublixException {
-		Study study = importExampleStudy();
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-		addStudy(study);
+
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		persistWorker(worker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(worker);
+		});
 
 		// PersonalSingleWorker cannot repeat the same study (StudyState in
 		// FINISHED, FAIL, ABORTED
-		addStudyResult(study, batch, worker, StudyState.FINISHED);
+		createStudyResult(study, batch, worker, StudyState.FINISHED);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
 					batch);
@@ -143,7 +174,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			assertThat(e.getMessage())
 					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
-		addStudyResult(study, batch, worker, StudyState.FAIL);
+		createStudyResult(study, batch, worker, StudyState.FAIL);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
 					batch);
@@ -152,7 +183,7 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			assertThat(e.getMessage())
 					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
-		addStudyResult(study, batch, worker, StudyState.ABORTED);
+		createStudyResult(study, batch, worker, StudyState.ABORTED);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
 					batch);
@@ -161,9 +192,16 @@ public class PersonalSingleStudyAuthorisationTest extends AbstractTest {
 			assertThat(e.getMessage())
 					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
+	}
 
-		// Clean-up
-		removeStudy(study);
+	private StudyResult createStudyResult(Study study, Batch batch,
+			PersonalSingleWorker worker, StudyState studyState) {
+		return jpaApi.withTransaction(() -> {
+			StudyResult studyResult = resultCreator.createStudyResult(study,
+					batch, worker);
+			studyResult.setStudyState(studyState);
+			return studyResult;
+		});
 	}
 
 }

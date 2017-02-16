@@ -2,86 +2,114 @@ package services.publix.workers;
 
 import static org.fest.assertions.Assertions.assertThat;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
+import javax.inject.Inject;
 
 import org.fest.assertions.Fail;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
-import general.AbstractTest;
+import general.TestHelper;
 import models.common.Batch;
 import models.common.Study;
+import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.MTSandboxWorker;
 import models.common.workers.MTWorker;
+import play.ApplicationLoader;
+import play.Environment;
+import play.db.jpa.JPAApi;
+import play.inject.guice.GuiceApplicationBuilder;
+import play.inject.guice.GuiceApplicationLoader;
 import services.publix.PublixErrorMessages;
-import services.publix.workers.MTStudyAuthorisation;
+import services.publix.ResultCreator;
 
 /**
  * @author Kristian Lange
  */
-public class MTStudyAuthorisationTest extends AbstractTest {
+public class MTStudyAuthorisationTest {
 
+	private Injector injector;
+
+	@Inject
+	private TestHelper testHelper;
+
+	@Inject
+	private JPAApi jpaApi;
+
+	@Inject
+	private WorkerDao workerDao;
+
+	@Inject
 	private MTStudyAuthorisation studyAuthorisation;
 
-	@Override
-	public void before() throws Exception {
-		studyAuthorisation = application.injector()
-				.instanceOf(MTStudyAuthorisation.class);
+	@Inject
+	private ResultCreator resultCreator;
+
+	@Before
+	public void startApp() throws Exception {
+		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+				.builder(new ApplicationLoader.Context(Environment.simple()));
+		injector = Guice.createInjector(builder.applicationModule());
+		injector.injectMembers(this);
 	}
 
-	@Override
-	public void after() throws Exception {
+	@After
+	public void stopApp() throws Exception {
+		// Clean up
+		testHelper.removeAllStudies();
+		testHelper.removeStudyAssetsRootDir();
 	}
 
 	@Test
 	public void checkWorkerAllowedToStartStudy()
-			throws NoSuchAlgorithmException, IOException,
-			ForbiddenPublixException {
+			throws ForbiddenPublixException {
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
-		persistWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		persistWorker(mtSandboxWorker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(mtWorker);
+			workerDao.create(mtSandboxWorker);
+		});
 
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
-		Study study = importExampleStudy();
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
-		addStudy(study);
 
 		studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study,
 				batch);
 		studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker,
 				study, batch);
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
 	public void checkWorkerAllowedToStartStudyDidStudyAlready()
-			throws NoSuchAlgorithmException, IOException,
-			ForbiddenPublixException {
+			throws ForbiddenPublixException {
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
-		persistWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		persistWorker(mtSandboxWorker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(mtWorker);
+			workerDao.create(mtSandboxWorker);
+		});
 
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
-		Study study = importExampleStudy();
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
-		addStudy(study);
 
 		// MTWorker is not allowed to start an already started study regardless
 		// of the StudyState
-		addStudyResult(study, batch, mtWorker, StudyState.STARTED);
+		createStudyResult(study, batch, mtWorker, StudyState.STARTED);
 		try {
 			studyAuthorisation.checkWorkerAllowedToStartStudy(mtWorker, study,
 					batch);
@@ -94,49 +122,44 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		// MTSandboxWorker is allowed to start again
 		studyAuthorisation.checkWorkerAllowedToStartStudy(mtSandboxWorker,
 				study, batch);
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
-	public void checkWorkerAllowedToDoStudy() throws NoSuchAlgorithmException,
-			IOException, ForbiddenPublixException {
+	public void checkWorkerAllowedToDoStudy() throws ForbiddenPublixException {
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
-		persistWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		persistWorker(mtSandboxWorker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(mtWorker);
+			workerDao.create(mtSandboxWorker);
+		});
 
 		// It's enough to allow MTWorker to allow both MTWorker and also
 		// MTSandboxWorker
-		Study study = importExampleStudy();
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
 		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
-		addStudy(study);
 
-		addStudyResult(study, batch, mtWorker, StudyState.STARTED);
+		createStudyResult(study, batch, mtWorker, StudyState.STARTED);
 
 		studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study, batch);
 		studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study,
 				batch);
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
-	public void checkWorkerAllowedToDoStudyWrongWorkerType()
-			throws NoSuchAlgorithmException, IOException {
-		Study study = importExampleStudy();
-		addStudy(study);
-
+	public void checkWorkerAllowedToDoStudyWrongWorkerType() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
+		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+
 		// Check both MTWorker and MTSandboxWorker
 		MTWorker mtWorker = new MTWorker();
-		persistWorker(mtWorker);
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		persistWorker(mtSandboxWorker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(mtWorker);
+			workerDao.create(mtSandboxWorker);
+		});
 		batch.removeAllowedWorkerType(MTWorker.WORKER_TYPE);
 		batch.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
 
@@ -161,27 +184,27 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 					.workerTypeNotAllowed(mtSandboxWorker.getUIWorkerType(),
 							study.getId(), batch.getId()));
 		}
-
-		// Clean-up
-		removeStudy(study);
 	}
 
 	@Test
 	public void checkWorkerAllowedToDoStudyMoreThanOnce()
-			throws NoSuchAlgorithmException, IOException,
-			ForbiddenPublixException {
-		Study study = importExampleStudy();
+			throws ForbiddenPublixException {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();
+		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
+
 		MTWorker mtWorker = new MTWorker();
 		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		persistWorker(mtWorker);
+		jpaApi.withTransaction(() -> {
+			workerDao.create(mtWorker);
+			workerDao.create(mtSandboxWorker);
+		});
 		batch.addAllowedWorkerType(MTWorker.WORKER_TYPE);
 		batch.removeAllowedWorkerType(MTSandboxWorker.WORKER_TYPE);
-		addStudy(study);
 
 		// MTWorkers cannot repeat the same study (StudyState in FINISHED, FAIL,
 		// ABORTED
-		addStudyResult(study, batch, mtWorker, StudyState.FINISHED);
+		createStudyResult(study, batch, mtWorker, StudyState.FINISHED);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study,
 					batch);
@@ -190,7 +213,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			assertThat(e.getMessage())
 					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
-		addStudyResult(study, batch, mtWorker, StudyState.FAIL);
+		createStudyResult(study, batch, mtWorker, StudyState.FAIL);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study,
 					batch);
@@ -199,7 +222,7 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 			assertThat(e.getMessage())
 					.isEqualTo(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
 		}
-		addStudyResult(study, batch, mtWorker, StudyState.ABORTED);
+		createStudyResult(study, batch, mtWorker, StudyState.ABORTED);
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(mtWorker, study,
 					batch);
@@ -212,9 +235,16 @@ public class MTStudyAuthorisationTest extends AbstractTest {
 		// MTSandboxWorkers can repeat the same study
 		studyAuthorisation.checkWorkerAllowedToDoStudy(mtSandboxWorker, study,
 				batch);
+	}
 
-		// Clean-up
-		removeStudy(study);
+	private StudyResult createStudyResult(Study study, Batch batch,
+			MTWorker mtWorker, StudyState studyState) {
+		return jpaApi.withTransaction(() -> {
+			StudyResult studyResult = resultCreator.createStudyResult(study,
+					batch, mtWorker);
+			studyResult.setStudyState(studyState);
+			return studyResult;
+		});
 	}
 
 }
