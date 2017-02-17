@@ -24,52 +24,52 @@ public class MTPublixUtilsTest extends PublixUtilsTest<MTWorker> {
 	private MTErrorMessages mtErrorMessages;
 	private MTPublixUtils mtPublixUtils;
 
-	@Override
-	public void before() throws Exception {
-		super.before();
-		mtPublixUtils = application.injector().instanceOf(MTPublixUtils.class);
-		publixUtils = mtPublixUtils;
-		mtErrorMessages = application.injector()
-				.instanceOf(MTErrorMessages.class);
-		errorMessages = mtErrorMessages;
-	}
-
-	@Override
-	public void after() throws Exception {
-		super.after();
-	}
-
-	@Test
-	public void checkRetrieveTypedWorker()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		MTWorker mtWorker = new MTWorker();
-		persistWorker(mtWorker);
-		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
-		persistWorker(mtSandboxWorker);
-
-		MTWorker retrievedWorker = publixUtils
-				.retrieveTypedWorker(mtWorker.getId());
-		assertThat(retrievedWorker.getId()).isEqualTo(mtWorker.getId());
-		retrievedWorker = publixUtils
-				.retrieveTypedWorker(mtSandboxWorker.getId());
-		assertThat(retrievedWorker.getId()).isEqualTo(mtSandboxWorker.getId());
-
-	}
-
-	@Test
-	public void checkRetrieveTypedWorkerWrongType()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		GeneralSingleWorker generalSingleWorker = new GeneralSingleWorker();
-		persistWorker(generalSingleWorker);
-
-		try {
-			publixUtils.retrieveTypedWorker(
-					generalSingleWorker.getId());
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(mtErrorMessages
-					.workerNotCorrectType(generalSingleWorker.getId()));
-		}
-	}
+//	@Override
+//	public void before() throws Exception {
+//		super.before();
+//		mtPublixUtils = application.injector().instanceOf(MTPublixUtils.class);
+//		publixUtils = mtPublixUtils;
+//		mtErrorMessages = application.injector()
+//				.instanceOf(MTErrorMessages.class);
+//		errorMessages = mtErrorMessages;
+//	}
+//
+//	@Override
+//	public void after() throws Exception {
+//		super.after();
+//	}
+//
+//	@Test
+//	public void checkRetrieveTypedWorker()
+//			throws NoSuchAlgorithmException, IOException, PublixException {
+//		MTWorker mtWorker = new MTWorker();
+//		persistWorker(mtWorker);
+//		MTSandboxWorker mtSandboxWorker = new MTSandboxWorker();
+//		persistWorker(mtSandboxWorker);
+//
+//		MTWorker retrievedWorker = publixUtils
+//				.retrieveTypedWorker(mtWorker.getId());
+//		assertThat(retrievedWorker.getId()).isEqualTo(mtWorker.getId());
+//		retrievedWorker = publixUtils
+//				.retrieveTypedWorker(mtSandboxWorker.getId());
+//		assertThat(retrievedWorker.getId()).isEqualTo(mtSandboxWorker.getId());
+//
+//	}
+//
+//	@Test
+//	public void checkRetrieveTypedWorkerWrongType()
+//			throws NoSuchAlgorithmException, IOException, PublixException {
+//		GeneralSingleWorker generalSingleWorker = new GeneralSingleWorker();
+//		persistWorker(generalSingleWorker);
+//
+//		try {
+//			publixUtils.retrieveTypedWorker(
+//					generalSingleWorker.getId());
+//			Fail.fail();
+//		} catch (PublixException e) {
+//			assertThat(e.getMessage()).isEqualTo(mtErrorMessages
+//					.workerNotCorrectType(generalSingleWorker.getId()));
+//		}
+//	}
 
 }

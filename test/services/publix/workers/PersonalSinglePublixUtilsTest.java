@@ -23,44 +23,44 @@ public class PersonalSinglePublixUtilsTest
 	private PersonalSingleErrorMessages personalSingleErrorMessages;
 	private PersonalSinglePublixUtils personalSinglePublixUtils;
 
-	@Override
-	public void before() throws Exception {
-		super.before();
-		personalSinglePublixUtils = application.injector()
-				.instanceOf(PersonalSinglePublixUtils.class);
-		publixUtils = personalSinglePublixUtils;
-		personalSingleErrorMessages = application.injector()
-				.instanceOf(PersonalSingleErrorMessages.class);
-		errorMessages = personalSingleErrorMessages;
-	}
-
-	@Override
-	public void after() throws Exception {
-		super.after();
-	}
-
-	@Test
-	public void checkRetrieveTypedWorker()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		PersonalSingleWorker worker = new PersonalSingleWorker();
-		persistWorker(worker);
-
-		PersonalSingleWorker retrievedWorker = personalSinglePublixUtils
-				.retrieveTypedWorker(worker.getId().toString());
-		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
-	}
-
-	@Test
-	public void checkRetrieveTypedWorkerWrongType()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		try {
-			personalSinglePublixUtils
-					.retrieveTypedWorker(admin.getWorker().getId().toString());
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(personalSingleErrorMessages
-					.workerNotCorrectType(admin.getWorker().getId()));
-		}
-	}
+//	@Override
+//	public void before() throws Exception {
+//		super.before();
+//		personalSinglePublixUtils = application.injector()
+//				.instanceOf(PersonalSinglePublixUtils.class);
+//		publixUtils = personalSinglePublixUtils;
+//		personalSingleErrorMessages = application.injector()
+//				.instanceOf(PersonalSingleErrorMessages.class);
+//		errorMessages = personalSingleErrorMessages;
+//	}
+//
+//	@Override
+//	public void after() throws Exception {
+//		super.after();
+//	}
+//
+//	@Test
+//	public void checkRetrieveTypedWorker()
+//			throws NoSuchAlgorithmException, IOException, PublixException {
+//		PersonalSingleWorker worker = new PersonalSingleWorker();
+//		persistWorker(worker);
+//
+//		PersonalSingleWorker retrievedWorker = personalSinglePublixUtils
+//				.retrieveTypedWorker(worker.getId().toString());
+//		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
+//	}
+//
+//	@Test
+//	public void checkRetrieveTypedWorkerWrongType()
+//			throws NoSuchAlgorithmException, IOException, PublixException {
+//		try {
+//			personalSinglePublixUtils
+//					.retrieveTypedWorker(admin.getWorker().getId().toString());
+//			Fail.fail();
+//		} catch (PublixException e) {
+//			assertThat(e.getMessage()).isEqualTo(personalSingleErrorMessages
+//					.workerNotCorrectType(admin.getWorker().getId()));
+//		}
+//	}
 
 }

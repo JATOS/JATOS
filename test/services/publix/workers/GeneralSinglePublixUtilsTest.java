@@ -22,44 +22,44 @@ public class GeneralSinglePublixUtilsTest
 	private GeneralSingleErrorMessages generalSingleErrorMessages;
 	private GeneralSinglePublixUtils generalSinglePublixUtils;
 
-	@Override
-	public void before() throws Exception {
-		super.before();
-		generalSinglePublixUtils = application.injector()
-				.instanceOf(GeneralSinglePublixUtils.class);
-		publixUtils = generalSinglePublixUtils;
-		generalSingleErrorMessages = application.injector()
-				.instanceOf(GeneralSingleErrorMessages.class);
-		errorMessages = generalSingleErrorMessages;
-	}
-
-	@Override
-	public void after() throws Exception {
-		super.after();
-	}
-
-	@Test
-	public void checkRetrieveTypedWorker()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		GeneralSingleWorker worker = new GeneralSingleWorker();
-		persistWorker(worker);
-
-		GeneralSingleWorker retrievedWorker = publixUtils
-				.retrieveTypedWorker(worker.getId());
-		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
-	}
-
-	@Test
-	public void checkRetrieveTypedWorkerWrongType()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		try {
-			generalSinglePublixUtils
-					.retrieveTypedWorker(admin.getWorker().getId());
-			Fail.fail();
-		} catch (ForbiddenPublixException e) {
-			assertThat(e.getMessage()).isEqualTo(generalSingleErrorMessages
-					.workerNotCorrectType(admin.getWorker().getId()));
-		}
-	}
+//	@Override
+//	public void before() throws Exception {
+//		super.before();
+//		generalSinglePublixUtils = application.injector()
+//				.instanceOf(GeneralSinglePublixUtils.class);
+//		publixUtils = generalSinglePublixUtils;
+//		generalSingleErrorMessages = application.injector()
+//				.instanceOf(GeneralSingleErrorMessages.class);
+//		errorMessages = generalSingleErrorMessages;
+//	}
+//
+//	@Override
+//	public void after() throws Exception {
+//		super.after();
+//	}
+//
+//	@Test
+//	public void checkRetrieveTypedWorker()
+//			throws NoSuchAlgorithmException, IOException, PublixException {
+//		GeneralSingleWorker worker = new GeneralSingleWorker();
+//		persistWorker(worker);
+//
+//		GeneralSingleWorker retrievedWorker = publixUtils
+//				.retrieveTypedWorker(worker.getId());
+//		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
+//	}
+//
+//	@Test
+//	public void checkRetrieveTypedWorkerWrongType()
+//			throws NoSuchAlgorithmException, IOException, PublixException {
+//		try {
+//			generalSinglePublixUtils
+//					.retrieveTypedWorker(admin.getWorker().getId());
+//			Fail.fail();
+//		} catch (ForbiddenPublixException e) {
+//			assertThat(e.getMessage()).isEqualTo(generalSingleErrorMessages
+//					.workerNotCorrectType(admin.getWorker().getId()));
+//		}
+//	}
 
 }

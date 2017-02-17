@@ -23,44 +23,44 @@ public class PersonalMultiplePublixUtilsTest
 	private PersonalMultipleErrorMessages personalMultipleErrorMessages;
 	private PersonalMultiplePublixUtils personalMultiplePublixUtils;
 
-	@Override
-	public void before() throws Exception {
-		super.before();
-		personalMultiplePublixUtils = application.injector()
-				.instanceOf(PersonalMultiplePublixUtils.class);
-		publixUtils = personalMultiplePublixUtils;
-		personalMultipleErrorMessages = application.injector()
-				.instanceOf(PersonalMultipleErrorMessages.class);
-		errorMessages = personalMultipleErrorMessages;
-	}
-
-	@Override
-	public void after() throws Exception {
-		super.after();
-	}
-
-	@Test
-	public void checkRetrieveTypedWorker()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		PersonalMultipleWorker worker = new PersonalMultipleWorker();
-		persistWorker(worker);
-
-		PersonalMultipleWorker retrievedWorker = personalMultiplePublixUtils
-				.retrieveTypedWorker(worker.getId().toString());
-		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
-	}
-
-	@Test
-	public void checkRetrieveTypedWorkerWrongType()
-			throws NoSuchAlgorithmException, IOException, PublixException {
-		try {
-			personalMultiplePublixUtils
-					.retrieveTypedWorker(admin.getWorker().getId().toString());
-			Fail.fail();
-		} catch (PublixException e) {
-			assertThat(e.getMessage()).isEqualTo(personalMultipleErrorMessages
-					.workerNotCorrectType(admin.getWorker().getId()));
-		}
-	}
+//	@Override
+//	public void before() throws Exception {
+//		super.before();
+//		personalMultiplePublixUtils = application.injector()
+//				.instanceOf(PersonalMultiplePublixUtils.class);
+//		publixUtils = personalMultiplePublixUtils;
+//		personalMultipleErrorMessages = application.injector()
+//				.instanceOf(PersonalMultipleErrorMessages.class);
+//		errorMessages = personalMultipleErrorMessages;
+//	}
+//
+//	@Override
+//	public void after() throws Exception {
+//		super.after();
+//	}
+//
+//	@Test
+//	public void checkRetrieveTypedWorker()
+//			throws NoSuchAlgorithmException, IOException, PublixException {
+//		PersonalMultipleWorker worker = new PersonalMultipleWorker();
+//		persistWorker(worker);
+//
+//		PersonalMultipleWorker retrievedWorker = personalMultiplePublixUtils
+//				.retrieveTypedWorker(worker.getId().toString());
+//		assertThat(retrievedWorker.getId()).isEqualTo(worker.getId());
+//	}
+//
+//	@Test
+//	public void checkRetrieveTypedWorkerWrongType()
+//			throws NoSuchAlgorithmException, IOException, PublixException {
+//		try {
+//			personalMultiplePublixUtils
+//					.retrieveTypedWorker(admin.getWorker().getId().toString());
+//			Fail.fail();
+//		} catch (PublixException e) {
+//			assertThat(e.getMessage()).isEqualTo(personalMultipleErrorMessages
+//					.workerNotCorrectType(admin.getWorker().getId()));
+//		}
+//	}
 
 }
