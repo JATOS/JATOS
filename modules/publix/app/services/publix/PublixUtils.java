@@ -237,7 +237,8 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	public StudyResult retrieveStudyResult(Worker worker, Study study,
-			Long studyResultId) throws PublixException {
+			Long studyResultId)
+			throws ForbiddenPublixException, BadRequestPublixException {
 		if (studyResultId == null) {
 			throw new ForbiddenPublixException(
 					"error retrieving study result ID");
@@ -308,7 +309,8 @@ public abstract class PublixUtils<T extends Worker> {
 
 	/**
 	 * Gets the current ComponentResult from the storage or if it doesn't exist
-	 * yet starts one for the given component.
+	 * yet starts one for the given component. The current ComponentResult
+	 * doesn't have to be of the given Component.
 	 */
 	public ComponentResult retrieveStartedComponentResult(Component component,
 			StudyResult studyResult) throws ForbiddenReloadException {
@@ -393,7 +395,7 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	public Component retrieveComponentByPosition(Long studyId, Integer position)
-			throws PublixException {
+			throws NotFoundPublixException, BadRequestPublixException {
 		Study study = retrieveStudy(studyId);
 		if (position == null) {
 			throw new BadRequestPublixException(
@@ -427,7 +429,7 @@ public abstract class PublixUtils<T extends Worker> {
 	 * BadRequestPublixException if it doesn't.
 	 */
 	public void checkComponentBelongsToStudy(Study study, Component component)
-			throws PublixException {
+			throws BadRequestPublixException {
 		if (!component.getStudy().equals(study)) {
 			throw new BadRequestPublixException(
 					PublixErrorMessages.componentNotBelongToStudy(study.getId(),
@@ -485,10 +487,9 @@ public abstract class PublixUtils<T extends Worker> {
 	}
 
 	/**
-	 * Sets the StudyResult's StudyState to STARTED if the study is
-	 * currently in state PRE and the study result moved away from the first
-	 * component (this means the given componentId isn't the first component's
-	 * one).
+	 * Sets the StudyResult's StudyState to STARTED if the study is currently in
+	 * state PRE and the study result moved away from the first component (this
+	 * means the given componentId isn't the first component's one).
 	 */
 	public void setPreStudyStateByComponentId(StudyResult studyResult,
 			Study study, Long componentId) {
