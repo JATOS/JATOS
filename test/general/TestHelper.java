@@ -77,7 +77,7 @@ public class TestHelper {
 	public void removeStudyAssetsRootDir() throws IOException {
 		File assetsRoot = new File(common.getStudyAssetsRootPath());
 		if (assetsRoot.list() != null && assetsRoot.list().length > 0) {
-			Logger.warn(AbstractTest.class.getSimpleName()
+			Logger.warn(TestHelper.class.getSimpleName()
 					+ ".removeStudyAssetsRootDir: Study assets root directory "
 					+ common.getStudyAssetsRootPath()
 					+ " is not empty after finishing testing. This should not happen.");
