@@ -76,40 +76,40 @@ public abstract class PublixUtilsTest<T extends Worker> {
 	protected PublixErrorMessages errorMessages;
 
 	@Inject
-	private IdCookieService idCookieService;
+	protected IdCookieService idCookieService;
 
 	@Inject
-	private IdCookieTestHelper idCookieTestHelper;
+	protected IdCookieTestHelper idCookieTestHelper;
 
 	@Inject
-	private ResultCreator resultCreator;
+	protected ResultCreator resultCreator;
 
 	@Inject
-	private UserDao userDao;
+	protected UserDao userDao;
 
 	@Inject
-	private StudyDao studyDao;
+	protected StudyDao studyDao;
 
 	@Inject
-	private ComponentDao componentDao;
+	protected ComponentDao componentDao;
 
 	@Inject
-	private ComponentResultDao componentResultDao;
+	protected ComponentResultDao componentResultDao;
 
 	@Inject
-	private StudyResultDao studyResultDao;
+	protected StudyResultDao studyResultDao;
 
 	@Inject
-	private WorkerDao workerDao;
+	protected WorkerDao workerDao;
 
 	@Inject
-	private BatchDao batchDao;
+	protected BatchDao batchDao;
 
 	@Inject
-	private StudyService studyService;
+	protected StudyService studyService;
 
 	@Inject
-	private BatchService batchService;
+	protected BatchService batchService;
 
 	@Before
 	public void startApp() throws Exception {
