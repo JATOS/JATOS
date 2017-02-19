@@ -459,7 +459,7 @@ var jatos = {};
 			data: resultData,
 			processData: false,
 			type: "POST",
-			contentType: "text/plain",
+			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
 			success: function (response) {
 				submittingResultData = false;
@@ -513,7 +513,7 @@ var jatos = {};
 			data: studySessionDataStr,
 			processData: false,
 			type: "POST",
-			contentType: "text/plain",
+			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
 			complete: function () {
 				if (onComplete) {
@@ -1246,7 +1246,7 @@ var jatos = {};
 			data: logMsg,
 			processData: false,
 			type: "POST",
-			contentType: "text/plain",
+			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
 			error: function (err) {
 				callingOnError(null, getAjaxErrorMsg(err));
