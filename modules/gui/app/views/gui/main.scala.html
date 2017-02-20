@@ -362,6 +362,7 @@ var messagesRequestScope = @Html(general.gui.RequestScopeMessaging.getAsJson());
 showMessages(messagesRequestScope);
 var messagesFlashScope = @Html(general.gui.FlashScopeMessaging.getAsJson());
 showMessages(messagesFlashScope);
+checkForIE();
 var breadcrumbs = @Html(breadcrumbs);
 showBreadcrumbs(breadcrumbs);
 fillSidebar();
@@ -388,6 +389,12 @@ function showMessages(messages) {
 				showError(error);
 			});
 		}
+	}
+}
+
+function checkForIE() {
+	if (window.navigator.userAgent.indexOf("MSIE ") > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
+		showWarning("JATOS' GUI may not be fully functional in Internet Explorer. Please use other browsers, e.g. Firefox, Edge, Chrome. This applies to the GUI only - your actual studies will run without problems.");
 	}
 }
 
