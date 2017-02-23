@@ -1,9 +1,14 @@
 package controllers.gui;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.naming.AuthenticationException;
+import javax.naming.CommunicationException;
+import javax.naming.NamingException;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
@@ -15,9 +20,11 @@ import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.Transactional;
+import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import services.gui.ActiveDirectoryService;
 import services.gui.BreadcrumbsService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.LogFileReader;
@@ -54,6 +61,28 @@ public class Home extends Controller {
 		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 		this.logFileReader = logFileReader;
+	}
+
+	@Transactional
+	public CompletionStage<Result> ldap() {
+		try {
+
+			CompletableFuture<Boolean> future = ActiveDirectoryService
+					.authenticate("riemann", "password");
+			return future.thenApply((e) -> ok("access granted"));
+
+		} catch (AuthenticationException exp) {
+			return CompletableFuture.completedFuture(ok("access denied"));
+
+		} catch (CommunicationException exp) {
+			return CompletableFuture.completedFuture(
+					ok("The active directory server is not reachable"));
+
+		} catch (NamingException exp) {
+			return CompletableFuture.completedFuture(
+					ok("active directory domain name does not exist"));
+
+		}
 	}
 
 	/**

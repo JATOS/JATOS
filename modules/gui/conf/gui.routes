@@ -12,6 +12,7 @@ GET     /jatos/logout                                @controllers.gui.Authentica
 GET     /jatos/sidebarStudyList                      @controllers.gui.Home.sidebarStudyList()
 GET     /jatos                                       @controllers.gui.Home.home()
 GET     /jatos/                                      @controllers.gui.Home.home()
+GET     /jatos/ldap                                  @controllers.gui.Home.ldap()
 GET     /                                            @controllers.gui.Home.home()
 GET     /jatos/admin/log                             @controllers.gui.Home.log(limit: Integer ?= 1000)
 
