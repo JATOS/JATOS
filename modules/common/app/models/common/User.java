@@ -5,7 +5,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
@@ -37,6 +40,11 @@ public class User {
 	public static final String PASSWORD_REPEAT = "passwordRepeat";
 	public static final String OLD_PASSWORD = "oldPassword";
 
+	public enum Role {
+		USER, // Normal JATOS user
+		ADMIN; // Allows to create/change/delete other users 
+	}
+
 	/**
 	 * Email address is used as ID.
 	 */
@@ -44,6 +52,10 @@ public class User {
 	private String email;
 
 	private String name;
+	
+	@ElementCollection(targetClass=Role.class)
+	@Enumerated(EnumType.STRING) 
+	private Set<Role> roleList =  new HashSet<>();
 
 	/**
 	 * Corresponding JatosWorker. This relationship is bidirectional.
@@ -91,6 +103,22 @@ public class User {
 
 	public String getName() {
 		return this.name;
+	}
+
+	public Set<Role> getRoleList() {
+		return roleList;
+	}
+
+	public void setRoleList(Set<Role> roleList) {
+		this.roleList = roleList;
+	}
+	
+	public void addRole(Role role) {
+		this.roleList.add(role);
+	}
+	
+	public boolean hasRole(Role role) {
+		return roleList.contains(role);
 	}
 
 	public void setPasswordHash(String passwordHash) {

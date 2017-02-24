@@ -13,6 +13,7 @@ import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.common.RequestScope;
 import models.common.User;
+import models.common.User.Role;
 import models.common.workers.JatosWorker;
 import play.data.validation.ValidationError;
 import utils.common.HashUtils;
@@ -105,6 +106,7 @@ public class UserService {
 
 	public User createAndPersistAdmin() {
 		User adminUser = new User(ADMIN_EMAIL, ADMIN_NAME);
+		adminUser.addRole(Role.ADMIN);
 		createAndPersistUser(adminUser, ADMIN_PASSWORD);
 		return adminUser;
 	}
@@ -118,6 +120,7 @@ public class UserService {
 		user.setPasswordHash(passwordHash);
 		JatosWorker worker = new JatosWorker(user);
 		user.setWorker(worker);
+		user.addRole(Role.USER);
 		workerDao.create(worker);
 		userDao.create(user);
 	}
