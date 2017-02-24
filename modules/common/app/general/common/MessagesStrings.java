@@ -325,7 +325,7 @@ public class MessagesStrings {
 	public static String pathNotAbsolute(String path) {
 		return "Path \"" + path + "\" should be absolute.";
 	}
-	
+
 	public static String pathNotRelative(String path) {
 		return "Path \"" + path + "\" should be relative.";
 	}
@@ -347,7 +347,8 @@ public class MessagesStrings {
 	public static String studyAssetsDirExistsBelongsToDifferentStudy(
 			String dirName) {
 		return "The uploaded study assets' directory \"" + dirName
-				+ "\" already exists but belongs to another study.";
+				+ "\" already exists but belongs to another study. Try renaming"
+				+ " the study assets' directory name in the study properties.";
 	}
 
 	public static String studyAssetsDirNotRenamed(String oldDirName,
