@@ -258,7 +258,11 @@ $(document).ready(function() {
 	
 	// Adjust the width of every component's toolbar to the widest one
 	componentsTable.on('column-sizing.dt', function (e, settings) {
-		setButtonWidthToMax(".componentResults");
+		// Newly created components of an empty study have a negative width (no
+		// clue why) - so set the width only if I have at least 2 components 
+		if ($(".componentResults").length > 1) {
+			setButtonWidthToMax(".componentResults");
+		}
 	});
 	
 	$('#componentsTable tbody').on('click', '.runComponent', function() {
