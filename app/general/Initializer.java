@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 import daos.common.UserDao;
 import general.common.Common;
 import models.common.User;
+import models.common.User.Role;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
@@ -76,8 +77,15 @@ public class Initializer {
 	private void checkAdmin() {
 		jpa.withTransaction(() -> {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			
 			if (admin == null) {
-				userService.createAndPersistAdmin();
+				admin = userService.createAndPersistAdmin();
+			}
+			
+			// Some older JATOS versions miss the ADMIN role 
+			if (!admin.hasRole(Role.ADMIN)) {
+				admin.addRole(Role.ADMIN);
+				userDao.update(admin);
 			}
 		});
 	}
