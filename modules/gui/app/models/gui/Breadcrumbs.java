@@ -3,11 +3,11 @@ package models.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-import utils.common.JsonUtils;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import play.libs.Json;
 
 /**
  * Model for breadcrumbs used in UI but not persisted in DB
@@ -35,17 +35,16 @@ public class Breadcrumbs {
 	public List<Breadcrumb> getBreadcrumbs() {
 		return breadcrumbs;
 	}
-	
-	public String asJson()
-			throws JsonProcessingException {
-		ArrayNode arrayNode = JsonUtils.OBJECTMAPPER.createArrayNode();
+
+	public String asJson() throws JsonProcessingException {
+		ArrayNode arrayNode = Json.mapper().createArrayNode();
 		for (Breadcrumb breadcrumb : getBreadcrumbs()) {
-			ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
+			ObjectNode node = Json.mapper().createObjectNode();
 			node.put("name", breadcrumb.name);
 			node.put("url", breadcrumb.url);
 			arrayNode.add(node);
 		}
-		return JsonUtils.OBJECTMAPPER.writeValueAsString(arrayNode);
+		return Json.mapper().writeValueAsString(arrayNode);
 	}
 
 }

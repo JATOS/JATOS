@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.CompletionStage;
 
-import controllers.gui.Users;
+import controllers.gui.Authentication;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import play.Logger;
 import play.Logger.ALogger;
@@ -36,7 +36,7 @@ public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();
 		guiLogger.info(request.method() + " " + request.uri() + " ("
-				+ Controller.session(Users.SESSION_EMAIL) + ")");
+				+ Controller.session(Authentication.SESSION_USER_EMAIL) + ")");
 		return delegate.call(ctx);
 	}
 

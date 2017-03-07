@@ -1,6 +1,5 @@
 package services.gui;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -15,7 +14,7 @@ import general.common.RequestScope;
 import models.common.User;
 import models.common.User.Role;
 import models.common.workers.JatosWorker;
-import play.data.validation.ValidationError;
+import models.gui.NewUserModel;
 import utils.common.HashUtils;
 
 /**
@@ -40,7 +39,14 @@ public class UserService {
 	}
 
 	/**
-	 * Retrieves the user with the given email form the DB. Throws an Exception
+	 * Retrieves all users from the database.
+	 */
+	public List<User> retrieveAllUsers() {
+		return userDao.findAll();
+	}
+
+	/**
+	 * Retrieves the user with the given email from the DB. Throws an Exception
 	 * if it doesn't exist.
 	 */
 	public User retrieveUser(String email) throws NotFoundException {
@@ -59,55 +65,9 @@ public class UserService {
 		return (User) RequestScope.get(Authentication.LOGGED_IN_USER);
 	}
 
-	public List<ValidationError> validateNewUser(User newUser, String password,
-			String passwordRepeat) {
-		List<ValidationError> errorList = new ArrayList<>();
-
-		// Check if user with this email already exists.
-		if (userDao.findByEmail(newUser.getEmail()) != null) {
-			errorList.add(new ValidationError(User.EMAIL,
-					MessagesStrings.THIS_EMAIL_IS_ALREADY_REGISTERED));
-		}
-
-		checkPasswords(password, passwordRepeat, errorList);
-		return errorList;
-	}
-
-	public List<ValidationError> validateChangePassword(User user,
-			String password, String passwordRepeat, String oldPasswordHash) {
-		List<ValidationError> errorList = new ArrayList<>();
-
-		if (!userDao.authenticate(user.getEmail(), oldPasswordHash)) {
-			errorList.add(new ValidationError(User.OLD_PASSWORD,
-					MessagesStrings.WRONG_OLD_PASSWORD));
-		}
-
-		checkPasswords(password, passwordRepeat, errorList);
-		return errorList;
-	}
-
-	private void checkPasswords(String password, String passwordRepeat,
-			List<ValidationError> errorList) {
-
-		// Check for non empty passwords
-		if (password.trim().isEmpty() || passwordRepeat.trim().isEmpty()) {
-			errorList.add(new ValidationError(User.PASSWORD,
-					MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
-		}
-
-		// Check that both passwords are the same
-		String passwordHash = HashUtils.getHashMDFive(password);
-		String passwordHashRepeat = HashUtils.getHashMDFive(passwordRepeat);
-		if (!passwordHash.equals(passwordHashRepeat)) {
-			errorList.add(new ValidationError(User.PASSWORD,
-					MessagesStrings.PASSWORDS_DONT_MATCH));
-		}
-	}
-
 	public User createAndPersistAdmin() {
 		User adminUser = new User(ADMIN_EMAIL, ADMIN_NAME);
-		adminUser.addRole(Role.ADMIN);
-		createAndPersistUser(adminUser, ADMIN_PASSWORD);
+		createAndPersistUser(adminUser, ADMIN_PASSWORD, true);
 		return adminUser;
 	}
 
@@ -115,20 +75,39 @@ public class UserService {
 	 * Creates a user, sets password hash and persists him. Creates and persists
 	 * an JatosWorker for the user.
 	 */
-	public void createAndPersistUser(User user, String password) {
+	public void createAndPersistNewUser(NewUserModel newUserModel) {
+		User user = new User(newUserModel.getEmail(), newUserModel.getName());
+		String password = newUserModel.getPassword();
+		boolean adminRole = newUserModel.getAdminRole();
+		createAndPersistUser(user, password, adminRole);
+	}
+
+	/**
+	 * Creates a user, sets password hash and persists him. Creates and persists
+	 * an JatosWorker for the user.
+	 */
+	public void createAndPersistUser(User user, String password,
+			boolean adminRole) {
 		String passwordHash = HashUtils.getHashMDFive(password);
 		user.setPasswordHash(passwordHash);
 		JatosWorker worker = new JatosWorker(user);
 		user.setWorker(worker);
+		// Every user has the Role USER
 		user.addRole(Role.USER);
+		if (adminRole) {
+			user.addRole(Role.ADMIN);
+		}
 		workerDao.create(worker);
 		userDao.create(user);
 	}
 
 	/**
-	 * Change password hash and persist user.
+	 * Change password and persist user.
 	 */
-	public void updatePasswordHash(User user, String newPasswordHash) {
+	public void updatePasswordHash(String emailOfUserToChange,
+			String newPassword) throws NotFoundException {
+		User user = retrieveUser(emailOfUserToChange);
+		String newPasswordHash = HashUtils.getHashMDFive(newPassword);
 		user.setPasswordHash(newPasswordHash);
 		userDao.update(user);
 	}

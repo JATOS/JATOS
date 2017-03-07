@@ -1,0 +1,244 @@
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+
+@views.html.gui.main(loggedInUser, breadcrumbs, localhost){
+
+<div class="btn-group">
+	<button id="createUserButton" type="button" class="btn btn-user">
+	New User <span class="glyphicon glyphicon-user" aria-hidden="true"></span></button>
+</div>
+
+<table id="userTable" class="table top-buffer">
+	<thead>
+		<tr>
+			<th>Email</th>
+			<th>Name</th>
+			<th>Roles</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		<!-- Template for user's row -->
+		<tr id="userRowTemplate" class="userItem" style="display: none">
+			<td class="userEmail"></td>
+			<td class="userName"></td>
+			<td class="userRoles"></td>
+			<td>
+				<div class="userBtnGroup btn-group pull-right" aria-hidden="true">
+					<button type="button" class="userChangePasswordButton btn btn-user" data-toggle="tooltip" data-placement="bottom"
+						title="Change the password of this user">
+						Change Password <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
+					</button>
+					<button type="button" class="userDeleteButton btn btn-user" data-toggle="tooltip" data-placement="bottom"
+						title="Delete this user from JATOS">
+						Delete <span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form id="createUserForm" method="post" action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">New User</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group row">
+						<label class="control-label col-xs-4" for="@models.gui.NewUserModel.EMAIL">Email address</label>
+						<div class="col-xs-8">
+							<input type="email" class="form-control @models.gui.NewUserModel.EMAIL" name="@models.gui.NewUserModel.EMAIL">
+							<span class="help-block">This will be the username.</span>
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-4" for="@models.gui.NewUserModel.NAME">Name</label>
+						<div class="col-xs-8">
+							<input type="text" class="form-control @models.gui.NewUserModel.NAME" name="@models.gui.NewUserModel.NAME">
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-4" for="@models.gui.NewUserModel.PASSWORD">Password</label>
+						<div class="col-xs-8">
+							<input type="password" class="form-control @models.gui.NewUserModel.PASSWORD" name="@models.gui.NewUserModel.PASSWORD" placeholder="Password">
+							<input type="password" class="form-control @models.gui.NewUserModel.PASSWORD_REPEAT" name="@models.gui.NewUserModel.PASSWORD_REPEAT" placeholder="Repeat password">
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<div class="col-xs-offset-4 col-xs-8">
+							<label class="checkbox-inline">
+								<input type="checkbox" class="@models.gui.NewUserModel.ADMIN_ROLE" name="@models.gui.NewUserModel.ADMIN_ROLE" value="true">
+								Admin <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this user an admin? Admins can create/change/delete other users." aria-hidden="true"></span>
+								<!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
+								<input type="hidden" name="@models.gui.NewUserModel.ADMIN_ROLE" value="false" />
+							</label>
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-4 adminPasswordLabel" for="@models.gui.NewUserModel.ADMIN_PASSWORD">Your password</label>
+						<div class="col-xs-5">
+							<input type="password" class="form-control @models.gui.NewUserModel.ADMIN_PASSWORD" name="@models.gui.NewUserModel.ADMIN_PASSWORD" placeholder="Your password">
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<input type="submit" class="confirmed btn btn-user" value="Create">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form id="changePasswordForm" method="post" action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">Change Password</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group row">
+						<label class="control-label col-xs-4 adminPasswordLabel" for="@models.gui.ChangePasswordModel.ADMIN_PASSWORD">Your password</label>
+						<div class="col-xs-5">
+							<input type="password" class="form-control @models.gui.ChangePasswordModel.ADMIN_PASSWORD" name="@models.gui.ChangePasswordModel.ADMIN_PASSWORD" placeholder="Your password">
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="control-label col-xs-4 newPasswordLabel" for="@models.gui.ChangePasswordModel.NEW_PASSWORD">New password</label>
+						<div class="col-xs-5">
+							<input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD" name="@models.gui.ChangePasswordModel.NEW_PASSWORD" placeholder="New password">
+							<input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" name="@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" placeholder="Repeat the new password">
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<input type="submit" class="confirmed btn btn-primary" value="Change">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+
+loadUserList();
+
+function loadUserList() {
+	$.ajax({
+		type: 'GET',
+		url: "@controllers.gui.routes.Users.userData()",
+		success: function(response) {
+			fillUserTable(response);
+		},
+		error: function(response) {
+			showError("Couldn't load users.");
+		}
+	});
+}
+
+function fillUserTable(userList) {
+	$('#userRowTemplate').nextAll().remove();
+	$.each(userList, function(index, user) {
+		var row = $('#userRowTemplate').clone().show();
+		$(row).removeAttr('id');
+		// Write user object into toolbar's data attribute so we can use it later on 
+		$(row).data(user);
+		$(row).find('.userEmail').text(user.email);
+		$(row).find('.userName').text(user.name);
+		$(row).find('.userRoles').text(user.roleList);
+		$("#userTable tr:last").after(row);
+	});
+}
+
+$('#createUserButton').click(function(event) {
+	removeAlerts("#createUserModal");
+	removeFormErrors("#createUserModal");
+	$('#createUserModal .@models.gui.NewUserModel.EMAIL').val('');
+	$('#createUserModal .@models.gui.NewUserModel.NAME').val('');
+	$('#createUserModal .@models.gui.NewUserModel.PASSWORD').val('');
+	$('#createUserModal .@models.gui.NewUserModel.PASSWORD_REPEAT').val('');
+	$('#createUserModal .@models.gui.NewUserModel.ADMIN_ROLE').prop('checked', false);
+	$('#createUserModal .adminPasswordLabel').text("Password of user @loggedInUser.getEmail()");
+	$('#createUserModal .@models.gui.NewUserModel.ADMIN_PASSWORD').val('');
+	$('#createUserModal').modal('show');
+});
+
+$("#createUserForm").submit(function(event) {
+	event.preventDefault();
+	$.ajax({
+		type: 'POST',
+		url: "@controllers.gui.routes.Users.submitCreated()",
+		data: $('#createUserForm').serialize(), 
+		success: function(response) {
+			removeAlerts("#createUserModal");
+			removeFormErrors("#createUserModal");
+			$('#createUserModal').modal('hide');
+			loadUserList();
+		},
+		error: function(response) {
+			removeAlerts("#createUserModal");
+			removeFormErrors("#createUserModal");
+			showWarning("User wasn't created", "#createUserModal .modal-header");
+			if (isJson(response.responseText)) {
+				showFormErrors("#createUserModal", response);
+			} else {
+				showModalError("#createUserModal .modal-header", response);
+			}
+		}
+	});
+});
+
+$('#userTable').on('click', '.userChangePasswordButton', function() {
+	// Put user into the form's data attribute
+	var user = $(this).closest("tr").data();
+	$('#changePasswordForm').data(user);
+	removeAlerts("#changePasswordModal");
+	removeFormErrors("#changePasswordModal");
+	$('#changePasswordModal .modal-title').text("Change password for " + user.name + "(" + user.email + ")");
+	$('#changePasswordModal .adminPasswordLabel').text("Password of user @loggedInUser.getEmail()");
+	$('#changePasswordModal .@models.gui.ChangePasswordModel.ADMIN_PASSWORD').val('');
+	$('#changePasswordModal .newPasswordLabel').text("New password for user " + user.email);
+	$('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD').val('');
+	$('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT').val('');
+	$('#changePasswordModal').modal('show');
+});
+
+$("#changePasswordForm").submit(function(event) {
+	event.preventDefault();
+	var user = $(this).data(user);
+	$.ajax({
+		type: 'POST',
+		url: '/jatos/user/' + user.email + '/password',
+		data: $('#changePasswordForm').serialize(), 
+		success: function(response) {
+			removeAlerts("#changePasswordModal");
+			removeFormErrors("#changePasswordModal");
+			$('#changePasswordModal').modal('hide');
+		},
+		error: function(response) {
+			removeAlerts("#changePasswordModal");
+			removeFormErrors("#changePasswordModal");
+			showWarning("Password wasn't changed", "#changePasswordModal .modal-header");
+			if (isJson(response.responseText)) {
+				showFormErrors("#changePasswordModal", response);
+			} else {
+				showModalError("#changePasswordModal .modal-header", response);
+			}
+		}
+	});
+});
+
+</script>
+
+}

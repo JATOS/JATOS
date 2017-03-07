@@ -43,7 +43,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class Workers extends Controller {
 
@@ -81,6 +80,7 @@ public class Workers extends Controller {
 	 * Remove a worker including its results.
 	 */
 	@Transactional
+	@Authenticated
 	public Result remove(Long workerId) throws JatosGuiException {
 		LOGGER.info(".remove: workerId " + workerId);
 		Worker worker = workerDao.findById(workerId);
@@ -107,6 +107,7 @@ public class Workers extends Controller {
 	 * Returns a list of workers (as JSON) that did the specified study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".tableDataByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -132,6 +133,7 @@ public class Workers extends Controller {
 	 * GET request to get the workers page of the given study and batch
 	 */
 	@Transactional
+	@Authenticated
 	public Result workerSetup(Long studyId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(
@@ -163,6 +165,7 @@ public class Workers extends Controller {
 	 * Ajax GET request: Returns a list of workers as JSON
 	 */
 	@Transactional
+	@Authenticated
 	public Result workerData(Long studyId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(".workersData: studyId " + studyId + ", " + "batchId "

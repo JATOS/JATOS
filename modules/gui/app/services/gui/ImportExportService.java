@@ -27,6 +27,7 @@ import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.api.Application;
+import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData.FilePart;
 import utils.common.IOUtils;
@@ -104,7 +105,7 @@ public class ImportExportService {
 		Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
 
 		// Create JSON response
-		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(COMPONENT_EXISTS, componentExists);
 		objectNode.put(COMPONENT_TITLE, uploadedComponent.getTitle());
 		return objectNode;
@@ -166,7 +167,7 @@ public class ImportExportService {
 				dirExists);
 
 		// Create JSON response
-		ObjectNode responseJson = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode responseJson = Json.mapper().createObjectNode();
 		responseJson.put(ImportExportService.STUDY_EXISTS, studyExists);
 		responseJson.put(ImportExportService.STUDY_TITLE,
 				uploadedStudy.getTitle());

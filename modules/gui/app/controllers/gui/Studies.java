@@ -51,7 +51,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class Studies extends Controller {
 
@@ -100,6 +99,7 @@ public class Studies extends Controller {
 	 * Shows the study view with details of a study components and so on.
 	 */
 	@Transactional
+	@Authenticated
 	public Result study(Long studyId, int httpStatus) throws JatosGuiException {
 		LOGGER.info(".study: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -116,6 +116,7 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
+	@Authenticated
 	public Result study(Long studyId) throws JatosGuiException {
 		return study(studyId, Http.Status.OK);
 	}
@@ -124,6 +125,7 @@ public class Studies extends Controller {
 	 * Ajax POST request of the form to create a new study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitCreated() {
 		LOGGER.info(".submitCreated");
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -152,6 +154,7 @@ public class Studies extends Controller {
 	 * Ajax GET request that gets the study properties as JSON.
 	 */
 	@Transactional
+	@Authenticated
 	public Result properties(Long studyId) throws JatosGuiException {
 		LOGGER.info(".properties: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -166,6 +169,7 @@ public class Studies extends Controller {
 	 * Ajax POST request of the edit form to change the properties of a study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitEdited(Long studyId) throws JatosGuiException {
 		LOGGER.info(".submitEdited: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -202,6 +206,7 @@ public class Studies extends Controller {
 	 * Swap the locked field of a study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result toggleLock(Long studyId) throws JatosGuiException {
 		LOGGER.info(".toggleLock: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -219,6 +224,7 @@ public class Studies extends Controller {
 	 * Remove a study
 	 */
 	@Transactional
+	@Authenticated
 	public Result remove(Long studyId) throws JatosGuiException {
 		LOGGER.info(".remove: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -246,6 +252,7 @@ public class Studies extends Controller {
 	 * Clones a study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result cloneStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".cloneStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -271,6 +278,7 @@ public class Studies extends Controller {
 	 * study as a JSON array.
 	 */
 	@Transactional
+	@Authenticated
 	public Result users(Long studyId) throws JatosGuiException {
 		LOGGER.info(".users: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -288,6 +296,7 @@ public class Studies extends Controller {
 	 * Ajax POST request that handles changed users of a study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitChangedUsers(Long studyId) throws JatosGuiException {
 		LOGGER.info(".submitChangedUser: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -314,6 +323,7 @@ public class Studies extends Controller {
 	 * Change the oder of components within a study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result changeComponentOrder(Long studyId, Long componentId,
 			String newPosition) throws JatosGuiException {
 		LOGGER.info(".changeComponentOrder: studyId " + studyId);
@@ -337,6 +347,7 @@ public class Studies extends Controller {
 	 * Publix.startStudy() action.
 	 */
 	@Transactional
+	@Authenticated
 	public Result runStudy(Long studyId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(
@@ -358,6 +369,7 @@ public class Studies extends Controller {
 	 * Returns all Components of the given study as JSON.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".tableDataByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -377,6 +389,7 @@ public class Studies extends Controller {
 	 * Shows view that lists all Workers that did the given study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result workers(Long studyId, String errorMsg, int httpStatus)
 			throws JatosGuiException {
 		LOGGER.info(".workers: studyId " + studyId);
@@ -392,12 +405,14 @@ public class Studies extends Controller {
 	}
 
 	@Transactional
+	@Authenticated
 	public Result workers(Long studyId, String errorMsg)
 			throws JatosGuiException {
 		return workers(studyId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
+	@Authenticated
 	public Result workers(Long studyId) throws JatosGuiException {
 		return workers(studyId, null, Http.Status.OK);
 	}

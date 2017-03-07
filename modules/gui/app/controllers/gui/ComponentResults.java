@@ -42,7 +42,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class ComponentResults extends Controller {
 
@@ -79,6 +78,7 @@ public class ComponentResults extends Controller {
 	 * Shows a view with all component results of a component of a study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result componentResults(Long studyId, Long componentId,
 			String errorMsg, int httpStatus) throws JatosGuiException {
 		LOGGER.info(".componentResults: studyId " + studyId + ", "
@@ -103,12 +103,14 @@ public class ComponentResults extends Controller {
 	}
 
 	@Transactional
+	@Authenticated
 	public Result componentResults(Long studyId, Long componentId,
 			String errorMsg) throws JatosGuiException {
 		return componentResults(studyId, componentId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
+	@Authenticated
 	public Result componentResults(Long studyId, Long componentId)
 			throws JatosGuiException {
 		return componentResults(studyId, componentId, null, Http.Status.OK);
@@ -121,6 +123,7 @@ public class ComponentResults extends Controller {
 	 * a comma separated list of of ComponentResult IDs as a String.
 	 */
 	@Transactional
+	@Authenticated
 	public Result remove(String componentResultIds) throws JatosGuiException {
 		LOGGER.info(".remove: componentResultIds " + componentResultIds);
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -141,6 +144,7 @@ public class ComponentResults extends Controller {
 	 * Removes all ComponentResults of the given component and study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result removeAllOfComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
 		LOGGER.info(".removeAllOfComponent: studyId " + studyId + ", "
@@ -169,6 +173,7 @@ public class ComponentResults extends Controller {
 	 * Returns all ComponentResults as JSON for a given component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
 		LOGGER.info(".tableDataByComponent: studyId " + studyId + ", "

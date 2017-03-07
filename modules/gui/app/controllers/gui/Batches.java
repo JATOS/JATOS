@@ -48,7 +48,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class Batches extends Controller {
 
@@ -90,6 +89,7 @@ public class Batches extends Controller {
 	 * GET request to get the runManager page
 	 */
 	@Transactional
+	@Authenticated
 	public Result batchManager(Long studyId) throws JatosGuiException {
 		LOGGER.info(".batchManager: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -111,6 +111,7 @@ public class Batches extends Controller {
 	 * includes the count of their StudyResults.
 	 */
 	@Transactional
+	@Authenticated
 	public Result batchesByStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".batchesByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -134,6 +135,7 @@ public class Batches extends Controller {
 	 * @throws JatosGuiException
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitCreated(Long studyId) throws JatosGuiException {
 		LOGGER.info(".submitCreated: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -163,6 +165,7 @@ public class Batches extends Controller {
 	 * @throws JatosGuiException
 	 */
 	@Transactional
+	@Authenticated
 	public Result properties(Long studyId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(".properties: studyId " + studyId + ", batchId " + batchId);
@@ -186,6 +189,7 @@ public class Batches extends Controller {
 	 * @throws JatosGuiException
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitEditedProperties(Long studyId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(".submitEditedProperties: studyId " + studyId + ", batchId "
@@ -226,6 +230,7 @@ public class Batches extends Controller {
 	 * @throws JatosGuiException
 	 */
 	@Transactional
+	@Authenticated
 	public Result toggleActive(Long studyId, Long batchId, Boolean active)
 			throws JatosGuiException {
 		LOGGER.info(".toggleActive: studyId " + studyId + ", " + "batchId "
@@ -254,6 +259,7 @@ public class Batches extends Controller {
 	 * @throws JatosGuiException
 	 */
 	@Transactional
+	@Authenticated
 	public Result toggleAllowedWorkerType(Long studyId, Long batchId,
 			String workerType, Boolean allow) throws JatosGuiException {
 		LOGGER.info(".toggleAllowedWorkerType: studyId " + studyId + ", "
@@ -289,6 +295,7 @@ public class Batches extends Controller {
 	 * @throws JatosGuiException
 	 */
 	@Transactional
+	@Authenticated
 	public Result remove(Long studyId, Long batchId) throws JatosGuiException {
 		LOGGER.info(".remove: studyId " + studyId + ", batchId " + batchId);
 		Study study = studyDao.findById(studyId);
@@ -313,6 +320,7 @@ public class Batches extends Controller {
 	 * IDs
 	 */
 	@Transactional
+	@Authenticated
 	public Result createPersonalSingleRun(Long studyId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(".createPersonalSingleRun: studyId " + studyId + ", "
@@ -326,6 +334,7 @@ public class Batches extends Controller {
 	 * worker IDs
 	 */
 	@Transactional
+	@Authenticated
 	public Result createPersonalMultipleRun(Long studyId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(".createPersonalMultipleRun: studyId " + studyId + ", "

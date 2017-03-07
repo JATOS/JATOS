@@ -53,6 +53,8 @@ public class MessagesStrings {
 	public static final String BATCH_MAX_TOTAL_WORKERS = "Batch's max total worker size must be at least 1.";
 
 	// User
+	public static final String WRONG_PASSWORD = "Wrong password";
+	public static final String NOT_ALLOWED_TO_CHANGE_PASSWORDS = "You are not allowed to change passwords.";
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";

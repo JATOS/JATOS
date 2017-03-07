@@ -47,7 +47,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class StudyResults extends Controller {
 
@@ -89,6 +88,7 @@ public class StudyResults extends Controller {
 	 * Shows view with all StudyResults of a study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result studysStudyResults(Long studyId) throws JatosGuiException {
 		LOGGER.info(".studysStudyResults: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -111,6 +111,7 @@ public class StudyResults extends Controller {
 	 * Shows view with all StudyResults of a batch.
 	 */
 	@Transactional
+	@Authenticated
 	public Result batchesStudyResults(Long studyId, Long batchId,
 			String workerType) throws JatosGuiException {
 		LOGGER.info(".batchesStudyResults: studyId " + studyId + ", "
@@ -142,6 +143,7 @@ public class StudyResults extends Controller {
 	 * Shows view with all StudyResults of a worker.
 	 */
 	@Transactional
+	@Authenticated
 	public Result workersStudyResults(Long workerId) throws JatosGuiException {
 		LOGGER.info(".workersStudyResults: " + "workerId " + workerId);
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -167,6 +169,7 @@ public class StudyResults extends Controller {
 	 * StudyResult always removes it's ComponentResults.
 	 */
 	@Transactional
+	@Authenticated
 	public Result remove(String studyResultIds) throws JatosGuiException {
 		LOGGER.info(".remove: studyResultIds " + studyResultIds);
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -185,6 +188,7 @@ public class StudyResults extends Controller {
 	 * Removes all StudyResults of the given study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result removeAllOfStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".removeAllOfStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -210,6 +214,7 @@ public class StudyResults extends Controller {
 	 * logged-in user is allowed to delete (only if he's a user of the study).
 	 */
 	@Transactional
+	@Authenticated
 	public Result removeAllOfWorker(Long workerId) throws JatosGuiException {
 		LOGGER.info(".removeAllOfWorker: workerId " + workerId);
 		Worker worker = workerDao.findById(workerId);
@@ -233,6 +238,7 @@ public class StudyResults extends Controller {
 	 * Ajax request: Returns all StudyResults of a study in JSON format.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".tableDataByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -258,6 +264,7 @@ public class StudyResults extends Controller {
 	 * will only be of this type.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByBatch(Long studyId, Long batchId,
 			String workerType) throws JatosGuiException {
 		LOGGER.info(".tableDataByStudy: studyId " + studyId);
@@ -293,6 +300,7 @@ public class StudyResults extends Controller {
 	 * Ajax request: Returns all StudyResults belonging to a worker as JSON.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByWorker(Long workerId) throws JatosGuiException {
 		LOGGER.info(".tableDataByWorker: workerId " + workerId);
 		User loggedInUser = userService.retrieveLoggedInUser();

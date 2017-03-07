@@ -4,8 +4,8 @@
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
 <div id="toolbar" class="btn-group">
-	<button id="editProfile" type="button" class="btn btn-primary">Edit Profile</button>
-	<button id="changePassword" type="button" class="btn btn-primary">Change password</button>
+	<button id="editProfile" type="button" class="btn btn-user">Edit Profile</button>
+	<button id="changePassword" type="button" class="btn btn-user">Change password</button>
 </div>
 
 <h3>User in Studies</h3>
@@ -42,7 +42,7 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					<input type="submit" class="confirmed btn btn-primary" value="Save">
+					<input type="submit" class="confirmed btn btn-user" value="Save">
 				</div>
 			</form>
 		</div>
@@ -60,23 +60,22 @@
 				</div>
 				<div class="modal-body">
 					<div class="form-group row">
-						<label class="control-label col-xs-4" for="oldPassword">Old password</label>
+						<label class="control-label col-xs-4" for="@models.gui.ChangePasswordModel.OLD_PASSWORD">Old password</label>
 						<div class="col-xs-5">
-							<input type="password" class="form-control @common.User.OLD_PASSWORD" name="@common.User.OLD_PASSWORD" placeholder="Your old password">
+							<input type="password" class="form-control @models.gui.ChangePasswordModel.OLD_PASSWORD" name="@models.gui.ChangePasswordModel.OLD_PASSWORD" placeholder="Your old password">
 						</div>
 					</div>
 					<div class="form-group row">
-						<label class="control-label col-xs-4" for="newPassword">New password</label>
+						<label class="control-label col-xs-4" for="@models.gui.ChangePasswordModel.NEW_PASSWORD">New password</label>
 						<div class="col-xs-5">
-							<input type="password" class="form-control @common.User.PASSWORD" name="@common.User.PASSWORD" placeholder="Your new password">
-							<input type="password" class="form-control @common.User.PASSWORD_REPEAT" name="@common.User.PASSWORD_REPEAT" placeholder="Repeat your new password">
+							<input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD" name="@models.gui.ChangePasswordModel.NEW_PASSWORD" placeholder="Your new password">
+							<input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" name="@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" placeholder="Repeat your new password">
 						</div>
 					</div>
-					<input type="hidden" name="@common.User.EMAIL" value="@user.getEmail()">
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					<input type="submit" class="confirmed btn btn-primary" value="Change">
+					<input type="submit" class="confirmed btn btn-user" value="Change">
 				</div>
 			</form>
 		</div>
@@ -87,15 +86,6 @@
 
 $('#toolbar').on('click', '#editProfile', function() {
 	$('#editProfileModal').modal('show');
-});
-
-$('#toolbar').on('click', '#changePassword', function() {
-	removeAlerts("#changePasswordModal");
-	removeFormErrors("#changePasswordModal");
-	$('#changePasswordModal .@common.User.OLD_PASSWORD').val('');
-	$('#changePasswordModal .@common.User.PASSWORD').val('');
-	$('#changePasswordModal .@common.User.PASSWORD_REPEAT').val('');
-	$('#changePasswordModal').modal('show');
 });
 
 $("#editProfileForm").submit(function(event) {
@@ -123,6 +113,15 @@ $("#editProfileForm").submit(function(event) {
 			}
 		}
 	});
+});
+
+$('#toolbar').on('click', '#changePassword', function() {
+	removeAlerts("#changePasswordModal");
+	removeFormErrors("#changePasswordModal");
+	$('#changePasswordModal .@models.gui.ChangePasswordModel.OLD_PASSWORD').val('');
+	$('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD').val('');
+	$('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT').val('');
+	$('#changePasswordModal').modal('show');
 });
 
 $("#changePasswordForm").submit(function(event) {

@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import daos.common.UserDao;
 import general.common.MessagesStrings;
 import general.gui.FlashScopeMessaging;
 import play.Logger;
@@ -14,6 +13,7 @@ import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import utils.common.HashUtils;
 
 /**
@@ -27,14 +27,16 @@ public class Authentication extends Controller {
 
 	private static final ALogger LOGGER = Logger.of(Workers.class);
 
+	public static final String SESSION_USER_EMAIL = "userEmail";
 	public static final String LOGGED_IN_USER = "loggedInUser";
 
-	private final UserDao userDao;
+	private final AuthenticationService authenticationService;
 	private final FormFactory formFactory;
 
 	@Inject
-	Authentication(UserDao userDao, FormFactory formFactory) {
-		this.userDao = userDao;
+	Authentication(AuthenticationService authenticationService,
+			FormFactory formFactory) {
+		this.authenticationService = authenticationService;
 		this.formFactory = formFactory;
 	}
 
@@ -48,7 +50,8 @@ public class Authentication extends Controller {
 	}
 
 	/**
-	 * Deals with login form post.
+	 * Deals with login form post. Puts user's email and roles into Play's
+	 * session.
 	 */
 	@Transactional
 	public Result authenticate() {
@@ -56,8 +59,8 @@ public class Authentication extends Controller {
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");
 		String passwordHash = HashUtils.getHashMDFive(password);
-		if (userDao.authenticate(email, passwordHash)) {
-			session(Users.SESSION_EMAIL, email);
+		if (authenticationService.authenticate(email, passwordHash)) {
+			session(SESSION_USER_EMAIL, email);
 			return redirect(controllers.gui.routes.Home.home());
 		} else {
 			loginForm.reject("Invalid user or password");
@@ -66,17 +69,17 @@ public class Authentication extends Controller {
 	}
 
 	/**
-	 * Shows login view with an logout message.
+	 * Removes user from session and shows login view with an logout message.
 	 */
 	public Result logout() {
-		LOGGER.info(".logout: " + session(Users.SESSION_EMAIL));
-		session().remove(Users.SESSION_EMAIL);
+		LOGGER.info(".logout: " + session(SESSION_USER_EMAIL));
+		session().remove(SESSION_USER_EMAIL);
 		FlashScopeMessaging.success(MessagesStrings.YOUVE_BEEN_LOGGED_OUT);
 		return redirect(controllers.gui.routes.Authentication.login());
 	}
 
 	/**
-	 * Inner class needed for login template
+	 * Model class needed for login template
 	 */
 	public static class Login {
 		public String email;

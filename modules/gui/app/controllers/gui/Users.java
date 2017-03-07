@@ -11,6 +11,9 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
 import models.common.User;
+import models.common.User.Role;
+import models.gui.ChangePasswordModel;
+import models.gui.NewUserModel;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.DynamicForm;
@@ -20,12 +23,13 @@ import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
-import utils.common.HashUtils;
 import utils.common.HttpUtils;
+import utils.common.JsonUtils;
 
 /**
  * Controller with actions concerning users
@@ -33,35 +37,58 @@ import utils.common.HttpUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class Users extends Controller {
 
 	private static final ALogger LOGGER = Logger.of(Users.class);
 
-	public static final String SESSION_EMAIL = "email";
-
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final Checker checker;
 	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final FormFactory formFactory;
 
 	@Inject
 	Users(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-			UserService userService, BreadcrumbsService breadcrumbsService,
-			FormFactory formFactory) {
+			UserService userService,
+			AuthenticationService authenticationService,
+			BreadcrumbsService breadcrumbsService, FormFactory formFactory) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.userService = userService;
+		this.authenticationService = authenticationService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.formFactory = formFactory;
+	}
+
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result userManager() throws JatosGuiException {
+		LOGGER.info(".userManager");
+		User loggedInUser = userService.retrieveLoggedInUser();
+		String breadcrumbs = breadcrumbsService
+				.generateForHome(BreadcrumbsService.USER_MANAGER);
+		return ok(views.html.gui.user.userManager.render(loggedInUser,
+				breadcrumbs, HttpUtils.isLocalhost()));
+	}
+
+	/**
+	 * Ajax GET request: Returns a list of all users as JSON
+	 */
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result userData() throws JatosGuiException {
+		LOGGER.info(".userData");
+		List<User> userList = userService.retrieveAllUsers();
+		return ok(JsonUtils.asJsonNode(userList));
 	}
 
 	/**
 	 * Shows the profile view of a user
 	 */
 	@Transactional
+	@Authenticated
 	public Result profile(String email) throws JatosGuiException {
 		LOGGER.info(".profile: " + "email " + email);
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -72,29 +99,32 @@ public class Users extends Controller {
 	}
 
 	/**
-	 * Handles post request of user create form.
+	 * Handles post request of user create form. Only users with Role ADMIN are
+	 * allowed to create new users.
 	 */
 	@Transactional
-	public Result submit() {
-		LOGGER.info(".submit");
-		Form<User> form = formFactory.form(User.class).bindFromRequest();
+	@Authenticated(Role.ADMIN)
+	public Result submitCreated() {
+		LOGGER.info(".submitCreated");
+		User loggedInUser = userService.retrieveLoggedInUser();
 
+		// Validate via model's validate method
+		Form<NewUserModel> form = formFactory.form(NewUserModel.class)
+				.bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
 		}
 
-		User newUser = form.get();
-		DynamicForm requestData = formFactory.form().bindFromRequest();
-		String password = requestData.get(User.PASSWORD);
-		String passwordRepeat = requestData.get(User.PASSWORD_REPEAT);
-		List<ValidationError> errorList = userService.validateNewUser(newUser,
-				password, passwordRepeat);
+		// Validate via AuthenticationService
+		NewUserModel newUser = form.get();
+		List<ValidationError> errorList = authenticationService
+				.validateNewUser(newUser, loggedInUser.getEmail());
 		if (!errorList.isEmpty()) {
 			errorList.forEach(form::reject);
 			return badRequest(form.errorsAsJson());
 		}
 
-		userService.createAndPersistUser(newUser, password);
+		userService.createAndPersistNewUser(newUser);
 		return ok();
 	}
 
@@ -102,6 +132,7 @@ public class Users extends Controller {
 	 * Handles post request of user edit profile form.
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitEditedProfile(String email) throws JatosGuiException {
 		LOGGER.info(".submitEditedProfile: " + "email " + email);
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -121,30 +152,40 @@ public class Users extends Controller {
 	}
 
 	/**
-	 * Handles post request of change password form.
+	 * Handles POST request of change password form. Can be either origin in the
+	 * user manager or in the user profile.
 	 */
 	@Transactional
-	public Result submitChangedPassword(String email) throws JatosGuiException {
-		LOGGER.info(".submitChangedPassword: " + "email " + email);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		User user = checkStandard(email, loggedInUser);
-		Form<User> form = formFactory.form(User.class).fill(user);
+	@Authenticated
+	public Result submitChangedPassword(String emailOfUserToChange) {
+		LOGGER.info(
+				".submitChangedPassword: " + "email " + emailOfUserToChange);
+		
+		// Validate via model's validate method
+		Form<ChangePasswordModel> form = formFactory
+				.form(ChangePasswordModel.class).bindFromRequest();
+		if (form.hasErrors()) {
+			return badRequest(form.errorsAsJson());
+		}
 
-		DynamicForm requestData = formFactory.form().bindFromRequest();
-		String newPassword = requestData.get(User.PASSWORD);
-		String newPasswordRepeat = requestData.get(User.PASSWORD_REPEAT);
-		String oldPasswordHash = HashUtils
-				.getHashMDFive(requestData.get(User.OLD_PASSWORD));
-		List<ValidationError> errorList = userService.validateChangePassword(
-				user, newPassword, newPasswordRepeat, oldPasswordHash);
+		// Validate via AuthenticationService
+		ChangePasswordModel changePasswordModel = form.get();
+		List<ValidationError> errorList = authenticationService
+				.validateChangePassword(emailOfUserToChange,
+						changePasswordModel);
 		if (!errorList.isEmpty()) {
 			errorList.forEach(form::reject);
 			return badRequest(form.errorsAsJson());
 		}
-		String newPasswordHash = HashUtils.getHashMDFive(newPassword);
-		userService.updatePasswordHash(user, newPasswordHash);
 
-		return redirect(controllers.gui.routes.Users.profile(email));
+		// Change password
+		try {
+			String newPassword = changePasswordModel.getNewPassword();
+			userService.updatePasswordHash(emailOfUserToChange, newPassword);
+		} catch (NotFoundException e) {
+			badRequest(e.getMessage());
+		}
+		return ok();
 	}
 
 	private User checkStandard(String email, User loggedInUser)

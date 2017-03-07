@@ -12,12 +12,15 @@ GET     /jatos/logout                                @controllers.gui.Authentica
 GET     /jatos/sidebarStudyList                      @controllers.gui.Home.sidebarStudyList()
 GET     /jatos                                       @controllers.gui.Home.home()
 GET     /jatos/                                      @controllers.gui.Home.home()
-GET     /jatos/ldap                                  @controllers.gui.Home.ldap()
 GET     /                                            @controllers.gui.Home.home()
 GET     /jatos/admin/log                             @controllers.gui.Home.log(limit: Integer ?= 1000)
+GET     /jatos/log                                   @controllers.gui.Home.log(limit: Integer ?= 1000)
+GET     /jatos/ldap                                  @controllers.gui.Home.ldap()
 
 # Users controller
-POST    /jatos/user                                  @controllers.gui.Users.submit()
+GET     /jatos/userManager                           @controllers.gui.Users.userManager()
+GET     /jatos/userData                              @controllers.gui.Users.userData()
+POST    /jatos/user                                  @controllers.gui.Users.submitCreated()
 POST    /jatos/user/:email/profile                   @controllers.gui.Users.submitEditedProfile(email: String)
 POST    /jatos/user/:email/password                  @controllers.gui.Users.submitChangedPassword(email: String)
 GET     /jatos/user/:email                           @controllers.gui.Users.profile(email: String)

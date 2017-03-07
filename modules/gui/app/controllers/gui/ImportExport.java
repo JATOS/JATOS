@@ -48,7 +48,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class ImportExport extends Controller {
 
@@ -97,6 +96,7 @@ public class ImportExport extends Controller {
 	 * importStudyConfirmed(). Returns JSON.
 	 */
 	@Transactional
+	@Authenticated
 	public Result importStudy() throws JatosGuiException {
 		LOGGER.info(".importStudy");
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -133,6 +133,7 @@ public class ImportExport extends Controller {
 	 * of an importStudy() call.
 	 */
 	@Transactional
+	@Authenticated
 	public Result importStudyConfirmed() throws JatosGuiException {
 		LOGGER.info(".importStudyConfirmed");
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -159,6 +160,7 @@ public class ImportExport extends Controller {
 	 * directory and the study as JSON as a .jas file.
 	 */
 	@Transactional
+	@Authenticated
 	public Result exportStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".exportStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -192,6 +194,7 @@ public class ImportExport extends Controller {
 	 * Export of a component. Returns a .jac file with the component in JSON.
 	 */
 	@Transactional
+	@Authenticated
 	public Result exportComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
 		LOGGER.info(".exportComponent: studyId " + studyId + ", "
@@ -230,6 +233,7 @@ public class ImportExport extends Controller {
 	 * happens in importComponentConfirmed(). Returns JSON with the results.
 	 */
 	@Transactional
+	@Authenticated
 	public Result importComponent(Long studyId) throws JatosGuiException {
 		LOGGER.info(".importComponent: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -255,6 +259,7 @@ public class ImportExport extends Controller {
 	 * Actual import of component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result importComponentConfirmed(Long studyId)
 			throws JatosGuiException {
 		LOGGER.info(".importComponentConfirmed: " + "studyId " + studyId);
@@ -287,6 +292,7 @@ public class ImportExport extends Controller {
 	 * text.
 	 */
 	@Transactional
+	@Authenticated
 	public Result exportDataOfStudyResults(String studyResultIds)
 			throws JatosGuiException {
 		LOGGER.info(
@@ -315,6 +321,7 @@ public class ImportExport extends Controller {
 	 * belonging to the given study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result exportDataOfAllStudyResults(Long studyId)
 			throws JatosGuiException {
 		LOGGER.info(".exportDataOfAllStudyResults");
@@ -347,6 +354,7 @@ public class ImportExport extends Controller {
 	 * of study component result IDs. Returns the results as text.
 	 */
 	@Transactional
+	@Authenticated
 	public Result exportDataOfComponentResults(String componentResultIds)
 			throws JatosGuiException {
 		LOGGER.info(".exportDataOfComponentResults: componentResultIds "
@@ -376,6 +384,7 @@ public class ImportExport extends Controller {
 	 * component and study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result exportDataOfAllComponentResults(Long studyId,
 			Long componentId) throws JatosGuiException {
 		LOGGER.info(".exportDataOfAllComponentResults: studyId " + studyId
@@ -411,6 +420,7 @@ public class ImportExport extends Controller {
 	 * worker's StudyResults.
 	 */
 	@Transactional
+	@Authenticated
 	public Result exportAllResultDataOfWorker(Long workerId)
 			throws JatosGuiException {
 		LOGGER.info(".exportAllResultDataOfWorker: workerId " + workerId);
@@ -449,10 +459,9 @@ public class ImportExport extends Controller {
 				+ IOUtils.TXT_FILE_SUFFIX;
 		response().setHeader("Content-disposition",
 				"attachment; filename=" + filename);
-		// Set transient cookie with no domain or path constraints 
+		// Set transient cookie with no domain or path constraints
 		Cookie cookie = new Cookie(JQDOWNLOAD_COOKIE_NAME,
-				JQDOWNLOAD_COOKIE_CONTENT, null, "/", null, false,
-				false);
+				JQDOWNLOAD_COOKIE_CONTENT, null, "/", null, false, false);
 		response().setCookie(cookie);
 	}
 

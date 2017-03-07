@@ -7,6 +7,7 @@ import java.io.IOException;
 import javax.inject.Inject;
 
 import models.common.Component;
+import play.libs.Json;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -38,7 +39,7 @@ public class ComponentUploadUnmarshaller extends UploadUnmarshaller<Component> {
 	 */
 	@Override
 	protected Component concreteUnmarshaling(String jsonStr) throws IOException {
-		JsonNode node = JsonUtils.OBJECTMAPPER.readTree(jsonStr).findValue(
+		JsonNode node = Json.mapper().readTree(jsonStr).findValue(
 				JsonUtils.VERSION);
 		int version = node.asInt();
 		if (version > Component.SERIAL_VERSION) {
@@ -49,9 +50,9 @@ public class ComponentUploadUnmarshaller extends UploadUnmarshaller<Component> {
 		case 0:
 		case 1:
 			// Current version
-			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr).findValue(
+			node = Json.mapper().readTree(jsonStr).findValue(
 					JsonUtils.DATA);
-			component = JsonUtils.OBJECTMAPPER.treeToValue(node,
+			component = Json.mapper().treeToValue(node,
 					Component.class);
 			break;
 		default:

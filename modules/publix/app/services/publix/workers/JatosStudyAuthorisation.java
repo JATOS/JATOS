@@ -47,7 +47,7 @@ public class JatosStudyAuthorisation extends StudyAuthorisation<JatosWorker> {
 					.workerNotAllowedStudy(worker, study.getId()));
 		}
 		// User has to be logged in
-		String email = Publix.session(JatosPublix.SESSION_EMAIL);
+		String email = Publix.session(JatosPublix.SESSION_USER_EMAIL);
 		if (!user.getEmail().equals(email)) {
 			throw new ForbiddenPublixException(PublixErrorMessages
 					.workerNotAllowedStudy(worker, study.getId()));

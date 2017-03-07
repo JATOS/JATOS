@@ -20,7 +20,6 @@ import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.Transactional;
-import play.libs.F.Promise;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -38,7 +37,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class Home extends Controller {
 
@@ -64,6 +62,7 @@ public class Home extends Controller {
 	}
 
 	@Transactional
+	@Authenticated
 	public CompletionStage<Result> ldap() {
 		try {
 
@@ -89,6 +88,7 @@ public class Home extends Controller {
 	 * Shows home view
 	 */
 	@Transactional
+	@Authenticated
 	public Result home(int httpStatus) {
 		LOGGER.info(".home");
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -99,6 +99,7 @@ public class Home extends Controller {
 	}
 
 	@Transactional
+	@Authenticated
 	public Result home() {
 		return home(Http.Status.OK);
 	}
@@ -110,6 +111,7 @@ public class Home extends Controller {
 	 * logged-in user for use in the GUI's sidebar.
 	 */
 	@Transactional
+	@Authenticated
 	public Result sidebarStudyList() {
 		LOGGER.info(".sidebarStudyList");
 		User loggedInUser = userService.retrieveLoggedInUser();
@@ -125,6 +127,7 @@ public class Home extends Controller {
 	 * error message.
 	 */
 	@Transactional
+	@Authenticated
 	public Result log(Integer lineLimit) throws JatosGuiException {
 		LOGGER.info(".log: " + "lineLimit " + lineLimit);
 		User loggedInUser = userService.retrieveLoggedInUser();

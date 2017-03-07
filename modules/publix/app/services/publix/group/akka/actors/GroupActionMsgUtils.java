@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import models.common.GroupResult;
 import models.common.StudyResult;
+import play.libs.Json;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
-import utils.common.JsonUtils;
 
 /**
  * Helper class with some methods that all create an GroupActionMsg.
@@ -33,7 +33,7 @@ public class GroupActionMsgUtils {
 	public static GroupActionMsg buildFullActionMsg(Long studyResultId,
 			GroupAction action, GroupResult groupResult,
 			Set<Long> studyResultIdSet) {
-		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, action.toString());
 		if (studyResultId != null) {
 			objectNode.put(GroupActionMsg.MEMBER_ID, studyResultId);
@@ -41,12 +41,12 @@ public class GroupActionMsgUtils {
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResult.getId());
 		objectNode.put(GroupActionMsg.GROUP_STATE,
 				groupResult.getGroupState().name());
-		ArrayNode members = JsonUtils.OBJECTMAPPER.createArrayNode();
+		ArrayNode members = Json.mapper().createArrayNode();
 		for (StudyResult studyResult : groupResult.getActiveMemberList()) {
 			members.add(String.valueOf(studyResult.getId()));
 		}
 		objectNode.set(GroupActionMsg.MEMBERS, members);
-		ArrayNode channels = JsonUtils.OBJECTMAPPER.createArrayNode();
+		ArrayNode channels = Json.mapper().createArrayNode();
 		for (Long id : studyResultIdSet) {
 			channels.add(String.valueOf(id));
 		}
@@ -69,7 +69,7 @@ public class GroupActionMsgUtils {
 	 */
 	public static GroupActionMsg buildSessionActionMsg(Long studyResultId,
 			GroupResult groupResult) {
-		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, GroupAction.SESSION.toString());
 		objectNode.put(GroupActionMsg.GROUP_SESSION_DATA,
 				groupResult.getGroupSessionData());
@@ -89,7 +89,7 @@ public class GroupActionMsgUtils {
 	 */
 	public static GroupActionMsg buildSimpleActionMsg(GroupAction action,
 			Long groupResultId) {
-		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, action.toString());
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResultId);
 		return new GroupActionMsg(objectNode);
@@ -100,7 +100,7 @@ public class GroupActionMsgUtils {
 	 */
 	public static GroupActionMsg buildErrorActionMsg(String errorMsg,
 			Long groupResultId) {
-		ObjectNode objectNode = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, GroupAction.ERROR.toString());
 		objectNode.put(GroupActionMsg.ERROR_MSG, errorMsg);
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResultId);

@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.TimeZone;
 
 import javax.inject.Singleton;
 
@@ -18,7 +17,6 @@ import org.hibernate.proxy.HibernateProxy;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -33,6 +31,7 @@ import models.common.User;
 import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
+import play.libs.Json;
 import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 
 /**
@@ -48,13 +47,6 @@ public class JsonUtils {
 
 	public static final String DATA = "data";
 	public static final String VERSION = "version";
-
-	/**
-	 * ObjectMapper from Jackson JSON library to marshal/unmarshal. It considers
-	 * the default timezone.
-	 */
-	public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
-			.setTimeZone(TimeZone.getDefault());
 
 	/**
 	 * Helper class for selectively marshaling an Object to JSON. Only fields of
@@ -77,7 +69,7 @@ public class JsonUtils {
 	 * are annotated with 'JsonForPublix'.
 	 */
 	public String asJsonForPublix(Object obj) throws JsonProcessingException {
-		ObjectWriter objectWriter = OBJECTMAPPER
+		ObjectWriter objectWriter = Json.mapper()
 				.writerWithView(JsonForPublix.class);
 		return objectWriter.writeValueAsString(obj);
 	}
@@ -98,7 +90,7 @@ public class JsonUtils {
 		}
 		String jsonDataForDB = null;
 		try {
-			jsonDataForDB = OBJECTMAPPER.readTree(jsonData).toString();
+			jsonDataForDB = Json.mapper().readTree(jsonData).toString();
 		} catch (Exception e) {
 			LOGGER.info(".asStringForDB: error probably due to invalid JSON");
 		}
@@ -113,7 +105,7 @@ public class JsonUtils {
 		try {
 			// Parse the string. If an exception occurs return false and true
 			// otherwise.
-			final JsonParser parser = OBJECTMAPPER.getFactory()
+			final JsonParser parser = Json.mapper().getFactory()
 					.createParser(jsonDataStr);
 			while (parser.nextToken() != null) {
 			}
@@ -138,14 +130,14 @@ public class JsonUtils {
 		ArrayNode componentList = getComponentListForInitData(study);
 		String componentProperties = asJsonForPublix(component);
 		String studySessionData = studyResult.getStudySessionData();
-		ObjectNode initData = OBJECTMAPPER.createObjectNode();
+		ObjectNode initData = Json.mapper().createObjectNode();
 		initData.put("studySessionData", studySessionData);
 		// This is ugly: first marshaling, now unmarshaling again
-		initData.set("studyProperties", OBJECTMAPPER.readTree(studyProperties));
-		initData.set("batchProperties", OBJECTMAPPER.readTree(batchProperties));
+		initData.set("studyProperties", Json.mapper().readTree(studyProperties));
+		initData.set("batchProperties", Json.mapper().readTree(batchProperties));
 		initData.set("componentList", componentList);
 		initData.set("componentProperties",
-				OBJECTMAPPER.readTree(componentProperties));
+				Json.mapper().readTree(componentProperties));
 		return initData;
 	}
 
@@ -155,9 +147,9 @@ public class JsonUtils {
 	 * data.
 	 */
 	private ArrayNode getComponentListForInitData(Study study) {
-		ArrayNode componentList = OBJECTMAPPER.createArrayNode();
+		ArrayNode componentList = Json.mapper().createArrayNode();
 		for (Component tempComponent : study.getComponentList()) {
-			ObjectNode componentNode = OBJECTMAPPER.createObjectNode();
+			ObjectNode componentNode = Json.mapper().createObjectNode();
 			componentNode.put("id", tempComponent.getId());
 			componentNode.put("title", tempComponent.getTitle());
 			componentNode.put("active", tempComponent.isActive());
@@ -194,7 +186,7 @@ public class JsonUtils {
 	 */
 	public JsonNode allStudyResultsForUI(List<StudyResult> studyResultList)
 			throws JsonProcessingException {
-		ObjectNode allStudyResultsNode = OBJECTMAPPER.createObjectNode();
+		ObjectNode allStudyResultsNode = Json.mapper().createObjectNode();
 		ArrayNode arrayNode = allStudyResultsNode.arrayNode();
 		for (StudyResult studyResult : studyResultList) {
 			JsonNode studyResultNode = studyResultAsJsonNode(studyResult);
@@ -211,7 +203,7 @@ public class JsonUtils {
 	public JsonNode allComponentResultsForUI(
 			List<ComponentResult> componentResultList)
 			throws JsonProcessingException {
-		ObjectNode allComponentResultsNode = OBJECTMAPPER.createObjectNode();
+		ObjectNode allComponentResultsNode = Json.mapper().createObjectNode();
 		ArrayNode arrayNode = allComponentResultsNode.arrayNode();
 		for (ComponentResult componentResult : componentResultList) {
 			JsonNode componentResultNode = componentResultAsJsonNode(
@@ -227,10 +219,10 @@ public class JsonUtils {
 	 * study's ID and title, and all ComponentResults.
 	 */
 	private JsonNode studyResultAsJsonNode(StudyResult studyResult) {
-		ObjectNode studyResultNode = OBJECTMAPPER.valueToTree(studyResult);
+		ObjectNode studyResultNode = Json.mapper().valueToTree(studyResult);
 
 		// Add worker
-		ObjectNode workerNode = OBJECTMAPPER
+		ObjectNode workerNode = Json.mapper()
 				.valueToTree(initializeAndUnproxy(studyResult.getWorker()));
 		studyResultNode.set("worker", workerNode);
 
@@ -274,7 +266,7 @@ public class JsonUtils {
 	 */
 	private JsonNode componentResultAsJsonNode(
 			ComponentResult componentResult) {
-		ObjectNode componentResultNode = OBJECTMAPPER
+		ObjectNode componentResultNode = Json.mapper()
 				.valueToTree(componentResult);
 
 		// Add extra variables
@@ -325,7 +317,7 @@ public class JsonUtils {
 	 */
 	public JsonNode studyForUI(Study study, int resultCount)
 			throws JsonProcessingException {
-		ObjectNode studyNode = OBJECTMAPPER.valueToTree(study);
+		ObjectNode studyNode = Json.mapper().valueToTree(study);
 		studyNode.put("resultCount", resultCount);
 		return studyNode;
 	}
@@ -335,9 +327,9 @@ public class JsonUtils {
 	 * This JSON is intended for JATOS' GUI.
 	 */
 	public JsonNode usersForStudyUI(List<User> userList, Study study) {
-		ArrayNode userArrayNode = OBJECTMAPPER.createArrayNode();
+		ArrayNode userArrayNode = Json.mapper().createArrayNode();
 		for (User user : userList) {
-			ObjectNode userNode = OBJECTMAPPER.createObjectNode();
+			ObjectNode userNode = Json.mapper().createObjectNode();
 			userNode.put("name", user.getName());
 			userNode.put("email", user.getEmail());
 			// Is this user admin of the study - NOT is it the admin user
@@ -408,10 +400,10 @@ public class JsonUtils {
 	 */
 	public JsonNode allBatchesByStudyForUI(Study study,
 			List<Integer> resultCountList) {
-		ArrayNode batchListNode = OBJECTMAPPER.createArrayNode();
+		ArrayNode batchListNode = Json.mapper().createArrayNode();
 		List<Batch> batchList = study.getBatchList();
 		for (int i = 0; i < batchList.size(); i++) {
-			ObjectNode batchNode = OBJECTMAPPER.valueToTree(batchList.get(i));
+			ObjectNode batchNode = Json.mapper().valueToTree(batchList.get(i));
 			// Add count of batch's results
 			batchNode.put("resultCount", resultCountList.get(i));
 			// Add count of batch's workers (without JatosWorker)
@@ -431,10 +423,10 @@ public class JsonUtils {
 	 */
 	public JsonNode allComponentsForUI(List<Component> componentList,
 			List<Integer> resultCountList) {
-		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
+		ArrayNode arrayNode = Json.mapper().createArrayNode();
 		// int i = 1;
 		for (int i = 0; i < componentList.size(); i++) {
-			ObjectNode componentNode = OBJECTMAPPER
+			ObjectNode componentNode = Json.mapper()
 					.valueToTree(componentList.get(i));
 			// Add count of component's results
 			componentNode.put("resultCount", resultCountList.get(i));
@@ -442,7 +434,7 @@ public class JsonUtils {
 			componentNode.put("position", position);
 			arrayNode.add(componentNode);
 		}
-		ObjectNode componentsNode = OBJECTMAPPER.createObjectNode();
+		ObjectNode componentsNode = Json.mapper().createObjectNode();
 		componentsNode.set(DATA, arrayNode);
 		return componentsNode;
 	}
@@ -453,13 +445,13 @@ public class JsonUtils {
 	 */
 	public JsonNode allWorkersForUI(Set<Worker> workerSet)
 			throws JsonProcessingException {
-		ArrayNode arrayNode = OBJECTMAPPER.createArrayNode();
+		ArrayNode arrayNode = Json.mapper().createArrayNode();
 		for (Worker worker : workerSet) {
-			ObjectNode workerNode = OBJECTMAPPER
+			ObjectNode workerNode = Json.mapper()
 					.valueToTree(initializeAndUnproxy(worker));
 			arrayNode.add(workerNode);
 		}
-		ObjectNode workersNode = OBJECTMAPPER.createObjectNode();
+		ObjectNode workersNode = Json.mapper().createObjectNode();
 		workersNode.set(DATA, arrayNode);
 		return workersNode;
 	}
@@ -478,7 +470,7 @@ public class JsonUtils {
 	 * Generic JSON marshaler.
 	 */
 	public static String asJson(Object obj) {
-		ObjectWriter objectWriter = OBJECTMAPPER.writer();
+		ObjectWriter objectWriter = Json.mapper().writer();
 		String objectAsJson = null;
 		try {
 			objectAsJson = objectWriter.writeValueAsString(obj);
@@ -492,7 +484,7 @@ public class JsonUtils {
 	 * Generic JSON marshaler.
 	 */
 	public static JsonNode asJsonNode(Object obj) {
-		return OBJECTMAPPER.valueToTree(obj);
+		return Json.mapper().valueToTree(obj);
 	}
 
 	/**
@@ -511,7 +503,7 @@ public class JsonUtils {
 	public void studyAsJsonForIO(Study study, File file) throws IOException {
 		JsonNode node = generateNodeWithVersionForIO(study,
 				String.valueOf(Study.SERIAL_VERSION));
-		OBJECTMAPPER.writer().writeValue(file, node);
+		Json.mapper().writer().writeValue(file, node);
 	}
 
 	/**
@@ -520,12 +512,12 @@ public class JsonUtils {
 	 */
 	private JsonNode generateNodeWithVersionForIO(Object obj, String version)
 			throws IOException {
-		ObjectNode node = OBJECTMAPPER.createObjectNode();
+		ObjectNode node = Json.mapper().createObjectNode();
 		node.put(VERSION, version);
 		// Unnecessary conversion into a temporary string - better solution?
-		String objAsJson = OBJECTMAPPER.writerWithView(JsonForIO.class)
+		String objAsJson = Json.mapper().writerWithView(JsonForIO.class)
 				.writeValueAsString(obj);
-		node.set(DATA, OBJECTMAPPER.readTree(objAsJson));
+		node.set(DATA, Json.mapper().readTree(objAsJson));
 		return node;
 	}
 

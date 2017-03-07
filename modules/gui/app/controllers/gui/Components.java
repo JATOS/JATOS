@@ -40,7 +40,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class Components extends Controller {
 
@@ -77,6 +76,7 @@ public class Components extends Controller {
 	 * Publix.startStudy().
 	 */
 	@Transactional
+	@Authenticated
 	public Result runComponent(Long studyId, Long componentId, Long batchId)
 			throws JatosGuiException {
 		LOGGER.info(".runComponent: studyId " + studyId + ", " + "componentId "
@@ -115,6 +115,7 @@ public class Components extends Controller {
 	 * Component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitCreated(Long studyId) throws JatosGuiException {
 		LOGGER.info(".submitCreated: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
@@ -137,6 +138,7 @@ public class Components extends Controller {
 	 * Ajax GET requests for getting the properties of a Component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result properties(Long studyId, Long componentId)
 			throws JatosGuiException {
 		LOGGER.info(".properties: studyId " + studyId + ", " + "componentId "
@@ -159,6 +161,7 @@ public class Components extends Controller {
 	 * Handles the post of the edit form.
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitEdited(Long studyId, Long componentId)
 			throws JatosGuiException {
 		LOGGER.info(".submitEdited: studyId " + studyId + ", " + "componentId "
@@ -194,6 +197,7 @@ public class Components extends Controller {
 	 * Request to change the property 'active' of a component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result toggleActive(Long studyId, Long componentId, Boolean active)
 			throws JatosGuiException {
 		LOGGER.info(".toggleActive: studyId " + studyId + ", " + "componentId "
@@ -216,6 +220,7 @@ public class Components extends Controller {
 	 * Clone a component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result cloneComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
 		LOGGER.info(".cloneComponent: studyId " + studyId + ", "
@@ -237,6 +242,7 @@ public class Components extends Controller {
 	 * Remove a component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result remove(Long studyId, Long componentId)
 			throws JatosGuiException {
 		LOGGER.info(".remove: studyId " + studyId + ", " + "componentId "
