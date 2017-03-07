@@ -18,8 +18,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import models.common.workers.JatosWorker;
 
 /**
- * Domain model / entity of a user. Used for JSON marshalling and JPA
- * persistance.
+ * Domain entity of a user. Used for JSON marshalling and JPA persistance.
  * 
  * @author Kristian Lange
  */
@@ -27,13 +26,9 @@ import models.common.workers.JatosWorker;
 @Table(name = "User")
 public class User {
 
-	public static final String NAME = "name";
-	public static final String EMAIL = "email";
-	public static final String PASSWORD = "password";
-	public static final String PASSWORD_REPEAT = "passwordRepeat";
-	public static final String OLD_PASSWORD = "oldPassword";
-	public static final String ADMIN = "admin";
-
+	/**
+	 * Roles are used for authorization within JATOS GUI
+	 */
 	public enum Role {
 		USER, // Normal JATOS user
 		ADMIN; // Allows to create/change/delete other users

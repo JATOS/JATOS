@@ -17,6 +17,7 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 
+import controllers.gui.Authentication.Login;
 import general.TestHelper;
 import models.common.User;
 import play.Application;
@@ -100,8 +101,8 @@ public class AuthenticationControllerTest {
 	@Test
 	public void authenticateSuccess() {
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(ImmutableMap.of(User.EMAIL, UserService.ADMIN_EMAIL,
-						User.PASSWORD, UserService.ADMIN_PASSWORD))
+				.bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL,
+						Login.PASSWORD, UserService.ADMIN_PASSWORD))
 				.uri(controllers.gui.routes.Authentication.authenticate()
 						.url());
 		Result result = route(request);
@@ -109,7 +110,8 @@ public class AuthenticationControllerTest {
 		// Successful login leads to a redirect and the user's email is in the
 		// session
 		assertEquals(303, result.status());
-		assertEquals(UserService.ADMIN_EMAIL, result.session().get(User.EMAIL));
+		assertEquals(UserService.ADMIN_EMAIL,
+				result.session().get(Authentication.SESSION_USER_EMAIL));
 	}
 
 	/**
@@ -118,15 +120,15 @@ public class AuthenticationControllerTest {
 	@Test
 	public void authenticateFailure() {
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(ImmutableMap.of(User.EMAIL, UserService.ADMIN_EMAIL,
-						User.PASSWORD, "bla"))
+				.bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL,
+						Login.PASSWORD, "bla"))
 				.uri(controllers.gui.routes.Authentication.authenticate()
 						.url());
 		Result result = route(request);
 
 		// Fail to login leads to a Bad Request (400)
 		assertEquals(400, result.status());
-		assertNull(result.session().get(User.EMAIL));
+		assertNull(result.session().get(Authentication.SESSION_USER_EMAIL));
 	}
 
 }

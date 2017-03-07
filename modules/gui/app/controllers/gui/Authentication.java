@@ -79,9 +79,13 @@ public class Authentication extends Controller {
 	}
 
 	/**
-	 * Model class needed for login template
+	 * Simple model class needed for login template
 	 */
 	public static class Login {
+		
+		public static final String EMAIL = "email";
+		public static final String PASSWORD = "password";
+		
 		public String email;
 		public String password;
 	}
