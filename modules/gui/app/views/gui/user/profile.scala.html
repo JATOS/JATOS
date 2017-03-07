@@ -35,10 +35,10 @@
 					<div class="form-group row">
 						<label class="control-label col-xs-4" for="editProfileName">Name</label>
 						<div class="col-xs-8">
-							<input type="text" class="form-control @common.User.NAME" id="editProfileName" name="@common.User.NAME" value="@user.getName()">
+							<input type="text" class="form-control name" id="editProfileName" name="name" value="@user.getName()">
 						</div>
 					</div>
-					<input type="hidden" name="@common.User.EMAIL" value="@user.getEmail()">
+					<input type="hidden" name="email" value="@user.getEmail()">
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>

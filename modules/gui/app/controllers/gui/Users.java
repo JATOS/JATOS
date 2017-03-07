@@ -146,7 +146,7 @@ public class Users extends Controller {
 		// Do not update 'email' since it's the ID and should stay
 		// unaltered. For the password we have an extra form.
 		DynamicForm requestData = formFactory.form().bindFromRequest();
-		String name = requestData.get(User.NAME);
+		String name = requestData.get("name");
 		userService.updateName(user, name);
 		return redirect(controllers.gui.routes.Users.profile(email));
 	}
@@ -160,7 +160,7 @@ public class Users extends Controller {
 	public Result submitChangedPassword(String emailOfUserToChange) {
 		LOGGER.info(
 				".submitChangedPassword: " + "email " + emailOfUserToChange);
-		
+
 		// Validate via model's validate method
 		Form<ChangePasswordModel> form = formFactory
 				.form(ChangePasswordModel.class).bindFromRequest();
