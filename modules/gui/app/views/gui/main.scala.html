@@ -254,12 +254,14 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 						Import Study
 					</a>
 				</li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Create a new user">
-					<a id="createUserLink" href="#">
-						<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-						New User
+				@if(loggedInUser.hasRole(common.User.Role.ADMIN)) {
+				<li data-toggle="tooltip" data-placement="bottom" title="Create or delete users and change their passwords">
+					<a id="userManagerLink" href="@controllers.gui.routes.Users.userManager()">
+						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+						User Manager
 					</a>
 				</li>
+				}
 			</ul>
 			<ul class="nav navbar-nav navbar-right">
 				<li><a href="@controllers.gui.routes.Users.profile(loggedInUser.getEmail())">
