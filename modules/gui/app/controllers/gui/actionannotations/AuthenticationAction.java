@@ -35,6 +35,10 @@ import utils.common.HttpUtils;
  * It also checks whether the user is authorized to access this action. For this
  * it checks the user role (optional in the Authenticated annotation).
  * 
+ * Important: Since this annotation accesses the database the annotated method
+ * has to be within a transaction. If you use the @Transactional annotation
+ * the it has to be BEFORE the @Authendicated annotation.
+ * 
  * @author Kristian Lange
  */
 public class AuthenticationAction extends Action<Authenticated> {
