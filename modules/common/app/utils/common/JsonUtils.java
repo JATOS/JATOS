@@ -133,8 +133,10 @@ public class JsonUtils {
 		ObjectNode initData = Json.mapper().createObjectNode();
 		initData.put("studySessionData", studySessionData);
 		// This is ugly: first marshaling, now unmarshaling again
-		initData.set("studyProperties", Json.mapper().readTree(studyProperties));
-		initData.set("batchProperties", Json.mapper().readTree(batchProperties));
+		initData.set("studyProperties",
+				Json.mapper().readTree(studyProperties));
+		initData.set("batchProperties",
+				Json.mapper().readTree(batchProperties));
 		initData.set("componentList", componentList);
 		initData.set("componentProperties",
 				Json.mapper().readTree(componentProperties));
@@ -485,6 +487,17 @@ public class JsonUtils {
 	 */
 	public static JsonNode asJsonNode(Object obj) {
 		return Json.mapper().valueToTree(obj);
+	}
+
+	/**
+	 * Generic JSON marshaling but wraps the resulting node in an 'data' object
+	 * like it is needed for DataTables.
+	 */
+	public static JsonNode asJsonNodeWithinData(Object obj) {
+		ObjectNode dataKeyNode = Json.mapper().createObjectNode();
+		JsonNode valueNode = Json.mapper().valueToTree(obj);
+		dataKeyNode.set(DATA, valueNode);
+		return dataKeyNode;
 	}
 
 	/**

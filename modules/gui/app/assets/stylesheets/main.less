@@ -194,33 +194,6 @@ a:focus {
 	margin-top: 10px;
 }
 
-
-/*
- * JATOS buttons
- */
-
-.btn-study {
-	&:extend(.btn-primary all);
-}
-
-.btn-component {
-	&:extend(.btn-info all);
-}
-
-.btn-batch {
-	&:extend(.btn-success all);
-}
-
-.btn-user,
-.btn-user:hover,
-.btn-user:focus,
-.btn-user:active,
-.btn-user:visited {
-	color: #ffffff;
-	background-color: #b17632;
-	border-color: #8e5e28;
-}
-
 .grayout {
 	opacity: 0.6; /* Real browsers */
 	filter: alpha(opacity=60); /* MSIE */
@@ -228,6 +201,7 @@ a:focus {
 
 
 @import 'apps/_study.less';         // Study related views
+@import 'apps/_user.less';          // User related views
 @import 'apps/_batch.less';         // Batch related views
 @import 'apps/_result.less';        // Results views
 @import 'apps/_edit.less';          // Edit forms

@@ -81,7 +81,7 @@ public class Users extends Controller {
 	public Result userData() throws JatosGuiException {
 		LOGGER.info(".userData");
 		List<User> userList = userService.retrieveAllUsers();
-		return ok(JsonUtils.asJsonNode(userList));
+		return ok(JsonUtils.asJsonNodeWithinData(userList));
 	}
 
 	/**

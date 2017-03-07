@@ -1,3 +1,17 @@
+
+/*
+ * Define study and component button colors
+ */
+.btn-study {
+	&:extend(.btn-primary all);
+}
+.btn-component {
+	&:extend(.btn-info all);
+}
+
+/*
+ * No wrapping in button group
+ */
 .componentBtnGroup {
 	display: -webkit-box;
 	display: -moz-box;
@@ -5,6 +19,10 @@
 	display: flex;
 	user-select: none;
 }
+
+/*
+ * Table
+ */
 .table tbody>tr>td{
 	vertical-align: middle;
 }

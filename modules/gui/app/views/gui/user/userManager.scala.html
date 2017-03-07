@@ -1,4 +1,4 @@
-@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+	@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -16,26 +16,21 @@
 			<th></th>
 		</tr>
 	</thead>
-	<tbody>
-		<!-- Template for user's row -->
-		<tr id="userRowTemplate" class="userItem" style="display: none">
-			<td class="userEmail"></td>
-			<td class="userName"></td>
-			<td class="userRoles"></td>
-			<td>
-				<div class="userBtnGroup btn-group pull-right" aria-hidden="true">
-					<button type="button" class="userChangePasswordButton btn btn-user" data-toggle="tooltip" data-placement="bottom"
-						title="Change the password of this user">
-						Change Password <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
-					</button>
-					<button type="button" class="userDeleteButton btn btn-user" data-toggle="tooltip" data-placement="bottom"
-						title="Delete this user from JATOS">
-						Delete <span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
-				</div>
-			</td>
-		</tr>
-	</tbody>
 </table>
+
+<!-- Template for button toolbar in User's row -->
+<div id="userToolbarDiv" style="display: none">
+	<div class="userBtnGroup btn-group" aria-hidden="true">
+		<button type="button" class="userChangePasswordButton btn btn-user" data-toggle="tooltip" data-placement="bottom"
+			title="Change the password of this user">
+			Change Password <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
+		</button>
+		<button type="button" class="userDeleteButton btn btn-user" data-toggle="tooltip" data-placement="bottom"
+			title="Delete this user from JATOS">
+			Delete <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+		</button>
+	</div>
+</div>
 
 <!-- Create User Modal -->
 <div class="modal fade" id="createUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -123,7 +118,7 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					<input type="submit" class="confirmed btn btn-primary" value="Change">
+					<input type="submit" class="confirmed btn btn-user" value="Change">
 				</div>
 			</form>
 		</div>
@@ -132,7 +127,38 @@
 
 <script>
 
-loadUserList();
+var userTable = $('#userTable').DataTable({
+	"ajax": {
+		"type": "GET",
+		"url" : '@controllers.gui.routes.Users.userData()',
+		"error": function(reason) {
+				showError("Couldn't read user data.")
+		}
+	},
+	"dom": 'ftip',
+	"order": [[ 0, "asc" ]],
+	"pageLength": 10,
+	"columns": [
+		{
+			"data": "email"
+		},
+		{ 
+			"data": "name" },
+		{ "data": "roleList" },
+		{ "class": "toolbar",
+			"data": null,
+			"defaultContent": '',
+			"width": "1%",
+			"orderable": false,
+			"searchable": false,
+			"searchable": false,
+			"render": function (data, type, full, meta) {
+				var toolbar = $('#userToolbarDiv').clone().show();
+				return toolbar.html();
+			}
+		}
+	]
+});
 
 function loadUserList() {
 	$.ajax({
@@ -184,7 +210,7 @@ $("#createUserForm").submit(function(event) {
 			removeAlerts("#createUserModal");
 			removeFormErrors("#createUserModal");
 			$('#createUserModal').modal('hide');
-			loadUserList();
+			userTable.ajax.reload();
 		},
 		error: function(response) {
 			removeAlerts("#createUserModal");
@@ -200,8 +226,8 @@ $("#createUserForm").submit(function(event) {
 });
 
 $('#userTable').on('click', '.userChangePasswordButton', function() {
-	// Put user into the form's data attribute
-	var user = $(this).closest("tr").data();
+	var tr = $(this).closest("tr");
+	var user = userTable.row(tr).data();
 	$('#changePasswordForm').data(user);
 	removeAlerts("#changePasswordModal");
 	removeFormErrors("#changePasswordModal");
