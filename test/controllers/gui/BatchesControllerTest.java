@@ -23,10 +23,10 @@ import play.ApplicationLoader;
 import play.Environment;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.libs.Json;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
-import utils.common.JsonUtils;
 
 /**
  * Testing actions of controller.Batches.
@@ -69,10 +69,10 @@ public class BatchesControllerTest {
 		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
+		JsonNode jsonNode = Json.mapper()
 				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyJson(jsonNode).session(Users.SESSION_EMAIL,
+				.bodyJson(jsonNode).session(Authentication.SESSION_USER_EMAIL,
 						admin.getEmail())
 				.uri(controllers.gui.routes.Batches.createPersonalSingleRun(
 						study.getId(), study.getDefaultBatch().getId()).url());
@@ -80,7 +80,7 @@ public class BatchesControllerTest {
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(result.contentType().get()).isEqualTo("application/json");
-		jsonNode = JsonUtils.OBJECTMAPPER.readTree(contentAsString(result));
+		jsonNode = Json.mapper().readTree(contentAsString(result));
 		assertThat(jsonNode.isArray()).isTrue();
 		assertThat(jsonNode.size()).isEqualTo(10);
 	}
@@ -90,18 +90,18 @@ public class BatchesControllerTest {
 		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
+		JsonNode jsonNode = Json.mapper()
 				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyJson(jsonNode)
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Batches.createPersonalMultipleRun(
 						study.getId(), study.getDefaultBatch().getId()).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(result.contentType().get()).isEqualTo("application/json");
-		jsonNode = JsonUtils.OBJECTMAPPER.readTree(contentAsString(result));
+		jsonNode = Json.mapper().readTree(contentAsString(result));
 		assertThat(jsonNode.isArray()).isTrue();
 		assertThat(jsonNode.size()).isEqualTo(10);
 	}

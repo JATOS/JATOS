@@ -106,7 +106,8 @@ public class LockedStudyControllerTest {
 	private void checkForbiddenBecauseLocked(Call call, String method) {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(call.url());
+				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.uri(call.url());
 		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN);
 	}
 
@@ -345,7 +346,7 @@ public class LockedStudyControllerTest {
 
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport
 						.exportDataOfComponentResults("1").url());
 		Result result = route(request);

@@ -102,7 +102,7 @@ public class TestHelper {
 			User user = userDao.findByEmail(email);
 			if (user == null) {
 				user = new User(email, name);
-				userService.createAndPersistUser(user, password);
+				userService.createAndPersistUser(user, password, false);
 			}
 			return user;
 		});

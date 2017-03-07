@@ -66,7 +66,7 @@ public class AuthenticationControllerTest {
 	public void callLogin() {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Authentication.login().url());
 		Result result = route(request);
 
@@ -83,14 +83,15 @@ public class AuthenticationControllerTest {
 	public void callLogout() throws Exception {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Authentication.logout().url());
 		Result result = route(request);
 
 		// Check that it redirects to the login page
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 		assertThat(result.redirectLocation().get()).contains("login");
-		assertThat(!result.session().containsKey(Users.SESSION_EMAIL));
+		assertThat(!result.session()
+				.containsKey(Authentication.SESSION_USER_EMAIL));
 	}
 
 	/**

@@ -2,26 +2,21 @@ package services.gui;
 
 import static org.fest.assertions.Assertions.assertThat;
 
-import java.util.List;
-
 import javax.inject.Inject;
 
 import org.fest.assertions.Fail;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import daos.common.UserDao;
 import exceptions.gui.NotFoundException;
 import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.User;
 import play.ApplicationLoader;
 import play.Environment;
-import play.data.validation.ValidationError;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
@@ -44,9 +39,6 @@ public class UserServiceTest {
 
 	@Inject
 	private UserService userService;
-
-	@Inject
-	private UserDao userDao;
 
 	@Before
 	public void startApp() throws Exception {
@@ -104,65 +96,6 @@ public class UserServiceTest {
 			Fail.fail();
 		}
 		assertThat(hash).isEqualTo("128ecf542a35ac5270a87dc740918404");
-	}
-
-	@Test
-	public void checkValidateNewUser() {
-		User testUser = new User("george@bla.com", "Bla", "bla");
-
-		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = userService
-					.validateNewUser(testUser, "bla", "bla");
-			assertThat(errorList).isEmpty();
-		});
-
-		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = userService
-					.validateNewUser(testUser, "", "foo");
-			assertThat(errorList).hasSize(2);
-			assertThat(errorList.get(0).message()).isEqualTo(
-					MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS);
-			assertThat(errorList.get(1).message())
-					.isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
-		});
-
-		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = userService
-					.validateNewUser(testUser, "bla", "foo");
-			assertThat(errorList).hasSize(1);
-			assertThat(errorList.get(0).message())
-					.isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
-		});
-
-		jpaApi.withTransaction(() -> {
-			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			List<ValidationError> errorList = userService.validateNewUser(admin,
-					"bla", "bla");
-			assertThat(errorList).hasSize(1);
-			assertThat(errorList.get(0).message()).isEqualTo(
-					MessagesStrings.THIS_EMAIL_IS_ALREADY_REGISTERED);
-		});
-	}
-
-	@Test
-	public void checkValidateChangePassword() {
-		jpaApi.withTransaction(() -> {
-			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			List<ValidationError> errorList = userService
-					.validateChangePassword(admin, "bla", "bla",
-							admin.getPasswordHash());
-			assertThat(errorList).isEmpty();
-		});
-
-		jpaApi.withTransaction(() -> {
-			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			List<ValidationError> errorList = userService
-					.validateChangePassword(admin, "bla", "bla",
-							"wrongPasswordhash");
-			assertThat(errorList).hasSize(1);
-			assertThat(errorList.get(0).message())
-					.isEqualTo(MessagesStrings.WRONG_OLD_PASSWORD);
-		});
 	}
 
 }

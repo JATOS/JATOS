@@ -287,7 +287,7 @@ public abstract class AbstractTest {
 			String password) {
 		return jpa.withTransaction(entityManager -> {
 			User user = new User(email, name);
-			userService.createAndPersistUser(user, password);
+			userService.createAndPersistUser(user, password, false);
 			return user;
 		});
 	}

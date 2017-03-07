@@ -32,10 +32,10 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 /**
  * Tests ImportExportService
@@ -273,7 +273,7 @@ public class ImportExportServiceTest {
 
 		// Import 2. part: Call importStudyConfirmed(): Since this study is new,
 		// the overwrite parameters don't matter
-		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode node = Json.mapper().createObjectNode();
 		node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, true);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
 		importStudyConfirmed(node);
@@ -315,7 +315,7 @@ public class ImportExportServiceTest {
 
 		// Import 2. call: importStudyConfirmed(): Allow properties and assets
 		// to be overwritten
-		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode node = Json.mapper().createObjectNode();
 		node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, true);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
 		importStudyConfirmed(node);
@@ -358,7 +358,7 @@ public class ImportExportServiceTest {
 
 		// Call importStudyConfirmed(): Allow properties but not assets to be
 		// overwritten
-		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode node = Json.mapper().createObjectNode();
 		node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, true);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, false);
 		importStudyConfirmed(node);
@@ -399,7 +399,7 @@ public class ImportExportServiceTest {
 
 		// Import 2. call: importStudyConfirmed(): Allow assets but not
 		// properties to be overwritten
-		ObjectNode node = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode node = Json.mapper().createObjectNode();
 		node.put(ImportExportService.STUDYS_ENTITY_CONFIRM, false);
 		node.put(ImportExportService.STUDYS_DIR_CONFIRM, true);
 		importStudyConfirmed(node);
