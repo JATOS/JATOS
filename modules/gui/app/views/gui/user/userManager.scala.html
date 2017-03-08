@@ -232,7 +232,7 @@ $('#userTable').on('click', '.userChangePasswordButton', function() {
 	removeAlerts("#changePasswordModal");
 	removeFormErrors("#changePasswordModal");
 	$('#changePasswordModal .modal-title').text("Change password for " + user.name + "(" + user.email + ")");
-	$('#changePasswordModal .adminPasswordLabel').text("Password of user @loggedInUser.getEmail()");
+	$('#changePasswordModal .adminPasswordLabel').text("@loggedInUser.getEmail()'s password");
 	$('#changePasswordModal .@models.gui.ChangePasswordModel.ADMIN_PASSWORD').val('');
 	$('#changePasswordModal .newPasswordLabel').text("New password for user " + user.email);
 	$('#changePasswordModal .@models.gui.ChangePasswordModel.NEW_PASSWORD').val('');
