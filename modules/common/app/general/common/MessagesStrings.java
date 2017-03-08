@@ -62,6 +62,7 @@ public class MessagesStrings {
 	public static final String YOUVE_BEEN_LOGGED_OUT = "You've been logged out";
 	public static final String ONLY_ADMIN_CAN_SEE_LOGS = "Only an admin can see the logs";
 	public static final String COULDNT_OPEN_LOG = "Couldn't open log file";
+	public static final String ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN = "Sorry, you are not allowed to remove your own admin rights.";
 
 	// Export / import
 	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
@@ -327,7 +328,7 @@ public class MessagesStrings {
 	public static String pathNotAbsolute(String path) {
 		return "Path \"" + path + "\" should be absolute.";
 	}
-	
+
 	public static String pathNotRelative(String path) {
 		return "Path \"" + path + "\" should be relative.";
 	}

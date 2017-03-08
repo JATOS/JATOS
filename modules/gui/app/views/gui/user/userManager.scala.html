@@ -12,11 +12,19 @@
 		<tr>
 			<th>Email</th>
 			<th>Name</th>
-			<th>Roles</th>
+			<th>Admin</th>
 			<th></th>
 		</tr>
 	</thead>
 </table>
+
+<!-- Template for admin toggle button in User's row -->
+<div id="userAdminToggleButtonDiv" style="display: none">
+	<button type="button" class="btn btn-sm btn-default adminButton"
+		data-toggle="tooltip" data-placement="bottom" title="">
+		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+	</button>
+</div>
 
 <!-- Template for button toolbar in User's row -->
 <div id="userToolbarDiv" style="display: none">
@@ -139,12 +147,22 @@ var userTable = $('#userTable').DataTable({
 	"order": [[ 0, "asc" ]],
 	"pageLength": 10,
 	"columns": [
-		{
-			"data": "email"
+		{ "data": "email" },
+		{ "data": "name" },
+		{ "class": 'adminRole',
+			"data": null,
+			"defaultContent": '',
+			"width": "1px",
+			"orderable": false,
+			"searchable": false,
+			"searchable": false,
+			"render": function (data, type, full, meta) {
+				var button = $('#userAdminToggleButtonDiv button:first-child').clone();
+				var adminRole = $.inArray("@models.common.User.Role.ADMIN.name()", data.roleList) >= 0;
+				setAdminButton(button, adminRole);
+				return button.prop('outerHTML');
+			}
 		},
-		{ 
-			"data": "name" },
-		{ "data": "roleList" },
 		{ "class": "toolbar",
 			"data": null,
 			"defaultContent": '',
@@ -194,6 +212,43 @@ $("#createUserForm").submit(function(event) {
 			} else {
 				showModalError("#createUserModal .modal-header", response);
 			}
+		}
+	});
+});
+
+function setAdminButton(button, adminRole) {
+	if (adminRole) {
+		button.addClass('adminRole');
+		button.removeClass('btn-default');
+		button.addClass('btn-user');
+		button.attr('title', "Click to remove admin rights from this user");
+		button.html($(button.html())
+				.removeClass('glyphicon-remove')
+				.addClass('glyphicon-ok').prop('outerHTML'));
+	} else {
+		button.removeClass('adminRole');
+		button.removeClass('btn-user');
+		button.addClass('btn-default');
+		button.attr('title', "Click to grant admin rights to this user");
+		button.html($(button.html())
+				.removeClass('glyphicon-ok')
+				.addClass('glyphicon-remove').prop('outerHTML'));
+	}
+}
+
+$('#userTable tbody').on('click', '.adminButton', function() {
+	var button = this;
+	var tr = $(this).closest('tr');
+	var user = userTable.row(tr).data();
+	var adminRole = $(this).hasClass('adminRole');
+	$.ajax({
+		url : "/jatos/user/" + user.email + "/admin?admin=" + !adminRole,
+		type : "POST",
+		success: function(adminRole) {
+			setAdminButton($(button), adminRole);
+		},
+		error : function(err) {
+			showError(err.responseText);
 		}
 	});
 });

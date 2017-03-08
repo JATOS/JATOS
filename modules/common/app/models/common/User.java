@@ -105,6 +105,10 @@ public class User {
 	public void addRole(Role role) {
 		this.roleList.add(role);
 	}
+	
+	public void removeRole(Role role) {
+		this.roleList.remove(role);
+	}
 
 	public boolean hasRole(Role role) {
 		return roleList.contains(role);

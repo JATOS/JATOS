@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 import controllers.gui.Authentication;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
+import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.common.RequestScope;
@@ -118,6 +119,30 @@ public class UserService {
 	public void updateName(User user, String name) {
 		user.setName(name);
 		userDao.update(user);
+	}
+
+	/**
+	 * Adds or removes the ADMIN role of the user with the given email and
+	 * persists the change. It the parameter admin is true the ADMIN role will
+	 * be set and if it's false it will be removed. Returns true if the user has
+	 * the role in the end - or false if he hasn't.
+	 */
+	public boolean changeAdminRole(String email, boolean adminRole)
+			throws NotFoundException, ForbiddenException {
+		User user = retrieveUser(email);
+		User loggedInUser = retrieveLoggedInUser();
+		if (user.equals(loggedInUser)) {
+			throw new ForbiddenException(
+					MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN);
+		}
+
+		if (adminRole) {
+			user.addRole(Role.ADMIN);
+		} else {
+			user.removeRole(Role.ADMIN);
+		}
+		userDao.update(user);
+		return user.hasRole(Role.ADMIN);
 	}
 
 }

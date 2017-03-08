@@ -85,6 +85,29 @@ public class Users extends Controller {
 	}
 
 	/**
+	 * Ajax POST
+	 * 
+	 * Request to add or remove the ADMIN role from a user.
+	 */
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result toggleAdmin(String emailOfUserToChange, Boolean adminRole)
+			throws JatosGuiException {
+		LOGGER.info(".toggleAdmin: emailOfUserToChange " + emailOfUserToChange
+				+ ", " + "adminRole " + adminRole);
+		boolean hasAdminRole;
+		try {
+			hasAdminRole = userService.changeAdminRole(emailOfUserToChange,
+					adminRole);
+		} catch (NotFoundException e) {
+			return badRequest(e.getMessage());
+		} catch (ForbiddenException e) {
+			return forbidden(e.getMessage());
+		}
+		return ok(JsonUtils.asJsonNode(hasAdminRole));
+	}
+
+	/**
 	 * Shows the profile view of a user
 	 */
 	@Transactional
