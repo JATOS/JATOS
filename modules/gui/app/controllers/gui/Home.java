@@ -17,6 +17,7 @@ import exceptions.gui.JatosGuiException;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
+import models.common.User.Role;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.Transactional;
@@ -127,7 +128,7 @@ public class Home extends Controller {
 	 * error message.
 	 */
 	@Transactional
-	@Authenticated
+	@Authenticated(Role.ADMIN)
 	public Result log(Integer lineLimit) throws JatosGuiException {
 		LOGGER.info(".log: " + "lineLimit " + lineLimit);
 		User loggedInUser = userService.retrieveLoggedInUser();
