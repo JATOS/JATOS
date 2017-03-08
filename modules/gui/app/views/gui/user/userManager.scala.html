@@ -160,33 +160,6 @@ var userTable = $('#userTable').DataTable({
 	]
 });
 
-function loadUserList() {
-	$.ajax({
-		type: 'GET',
-		url: "@controllers.gui.routes.Users.userData()",
-		success: function(response) {
-			fillUserTable(response);
-		},
-		error: function(response) {
-			showError("Couldn't load users.");
-		}
-	});
-}
-
-function fillUserTable(userList) {
-	$('#userRowTemplate').nextAll().remove();
-	$.each(userList, function(index, user) {
-		var row = $('#userRowTemplate').clone().show();
-		$(row).removeAttr('id');
-		// Write user object into toolbar's data attribute so we can use it later on 
-		$(row).data(user);
-		$(row).find('.userEmail').text(user.email);
-		$(row).find('.userName').text(user.name);
-		$(row).find('.userRoles').text(user.roleList);
-		$("#userTable tr:last").after(row);
-	});
-}
-
 $('#createUserButton').click(function(event) {
 	removeAlerts("#createUserModal");
 	removeFormErrors("#createUserModal");
