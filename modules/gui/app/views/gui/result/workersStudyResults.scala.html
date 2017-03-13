@@ -12,7 +12,11 @@
 		MTurk Worker ID: @worker.asInstanceOf[common.workers.MTWorker].getMTWorkerId()
 	}
 	@if(worker.getWorkerType().equals(common.workers.JatosWorker.WORKER_TYPE)) {
+		@if(worker.asInstanceOf[common.workers.JatosWorker].getUser() != null) {
 		User Email Address: @worker.asInstanceOf[common.workers.JatosWorker].getUser().getEmail()
+		} else {
+		User Email Address: unknown (user was probably deleted)
+		}
 	}
 	@if(worker.getWorkerType().equals(common.workers.PersonalMultipleWorker.WORKER_TYPE)) {
 		Comment: @worker.asInstanceOf[common.workers.PersonalMultipleWorker].getComment()
@@ -220,13 +224,16 @@ $(document).ready(function() {
 		var tr = $(this).closest('tr');
 		var row = resultsTable.row(tr);
 		if (row.child.isShown()) {
-			row.child.hide();
-			tr.removeClass('shown');
+			$('div.slider', row.child()).slideUp( function () {
+				row.child.hide();
+				tr.removeClass('shown');
+			});
 		}
 		else {
-			row.child(childRowFormat(row.data())).show();
+			row.child(childRowFormat(row.data())).show();	
 			tr.addClass('shown');
 			tr.next().addClass('info');
+			$('div.slider', row.child()).slideDown();
 		}
 		$(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
 				.toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
@@ -316,7 +323,8 @@ $(document).ready(function() {
 	function childRowFormat(data) {
 		// `data` is the original data object for the row
 		var html = [];
-		html.push('<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
+		html.push('<div class="slider" style="display: none">',
+			'<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
 			'<tr class="info">',
 			'<td><b>Comp. Result ID</b></td>',
 			'<td><b>Comp. ID</b></td>',
@@ -344,7 +352,7 @@ $(document).ready(function() {
 					'<td colspan="6">empty</td>',
 					'</tr>');
 			}
-			html.push('</table>');
+			html.push('</table>', '</div>');
 		return html.join("");
 	}
 	

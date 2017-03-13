@@ -165,13 +165,16 @@ $(document).ready(function() {
 		var tr = $(this).closest('tr');
 		var row = resultsTable.row(tr);
 		if (row.child.isShown()) {
-			row.child.hide();
-			tr.removeClass('shown');
+			$('div.slider', row.child()).slideUp( function () {
+				row.child.hide();
+				tr.removeClass('shown');
+			});
 		}
 		else {
-			row.child(childRowFormat(row.data())).show();
+			row.child(childRowFormat(row.data())).show();	
 			tr.addClass('shown');
 			tr.next().addClass('info');
+			$('div.slider', row.child()).slideDown();
 		}
 		$(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
 				.toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
@@ -258,7 +261,7 @@ $(document).ready(function() {
 	
 	function childRowFormat(data) {
 		// `data` is the original data object for the row
-		return '<p><pre class="details-data">' + data.data + '</pre></p>';
+		return '<div class="slider" style="display: none"><p><pre class="details-data">' + data.data + '</pre></p></div>';
 	}
 
 });
