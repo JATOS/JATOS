@@ -11,8 +11,7 @@ ALTER TABLE `User` ADD KEY `FK_pk77d8680811astbnoae923x1` (`worker_id`);
 ALTER TABLE `User` ADD CONSTRAINT `FK_pk77d8680811astbnoae923x1` FOREIGN KEY (`worker_id`) REFERENCES `Worker` (`id`);
 
 ALTER TABLE `Worker` DROP FOREIGN KEY `FK_rvmm2rl58o8ui2tsq774o8rij`;
-ALTER TABLE `Worker` DROP KEY `FK_rvmm2rl58o8ui2tsq774o8rij`;
-
+ALTER TABLE `Worker` DROP INDEX `FK_rvmm2rl58o8ui2tsq774o8rij`;
 ALTER TABLE `Worker` DROP COLUMN `user_email`;
 
 # --- !Downs
@@ -23,7 +22,6 @@ UPDATE `Worker` w SET `user_email` = (SELECT `email` FROM `User` WHERE `worker_i
 ALTER TABLE `Worker` ADD KEY `FK_rvmm2rl58o8ui2tsq774o8rij` (`user_email`);
 ALTER TABLE `Worker` ADD CONSTRAINT `FK_rvmm2rl58o8ui2tsq774o8rij` FOREIGN KEY (`user_email`) REFERENCES `User` (`email`);
 
-ALTER TABLE `User` DROP CONSTRAINT `FK_pk77d8680811astbnoae923x1` FOREIGN KEY (`worker_id`) REFERENCES `Worker` (`id`);
-ALTER TABLE `User` DROP KEY `FK_pk77d8680811astbnoae923x1` (`worker_id`);
-
+ALTER TABLE `User` DROP FOREIGN KEY `FK_pk77d8680811astbnoae923x1`;
+ALTER TABLE `User` DROP INDEX `FK_pk77d8680811astbnoae923x1`;
 ALTER TABLE `User` DROP COLUMN `worker_id`;
