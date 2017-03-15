@@ -43,7 +43,7 @@ public class AuthenticationServiceTest {
 	private JPAApi jpaApi;
 
 	@Inject
-	private AuthenticationService authenticationService;
+	private AuthenticationValidation authenticationValidation;
 
 	@Before
 	public void startApp() throws Exception {
@@ -76,7 +76,7 @@ public class AuthenticationServiceTest {
 		NewUserModel newUserModel = createDummyNewUserModel();
 
 		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = authenticationService
+			List<ValidationError> errorList = authenticationValidation
 					.validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
 			assertThat(errorList).isEmpty();
 		});
@@ -94,7 +94,7 @@ public class AuthenticationServiceTest {
 		newUserModel.setPasswordRepeat("different");
 
 		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = authenticationService
+			List<ValidationError> errorList = authenticationValidation
 					.validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
 			assertThat(errorList).isNotEmpty();
 			assertThat(errorList.get(0).message())
@@ -113,7 +113,7 @@ public class AuthenticationServiceTest {
 		newUserModel.setEmail("admin");
 
 		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = authenticationService
+			List<ValidationError> errorList = authenticationValidation
 					.validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
 			assertThat(errorList).hasSize(1);
 			assertThat(errorList.get(0).message()).isEqualTo(
@@ -132,7 +132,7 @@ public class AuthenticationServiceTest {
 		newUserModel.setAdminPassword("wrongPw");
 
 		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = authenticationService
+			List<ValidationError> errorList = authenticationValidation
 					.validateNewUser(newUserModel, UserService.ADMIN_EMAIL);
 			assertThat(errorList).hasSize(1);
 			assertThat(errorList.get(0).message())
@@ -159,7 +159,7 @@ public class AuthenticationServiceTest {
 		model.setNewPasswordRepeat("abc123");
 
 		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = authenticationService
+			List<ValidationError> errorList = authenticationValidation
 					.validateChangePassword("tester.test@test.com", model);
 			assertThat(errorList).isEmpty();
 		});
@@ -183,7 +183,7 @@ public class AuthenticationServiceTest {
 		model.setNewPasswordRepeat("different");
 
 		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = authenticationService
+			List<ValidationError> errorList = authenticationValidation
 					.validateChangePassword("tester.test@test.com", model);
 			assertThat(errorList).isNotEmpty();
 			assertThat(errorList.get(0).message())
@@ -208,7 +208,7 @@ public class AuthenticationServiceTest {
 		model.setNewPasswordRepeat("abc123");
 
 		jpaApi.withTransaction(() -> {
-			List<ValidationError> errorList = authenticationService
+			List<ValidationError> errorList = authenticationValidation
 					.validateChangePassword("tester.test@test.com", model);
 			assertThat(errorList).isEmpty();
 		});

@@ -9,6 +9,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -31,7 +32,8 @@ public class User {
 	 */
 	public enum Role {
 		USER, // Normal JATOS user
-		ADMIN; // Allows to create/change/delete other users
+		ADMIN; // Allows to create/change/delete other users (don't confuse role
+				// ADMIN with user 'admin'
 	}
 
 	/**
@@ -50,10 +52,13 @@ public class User {
 	 * Corresponding JatosWorker. This relationship is bidirectional.
 	 */
 	@JsonIgnore
-	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "worker_id")
 	private JatosWorker worker;
 
-	// Password is stored as a hash
+	/**
+	 * Hash of the user's password
+	 */
 	@JsonIgnore
 	private String passwordHash;
 
@@ -105,7 +110,7 @@ public class User {
 	public void addRole(Role role) {
 		this.roleList.add(role);
 	}
-	
+
 	public void removeRole(Role role) {
 		this.roleList.remove(role);
 	}
@@ -132,6 +137,10 @@ public class User {
 
 	public void addStudy(Study study) {
 		this.studyList.add(study);
+	}
+
+	public void removeStudy(Study study) {
+		this.studyList.remove(study);
 	}
 
 	public void setWorker(JatosWorker worker) {

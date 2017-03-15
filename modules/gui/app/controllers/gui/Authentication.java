@@ -13,8 +13,7 @@ import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.gui.AuthenticationService;
-import utils.common.HashUtils;
+import services.gui.UserService;
 
 /**
  * Controller that deals with login/logout.
@@ -30,13 +29,12 @@ public class Authentication extends Controller {
 	public static final String SESSION_USER_EMAIL = "userEmail";
 	public static final String LOGGED_IN_USER = "loggedInUser";
 
-	private final AuthenticationService authenticationService;
+	private final UserService userService;
 	private final FormFactory formFactory;
 
 	@Inject
-	Authentication(AuthenticationService authenticationService,
-			FormFactory formFactory) {
-		this.authenticationService = authenticationService;
+	Authentication(UserService userService, FormFactory formFactory) {
+		this.userService = userService;
 		this.formFactory = formFactory;
 	}
 
@@ -58,8 +56,7 @@ public class Authentication extends Controller {
 		Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest();
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");
-		String passwordHash = HashUtils.getHashMDFive(password);
-		if (authenticationService.authenticate(email, passwordHash)) {
+		if (userService.authenticate(email, password)) {
 			session(SESSION_USER_EMAIL, email);
 			return redirect(controllers.gui.routes.Home.home());
 		} else {
@@ -82,10 +79,10 @@ public class Authentication extends Controller {
 	 * Simple model class needed for login template
 	 */
 	public static class Login {
-		
+
 		public static final String EMAIL = "email";
 		public static final String PASSWORD = "password";
-		
+
 		public String email;
 		public String password;
 	}

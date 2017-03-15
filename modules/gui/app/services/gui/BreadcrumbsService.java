@@ -26,6 +26,7 @@ public class BreadcrumbsService {
 	private static final ALogger LOGGER = Logger.of(BreadcrumbsService.class);
 
 	public static final String HOME = "Home";
+	public static final String WORKERS = "Workers";
 	public static final String WORKER_SETUP = "Worker Setup";
 	public static final String MECHANICAL_TURK_HIT_LAYOUT_SOURCE_CODE = "Mechanical Turk HIT Layout Source Code";
 	public static final String RESULTS = "Results";

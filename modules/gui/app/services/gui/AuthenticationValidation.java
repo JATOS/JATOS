@@ -16,37 +16,32 @@ import play.data.validation.ValidationError;
 import utils.common.HashUtils;
 
 /**
- * Service class that handles user authentication and validation of new users
- * and validation of password changes
+ * Service class that validates models that create, change or delete users.
  * 
  * @author Kristian Lange (2017)
  */
 @Singleton
-public class AuthenticationService {
+public class AuthenticationValidation {
 
 	private final UserService userService;
 	private final UserDao userDao;
 
 	@Inject
-	AuthenticationService(UserService userService, UserDao userDao) {
+	AuthenticationValidation(UserService userService, UserDao userDao) {
 		this.userService = userService;
 		this.userDao = userDao;
-	}
-
-	public boolean authenticate(String email, String passwordHash) {
-		return userDao.authenticate(email, passwordHash);
 	}
 
 	/**
 	 * Validates a NewUserModel and returns a list with errors. Usually this is
 	 * done in the model class, but since here the user DAO is needed I put it
-	 * in this class. Still in the model class is some simple validation.
+	 * in an extra class. In the NewUserModel are still some simple validations.
 	 */
 	public List<ValidationError> validateNewUser(NewUserModel newUserModel,
 			String loggedInAdminEmail) {
 		List<ValidationError> errorList = new ArrayList<>();
 
-		// Check if user with this email already exists.
+		// Check if user with this email already exists
 		String email = newUserModel.getEmail();
 		User existingUser = userDao.findByEmail(email);
 		if (existingUser != null) {
@@ -78,9 +73,9 @@ public class AuthenticationService {
 	/**
 	 * Validates a ChangePasswordModel and returns a list with errors. It can
 	 * either originate in the GUI in the user manager or in the user profile.
-	 * Both cases have to be validated differently. Usually this is done in the
-	 * model class, but since here the user DAO is needed I put it in this
-	 * class.
+	 * Both cases have to be validated differently. Usually this would be done
+	 * in the ChangePasswordModel class, but since here the user DAO is needed I
+	 * put it in an extra class.
 	 */
 	public List<ValidationError> validateChangePassword(
 			String emailOfUserToChange,
@@ -90,6 +85,14 @@ public class AuthenticationService {
 
 		// All form related errors go into errorList
 		List<ValidationError> errorList = new ArrayList<>();
+
+		// Only user 'admin' is allowed to change his password
+		if (emailOfUserToChange.equals(UserService.ADMIN_EMAIL)
+				&& !loggedInUser.getEmail().equals(UserService.ADMIN_EMAIL)) {
+			errorList
+					.add(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
+							MessagesStrings.NOT_ALLOWED_CHANGE_PW_ADMIN));
+		}
 
 		// Check both passwords equal
 		String newPassword = changePasswordModel.getNewPassword();
@@ -103,7 +106,7 @@ public class AuthenticationService {
 		}
 
 		// Authenticate: Either admin changes a password for some other user
-		// or an user changes his own password
+		// or an user changes their own password
 		if (loggedInUser.hasRole(Role.ADMIN)
 				&& changePasswordModel.getAdminPassword() != null) {
 			String adminEmail = loggedInUser.getEmail();

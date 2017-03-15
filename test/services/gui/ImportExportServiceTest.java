@@ -564,8 +564,7 @@ public class ImportExportServiceTest {
 	}
 
 	private Study getAlteredStudy() throws IOException {
-		User admin = testHelper.getAdmin();
-		Study study = testHelper.importExampleStudy(admin, injector);
+		Study study = testHelper.importExampleStudy(injector);
 		alterStudyProperties(study);
 		jpaApi.withTransaction(() -> {
 			User u = userDao.findByEmail(UserService.ADMIN_EMAIL);

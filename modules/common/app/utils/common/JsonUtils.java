@@ -28,6 +28,7 @@ import models.common.GroupResult;
 import models.common.Study;
 import models.common.StudyResult;
 import models.common.User;
+import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
@@ -342,6 +343,43 @@ public class JsonUtils {
 	}
 
 	/**
+	 * Returns a ArrayNode with the usual user fields plus from all studies
+	 * where the user is member of the title and the number of members.
+	 */
+	public JsonNode userData(List<User> userList) {
+		ArrayNode userArrayNode = Json.mapper().createArrayNode();
+		for (User user : userList) {
+			userArrayNode.add(userData(user));
+		}
+		ObjectNode userDataNode = Json.mapper().createObjectNode();
+		userDataNode.set(DATA, userArrayNode);
+		return userDataNode;
+	}
+
+	/**
+	 * Returns a JsonNode with the usual user fields plus from all studies where
+	 * the user is member of the title and the number of members.
+	 */
+	public JsonNode userData(User user) {
+		ObjectNode userNode = Json.mapper().createObjectNode();
+		userNode.put("name", user.getName());
+		userNode.put("email", user.getEmail());
+		ArrayNode roleListArray = Json.mapper().valueToTree(user.getRoleList());
+		userNode.putArray("roleList").addAll(roleListArray);
+		// Add array with study titles
+		ArrayNode studyArrayNode = Json.mapper().createArrayNode();
+		for (Study study : user.getStudyList()) {
+			ObjectNode studyNode = Json.mapper().createObjectNode();
+			studyNode.put("id", study.getId());
+			studyNode.put("title", study.getTitle());
+			studyNode.put("userSize", study.getUserList().size());
+			studyArrayNode.add(studyNode);
+		}
+		userNode.putArray("studyList").addAll(studyArrayNode);
+		return userNode;
+	}
+
+	/**
 	 * Returns the JSON data for the sidebar (study title, ID and components)
 	 */
 	public JsonNode sidebarStudyList(List<Study> studyList) {
@@ -443,19 +481,41 @@ public class JsonUtils {
 
 	/**
 	 * Returns a JSON string with the given set of workers wrapped in a data
-	 * object. Intended for use in JATOS' GUI / datatables plugin.
+	 * object. Intended for use in JATOS' GUI / s.
 	 */
-	public JsonNode allWorkersForUI(Set<Worker> workerSet)
-			throws JsonProcessingException {
-		ArrayNode arrayNode = Json.mapper().createArrayNode();
-		for (Worker worker : workerSet) {
-			ObjectNode workerNode = Json.mapper()
-					.valueToTree(initializeAndUnproxy(worker));
-			arrayNode.add(workerNode);
-		}
+	public JsonNode allWorkersForTableDataByStudy(Set<Worker> workerSet) {
+		JsonNode arrayNode = allWorkersForWorkerSetup(workerSet);
 		ObjectNode workersNode = Json.mapper().createObjectNode();
 		workersNode.set(DATA, arrayNode);
 		return workersNode;
+	}
+
+	/**
+	 * Returns a JSON string with the given set of workers. Additionally for
+	 * JatosWorkers the user's email is added. Intended for use in JATOS' GUI /
+	 * worker setup.
+	 */
+	public JsonNode allWorkersForWorkerSetup(Set<Worker> workerSet) {
+		ArrayNode workerArrayNode = Json.mapper().createArrayNode();
+		for (Worker worker : workerSet) {
+			ObjectNode workerNode = Json.mapper()
+					.valueToTree(initializeAndUnproxy(worker));
+			if (worker instanceof JatosWorker) {
+				JatosWorker jatosWorker = (JatosWorker) worker;
+				if (jatosWorker.getUser() != null) {
+					workerNode.put("userEmail",
+							jatosWorker.getUser().getEmail());
+				} else {
+					workerNode.put("userEmail", "unknown");
+				}
+			} else if (worker.getWorkerType().equals(JatosWorker.WORKER_TYPE)) {
+				// In case the JatosWorker's user is already removed from the
+				// database Hibernate doesn't use the type JatosWorker
+				workerNode.put("userEmail", "unknown (probably deleted)");
+			}
+			workerArrayNode.add(workerNode);
+		}
+		return workerArrayNode;
 	}
 
 	@SuppressWarnings("unchecked")

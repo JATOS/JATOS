@@ -325,7 +325,7 @@ public class LockedStudyControllerTest {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			Study study;
 			try {
-				study = testHelper.importExampleStudy(admin, injector);
+				study = testHelper.importExampleStudy(injector);
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
 			}

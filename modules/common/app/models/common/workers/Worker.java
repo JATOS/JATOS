@@ -1,7 +1,9 @@
 package models.common.workers;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
@@ -13,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.Table;
@@ -22,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 
+import models.common.Batch;
 import models.common.StudyResult;
 import play.data.validation.ValidationError;
 
@@ -41,7 +45,7 @@ import play.data.validation.ValidationError;
 @Table(name = "Worker")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = Worker.DISCRIMINATOR)
-@AttributeOverride(name = Worker.DISCRIMINATOR, column = @Column(name = Worker.DISCRIMINATOR, nullable = false, insertable = false, updatable = false) )
+@AttributeOverride(name = Worker.DISCRIMINATOR, column = @Column(name = Worker.DISCRIMINATOR, nullable = false, insertable = false, updatable = false))
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, include = As.WRAPPER_OBJECT, property = "type")
 public abstract class Worker {
 
@@ -63,6 +67,13 @@ public abstract class Worker {
 	// Not using mappedBy because of
 	// http://stackoverflow.com/questions/2956171/jpa-2-0-ordercolumn-annotation-in-hibernate-3-5
 	private List<StudyResult> studyResultList = new ArrayList<>();
+
+	/**
+	 * List of batches this worker belongs to. This relationship is
+	 * bidirectional.
+	 */
+	@ManyToMany(mappedBy = "workerList", fetch = FetchType.LAZY)
+	private Set<Batch> batchList = new HashSet<>();
 
 	public Worker() {
 	}
@@ -128,6 +139,18 @@ public abstract class Worker {
 
 	public void removeStudyResult(StudyResult studyResult) {
 		studyResultList.remove(studyResult);
+	}
+	
+	public Set<Batch> getBatchList() {
+		return batchList;
+	}
+
+	public void setBatchList(Set<Batch> batchList) {
+		this.batchList = batchList;
+	}
+	
+	public boolean hasBatch(Batch batch) {
+		return batchList.contains(batch);
 	}
 
 	@Override

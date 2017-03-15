@@ -160,17 +160,6 @@ public class Checker {
 	}
 
 	/**
-	 * Throws an Exception in case the user isn't equal to the loggedInUser.
-	 */
-	public void checkUserLoggedIn(User user, User loggedInUser)
-			throws ForbiddenException {
-		if (!user.equals(loggedInUser)) {
-			throw new ForbiddenException(
-					MessagesStrings.userMustBeLoggedInToSeeProfile(user));
-		}
-	}
-
-	/**
 	 * Throws a Exception in case the worker doesn't exist. Distinguishes
 	 * between normal and Ajax request.
 	 */

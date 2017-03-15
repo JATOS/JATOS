@@ -1,6 +1,5 @@
 package controllers.gui;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Set;
@@ -18,7 +17,6 @@ import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
-import general.common.MessagesStrings;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
@@ -27,7 +25,6 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
 import services.gui.Checker;
@@ -118,11 +115,7 @@ public class Workers extends Controller {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 
 			Set<Worker> workerSet = workerService.retrieveWorkers(study);
-			dataAsJson = jsonUtils.allWorkersForUI(workerSet);
-		} catch (IOException e) {
-			String errorMsg = MessagesStrings.PROBLEM_GENERATING_JSON_DATA;
-			jatosGuiExceptionThrower.throwAjax(errorMsg,
-					Http.Status.INTERNAL_SERVER_ERROR);
+			dataAsJson = jsonUtils.allWorkersForTableDataByStudy(workerSet);
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
@@ -136,8 +129,8 @@ public class Workers extends Controller {
 	@Authenticated
 	public Result workerSetup(Long studyId, Long batchId)
 			throws JatosGuiException {
-		LOGGER.info(
-				".workers: studyId " + studyId + ", " + "batchId " + batchId);
+		LOGGER.info(".workerSetup: studyId " + studyId + ", " + "batchId "
+				+ batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
@@ -180,8 +173,8 @@ public class Workers extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		Set<Worker> workerList = workerService.retrieveAllWorkers(study, batch);
-		return ok(JsonUtils.asJsonNode(workerList));
+		Set<Worker> workerList = batch.getWorkerList();
+		return ok(jsonUtils.allWorkersForWorkerSetup(workerList));
 	}
 
 }

@@ -147,20 +147,5 @@ public class WorkerService {
 		putCountToMap.accept(MTSandboxWorker.WORKER_TYPE);
 		return resultsPerWorker;
 	}
-
-	/**
-	 * Get all workers (PersonalSingleWorker, PersonalMultipleWorker,
-	 * GeneralSingle, MTWorker, MTSandboxWorker and JatosWorker) that belong to
-	 * the given batch.
-	 */
-	public Set<Worker> retrieveAllWorkers(Study study, Batch batch) {
-		// Batch's workerList has all workers except JatosWorkers
-		Set<Worker> workerSet = batch.getWorkerList();
-
-		// Add Jatos workers of this study.
-		study.getUserList().stream().map(u -> u.getWorker())
-				.forEachOrdered(workerSet::add);
-		return workerSet;
-	}
-
+	
 }

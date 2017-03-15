@@ -1349,8 +1349,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 		long batchId = jpaApi.withTransaction(() -> {
 			Batch batch2 = batchService.clone(study.getDefaultBatch());
 			batch2.setTitle("Test Title");
-			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			batchService.createAndPersistBatch(batch2, study, admin);
+			batchService.createAndPersistBatch(batch2, study);
 			return batch2.getId();
 		});
 
@@ -1372,8 +1371,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 		long batchId = jpaApi.withTransaction(() -> {
 			Batch batch2 = batchService.clone(study.getDefaultBatch());
 			batch2.setTitle("Test Title");
-			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			batchService.createAndPersistBatch(batch2, study, admin);
+			batchService.createAndPersistBatch(batch2, study);
 			return batch2.getId();
 		});
 

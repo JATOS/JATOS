@@ -113,7 +113,7 @@ public class TestHelper {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			Study exampleStudy;
 			try {
-				exampleStudy = importExampleStudy(admin, injector);
+				exampleStudy = importExampleStudy(injector);
 				studyService.createAndPersistStudy(admin, exampleStudy);
 				return exampleStudy;
 			} catch (IOException e) {
@@ -122,7 +122,7 @@ public class TestHelper {
 		});
 	}
 
-	public Study importExampleStudy(User user, Injector injector)
+	public Study importExampleStudy(Injector injector)
 			throws IOException {
 		File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
@@ -141,7 +141,7 @@ public class TestHelper {
 
 		// Every study has a default batch
 		importedStudy
-				.addBatch(batchService.createDefaultBatch(importedStudy, user));
+				.addBatch(batchService.createDefaultBatch(importedStudy));
 		return importedStudy;
 	}
 
@@ -150,8 +150,7 @@ public class TestHelper {
 			try {
 				Study study = studyDao.findById(studyId);
 				if (study != null) {
-					ioUtils.removeStudyAssetsDir(study.getDirName());
-					studyService.remove(study);
+					studyService.removeStudyInclAssets(study);
 				}
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
@@ -163,8 +162,7 @@ public class TestHelper {
 		jpaApi.withTransaction(() -> {
 			studyDao.findAll().forEach(study -> {
 				try {
-					ioUtils.removeStudyAssetsDir(study.getDirName());
-					studyService.remove(study);
+					studyService.removeStudyInclAssets(study);
 				} catch (IOException e) {
 					throw new UncheckedIOException(e);
 				}

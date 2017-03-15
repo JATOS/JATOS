@@ -241,7 +241,7 @@ public abstract class AbstractTest {
 
 		// Every study has a default batch
 		importedStudy.addBatch(
-				batchService.createDefaultBatch(importedStudy, admin));
+				batchService.createDefaultBatch(importedStudy));
 		return importedStudy;
 	}
 
@@ -293,9 +293,8 @@ public abstract class AbstractTest {
 	}
 
 	protected synchronized void removeStudy(Study study) throws IOException {
-		ioUtils.removeStudyAssetsDir(study.getDirName());
 		entityManager.getTransaction().begin();
-		studyService.remove(study);
+		studyService.removeStudyInclAssets(study);
 		entityManager.getTransaction().commit();
 	}
 

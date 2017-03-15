@@ -23,7 +23,7 @@ public class UserDao extends AbstractDao {
 	}
 
 	/**
-	 * Persist user und creates it's JatosWorker.
+	 * Persist user (involves creating a JatosWorker)
 	 */
 	public void create(User user) {
 		persist(user);
@@ -31,6 +31,10 @@ public class UserDao extends AbstractDao {
 
 	public void update(User user) {
 		merge(user);
+	}
+
+	public void remove(User user) {
+		super.remove(user);
 	}
 
 	public boolean authenticate(String email, String passwordHash) {

@@ -236,9 +236,8 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 
-		studyService.remove(study);
 		try {
-			ioUtils.removeStudyAssetsDir(study.getDirName());
+			studyService.removeStudyInclAssets(study);
 		} catch (IOException e) {
 			String errorMsg = e.getMessage();
 			return internalServerError(errorMsg);
@@ -399,7 +398,7 @@ public class Studies extends Controller {
 
 		RequestScopeMessaging.error(errorMsg);
 		String breadcrumbs = breadcrumbsService.generateForStudy(study,
-				BreadcrumbsService.WORKER_SETUP);
+				BreadcrumbsService.WORKERS);
 		return status(httpStatus, views.html.gui.study.studysWorkers.render(
 				loggedInUser, breadcrumbs, HttpUtils.isLocalhost(), study));
 	}

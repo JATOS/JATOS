@@ -18,7 +18,6 @@ import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
-import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Batch;
 import models.common.Study;
@@ -155,7 +154,7 @@ public class Batches extends Controller {
 		BatchProperties batchProperties = form.get();
 		Batch batch = batchService.bindToBatch(batchProperties);
 
-		batchService.createAndPersistBatch(batch, study, loggedInUser);
+		batchService.createAndPersistBatch(batch, study);
 		return ok(batch.getId().toString());
 	}
 
@@ -311,7 +310,6 @@ public class Batches extends Controller {
 		}
 
 		batchService.remove(batch);
-		RequestScopeMessaging.success(MessagesStrings.BATCH_DELETED);
 		return ok(RequestScopeMessaging.getAsJson());
 	}
 

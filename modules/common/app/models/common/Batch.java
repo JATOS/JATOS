@@ -96,8 +96,8 @@ public class Batch {
 	 * Set of workers that is created in this batch. Workers can be created
 	 * before the study starts (PersonalMultipleWorker or PersonalSingleWorker)
 	 * or created on-the-fly after the study started (MTWorker,
-	 * GeneralSingleWorker) - but all appear in this list - with the exception
-	 * of JatosWorkers. This relationship is unidirectional.
+	 * GeneralSingleWorker). JatosWorker are created together with the User.
+	 * This relationship is bidirectional.
 	 */
 	@JsonIgnore
 	@ManyToMany(fetch = FetchType.LAZY)

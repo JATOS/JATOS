@@ -166,24 +166,4 @@ public class CheckerTest {
 		}
 	}
 
-	@Test
-	public void testCheckUserLoggedIn() {
-		User admin = testHelper.getAdmin();
-		try {
-			checker.checkUserLoggedIn(admin, admin);
-		} catch (ForbiddenException e) {
-			Fail.fail();
-		}
-
-		User testUser = testHelper.createAndPersistUser("bla@bla.com", "Bla",
-				"bla");
-		try {
-			checker.checkUserLoggedIn(testUser, admin);
-			Fail.fail();
-		} catch (ForbiddenException e) {
-			assertThat(e.getMessage()).isEqualTo(
-					MessagesStrings.userMustBeLoggedInToSeeProfile(testUser));
-		}
-	}
-
 }

@@ -1,17 +1,22 @@
 package services.gui;
 
+import java.io.IOException;
 import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.google.common.collect.Lists;
+
 import controllers.gui.Authentication;
+import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.common.RequestScope;
+import models.common.Study;
 import models.common.User;
 import models.common.User.Role;
 import models.common.workers.JatosWorker;
@@ -30,13 +35,23 @@ public class UserService {
 	public static final String ADMIN_PASSWORD = "admin";
 	public static final String ADMIN_NAME = "Admin";
 
+	private final StudyService studyService;
 	private final UserDao userDao;
+	private final StudyDao studyDao;
 	private final WorkerDao workerDao;
 
 	@Inject
-	UserService(UserDao userDao, WorkerDao workerDao) {
+	UserService(StudyService studyService, UserDao userDao, StudyDao studyDao,
+			WorkerDao workerDao) {
+		this.studyService = studyService;
 		this.userDao = userDao;
+		this.studyDao = studyDao;
 		this.workerDao = workerDao;
+	}
+
+	public boolean authenticate(String email, String password) {
+		String passwordHash = HashUtils.getHashMDFive(password);
+		return userDao.authenticate(email, passwordHash);
 	}
 
 	/**
@@ -60,7 +75,8 @@ public class UserService {
 
 	/**
 	 * Retrieves the user with the given email form the RequestScope. It was put
-	 * into the RequestScope by the AuthenticationAction.
+	 * into the RequestScope by the AuthenticationAction. Therefore this method
+	 * works only if you use the @Authenticated annotation at your action.
 	 */
 	public User retrieveLoggedInUser() {
 		return (User) RequestScope.get(Authentication.LOGGED_IN_USER);
@@ -133,7 +149,11 @@ public class UserService {
 		User loggedInUser = retrieveLoggedInUser();
 		if (user.equals(loggedInUser)) {
 			throw new ForbiddenException(
-					MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN);
+					MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE);
+		}
+		if (user.getEmail().equals(ADMIN_EMAIL)) {
+			throw new ForbiddenException(
+					MessagesStrings.NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS);
 		}
 
 		if (adminRole) {
@@ -143,6 +163,35 @@ public class UserService {
 		}
 		userDao.update(user);
 		return user.hasRole(Role.ADMIN);
+	}
+
+	/**
+	 * Removes the User belonging to the given email from the database. It also
+	 * removes all studies where this user is the last member (which
+	 * subsequently removes all components, results and the study assets too).
+	 */
+	public void removeUser(String email)
+			throws NotFoundException, ForbiddenException, IOException {
+		User user = retrieveUser(email);
+		if (user.getEmail().equals(ADMIN_EMAIL)) {
+			throw new ForbiddenException(
+					MessagesStrings.NOT_ALLOWED_DELETE_ADMIN);
+		}
+
+		// Remove Study (including batches, components, study results, component
+		// results, group results)
+		for (Study study : Lists.newArrayList(user.getStudyList())) {
+			// Only remove the study if no other users are member in this study
+			if (study.getUserList().size() == 1) {
+				studyService.removeStudyInclAssets(study);
+			} else {
+				study.removeUser(user);
+				studyDao.update(study);
+			}
+		}
+		// Don't necessary to remove the user's JatosWorker: he is removed
+		// together with the default batch
+		userDao.remove(user);
 	}
 
 }

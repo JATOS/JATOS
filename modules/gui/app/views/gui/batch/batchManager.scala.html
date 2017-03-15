@@ -197,7 +197,7 @@ $('#batchTable').on('click', '.activeButton', function() {
 function setRowActive(row, active) {
 	var button = $(row).find('.activeButton');
 	if (active) {
-		row.removeClass("grayout");
+		row.find('.btn, .batchId, .batchTitle').removeClass("grayout");
 		button.addClass('activeBatch');
 		button.removeClass('btn-default');
 		button.addClass('btn-batch');
@@ -206,7 +206,7 @@ function setRowActive(row, active) {
 				.removeClass('glyphicon-remove')
 				.addClass('glyphicon-ok').prop('outerHTML'));
 	} else {
-		row.addClass("grayout");
+		row.find('.btn, .batchId, .batchTitle').addClass("grayout");
 		button.removeClass('activeBatch');
 		button.removeClass('btn-batch');
 		button.addClass('btn-default');

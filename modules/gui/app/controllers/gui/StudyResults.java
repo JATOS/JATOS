@@ -267,7 +267,7 @@ public class StudyResults extends Controller {
 	@Authenticated
 	public Result tableDataByBatch(Long studyId, Long batchId,
 			String workerType) throws JatosGuiException {
-		LOGGER.info(".tableDataByStudy: studyId " + studyId);
+		LOGGER.info(".tableDataByBatch: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		Batch batch = batchDao.findById(batchId);
 		User loggedInUser = userService.retrieveLoggedInUser();

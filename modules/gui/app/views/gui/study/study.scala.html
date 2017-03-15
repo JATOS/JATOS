@@ -229,11 +229,13 @@ $(document).ready(function() {
 				}
 			},
 			{
+				"class": "componentId",
 				"data": "id",
 				"width": "1px"
 			},
 			{ 
-				"data": "title",
+				"class": "componentTitle",
+				"data": "title"
 			},
 			{
 				"class": "toolbar",
@@ -337,9 +339,9 @@ $(document).ready(function() {
 	
 	function setRowActive(tr, active) {
 		if (active) {
-			tr.removeClass("grayout");
+			tr.find('.btn, .componentId, .componentTitle').removeClass("grayout");
 		} else {
-			tr.addClass("grayout");
+			tr.find('.btn, .componentId, .componentTitle').addClass("grayout");
 		}
 	}
 	

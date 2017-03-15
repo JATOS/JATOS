@@ -20,12 +20,15 @@ GET     /jatos/ldap                                  @controllers.gui.Home.ldap(
 
 # Users controller
 GET     /jatos/userManager                           @controllers.gui.Users.userManager()
-GET     /jatos/userData                              @controllers.gui.Users.userData()
+GET     /jatos/userData                              @controllers.gui.Users.allUserData()
 POST    /jatos/user                                  @controllers.gui.Users.submitCreated()
 POST    /jatos/user/:email/profile                   @controllers.gui.Users.submitEditedProfile(email: String)
+GET     /jatos/user/:email/userData                  @controllers.gui.Users.singleUserData(email: String)
 POST    /jatos/user/:email/password                  @controllers.gui.Users.submitChangedPassword(email: String)
 POST    /jatos/user/:email/admin                     @controllers.gui.Users.toggleAdmin(email: String, admin: Boolean)
 GET     /jatos/user/:email                           @controllers.gui.Users.profile(email: String)
+# Play doesn't allow data in body in a DELETE request, so I use POST instead
+POST    /jatos/user/:email/delete                    @controllers.gui.Users.remove(email: String)
 
 # ComponentResults & StudyResults controller
 GET     /jatos/worker/:workerId/tableData            @controllers.gui.StudyResults.tableDataByWorker(workerId: Long)

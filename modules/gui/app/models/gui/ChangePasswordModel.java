@@ -26,13 +26,13 @@ public class ChangePasswordModel {
 
 	/**
 	 * In case an admin wants to change the password of an user the admin has to
-	 * send his own password too for authentication
+	 * send their own password too for authentication
 	 */
 	private String adminPassword;
 
 	/**
-	 * In case an user wants to change his own password we need his old password
-	 * for authentication.
+	 * In case an user wants to change their own password we need their old
+	 * password for authentication.
 	 */
 	private String oldPassword;
 

@@ -1,4 +1,4 @@
-	@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
+@(loggedInUser: common.User, breadcrumbs: String, localhost: Boolean)
 
 @views.html.gui.main(loggedInUser, breadcrumbs, localhost){
 
@@ -133,12 +133,39 @@
 	</div>
 </div>
 
+<!-- Delete user confirmation  modal -->
+<div class="modal fade" id="deleteUserModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form id="deleteUserForm" method="post" action="/" class="form-horizontal" role="form">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">Confirm User Deletion</h4>
+				</div>
+				<div class="modal-body">
+					<p class="confirmationText"></p>
+					<div class="form-group row">
+						<label class="control-label col-xs-6 adminPasswordLabel" for="password">Your password</label>
+						<div class="col-xs-5">
+							<input type="password" class="form-control password" name="password" placeholder="Your password">
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<input type="submit" class="confirmed btn btn-user" value="Delete">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
 <script>
 
 var userTable = $('#userTable').DataTable({
 	"ajax": {
 		"type": "GET",
-		"url" : '@controllers.gui.routes.Users.userData()',
+		"url" : '@controllers.gui.routes.Users.allUserData()',
 		"error": function(reason) {
 				showError("Couldn't read user data.")
 		}
@@ -160,6 +187,10 @@ var userTable = $('#userTable').DataTable({
 				var button = $('#userAdminToggleButtonDiv button:first-child').clone();
 				var adminRole = $.inArray("@models.common.User.Role.ADMIN.name()", data.roleList) >= 0;
 				setAdminButton(button, adminRole);
+				if (data.email == "@services.gui.UserService.ADMIN_EMAIL" ||
+						data.email == "@loggedInUser.getEmail()") {
+					button.toggleClass('disabled', true);
+				}
 				return button.prop('outerHTML');
 			}
 		},
@@ -172,6 +203,15 @@ var userTable = $('#userTable').DataTable({
 			"searchable": false,
 			"render": function (data, type, full, meta) {
 				var toolbar = $('#userToolbarDiv').clone().show();
+				if (data.email == "@services.gui.UserService.ADMIN_EMAIL") {
+					toolbar.find('.userDeleteButton').toggleClass('disabled', true);
+					if ("@loggedInUser.getEmail()" != "@services.gui.UserService.ADMIN_EMAIL") {
+						toolbar.find('.userChangePasswordButton').toggleClass('disabled', true);
+					}
+				}
+				if (data.email == "@loggedInUser.getEmail()") {
+					toolbar.find('.userDeleteButton').toggleClass('disabled', true);
+				}
 				return toolbar.html();
 			}
 		}
@@ -274,7 +314,7 @@ $("#changePasswordForm").submit(function(event) {
 	$.ajax({
 		type: 'POST',
 		url: '/jatos/user/' + user.email + '/password',
-		data: $('#changePasswordForm').serialize(), 
+		data: $('#changePasswordForm').serialize(),
 		success: function(response) {
 			removeAlerts("#changePasswordModal");
 			removeFormErrors("#changePasswordModal");
@@ -288,6 +328,65 @@ $("#changePasswordForm").submit(function(event) {
 				showFormErrors("#changePasswordModal", response);
 			} else {
 				showModalError("#changePasswordModal .modal-header", response);
+			}
+		}
+	});
+});
+
+$('#userTable tbody').on('click', '.userDeleteButton', function() {
+	var tr = $(this).closest("tr");
+	var user = userTable.row(tr).data();
+	$('#deleteUserForm').data(user);
+	removeAlerts("#deleteUserModal");
+	removeFormErrors("#deleteUserModal");
+	$('#deleteUserModal .modal-title').text("Delete " + user.email + " (" + user.name + ")");
+	$('#deleteUserModal .confirmationText').html(generateUserDeleteConfirmationHtml(user));
+	$('#deleteUserModal .adminPasswordLabel').text("Confirm with your (@loggedInUser.getEmail()) password");
+	$('#deleteUserModal .password').val('');
+	$('#deleteUserModal').modal('show');
+});
+
+function generateUserDeleteConfirmationHtml(user) {
+	var confirmationText = "<p>You are about to delete the user <b>" + user.email + " (" + user.name + ")</b>. "
+			+ "All studies with this user as the only user will be deleted too.</p>";
+	// Only add the studies that have a user size of 1 (means this user is the only
+	// member and the study would be abandoned after user deletion) .
+	var studyList = "";
+	$.each(user.studyList, function(index, study) {
+		if (study.userSize === 1) {
+			studyList += "<li>" + study.title + " (ID: " + study.id + ")</li>";
+		}
+	});
+	if (studyList !== "") {
+		confirmationText += "<p><b>This would automatically delete the following studies with all their results</b>.";
+		confirmationText += "<ul>" + studyList + "</ul>";
+	}
+	confirmationText += "<p><b>This can't be undone.</b></p>";
+	return confirmationText;
+}
+
+$('#deleteUserForm').submit(function(event) {
+	event.preventDefault();
+	var user = $('#deleteUserForm').data(user);
+	$.ajax({
+		url : "/jatos/user/" + user.email + "/delete",
+		type : 'POST',
+		data: $('#deleteUserForm').serialize(), 
+		success : function(result) {
+			removeAlerts("#deleteUserModal");
+			removeFormErrors("#deleteUserModal");
+			$('#deleteUserModal').modal('hide');
+			userTable.ajax.reload();
+			fillSidebar();
+		},
+		error : function(response) {
+			removeAlerts("#deleteUserModal");
+			removeFormErrors("#deleteUserModal");
+			showWarning("User wasn't deleted", "#deleteUserModal .modal-header");
+			if (isJson(response.responseText)) {
+				showFormErrors("#deleteUserModal", response);
+			} else {
+				showModalError("#deleteUserModal .modal-header", response);
 			}
 		}
 	});

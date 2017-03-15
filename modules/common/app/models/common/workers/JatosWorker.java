@@ -5,14 +5,12 @@ import java.util.List;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import models.common.User;
 import play.data.validation.ValidationError;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Model and DB entity of the concrete Worker who originates from JATOS itself.
@@ -30,8 +28,7 @@ public class JatosWorker extends Worker {
 	 * Corresponding User. This relationship is bidirectional.
 	 */
 	@JsonIgnore
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_email")
+	@OneToOne(mappedBy = "worker", fetch = FetchType.LAZY)
 	private User user;
 
 	public JatosWorker() {
@@ -47,11 +44,6 @@ public class JatosWorker extends Worker {
 
 	public User getUser() {
 		return this.user;
-	}
-
-	@JsonProperty("userEmail")
-	public String getUserEmail() {
-		return this.user.getEmail();
 	}
 
 	@Override

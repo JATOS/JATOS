@@ -4,7 +4,6 @@ import javax.inject.Singleton;
 
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
-import models.common.User;
 import models.common.workers.MTWorker;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
@@ -55,6 +54,7 @@ public class MessagesStrings {
 	// User
 	public static final String WRONG_PASSWORD = "Wrong password";
 	public static final String NOT_ALLOWED_TO_CHANGE_PASSWORDS = "You are not allowed to change passwords.";
+	public static final String NOT_ALLOWED_TO_DELETE_USER = "You are not allowed to delete this user.";
 	public static final String WRONG_OLD_PASSWORD = "Wrong old password";
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";
@@ -62,7 +62,10 @@ public class MessagesStrings {
 	public static final String YOUVE_BEEN_LOGGED_OUT = "You've been logged out";
 	public static final String ONLY_ADMIN_CAN_SEE_LOGS = "Only an admin can see the logs";
 	public static final String COULDNT_OPEN_LOG = "Couldn't open log file";
-	public static final String ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN = "Sorry, you are not allowed to remove your own admin rights.";
+	public static final String ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE = "Sorry, it's not possible to remove your own admin rights. Although you can ask another admin to remove them for you.";
+	public static final String NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS = "It's not possible to remove 'admin's admin rights.";
+	public static final String NOT_ALLOWED_DELETE_ADMIN = "It's not possible to remove user 'admin'.";
+	public static final String NOT_ALLOWED_CHANGE_PW_ADMIN = "It's not possible to change 'admin's password.";
 
 	// Export / import
 	public static final String NO_COMPONENT_UPLOAD = "Uploaded file isn't intended for components";
@@ -209,9 +212,8 @@ public class MessagesStrings {
 		return errorMsg;
 	}
 
-	public static String userMustBeLoggedInToSeeProfile(User user) {
-		return "You must be logged in as " + user.toString()
-				+ " to see the profile of this user.";
+	public static String userNotAllowedToGetData(String email) {
+		return "You are not allowed to get data for user " + email + ".";
 	}
 
 	public static String componentNotExist(Long componentId) {
