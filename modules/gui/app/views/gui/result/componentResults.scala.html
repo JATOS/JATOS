@@ -222,7 +222,7 @@ $(document).ready(function() {
 		var htmlText = "<p>You are about to delete the component results "
 			+ "(ID " + ids.join(", ") + "). This cannot be undone.</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = '/jatos/componentResult?componentResultIds=' + ids.toString();
 			$.ajax({
 				url: url,
@@ -244,7 +244,7 @@ $(document).ready(function() {
 		var htmlText = "<p>You are about to delete <b>ALL</b> component results"
 			+ " (cannot be undone).</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = "@controllers.gui.routes.ComponentResults.removeAllOfComponent(study.getId(), component.getId())";
 			$.ajax({
 				url: url,

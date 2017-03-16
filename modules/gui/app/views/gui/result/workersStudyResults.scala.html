@@ -282,7 +282,7 @@ $(document).ready(function() {
 			+ "(ID " + ids.join(", ") + ") " 
 			+ "<b>with all their component results</b>.</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
 			$.ajax({
 				url : url,
@@ -305,7 +305,7 @@ $(document).ready(function() {
 			+ "@worker.getUIWorkerType() worker with the ID @worker.getId() "
 			+ "<b>with all their component results</b>.</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = "@controllers.gui.routes.StudyResults.removeAllOfWorker(worker.getId())";
 			$.ajax({
 				url : url,

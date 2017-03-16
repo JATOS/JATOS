@@ -302,7 +302,7 @@ $(document).ready(function() {
 		var htmlText = "<p>You are about to delete component \"" + componentTitle 
 			+ "\" (ID " + componentId + ") <b>with all its results</b>.</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+		askConfirmation(title, htmlText, 'Delete', 'btn-component', function() {
 			$.ajax({
 				url : "/jatos/" + @study.getId() +"/" + componentId,
 				type : 'DELETE',
@@ -482,7 +482,7 @@ $('#studyToolbar').on('click', '#removeStudy', function() {
 		+ "<b>with all its components, results, and the entire study assets directory, "
 		+ "including the HTML files</b>.</p>"
 		+ "<p>Do you want to proceed?</p>";
-	askConfirmation(title, htmlText, 'Delete', function() {
+	askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 		$.ajax({
 			url : '@controllers.gui.routes.Studies.remove(study.getId())',
 			type : 'DELETE',
@@ -539,7 +539,7 @@ function importComponentConfirm(response) {
 		var htmlText = "<p>It seems a component \"" + response.componentTitle 
 			+ "\" already exists in this study.</p>"
 			+ "<p>Do you want to overwrite this component?</p>";
-		askConfirmation(title, htmlText, 'Overwrite', function() {
+		askConfirmation(title, htmlText, 'Overwrite', 'btn-component', function() {
 			postComponentImportConfirm();
 		});
 	} else {
@@ -547,7 +547,7 @@ function importComponentConfirm(response) {
 		var htmlText = "<p>You are about to create the component \""
 			+ response.componentTitle + "\".</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Create', function() {
+		askConfirmation(title, htmlText, 'Create', 'btn-component', function() {
 			postComponentImportConfirm();
 		});
 	}

@@ -225,7 +225,7 @@ $('#batchTable').on('click', '.removeBatch', function() {
 	var htmlText = "<p>You are about to delete batch \"" + batch.title 
 		+ "\" (ID " + batch.id + ") <b>with all its results</b>.</p>"
 		+ "<p>Do you want to proceed?</p>";
-	askConfirmation(title, htmlText, 'Delete', function() {
+	askConfirmation(title, htmlText, 'Delete', "btn-batch", function() {
 		$.ajax({
 			url : "/jatos/" + @study.getId() +"/batch/" + batch.id,
 			type : 'DELETE',

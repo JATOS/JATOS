@@ -269,7 +269,7 @@ $(document).ready(function() {
 			+ "(ID " + ids.join(", ") + ") " 
 			+ "<b>with all their component results</b> (cannot be undone).</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
 			$.ajax({
 				url : url,
@@ -291,7 +291,7 @@ $(document).ready(function() {
 		var htmlText = "<p>You are about to delete <b>ALL</b> study results "
 			+ "<b>with all their component results</b> (cannot be undone).</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = "@controllers.gui.routes.StudyResults.removeAllOfStudy(study.getId())";
 			$.ajax({
 				url : url,

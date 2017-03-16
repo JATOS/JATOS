@@ -308,7 +308,7 @@ function getUIWorkerTypeWithGlyphicon(workerType) {
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button type="button" class="confirmed btn btn-primary"></button>
+				<button type="button" class="confirmed btn"></button>
 			</div>
 		</div>
 	</div>
@@ -411,15 +411,17 @@ function showBreadcrumbs (breadcrumbs) {
 	});
 }
 
-function askConfirmation(title, html, buttonText, action) {
+function askConfirmation(title, html, buttonText, buttonClass, action) {
 	$('#confirmationModal .modal-title').text(title);
 	if (html) {
 		$('#confirmationModal .modal-body').html(html);
 	}
 	$('#confirmationModal .confirmed').text(buttonText);
+	$('#confirmationModal .confirmed').addClass(buttonClass);
 	$('#confirmationModal').modal('show');
 	$('#confirmationModal').off('click.confirm').on('click.confirm', '.confirmed', function() {
 		$('#confirmationModal').modal('hide');
+		$('#confirmationModal .confirmed').removeClass(buttonClass);
 		action();
 	});
 }
@@ -495,7 +497,7 @@ function askConfirmationForStudyNotExistsDirExists(response) {
 		+ "\". There already exist a directory with the same name. "
 		+ "If you proceed the <b>current directory will be overridden</b>.</p>"
 		+ "<p>Do you want to proceed?</p>";
-	askConfirmation(title, htmlText, 'Import', function() {
+	askConfirmation(title, htmlText, 'Import', "btn-primary", function() {
 		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
 			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);
@@ -507,7 +509,7 @@ function askConfirmationForStudyNotExistsDirNotExists(response) {
 	var htmlText = "<p>You are about to import the study \"" + response.studyTitle 
 		+ "\" and its directory \"" + response.dirPath + "\".</p>"
 		+ "<p>Do you want to proceed?</p>";
-	askConfirmation(title, htmlText, 'Import', function() {
+	askConfirmation(title, htmlText, 'Import', "btn-primary", function() {
 		var jsonData = JSON.stringify({ "@services.gui.ImportExportService.STUDYS_ENTITY_CONFIRM": true,
 			"@services.gui.ImportExportService.STUDYS_DIR_CONFIRM" : true });
 		postStudyImportConfirm(jsonData);
