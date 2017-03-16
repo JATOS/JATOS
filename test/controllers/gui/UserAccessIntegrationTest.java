@@ -160,7 +160,7 @@ public class UserAccessIntegrationTest {
 	@Test
 	public void callStudiesUsers() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Call call = controllers.gui.routes.Studies.users(study.getId());
+		Call call = controllers.gui.routes.Studies.memberUsers(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
 		checkNotTheRightUser(call, study.getId(), Helpers.GET);
 	}
@@ -168,7 +168,7 @@ public class UserAccessIntegrationTest {
 	@Test
 	public void callUsers() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Call call = controllers.gui.routes.Studies.users(study.getId());
+		Call call = controllers.gui.routes.Studies.memberUsers(study.getId());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
 		checkNotTheRightUser(call, study.getId(), Helpers.GET);
 	}
@@ -177,7 +177,7 @@ public class UserAccessIntegrationTest {
 	public void callStudiesSubmitChangedUsers() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Call call = controllers.gui.routes.Studies
-				.submitChangedUsers(study.getId());
+				.toggleMemberUser(study.getId(),"email", true);
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.POST);
 		checkNotTheRightUser(call, study.getId(), Helpers.POST);
 	}

@@ -1,0 +1,146 @@
+@(loggedInUser: common.User)
+
+<div class="modal fade" id="changeMemberUsersModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				<h4 class="modal-title">Change who is member of this study</h4>
+			</div>
+			<div class="modal-body">
+				<table id="memberUserTable" class="table" width="100%">
+					<thead>
+						<tr>
+							<th>Member</th>
+							<th>Name</th>
+						</tr>
+					</thead>
+					<!-- Member users are added in JS -->
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Template for member toggle button in user's row -->
+<div id="memberToggleButtonDiv" style="display: none">
+	<button type="button" class="btn btn-sm btn-default memberToggleButton"
+		data-toggle="tooltip" data-placement="bottom" title="">
+		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+	</button>
+</div>
+
+<script>
+
+var memberUserTable;
+
+function initMemberUserTable() {
+	if (memberUserTable) {
+		memberUserTable.ajax.reload();
+		memberUserTable.draw();
+		return;
+	}
+	
+	memberUserTable = $('#memberUserTable').DataTable({
+		"ajax": {
+			"type": "GET",
+			"url" : "/jatos/" + studyId + "/memberUsers",
+			"error": function(reason) {
+				showError("Couldn't read member data.", "#changeMemberUsersModal .modal-header");
+			}
+		},
+		"dom": 'ftip',
+		"order": [[ 1, "asc" ]],
+		"pageLength": 10,
+		"columns": [
+			{ "class": 'memberInStudyColumn',
+				"data": null,
+				"defaultContent": '',
+				"width": "1%",
+				"orderable": false,
+				"searchable": false,
+				"searchable": false,
+				"render": function (data, type, full, meta) {
+					var button = $('#memberToggleButtonDiv button:first-child').clone();
+					setMemberButton(button, data.isMember);
+					return button.prop('outerHTML');
+				}
+			},
+			{ "data": "name" }
+		]
+	});
+}
+
+function setMemberButton(button, isMember) {
+	if (isMember) {
+		button.addClass('isMember');
+		button.removeClass('btn-default');
+		button.addClass('btn-primary');
+		button.attr('title', "Click to remove this user from this study");
+		button.html($(button.html())
+				.removeClass('glyphicon-remove')
+				.addClass('glyphicon-ok').prop('outerHTML'));
+	} else {
+		button.removeClass('isMember');
+		button.removeClass('btn-primary');
+		button.addClass('btn-default');
+		button.attr('title', "Click to let this user become a member of this study");
+		button.html($(button.html())
+				.removeClass('glyphicon-ok')
+				.addClass('glyphicon-remove').prop('outerHTML'));
+	}
+}
+
+$('#studyToolbar').on('click', '#changeMemberUsersLink', function() {
+	removeAlerts("#changeMemberUsersModal");
+	removeFormErrors("#changeMemberUsersModal");
+	initMemberUserTable();
+	$('#changeMemberUsersModal').modal('show');
+});
+
+$('#memberUserTable').on('click', '.memberToggleButton', function() {
+	var button = this;
+	var tr = $(this).closest('tr');
+	var member = memberUserTable.row(tr).data();
+	var isMember = $(this).hasClass('isMember');
+	if (member.email === "@loggedInUser.getEmail()" && !member.removeConfirmation) {
+		showWarning("Sure, you want to remove yourself from the study?", "#changeMemberUsersModal .modal-header");
+		member.removeConfirmation = true;
+		return;
+	}
+	$.ajax({
+		url : '/jatos/' + studyId + '/memberUser?email=' + member.email + '&isMember=' + !isMember, 
+		type : "POST",
+		success: function(isMember) {
+			removeAlerts("#changeMemberUsersModal");
+			setMemberButton($(button), isMember);
+		},
+		error : function(err) {
+			removeAlerts("#changeMemberUsersModal");
+			showError(err.responseText, "#changeMemberUsersModal .modal-header");
+		}
+	});
+});
+
+
+$("#changeUsersForm").submit(function(event) {
+	event.preventDefault();
+	var data = $('#changeUsersForm').serialize();
+	$.ajax({
+		type : 'POST',
+		url : '/jatos/' + studyId + '/memberUsers ',
+		data : $('#changeUsersForm').serialize(),
+		success : function(response) {
+			removeAlerts("#changeMemberUsersModal");
+			removeFormErrors("#changeMemberUsersModal");
+			$('#changeMemberUsersModal').modal('hide');
+		},
+		error : function(response) {
+			removeAlerts("#changeMemberUsersModal");
+			removeFormErrors("#changeMemberUsersModal");
+			showWarning(response.responseText, "#changeMemberUsersModal .modal-header");
+		}
+	});
+});
+
+</script>

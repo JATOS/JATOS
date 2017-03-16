@@ -167,7 +167,7 @@ var userTable = $('#userTable').DataTable({
 		"type": "GET",
 		"url" : '@controllers.gui.routes.Users.allUserData()',
 		"error": function(reason) {
-				showError("Couldn't read user data.")
+			showError("Couldn't read user data.")
 		}
 	},
 	"dom": 'ftip',

@@ -326,20 +326,21 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Returns JsonNode of the given user list for use in the change-user-form.
-	 * This JSON is intended for JATOS' GUI.
+	 * Returns JsonNode with all users and if they are member of the given study.
+	 * This JSON is intended for JATOS' GUI / in the change user modal.
 	 */
-	public JsonNode usersForStudyUI(List<User> userList, Study study) {
+	public JsonNode memberUsersOfStudy(List<User> userList, Study study) {
 		ArrayNode userArrayNode = Json.mapper().createArrayNode();
 		for (User user : userList) {
 			ObjectNode userNode = Json.mapper().createObjectNode();
 			userNode.put("name", user.getName());
 			userNode.put("email", user.getEmail());
-			// Is this user admin of the study - NOT is it the admin user
-			userNode.put("admin", study.hasUser(user));
+			userNode.put("isMember", study.hasUser(user));
 			userArrayNode.add(userNode);
 		}
-		return userArrayNode;
+		ObjectNode userDataNode = Json.mapper().createObjectNode();
+		userDataNode.set(DATA, userArrayNode);
+		return userDataNode;
 	}
 
 	/**

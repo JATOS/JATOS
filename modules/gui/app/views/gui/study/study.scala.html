@@ -48,7 +48,7 @@
 					</a>
 				</li>
 				<li data-toggle="tooltip" data-placement="bottom" title="Change who can admin this study">
-					<a id="changeUsersLink" href="#">
+					<a id="changeMemberUsersLink" href="#">
 						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
 						Change&nbsp;Users
 					</a>
@@ -180,7 +180,7 @@
 	</div>
 </div>
 
-@views.html.gui.study.changeUsersModal()
+@views.html.gui.study.changeMemberUsersModal(loggedInUser)
 @views.html.gui.study.componentPropertiesModal(study)
 
 <script type="text/javascript">

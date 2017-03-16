@@ -20,6 +20,7 @@ import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
+import exceptions.gui.NotFoundException;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
@@ -278,8 +279,8 @@ public class Studies extends Controller {
 	 */
 	@Transactional
 	@Authenticated
-	public Result users(Long studyId) throws JatosGuiException {
-		LOGGER.info(".users: studyId " + studyId);
+	public Result memberUsers(Long studyId) throws JatosGuiException {
+		LOGGER.info(".memberUsers: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
@@ -288,32 +289,33 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		List<User> userList = userDao.findAll();
-		return ok(jsonUtils.usersForStudyUI(userList, study));
+		return ok(jsonUtils.memberUsersOfStudy(userList, study));
 	}
 
 	/**
-	 * Ajax POST request that handles changed users of a study.
+	 * Ajax POST request that adds or removes a member user from a study
 	 */
 	@Transactional
 	@Authenticated
-	public Result submitChangedUsers(Long studyId) throws JatosGuiException {
-		LOGGER.info(".submitChangedUser: studyId " + studyId);
+	public Result toggleMemberUser(Long studyId, String email, boolean isMember)
+			throws JatosGuiException {
+		LOGGER.info(".toggleMemberUser: studyId " + studyId + ", email " + email
+				+ ", isMember " + isMember);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = userService.retrieveLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwAjax(e);
-		}
-
-		String[] checkedUsers = (request().body().asFormUrlEncoded() != null)
-				? request().body().asFormUrlEncoded().get(Study.USERS) : null;
-		try {
-			studyService.exchangeUsers(study, checkedUsers);
+			User userToChange = userService.retrieveUser(email);
+			studyService.changeUserMember(study, userToChange, isMember);
+		} catch (ForbiddenException e) {
+			return forbidden(e.getMessage());
+		} catch (NotFoundException e) {
+			return notFound(e.getMessage());
 		} catch (BadRequestException e) {
 			return badRequest(e.getMessage());
 		}
-		return ok();
+
+		return ok(JsonUtils.asJsonNode(isMember));
 	}
 
 	/**

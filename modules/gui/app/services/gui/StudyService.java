@@ -1,8 +1,7 @@
 package services.gui;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -18,8 +17,9 @@ import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
+import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -120,67 +120,20 @@ public class StudyService {
 		return cloneTitle;
 	}
 
-	/**
-	 * Adds the new users to the study. Additionally it add's the user's
-	 * JatosWorkers to the study's batches. In case of an empty list an
-	 * BadRequestException is thrown.
-	 */
-	public void exchangeUsers(Study study, String[] userEmailArray)
-			throws BadRequestException {
-		List<User> newUserList = checkAllUsersExistsAndListNotEmpty(
-				userEmailArray);
-
-		List<User> usersToRemove = new ArrayList<>();
-		usersToRemove.addAll(study.getUserList());
-		usersToRemove.removeAll(newUserList);
-
-		List<User> usersToAdd = new ArrayList<>();
-		usersToAdd.addAll(newUserList);
-		usersToAdd.removeAll(study.getUserList());
-
-		usersToRemove.forEach(user -> removeUserFromStudy(study, user));
-		usersToAdd.forEach(user -> addUserToStudy(study, user));
-	}
-
-	private List<User> checkAllUsersExistsAndListNotEmpty(
-			String[] userEmailArray) throws BadRequestException {
-		if (userEmailArray == null) {
-			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_USER;
-			throw new BadRequestException(errorMsg);
-		}
-
-		List<User> userList = new ArrayList<>();
-		for (String email : userEmailArray) {
-			User user = userDao.findByEmail(email);
-			if (user == null) {
-				String errorMsg = MessagesStrings.userNotExist(email);
-				RequestScopeMessaging.error(errorMsg);
-				throw new BadRequestException(errorMsg);
+	public void changeUserMember(Study study, User userToChange,
+			boolean isMember) throws NotFoundException, ForbiddenException {
+		if (isMember) {
+			study.addUser(userToChange);
+		} else {
+			Set<User> userList = study.getUserList();
+			if (userList.size() <= 1 || !userList.contains(userToChange)) {
+				throw new ForbiddenException(
+						MessagesStrings.STUDY_AT_LEAST_ONE_USER);
 			}
-			userList.add(user);
+			study.removeUser(userToChange);
 		}
-
-		if (userList.isEmpty()) {
-			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_USER;
-			RequestScopeMessaging.error(errorMsg);
-			throw new BadRequestException(errorMsg);
-		}
-		return userList;
-	}
-
-	private void removeUserFromStudy(Study study, User user) {
-		study.removeUser(user);
-		user.removeStudy(study);
 		studyDao.update(study);
-		userDao.update(user);
-
-		// For each of the study's batches remove the user's JatosWorker
-		JatosWorker jatosWorker = user.getWorker();
-		for (Batch batch : study.getBatchList()) {
-			batch.removeWorker(jatosWorker);
-			batchDao.update(batch);
-		}
-		workerDao.update(jatosWorker);
+		userDao.update(userToChange);
 	}
 
 	private void addUserToStudy(Study study, User user) {
