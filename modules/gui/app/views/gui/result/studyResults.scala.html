@@ -267,8 +267,8 @@ $(document).ready(function() {
 		var title = "Confirm Delete";
 		var htmlText = "<p>You are about to delete the study results "
 			+ "(ID " + ids.join(", ") + ") " 
-			+ "<b>with all their component results</b> (cannot be undone).</p>"
-			+ "<p>Do you want to proceed?</p>";
+			+ "<b>with all their component results</b>.</p>"
+			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
 		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
 			$.ajax({
@@ -289,8 +289,8 @@ $(document).ready(function() {
 	function deleteAllResults(e, dt, node, config) {
 		var title = "Confirm Delete";
 		var htmlText = "<p>You are about to delete <b>ALL</b> study results "
-			+ "<b>with all their component results</b> (cannot be undone).</p>"
-			+ "<p>Do you want to proceed?</p>";
+			+ "<b>with all their component results</b>.</p>"
+			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
 		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = "@controllers.gui.routes.StudyResults.removeAllOfStudy(study.getId())";
 			$.ajax({

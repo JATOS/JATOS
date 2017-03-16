@@ -301,7 +301,7 @@ $(document).ready(function() {
 		var title = "Confirm Delete";
 		var htmlText = "<p>You are about to delete component \"" + componentTitle 
 			+ "\" (ID " + componentId + ") <b>with all its results</b>.</p>"
-			+ "<p>Do you want to proceed?</p>";
+			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
 		askConfirmation(title, htmlText, 'Delete', 'btn-component', function() {
 			$.ajax({
 				url : "/jatos/" + @study.getId() +"/" + componentId,
@@ -481,7 +481,7 @@ $('#studyToolbar').on('click', '#removeStudy', function() {
 		+ "(ID @study.getId()) "
 		+ "<b>with all its components, results, and the entire study assets directory, "
 		+ "including the HTML files</b>.</p>"
-		+ "<p>Do you want to proceed?</p>";
+		+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
 	askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 		$.ajax({
 			url : '@controllers.gui.routes.Studies.remove(study.getId())',
