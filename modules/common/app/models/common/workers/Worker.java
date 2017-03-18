@@ -152,6 +152,14 @@ public abstract class Worker {
 	public boolean hasBatch(Batch batch) {
 		return batchList.contains(batch);
 	}
+	
+	public void addBatch(Batch batch) {
+		batchList.add(batch);
+	}
+	
+	public void removeBatch(Batch batch) {
+		batchList.remove(batch);
+	}
 
 	@Override
 	public String toString() {
