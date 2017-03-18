@@ -177,7 +177,7 @@ public class UserAccessIntegrationTest {
 	public void callStudiesSubmitChangedUsers() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Call call = controllers.gui.routes.Studies
-				.toggleMemberUser(study.getId(),"email", true);
+				.toggleMemberUser(study.getId(), "email", true);
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.POST);
 		checkNotTheRightUser(call, study.getId(), Helpers.POST);
 	}
