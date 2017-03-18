@@ -122,8 +122,7 @@ public class TestHelper {
 		});
 	}
 
-	public Study importExampleStudy(Injector injector)
-			throws IOException {
+	public Study importExampleStudy(Injector injector) throws IOException {
 		File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
 		File[] studyFileList = ioUtils.findFiles(tempUnzippedStudyDir, "",
@@ -140,12 +139,11 @@ public class TestHelper {
 		tempUnzippedStudyDir.delete();
 
 		// Every study has a default batch
-		importedStudy
-				.addBatch(batchService.createDefaultBatch(importedStudy));
+		importedStudy.addBatch(batchService.createDefaultBatch(importedStudy));
 		return importedStudy;
 	}
 
-	public void removeStudy(Long studyId) throws IOException {
+	public void removeStudy(Long studyId) {
 		jpaApi.withTransaction(() -> {
 			try {
 				Study study = studyDao.findById(studyId);
