@@ -44,6 +44,10 @@ public class User {
 
 	private String name;
 
+	/**
+	 * A list of Roles used for authorization. It has to be fetched eagerly
+	 * otherwise Hibernate has problems with the Worker's inheritance.
+	 */
 	@ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
 	@Enumerated(EnumType.STRING)
 	private Set<Role> roleList = new HashSet<>();
@@ -52,7 +56,7 @@ public class User {
 	 * Corresponding JatosWorker. This relationship is bidirectional.
 	 */
 	@JsonIgnore
-	@OneToOne(fetch = FetchType.LAZY)
+	@OneToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "worker_id")
 	private JatosWorker worker;
 
