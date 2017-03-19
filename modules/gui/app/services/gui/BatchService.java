@@ -181,20 +181,68 @@ public class BatchService {
 
 		// Remove or update Workers of this batch
 		for (Worker worker : batch.getWorkerList()) {
-			if (worker.getBatchList().size() == 1) {
-				// If this worker does not belong to any other batches remove it
-				// from the database
-				workerDao.remove(worker);
-			} else {
-				// If this worker belongs to other batches it can't be removed
-				// from the database but this batch has to be removed from the
-				// worker's batch list
-				worker.getBatchList().remove(batch);
-				workerDao.update(worker);
-			}
+			removeOrUpdateJatosWorker(batch, worker);
+			removeOrUpdateNonJatosWorkers(batch, worker);
 		}
 
 		batchDao.remove(batch);
+	}
+
+	private void removeOrUpdateJatosWorker(Batch batch, Worker worker) {
+		// We can't check type with 'instanceof JatosWorker' because sometimes
+		// Hibernate doesn't map the proper type
+		if (!worker.getWorkerType().equals(JatosWorker.WORKER_TYPE)) {
+			return;
+		}
+
+		// If worker is part of other batches just remove this batch
+		if (worker.getBatchList().size() != 1) {
+			worker.removeBatch(batch);
+			workerDao.update(worker);
+			return;
+		}
+
+		// This is a Hibernate issue: If this worker was a JatosWorker
+		// before but its user was already deleted it's not instance of
+		// JatosWorker anymore. But anyway, since the worker is only in this
+		// batch, now it can be removed.
+		if (!(worker instanceof JatosWorker)) {
+			workerDao.remove(worker);
+			return;
+		}
+
+		// Worker is only in this batch
+		JatosWorker jatosWorker = (JatosWorker) worker;
+		if (jatosWorker.getUser() == null) {
+			// Last one in batch list and User gone -> remove worker
+			workerDao.remove(worker);
+			return;
+		} else {
+			// If the JatosWorker's User still exist don't remove
+			worker.removeBatch(batch);
+			workerDao.update(worker);
+			return;
+		}
+	}
+
+	private void removeOrUpdateNonJatosWorkers(Batch batch, Worker worker) {
+		// We can't check type with 'instanceof JatosWorker' because sometimes
+		// Hibernate doesn't map the proper type
+		if (worker.getWorkerType().equals(JatosWorker.WORKER_TYPE)) {
+			return;
+		}
+
+		if (worker.getBatchList().size() == 1) {
+			// If this worker does not belong to any other batches remove it
+			// from the database
+			workerDao.remove(worker);
+		} else {
+			// If this worker belongs to other batches it can't be removed
+			// from the database but this batch has to be removed from the
+			// worker's batch list
+			worker.removeBatch(batch);
+			workerDao.update(worker);
+		}
 	}
 
 }
