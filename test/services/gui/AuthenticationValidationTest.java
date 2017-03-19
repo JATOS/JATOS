@@ -32,7 +32,7 @@ import play.inject.guice.GuiceApplicationLoader;
  * 
  * @author Kristian Lange
  */
-public class AuthenticationServiceTest {
+public class AuthenticationValidationTest {
 
 	private Injector injector;
 
