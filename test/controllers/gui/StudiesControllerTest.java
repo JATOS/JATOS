@@ -4,6 +4,8 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static play.mvc.Http.Status.OK;
 import static play.mvc.Http.Status.SEE_OTHER;
+import static play.mvc.Http.Status.FORBIDDEN;
+import static play.mvc.Http.Status.NOT_FOUND;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
@@ -40,6 +42,8 @@ import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.BreadcrumbsService;
+import services.gui.UserService;
+import utils.common.JsonUtils;
 
 /**
  * Testing actions of controller.Studies.
@@ -83,8 +87,11 @@ public class StudiesControllerTest {
 		testHelper.removeStudyAssetsRootDir();
 	}
 
+	/**
+	 * Test Studies.study()
+	 */
 	@Test
-	public void callIndex() throws Exception {
+	public void callStudy() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		User admin = testHelper.getAdmin();
@@ -98,6 +105,9 @@ public class StudiesControllerTest {
 		assertThat(contentAsString(result)).contains("Components");
 	}
 
+	/**
+	 * Test Studies.submitCreated()
+	 */
 	@Test
 	public void callSubmitCreated() throws Exception {
 		Map<String, String> formMap = new HashMap<String, String>();
@@ -134,6 +144,9 @@ public class StudiesControllerTest {
 		});
 	}
 
+	/**
+	 * Test Studies.submitCreated()
+	 */
 	@Test
 	public void callSubmitCreatedValidationError()
 			throws JsonProcessingException, IOException {
@@ -165,6 +178,9 @@ public class StudiesControllerTest {
 				.isEqualTo("[\"" + MessagesStrings.INVALID_JSON_FORMAT + "\"]");
 	}
 
+	/**
+	 * Test Studies.submitCreated()
+	 */
 	@Test
 	public void callSubmitCreatedStudyAssetsDirExists() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -185,6 +201,9 @@ public class StudiesControllerTest {
 				"{\"dirName\":[\"Study assets' directory (basic_example_study) couldn't be created because it already exists.\"]}");
 	}
 
+	/**
+	 * Test Studies.properties()
+	 */
 	@Test
 	public void callProperties() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -220,6 +239,9 @@ public class StudiesControllerTest {
 				.isEqualTo(String.valueOf(study.isGroupStudy()));
 	}
 
+	/**
+	 * Test Studies.submitEdited()
+	 */
 	@Test
 	public void callSubmitEdited() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -252,8 +274,11 @@ public class StudiesControllerTest {
 		assertThat((!editedStudy.isLocked()));
 	}
 
+	/**
+	 * Test Studies.toggleLock()
+	 */
 	@Test
-	public void callSwapLock() throws Exception {
+	public void callToggleLock() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
@@ -266,6 +291,9 @@ public class StudiesControllerTest {
 		assertThat(contentAsString(result)).contains("true");
 	}
 
+	/**
+	 * Test Studies.remove()
+	 */
 	@Test
 	public void callRemove() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -278,6 +306,9 @@ public class StudiesControllerTest {
 		assertThat(result.status()).isEqualTo(OK);
 	}
 
+	/**
+	 * Test Studies.cloneStudy()
+	 */
 	@Test
 	public void callCloneStudy() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -290,49 +321,100 @@ public class StudiesControllerTest {
 
 		assertThat(result.status()).isEqualTo(OK);
 	}
-
+	
+	/**
+	 * Test Studies.memberUsers()
+	 */
 	@Test
-	public void callChangeUser() throws Exception {
+	public void callMemberUsers() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies
-						.submitChangedUsers(study.getId()).url());
+				.uri(controllers.gui.routes.Studies.memberUsers(study.getId())
+						.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
+		assertThat(result.contentType().get()).isEqualTo("application/json");
+		assertThat(contentAsString(result)).contains(UserService.ADMIN_NAME);
 	}
 
+	/**
+	 * Tests Studies.toggleMemberUser(): test adding and removing a member user
+	 * from a study
+	 */
 	@Test
-	public void callSubmitChangedUsers() throws Exception {
+	public void callToggleMemberUser() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
+		User someUser = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+				"bla");
+
+		// Add someUser as member to study
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
 				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies
-						.submitChangedUsers(study.getId()).url());
+				.uri(controllers.gui.routes.Studies.toggleMemberUser(
+						study.getId(), someUser.getEmail(), true).url());
 		Result result = route(request);
 
-		assertEquals(OK, result.status());
+		assertThat(result.status()).isEqualTo(OK);
+		assertThat(contentAsString(result)).isEqualTo("true");
+
+		// Remove admin as member from study
+		request = new RequestBuilder().method("POST")
+				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.uri(controllers.gui.routes.Studies.toggleMemberUser(
+						study.getId(), admin.getEmail(), false).url());
+		result = route(request);
+
+		assertThat(result.status()).isEqualTo(OK);
+		assertThat(contentAsString(result)).isEqualTo("false");
 	}
 
+	/**
+	 * Tests Studies.toggleMemberUser(): it's not allowed to remove the last
+	 * user from a study - a study must always have at least one user.
+	 */
 	@Test
-	public void callSubmitChangedUsersZeroUsers() throws Exception {
+	public void callToggleMemberUserNotAllowedRemoveLast() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
+
+		// Remove admin as last member from study must lead to HTTP status
+		// FORBIDDEN
+		RequestBuilder request = new RequestBuilder().method("POST")
+				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.uri(controllers.gui.routes.Studies.toggleMemberUser(
+						study.getId(), admin.getEmail(), false).url());
+		Result result = route(request);
+
+		assertThat(result.status()).isEqualTo(FORBIDDEN);
+	}
+
+	/**
+	 * Tests Studies.toggleMemberUser(): the new member must exist in the DB
+	 */
+	@Test
+	public void callToggleMemberUserNotKnown() throws Exception {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+		User admin = testHelper.getAdmin();
+
+		// Adding a user that doesn't exist in th DB leads to HTTP status
+		// NOT_FOUND
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of("bla", "blu"))
 				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies
-						.submitChangedUsers(study.getId()).url());
+				.uri(controllers.gui.routes.Studies.toggleMemberUser(
+						study.getId(), "non.existing@mail.com", true).url());
 		Result result = route(request);
 
-		assertThat(contentAsString(result))
-				.contains("An study should have at least one user.");
+		assertThat(result.status()).isEqualTo(NOT_FOUND);
 	}
 
+	/**
+	 * Tests Studies.changeComponentOrder()
+	 */
 	@Test
 	public void callChangeComponentOrder() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -362,8 +444,11 @@ public class StudiesControllerTest {
 		assertThat(result.status()).isEqualTo(OK);
 	}
 
+	/**
+	 * Tests Studies.runStudy()
+	 */
 	@Test
-	public void callShowStudy() throws Exception {
+	public void callRunStudy() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
@@ -375,7 +460,28 @@ public class StudiesControllerTest {
 
 		assertEquals(SEE_OTHER, result.status());
 	}
+	
+	/**
+	 * Tests Studies.tableDataByStudy()
+	 */
+	@Test
+	public void callTableDataByStudy() throws Exception {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+		User admin = testHelper.getAdmin();
+		RequestBuilder request = new RequestBuilder().method("GET")
+				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.uri(controllers.gui.routes.Studies.tableDataByStudy(study.getId())
+						.url());
+		Result result = route(request);
 
+		assertEquals(OK, result.status());
+		assertThat(result.contentType().get()).isEqualTo("application/json");
+		assertThat(contentAsString(result)).contains(JsonUtils.DATA);
+	}
+
+	/**
+	 * Tests Studies.workers()
+	 */
 	@Test
 	public void callWorkers() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -388,7 +494,7 @@ public class StudiesControllerTest {
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(contentAsString(result))
-				.contains(BreadcrumbsService.WORKER_SETUP);
+				.contains(BreadcrumbsService.WORKERS);
 	}
 
 }

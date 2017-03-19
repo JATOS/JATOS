@@ -18,7 +18,6 @@ import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import models.common.Batch;
 import models.common.Component;
@@ -121,12 +120,18 @@ public class StudyService {
 	}
 
 	public void changeUserMember(Study study, User userToChange,
-			boolean isMember) throws NotFoundException, ForbiddenException {
+			boolean isMember) throws ForbiddenException {
+		Set<User> userList = study.getUserList();
 		if (isMember) {
+			if (userList.contains(userToChange)) {
+				return;
+			}
 			study.addUser(userToChange);
 		} else {
-			Set<User> userList = study.getUserList();
-			if (userList.size() <= 1 || !userList.contains(userToChange)) {
+			if (!userList.contains(userToChange)) {
+				return;
+			}
+			if (userList.size() <= 1) {
 				throw new ForbiddenException(
 						MessagesStrings.STUDY_AT_LEAST_ONE_USER);
 			}
@@ -134,21 +139,6 @@ public class StudyService {
 		}
 		studyDao.update(study);
 		userDao.update(userToChange);
-	}
-
-	private void addUserToStudy(Study study, User user) {
-		study.addUser(user);
-		user.addStudy(study);
-		studyDao.update(study);
-		userDao.update(user);
-
-		// For each of the study's batches add the user's JatosWorker
-		JatosWorker jatosWorker = user.getWorker();
-		for (Batch batch : study.getBatchList()) {
-			batch.addWorker(jatosWorker);
-			batchDao.update(batch);
-		}
-		workerDao.update(jatosWorker);
 	}
 
 	/**
@@ -229,6 +219,21 @@ public class StudyService {
 		return study;
 	}
 
+	private void addUserToStudy(Study study, User user) {
+		study.addUser(user);
+		user.addStudy(study);
+		studyDao.update(study);
+		userDao.update(user);
+
+		// For each of the study's batches add the user's JatosWorker
+		JatosWorker jatosWorker = user.getWorker();
+		for (Batch batch : study.getBatchList()) {
+			batch.addWorker(jatosWorker);
+			batchDao.update(batch);
+		}
+		workerDao.update(jatosWorker);
+	}
+
 	/**
 	 * Update properties of study with properties of updatedStudy.
 	 */
@@ -265,7 +270,7 @@ public class StudyService {
 
 	/**
 	 * Update properties of study with properties of updatedStudy (excluding
-	 * study's dir name).
+	 * study's dir name). Does not persist.
 	 */
 	public void bindToStudyWithoutDirName(Study study,
 			StudyProperties studyProperties) {

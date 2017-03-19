@@ -15,9 +15,12 @@ import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import daos.common.BatchDao;
+import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
 import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.Component;
@@ -32,7 +35,7 @@ import play.inject.guice.GuiceApplicationLoader;
 import utils.common.IOUtils;
 
 /**
- * Tests StudyService
+ * Tests StudyService class
  * 
  * @author Kristian Lange
  */
@@ -51,6 +54,12 @@ public class StudyServiceTest {
 
 	@Inject
 	private StudyDao studyDao;
+
+	@Inject
+	private BatchDao batchDao;
+
+	@Inject
+	private ComponentDao componentDao;
 
 	@Inject
 	private StudyService studyService;
@@ -92,13 +101,17 @@ public class StudyServiceTest {
 		});
 	}
 
+	/**
+	 * StudyService.clone(): clones a study but does not persist. This includes
+	 * the Components, Batches and asset directory.
+	 */
 	@Test
-	public void checkCloneStudy() {
+	public void checkClone() {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Study clone = cloneAndPersistStudy(study);
 
-		// Equal
+		// Check properties equal in original study and clone
 		assertThat(clone.getComponentList().size())
 				.isEqualTo(study.getComponentList().size());
 		assertThat(clone.getFirstComponent().getTitle())
@@ -112,7 +125,7 @@ public class StudyServiceTest {
 		assertThat(clone.getUserList()).containsOnly(testHelper.getAdmin());
 		assertThat(clone.getTitle()).isEqualTo(study.getTitle() + " (clone)");
 
-		// Not equal
+		// Check properties that are not equal
 		assertThat(clone.isLocked()).isFalse();
 		assertThat(clone.getId()).isNotEqualTo(study.getId());
 		assertThat(clone.getId()).isPositive();
@@ -124,92 +137,151 @@ public class StudyServiceTest {
 				.isTrue();
 	}
 
+	/**
+	 * StudyService.changeUserMember(): adding or deletion of the users to the
+	 * members of a study
+	 */
 	@Test
-	public void checkUpdateStudy() {
-		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-
-		StudyProperties updatedProps = new StudyProperties();
-		updatedProps.setDescription("Changed description");
-		updatedProps.setComments("Changed comments");
-		updatedProps.setJsonData("{}");
-		updatedProps.setTitle("Changed Title");
-		updatedProps.setUuid("changed uuid");
-		long studyId = study.getId();
-
-		studyService.bindToStudyWithoutDirName(study, updatedProps);
-
-		// Changed
-		assertThat(study.getTitle()).isEqualTo(updatedProps.getTitle());
-		assertThat(study.getDescription())
-				.isEqualTo(updatedProps.getDescription());
-		assertThat(study.getComments()).isEqualTo(updatedProps.getComments());
-		assertThat(study.getJsonData()).isEqualTo(updatedProps.getJsonData());
-
-		// Unchanged
-		assertThat(study.getComponentList().size()).isEqualTo(7);
-		assertThat(study.getComponent(1).getTitle())
-				.isEqualTo("Show JSON input ");
-		assertThat(study.getLastComponent().getTitle())
-				.isEqualTo("Quit button");
-		assertThat(study.getId()).isEqualTo(studyId);
-		assertThat(study.getUserList()).contains(testHelper.getAdmin());
-		assertThat(study.getUuid())
-				.isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
-	}
-
-	@Test
-	public void checkExchangeUsers() {
-		testHelper.mockContext();
-
+	public void checkChangeUserMember() {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		User userBla = testHelper.createAndPersistUser("bla@bla.com", "Bla",
 				"bla");
 		testHelper.createAndPersistUser("blu@blu.com", "Blu", "blu");
 
-		// Exchange users of the study with admin and userBla
+		// Add user Bla but not user Blu
 		jpaApi.withTransaction(() -> {
 			try {
-				String[] userList = { UserService.ADMIN_EMAIL,
-						userBla.getEmail() };
-				studyService.exchangeUsers(study, userList);
-			} catch (BadRequestException e) {
+				Study s = studyDao.findById(study.getId());
+				studyService.changeUserMember(s, userBla, true);
+			} catch (ForbiddenException e) {
 				Fail.fail();
 			}
 		});
 
-		// Check that study's users are admin and userBla
+		// Check that study's users are admin and user Bla
 		jpaApi.withTransaction(() -> {
-			Study s = studyDao.findByUuid(study.getUuid());
+			Study s = studyDao.findById(study.getId());
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			assertThat(s.getUserList()).containsOnly(userBla, admin);
 		});
 
-		// Exchange users with empty user list should fail
+		// Remove user Bla again
 		jpaApi.withTransaction(() -> {
 			try {
-				String[] userList = {};
-				studyService.exchangeUsers(study, userList);
+				Study s = studyDao.findById(study.getId());
+				studyService.changeUserMember(s, userBla, false);
+			} catch (ForbiddenException e) {
 				Fail.fail();
-			} catch (BadRequestException e) {
-				assertThat(e.getMessage())
-						.isEqualTo(MessagesStrings.STUDY_AT_LEAST_ONE_USER);
 			}
 		});
 
-		// Exchange users with non existent user should fail
+		// Check that study's user is only admin user
+		jpaApi.withTransaction(() -> {
+			Study s = studyDao.findById(study.getId());
+			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			assertThat(s.getUserList()).containsOnly(admin);
+		});
+	}
+
+	/**
+	 * StudyService.changeUserMember(): adding or deletion of the same user
+	 * twice shouldn't change the outcome
+	 */
+	@Test
+	public void checkChangeUserMemberDouble() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+		User userBla = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+				"bla");
+
+		// Add user Bla twice: no exception should be thrown
 		jpaApi.withTransaction(() -> {
 			try {
-				String[] userList = { "not_exist", "admin" };
-				studyService.exchangeUsers(study, userList);
+				Study s = studyDao.findById(study.getId());
+				studyService.changeUserMember(s, userBla, true);
+			} catch (ForbiddenException e) {
 				Fail.fail();
-			} catch (BadRequestException e) {
-				assertThat(e.getMessage())
-						.isEqualTo(MessagesStrings.userNotExist("not_exist"));
+			}
+		});
+		jpaApi.withTransaction(() -> {
+			try {
+				Study s = studyDao.findById(study.getId());
+				studyService.changeUserMember(s, userBla, true);
+			} catch (ForbiddenException e) {
+				Fail.fail();
+			}
+		});
+		// Check that study's users are only admin and user Bla
+		jpaApi.withTransaction(() -> {
+			Study s = studyDao.findById(study.getId());
+			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			assertThat(s.getUserList()).containsOnly(userBla, admin);
+		});
+
+		// Remove user Bla twice: no exception should be thrown
+		jpaApi.withTransaction(() -> {
+			try {
+				Study s = studyDao.findById(study.getId());
+				studyService.changeUserMember(s, userBla, false);
+			} catch (ForbiddenException e) {
+				Fail.fail();
+			}
+		});
+		jpaApi.withTransaction(() -> {
+			try {
+				Study s = studyDao.findById(study.getId());
+				studyService.changeUserMember(s, userBla, false);
+			} catch (ForbiddenException e) {
+				Fail.fail();
+			}
+		});
+		// Check that study's users is only admin
+		jpaApi.withTransaction(() -> {
+			Study s = studyDao.findById(study.getId());
+			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+			assertThat(s.getUserList()).containsOnly(admin);
+		});
+	}
+
+	/**
+	 * StudyService.changeUserMember(): study must have at least one member user
+	 */
+	@Test
+	public void checkChangeUserMemberAtLeastOne() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+		// If one tries to remove the last user of a study an exception is
+		// thrown
+		jpaApi.withTransaction(() -> {
+			try {
+				Study s = studyDao.findById(study.getId());
+				User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
+				studyService.changeUserMember(s, admin, false);
+				Fail.fail();
+			} catch (ForbiddenException e) {
+				// Must throw an ForbiddenException
+			}
+		});
+
+		// But if the user to be removed isn't member of the study it doesn't
+		// lead to an exception
+		User userBla = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+				"bla");
+		jpaApi.withTransaction(() -> {
+			try {
+				Study s = studyDao.findById(study.getId());
+				studyService.changeUserMember(s, userBla, false);
+			} catch (ForbiddenException e) {
+				Fail.fail();
 			}
 		});
 	}
 
+	/**
+	 * StudyService.changeComponentPosition(): change the position of a
+	 * component within the study (hint: the first position is 1 and not 0)
+	 */
 	@Test
 	public void checkChangeComponentPosition() {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -227,7 +299,7 @@ public class StudyServiceTest {
 		int lastPostion = study.getComponentPosition(study.getLastComponent());
 		checkChangeToPosition(lastPostion, lastPostion, study.getId());
 
-		// NumberFormatException
+		// NumberFormatException if the position isn't a number
 		try {
 			studyService.changeComponentPosition("bla", study,
 					study.getFirstComponent());
@@ -237,7 +309,7 @@ public class StudyServiceTest {
 					MessagesStrings.COULDNT_CHANGE_POSITION_OF_COMPONENT);
 		}
 
-		// IndexOutOfBoundsException
+		// IndexOutOfBoundsException if the position isn't within the study
 		jpaApi.withTransaction(() -> {
 			Study s = studyDao.findById(study.getId());
 			try {
@@ -251,6 +323,60 @@ public class StudyServiceTest {
 		});
 	}
 
+	private void checkChangeToPosition(int fromPosition, int toPosition,
+			long studyId) {
+		jpaApi.withTransaction(() -> {
+			Study s = studyDao.findById(studyId);
+			Component c = s.getComponent(fromPosition);
+			try {
+				studyService.changeComponentPosition("" + toPosition, s, c);
+			} catch (BadRequestException e) {
+				Fail.fail();
+			}
+			assertThat(s.getComponent(toPosition)).isEqualTo(c);
+		});
+	}
+
+	/**
+	 * StudyService.bindToStudyWithoutDirName(): Update properties of study with
+	 * properties of updatedStudy (excluding study's dir name). Doesn't persist.
+	 */
+	@Test
+	public void checkBindToStudyWithoutDirName() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+		StudyProperties updatedProps = new StudyProperties();
+		updatedProps.setDescription("Changed description");
+		updatedProps.setComments("Changed comments");
+		updatedProps.setJsonData("{}");
+		updatedProps.setTitle("Changed Title");
+		updatedProps.setUuid("changed uuid");
+		long studyId = study.getId();
+
+		studyService.bindToStudyWithoutDirName(study, updatedProps);
+
+		// Check changed properties of the study
+		assertThat(study.getTitle()).isEqualTo(updatedProps.getTitle());
+		assertThat(study.getDescription())
+				.isEqualTo(updatedProps.getDescription());
+		assertThat(study.getComments()).isEqualTo(updatedProps.getComments());
+		assertThat(study.getJsonData()).isEqualTo(updatedProps.getJsonData());
+
+		// Check the unchanged properties
+		assertThat(study.getComponentList().size()).isEqualTo(7);
+		assertThat(study.getComponent(1).getTitle())
+				.isEqualTo("Show JSON input ");
+		assertThat(study.getLastComponent().getTitle())
+				.isEqualTo("Quit button");
+		assertThat(study.getId()).isEqualTo(studyId);
+		assertThat(study.getUserList()).contains(testHelper.getAdmin());
+		assertThat(study.getUuid())
+				.isEqualTo("5c85bd82-0258-45c6-934a-97ecc1ad6617");
+	}
+
+	/**
+	 * StudyService.renameStudyAssetsDir()
+	 */
 	@Test
 	public void checkRenameStudyAssetsDir() {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
@@ -274,18 +400,46 @@ public class StudyServiceTest {
 		});
 	}
 
-	private void checkChangeToPosition(int fromPosition, int toPosition,
-			long studyId) {
+	/**
+	 * StudyService.remove()
+	 */
+	@Test
+	public void checkRemove() {
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
 		jpaApi.withTransaction(() -> {
-			Study s = studyDao.findById(studyId);
-			Component c = s.getComponent(fromPosition);
 			try {
-				studyService.changeComponentPosition("" + toPosition, s, c);
-			} catch (BadRequestException e) {
-				Fail.fail();
+				Study s = studyDao.findById(study.getId());
+				studyService.removeStudyInclAssets(s);
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
 			}
-			assertThat(s.getComponent(toPosition)).isEqualTo(c);
 		});
+
+		// Check everything was removed
+		jpaApi.withTransaction(() -> {
+			// Check that the study is removed from the database
+			Study s = studyDao.findById(study.getId());
+			assertThat(s).isNull();
+
+			// Check that all components are gone
+			study.getComponentList().forEach(
+					c -> assertThat(componentDao.findById(c.getId())).isNull());
+
+			// Check all batches are gone
+			study.getBatchList().forEach(
+					b -> assertThat(batchDao.findById(b.getId())).isNull());
+
+			// This study is removed from all its member users
+			study.getUserList()
+					.forEach(u -> assertThat(
+							userDao.findByEmail(u.getEmail()).hasStudy(s))
+									.isFalse());
+		});
+
+		// Check study assets are removed
+		assertThat(ioUtils.checkStudyAssetsDirExists(study.getDirName()))
+				.isFalse();
 	}
 
 }

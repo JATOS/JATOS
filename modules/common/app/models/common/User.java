@@ -146,6 +146,10 @@ public class User {
 	public void removeStudy(Study study) {
 		this.studyList.remove(study);
 	}
+	
+	public boolean hasStudy(Study study) {
+		return this.studyList.contains(study);
+	}
 
 	public void setWorker(JatosWorker worker) {
 		this.worker = worker;
