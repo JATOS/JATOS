@@ -24,7 +24,7 @@ import services.gui.UserService;
 @Singleton
 public class Authentication extends Controller {
 
-	private static final ALogger LOGGER = Logger.of(Workers.class);
+	private static final ALogger LOGGER = Logger.of(Authentication.class);
 
 	public static final String SESSION_USER_EMAIL = "userEmail";
 	public static final String LOGGED_IN_USER = "loggedInUser";
