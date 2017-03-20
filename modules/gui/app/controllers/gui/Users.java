@@ -139,7 +139,7 @@ public class Users extends Controller {
 	}
 
 	/**
-	 * Handles post request of user create form. Only users with Role ADMIN are
+	 * Handles POST request of user create form. Only users with Role ADMIN are
 	 * allowed to create new users.
 	 */
 	@Transactional
@@ -188,7 +188,7 @@ public class Users extends Controller {
 		// Update user in database: so far it's only the user's name
 		String name = form.get().getName();
 		userService.updateName(loggedInUser, name);
-		return redirect(controllers.gui.routes.Users.profile(email));
+		return ok();
 	}
 
 	/**
@@ -215,7 +215,7 @@ public class Users extends Controller {
 						changePasswordModel);
 		if (!errorList.isEmpty()) {
 			errorList.forEach(form::reject);
-			return badRequest(form.errorsAsJson());
+			return forbidden(form.errorsAsJson());
 		}
 
 		// Change password
