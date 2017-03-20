@@ -401,7 +401,7 @@ public class UserServiceTest {
 
 		// Create a study where the user is member
 		Study study = testHelper.createAndPersistExampleStudy(injector,
-				userBla);
+				userBla.getEmail());
 
 		// Remove user
 		jpaApi.withTransaction(() -> {
