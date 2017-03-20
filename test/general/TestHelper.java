@@ -121,14 +121,13 @@ public class TestHelper {
 	}
 
 	public Study createAndPersistExampleStudyForAdmin(Injector injector) {
-		User admin = jpaApi.withTransaction(() -> {
-			return userDao.findByEmail(UserService.ADMIN_EMAIL);
-		});
-		return createAndPersistExampleStudy(injector, admin);
+		return createAndPersistExampleStudy(injector, UserService.ADMIN_EMAIL);
 	}
 
-	public Study createAndPersistExampleStudy(Injector injector, User user) {
+	public Study createAndPersistExampleStudy(Injector injector,
+			String userEmail) {
 		return jpaApi.withTransaction(() -> {
+			User user = userDao.findByEmail(userEmail);
 			try {
 				Study exampleStudy = importExampleStudy(injector);
 				studyService.createAndPersistStudy(user, exampleStudy);
