@@ -350,6 +350,7 @@ public class UserAccessIntegrationTest {
 		User someUser = testHelper.createAndPersistUser("bla@bla.com", "Bla",
 				"bla");
 		checkThatCallIsForbidden(call, Helpers.DELETE, someUser);
+		testHelper.removeUser("bla@bla.com");
 	}
 
 	private StudyResult createTwoComponentResults(Study study) {
@@ -440,6 +441,7 @@ public class UserAccessIntegrationTest {
 		Call call = controllers.gui.routes.Users.profile(someUser.getEmail());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.GET);
 		checkThatCallLeadsToRedirect(call, Helpers.GET);
+		testHelper.removeUser("bla@bla.com");
 	}
 
 	@Test
@@ -456,6 +458,7 @@ public class UserAccessIntegrationTest {
 				.submitEditedProfile(someUser.getEmail());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.POST);
 		checkThatCallLeadsToRedirect(call, Helpers.POST);
+		testHelper.removeUser("bla@bla.com");
 	}
 
 	@Test
@@ -466,6 +469,7 @@ public class UserAccessIntegrationTest {
 				.submitChangedPassword(someUser.getEmail());
 		checkDeniedAccessAndRedirectToLogin(call, Helpers.POST);
 		checkThatCallLeadsToRedirect(call, Helpers.POST);
+		testHelper.removeUser("bla@bla.com");
 	}
 
 	@Test

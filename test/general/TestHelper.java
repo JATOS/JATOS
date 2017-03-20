@@ -23,7 +23,9 @@ import com.google.inject.Injector;
 
 import daos.common.StudyDao;
 import daos.common.UserDao;
+import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
+import exceptions.gui.NotFoundException;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
@@ -108,13 +110,28 @@ public class TestHelper {
 		});
 	}
 
-	public Study createAndPersistExampleStudyForAdmin(Injector injector) {
-		return jpaApi.withTransaction(() -> {
-			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			Study exampleStudy;
+	public void removeUser(String userEmail) {
+		jpaApi.withTransaction(() -> {
 			try {
-				exampleStudy = importExampleStudy(injector);
-				studyService.createAndPersistStudy(admin, exampleStudy);
+				userService.removeUser(userEmail);
+			} catch (NotFoundException | ForbiddenException | IOException e) {
+				throw new RuntimeException(e);
+			}
+		});
+	}
+
+	public Study createAndPersistExampleStudyForAdmin(Injector injector) {
+		User admin = jpaApi.withTransaction(() -> {
+			return userDao.findByEmail(UserService.ADMIN_EMAIL);
+		});
+		return createAndPersistExampleStudy(injector, admin);
+	}
+
+	public Study createAndPersistExampleStudy(Injector injector, User user) {
+		return jpaApi.withTransaction(() -> {
+			try {
+				Study exampleStudy = importExampleStudy(injector);
+				studyService.createAndPersistStudy(user, exampleStudy);
 				return exampleStudy;
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);

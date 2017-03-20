@@ -182,6 +182,9 @@ public class StudyServiceTest {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			assertThat(s.getUserList()).containsOnly(admin);
 		});
+
+		testHelper.removeUser(userBla.getEmail());
+		testHelper.removeUser("blu@blu.com");
 	}
 
 	/**
@@ -242,6 +245,8 @@ public class StudyServiceTest {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			assertThat(s.getUserList()).containsOnly(admin);
 		});
+
+		testHelper.removeUser(userBla.getEmail());
 	}
 
 	/**
@@ -276,6 +281,8 @@ public class StudyServiceTest {
 				Fail.fail();
 			}
 		});
+
+		testHelper.removeUser(userBla.getEmail());
 	}
 
 	/**

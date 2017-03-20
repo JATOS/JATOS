@@ -173,6 +173,8 @@ public class ResultServiceTest {
 				throw new RuntimeException(e);
 			}
 		});
+
+		testHelper.removeUser("bla@bla.com");
 	}
 
 	@Test
@@ -446,6 +448,8 @@ public class ResultServiceTest {
 					.getAllowedStudyResultList(admin, testUser.getWorker());
 			assertThat(studyResultList).isEmpty();
 		});
+
+		testHelper.removeUser("bla@bla.com");
 	}
 
 }

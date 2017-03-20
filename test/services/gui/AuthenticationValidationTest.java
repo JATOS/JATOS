@@ -163,6 +163,9 @@ public class AuthenticationValidationTest {
 					.validateChangePassword("tester.test@test.com", model);
 			assertThat(errorList).isEmpty();
 		});
+
+		// Clean-up
+		testHelper.removeUser("tester.test@test.com");
 	}
 
 	/**
@@ -189,6 +192,9 @@ public class AuthenticationValidationTest {
 			assertThat(errorList.get(0).message())
 					.isEqualTo(MessagesStrings.PASSWORDS_DONT_MATCH);
 		});
+
+		// Clean-up
+		testHelper.removeUser("tester.test@test.com");
 	}
 
 	/**
@@ -212,6 +218,9 @@ public class AuthenticationValidationTest {
 					.validateChangePassword("tester.test@test.com", model);
 			assertThat(errorList).isEmpty();
 		});
+
+		// Clean-up
+		testHelper.removeUser("tester.test@test.com");
 	}
 
 	private NewUserModel createDummyNewUserModel() {

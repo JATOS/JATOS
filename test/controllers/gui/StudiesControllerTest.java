@@ -370,6 +370,9 @@ public class StudiesControllerTest {
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(contentAsString(result)).isEqualTo("false");
+		
+		// Clean-up
+		testHelper.removeUser("bla@bla.com");
 	}
 
 	/**

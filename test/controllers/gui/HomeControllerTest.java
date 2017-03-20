@@ -91,11 +91,14 @@ public class HomeControllerTest {
 	public void callLogNotAsAdmin() throws Exception {
 		User notAdminUser = testHelper.createAndPersistUser("bla@bla.com",
 				"Bla", "bla");
+		
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.session(Authentication.SESSION_USER_EMAIL,
 						notAdminUser.getEmail())
 				.uri(controllers.gui.routes.Home.log(1000).url());
 		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN);
+		
+		testHelper.removeUser("bla@bla.com");
 	}
 
 }
