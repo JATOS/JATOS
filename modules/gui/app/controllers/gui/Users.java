@@ -164,7 +164,7 @@ public class Users extends Controller {
 			return badRequest(form.errorsAsJson());
 		}
 
-		userService.createAndPersistNewUser(newUser);
+		userService.bindToUserAndPersist(newUser);
 		return ok();
 	}
 
@@ -221,7 +221,7 @@ public class Users extends Controller {
 		// Change password
 		try {
 			String newPassword = changePasswordModel.getNewPassword();
-			userService.updatePasswordHash(emailOfUserToChange, newPassword);
+			userService.updatePassword(emailOfUserToChange, newPassword);
 		} catch (NotFoundException e) {
 			return badRequest(e.getMessage());
 		}
