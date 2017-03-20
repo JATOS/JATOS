@@ -92,7 +92,7 @@ public class UserService {
 	 * Creates a user, sets password hash and persists him. Creates and persists
 	 * an JatosWorker for the user.
 	 */
-	public void createAndPersistNewUser(NewUserModel newUserModel) {
+	public void bindToUserAndPersist(NewUserModel newUserModel) {
 		User user = new User(newUserModel.getEmail(), newUserModel.getName());
 		String password = newUserModel.getPassword();
 		boolean adminRole = newUserModel.getAdminRole();
@@ -121,7 +121,7 @@ public class UserService {
 	/**
 	 * Change password and persist user.
 	 */
-	public void updatePasswordHash(String emailOfUserToChange,
+	public void updatePassword(String emailOfUserToChange,
 			String newPassword) throws NotFoundException {
 		User user = retrieveUser(emailOfUserToChange);
 		String newPasswordHash = HashUtils.getHashMDFive(newPassword);
