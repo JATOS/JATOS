@@ -63,10 +63,6 @@ public class BatchesUserAccessTest {
 		testHelper.removeStudyAssetsRootDir();
 	}
 
-	// *****************************************************
-	// Testing authentication of Batches controller actions
-	// *****************************************************
-
 	@Test
 	public void callBatchesRunManager() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
