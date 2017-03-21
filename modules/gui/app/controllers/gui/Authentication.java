@@ -3,6 +3,7 @@ package controllers.gui;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import general.common.MessagesStrings;
 import general.gui.FlashScopeMessaging;
@@ -68,6 +69,8 @@ public class Authentication extends Controller {
 	/**
 	 * Removes user from session and shows login view with an logout message.
 	 */
+	@Transactional
+	@Authenticated
 	public Result logout() {
 		LOGGER.info(".logout: " + session(SESSION_USER_EMAIL));
 		session().remove(SESSION_USER_EMAIL);
