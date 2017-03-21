@@ -99,7 +99,7 @@ public class Workers extends Controller {
 	}
 
 	/**
-	 * Ajax request
+	 * Ajax GET request
 	 * 
 	 * Returns a list of workers (as JSON) that did the specified study.
 	 */

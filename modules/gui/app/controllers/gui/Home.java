@@ -62,7 +62,6 @@ public class Home extends Controller {
 	@Authenticated
 	public CompletionStage<Result> ldap() {
 		try {
-
 			CompletableFuture<Boolean> future = ActiveDirectoryService
 					.authenticate("riemann", "password");
 			return future.thenApply((e) -> ok("access granted"));
