@@ -4,4 +4,4 @@ Add lastSeenDate for heart beat in v2.2.5
 ALTER TABLE `StudyResult` ADD `lastSeenDate` datetime DEFAULT NULL;
 
 # --- !Downs
-# Not supported
+ALTER TABLE `StudyResult` DROP `lastSeenDate`;
