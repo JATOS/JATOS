@@ -164,17 +164,7 @@ ALTER TABLE `Worker` ADD CONSTRAINT `FK_rvmm2rl58o8ui2tsq774o8rij` FOREIGN KEY (
 
 
 # --- !Downs
- 
-DROP TABLE IF EXISTS `Component`;
-DROP TABLE IF EXISTS `ComponentResult`;
-DROP TABLE IF EXISTS `Batch`;
-DROP TABLE IF EXISTS `GroupResult`;
-DROP TABLE IF EXISTS `Study`;
-DROP TABLE IF EXISTS `StudyResult`;
-DROP TABLE IF EXISTS `StudyUserMap`;
-DROP TABLE IF EXISTS `Batch_allowedWorkerTypes`;
-DROP TABLE IF EXISTS `User`;
-DROP TABLE IF EXISTS `Worker`;
+# Not supported
 
 
 

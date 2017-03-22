@@ -13,5 +13,4 @@ ALTER TABLE `User_roleList` ADD CONSTRAINT `FK9q91gwu0njssl15fn116efivn` FOREIGN
 INSERT INTO User_roleList (User_email, roleList) SELECT email, 'USER' FROM User;
 
 # --- !Downs
-
-DROP TABLE IF EXISTS `User_roleList`;
+# Not supported
