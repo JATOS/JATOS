@@ -13,22 +13,25 @@ import models.common.User.Role;
 import models.gui.ChangePasswordModel;
 import models.gui.NewUserModel;
 import play.data.validation.ValidationError;
-import utils.common.HashUtils;
 
 /**
  * Service class that validates models that create, change or delete users.
+ * Usually this validation is part of the model class, but since this is
+ * concerns authentication and it used other service and DAO classes I put it in
+ * an extra class.
  * 
  * @author Kristian Lange (2017)
  */
 @Singleton
 public class AuthenticationValidation {
 
-	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final UserDao userDao;
 
 	@Inject
-	AuthenticationValidation(UserService userService, UserDao userDao) {
-		this.userService = userService;
+	AuthenticationValidation(AuthenticationService authenticationService,
+			UserDao userDao) {
+		this.authenticationService = authenticationService;
 		this.userDao = userDao;
 	}
 
@@ -52,17 +55,15 @@ public class AuthenticationValidation {
 		// Check both passwords equal
 		String password = newUserModel.getPassword();
 		String passwordRepeat = newUserModel.getPasswordRepeat();
-		String passwordHash = HashUtils.getHashMDFive(password);
-		String passwordHashRepeat = HashUtils.getHashMDFive(passwordRepeat);
-		if (!passwordHash.equals(passwordHashRepeat)) {
+		if (!password.equals(passwordRepeat)) {
 			errorList.add(new ValidationError(NewUserModel.PASSWORD,
 					MessagesStrings.PASSWORDS_DONT_MATCH));
 		}
 
 		// Authenticate: check admin password
 		String adminPassword = newUserModel.getAdminPassword();
-		String adminPasswordHash = HashUtils.getHashMDFive(adminPassword);
-		if (!userDao.authenticate(loggedInAdminEmail, adminPasswordHash)) {
+		if (!authenticationService.authenticate(loggedInAdminEmail,
+				adminPassword)) {
 			errorList.add(new ValidationError(NewUserModel.ADMIN_PASSWORD,
 					MessagesStrings.WRONG_PASSWORD));
 		}
@@ -81,7 +82,7 @@ public class AuthenticationValidation {
 			String emailOfUserToChange,
 			ChangePasswordModel changePasswordModel) {
 
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 
 		// All form related errors go into errorList
 		List<ValidationError> errorList = new ArrayList<>();
@@ -97,10 +98,7 @@ public class AuthenticationValidation {
 		// Check both passwords equal
 		String newPassword = changePasswordModel.getNewPassword();
 		String newPasswordRepeat = changePasswordModel.getNewPasswordRepeat();
-		String newPasswordHash = HashUtils.getHashMDFive(newPassword);
-		String newPasswordHashRepeat = HashUtils
-				.getHashMDFive(newPasswordRepeat);
-		if (!newPasswordHash.equals(newPasswordHashRepeat)) {
+		if (!newPassword.equals(newPasswordRepeat)) {
 			errorList.add(new ValidationError(ChangePasswordModel.NEW_PASSWORD,
 					MessagesStrings.PASSWORDS_DONT_MATCH));
 		}
@@ -111,8 +109,8 @@ public class AuthenticationValidation {
 				&& changePasswordModel.getAdminPassword() != null) {
 			String adminEmail = loggedInUser.getEmail();
 			String adminPassword = changePasswordModel.getAdminPassword();
-			String passwordHash = HashUtils.getHashMDFive(adminPassword);
-			if (!userDao.authenticate(adminEmail, passwordHash)) {
+			if (!authenticationService.authenticate(adminEmail,
+					adminPassword)) {
 				errorList.add(
 						new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
 								MessagesStrings.WRONG_PASSWORD));
@@ -121,8 +119,8 @@ public class AuthenticationValidation {
 		} else if (loggedInUser.getEmail().equals(emailOfUserToChange)
 				&& changePasswordModel.getOldPassword() != null) {
 			String oldPassword = changePasswordModel.getOldPassword();
-			String oldPasswordHash = HashUtils.getHashMDFive(oldPassword);
-			if (!userDao.authenticate(emailOfUserToChange, oldPasswordHash)) {
+			if (!authenticationService.authenticate(emailOfUserToChange,
+					oldPassword)) {
 				errorList.add(
 						new ValidationError(ChangePasswordModel.OLD_PASSWORD,
 								MessagesStrings.WRONG_OLD_PASSWORD));

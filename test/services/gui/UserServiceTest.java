@@ -14,7 +14,6 @@ import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import controllers.gui.Authentication;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.ForbiddenException;
@@ -49,6 +48,9 @@ public class UserServiceTest {
 
 	@Inject
 	private UserService userService;
+
+	@Inject
+	private AuthenticationService authenticationService;
 
 	@Inject
 	private UserDao userDao;
@@ -86,10 +88,12 @@ public class UserServiceTest {
 	@Test
 	public void checkAuthenticate() {
 		jpaApi.withTransaction(() -> {
-			assertThat(userService.authenticate(UserService.ADMIN_EMAIL,
-					UserService.ADMIN_PASSWORD)).isTrue();
-			assertThat(userService.authenticate(UserService.ADMIN_EMAIL,
-					"wrongPassword")).isFalse();
+			assertThat(authenticationService.authenticate(
+					UserService.ADMIN_EMAIL, UserService.ADMIN_PASSWORD))
+							.isTrue();
+			assertThat(authenticationService
+					.authenticate(UserService.ADMIN_EMAIL, "wrongPassword"))
+							.isFalse();
 		});
 	}
 
@@ -102,9 +106,10 @@ public class UserServiceTest {
 		testHelper.createAndPersistUser("bla@bla.org", "Bla Bla", "bla");
 
 		jpaApi.withTransaction(() -> {
-			assertThat(userService.authenticate("bla@bla.org", "bla")).isTrue();
-			assertThat(userService.authenticate("bla@bla.org", "wrongPassword"))
-					.isFalse();
+			assertThat(authenticationService.authenticate("bla@bla.org", "bla"))
+					.isTrue();
+			assertThat(authenticationService.authenticate("bla@bla.org",
+					"wrongPassword")).isFalse();
 		});
 
 		testHelper.removeUser("bla@bla.org");
@@ -248,7 +253,8 @@ public class UserServiceTest {
 		});
 
 		jpaApi.withTransaction(() -> {
-			userService.authenticate(UserService.ADMIN_EMAIL, "newPassword");
+			authenticationService.authenticate(UserService.ADMIN_EMAIL,
+					"newPassword");
 		});
 	}
 
@@ -445,7 +451,7 @@ public class UserServiceTest {
 
 	private void defineLoggedInUser(User user) {
 		testHelper.mockContext();
-		RequestScope.put(Authentication.LOGGED_IN_USER, user);
+		RequestScope.put(AuthenticationService.LOGGED_IN_USER, user);
 	}
 
 }

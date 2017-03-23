@@ -1,13 +1,13 @@
 package controllers.gui.useraccess;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.*;
+import static play.mvc.Http.Status.FORBIDDEN;
+import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.route;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import controllers.gui.Authentication;
 import daos.common.StudyDao;
 import general.TestHelper;
 import models.common.Study;
@@ -17,6 +17,7 @@ import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 
 /**
  * Helper methods for testing user access to controller actions
@@ -51,12 +52,12 @@ public class UserAccessTestHelpers {
 	 * an User that does not have the ADMIN role. This must lead to an HTTP
 	 * FORBIDDEN.
 	 */
-	public void checkDeniedAccessDueToAuthorization(Call call,
-			String method) {
+	public void checkDeniedAccessDueToAuthorization(Call call, String method) {
 		// Persist User without ADMIN role
 		testHelper.createAndPersistUser("bla@bla.org", "Bla Bla", "bla");
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(Authentication.SESSION_USER_EMAIL, "bla@bla.org")
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						"bla@bla.org")
 				.uri(call.url());
 		Result result = route(request);
 
@@ -87,7 +88,8 @@ public class UserAccessTestHelpers {
 	public void checkThatCallLeadsToRedirect(Call call, String method) {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(call.url());
 
 		testHelper.assertJatosGuiException(request, Http.Status.SEE_OTHER);
@@ -100,7 +102,8 @@ public class UserAccessTestHelpers {
 	 */
 	public void checkThatCallIsForbidden(Call call, String method, User user) {
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(Authentication.SESSION_USER_EMAIL, user.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						user.getEmail())
 				.uri(call.url());
 		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN);
 	}

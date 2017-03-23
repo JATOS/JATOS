@@ -36,6 +36,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
@@ -61,6 +62,7 @@ public class Studies extends Controller {
 	private final Checker checker;
 	private final StudyService studyService;
 	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final WorkerService workerService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final UserDao userDao;
@@ -75,6 +77,7 @@ public class Studies extends Controller {
 	@Inject
 	Studies(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
 			StudyService studyService, UserService userService,
+			AuthenticationService authenticationService,
 			WorkerService workerService, BreadcrumbsService breadcrumbsService,
 			StudyDao studyDao, ComponentDao componentDao,
 			StudyResultDao studyResultDao, UserDao userDao,
@@ -84,6 +87,7 @@ public class Studies extends Controller {
 		this.checker = checker;
 		this.studyService = studyService;
 		this.userService = userService;
+		this.authenticationService = authenticationService;
 		this.workerService = workerService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
@@ -104,7 +108,7 @@ public class Studies extends Controller {
 	public Result study(Long studyId, int httpStatus) throws JatosGuiException {
 		LOGGER.info(".study: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		Set<Worker> workerSet = workerService.retrieveWorkers(study);
@@ -129,7 +133,7 @@ public class Studies extends Controller {
 	@Authenticated
 	public Result submitCreated() {
 		LOGGER.info(".submitCreated");
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 
 		Form<StudyProperties> form = formFactory.form(StudyProperties.class)
 				.bindFromRequest();
@@ -159,7 +163,7 @@ public class Studies extends Controller {
 	public Result properties(Long studyId) throws JatosGuiException {
 		LOGGER.info(".properties: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		StudyProperties studyProperties = studyService.bindToProperties(study);
@@ -174,7 +178,7 @@ public class Studies extends Controller {
 	public Result submitEdited(Long studyId) throws JatosGuiException {
 		LOGGER.info(".submitEdited: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStudyLocked(study);
@@ -211,7 +215,7 @@ public class Studies extends Controller {
 	public Result toggleLock(Long studyId) throws JatosGuiException {
 		LOGGER.info(".toggleLock: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		study.setLocked(!study.isLocked());
@@ -229,7 +233,7 @@ public class Studies extends Controller {
 	public Result remove(Long studyId) throws JatosGuiException {
 		LOGGER.info(".remove: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStudyLocked(study);
@@ -256,7 +260,7 @@ public class Studies extends Controller {
 	public Result cloneStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".cloneStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -282,7 +286,7 @@ public class Studies extends Controller {
 	public Result memberUsers(Long studyId) throws JatosGuiException {
 		LOGGER.info(".memberUsers: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -302,7 +306,7 @@ public class Studies extends Controller {
 		LOGGER.info(".toggleMemberUser: studyId " + studyId + ", email " + email
 				+ ", isMember " + isMember);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			User userToChange = userService.retrieveUser(email);
@@ -329,7 +333,7 @@ public class Studies extends Controller {
 			String newPosition) throws JatosGuiException {
 		LOGGER.info(".changeComponentOrder: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -354,7 +358,7 @@ public class Studies extends Controller {
 		LOGGER.info(
 				".runStudy: studyId " + studyId + ", " + "batch " + batchId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		session("jatos_run", "RUN_STUDY");
@@ -374,7 +378,7 @@ public class Studies extends Controller {
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".tableDataByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		List<Component> componentList = study.getComponentList();
@@ -395,7 +399,7 @@ public class Studies extends Controller {
 			throws JatosGuiException {
 		LOGGER.info(".workers: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		RequestScopeMessaging.error(errorMsg);

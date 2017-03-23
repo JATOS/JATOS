@@ -27,6 +27,7 @@ import play.libs.Json;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 
 /**
  * Testing actions of controller.Batches.
@@ -72,7 +73,8 @@ public class BatchesControllerTest {
 		JsonNode jsonNode = Json.mapper()
 				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyJson(jsonNode).session(Authentication.SESSION_USER_EMAIL,
+				.bodyJson(jsonNode)
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						admin.getEmail())
 				.uri(controllers.gui.routes.Batches.createPersonalSingleRun(
 						study.getId(), study.getDefaultBatch().getId()).url());
@@ -94,7 +96,8 @@ public class BatchesControllerTest {
 				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyJson(jsonNode)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Batches.createPersonalMultipleRun(
 						study.getId(), study.getDefaultBatch().getId()).url());
 		Result result = route(request);

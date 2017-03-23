@@ -10,6 +10,11 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.api.Application;
 
+/**
+ * This class provides configuration that is common to all modules of JATOS.
+ * 
+ * @author Kristian Lange
+ */
 @Singleton
 public class Common {
 

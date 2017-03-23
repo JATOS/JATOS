@@ -24,6 +24,7 @@ import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 
 /**
@@ -63,7 +64,8 @@ public class HomeControllerTest {
 	public void callHome() throws Exception {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Home.home().url());
 		Result result = route(request);
 
@@ -77,7 +79,8 @@ public class HomeControllerTest {
 	public void callLog() throws Exception {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Home.log(1000).url());
 		Result result = route(request);
 
@@ -91,13 +94,13 @@ public class HomeControllerTest {
 	public void callLogNotAsAdmin() throws Exception {
 		User notAdminUser = testHelper.createAndPersistUser("bla@bla.com",
 				"Bla", "bla");
-		
+
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL,
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						notAdminUser.getEmail())
 				.uri(controllers.gui.routes.Home.log(1000).url());
 		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN);
-		
+
 		testHelper.removeUser("bla@bla.com");
 	}
 

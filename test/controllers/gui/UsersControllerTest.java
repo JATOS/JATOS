@@ -1,7 +1,8 @@
 package controllers.gui;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static play.mvc.Http.Status.*;
+import static play.mvc.Http.Status.FORBIDDEN;
+import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
@@ -30,6 +31,7 @@ import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.UserService;
 
@@ -78,7 +80,7 @@ public class UsersControllerTest {
 	@Test
 	public void callUserManager() throws Exception {
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL,
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						UserService.ADMIN_EMAIL)
 				.uri(controllers.gui.routes.Users.userManager().url());
 		Result result = route(request);
@@ -96,7 +98,7 @@ public class UsersControllerTest {
 	@Test
 	public void callAllUserData() throws Exception {
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL,
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						UserService.ADMIN_EMAIL)
 				.uri(controllers.gui.routes.Users.allUserData().url());
 		Result result = route(request);
@@ -113,7 +115,7 @@ public class UsersControllerTest {
 	public void callToggleAdmin() throws Exception {
 		testHelper.createAndPersistUser("bla@bla.org", "Bla Bla", "bla");
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(Authentication.SESSION_USER_EMAIL,
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						UserService.ADMIN_EMAIL)
 				.uri(controllers.gui.routes.Users
 						.toggleAdmin("bla@bla.org", true).url());
@@ -133,7 +135,7 @@ public class UsersControllerTest {
 	@Test
 	public void callProfile() throws Exception {
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL,
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						UserService.ADMIN_EMAIL)
 				.uri(controllers.gui.routes.Users
 						.profile(UserService.ADMIN_EMAIL).url());
@@ -151,7 +153,7 @@ public class UsersControllerTest {
 	@Test
 	public void callSingleUserData() throws Exception {
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL,
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						UserService.ADMIN_EMAIL)
 				.uri(controllers.gui.routes.Users
 						.singleUserData(UserService.ADMIN_EMAIL).url());
@@ -177,7 +179,7 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL,
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						UserService.ADMIN_EMAIL)
 				.uri(controllers.gui.routes.Users.submitCreated().url());
 		Result result = route(request);
@@ -197,7 +199,8 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, "bla@bla.org")
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						"bla@bla.org")
 				.uri(controllers.gui.routes.Users
 						.submitEditedProfile("bla@bla.org").url());
 		Result result = route(request);
@@ -227,7 +230,8 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, "bla@bla.org")
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						"bla@bla.org")
 				.uri(controllers.gui.routes.Users
 						.submitChangedPassword("bla@bla.org").url());
 		Result result = route(request);
@@ -258,7 +262,7 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL,
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						UserService.ADMIN_EMAIL)
 				.uri(controllers.gui.routes.Users
 						.submitChangedPassword("bla@bla.org").url());
@@ -278,7 +282,8 @@ public class UsersControllerTest {
 	 * If the wrong admin password is given an 403 is returned.
 	 */
 	@Test
-	public void callSubmitChangedPasswordByAdminWrongPassword() throws Exception {
+	public void callSubmitChangedPasswordByAdminWrongPassword()
+			throws Exception {
 		testHelper.createAndPersistUser("bla@bla.org", "Bla Bla", "bla");
 
 		Map<String, String> formMap = new HashMap<String, String>();
@@ -290,7 +295,8 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, "bla@bla.org")
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						"bla@bla.org")
 				.uri(controllers.gui.routes.Users
 						.submitChangedPassword("bla@bla.org").url());
 		Result result = route(request);
@@ -300,7 +306,7 @@ public class UsersControllerTest {
 		// Clean-up
 		testHelper.removeUser("bla@bla.org");
 	}
-	
+
 	/**
 	 * Action Users.submitChangedPassword(): there are two uses: 1) user changes
 	 * his own password, 2) an admin changes the password of another user. This
@@ -309,7 +315,8 @@ public class UsersControllerTest {
 	 * If the wrong user password is given an 403 is returned.
 	 */
 	@Test
-	public void callSubmitChangedPasswordByUserSelfWrongPassword() throws Exception {
+	public void callSubmitChangedPasswordByUserSelfWrongPassword()
+			throws Exception {
 		testHelper.createAndPersistUser("bla@bla.org", "Bla Bla", "bla");
 
 		Map<String, String> formMap = new HashMap<String, String>();
@@ -321,7 +328,8 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, "bla@bla.org")
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						"bla@bla.org")
 				.uri(controllers.gui.routes.Users
 						.submitChangedPassword("bla@bla.org").url());
 		Result result = route(request);
@@ -347,7 +355,7 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL,
+				.session(AuthenticationService.SESSION_USER_EMAIL,
 						UserService.ADMIN_EMAIL)
 				.uri(controllers.gui.routes.Users.remove("bla@bla.org").url());
 		Result result = route(request);
@@ -374,7 +382,8 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, "bla@bla.org")
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						"bla@bla.org")
 				.uri(controllers.gui.routes.Users.remove("bla@bla.org").url());
 		Result result = route(request);
 
@@ -402,7 +411,8 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, "bla@bla.org")
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						"bla@bla.org")
 				.uri(controllers.gui.routes.Users.remove("foo@foo.org").url());
 		Result result = route(request);
 
@@ -425,7 +435,8 @@ public class UsersControllerTest {
 
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, "bla@bla.org")
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						"bla@bla.org")
 				.uri(controllers.gui.routes.Users.remove("bla@bla.org").url());
 		Result result = route(request);
 

@@ -59,7 +59,6 @@ public class MessagesStrings {
 	public static final String PASSWORDS_DONT_MATCH = "Passwords don't match";
 	public static final String PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS = "Passwords shouldn't be empty strings";
 	public static final String THIS_EMAIL_IS_ALREADY_REGISTERED = "This email address is already registered.";
-	public static final String YOUVE_BEEN_LOGGED_OUT = "You've been logged out";
 	public static final String ONLY_ADMIN_CAN_SEE_LOGS = "Only an admin can see the logs";
 	public static final String COULDNT_OPEN_LOG = "Couldn't open log file";
 	public static final String ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE = "Sorry, it's not possible to remove your own admin rights. Although you can ask another admin to remove them for you.";

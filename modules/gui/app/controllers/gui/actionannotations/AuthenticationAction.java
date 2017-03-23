@@ -9,12 +9,13 @@ import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import controllers.gui.Authentication;
 import controllers.gui.Home;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
-import daos.common.UserDao;
 import general.common.RequestScope;
+import general.gui.FlashScopeMessaging;
 import general.gui.RequestScopeMessaging;
 import models.common.User;
 import models.common.User.Role;
@@ -24,29 +25,47 @@ import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
+import services.gui.AuthenticationService;
 import utils.common.HttpUtils;
 
 /**
- * For all actions in a controller that are annotated with @Authenticated check
- * authentication. An action is authenticated if there is an email in the
- * session that correspondents to a user in the database. If successful the User
- * is stored in the RequestScope.
+ * This class defines the @Authenticated annotation used in JATOS GUI
+ * controllers. It does authenticate and authorize an logged-in user and has
+ * several layers of security:
  * 
- * It also checks whether the user is authorized to access this action. For this
- * it checks the user role (optional in the Authenticated annotation).
+ * 1) First it checks if an email is in Play's session and if this email belongs
+ * to a user in the database. If successful the User object of the logged-in
+ * user is stored in the RequestScope.
  * 
- * Important: Since this annotation accesses the database the annotated method
- * has to be within a transaction. If you use the @Transactional annotation
- * the it has to be BEFORE the @Authendicated annotation.
+ * 2) We check whether the session ID stored in Play's session is the same as
+ * stored with the User in the database. After a user logs out this session ID
+ * is deleted in the database and thus subsequent log-ins will fail.
  * 
- * @author Kristian Lange
+ * 3) Check if the session timed out. The time span is defined in the
+ * application.conf.
+ * 
+ * 4) Check if the session timed out due to inactivity of the user. With each
+ * request by the user the time of last activity gets refreshed in the session.
+ * 
+ * 5) Check if the logged-in user has the proper Role needed to access this
+ * page. This Role is an optional parameter in the @Authenticated annotation.
+ * 
+ * The @Authenticated annotation does not check the user's password. Thia is
+ * done once during login (class {@link Authentication}):
+ * 
+ * IMPORTANT: Since this annotation accesses the database the annotated method
+ * has to be within a transaction. This means the @Transactional annotation has
+ * to be BEFORE the @Authenticated annotation.
+ * 
+ * @author Kristian Lange (2015 - 2017)
  */
+@Singleton
 public class AuthenticationAction extends Action<Authenticated> {
 
 	/**
-	 * This Annotation can be used on every method where authentication or
-	 * authorization is required. If no Role is added than the default Role
-	 * 'USER' is assumed.
+	 * This @Authenticated annotation can be used on every controller action
+	 * where authentication and authorization is required. If no Role is added
+	 * than the default Role 'USER' is assumed.
 	 */
 	@With(AuthenticationAction.class)
 	@Target({ ElementType.TYPE, ElementType.METHOD })
@@ -57,57 +76,134 @@ public class AuthenticationAction extends Action<Authenticated> {
 
 	private static final ALogger LOGGER = Logger.of(AuthenticationAction.class);
 
-	private final UserDao userDao;
 	private final Provider<Home> homeProvider;
+	private final AuthenticationService authenticationService;
 
 	@Inject
-	AuthenticationAction(UserDao userDao, Provider<Home> homeProvider) {
-		this.userDao = userDao;
+	AuthenticationAction(Provider<Home> homeProvider,
+			AuthenticationService authenticationService) {
 		this.homeProvider = homeProvider;
+		this.authenticationService = authenticationService;
 	}
 
 	public CompletionStage<Result> call(Http.Context ctx) {
-		String email = ctx.session().get(Authentication.SESSION_USER_EMAIL);
-
 		// For authentication it's actually enough to check that the email is in
 		// Play's session. Play's session is safe from tempering. But we
-		// retrieve the user from the database and put it into our RequestScope.
-		// We need it later anyway and storing it in the RequestScope now
+		// retrieve the user from the database and put it into our RequestScope
+		// since we need it later anyway. Storing it in the RequestScope now
 		// saves us some database requests later.
-		User loggedInUser = null;
-		if (email != null) {
-			loggedInUser = userDao.findByEmail(email);
-		}
+		User loggedInUser = authenticationService
+				.getLoggedInUser(ctx.session());
 		if (loggedInUser == null) {
-			return callForbiddenDueToAuthentication();
+			authenticationService.logout(ctx.session());
+			return callForbiddenDueToAuthentication(ctx.request().host(),
+					ctx.request().path());
 		}
-		RequestScope.put(Authentication.LOGGED_IN_USER, loggedInUser);
+		RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
-		// We are authenticated, but are we authorized?
-		Role neededRole = configuration.value();
-		if (loggedInUser.hasRole(neededRole)) {
-			// Everything OK
-			return delegate.call(ctx);
-		} else {
+		// Check user's session ID
+		if (!authenticationService.isValidSessionId(ctx.session(),
+				loggedInUser)) {
+			authenticationService.logout(ctx.session());
+			return callForbiddenDueToInvalidSession(loggedInUser.getEmail(),
+					ctx.request().host(), ctx.request().path());
+		}
+
+		// Check session timeout
+		if (authenticationService.isSessionTimeout(ctx.session())) {
+			authenticationService.logout(ctx.session());
+			return callForbiddenDueToSessionTimeout(loggedInUser.getEmail());
+		}
+
+		// Check inactivity timeout
+		if (authenticationService.isInactivityTimeout(ctx.session())) {
+			authenticationService.logout(ctx.session());
+			return callForbiddenDueToInactivityTimeout(loggedInUser.getEmail());
+		}
+
+		authenticationService.refreshSession(ctx.session());
+
+		// Check authorization
+		if (!isAuthorized(loggedInUser)) {
 			return callForbiddenDueToAuthorization(loggedInUser.getEmail(),
 					ctx.request().path());
 		}
+
+		// Everything ok: authenticated and authorized
+		return delegate.call(ctx);
 	}
 
-	private CompletionStage<Result> callForbiddenDueToAuthentication() {
+	private boolean isAuthorized(User loggedInUser) {
+		// configuration.value() contains the Role parameter of @Authenticated
+		Role neededRole = configuration.value();
+		return loggedInUser.hasRole(neededRole);
+	}
+
+	private CompletionStage<Result> callForbiddenDueToAuthentication(
+			String requestHost, String urlPath) {
+		LOGGER.warn("Authentication failed: host " + requestHost
+				+ " tried to access page " + urlPath);
 		if (HttpUtils.isAjax()) {
 			return CompletableFuture
 					.completedFuture(forbidden("Not logged in"));
 		} else {
+			FlashScopeMessaging.error(
+					"You are not allowed to access this page. Please login.");
+			return CompletableFuture.completedFuture(
+					redirect(controllers.gui.routes.Authentication.login()));
+		}
+	}
+
+	private CompletionStage<Result> callForbiddenDueToInvalidSession(
+			String userEmail, String requestHost, String urlPath) {
+		LOGGER.warn(
+				"Invalid session: user " + userEmail + " tried to access page "
+						+ urlPath + " from host " + requestHost + ".");
+		if (HttpUtils.isAjax()) {
+			return CompletableFuture
+					.completedFuture(forbidden("Invalid session"));
+		} else {
+			FlashScopeMessaging.warning(
+					"The same user was used in a different browser. You have been logged out.");
+			return CompletableFuture.completedFuture(
+					redirect(controllers.gui.routes.Authentication.login()));
+		}
+	}
+
+	private CompletionStage<Result> callForbiddenDueToSessionTimeout(
+			String userEmail) {
+		LOGGER.info("Session of user " + userEmail
+				+ " has expired and the user has been logged out.");
+		if (HttpUtils.isAjax()) {
+			return CompletableFuture
+					.completedFuture(forbidden("Session timeout"));
+		} else {
+			FlashScopeMessaging.success(
+					"Your session has expired. You have been logged out.");
+			return CompletableFuture.completedFuture(
+					redirect(controllers.gui.routes.Authentication.login()));
+		}
+	}
+
+	private CompletionStage<Result> callForbiddenDueToInactivityTimeout(
+			String userEmail) {
+		LOGGER.info("User " + userEmail
+				+ " has been logged out due to inactivity.");
+		if (HttpUtils.isAjax()) {
+			return CompletableFuture
+					.completedFuture(forbidden("Inactivity timeout"));
+		} else {
+			FlashScopeMessaging
+					.success("You have been logged out due to inactivity.");
 			return CompletableFuture.completedFuture(
 					redirect(controllers.gui.routes.Authentication.login()));
 		}
 	}
 
 	private CompletionStage<Result> callForbiddenDueToAuthorization(
-			String userEmail, String path) {
+			String userEmail, String urlPath) {
 		String message = "User " + userEmail + " isn't allowed to access page "
-				+ path;
+				+ urlPath + ".";
 		LOGGER.warn(message);
 		if (HttpUtils.isAjax()) {
 			return CompletableFuture.completedFuture(forbidden(message));

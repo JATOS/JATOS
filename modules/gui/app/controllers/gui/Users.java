@@ -26,6 +26,7 @@ import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.AuthenticationValidation;
 import services.gui.BreadcrumbsService;
 import services.gui.JatosGuiExceptionThrower;
@@ -46,7 +47,8 @@ public class Users extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final UserService userService;
-	private final AuthenticationValidation authenticationService;
+	private final AuthenticationService authenticationService;
+	private final AuthenticationValidation authenticationValidation;
 	private final BreadcrumbsService breadcrumbsService;
 	private final FormFactory formFactory;
 	private final JsonUtils jsonUtils;
@@ -54,12 +56,14 @@ public class Users extends Controller {
 	@Inject
 	Users(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			UserService userService,
-			AuthenticationValidation authenticationService,
+			AuthenticationService authenticationService,
+			AuthenticationValidation authenticationValidation,
 			BreadcrumbsService breadcrumbsService, FormFactory formFactory,
 			JsonUtils jsonUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.userService = userService;
 		this.authenticationService = authenticationService;
+		this.authenticationValidation = authenticationValidation;
 		this.breadcrumbsService = breadcrumbsService;
 		this.formFactory = formFactory;
 		this.jsonUtils = jsonUtils;
@@ -69,7 +73,7 @@ public class Users extends Controller {
 	@Authenticated(Role.ADMIN)
 	public Result userManager() throws JatosGuiException {
 		LOGGER.info(".userManager");
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		String breadcrumbs = breadcrumbsService
 				.generateForHome(BreadcrumbsService.USER_MANAGER);
 		return ok(views.html.gui.user.userManager.render(loggedInUser,
@@ -117,7 +121,7 @@ public class Users extends Controller {
 	@Authenticated
 	public Result profile(String email) throws JatosGuiException {
 		LOGGER.info(".profile: " + "email " + email);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkEmailIsOfLoggedInUser(email, loggedInUser);
 
 		String breadcrumbs = breadcrumbsService.generateForUser(loggedInUser);
@@ -133,7 +137,7 @@ public class Users extends Controller {
 	@Authenticated
 	public Result singleUserData(String email) throws JatosGuiException {
 		LOGGER.info(".singleUserData: " + "email " + email);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkEmailIsOfLoggedInUser(email, loggedInUser);
 		return ok(jsonUtils.userData(loggedInUser));
 	}
@@ -146,7 +150,7 @@ public class Users extends Controller {
 	@Authenticated(Role.ADMIN)
 	public Result submitCreated() {
 		LOGGER.info(".submitCreated");
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 
 		// Validate via model's validate method
 		Form<NewUserModel> form = formFactory.form(NewUserModel.class)
@@ -157,7 +161,7 @@ public class Users extends Controller {
 
 		// Validate via AuthenticationService
 		NewUserModel newUser = form.get();
-		List<ValidationError> errorList = authenticationService
+		List<ValidationError> errorList = authenticationValidation
 				.validateNewUser(newUser, loggedInUser.getEmail());
 		if (!errorList.isEmpty()) {
 			errorList.forEach(form::reject);
@@ -176,7 +180,7 @@ public class Users extends Controller {
 	@Authenticated
 	public Result submitEditedProfile(String email) throws JatosGuiException {
 		LOGGER.info(".submitEditedProfile: " + "email " + email);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkEmailIsOfLoggedInUser(email, loggedInUser);
 
 		Form<ChangeUserProfileModel> form = formFactory
@@ -210,7 +214,7 @@ public class Users extends Controller {
 
 		// Validate via AuthenticationService
 		ChangePasswordModel changePasswordModel = form.get();
-		List<ValidationError> errorList = authenticationService
+		List<ValidationError> errorList = authenticationValidation
 				.validateChangePassword(emailOfUserToChange,
 						changePasswordModel);
 		if (!errorList.isEmpty()) {
@@ -240,7 +244,7 @@ public class Users extends Controller {
 	public Result remove(String emailOfUserToRemove) throws JatosGuiException {
 		LOGGER.info(".remove: " + "emailOfUserToRemove " + emailOfUserToRemove);
 
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		String loggedInUserEmail = loggedInUser.getEmail();
 		if (!loggedInUser.hasRole(Role.ADMIN)
 				&& !emailOfUserToRemove.equals(loggedInUserEmail)) {
@@ -249,7 +253,7 @@ public class Users extends Controller {
 
 		DynamicForm requestData = formFactory.form().bindFromRequest();
 		String password = requestData.get("password");
-		if (!userService.authenticate(loggedInUserEmail, password)) {
+		if (!authenticationService.authenticate(loggedInUserEmail, password)) {
 			return forbidden(MessagesStrings.WRONG_PASSWORD);
 		}
 
@@ -262,9 +266,9 @@ public class Users extends Controller {
 		} catch (IOException e) {
 			return internalServerError(e.getMessage());
 		}
-		// If the user removes himself remove him from the Play session too
+		// If the user removes himself: logout
 		if (emailOfUserToRemove.equals(loggedInUserEmail)) {
-			session().remove(Authentication.SESSION_USER_EMAIL);
+			authenticationService.logout(session());
 		}
 		return ok();
 	}

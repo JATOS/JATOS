@@ -13,7 +13,6 @@ import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import controllers.gui.Authentication;
 import general.TestHelper;
 import general.common.MessagesStrings;
 import general.common.RequestScope;
@@ -151,7 +150,7 @@ public class AuthenticationValidationTest {
 		testHelper.createAndPersistUser("tester.test@test.com", "Test Tester",
 				"password");
 		User admin = testHelper.getAdmin();
-		RequestScope.put(Authentication.LOGGED_IN_USER, admin);
+		RequestScope.put(AuthenticationService.LOGGED_IN_USER, admin);
 
 		ChangePasswordModel model = new ChangePasswordModel();
 		model.setAdminPassword(UserService.ADMIN_PASSWORD);
@@ -178,7 +177,7 @@ public class AuthenticationValidationTest {
 		testHelper.createAndPersistUser("tester.test@test.com", "Test Tester",
 				"password");
 		User admin = testHelper.getAdmin();
-		RequestScope.put(Authentication.LOGGED_IN_USER, admin);
+		RequestScope.put(AuthenticationService.LOGGED_IN_USER, admin);
 
 		ChangePasswordModel model = new ChangePasswordModel();
 		model.setAdminPassword(UserService.ADMIN_PASSWORD);
@@ -206,7 +205,7 @@ public class AuthenticationValidationTest {
 
 		User loggedInUser = testHelper.createAndPersistUser(
 				"tester.test@test.com", "Test Tester", "password");
-		RequestScope.put(Authentication.LOGGED_IN_USER, loggedInUser);
+		RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
 		ChangePasswordModel model = new ChangePasswordModel();
 		model.setOldPassword("password");

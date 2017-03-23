@@ -26,10 +26,10 @@ import play.Logger.ALogger;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
-import services.gui.UserService;
 import services.gui.WorkerService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
@@ -47,7 +47,7 @@ public class Workers extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final Checker checker;
-	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final WorkerService workerService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final JsonUtils jsonUtils;
@@ -57,12 +57,13 @@ public class Workers extends Controller {
 
 	@Inject
 	Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-			UserService userService, WorkerService workerService,
-			BreadcrumbsService breadcrumbsService, JsonUtils jsonUtils,
-			StudyDao studyDao, BatchDao batchDao, WorkerDao workerDao) {
+			AuthenticationService authenticationService,
+			WorkerService workerService, BreadcrumbsService breadcrumbsService,
+			JsonUtils jsonUtils, StudyDao studyDao, BatchDao batchDao,
+			WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
-		this.userService = userService;
+		this.authenticationService = authenticationService;
 		this.workerService = workerService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.jsonUtils = jsonUtils;
@@ -81,7 +82,7 @@ public class Workers extends Controller {
 	public Result remove(Long workerId) throws JatosGuiException {
 		LOGGER.info(".remove: workerId " + workerId);
 		Worker worker = workerDao.findById(workerId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkWorker(worker, workerId);
 		} catch (BadRequestException e) {
@@ -108,7 +109,7 @@ public class Workers extends Controller {
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".tableDataByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 
 		JsonNode dataAsJson = null;
 		try {
@@ -132,7 +133,7 @@ public class Workers extends Controller {
 		LOGGER.info(".workerSetup: studyId " + studyId + ", " + "batchId "
 				+ batchId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -164,7 +165,7 @@ public class Workers extends Controller {
 		LOGGER.info(".workersData: studyId " + studyId + ", " + "batchId "
 				+ batchId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Batch batch = batchDao.findById(batchId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);

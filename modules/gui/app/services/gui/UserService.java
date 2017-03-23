@@ -8,14 +8,12 @@ import javax.inject.Singleton;
 
 import com.google.common.collect.Lists;
 
-import controllers.gui.Authentication;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
-import general.common.RequestScope;
 import models.common.Study;
 import models.common.User;
 import models.common.User.Role;
@@ -31,27 +29,37 @@ import utils.common.HashUtils;
 @Singleton
 public class UserService {
 
+	/**
+	 * Default admin email; the admin user is created during first
+	 * initialization of JATOS; don't confuse admin user with the Role ADMIN
+	 */
 	public static final String ADMIN_EMAIL = "admin";
+	/**
+	 * Default admin password; the admin user is created during first
+	 * initialization of JATOS; don't confuse admin user with the Role ADMIN
+	 */
 	public static final String ADMIN_PASSWORD = "admin";
+	/**
+	 * Default admin name; the admin user is created during first initialization
+	 * of JATOS; don't confuse admin user with the Role ADMIN
+	 */
 	public static final String ADMIN_NAME = "Admin";
 
 	private final StudyService studyService;
+	private final AuthenticationService authenticationService;
 	private final UserDao userDao;
 	private final StudyDao studyDao;
 	private final WorkerDao workerDao;
 
 	@Inject
-	UserService(StudyService studyService, UserDao userDao, StudyDao studyDao,
-			WorkerDao workerDao) {
+	UserService(StudyService studyService,
+			AuthenticationService authenticationService, UserDao userDao,
+			StudyDao studyDao, WorkerDao workerDao) {
 		this.studyService = studyService;
+		this.authenticationService = authenticationService;
 		this.userDao = userDao;
 		this.studyDao = studyDao;
 		this.workerDao = workerDao;
-	}
-
-	public boolean authenticate(String email, String password) {
-		String passwordHash = HashUtils.getHashMDFive(password);
-		return userDao.authenticate(email, passwordHash);
 	}
 
 	/**
@@ -71,15 +79,6 @@ public class UserService {
 			throw new NotFoundException(MessagesStrings.userNotExist(email));
 		}
 		return user;
-	}
-
-	/**
-	 * Retrieves the user with the given email form the RequestScope. It was put
-	 * into the RequestScope by the AuthenticationAction. Therefore this method
-	 * works only if you use the @Authenticated annotation at your action.
-	 */
-	public User retrieveLoggedInUser() {
-		return (User) RequestScope.get(Authentication.LOGGED_IN_USER);
 	}
 
 	public User createAndPersistAdmin() {
@@ -121,8 +120,8 @@ public class UserService {
 	/**
 	 * Change password and persist user.
 	 */
-	public void updatePassword(String emailOfUserToChange,
-			String newPassword) throws NotFoundException {
+	public void updatePassword(String emailOfUserToChange, String newPassword)
+			throws NotFoundException {
 		User user = retrieveUser(emailOfUserToChange);
 		String newPasswordHash = HashUtils.getHashMDFive(newPassword);
 		user.setPasswordHash(newPasswordHash);
@@ -146,7 +145,7 @@ public class UserService {
 	public boolean changeAdminRole(String email, boolean adminRole)
 			throws NotFoundException, ForbiddenException {
 		User user = retrieveUser(email);
-		User loggedInUser = retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		if (user.equals(loggedInUser)) {
 			throw new ForbiddenException(
 					MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE);

@@ -39,6 +39,7 @@ import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 
 /**
  * Testing actions of controller.Components.
@@ -91,7 +92,9 @@ public class ComponentsControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
 				.uri(controllers.gui.routes.Components
 						.runComponent(study.getId(),
 								study.getComponent(1).getId(), -1l)
@@ -122,7 +125,9 @@ public class ComponentsControllerTest {
 		});
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
 				.uri(controllers.gui.routes.Components
 						.runComponent(study.getId(),
 								study.getComponent(1).getId(), -1l)
@@ -141,7 +146,9 @@ public class ComponentsControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
 				.uri(controllers.gui.routes.Components.properties(study.getId(),
 						study.getFirstComponent().getId()).url());
 		Result result = route(request);
@@ -194,7 +201,8 @@ public class ComponentsControllerTest {
 		form.put(ComponentProperties.JSON_DATA, "{}");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(form)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Components
 						.submitCreated(study.getId()).url());
 		Result result = route(request);
@@ -220,7 +228,9 @@ public class ComponentsControllerTest {
 		form.put(ComponentProperties.JSON_DATA, "{}");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(form)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
 				.uri(controllers.gui.routes.Components
 						.submitEdited(study.getId(),
 								study.getFirstComponent().getId())
@@ -247,7 +257,8 @@ public class ComponentsControllerTest {
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE_AND_RUN);
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(form)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Components
 						.submitCreated(study.getId()).url());
 		Result result = route(request);
@@ -271,7 +282,9 @@ public class ComponentsControllerTest {
 		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
 				.uri(controllers.gui.routes.Components
 						.toggleActive(study.getId(),
 								study.getComponent(1).getId(), true)
@@ -286,7 +299,9 @@ public class ComponentsControllerTest {
 		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
 				.uri(controllers.gui.routes.Components.cloneComponent(
 						study.getId(), study.getComponent(1).getId()).url());
 		Result result = route(request);
@@ -299,7 +314,8 @@ public class ComponentsControllerTest {
 		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		RequestBuilder request = new RequestBuilder().method("DELETE")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Components
 						.remove(study.getId(), study.getComponent(1).getId())
 						.url());

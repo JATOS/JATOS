@@ -28,6 +28,7 @@ import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 import services.gui.UserService;
 
 /**
@@ -67,7 +68,8 @@ public class AuthenticationControllerTest {
 	public void callLogin() {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Authentication.login().url());
 		Result result = route(request);
 
@@ -84,7 +86,8 @@ public class AuthenticationControllerTest {
 	public void callLogout() throws Exception {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Authentication.logout().url());
 		Result result = route(request);
 
@@ -92,7 +95,7 @@ public class AuthenticationControllerTest {
 		assertThat(result.status()).isEqualTo(SEE_OTHER);
 		assertThat(result.redirectLocation().get()).contains("login");
 		assertThat(!result.session()
-				.containsKey(Authentication.SESSION_USER_EMAIL));
+				.containsKey(AuthenticationService.SESSION_USER_EMAIL));
 	}
 
 	/**
@@ -111,7 +114,7 @@ public class AuthenticationControllerTest {
 		// session
 		assertEquals(303, result.status());
 		assertEquals(UserService.ADMIN_EMAIL,
-				result.session().get(Authentication.SESSION_USER_EMAIL));
+				result.session().get(AuthenticationService.SESSION_USER_EMAIL));
 	}
 
 	/**
@@ -128,7 +131,8 @@ public class AuthenticationControllerTest {
 
 		// Fail to login leads to a Bad Request (400)
 		assertEquals(400, result.status());
-		assertNull(result.session().get(Authentication.SESSION_USER_EMAIL));
+		assertNull(
+				result.session().get(AuthenticationService.SESSION_USER_EMAIL));
 	}
 
 }

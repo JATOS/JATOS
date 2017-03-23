@@ -2,10 +2,10 @@ package controllers.gui;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static play.mvc.Http.Status.OK;
-import static play.mvc.Http.Status.SEE_OTHER;
 import static play.mvc.Http.Status.FORBIDDEN;
 import static play.mvc.Http.Status.NOT_FOUND;
+import static play.mvc.Http.Status.OK;
+import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.route;
 
@@ -41,6 +41,7 @@ import play.libs.Json;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.UserService;
 import utils.common.JsonUtils;
@@ -96,7 +97,8 @@ public class StudiesControllerTest {
 
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.study(study.getId()).url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(OK);
@@ -120,7 +122,8 @@ public class StudiesControllerTest {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
@@ -160,7 +163,8 @@ public class StudiesControllerTest {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
@@ -193,7 +197,8 @@ public class StudiesControllerTest {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
@@ -210,7 +215,8 @@ public class StudiesControllerTest {
 
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.properties(study.getId())
 						.url());
 		Result result = route(request);
@@ -255,7 +261,8 @@ public class StudiesControllerTest {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(formMap)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.submitEdited(study.getId())
 						.url());
 		Result result = route(request);
@@ -282,7 +289,8 @@ public class StudiesControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.toggleLock(study.getId())
 						.url());
 		Result result = route(request);
@@ -299,7 +307,8 @@ public class StudiesControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("DELETE")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.remove(study.getId())
 						.url());
 		Result result = route(request);
@@ -314,14 +323,15 @@ public class StudiesControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.cloneStudy(study.getId())
 						.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 	}
-	
+
 	/**
 	 * Test Studies.memberUsers()
 	 */
@@ -330,7 +340,8 @@ public class StudiesControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.memberUsers(study.getId())
 						.url());
 		Result result = route(request);
@@ -353,7 +364,8 @@ public class StudiesControllerTest {
 
 		// Add someUser as member to study
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), someUser.getEmail(), true).url());
 		Result result = route(request);
@@ -363,14 +375,15 @@ public class StudiesControllerTest {
 
 		// Remove admin as member from study
 		request = new RequestBuilder().method("POST")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), admin.getEmail(), false).url());
 		result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(contentAsString(result)).isEqualTo("false");
-		
+
 		// Clean-up
 		testHelper.removeUser("bla@bla.com");
 	}
@@ -387,7 +400,8 @@ public class StudiesControllerTest {
 		// Remove admin as last member from study must lead to HTTP status
 		// FORBIDDEN
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), admin.getEmail(), false).url());
 		Result result = route(request);
@@ -407,7 +421,8 @@ public class StudiesControllerTest {
 		// NOT_FOUND
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of("bla", "blu"))
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), "non.existing@mail.com", true).url());
 		Result result = route(request);
@@ -425,7 +440,8 @@ public class StudiesControllerTest {
 		// Move first component to second position
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies
 						.changeComponentOrder(study.getId(),
 								study.getComponentList().get(0).getId(), "2")
@@ -437,7 +453,8 @@ public class StudiesControllerTest {
 		// Move second component to first position
 		request = new RequestBuilder().method("POST")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies
 						.changeComponentOrder(study.getId(),
 								study.getComponentList().get(1).getId(), "1")
@@ -456,14 +473,15 @@ public class StudiesControllerTest {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.runStudy(study.getId(), -1l)
 						.url());
 		Result result = route(request);
 
 		assertEquals(SEE_OTHER, result.status());
 	}
-	
+
 	/**
 	 * Tests Studies.tableDataByStudy()
 	 */
@@ -472,9 +490,10 @@ public class StudiesControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
-				.uri(controllers.gui.routes.Studies.tableDataByStudy(study.getId())
-						.url());
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
+				.uri(controllers.gui.routes.Studies
+						.tableDataByStudy(study.getId()).url());
 		Result result = route(request);
 
 		assertEquals(OK, result.status());
@@ -490,7 +509,8 @@ public class StudiesControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.workers(study.getId())
 						.url());
 		Result result = route(request);

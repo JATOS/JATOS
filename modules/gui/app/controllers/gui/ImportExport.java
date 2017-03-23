@@ -34,11 +34,11 @@ import play.mvc.Http;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.Checker;
 import services.gui.ImportExportService;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.ResultDataStringGenerator;
-import services.gui.UserService;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -61,7 +61,7 @@ public class ImportExport extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final Checker checker;
-	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final ImportExportService importExportService;
 	private final ResultDataStringGenerator resultDataStringGenerator;
 	private final IOUtils ioUtils;
@@ -73,14 +73,15 @@ public class ImportExport extends Controller {
 	@Inject
 	ImportExport(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			Checker checker, IOUtils ioUtils, JsonUtils jsonUtils,
-			UserService userService, ImportExportService importExportService,
+			AuthenticationService authenticationService,
+			ImportExportService importExportService,
 			ResultDataStringGenerator resultDataStringGenerator,
 			StudyDao studyDao, ComponentDao componentDao, WorkerDao workerDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.jsonUtils = jsonUtils;
 		this.ioUtils = ioUtils;
-		this.userService = userService;
+		this.authenticationService = authenticationService;
 		this.importExportService = importExportService;
 		this.resultDataStringGenerator = resultDataStringGenerator;
 		this.studyDao = studyDao;
@@ -99,7 +100,7 @@ public class ImportExport extends Controller {
 	@Authenticated
 	public Result importStudy() throws JatosGuiException {
 		LOGGER.info(".importStudy");
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 
 		// Get file from request
 		FilePart<Object> filePart = request().body().asMultipartFormData()
@@ -136,7 +137,7 @@ public class ImportExport extends Controller {
 	@Authenticated
 	public Result importStudyConfirmed() throws JatosGuiException {
 		LOGGER.info(".importStudyConfirmed");
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 
 		// Get confirmation: overwrite study's properties and/or study assets
 		JsonNode json = request().body().asJson();
@@ -164,7 +165,7 @@ public class ImportExport extends Controller {
 	public Result exportStudy(Long studyId) throws JatosGuiException {
 		LOGGER.info(".exportStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -200,7 +201,7 @@ public class ImportExport extends Controller {
 		LOGGER.info(".exportComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -237,7 +238,7 @@ public class ImportExport extends Controller {
 	public Result importComponent(Long studyId) throws JatosGuiException {
 		LOGGER.info(".importComponent: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		ObjectNode json = null;
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -264,7 +265,7 @@ public class ImportExport extends Controller {
 			throws JatosGuiException {
 		LOGGER.info(".importComponentConfirmed: " + "studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -300,7 +301,7 @@ public class ImportExport extends Controller {
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 
 		String resultDataAsStr = null;
 		try {
@@ -329,7 +330,7 @@ public class ImportExport extends Controller {
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -362,7 +363,7 @@ public class ImportExport extends Controller {
 		// Remove cookie of johnculviner's jQuery.fileDownload plugin (just to
 		// be sure, in case it's still there)
 		response().discardCookie(ImportExport.JQDOWNLOAD_COOKIE_NAME);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 
 		String resultDataAsStr = null;
 		try {
@@ -393,7 +394,7 @@ public class ImportExport extends Controller {
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -428,7 +429,7 @@ public class ImportExport extends Controller {
 		// be sure, in case it's still there)
 		response().discardCookie(JQDOWNLOAD_COOKIE_NAME);
 		Worker worker = workerDao.findById(workerId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkWorker(worker, workerId);
 		} catch (BadRequestException e) {

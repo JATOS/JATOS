@@ -19,6 +19,7 @@ import play.api.mvc.AnyContentAsMultipartFormData;
 import play.libs.Json;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.ImportExportService;
 
 /**
@@ -85,7 +86,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		Study importedStudy = studyDao
 				.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617");
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
 						.remove(importedStudy.getId()).url());
 		result = route(request);
@@ -257,7 +258,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		addStudy(study);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport
 						.exportStudy(study.getId()).url());
 		Result result = route(request);
@@ -275,7 +276,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		addStudy(study);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport.exportComponent(
 						study.getId(), study.getComponent(1).getId()).url());
 		Result result = route(request);
@@ -300,7 +301,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		// http://stackoverflow.com/questions/32791562/unit-testing-file-upload-in-a-controller-with-java-play-framework-2-3-x
 		// http://stackoverflow.com/questions/33962838/play-2-4-how-to-write-a-test-case-for-file-upload-with-multipartformdata
 		RequestBuilder requestBuilder = new RequestBuilder().method("POST")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport.importStudy().url());
 
 		// Tried with a mock but get Scala scala.MatchError
@@ -363,7 +364,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		jsonObj.put(ImportExportService.STUDYS_DIR_CONFIRM, overrideDir);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
 						unzippedStudyDirName)
 				.bodyJson(jsonObj).uri(controllers.gui.routes.ImportExport

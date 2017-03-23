@@ -24,9 +24,9 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.ActiveDirectoryService;
+import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.LogFileReader;
-import services.gui.UserService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -42,17 +42,17 @@ public class Home extends Controller {
 	private static final ALogger LOGGER = Logger.of(Home.class);
 
 	private final JsonUtils jsonUtils;
-	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final StudyDao studyDao;
 	private final LogFileReader logFileReader;
 
 	@Inject
-	Home(JsonUtils jsonUtils, UserService userService,
+	Home(JsonUtils jsonUtils, AuthenticationService authenticationService,
 			BreadcrumbsService breadcrumbsService, StudyDao studyDao,
 			LogFileReader logFileReader) {
 		this.jsonUtils = jsonUtils;
-		this.userService = userService;
+		this.authenticationService = authenticationService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.studyDao = studyDao;
 		this.logFileReader = logFileReader;
@@ -87,7 +87,7 @@ public class Home extends Controller {
 	@Authenticated
 	public Result home(int httpStatus) {
 		LOGGER.info(".home");
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		String breadcrumbs = breadcrumbsService.generateForHome();
 		return status(httpStatus, views.html.gui.home.render(studyList,
@@ -110,7 +110,7 @@ public class Home extends Controller {
 	@Authenticated
 	public Result sidebarStudyList() {
 		LOGGER.info(".sidebarStudyList");
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		return ok(jsonUtils.sidebarStudyList(studyList));
 	}

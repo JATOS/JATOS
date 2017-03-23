@@ -5,7 +5,6 @@ import javax.inject.Singleton;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import general.common.MessagesStrings;
 import general.gui.FlashScopeMessaging;
 import play.Logger;
 import play.Logger.ALogger;
@@ -14,7 +13,7 @@ import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.gui.UserService;
+import services.gui.AuthenticationService;
 
 /**
  * Controller that deals with login/logout.
@@ -27,15 +26,13 @@ public class Authentication extends Controller {
 
 	private static final ALogger LOGGER = Logger.of(Authentication.class);
 
-	public static final String SESSION_USER_EMAIL = "userEmail";
-	public static final String LOGGED_IN_USER = "loggedInUser";
-
-	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final FormFactory formFactory;
 
 	@Inject
-	Authentication(UserService userService, FormFactory formFactory) {
-		this.userService = userService;
+	Authentication(AuthenticationService authenticationService,
+			FormFactory formFactory) {
+		this.authenticationService = authenticationService;
 		this.formFactory = formFactory;
 	}
 
@@ -49,16 +46,16 @@ public class Authentication extends Controller {
 	}
 
 	/**
-	 * Deals with login form post. Puts user's email and roles into Play's
-	 * session.
+	 * Endpoint for the login form post. Authenticates and either redirects to
+	 * the home page or shows the login page with an error.
 	 */
 	@Transactional
 	public Result authenticate() {
 		Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest();
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");
-		if (userService.authenticate(email, password)) {
-			session(SESSION_USER_EMAIL, email);
+		if (authenticationService.authenticate(email, password)) {
+			authenticationService.login(session(), email);
 			return redirect(controllers.gui.routes.Home.home());
 		} else {
 			loginForm.reject("Invalid user or password");
@@ -72,9 +69,10 @@ public class Authentication extends Controller {
 	@Transactional
 	@Authenticated
 	public Result logout() {
-		LOGGER.info(".logout: " + session(SESSION_USER_EMAIL));
-		session().remove(SESSION_USER_EMAIL);
-		FlashScopeMessaging.success(MessagesStrings.YOUVE_BEEN_LOGGED_OUT);
+		LOGGER.info(".logout: "
+				+ session(AuthenticationService.SESSION_USER_EMAIL));
+		authenticationService.logout(session());
+		FlashScopeMessaging.success("You've been logged out.");
 		return redirect(controllers.gui.routes.Authentication.login());
 	}
 

@@ -42,6 +42,9 @@ public class User {
 	@Id
 	private String email;
 
+	/**
+	 * User's name
+	 */
 	private String name;
 
 	/**
@@ -72,6 +75,15 @@ public class User {
 	 */
 	@ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
 	private Set<Study> studyList = new HashSet<>();
+
+	/**
+	 * ID used in Play's session cookie to add an additional layer of security.
+	 * It identifies the current session. If a user logs out, the session ID
+	 * becomes null. This way the session can't be reused after the user
+	 * logged-out.
+	 */
+	@JsonIgnore
+	private String sessionId;
 
 	public User(String email, String name, String passwordHash) {
 		this.email = email;
@@ -131,6 +143,14 @@ public class User {
 		return this.passwordHash;
 	}
 
+	public void setWorker(JatosWorker worker) {
+		this.worker = worker;
+	}
+
+	public JatosWorker getWorker() {
+		return this.worker;
+	}
+
 	public void setStudyList(Set<Study> studyList) {
 		this.studyList = studyList;
 	}
@@ -146,17 +166,17 @@ public class User {
 	public void removeStudy(Study study) {
 		this.studyList.remove(study);
 	}
-	
+
 	public boolean hasStudy(Study study) {
 		return this.studyList.contains(study);
 	}
 
-	public void setWorker(JatosWorker worker) {
-		this.worker = worker;
+	public String getSessionId() {
+		return sessionId;
 	}
 
-	public JatosWorker getWorker() {
-		return this.worker;
+	public void setSessionId(String sessionId) {
+		this.sessionId = sessionId;
 	}
 
 	@Override

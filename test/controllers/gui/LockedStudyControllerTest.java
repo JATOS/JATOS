@@ -36,6 +36,7 @@ import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 import services.gui.StudyService;
 import services.gui.UserService;
 import services.publix.ResultCreator;
@@ -106,7 +107,8 @@ public class LockedStudyControllerTest {
 	private void checkForbiddenBecauseLocked(Call call, String method) {
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(call.url());
 		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN);
 	}
@@ -346,7 +348,8 @@ public class LockedStudyControllerTest {
 
 		User admin = testHelper.getAdmin();
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport
 						.exportDataOfComponentResults("1").url());
 		Result result = route(request);

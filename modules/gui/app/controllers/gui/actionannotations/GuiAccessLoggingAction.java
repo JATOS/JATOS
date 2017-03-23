@@ -6,7 +6,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.CompletionStage;
 
-import controllers.gui.Authentication;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import play.Logger;
 import play.Logger.ALogger;
@@ -16,6 +15,7 @@ import play.mvc.Http;
 import play.mvc.Http.Request;
 import play.mvc.Result;
 import play.mvc.With;
+import services.gui.AuthenticationService;
 
 /**
  * Annotation definition for Play actions: logging of each action call, e.g.
@@ -36,7 +36,8 @@ public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();
 		guiLogger.info(request.method() + " " + request.uri() + " ("
-				+ Controller.session(Authentication.SESSION_USER_EMAIL) + ")");
+				+ Controller.session(AuthenticationService.SESSION_USER_EMAIL)
+				+ ")");
 		return delegate.call(ctx);
 	}
 

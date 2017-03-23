@@ -78,6 +78,12 @@ function setBrand() {
 @if(flash.containsKey(general.gui.FlashScopeMessaging.SUCCESS)) {
 	$('#password').after('<p class="text-success">@flash.get(general.gui.FlashScopeMessaging.SUCCESS)</p>');
 }
+@if(flash.containsKey(general.gui.FlashScopeMessaging.WARNING)) {
+	$('#password').after('<p class="text-warning">@flash.get(general.gui.FlashScopeMessaging.WARNING)</p>');
+}
+@if(flash.containsKey(general.gui.FlashScopeMessaging.ERROR)) {
+	$('#password').after('<p class="text-danger">@flash.get(general.gui.FlashScopeMessaging.ERROR)</p>');
+}
 </script>
 
 </body>

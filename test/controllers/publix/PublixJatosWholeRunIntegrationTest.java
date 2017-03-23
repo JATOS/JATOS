@@ -23,7 +23,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import akka.stream.Materializer;
-import controllers.gui.Authentication;
 import controllers.publix.workers.JatosPublix;
 import controllers.publix.workers.JatosPublix.JatosRun;
 import daos.common.StudyResultDao;
@@ -50,6 +49,7 @@ import play.mvc.Http.HeaderNames;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 import utils.common.JsonUtils;
 
 /**
@@ -416,7 +416,8 @@ public class PublixJatosWholeRunIntegrationTest {
 		String url = "/publix/" + study.getId() + "/start?"
 				+ JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.session(JatosPublix.SESSION_JATOS_RUN,
 						JatosRun.RUN_STUDY.name());
 		return route(request);
@@ -429,7 +430,8 @@ public class PublixJatosWholeRunIntegrationTest {
 				+ "/component/start?position=" + position + "&srid="
 				+ studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
@@ -441,7 +443,8 @@ public class PublixJatosWholeRunIntegrationTest {
 		String url = "/publix/" + studyResult.getStudy().getId() + "/"
 				+ component.getId() + "/start?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		return route(request, 10000);
@@ -453,7 +456,8 @@ public class PublixJatosWholeRunIntegrationTest {
 		String url = "/publix/" + studyResult.getStudy().getId()
 				+ "/nextComponent/start?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's session data.");
@@ -467,7 +471,8 @@ public class PublixJatosWholeRunIntegrationTest {
 		String url = "/publix/" + studyResult.getStudy().getId() + "/"
 				+ component.getId() + "/initData?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort());
 		result = route(request, 10000);
@@ -481,7 +486,8 @@ public class PublixJatosWholeRunIntegrationTest {
 				+ studyResult.getStudy().getComponent(3).getId() + "/log?srid="
 				+ studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText(msg);
@@ -495,7 +501,8 @@ public class PublixJatosWholeRunIntegrationTest {
 		String url = "/publix/" + studyResult.getStudy().getId()
 				+ "/studySessionData?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's our session data.");
@@ -510,7 +517,8 @@ public class PublixJatosWholeRunIntegrationTest {
 				+ studyResult.getStudy().getFirstComponent().getId()
 				+ "/resultData?srid=" + studyResult.getId();
 		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's a test result data.");
@@ -525,7 +533,8 @@ public class PublixJatosWholeRunIntegrationTest {
 				+ studyResult.getId() + "&successful=" + successful
 				+ "&errorMsg=" + errorMsg;
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.cookie(idCookie);
 		result = route(request, 10000);
@@ -538,7 +547,8 @@ public class PublixJatosWholeRunIntegrationTest {
 		String url = "/publix/" + studyResult.getStudy().getId()
 				+ "/abort?srid=" + studyResult.getId() + "&message=" + abortMsg;
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.cookie(idCookie);
 		result = route(request, 10000);

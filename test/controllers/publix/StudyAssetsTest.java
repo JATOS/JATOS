@@ -23,7 +23,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import akka.stream.Materializer;
-import controllers.gui.Authentication;
 import controllers.publix.workers.JatosPublix;
 import controllers.publix.workers.JatosPublix.JatosRun;
 import daos.common.UserDao;
@@ -45,6 +44,7 @@ import play.mvc.Http.Cookie;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 import services.gui.StudyService;
 import services.gui.UserService;
 
@@ -137,7 +137,8 @@ public class StudyAssetsTest {
 		String url = "/publix/" + study.getId() + "/start?"
 				+ JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Authentication.SESSION_USER_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.session(JatosPublix.SESSION_JATOS_RUN,
 						JatosRun.RUN_STUDY.name());
 		return route(request);
