@@ -9,7 +9,6 @@ import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import javax.inject.Singleton;
 
 import controllers.gui.Authentication;
 import controllers.gui.Home;
@@ -50,8 +49,8 @@ import utils.common.HttpUtils;
  * 5) Check if the logged-in user has the proper Role needed to access this
  * page. This Role is an optional parameter in the @Authenticated annotation.
  * 
- * The @Authenticated annotation does not check the user's password. Thia is
- * done once during login (class {@link Authentication}):
+ * The @Authenticated annotation does not check the user's password. This is
+ * done once during login (class {@link Authentication}).
  * 
  * IMPORTANT: Since this annotation accesses the database the annotated method
  * has to be within a transaction. This means the @Transactional annotation has
@@ -59,7 +58,6 @@ import utils.common.HttpUtils;
  * 
  * @author Kristian Lange (2015 - 2017)
  */
-@Singleton
 public class AuthenticationAction extends Action<Authenticated> {
 
 	/**
