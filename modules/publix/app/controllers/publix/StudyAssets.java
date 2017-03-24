@@ -40,14 +40,11 @@ public class StudyAssets extends Controller {
 
 	private final IOUtils ioUtils;
 	private final IdCookieService idCookieService;
-	private final Common common;
 
 	@Inject
-	StudyAssets(IOUtils ioUtils, IdCookieService idCookieService,
-			Common common) {
+	StudyAssets(IOUtils ioUtils, IdCookieService idCookieService) {
 		this.ioUtils = ioUtils;
 		this.idCookieService = idCookieService;
-		this.common = common;
 	}
 
 	/**
@@ -61,7 +58,7 @@ public class StudyAssets extends Controller {
 			String filePath = urlPath.replace(URL_PATH_SEPARATOR,
 					File.separator);
 			file = ioUtils.getExistingFileSecurely(
-					common.getStudyAssetsRootPath(), filePath);
+					Common.getStudyAssetsRootPath(), filePath);
 			LOGGER.info(".versioned: loading file " + file.getPath() + ".");
 		} catch (PublixException e) {
 			String errorMsg = e.getMessage();
@@ -73,7 +70,7 @@ public class StudyAssets extends Controller {
 			}
 		} catch (IOException e) {
 			LOGGER.info(".versioned: failed loading from path "
-					+ common.getStudyAssetsRootPath() + File.separator
+					+ Common.getStudyAssetsRootPath() + File.separator
 					+ urlPath);
 			String errorMsg = "Resource \"" + urlPath + "\" couldn't be found.";
 			if (HttpUtils.isAjax()) {

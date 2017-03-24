@@ -32,8 +32,8 @@ setLoginTimeouts();
 function setLoginTimeouts() {
 	// The actual session timeout handling is done on the server side -
 	// here we just offer an login overlay.
-	var sessionTimeout = @general.common.Common.SESSION_TIMEOUT * 60000;
-	var sessionInactivity = @general.common.Common.SESSION_INACTIVITY * 60000;
+	var sessionTimeout = @general.common.Common.getSessionTimeout() * 60000;
+	var sessionInactivity = @general.common.Common.getSessionInactivity() * 60000;
 	sessionTimeoutTimeout = setTimeout(function() {
 		showLoginModal("You have been logged out due to session timeout.");
 	}, sessionTimeout);

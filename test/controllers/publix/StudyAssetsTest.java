@@ -67,9 +67,6 @@ public class StudyAssetsTest {
 	private JPAApi jpaApi;
 
 	@Inject
-	private Common common;
-
-	@Inject
 	private StudyService studyService;
 
 	@Inject
@@ -110,7 +107,7 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testStudyAssetsRootPath() {
-		File studyAssetsRoot = new File(common.getStudyAssetsRootPath());
+		File studyAssetsRoot = new File(Common.getStudyAssetsRootPath());
 		assertThat(studyAssetsRoot.exists());
 		assertThat(studyAssetsRoot.isDirectory());
 		assertThat(studyAssetsRoot.isAbsolute());

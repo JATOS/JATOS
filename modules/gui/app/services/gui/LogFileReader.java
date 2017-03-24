@@ -3,7 +3,6 @@ package services.gui;
 import java.io.File;
 import java.io.IOException;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
@@ -26,13 +25,6 @@ import general.common.MessagesStrings;
 @Singleton
 public class LogFileReader {
 
-	private final Common common;
-
-	@Inject
-	LogFileReader(Common common) {
-		this.common = common;
-	}
-
 	/**
 	 * Reads logs/application.log file in reverse order and returns it as Akka
 	 * Stream source. It maximal reads until line specified in lineLimit.
@@ -48,7 +40,7 @@ public class LogFileReader {
 	}
 
 	private Object fillSource(ActorRef sourceActor, int lineLimit) {
-		File logFile = new File(common.getBasepath() + "/logs/application.log");
+		File logFile = new File(Common.getBasepath() + "/logs/application.log");
 		try (ReversedLinesFileReader reader = new ReversedLinesFileReader(
 				logFile)) {
 			String oneLine = reader.readLine();

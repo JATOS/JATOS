@@ -26,15 +26,12 @@ public class Initializer {
 	private static final ALogger LOGGER = Logger.of(Initializer.class);
 
 	private final JPAApi jpa;
-	private final Common common;
 	private final UserService userService;
 	private final UserDao userDao;
 
 	@Inject
-	Initializer(JPAApi jpa, Common common, UserDao userDao,
-			UserService userService) {
+	Initializer(JPAApi jpa, UserDao userDao, UserService userService) {
 		this.jpa = jpa;
-		this.common = common;
 		this.userDao = userDao;
 		this.userService = userService;
 		initialize();
@@ -55,17 +52,17 @@ public class Initializer {
 	 * Check whether studies assets root directory exists and create if not.
 	 */
 	private void checkStudyAssetsRootDir() {
-		File studyAssetsRoot = new File(common.getStudyAssetsRootPath());
+		File studyAssetsRoot = new File(Common.getStudyAssetsRootPath());
 		boolean success = studyAssetsRoot.mkdirs();
 		if (success) {
 			LOGGER.info(
 					".checkStudyAssetsRootDir: Created study assets root directory "
-							+ common.getStudyAssetsRootPath());
+							+ Common.getStudyAssetsRootPath());
 		}
 		if (!studyAssetsRoot.isDirectory()) {
 			LOGGER.error(
 					".checkStudyAssetsRootDir: Study assets root directory "
-							+ common.getStudyAssetsRootPath()
+							+ Common.getStudyAssetsRootPath()
 							+ " couldn't be created.");
 		}
 	}
@@ -77,12 +74,12 @@ public class Initializer {
 	private void checkAdmin() {
 		jpa.withTransaction(() -> {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			
+
 			if (admin == null) {
 				admin = userService.createAndPersistAdmin();
 			}
-			
-			// Some older JATOS versions miss the ADMIN role 
+
+			// Some older JATOS versions miss the ADMIN role
 			if (!admin.hasRole(Role.ADMIN)) {
 				admin.addRole(Role.ADMIN);
 				userDao.update(admin);

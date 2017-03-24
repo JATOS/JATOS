@@ -12,7 +12,10 @@ import play.api.Application;
 
 /**
  * This class provides configuration that is common to all modules of JATOS. It
- * is initialized during JATOS start (triggered in GuiceConfig).
+ * mostly takes parameters from application.conf. It is initialized during JATOS
+ * start (triggered in GuiceConfig). Since most fields are initialized by the
+ * constructor during the JATOS' start (triggered in GuiceConfig), it's save to
+ * access them via static getter methods.
  * 
  * @author Kristian Lange
  */
@@ -24,7 +27,7 @@ public class Common {
 	/**
 	 * JATOS version
 	 */
-	public static final String VERSION = Common.class.getPackage()
+	public static final String JATOS_VERSION = Common.class.getPackage()
 			.getImplementationVersion();
 
 	/**
@@ -37,31 +40,38 @@ public class Common {
 	/**
 	 * JATOS' absolute base path without trailing '/.'
 	 */
-	private final String basepath;
+	private static String basepath;
 
 	/**
 	 * Path in the file system to the study assets root directory. If the
 	 * property is defined in the configuration file then use it as the base
 	 * path. If property isn't defined, try in default study path instead.
 	 */
-	private final String studyAssetsRootPath;
+	private static String studyAssetsRootPath;
 
 	/**
 	 * Is true if an in-memory database is used.
 	 */
-	private final boolean inMemoryDb;
+	private static boolean inMemoryDb;
 
-	public static int SESSION_TIMEOUT;
-	public static int SESSION_INACTIVITY;
+	/**
+	 * User session timeout in minutes
+	 */
+	private static int sessionTimeout;
+
+	/**
+	 * User session inactivity timeout in minutes
+	 */
+	private static int sessionInactivity;
 
 	@Inject
 	Common(Application application, Configuration configuration) {
-		this.basepath = fillBasePath(application);
-		this.studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
-		this.inMemoryDb = configuration.getString("db.default.url")
+		basepath = fillBasePath(application);
+		studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
+		inMemoryDb = configuration.getString("db.default.url")
 				.contains("jdbc:h2:mem:");
-		SESSION_TIMEOUT = configuration.getInt("jatos.session.timeout");
-		SESSION_INACTIVITY = configuration.getInt("jatos.session.inactivity");
+		sessionTimeout = configuration.getInt("jatos.session.timeout");
+		sessionInactivity = configuration.getInt("jatos.session.inactivity");
 	}
 
 	private String fillBasePath(Application application) {
@@ -97,7 +107,7 @@ public class Common {
 		// If relative path add JATOS' base path as prefix
 
 		if (!(new File(tempStudyAssetsRootPath).isAbsolute())) {
-			tempStudyAssetsRootPath = this.basepath + File.separator
+			tempStudyAssetsRootPath = basepath + File.separator
 					+ tempStudyAssetsRootPath;
 		}
 		LOGGER.info(
@@ -105,16 +115,28 @@ public class Common {
 		return tempStudyAssetsRootPath;
 	}
 
-	public String getBasepath() {
+	public static String getJatosVersion() {
+		return JATOS_VERSION;
+	}
+
+	public static String getBasepath() {
 		return basepath;
 	}
 
-	public String getStudyAssetsRootPath() {
+	public static String getStudyAssetsRootPath() {
 		return studyAssetsRootPath;
 	}
 
-	public boolean isInMemoryDb() {
+	public static boolean isInMemoryDb() {
 		return inMemoryDb;
+	}
+
+	public static int getSessionTimeout() {
+		return sessionTimeout;
+	}
+
+	public static int getSessionInactivity() {
+		return sessionInactivity;
 	}
 
 }

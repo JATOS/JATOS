@@ -85,7 +85,6 @@ public abstract class AbstractTest {
 	protected StudyResultDao studyResultDao;
 	protected ComponentResultDao componentResultDao;
 	protected IOUtils ioUtils;
-	protected Common common;
 	protected JPAApi jpa;
 
 	// All not dependency injected
@@ -122,7 +121,6 @@ public abstract class AbstractTest {
 				.instanceOf(StudyResultDao.class);
 		componentResultDao = application.injector()
 				.instanceOf(ComponentResultDao.class);
-		common = application.injector().instanceOf(Common.class);
 		ioUtils = application.injector().instanceOf(IOUtils.class);
 
 		entityManager = jpa.em("default");
@@ -213,11 +211,11 @@ public abstract class AbstractTest {
 	}
 
 	protected void removeStudyAssetsRootDir() throws IOException {
-		File assetsRoot = new File(common.getStudyAssetsRootPath());
+		File assetsRoot = new File(Common.getStudyAssetsRootPath());
 		if (assetsRoot.list() != null && assetsRoot.list().length > 0) {
 			Logger.warn(CLASS_NAME
 					+ ".removeStudyAssetsRootDir: Study assets root directory "
-					+ common.getStudyAssetsRootPath()
+					+ Common.getStudyAssetsRootPath()
 					+ " is not empty after finishing testing. This should not happen.");
 		}
 		FileUtils.deleteDirectory(assetsRoot);
