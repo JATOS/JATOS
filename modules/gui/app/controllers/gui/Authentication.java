@@ -18,7 +18,9 @@ import services.gui.AuthenticationService;
 import utils.common.HttpUtils;
 
 /**
- * Controller that deals with login/logout.
+ * Controller that deals with login/logout. There are two login views: 1) login
+ * HTML page, and 2) an overlay. The second one is triggered by a session
+ * timeout or an inactivity timeout in JavaScript.
  * 
  * @author Kristian Lange
  */
@@ -39,7 +41,7 @@ public class Authentication extends Controller {
 	}
 
 	/**
-	 * Shows the login form view.
+	 * Shows the login page
 	 */
 	public Result login() {
 		LOGGER.info(".login");
