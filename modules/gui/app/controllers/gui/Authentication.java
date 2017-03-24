@@ -5,6 +5,7 @@ import javax.inject.Singleton;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import general.common.MessagesStrings;
 import general.gui.FlashScopeMessaging;
 import play.Logger;
 import play.Logger.ALogger;
@@ -14,6 +15,7 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.gui.AuthenticationService;
+import utils.common.HttpUtils;
 
 /**
  * Controller that deals with login/logout.
@@ -46,20 +48,29 @@ public class Authentication extends Controller {
 	}
 
 	/**
-	 * Endpoint for the login form post. Authenticates and either redirects to
-	 * the home page or shows the login page with an error.
+	 * HTTP POST Endpoint for the login form. It handles both Ajax and normal
+	 * requests.
 	 */
 	@Transactional
 	public Result authenticate() {
 		Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest();
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");
+
 		if (authenticationService.authenticate(email, password)) {
 			authenticationService.login(session(), email);
-			return redirect(controllers.gui.routes.Home.home());
+			if (HttpUtils.isAjax()) {
+				return ok();
+			} else {
+				return redirect(controllers.gui.routes.Home.home());
+			}
 		} else {
-			loginForm.reject("Invalid user or password");
-			return badRequest(views.html.gui.auth.login.render(loginForm));
+			if (HttpUtils.isAjax()) {
+				return badRequest(MessagesStrings.INVALID_USER_OR_PASSWORD);
+			} else {
+				loginForm.reject(MessagesStrings.INVALID_USER_OR_PASSWORD);
+				return badRequest(views.html.gui.auth.login.render(loginForm));
+			}
 		}
 	}
 

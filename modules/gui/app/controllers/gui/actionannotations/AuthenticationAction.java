@@ -146,7 +146,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 					.completedFuture(forbidden("Not logged in"));
 		} else {
 			FlashScopeMessaging.error(
-					"You are not allowed to access this page. Please login.");
+					"You are not allowed to access this page. Please log in.");
 			return CompletableFuture.completedFuture(
 					redirect(controllers.gui.routes.Authentication.login()));
 		}

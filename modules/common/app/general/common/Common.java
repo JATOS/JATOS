@@ -11,7 +11,8 @@ import play.Logger.ALogger;
 import play.api.Application;
 
 /**
- * This class provides configuration that is common to all modules of JATOS.
+ * This class provides configuration that is common to all modules of JATOS. It
+ * is initialized during JATOS start (triggered in GuiceConfig).
  * 
  * @author Kristian Lange
  */
@@ -50,12 +51,17 @@ public class Common {
 	 */
 	private final boolean inMemoryDb;
 
+	public static int SESSION_TIMEOUT;
+	public static int SESSION_INACTIVITY;
+
 	@Inject
 	Common(Application application, Configuration configuration) {
 		this.basepath = fillBasePath(application);
 		this.studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
 		this.inMemoryDb = configuration.getString("db.default.url")
 				.contains("jdbc:h2:mem:");
+		SESSION_TIMEOUT = configuration.getInt("jatos.session.timeout");
+		SESSION_INACTIVITY = configuration.getInt("jatos.session.inactivity");
 	}
 
 	private String fillBasePath(Application application) {
@@ -89,7 +95,7 @@ public class Common {
 				File.separator);
 
 		// If relative path add JATOS' base path as prefix
-		
+
 		if (!(new File(tempStudyAssetsRootPath).isAbsolute())) {
 			tempStudyAssetsRootPath = this.basepath + File.separator
 					+ tempStudyAssetsRootPath;
