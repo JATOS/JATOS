@@ -93,7 +93,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 		User loggedInUser = authenticationService
 				.getLoggedInUser(ctx.session());
 		if (loggedInUser == null) {
-			authenticationService.logout(ctx.session());
+			authenticationService.clearSessionCookie(ctx.session());
 			return callForbiddenDueToAuthentication(ctx.request().host(),
 					ctx.request().path());
 		}
@@ -102,20 +102,22 @@ public class AuthenticationAction extends Action<Authenticated> {
 		// Check user's session ID
 		if (!authenticationService.isValidSessionId(ctx.session(),
 				loggedInUser)) {
-			authenticationService.logout(ctx.session());
+			authenticationService.clearSessionCookie(ctx.session());
 			return callForbiddenDueToInvalidSession(loggedInUser.getEmail(),
 					ctx.request().host(), ctx.request().path());
 		}
 
 		// Check session timeout
 		if (authenticationService.isSessionTimeout(ctx.session())) {
-			authenticationService.logout(ctx.session());
+			authenticationService.clearSessionCookieAndSessionId(ctx.session(),
+					loggedInUser);
 			return callForbiddenDueToSessionTimeout(loggedInUser.getEmail());
 		}
 
 		// Check inactivity timeout
 		if (authenticationService.isInactivityTimeout(ctx.session())) {
-			authenticationService.logout(ctx.session());
+			authenticationService.clearSessionCookieAndSessionId(ctx.session(),
+					loggedInUser);
 			return callForbiddenDueToInactivityTimeout(loggedInUser.getEmail());
 		}
 

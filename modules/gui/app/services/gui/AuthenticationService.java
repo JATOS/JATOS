@@ -119,34 +119,19 @@ public class AuthenticationService {
 
 	/**
 	 * Prepares Play's session for the user with the given email to be
-	 * logged-in.
+	 * logged-in. Does not authenticate the user (use authenticate() for this).
 	 */
-	public void login(Http.Session session, String email) {
+	public void writeSessionCookieAndSessionId(Http.Session session,
+			String email) {
 		String sessionId = generateSessionId();
-		persistUsersSessionId(email, sessionId);
+		User user = userDao.findByEmail(email);
+		persistUsersSessionId(user, sessionId);
 		session.put(SESSION_ID, sessionId);
 		session.put(SESSION_USER_EMAIL, email);
 		session.put(SESSION_LOGIN_TIME,
 				String.valueOf(Instant.now().toEpochMilli()));
 		session.put(SESSION_LAST_ACTIVITY_TIME,
 				String.valueOf(Instant.now().toEpochMilli()));
-	}
-
-	/**
-	 * Refreshes the last activity timestamp in Play's session
-	 */
-	public void refreshSession(Http.Session session) {
-		session.put(SESSION_LAST_ACTIVITY_TIME,
-				String.valueOf(Instant.now().toEpochMilli()));
-	}
-
-	/**
-	 * Invalidates the given session.
-	 */
-	public void logout(Http.Session session) {
-		User user = getLoggedInUser();
-		persistUsersSessionId(user.getEmail(), null);
-		session.clear();
 	}
 
 	/**
@@ -158,8 +143,32 @@ public class AuthenticationService {
 		return new BigInteger(130, random).toString(32);
 	}
 
-	private void persistUsersSessionId(String email, String sessionId) {
-		User user = userDao.findByEmail(email);
+	/**
+	 * Refreshes the last activity timestamp in Play's session
+	 */
+	public void refreshSession(Http.Session session) {
+		session.put(SESSION_LAST_ACTIVITY_TIME,
+				String.valueOf(Instant.now().toEpochMilli()));
+	}
+
+	/**
+	 * Deletes the session cookie. This is usual done during a user logout.
+	 */
+	public void clearSessionCookie(Http.Session session) {
+		session.clear();
+	}
+
+	/**
+	 * Deletes the session cookie and removes the session ID from the logged-in
+	 * User. This is usual done during a user logout.
+	 */
+	public void clearSessionCookieAndSessionId(Http.Session session,
+			User loggedInUser) {
+		persistUsersSessionId(loggedInUser, null);
+		session.clear();
+	}
+
+	private void persistUsersSessionId(User user, String sessionId) {
 		user.setSessionId(sessionId);
 		userDao.update(user);
 	}

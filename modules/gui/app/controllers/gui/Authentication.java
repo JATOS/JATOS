@@ -7,6 +7,7 @@ import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import general.common.MessagesStrings;
 import general.gui.FlashScopeMessaging;
+import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
@@ -60,7 +61,7 @@ public class Authentication extends Controller {
 		String password = loginForm.data().get("password");
 
 		if (authenticationService.authenticate(email, password)) {
-			authenticationService.login(session(), email);
+			authenticationService.writeSessionCookieAndSessionId(session(), email);
 			if (HttpUtils.isAjax()) {
 				return ok();
 			} else {
@@ -84,7 +85,9 @@ public class Authentication extends Controller {
 	public Result logout() {
 		LOGGER.info(".logout: "
 				+ session(AuthenticationService.SESSION_USER_EMAIL));
-		authenticationService.logout(session());
+		User loggedInUser = authenticationService.getLoggedInUser();
+		authenticationService.clearSessionCookieAndSessionId(session(),
+				loggedInUser);
 		FlashScopeMessaging.success("You've been logged out.");
 		return redirect(controllers.gui.routes.Authentication.login());
 	}
