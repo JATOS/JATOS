@@ -12,7 +12,9 @@
 		<tr>
 			<th>Email</th>
 			<th>Name</th>
-			<th>Admin</th>
+			<th data-toggle="tooltip" data-placement="bottom" title="Users with admin rights can create/change/delete other users.">
+				Admin Rights
+			</th>
 			<th></th>
 		</tr>
 	</thead>
@@ -20,23 +22,26 @@
 
 <!-- Template for admin toggle button in User's row -->
 <div id="userAdminToggleButtonDiv" style="display: none">
-	<button type="button" class="btn btn-sm btn-default adminButton"
-		data-toggle="tooltip" data-placement="bottom" title="">
-		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-	</button>
+	<div class="tooltipWrapper" data-title="">
+		<button type="button" class="btn btn-sm btn-default adminButton">
+			<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+		</button>
+	</div>
 </div>
 
 <!-- Template for button toolbar in User's row -->
 <div id="userToolbarDiv" style="display: none">
 	<div class="userBtnGroup btn-group" aria-hidden="true">
-		<button type="button" class="userChangePasswordButton btn btn-user" data-toggle="tooltip" data-placement="bottom"
-			title="Change the password of this user">
-			Change Password <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
-		</button>
-		<button type="button" class="userDeleteButton btn btn-user" data-toggle="tooltip" data-placement="bottom"
-			title="Delete this user from JATOS">
-			Delete <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-		</button>
+		<div class="userChangePasswordTooltip" data-title="">
+			<button type="button" class="userChangePasswordButton btn btn-user">
+				Change Password <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
+			</button>
+		</div>
+		<div class="userDeleteTooltip" data-title="">
+			<button type="button" class="userDeleteButton btn btn-user">
+				Delete <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+			</button>
+		</div>
 	</div>
 </div>
 
@@ -77,7 +82,7 @@
 						<div class="col-xs-offset-4 col-xs-8">
 							<label class="checkbox-inline">
 								<input type="checkbox" class="@models.gui.NewUserModel.ADMIN_ROLE" name="@models.gui.NewUserModel.ADMIN_ROLE" value="true">
-								Admin <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Is this user an admin? Admins can create/change/delete other users." aria-hidden="true"></span>
+								Admin Rights <span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Should this user have admin rights? Admins can create/change/delete other users." aria-hidden="true"></span>
 								<!-- We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework -->
 								<input type="hidden" name="@models.gui.NewUserModel.ADMIN_ROLE" value="false" />
 							</label>
@@ -184,14 +189,10 @@ var userTable = $('#userTable').DataTable({
 			"searchable": false,
 			"searchable": false,
 			"render": function (data, type, full, meta) {
-				var button = $('#userAdminToggleButtonDiv button:first-child').clone();
+				var buttonDiv = $('#userAdminToggleButtonDiv :first-child').clone();
 				var adminRole = $.inArray("@models.common.User.Role.ADMIN.name()", data.roleList) >= 0;
-				setAdminButton(button, adminRole);
-				if (data.email == "@services.gui.UserService.ADMIN_EMAIL" ||
-						data.email == "@loggedInUser.getEmail()") {
-					button.toggleClass('disabled', true);
-				}
-				return button.prop('outerHTML');
+				setAdminButton(buttonDiv, adminRole, data.email);
+				return buttonDiv.prop('outerHTML');
 			}
 		},
 		{ "class": "toolbar",
@@ -203,15 +204,7 @@ var userTable = $('#userTable').DataTable({
 			"searchable": false,
 			"render": function (data, type, full, meta) {
 				var toolbar = $('#userToolbarDiv').clone().show();
-				if (data.email == "@services.gui.UserService.ADMIN_EMAIL") {
-					toolbar.find('.userDeleteButton').toggleClass('disabled', true);
-					if ("@loggedInUser.getEmail()" != "@services.gui.UserService.ADMIN_EMAIL") {
-						toolbar.find('.userChangePasswordButton').toggleClass('disabled', true);
-					}
-				}
-				if (data.email == "@loggedInUser.getEmail()") {
-					toolbar.find('.userDeleteButton').toggleClass('disabled', true);
-				}
+				setUserToolbar(toolbar, data.email);
 				return toolbar.html();
 			}
 		}
@@ -256,12 +249,22 @@ $("#createUserForm").submit(function(event) {
 	});
 });
 
-function setAdminButton(button, adminRole) {
+function setAdminButton(buttonDiv, adminRole, email) {
+	var button = $(buttonDiv).children("button:first");
 	if (adminRole) {
 		button.addClass('adminRole');
 		button.removeClass('btn-default');
 		button.addClass('btn-user');
-		button.attr('title', "Click to remove admin rights from this user");
+		// Special treatment of admin users
+		if (email == "@services.gui.UserService.ADMIN_EMAIL") {
+			button.toggleClass('disabled', true);
+			buttonDiv.attr('title', "User admin's admin rights can't be removed.");
+		} else if (email == "@loggedInUser.getEmail()") {
+			button.toggleClass('disabled', true);
+			buttonDiv.attr('title', "You can't remove your own admin rights. Only another user with admin rights can do it.");
+		} else {
+			buttonDiv.attr('title', "Click to remove admin rights from this user");
+		}
 		button.html($(button.html())
 				.removeClass('glyphicon-remove')
 				.addClass('glyphicon-ok').prop('outerHTML'));
@@ -269,10 +272,30 @@ function setAdminButton(button, adminRole) {
 		button.removeClass('adminRole');
 		button.removeClass('btn-user');
 		button.addClass('btn-default');
-		button.attr('title', "Click to grant admin rights to this user");
+		buttonDiv.attr('title', "Click to grant admin rights to this user");
 		button.html($(button.html())
 				.removeClass('glyphicon-ok')
 				.addClass('glyphicon-remove').prop('outerHTML'));
+	}
+}
+
+function setUserToolbar(toolbar, email) {
+	if (email == "@services.gui.UserService.ADMIN_EMAIL") {
+		toolbar.find('.userDeleteButton').toggleClass('disabled', true);
+		toolbar.find('.userDeleteTooltip').attr('title', "It's not possible to delete the admin user.");
+		if ("@loggedInUser.getEmail()" != "@services.gui.UserService.ADMIN_EMAIL") {
+			toolbar.find('.userChangePasswordButton').toggleClass('disabled', true);
+			toolbar.find('.userChangePasswordTooltip').attr('title', "Only user admin can change their own password.");
+		} else {
+			toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
+		}
+	} else if (email == "@loggedInUser.getEmail()") {
+		toolbar.find('.userDeleteButton').toggleClass('disabled', true);
+		toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
+		toolbar.find('.userDeleteTooltip').attr('title', "You cannot delete your user here - but you can delete yourself in the user page (click on your email in the JATOS header).");
+	} else {
+		toolbar.find('.userChangePasswordTooltip').attr('title', "Change the password of this user");
+		toolbar.find('.userDeleteTooltip').attr('title', "Delete this user from JATOS");
 	}
 }
 
@@ -285,7 +308,7 @@ $('#userTable tbody').on('click', '.adminButton', function() {
 		url : "/jatos/user/" + user.email + "/admin?admin=" + !adminRole,
 		type : "POST",
 		success: function(adminRole) {
-			setAdminButton($(button), adminRole);
+			setAdminButton($(button).parent(), adminRole);
 		},
 		error : function(err) {
 			showError(err.responseText);

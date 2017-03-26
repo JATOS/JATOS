@@ -104,7 +104,8 @@ $('#memberUserTable').on('click', '.memberToggleButton', function() {
 	var member = memberUserTable.row(tr).data();
 	var isMember = $(this).hasClass('isMember');
 	if (member.email === "@loggedInUser.getEmail()" && !member.removeConfirmation) {
-		showWarning("Sure, you want to remove yourself from the study?", "#changeMemberUsersModal .modal-header");
+		showWarning("Are you sure you want to remove yourself from this study? "
+			+ "Then click again on the member checkbox.", "#changeMemberUsersModal .modal-header");
 		member.removeConfirmation = true;
 		return;
 	}
