@@ -551,11 +551,11 @@ function fillSidebar() {
 }
 
 $('#sidebarStudyList').on('click', '.studyListItem', function(e) {
-	// If plus or minus expand the study
+	// If chevron clicked show study's components
 	if ($(e.target).hasClass('glyphicon-chevron-right')
 			|| $(e.target).hasClass('glyphicon-chevron-down')) {
-		$(this).find(".glyphicon").toggleClass('study-expanded study-collapsed');
-		$(this).find(".glyphicon").toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
+		$(this).find(".glyphicon-chevron-right, .glyphicon-chevron-down").toggleClass('study-expanded study-collapsed');
+		$(this).find(".glyphicon-chevron-right, .glyphicon-chevron-down").toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
 	} else {
 		var clickedStudyId = $(this).attr('id').replace('sidebarStudy', "");
 		window.location.href = "/jatos/" + clickedStudyId;
