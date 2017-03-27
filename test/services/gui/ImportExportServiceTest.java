@@ -135,9 +135,6 @@ public class ImportExportServiceTest {
 			component.setHtmlFilePath("changedHtmlFilePath");
 			component.setJsonData("{}");
 			component.setReloadable(false);
-			// We have to set the study again otherwise it's null. Don't know
-			// why. TODO
-			// firstComponent.setStudy(study);
 			componentDao.update(component);
 			return component;
 		});

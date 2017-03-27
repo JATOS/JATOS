@@ -19,7 +19,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
@@ -342,7 +341,7 @@ public class Study {
 		return this.batchList.get(0);
 	}
 
-	@JsonGetter("batchList")
+	@JsonIgnore
 	public List<Batch> getDefaultBatchList() {
 		return Lists.newArrayList(this.batchList.get(0));
 	}
