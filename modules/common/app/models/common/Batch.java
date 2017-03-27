@@ -190,6 +190,9 @@ public class Batch {
 	}
 
 	public void addAllowedWorkerType(String workerType) {
+		if (allowedWorkerTypes == null) {
+			allowedWorkerTypes = new HashSet<>();
+		}
 		allowedWorkerTypes.add(workerType);
 	}
 

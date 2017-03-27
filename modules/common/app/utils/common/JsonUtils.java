@@ -37,7 +37,8 @@ import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 
 /**
  * Utility class the handles everything around JSON, like marshaling and
- * unmarshaling.
+ * unmarshaling. Uses a custom Jackson JSON object mapper defined in
+ * {@link JsonObjectMapper}.
  * 
  * @author Kristian Lange
  */
@@ -326,8 +327,8 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Returns JsonNode with all users and if they are member of the given study.
-	 * This JSON is intended for JATOS' GUI / in the change user modal.
+	 * Returns JsonNode with all users and if they are member of the given
+	 * study. This JSON is intended for JATOS' GUI / in the change user modal.
 	 */
 	public JsonNode memberUsersOfStudy(List<User> userList, Study study) {
 		ArrayNode userArrayNode = Json.mapper().createArrayNode();
@@ -562,36 +563,57 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Marshals the given object into JSON, adds the application's version, and
-	 * returns it as String. It uses the view JsonForIO.
+	 * Marshals the given component into JSON, adds the current component serial
+	 * version, and returns it as JsonNode. It uses the view JsonForIO.
 	 */
-	public JsonNode componentAsJsonForIO(Object obj) throws IOException {
-		return generateNodeWithVersionForIO(obj,
+	public JsonNode componentAsJsonForIO(Component component)
+			throws IOException {
+		ObjectNode componentNode = (ObjectNode) asObjectNodeWithIOView(
+				component);
+		return wrapNodeWithVersion(componentNode,
 				String.valueOf(Component.SERIAL_VERSION));
 	}
 
 	/**
-	 * Marshals the given object into JSON, adds the application's version, and
-	 * saves it into the given File. It uses the view JsonForIO.
+	 * Marshals the given study into JSON, adds the current study serial
+	 * version, and saves it into the given File. It uses the view JsonForIO.
 	 */
 	public void studyAsJsonForIO(Study study, File file) throws IOException {
-		JsonNode node = generateNodeWithVersionForIO(study,
+		ObjectNode studyNode = (ObjectNode) asObjectNodeWithIOView(study);
+
+		// Add components
+		ArrayNode componentArray = (ArrayNode) asObjectNodeWithIOView(
+				study.getComponentList());
+		studyNode.putArray("componentList").addAll(componentArray);
+
+		// Add default Batch
+		ArrayNode batchArray = (ArrayNode) asObjectNodeWithIOView(
+				study.getDefaultBatchList());
+		studyNode.putArray("batchList").addAll(batchArray);
+
+		// Add Study version
+		JsonNode nodeForIO = wrapNodeWithVersion(studyNode,
 				String.valueOf(Study.SERIAL_VERSION));
-		Json.mapper().writer().writeValue(file, node);
+
+		// Write to file
+		Json.mapper().writeValue(file, nodeForIO);
 	}
 
 	/**
-	 * Generic JSON marshaler that adds the JATOS version to the JSON string.
-	 * Intended for file IO.
+	 * Reads the given object into a JsonNode while using the JsonForIO view.
 	 */
-	private JsonNode generateNodeWithVersionForIO(Object obj, String version)
+	private JsonNode asObjectNodeWithIOView(Object obj) throws IOException {
+		// Unnecessary conversion into a temporary string - better solution?
+		String tmpStr = Json.mapper().writerWithView(JsonForIO.class)
+				.writeValueAsString(obj);
+		return Json.mapper().readTree(tmpStr);
+	}
+
+	private JsonNode wrapNodeWithVersion(JsonNode jsonNode, String version)
 			throws IOException {
 		ObjectNode node = Json.mapper().createObjectNode();
 		node.put(VERSION, version);
-		// Unnecessary conversion into a temporary string - better solution?
-		String objAsJson = Json.mapper().writerWithView(JsonForIO.class)
-				.writeValueAsString(obj);
-		node.set(DATA, Json.mapper().readTree(objAsJson));
+		node.set(DATA, jsonNode);
 		return node;
 	}
 
