@@ -83,39 +83,6 @@ public class UserServiceTest {
 	}
 
 	/**
-	 * Test UserService.authenticate(): check with admin user
-	 */
-	@Test
-	public void checkAuthenticate() {
-		jpaApi.withTransaction(() -> {
-			assertThat(authenticationService.authenticate(
-					UserService.ADMIN_EMAIL, UserService.ADMIN_PASSWORD))
-							.isTrue();
-			assertThat(authenticationService
-					.authenticate(UserService.ADMIN_EMAIL, "wrongPassword"))
-							.isFalse();
-		});
-	}
-
-	/**
-	 * Test UserService.authenticate(): check with a different user than the
-	 * admin user (shouldn't be necessary - just to be sure)
-	 */
-	@Test
-	public void checkAuthenticateNotAdminUser() {
-		testHelper.createAndPersistUser("bla@bla.org", "Bla Bla", "bla");
-
-		jpaApi.withTransaction(() -> {
-			assertThat(authenticationService.authenticate("bla@bla.org", "bla"))
-					.isTrue();
-			assertThat(authenticationService.authenticate("bla@bla.org",
-					"wrongPassword")).isFalse();
-		});
-
-		testHelper.removeUser("bla@bla.org");
-	}
-
-	/**
 	 * Test UserService.retrieveUser(): gets a user from the DB
 	 */
 	@Test

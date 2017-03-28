@@ -11,6 +11,7 @@ import javax.inject.Singleton;
 import controllers.gui.Authentication;
 import controllers.gui.actionannotations.AuthenticationAction;
 import daos.common.UserDao;
+import general.common.Common;
 import general.common.RequestScope;
 import models.common.User;
 import play.Configuration;
@@ -61,30 +62,18 @@ public class AuthenticationService {
 	 */
 	public static final String LOGGED_IN_USER = "loggedInUser";
 
-	/**
-	 * Time in minutes when the Play session will timeout (defined in
-	 * application.conf)
-	 */
-	private final int SESSION_TIMEOUT;
-
-	/**
-	 * Time in minutes a user can be inactive before he will be logged-out
-	 * (defined in application.conf)
-	 */
-	private final int SESSION_INACTIVITY;
-
 	private static SecureRandom random = new SecureRandom();
 
 	private final UserDao userDao;
 
 	@Inject
 	AuthenticationService(Configuration configuration, UserDao userDao) {
-		this.SESSION_TIMEOUT = configuration.getInt("jatos.session.timeout");
-		this.SESSION_INACTIVITY = configuration
-				.getInt("jatos.session.inactivity");
 		this.userDao = userDao;
 	}
 
+	/**
+	 * Authenticates the user specified by the email with the given password.
+	 */
 	public boolean authenticate(String email, String password) {
 		String passwordHash = HashUtils.getHashMDFive(password);
 		return userDao.authenticate(email, passwordHash);
@@ -99,7 +88,7 @@ public class AuthenticationService {
 	 * In most cases getLoggedInUser() is faster since it doesn't has to query
 	 * the database.
 	 */
-	public User getLoggedInUser(Http.Session session) {
+	public User getLoggedInUserBySession(Http.Session session) {
 		String email = session.get(AuthenticationService.SESSION_USER_EMAIL);
 		User loggedInUser = null;
 		if (email != null) {
@@ -144,9 +133,10 @@ public class AuthenticationService {
 	}
 
 	/**
-	 * Refreshes the last activity timestamp in Play's session
+	 * Refreshes the last activity timestamp in Play's session. This is usually
+	 * done with each activity of the user.
 	 */
-	public void refreshSession(Http.Session session) {
+	public void refreshSessionCookie(Http.Session session) {
 		session.put(SESSION_LAST_ACTIVITY_TIME,
 				String.valueOf(Instant.now().toEpochMilli()));
 	}
@@ -189,7 +179,7 @@ public class AuthenticationService {
 			Instant loginTime = Instant.ofEpochMilli(
 					Long.parseLong(session.get(SESSION_LOGIN_TIME)));
 			Instant now = Instant.now();
-			Instant allowedUntil = loginTime.plus(SESSION_TIMEOUT,
+			Instant allowedUntil = loginTime.plus(Common.getSessionTimeout(),
 					ChronoUnit.MINUTES);
 			return allowedUntil.isBefore(now);
 		} catch (Exception e) {
@@ -204,8 +194,8 @@ public class AuthenticationService {
 			Instant lastActivityTime = Instant.ofEpochMilli(
 					Long.parseLong(session.get(SESSION_LAST_ACTIVITY_TIME)));
 			Instant now = Instant.now();
-			Instant allowedUntil = lastActivityTime.plus(SESSION_INACTIVITY,
-					ChronoUnit.MINUTES);
+			Instant allowedUntil = lastActivityTime
+					.plus(Common.getSessionInactivity(), ChronoUnit.MINUTES);
 			return allowedUntil.isBefore(now);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage());

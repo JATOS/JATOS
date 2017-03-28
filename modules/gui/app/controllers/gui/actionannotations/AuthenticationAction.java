@@ -91,7 +91,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 		// since we need it later anyway. Storing it in the RequestScope now
 		// saves us some database requests later.
 		User loggedInUser = authenticationService
-				.getLoggedInUser(ctx.session());
+				.getLoggedInUserBySession(ctx.session());
 		if (loggedInUser == null) {
 			authenticationService.clearSessionCookie(ctx.session());
 			return callForbiddenDueToAuthentication(ctx.request().host(),
@@ -121,7 +121,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 			return callForbiddenDueToInactivityTimeout(loggedInUser.getEmail());
 		}
 
-		authenticationService.refreshSession(ctx.session());
+		authenticationService.refreshSessionCookie(ctx.session());
 
 		// Check authorization
 		if (!isAuthorized(loggedInUser)) {

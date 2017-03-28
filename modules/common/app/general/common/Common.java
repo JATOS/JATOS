@@ -55,12 +55,14 @@ public class Common {
 	private static boolean inMemoryDb;
 
 	/**
-	 * User session timeout in minutes
+	 * Time in minutes when the Play session will timeout (defined in
+	 * application.conf)
 	 */
 	private static int sessionTimeout;
 
 	/**
-	 * User session inactivity timeout in minutes
+	 * Time in minutes a user can be inactive before he will be logged-out
+	 * (defined in application.conf)
 	 */
 	private static int sessionInactivity;
 
