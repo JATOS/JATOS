@@ -17,7 +17,8 @@ libraryDependencies ++= Seq(
 	javaCore,
 	javaJdbc,
 	javaJpa,
-	javaWs
+	javaWs,
+	filters
 )
 
 // Docker commands to run in Dockerfile
