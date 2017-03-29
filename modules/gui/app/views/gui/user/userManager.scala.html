@@ -73,8 +73,8 @@
 					<div class="form-group row">
 						<label class="control-label col-xs-4" for="@models.gui.NewUserModel.PASSWORD">Password</label>
 						<div class="col-xs-8">
-							<input type="password" class="form-control @models.gui.NewUserModel.PASSWORD" name="@models.gui.NewUserModel.PASSWORD" placeholder="Password">
-							<input type="password" class="form-control @models.gui.NewUserModel.PASSWORD_REPEAT" name="@models.gui.NewUserModel.PASSWORD_REPEAT" placeholder="Repeat password">
+							<input type="password" class="form-control @models.gui.NewUserModel.PASSWORD" name="@models.gui.NewUserModel.PASSWORD" placeholder="Password" autocomplete="off" required>
+							<input type="password" class="form-control @models.gui.NewUserModel.PASSWORD_REPEAT" name="@models.gui.NewUserModel.PASSWORD_REPEAT" placeholder="Repeat password" autocomplete="off" required>
 						</div>
 					</div>
 					
@@ -92,7 +92,7 @@
 					<div class="form-group row">
 						<label class="control-label col-xs-4 adminPasswordLabel" for="@models.gui.NewUserModel.ADMIN_PASSWORD">Your password</label>
 						<div class="col-xs-5">
-							<input type="password" class="form-control @models.gui.NewUserModel.ADMIN_PASSWORD" name="@models.gui.NewUserModel.ADMIN_PASSWORD" placeholder="Your password">
+							<input type="password" class="form-control @models.gui.NewUserModel.ADMIN_PASSWORD" name="@models.gui.NewUserModel.ADMIN_PASSWORD" placeholder="Your password" autocomplete="off" required>
 						</div>
 					</div>
 				</div>
@@ -118,14 +118,14 @@
 					<div class="form-group row">
 						<label class="control-label col-xs-4 adminPasswordLabel" for="@models.gui.ChangePasswordModel.ADMIN_PASSWORD">Your password</label>
 						<div class="col-xs-5">
-							<input type="password" class="form-control @models.gui.ChangePasswordModel.ADMIN_PASSWORD" name="@models.gui.ChangePasswordModel.ADMIN_PASSWORD" placeholder="Your password">
+							<input type="password" class="form-control @models.gui.ChangePasswordModel.ADMIN_PASSWORD" name="@models.gui.ChangePasswordModel.ADMIN_PASSWORD" placeholder="Your password" autocomplete="off" required>
 						</div>
 					</div>
 					<div class="form-group row">
 						<label class="control-label col-xs-4 newPasswordLabel" for="@models.gui.ChangePasswordModel.NEW_PASSWORD">New password</label>
 						<div class="col-xs-5">
-							<input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD" name="@models.gui.ChangePasswordModel.NEW_PASSWORD" placeholder="New password">
-							<input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" name="@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" placeholder="Repeat the new password">
+							<input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD" name="@models.gui.ChangePasswordModel.NEW_PASSWORD" placeholder="New password" autocomplete="off" required>
+							<input type="password" class="form-control @models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" name="@models.gui.ChangePasswordModel.NEW_PASSWORD_REPEAT" placeholder="Repeat the new password" autocomplete="off" required>
 						</div>
 					</div>
 				</div>
@@ -152,7 +152,7 @@
 					<div class="form-group row">
 						<label class="control-label col-xs-6 adminPasswordLabel" for="password">Your password</label>
 						<div class="col-xs-5">
-							<input type="password" class="form-control password" name="password" placeholder="Your password">
+							<input type="password" class="form-control password" name="password" placeholder="Your password" autocomplete="off" required>
 						</div>
 					</div>
 				</div>
