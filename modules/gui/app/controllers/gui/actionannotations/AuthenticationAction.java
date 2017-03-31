@@ -29,16 +29,16 @@ import utils.common.HttpUtils;
 
 /**
  * This class defines the @Authenticated annotation used in JATOS GUI
- * controllers. It does authenticate and authorize an logged-in user and has
- * several layers of security:
+ * controllers. It checks Play's session cookie and the cached user session.
+ * Additionally it does authorization. It has several layers of security:
  * 
- * 1) First it checks if an email is in Play's session and if this email belongs
- * to a user in the database. If successful the User object of the logged-in
- * user is stored in the RequestScope.
+ * 1) First it checks if an email is in Play's session cookie and if this email
+ * belongs to a user in the database.
  * 
- * 2) We check whether the session ID stored in Play's session is the same as
- * stored with the User in the database. After a user logs out this session ID
- * is deleted in the database and thus subsequent log-ins will fail.
+ * 2) We check whether the session ID stored in Play's session cookie is the
+ * same as stored in the UserSession in the cache. After a user logs out this
+ * session ID is deleted in the cache and from the session cookie and thus
+ * subsequent log-ins will fail.
  * 
  * 3) Check if the session timed out. The time span is defined in the
  * application.conf.
@@ -91,7 +91,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 		// since we need it later anyway. Storing it in the RequestScope now
 		// saves us some database requests later.
 		User loggedInUser = authenticationService
-				.getLoggedInUserBySession(ctx.session());
+				.getLoggedInUserBySessionCookie(ctx.session());
 		if (loggedInUser == null) {
 			authenticationService.clearSessionCookie(ctx.session());
 			return callForbiddenDueToAuthentication(ctx.request().host(),
@@ -101,7 +101,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 
 		// Check user's session ID
 		if (!authenticationService.isValidSessionId(ctx.session(),
-				loggedInUser)) {
+				loggedInUser.getEmail(), ctx.request().host())) {
 			authenticationService.clearSessionCookie(ctx.session());
 			return callForbiddenDueToInvalidSession(loggedInUser.getEmail(),
 					ctx.request().host(), ctx.request().path());
@@ -109,15 +109,17 @@ public class AuthenticationAction extends Action<Authenticated> {
 
 		// Check session timeout
 		if (authenticationService.isSessionTimeout(ctx.session())) {
-			authenticationService.clearSessionCookieAndSessionId(ctx.session(),
-					loggedInUser);
+			authenticationService.clearSessionCookieAndSessionCache(
+					ctx.session(), loggedInUser.getEmail(),
+					ctx.request().host());
 			return callForbiddenDueToSessionTimeout(loggedInUser.getEmail());
 		}
 
 		// Check inactivity timeout
 		if (authenticationService.isInactivityTimeout(ctx.session())) {
-			authenticationService.clearSessionCookieAndSessionId(ctx.session(),
-					loggedInUser);
+			authenticationService.clearSessionCookieAndSessionCache(
+					ctx.session(), loggedInUser.getEmail(),
+					ctx.request().host());
 			return callForbiddenDueToInactivityTimeout(loggedInUser.getEmail());
 		}
 
@@ -163,8 +165,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 			return CompletableFuture
 					.completedFuture(forbidden("Invalid session"));
 		} else {
-			FlashScopeMessaging.warning(
-					"The same user was used in a different browser. You have been logged out.");
+			FlashScopeMessaging.warning("You have been logged out.");
 			return CompletableFuture.completedFuture(
 					redirect(controllers.gui.routes.Authentication.login()));
 		}

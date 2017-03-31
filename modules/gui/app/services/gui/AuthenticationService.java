@@ -14,16 +14,20 @@ import daos.common.UserDao;
 import general.common.Common;
 import general.common.RequestScope;
 import models.common.User;
-import play.Configuration;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http;
 import utils.common.HashUtils;
 
 /**
- * Service class around authentication. It works together with the
- * {@link Authentication} controller and the @Authenticated annotation defined
- * in {@link AuthenticationAction}.
+ * Service class around authentication, session cookie and session cache
+ * handling. It works together with the {@link Authentication} controller and
+ * the @Authenticated annotation defined in {@link AuthenticationAction}.
+ * 
+ * If a user is authenticated (same password as stored in the database) a user
+ * session ID is generated and stored in Play's session cookie and in the the
+ * cache. With each subsequent request this session is checked in the
+ * AuthenticationAction.
  * 
  * @author Kristian Lange (2017)
  */
@@ -65,10 +69,13 @@ public class AuthenticationService {
 	private static SecureRandom random = new SecureRandom();
 
 	private final UserDao userDao;
+	private final UserSessionCacheAccessor userSessionCacheAccessor;
 
 	@Inject
-	AuthenticationService(Configuration configuration, UserDao userDao) {
+	AuthenticationService(UserDao userDao,
+			UserSessionCacheAccessor userSessionCacheAccessor) {
 		this.userDao = userDao;
+		this.userSessionCacheAccessor = userSessionCacheAccessor;
 	}
 
 	/**
@@ -80,6 +87,14 @@ public class AuthenticationService {
 	}
 
 	/**
+	 * Checks the user session cache whether this user tries to login repeatedly
+	 */
+	public boolean isRepeatedLoginAttempt(String email) {
+		userSessionCacheAccessor.addLoginAttempt(email);
+		return userSessionCacheAccessor.isRepeatedLoginAttempt(email);
+	}
+
+	/**
 	 * Retrieves the logged-in user from Play's session. If a user is logged-in
 	 * his email is stored in the Play's session cookie. With the email a user
 	 * can be retrieved from the database. Returns null if the session doesn't
@@ -88,7 +103,7 @@ public class AuthenticationService {
 	 * In most cases getLoggedInUser() is faster since it doesn't has to query
 	 * the database.
 	 */
-	public User getLoggedInUserBySession(Http.Session session) {
+	public User getLoggedInUserBySessionCookie(Http.Session session) {
 		String email = session.get(AuthenticationService.SESSION_USER_EMAIL);
 		User loggedInUser = null;
 		if (email != null) {
@@ -107,14 +122,14 @@ public class AuthenticationService {
 	}
 
 	/**
-	 * Prepares Play's session for the user with the given email to be
-	 * logged-in. Does not authenticate the user (use authenticate() for this).
+	 * Prepares Play's session cookie and the user session cache for the user
+	 * with the given email to be logged-in. Does not authenticate the user (use
+	 * authenticate() for this).
 	 */
-	public void writeSessionCookieAndSessionId(Http.Session session,
-			String email) {
+	public void writeSessionCookieAndSessionCache(Http.Session session,
+			String email, String host) {
 		String sessionId = generateSessionId();
-		User user = userDao.findByEmail(email);
-		persistUsersSessionId(user, sessionId);
+		userSessionCacheAccessor.setUserSessionId(email, host, sessionId);
 		session.put(SESSION_ID, sessionId);
 		session.put(SESSION_USER_EMAIL, email);
 		session.put(SESSION_LOGIN_TIME,
@@ -133,8 +148,8 @@ public class AuthenticationService {
 	}
 
 	/**
-	 * Refreshes the last activity timestamp in Play's session. This is usually
-	 * done with each activity of the user.
+	 * Refreshes the last activity timestamp in Play's session cookie. This is
+	 * usually done with each HTTP call of the user.
 	 */
 	public void refreshSessionCookie(Http.Session session) {
 		session.put(SESSION_LAST_ACTIVITY_TIME,
@@ -149,31 +164,32 @@ public class AuthenticationService {
 	}
 
 	/**
-	 * Deletes the session cookie and removes the session ID from the logged-in
-	 * User. This is usual done during a user logout.
+	 * Deletes the session cookie and removes the cache entry. This is usual
+	 * done during a user logout.
 	 */
-	public void clearSessionCookieAndSessionId(Http.Session session,
-			User loggedInUser) {
-		persistUsersSessionId(loggedInUser, null);
+	public void clearSessionCookieAndSessionCache(Http.Session session,
+			String email, String host) {
+		userSessionCacheAccessor.removeUserSessionId(email, host);
 		session.clear();
 	}
 
-	private void persistUsersSessionId(User user, String sessionId) {
-		user.setSessionId(sessionId);
-		userDao.update(user);
+	/**
+	 * Checks the session ID stored in Play's session cookie whether it is the
+	 * same as stored in the cache during the last login.
+	 */
+	public boolean isValidSessionId(Http.Session session, String email,
+			String host) {
+		String cookieSessionId = session.get(SESSION_ID);
+		String cachedSessionId = userSessionCacheAccessor
+				.getUserSessionId(email, host);
+		return cookieSessionId != null && cachedSessionId != null
+				&& cookieSessionId.equals(cachedSessionId);
 	}
 
 	/**
-	 * Checks the session ID stored in Play's session whether it is the same as
-	 * stored in the given User during the last login.
+	 * Returns true if the session login time as saved in Play's session cookie
+	 * is older than allowed.
 	 */
-	public boolean isValidSessionId(Http.Session session, User user) {
-		String sessionId = session.get(SESSION_ID);
-		String usersSessionId = user.getSessionId();
-		return sessionId != null && usersSessionId != null
-				&& sessionId.equals(user.getSessionId());
-	}
-
 	public boolean isSessionTimeout(Http.Session session) {
 		try {
 			Instant loginTime = Instant.ofEpochMilli(
@@ -189,6 +205,10 @@ public class AuthenticationService {
 		}
 	}
 
+	/**
+	 * Returns true if the session inactivity time as saved in Play's session
+	 * cookie is older than allowed.
+	 */
 	public boolean isInactivityTimeout(Http.Session session) {
 		try {
 			Instant lastActivityTime = Instant.ofEpochMilli(

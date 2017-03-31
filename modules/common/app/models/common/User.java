@@ -76,15 +76,6 @@ public class User {
 	@ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
 	private Set<Study> studyList = new HashSet<>();
 
-	/**
-	 * ID used in Play's session cookie to add an additional layer of security.
-	 * It identifies the current session. If a user logs out, the session ID
-	 * becomes null. This way the session can't be reused after the user
-	 * logged-out.
-	 */
-	@JsonIgnore
-	private String sessionId;
-
 	public User(String email, String name, String passwordHash) {
 		this.email = email;
 		this.name = name;
@@ -169,14 +160,6 @@ public class User {
 
 	public boolean hasStudy(Study study) {
 		return this.studyList.contains(study);
-	}
-
-	public String getSessionId() {
-		return sessionId;
-	}
-
-	public void setSessionId(String sessionId) {
-		this.sessionId = sessionId;
 	}
 
 	@Override

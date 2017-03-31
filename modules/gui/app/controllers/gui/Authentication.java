@@ -56,24 +56,47 @@ public class Authentication extends Controller {
 	 */
 	@Transactional
 	public Result authenticate() {
+		LOGGER.info(".authenticate");
 		Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest();
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");
 
-		if (authenticationService.authenticate(email, password)) {
-			authenticationService.writeSessionCookieAndSessionId(session(), email);
+		if (authenticationService.isRepeatedLoginAttempt(email)) {
+			return returnBadRequestDueToRepeatedLoginAttempt(loginForm, email);
+		} else if (!authenticationService.authenticate(email, password)) {
+			return returnBadRequestDueToFailedAuth(loginForm, email);
+		} else {
+			authenticationService.writeSessionCookieAndSessionCache(session(),
+					email, request().host());
 			if (HttpUtils.isAjax()) {
 				return ok();
 			} else {
 				return redirect(controllers.gui.routes.Home.home());
 			}
+		}
+	}
+
+	private Result returnBadRequestDueToRepeatedLoginAttempt(
+			Form<Login> loginForm, String email) {
+		LOGGER.warn("Authentication failed: host " + request().host()
+				+ " failed repeatedly for email " + email);
+		if (HttpUtils.isAjax()) {
+			return badRequest(MessagesStrings.FAILED_THREE_TIMES);
 		} else {
-			if (HttpUtils.isAjax()) {
-				return badRequest(MessagesStrings.INVALID_USER_OR_PASSWORD);
-			} else {
-				loginForm.reject(MessagesStrings.INVALID_USER_OR_PASSWORD);
-				return badRequest(views.html.gui.auth.login.render(loginForm));
-			}
+			loginForm.reject(MessagesStrings.FAILED_THREE_TIMES);
+			return badRequest(views.html.gui.auth.login.render(loginForm));
+		}
+	}
+
+	private Result returnBadRequestDueToFailedAuth(Form<Login> loginForm,
+			String email) {
+		LOGGER.warn("Authentication failed: host " + request().host()
+				+ " failed for email " + email);
+		if (HttpUtils.isAjax()) {
+			return badRequest(MessagesStrings.INVALID_USER_OR_PASSWORD);
+		} else {
+			loginForm.reject(MessagesStrings.INVALID_USER_OR_PASSWORD);
+			return badRequest(views.html.gui.auth.login.render(loginForm));
 		}
 	}
 
@@ -86,8 +109,8 @@ public class Authentication extends Controller {
 		LOGGER.info(".logout: "
 				+ session(AuthenticationService.SESSION_USER_EMAIL));
 		User loggedInUser = authenticationService.getLoggedInUser();
-		authenticationService.clearSessionCookieAndSessionId(session(),
-				loggedInUser);
+		authenticationService.clearSessionCookieAndSessionCache(session(),
+				loggedInUser.getEmail(), request().host());
 		FlashScopeMessaging.success("You've been logged out.");
 		return redirect(controllers.gui.routes.Authentication.login());
 	}

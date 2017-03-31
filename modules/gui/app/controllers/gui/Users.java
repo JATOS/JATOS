@@ -268,8 +268,8 @@ public class Users extends Controller {
 		}
 		// If the user removes himself: logout
 		if (emailOfUserToRemove.equals(loggedInUserEmail)) {
-			authenticationService.clearSessionCookieAndSessionId(session(),
-					loggedInUser);
+			authenticationService.clearSessionCookieAndSessionCache(session(),
+					loggedInUser.getEmail(), request().host());
 		}
 		return ok();
 	}

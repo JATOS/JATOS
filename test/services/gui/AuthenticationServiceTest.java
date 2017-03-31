@@ -16,7 +16,6 @@ import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import daos.common.UserDao;
 import general.TestHelper;
 import general.common.Common;
 import general.common.RequestScope;
@@ -35,6 +34,10 @@ import play.mvc.Http;
  */
 public class AuthenticationServiceTest {
 
+	private static final String BLA_AT_BLA_ORG = "bla@bla.org";
+
+	private static final String WWW_EXAMPLE_COM = "www.example.com";
+
 	private Injector injector;
 
 	@Inject
@@ -47,7 +50,7 @@ public class AuthenticationServiceTest {
 	private AuthenticationService authenticationService;
 
 	@Inject
-	private UserDao userDao;
+	private UserSessionCacheAccessor userSessionCacheAccessor;
 
 	@Before
 	public void startApp() throws Exception {
@@ -88,16 +91,39 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkAuthenticateNotAdminUser() {
-		testHelper.createAndPersistUser("bla@bla.org", "Bla Bla", "bla");
+		testHelper.createAndPersistUser(BLA_AT_BLA_ORG, "Bla Bla", "bla");
 
 		jpaApi.withTransaction(() -> {
-			assertThat(authenticationService.authenticate("bla@bla.org", "bla"))
-					.isTrue();
-			assertThat(authenticationService.authenticate("bla@bla.org",
+			assertThat(
+					authenticationService.authenticate(BLA_AT_BLA_ORG, "bla"))
+							.isTrue();
+			assertThat(authenticationService.authenticate(BLA_AT_BLA_ORG,
 					"wrongPassword")).isFalse();
 		});
 
-		testHelper.removeUser("bla@bla.org");
+		testHelper.removeUser(BLA_AT_BLA_ORG);
+	}
+
+	/**
+	 * Test AuthenticationService.isRepeatedLoginAttempt(): The 4th call for the
+	 * same email within the same minute returns true
+	 */
+	@Test
+	public void checkIsRepeatedLoginAttempt() {
+		testHelper.createAndPersistUser(BLA_AT_BLA_ORG, "Bla Bla", "bla");
+
+		assertThat(authenticationService.isRepeatedLoginAttempt(BLA_AT_BLA_ORG))
+				.isFalse();
+		assertThat(authenticationService.isRepeatedLoginAttempt(BLA_AT_BLA_ORG))
+				.isFalse();
+		assertThat(authenticationService.isRepeatedLoginAttempt(BLA_AT_BLA_ORG))
+				.isFalse();
+		assertThat(authenticationService.isRepeatedLoginAttempt(BLA_AT_BLA_ORG))
+				.isTrue();
+
+		// Try a different email - should still return true
+		assertThat(authenticationService.isRepeatedLoginAttempt("foo@foo.org"))
+				.isFalse();
 	}
 
 	/**
@@ -110,20 +136,22 @@ public class AuthenticationServiceTest {
 			data.put(AuthenticationService.SESSION_USER_EMAIL,
 					UserService.ADMIN_EMAIL);
 			Http.Session session = new Http.Session(data);
-			assertThat(authenticationService.getLoggedInUserBySession(session))
-					.isEqualTo(testHelper.getAdmin());
+			assertThat(authenticationService
+					.getLoggedInUserBySessionCookie(session))
+							.isEqualTo(testHelper.getAdmin());
 		});
 
 		// Try again with another non-admin user
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
-				"bla");
+		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+				"Bla Bla", "bla");
 		jpaApi.withTransaction(() -> {
 			Map<String, String> data = new HashMap<>();
 			data.put(AuthenticationService.SESSION_USER_EMAIL,
 					userBla.getEmail());
 			Http.Session session = new Http.Session(data);
-			assertThat(authenticationService.getLoggedInUserBySession(session))
-					.isEqualTo(userBla);
+			assertThat(authenticationService
+					.getLoggedInUserBySessionCookie(session))
+							.isEqualTo(userBla);
 		});
 	}
 
@@ -138,8 +166,8 @@ public class AuthenticationServiceTest {
 			data.put(AuthenticationService.SESSION_USER_EMAIL,
 					"user-not-exist@bla.org");
 			Http.Session session = new Http.Session(data);
-			assertThat(authenticationService.getLoggedInUserBySession(session))
-					.isNull();
+			assertThat(authenticationService
+					.getLoggedInUserBySessionCookie(session)).isNull();
 		});
 	}
 
@@ -151,8 +179,8 @@ public class AuthenticationServiceTest {
 	public void checkGetLoggedInUser() {
 		testHelper.mockContext();
 
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
-				"bla");
+		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+				"Bla Bla", "bla");
 		RequestScope.put(AuthenticationService.LOGGED_IN_USER, userBla);
 
 		assertThat(authenticationService.getLoggedInUser()).isEqualTo(userBla);
@@ -169,21 +197,21 @@ public class AuthenticationServiceTest {
 	}
 
 	/**
-	 * Test AuthenticationService.writeSessionCookieAndSessionId()
+	 * Test AuthenticationService.writeSessionCookieAndSessionCache()
 	 */
 	@Test
-	public void checkWriteSessionCookieAndSessionId() {
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
-				"bla");
+	public void checkWriteSessionCookieAndSessionCache() {
+		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+				"Bla Bla", "bla");
 		Map<String, String> data = new HashMap<>();
 		Http.Session session = new Http.Session(data);
 
 		jpaApi.withTransaction(() -> {
-			authenticationService.writeSessionCookieAndSessionId(session,
-					userBla.getEmail());
+			authenticationService.writeSessionCookieAndSessionCache(session,
+					userBla.getEmail(), WWW_EXAMPLE_COM);
 		});
 
-		// Check session
+		// Check session cookie
 		assertThat(session.get(AuthenticationService.SESSION_ID)).isNotEmpty();
 		assertThat(session.get(AuthenticationService.SESSION_USER_EMAIL))
 				.isEqualTo(userBla.getEmail());
@@ -193,18 +221,17 @@ public class AuthenticationServiceTest {
 				session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME))
 						.isNotEmpty();
 
-		// Check that session ID is stored in user and that it is the same as in
-		// the session
-		jpaApi.withTransaction(() -> {
-			User user = userDao.findByEmail(userBla.getEmail());
-			assertThat(user.getSessionId())
-					.isEqualTo(session.get(AuthenticationService.SESSION_ID));
-		});
+		// Check that user session cache and that the session ID is the same as
+		// in the session cookie
+		String cachedUserSessionId = userSessionCacheAccessor
+				.getUserSessionId(userBla.getEmail(), WWW_EXAMPLE_COM);
+		assertThat(cachedUserSessionId)
+				.isEqualTo(session.get(AuthenticationService.SESSION_ID));
 	}
 
 	/**
 	 * Test AuthenticationService.refreshSessionCookie(): writes a new last
-	 * activity time into the session
+	 * activity time into the session cookie
 	 */
 	@Test
 	public void checkRefreshSessionCookie() {
@@ -220,7 +247,7 @@ public class AuthenticationServiceTest {
 
 	/**
 	 * Test AuthenticationService.clearSessionCookie(): removes all entries from
-	 * the session
+	 * the session cookie
 	 */
 	@Test
 	public void checkClearSessionCookie() {
@@ -244,14 +271,14 @@ public class AuthenticationServiceTest {
 	}
 
 	/**
-	 * Test AuthenticationService.clearSessionCookieAndSessionId(): additional
-	 * to removing all entries from the session it also removes the session ID
-	 * from the user
+	 * Test AuthenticationService.clearSessionCookieAndSessionCache():
+	 * additional to removing all entries from the session it also removes the
+	 * session ID from the cached user session
 	 */
 	@Test
-	public void checkClearSessionCookieAndSessionId() {
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
-				"bla");
+	public void checkClearSessionCookieAndSessionCache() {
+		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+				"Bla Bla", "bla");
 		Map<String, String> data = new HashMap<>();
 		data.put(AuthenticationService.SESSION_LAST_ACTIVITY_TIME, "blafasel");
 		data.put(AuthenticationService.SESSION_ID, "blafasel");
@@ -259,8 +286,8 @@ public class AuthenticationServiceTest {
 		data.put(AuthenticationService.SESSION_USER_EMAIL, "blafasel");
 		Http.Session session = new Http.Session(data);
 		jpaApi.withTransaction(() -> {
-			authenticationService.clearSessionCookieAndSessionId(session,
-					userBla);
+			authenticationService.clearSessionCookieAndSessionCache(session,
+					userBla.getEmail(), WWW_EXAMPLE_COM);
 		});
 
 		// Check that session is cleared
@@ -273,11 +300,11 @@ public class AuthenticationServiceTest {
 		assertThat(session.get(AuthenticationService.SESSION_USER_EMAIL))
 				.isNull();
 
-		// Check that the session ID that was stored in user is removed
-		jpaApi.withTransaction(() -> {
-			User user = userDao.findByEmail(userBla.getEmail());
-			assertThat(user.getSessionId()).isNull();
-		});
+		// Check that the session ID that was stored in cached user session is
+		// removed
+		String cachedUserSessionId = userSessionCacheAccessor
+				.getUserSessionId(userBla.getEmail(), WWW_EXAMPLE_COM);
+		assertThat(cachedUserSessionId).isNull();
 	}
 
 	/**
@@ -286,16 +313,15 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkIsValidSessionIdIsValid() {
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
-				"bla");
-		userBla.setSessionId("this-is-a-session-id");
+		userSessionCacheAccessor.setUserSessionId(BLA_AT_BLA_ORG,
+				WWW_EXAMPLE_COM, "this-is-a-session-id");
 
 		Map<String, String> data = new HashMap<>();
 		data.put(AuthenticationService.SESSION_ID, "this-is-a-session-id");
 		Http.Session session = new Http.Session(data);
 
-		assertThat(authenticationService.isValidSessionId(session, userBla))
-				.isTrue();
+		assertThat(authenticationService.isValidSessionId(session,
+				BLA_AT_BLA_ORG, WWW_EXAMPLE_COM)).isTrue();
 	}
 
 	/**
@@ -304,35 +330,30 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkIsValidSessionIdIsNotValid() {
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
-				"bla");
-		userBla.setSessionId("this-is-a-session-id");
+		userSessionCacheAccessor.setUserSessionId(BLA_AT_BLA_ORG,
+				WWW_EXAMPLE_COM, "this-is-a-session-id");
 
 		Map<String, String> data = new HashMap<>();
 		data.put(AuthenticationService.SESSION_ID,
 				"this-is-a-complete-different-session-id");
 		Http.Session session = new Http.Session(data);
 
-		assertThat(authenticationService.isValidSessionId(session, userBla))
-				.isFalse();
+		assertThat(authenticationService.isValidSessionId(session,
+				BLA_AT_BLA_ORG, WWW_EXAMPLE_COM)).isFalse();
 	}
 
 	/**
-	 * Test AuthenticationService.isValidSessionId(): returns false if user's
-	 * session ID is null
+	 * Test AuthenticationService.isValidSessionId(): returns false if cached
+	 * user session ID was never set
 	 */
 	@Test
 	public void checkIsValidSessionIdUsersSessionIdNull() {
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
-				"bla");
-		userBla.setSessionId(null);
-
 		Map<String, String> data = new HashMap<>();
 		data.put(AuthenticationService.SESSION_ID, "this-is-a-session-id");
 		Http.Session session = new Http.Session(data);
 
-		assertThat(authenticationService.isValidSessionId(session, userBla))
-				.isFalse();
+		assertThat(authenticationService.isValidSessionId(session,
+				BLA_AT_BLA_ORG, WWW_EXAMPLE_COM)).isFalse();
 	}
 
 	/**
@@ -341,15 +362,14 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkIsValidSessionIdNullInSession() {
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
-				"bla");
-		userBla.setSessionId("this-is-a-session-id");
+		userSessionCacheAccessor.setUserSessionId(BLA_AT_BLA_ORG,
+				WWW_EXAMPLE_COM, "this-is-a-session-id");
 
 		Map<String, String> data = new HashMap<>();
 		Http.Session session = new Http.Session(data);
 
-		assertThat(authenticationService.isValidSessionId(session, userBla))
-				.isFalse();
+		assertThat(authenticationService.isValidSessionId(session,
+				BLA_AT_BLA_ORG, WWW_EXAMPLE_COM)).isFalse();
 	}
 
 	/**
