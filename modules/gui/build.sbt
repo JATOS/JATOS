@@ -9,6 +9,7 @@ includeFilter in (Assets, LessKeys.less) := "*.less"
 excludeFilter in (Assets, LessKeys.less) := "_*.less"
 
 libraryDependencies ++= Seq(
+	cache,
 	"org.webjars" % "bootstrap" % "3.3.4"
 )
 
