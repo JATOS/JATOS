@@ -26,26 +26,17 @@
 
 <script>
 
-var sessionTimeoutTimeout;
-var sessionInactivityTimeout;
-setLoginTimeouts();
-
-function setLoginTimeouts() {
-	// The actual session timeout handling is done on the server side -
-	// here we just offer an login overlay.
-	var sessionTimeout = @general.common.Common.getSessionTimeout() * 60000;
-	var sessionInactivity = @general.common.Common.getSessionInactivity() * 60000;
-	sessionTimeoutTimeout = setTimeout(function() {
-		showLoginModal("You have been logged out due to session timeout.");
-	}, sessionTimeout);
-	sessionInactivityTimeout = setTimeout(function() {
-		showLoginModal("You have been logged out due to inactivity.");
-	}, sessionInactivity);
+// Let a background worker check for session timeouts
+var sessionTimeoutWorker;
+if (window.Worker) {
+	sessionTimeoutWorker = new Worker('@controllers.gui.routes.Assets.versioned("lib/jatos-gui/javascripts/sessionTimoutChecker.js")');
+	sessionTimeoutWorker.postMessage([@general.common.Common.getSessionTimeout(), @general.common.Common.getSessionInactivity()]);
+	sessionTimeoutWorker.onmessage = function(msg) {
+		showLoginModal(msg.data);
+	}
 }
 
 function showLoginModal(explanationText) {
-	clearTimeout(sessionTimeoutTimeout);
-	clearTimeout(sessionInactivityTimeout);
 	removeAlerts('#loginModal');
 	removeFormErrors('#loginModal')
 	$('#loginModal .explanation').text(explanationText);
@@ -61,7 +52,7 @@ $("#loginForm").submit(function(event) {
 		data: $('#loginForm').serialize(),
 		success: function(response) {
 			removeAlerts('#loginModal');
-			setLoginTimeouts();
+			sessionTimeoutWorker.postMessage([@general.common.Common.getSessionTimeout(), @general.common.Common.getSessionInactivity()]);
 			$('#loginModal').modal('hide');
 		},
 		error: function(response) {
