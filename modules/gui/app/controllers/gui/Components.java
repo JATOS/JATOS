@@ -79,7 +79,7 @@ public class Components extends Controller {
 	@Authenticated
 	public Result runComponent(Long studyId, Long componentId, Long batchId)
 			throws JatosGuiException {
-		LOGGER.info(".runComponent: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".runComponent: studyId " + studyId + ", " + "componentId "
 				+ componentId + ", " + "batch " + batchId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		Study study = studyDao.findById(studyId);
@@ -117,7 +117,7 @@ public class Components extends Controller {
 	@Transactional
 	@Authenticated
 	public Result submitCreated(Long studyId) throws JatosGuiException {
-		LOGGER.info(".submitCreated: studyId " + studyId);
+		LOGGER.debug(".submitCreated: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		checkStudyAndLocked(studyId, study, loggedInUser);
@@ -141,7 +141,7 @@ public class Components extends Controller {
 	@Authenticated
 	public Result properties(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".properties: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".properties: studyId " + studyId + ", " + "componentId "
 				+ componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
@@ -164,7 +164,7 @@ public class Components extends Controller {
 	@Authenticated
 	public Result submitEdited(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".submitEdited: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".submitEdited: studyId " + studyId + ", " + "componentId "
 				+ componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
@@ -200,7 +200,7 @@ public class Components extends Controller {
 	@Authenticated
 	public Result toggleActive(Long studyId, Long componentId, Boolean active)
 			throws JatosGuiException {
-		LOGGER.info(".toggleActive: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".toggleActive: studyId " + studyId + ", " + "componentId "
 				+ componentId + ", " + "active " + active);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
@@ -223,7 +223,7 @@ public class Components extends Controller {
 	@Authenticated
 	public Result cloneComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".cloneComponent: studyId " + studyId + ", "
+		LOGGER.debug(".cloneComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
@@ -245,7 +245,7 @@ public class Components extends Controller {
 	@Authenticated
 	public Result remove(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".remove: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".remove: studyId " + studyId + ", " + "componentId "
 				+ componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();

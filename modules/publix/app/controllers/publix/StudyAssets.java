@@ -59,7 +59,7 @@ public class StudyAssets extends Controller {
 					File.separator);
 			file = ioUtils.getExistingFileSecurely(
 					Common.getStudyAssetsRootPath(), filePath);
-			LOGGER.info(".versioned: loading file " + file.getPath() + ".");
+			LOGGER.debug(".versioned: loading file " + file.getPath() + ".");
 		} catch (PublixException e) {
 			String errorMsg = e.getMessage();
 			LOGGER.info(".versioned: " + errorMsg);

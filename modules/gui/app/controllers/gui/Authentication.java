@@ -45,7 +45,7 @@ public class Authentication extends Controller {
 	 * Shows the login page
 	 */
 	public Result login() {
-		LOGGER.info(".login");
+		LOGGER.debug(".login");
 		return ok(views.html.gui.auth.login
 				.render(formFactory.form(Authentication.Login.class)));
 	}
@@ -56,7 +56,7 @@ public class Authentication extends Controller {
 	 */
 	@Transactional
 	public Result authenticate() {
-		LOGGER.info(".authenticate");
+		LOGGER.debug(".authenticate");
 		Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest();
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");

@@ -81,7 +81,7 @@ public class ComponentResults extends Controller {
 	@Authenticated
 	public Result componentResults(Long studyId, Long componentId,
 			String errorMsg, int httpStatus) throws JatosGuiException {
-		LOGGER.info(".componentResults: studyId " + studyId + ", "
+		LOGGER.debug(".componentResults: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
@@ -125,7 +125,7 @@ public class ComponentResults extends Controller {
 	@Transactional
 	@Authenticated
 	public Result remove(String componentResultIds) throws JatosGuiException {
-		LOGGER.info(".remove: componentResultIds " + componentResultIds);
+		LOGGER.debug(".remove: componentResultIds " + componentResultIds);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			// Permission check is done in service for each result individually
@@ -147,7 +147,7 @@ public class ComponentResults extends Controller {
 	@Authenticated
 	public Result removeAllOfComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".removeAllOfComponent: studyId " + studyId + ", "
+		LOGGER.debug(".removeAllOfComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
@@ -176,7 +176,7 @@ public class ComponentResults extends Controller {
 	@Authenticated
 	public Result tableDataByComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".tableDataByComponent: studyId " + studyId + ", "
+		LOGGER.debug(".tableDataByComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();

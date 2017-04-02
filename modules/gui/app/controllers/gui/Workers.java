@@ -80,7 +80,7 @@ public class Workers extends Controller {
 	@Transactional
 	@Authenticated
 	public Result remove(Long workerId) throws JatosGuiException {
-		LOGGER.info(".remove: workerId " + workerId);
+		LOGGER.debug(".remove: workerId " + workerId);
 		Worker worker = workerDao.findById(workerId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
@@ -107,7 +107,7 @@ public class Workers extends Controller {
 	@Transactional
 	@Authenticated
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
-		LOGGER.info(".tableDataByStudy: studyId " + studyId);
+		LOGGER.debug(".tableDataByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 
@@ -130,7 +130,7 @@ public class Workers extends Controller {
 	@Authenticated
 	public Result workerSetup(Long studyId, Long batchId)
 			throws JatosGuiException {
-		LOGGER.info(".workerSetup: studyId " + studyId + ", " + "batchId "
+		LOGGER.debug(".workerSetup: studyId " + studyId + ", " + "batchId "
 				+ batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
@@ -162,7 +162,7 @@ public class Workers extends Controller {
 	@Authenticated
 	public Result workerData(Long studyId, Long batchId)
 			throws JatosGuiException {
-		LOGGER.info(".workersData: studyId " + studyId + ", " + "batchId "
+		LOGGER.debug(".workersData: studyId " + studyId + ", " + "batchId "
 				+ batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();

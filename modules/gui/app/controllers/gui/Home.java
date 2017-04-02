@@ -86,7 +86,7 @@ public class Home extends Controller {
 	@Transactional
 	@Authenticated
 	public Result home(int httpStatus) {
-		LOGGER.info(".home");
+		LOGGER.debug(".home");
 		User loggedInUser = authenticationService.getLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		String breadcrumbs = breadcrumbsService.generateForHome();
@@ -109,7 +109,7 @@ public class Home extends Controller {
 	@Transactional
 	@Authenticated
 	public Result sidebarStudyList() {
-		LOGGER.info(".sidebarStudyList");
+		LOGGER.debug(".sidebarStudyList");
 		User loggedInUser = authenticationService.getLoggedInUser();
 		List<Study> studyList = studyDao.findAllByUser(loggedInUser);
 		return ok(jsonUtils.sidebarStudyList(studyList));
@@ -125,7 +125,7 @@ public class Home extends Controller {
 	@Transactional
 	@Authenticated(Role.ADMIN)
 	public Result log(Integer lineLimit) throws JatosGuiException {
-		LOGGER.info(".log: " + "lineLimit " + lineLimit);
+		LOGGER.debug(".log: " + "lineLimit " + lineLimit);
 		return ok().chunked(logFileReader.read(lineLimit))
 				.as("text/plain; charset=utf-8");
 	}

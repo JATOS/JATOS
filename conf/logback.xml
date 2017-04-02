@@ -33,8 +33,6 @@
 
 	<logger name="play" level="INFO" />
 	<logger name="application" level="INFO" />
-	<logger name="controllers.gui" level="WARN" />
-	<logger name="controllers.publix.StudyAssets" level="WARN" />
 
 	<root level="INFO">
 		<appender-ref ref="ASYNCFILE" />

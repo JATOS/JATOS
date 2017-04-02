@@ -72,7 +72,7 @@ public class Users extends Controller {
 	@Transactional
 	@Authenticated(Role.ADMIN)
 	public Result userManager() throws JatosGuiException {
-		LOGGER.info(".userManager");
+		LOGGER.debug(".userManager");
 		User loggedInUser = authenticationService.getLoggedInUser();
 		String breadcrumbs = breadcrumbsService
 				.generateForHome(BreadcrumbsService.USER_MANAGER);
@@ -86,7 +86,7 @@ public class Users extends Controller {
 	@Transactional
 	@Authenticated(Role.ADMIN)
 	public Result allUserData() {
-		LOGGER.info(".allUserData");
+		LOGGER.debug(".allUserData");
 		List<User> userList = userService.retrieveAllUsers();
 		return ok(jsonUtils.userData(userList));
 	}
@@ -100,7 +100,7 @@ public class Users extends Controller {
 	@Authenticated(Role.ADMIN)
 	public Result toggleAdmin(String emailOfUserToChange, Boolean adminRole)
 			throws JatosGuiException {
-		LOGGER.info(".toggleAdmin: emailOfUserToChange " + emailOfUserToChange
+		LOGGER.debug(".toggleAdmin: emailOfUserToChange " + emailOfUserToChange
 				+ ", " + "adminRole " + adminRole);
 		boolean hasAdminRole;
 		try {
@@ -120,7 +120,7 @@ public class Users extends Controller {
 	@Transactional
 	@Authenticated
 	public Result profile(String email) throws JatosGuiException {
-		LOGGER.info(".profile: " + "email " + email);
+		LOGGER.debug(".profile: " + "email " + email);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		checkEmailIsOfLoggedInUser(email, loggedInUser);
 
@@ -136,7 +136,7 @@ public class Users extends Controller {
 	@Transactional
 	@Authenticated
 	public Result singleUserData(String email) throws JatosGuiException {
-		LOGGER.info(".singleUserData: " + "email " + email);
+		LOGGER.debug(".singleUserData: " + "email " + email);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		checkEmailIsOfLoggedInUser(email, loggedInUser);
 		return ok(jsonUtils.userData(loggedInUser));
@@ -149,7 +149,7 @@ public class Users extends Controller {
 	@Transactional
 	@Authenticated(Role.ADMIN)
 	public Result submitCreated() {
-		LOGGER.info(".submitCreated");
+		LOGGER.debug(".submitCreated");
 		User loggedInUser = authenticationService.getLoggedInUser();
 
 		// Validate via model's validate method
@@ -179,7 +179,7 @@ public class Users extends Controller {
 	@Transactional
 	@Authenticated
 	public Result submitEditedProfile(String email) throws JatosGuiException {
-		LOGGER.info(".submitEditedProfile: " + "email " + email);
+		LOGGER.debug(".submitEditedProfile: " + "email " + email);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		checkEmailIsOfLoggedInUser(email, loggedInUser);
 
@@ -202,7 +202,7 @@ public class Users extends Controller {
 	@Transactional
 	@Authenticated
 	public Result submitChangedPassword(String emailOfUserToChange) {
-		LOGGER.info(
+		LOGGER.debug(
 				".submitChangedPassword: " + "email " + emailOfUserToChange);
 
 		// Validate via model's validate method
@@ -242,7 +242,7 @@ public class Users extends Controller {
 	@Transactional
 	@Authenticated
 	public Result remove(String emailOfUserToRemove) throws JatosGuiException {
-		LOGGER.info(".remove: " + "emailOfUserToRemove " + emailOfUserToRemove);
+		LOGGER.debug(".remove: " + "emailOfUserToRemove " + emailOfUserToRemove);
 
 		User loggedInUser = authenticationService.getLoggedInUser();
 		String loggedInUserEmail = loggedInUser.getEmail();
