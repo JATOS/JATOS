@@ -293,7 +293,7 @@ public class Studies extends Controller {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
 		List<User> userList = userDao.findAll();
-		return ok(jsonUtils.memberUsersOfStudy(userList, study));
+		return ok(jsonUtils.memberUserArrayOfStudy(userList, study));
 	}
 
 	/**
@@ -307,9 +307,10 @@ public class Studies extends Controller {
 				+ ", isMember " + isMember);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
+		User userToChange;
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
-			User userToChange = userService.retrieveUser(email);
+			userToChange = userService.retrieveUser(email);
 			studyService.changeUserMember(study, userToChange, isMember);
 		} catch (ForbiddenException e) {
 			return forbidden(e.getMessage());
@@ -319,7 +320,7 @@ public class Studies extends Controller {
 			return badRequest(e.getMessage());
 		}
 
-		return ok(JsonUtils.asJsonNode(isMember));
+		return ok(jsonUtils.memberUserOfStudy(userToChange, study));
 	}
 
 	/**

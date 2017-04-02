@@ -327,21 +327,32 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Returns JsonNode with all users and if they are member of the given
-	 * study. This JSON is intended for JATOS' GUI / in the change user modal.
+	 * Returns JsonNode with all users of this study. This JSON is intended for
+	 * JATOS' GUI / in the change user modal.
 	 */
-	public JsonNode memberUsersOfStudy(List<User> userList, Study study) {
+	public JsonNode memberUserArrayOfStudy(List<User> userList, Study study) {
 		ArrayNode userArrayNode = Json.mapper().createArrayNode();
 		for (User user : userList) {
-			ObjectNode userNode = Json.mapper().createObjectNode();
-			userNode.put("name", user.getName());
-			userNode.put("email", user.getEmail());
-			userNode.put("isMember", study.hasUser(user));
-			userArrayNode.add(userNode);
+			if (study.hasUser(user)) {
+				ObjectNode userNode = memberUserOfStudy(user, study);
+				userArrayNode.add(userNode);
+			}
 		}
 		ObjectNode userDataNode = Json.mapper().createObjectNode();
 		userDataNode.set(DATA, userArrayNode);
 		return userDataNode;
+	}
+
+	/**
+	 * Returns JsonNode with the given user. This JSON is intended for JATOS'
+	 * GUI / in the change user modal.
+	 */
+	public ObjectNode memberUserOfStudy(User user, Study study) {
+		ObjectNode userNode = Json.mapper().createObjectNode();
+		userNode.put("name", user.getName());
+		userNode.put("email", user.getEmail());
+		userNode.put("isMember", study.hasUser(user));
+		return userNode;
 	}
 
 	/**
