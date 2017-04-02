@@ -151,9 +151,12 @@ public class MessagesStrings {
 	}
 
 	public static String studyImportNotUser(String studyTitle) {
-		String errorMsg = "The study \"" + studyTitle + "\" you're trying "
-				+ "to upload already exists but you aren't a user of it.";
-		return errorMsg;
+		return "The study \"" + studyTitle + "\" you're trying "
+				+ "to upload already exists but you aren't a user of it. "
+				+ "You can always import this study in another JATOS instance "
+				+ "(e.g. <a href=\"http://www.jatos.org/Installation.html\">"
+				+ "in your local instance</a>), clone it there, export it, "
+				+ "and import it here again.";
 	}
 
 	public static String studyAssetsOverwritten(String studyAssetsName,
