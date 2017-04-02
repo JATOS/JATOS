@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 
 import models.common.Batch;
 import models.common.Component;
@@ -77,17 +78,16 @@ public class JsonUtils {
 	}
 
 	/**
-	 * Formats a JSON string into a standardised form suitable for storing into
-	 * a DB.
+	 * Formats a JSON string into a minimized form suitable for storing into a
+	 * DB.
 	 */
 	public static String asStringForDB(String jsonData) {
-		if (jsonData == null) {
+		if (Strings.isNullOrEmpty(jsonData)) {
 			return null;
 		}
 		if (!JsonUtils.isValidJSON(jsonData)) {
-			// Set the invalid string anyway, but don't standardise it. It will
-			// cause an error during next validate() if one tries to edit this
-			// component.
+			// Set the invalid string anyway, but don't standardize it. It will
+			// cause an error during next validation.
 			return jsonData;
 		}
 		String jsonDataForDB = null;
