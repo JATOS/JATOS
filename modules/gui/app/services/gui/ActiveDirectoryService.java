@@ -30,7 +30,7 @@ public class ActiveDirectoryService {
 
 		// Authenticate as S. User and password “mysecret”
 		env.put(Context.SECURITY_AUTHENTICATION, "simple");
-		env.put(Context.SECURITY_PRINCIPAL, "cn=read-only-admin,dc=example,dc=com");
+		env.put(Context.SECURITY_PRINCIPAL, "uid="+ username +",dc=example,dc=com");
 		env.put(Context.SECURITY_CREDENTIALS, password);
 		
 		env.put("com.sun.jndi.ldap.connect.timeout", "" + (timeout * 1000));

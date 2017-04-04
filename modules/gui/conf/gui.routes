@@ -6,6 +6,7 @@
 # Authentication controller
 GET     /jatos/login                                 @controllers.gui.Authentication.login()
 POST    /jatos/login                                 @controllers.gui.Authentication.authenticate()
+POST    /jatos/loginldap                             @controllers.gui.Authentication.authenticateLdap()
 GET     /jatos/logout                                @controllers.gui.Authentication.logout()
 
 # Home controller

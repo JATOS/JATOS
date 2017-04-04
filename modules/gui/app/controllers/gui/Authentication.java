@@ -1,7 +1,13 @@
 package controllers.gui;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.naming.AuthenticationException;
+import javax.naming.CommunicationException;
+import javax.naming.NamingException;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
@@ -15,6 +21,7 @@ import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.gui.ActiveDirectoryService;
 import services.gui.AuthenticationService;
 import utils.common.HttpUtils;
 
@@ -48,6 +55,33 @@ public class Authentication extends Controller {
 		LOGGER.debug(".login");
 		return ok(views.html.gui.auth.login
 				.render(formFactory.form(Authentication.Login.class)));
+	}
+
+	public CompletionStage<Result> authenticateLdap() {
+		Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest();
+		String email = loginForm.data().get("email");
+		String password = loginForm.data().get("password");
+
+		try {
+			CompletableFuture<Boolean> future = ActiveDirectoryService
+					.authenticate(email, password);
+			return future.thenApply((a) -> {
+				FlashScopeMessaging.success("access granted");
+				return ok(views.html.gui.auth.login.render(loginForm));
+			});
+		} catch (AuthenticationException exp) {
+			loginForm.reject("access denied");
+			return CompletableFuture.completedFuture(
+					badRequest(views.html.gui.auth.login.render(loginForm)));
+		} catch (CommunicationException exp) {
+			loginForm.reject("The active directory server is not reachable");
+			return CompletableFuture.completedFuture(internalServerError(
+					views.html.gui.auth.login.render(loginForm)));
+		} catch (NamingException exp) {
+			loginForm.reject("active directory domain name does not exist");
+			return CompletableFuture.completedFuture(internalServerError(
+					views.html.gui.auth.login.render(loginForm)));
+		}
 	}
 
 	/**
