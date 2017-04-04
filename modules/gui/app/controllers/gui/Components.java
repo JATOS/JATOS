@@ -27,10 +27,10 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.Checker;
 import services.gui.ComponentService;
 import services.gui.JatosGuiExceptionThrower;
-import services.gui.UserService;
 import utils.common.JsonUtils;
 
 /**
@@ -40,7 +40,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class Components extends Controller {
 
@@ -53,7 +52,7 @@ public class Components extends Controller {
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final Checker checker;
 	private final ComponentService componentService;
-	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 	private final FormFactory formFactory;
@@ -61,12 +60,12 @@ public class Components extends Controller {
 	@Inject
 	Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			Checker checker, ComponentService componentService,
-			UserService userService, StudyDao studyDao,
+			AuthenticationService authenticationService, StudyDao studyDao,
 			ComponentDao componentDao, FormFactory formFactory) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.componentService = componentService;
-		this.userService = userService;
+		this.authenticationService = authenticationService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.formFactory = formFactory;
@@ -77,11 +76,12 @@ public class Components extends Controller {
 	 * Publix.startStudy().
 	 */
 	@Transactional
+	@Authenticated
 	public Result runComponent(Long studyId, Long componentId, Long batchId)
 			throws JatosGuiException {
-		LOGGER.info(".runComponent: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".runComponent: studyId " + studyId + ", " + "componentId "
 				+ componentId + ", " + "batch " + batchId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Study study = studyDao.findById(studyId);
 		Component component = componentDao.findById(componentId);
 		try {
@@ -115,10 +115,11 @@ public class Components extends Controller {
 	 * Component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitCreated(Long studyId) throws JatosGuiException {
-		LOGGER.info(".submitCreated: studyId " + studyId);
+		LOGGER.debug(".submitCreated: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		checkStudyAndLocked(studyId, study, loggedInUser);
 
 		Form<ComponentProperties> form = formFactory
@@ -137,12 +138,13 @@ public class Components extends Controller {
 	 * Ajax GET requests for getting the properties of a Component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result properties(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".properties: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".properties: studyId " + studyId + ", " + "componentId "
 				+ componentId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -159,12 +161,13 @@ public class Components extends Controller {
 	 * Handles the post of the edit form.
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitEdited(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".submitEdited: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".submitEdited: studyId " + studyId + ", " + "componentId "
 				+ componentId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		checkStudyAndLockedAndComponent(studyId, componentId, study,
 				loggedInUser, component);
@@ -194,12 +197,13 @@ public class Components extends Controller {
 	 * Request to change the property 'active' of a component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result toggleActive(Long studyId, Long componentId, Boolean active)
 			throws JatosGuiException {
-		LOGGER.info(".toggleActive: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".toggleActive: studyId " + studyId + ", " + "componentId "
 				+ componentId + ", " + "active " + active);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		checkStudyAndLockedAndComponent(studyId, componentId, study,
 				loggedInUser, component);
@@ -216,12 +220,13 @@ public class Components extends Controller {
 	 * Clone a component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result cloneComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".cloneComponent: studyId " + studyId + ", "
+		LOGGER.debug(".cloneComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		checkStudyAndLockedAndComponent(studyId, componentId, study,
 				loggedInUser, component);
@@ -237,12 +242,13 @@ public class Components extends Controller {
 	 * Remove a component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result remove(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".remove: studyId " + studyId + ", " + "componentId "
+		LOGGER.debug(".remove: studyId " + studyId + ", " + "componentId "
 				+ componentId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		checkStudyAndLockedAndComponent(studyId, componentId, study,
 				loggedInUser, component);

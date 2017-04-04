@@ -15,6 +15,7 @@ import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import controllers.publix.workers.JatosPublix;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.PublixException;
 import general.TestHelper;
@@ -61,7 +62,8 @@ public class JatosStudyAuthorisationTest {
 			IOException, ForbiddenPublixException {
 		testHelper.mockContext();
 		User admin = testHelper.getAdmin();
-		Http.Context.current().session().put("email", admin.getEmail());
+		Http.Context.current().session().put(JatosPublix.SESSION_USER_EMAIL,
+				admin.getEmail());
 
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Batch batch = study.getDefaultBatch();

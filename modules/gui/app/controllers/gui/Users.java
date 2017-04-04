@@ -1,5 +1,6 @@
 package controllers.gui;
 
+import java.io.IOException;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -10,7 +11,12 @@ import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
 import exceptions.gui.NotFoundException;
+import general.common.MessagesStrings;
 import models.common.User;
+import models.common.User.Role;
+import models.gui.ChangePasswordModel;
+import models.gui.ChangeUserProfileModel;
+import models.gui.NewUserModel;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.DynamicForm;
@@ -20,12 +26,13 @@ import play.data.validation.ValidationError;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
+import services.gui.AuthenticationValidation;
 import services.gui.BreadcrumbsService;
-import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.UserService;
-import utils.common.HashUtils;
 import utils.common.HttpUtils;
+import utils.common.JsonUtils;
 
 /**
  * Controller with actions concerning users
@@ -33,131 +40,248 @@ import utils.common.HttpUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class Users extends Controller {
 
 	private static final ALogger LOGGER = Logger.of(Users.class);
 
-	public static final String SESSION_EMAIL = "email";
-
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-	private final Checker checker;
 	private final UserService userService;
+	private final AuthenticationService authenticationService;
+	private final AuthenticationValidation authenticationValidation;
 	private final BreadcrumbsService breadcrumbsService;
 	private final FormFactory formFactory;
+	private final JsonUtils jsonUtils;
 
 	@Inject
-	Users(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
-			UserService userService, BreadcrumbsService breadcrumbsService,
-			FormFactory formFactory) {
+	Users(JatosGuiExceptionThrower jatosGuiExceptionThrower,
+			UserService userService,
+			AuthenticationService authenticationService,
+			AuthenticationValidation authenticationValidation,
+			BreadcrumbsService breadcrumbsService, FormFactory formFactory,
+			JsonUtils jsonUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-		this.checker = checker;
 		this.userService = userService;
+		this.authenticationService = authenticationService;
+		this.authenticationValidation = authenticationValidation;
 		this.breadcrumbsService = breadcrumbsService;
 		this.formFactory = formFactory;
+		this.jsonUtils = jsonUtils;
+	}
+
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result userManager() throws JatosGuiException {
+		LOGGER.debug(".userManager");
+		User loggedInUser = authenticationService.getLoggedInUser();
+		String breadcrumbs = breadcrumbsService
+				.generateForHome(BreadcrumbsService.USER_MANAGER);
+		return ok(views.html.gui.user.userManager.render(loggedInUser,
+				breadcrumbs, HttpUtils.isLocalhost()));
+	}
+
+	/**
+	 * Ajax GET request: Returns a list of all users as JSON
+	 */
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result allUserData() {
+		LOGGER.debug(".allUserData");
+		List<User> userList = userService.retrieveAllUsers();
+		return ok(jsonUtils.userData(userList));
+	}
+
+	/**
+	 * Ajax POST
+	 * 
+	 * Request to add or remove the ADMIN role from a user.
+	 */
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result toggleAdmin(String emailOfUserToChange, Boolean adminRole)
+			throws JatosGuiException {
+		LOGGER.debug(".toggleAdmin: emailOfUserToChange " + emailOfUserToChange
+				+ ", " + "adminRole " + adminRole);
+		boolean hasAdminRole;
+		try {
+			hasAdminRole = userService.changeAdminRole(emailOfUserToChange,
+					adminRole);
+		} catch (NotFoundException e) {
+			return badRequest(e.getMessage());
+		} catch (ForbiddenException e) {
+			return forbidden(e.getMessage());
+		}
+		return ok(JsonUtils.asJsonNode(hasAdminRole));
 	}
 
 	/**
 	 * Shows the profile view of a user
 	 */
 	@Transactional
+	@Authenticated
 	public Result profile(String email) throws JatosGuiException {
-		LOGGER.info(".profile: " + "email " + email);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		User user = checkStandard(email, loggedInUser);
-		String breadcrumbs = breadcrumbsService.generateForUser(user);
+		LOGGER.debug(".profile: " + "email " + email);
+		User loggedInUser = authenticationService.getLoggedInUser();
+		checkEmailIsOfLoggedInUser(email, loggedInUser);
+
+		String breadcrumbs = breadcrumbsService.generateForUser(loggedInUser);
 		return ok(views.html.gui.user.profile.render(loggedInUser, breadcrumbs,
-				HttpUtils.isLocalhost(), user));
+				HttpUtils.isLocalhost()));
 	}
 
 	/**
-	 * Handles post request of user create form.
+	 * Ajax GET request: Returns data of the user that belongs to the given
+	 * email
 	 */
 	@Transactional
-	public Result submit() {
-		LOGGER.info(".submit");
-		Form<User> form = formFactory.form(User.class).bindFromRequest();
+	@Authenticated
+	public Result singleUserData(String email) throws JatosGuiException {
+		LOGGER.debug(".singleUserData: " + "email " + email);
+		User loggedInUser = authenticationService.getLoggedInUser();
+		checkEmailIsOfLoggedInUser(email, loggedInUser);
+		return ok(jsonUtils.userData(loggedInUser));
+	}
 
+	/**
+	 * Handles POST request of user create form. Only users with Role ADMIN are
+	 * allowed to create new users.
+	 */
+	@Transactional
+	@Authenticated(Role.ADMIN)
+	public Result submitCreated() {
+		LOGGER.debug(".submitCreated");
+		User loggedInUser = authenticationService.getLoggedInUser();
+
+		// Validate via model's validate method
+		Form<NewUserModel> form = formFactory.form(NewUserModel.class)
+				.bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
 		}
 
-		User newUser = form.get();
-		DynamicForm requestData = formFactory.form().bindFromRequest();
-		String password = requestData.get(User.PASSWORD);
-		String passwordRepeat = requestData.get(User.PASSWORD_REPEAT);
-		List<ValidationError> errorList = userService.validateNewUser(newUser,
-				password, passwordRepeat);
+		// Validate via AuthenticationService
+		NewUserModel newUser = form.get();
+		List<ValidationError> errorList = authenticationValidation
+				.validateNewUser(newUser, loggedInUser.getEmail());
 		if (!errorList.isEmpty()) {
 			errorList.forEach(form::reject);
 			return badRequest(form.errorsAsJson());
 		}
 
-		userService.createAndPersistUser(newUser, password);
+		userService.bindToUserAndPersist(newUser);
 		return ok();
 	}
 
 	/**
-	 * Handles post request of user edit profile form.
+	 * Handles POST request of user edit profile form (so far it's only the
+	 * user's name - password is handled in another method).
 	 */
 	@Transactional
+	@Authenticated
 	public Result submitEditedProfile(String email) throws JatosGuiException {
-		LOGGER.info(".submitEditedProfile: " + "email " + email);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		User user = checkStandard(email, loggedInUser);
+		LOGGER.debug(".submitEditedProfile: " + "email " + email);
+		User loggedInUser = authenticationService.getLoggedInUser();
+		checkEmailIsOfLoggedInUser(email, loggedInUser);
 
-		Form<User> form = formFactory.form(User.class).bindFromRequest();
+		Form<ChangeUserProfileModel> form = formFactory
+				.form(ChangeUserProfileModel.class).bindFromRequest();
 		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
 		}
-		// Update user in database
-		// Do not update 'email' since it's the ID and should stay
-		// unaltered. For the password we have an extra form.
-		DynamicForm requestData = formFactory.form().bindFromRequest();
-		String name = requestData.get(User.NAME);
-		userService.updateName(user, name);
-		return redirect(controllers.gui.routes.Users.profile(email));
+
+		// Update user in database: so far it's only the user's name
+		String name = form.get().getName();
+		userService.updateName(loggedInUser, name);
+		return ok();
 	}
 
 	/**
-	 * Handles post request of change password form.
+	 * Handles POST request of change password form. Can be either origin in the
+	 * user manager or in the user profile.
 	 */
 	@Transactional
-	public Result submitChangedPassword(String email) throws JatosGuiException {
-		LOGGER.info(".submitChangedPassword: " + "email " + email);
-		User loggedInUser = userService.retrieveLoggedInUser();
-		User user = checkStandard(email, loggedInUser);
-		Form<User> form = formFactory.form(User.class).fill(user);
+	@Authenticated
+	public Result submitChangedPassword(String emailOfUserToChange) {
+		LOGGER.debug(
+				".submitChangedPassword: " + "email " + emailOfUserToChange);
 
-		DynamicForm requestData = formFactory.form().bindFromRequest();
-		String newPassword = requestData.get(User.PASSWORD);
-		String newPasswordRepeat = requestData.get(User.PASSWORD_REPEAT);
-		String oldPasswordHash = HashUtils
-				.getHashMDFive(requestData.get(User.OLD_PASSWORD));
-		List<ValidationError> errorList = userService.validateChangePassword(
-				user, newPassword, newPasswordRepeat, oldPasswordHash);
-		if (!errorList.isEmpty()) {
-			errorList.forEach(form::reject);
+		// Validate via model's validate method
+		Form<ChangePasswordModel> form = formFactory
+				.form(ChangePasswordModel.class).bindFromRequest();
+		if (form.hasErrors()) {
 			return badRequest(form.errorsAsJson());
 		}
-		String newPasswordHash = HashUtils.getHashMDFive(newPassword);
-		userService.updatePasswordHash(user, newPasswordHash);
 
-		return redirect(controllers.gui.routes.Users.profile(email));
+		// Validate via AuthenticationService
+		ChangePasswordModel changePasswordModel = form.get();
+		List<ValidationError> errorList = authenticationValidation
+				.validateChangePassword(emailOfUserToChange,
+						changePasswordModel);
+		if (!errorList.isEmpty()) {
+			errorList.forEach(form::reject);
+			return forbidden(form.errorsAsJson());
+		}
+
+		// Change password
+		try {
+			String newPassword = changePasswordModel.getNewPassword();
+			userService.updatePassword(emailOfUserToChange, newPassword);
+		} catch (NotFoundException e) {
+			return badRequest(e.getMessage());
+		}
+		return ok();
 	}
 
-	private User checkStandard(String email, User loggedInUser)
-			throws JatosGuiException {
-		User user = null;
+	/**
+	 * POST request to delete a user. Is called from user manager and user
+	 * profile.
+	 * 
+	 * It can't be a HTTP DELETE because it contains form data and Play doesn't
+	 * handle body data in a DELETE request.
+	 */
+	@Transactional
+	@Authenticated
+	public Result remove(String emailOfUserToRemove) throws JatosGuiException {
+		LOGGER.debug(".remove: " + "emailOfUserToRemove " + emailOfUserToRemove);
+
+		User loggedInUser = authenticationService.getLoggedInUser();
+		String loggedInUserEmail = loggedInUser.getEmail();
+		if (!loggedInUser.hasRole(Role.ADMIN)
+				&& !emailOfUserToRemove.equals(loggedInUserEmail)) {
+			return forbidden(MessagesStrings.NOT_ALLOWED_TO_DELETE_USER);
+		}
+
+		DynamicForm requestData = formFactory.form().bindFromRequest();
+		String password = requestData.get("password");
+		if (!authenticationService.authenticate(loggedInUserEmail, password)) {
+			return forbidden(MessagesStrings.WRONG_PASSWORD);
+		}
+
 		try {
-			user = userService.retrieveUser(email);
-			checker.checkUserLoggedIn(user, loggedInUser);
-		} catch (ForbiddenException | NotFoundException e) {
+			userService.removeUser(emailOfUserToRemove);
+		} catch (NotFoundException e) {
+			return badRequest(e.getMessage());
+		} catch (ForbiddenException e) {
+			return forbidden(e.getMessage());
+		} catch (IOException e) {
+			return internalServerError(e.getMessage());
+		}
+		// If the user removes himself: logout
+		if (emailOfUserToRemove.equals(loggedInUserEmail)) {
+			authenticationService.clearSessionCookieAndSessionCache(session(),
+					loggedInUser.getEmail(), request().host());
+		}
+		return ok();
+	}
+
+	private void checkEmailIsOfLoggedInUser(String email, User loggedInUser)
+			throws JatosGuiException {
+		if (!email.equals(loggedInUser.getEmail())) {
+			ForbiddenException e = new ForbiddenException(
+					MessagesStrings.userNotAllowedToGetData(email));
 			jatosGuiExceptionThrower.throwRedirect(e,
 					controllers.gui.routes.Home.home());
 		}
-		return user;
 	}
 
 }

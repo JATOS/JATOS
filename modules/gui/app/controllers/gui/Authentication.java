@@ -1,12 +1,19 @@
 package controllers.gui;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.naming.AuthenticationException;
+import javax.naming.CommunicationException;
+import javax.naming.NamingException;
 
+import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
-import daos.common.UserDao;
 import general.common.MessagesStrings;
 import general.gui.FlashScopeMessaging;
+import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
@@ -14,10 +21,14 @@ import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
-import utils.common.HashUtils;
+import services.gui.ActiveDirectoryService;
+import services.gui.AuthenticationService;
+import utils.common.HttpUtils;
 
 /**
- * Controller that deals with login/logout.
+ * Controller that deals with login/logout. There are two login views: 1) login
+ * HTML page, and 2) an overlay. The second one is triggered by a session
+ * timeout or an inactivity timeout in JavaScript.
  * 
  * @author Kristian Lange
  */
@@ -25,60 +36,127 @@ import utils.common.HashUtils;
 @Singleton
 public class Authentication extends Controller {
 
-	private static final ALogger LOGGER = Logger.of(Workers.class);
+	private static final ALogger LOGGER = Logger.of(Authentication.class);
 
-	public static final String LOGGED_IN_USER = "loggedInUser";
-
-	private final UserDao userDao;
+	private final AuthenticationService authenticationService;
 	private final FormFactory formFactory;
 
 	@Inject
-	Authentication(UserDao userDao, FormFactory formFactory) {
-		this.userDao = userDao;
+	Authentication(AuthenticationService authenticationService,
+			FormFactory formFactory) {
+		this.authenticationService = authenticationService;
 		this.formFactory = formFactory;
 	}
 
 	/**
-	 * Shows the login form view.
+	 * Shows the login page
 	 */
 	public Result login() {
-		LOGGER.info(".login");
+		LOGGER.debug(".login");
 		return ok(views.html.gui.auth.login
 				.render(formFactory.form(Authentication.Login.class)));
 	}
 
-	/**
-	 * Deals with login form post.
-	 */
-	@Transactional
-	public Result authenticate() {
+	public CompletionStage<Result> authenticateLdap() {
 		Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest();
 		String email = loginForm.data().get("email");
 		String password = loginForm.data().get("password");
-		String passwordHash = HashUtils.getHashMDFive(password);
-		if (userDao.authenticate(email, passwordHash)) {
-			session(Users.SESSION_EMAIL, email);
-			return redirect(controllers.gui.routes.Home.home());
+
+		try {
+			CompletableFuture<Boolean> future = ActiveDirectoryService
+					.authenticate(email, password);
+			return future.thenApply((a) -> {
+				FlashScopeMessaging.success("access granted");
+				return ok(views.html.gui.auth.login.render(loginForm));
+			});
+		} catch (AuthenticationException exp) {
+			loginForm.reject("access denied");
+			return CompletableFuture.completedFuture(
+					badRequest(views.html.gui.auth.login.render(loginForm)));
+		} catch (CommunicationException exp) {
+			loginForm.reject("The active directory server is not reachable");
+			return CompletableFuture.completedFuture(internalServerError(
+					views.html.gui.auth.login.render(loginForm)));
+		} catch (NamingException exp) {
+			loginForm.reject("active directory domain name does not exist");
+			return CompletableFuture.completedFuture(internalServerError(
+					views.html.gui.auth.login.render(loginForm)));
+		}
+	}
+
+	/**
+	 * HTTP POST Endpoint for the login form. It handles both Ajax and normal
+	 * requests.
+	 */
+	@Transactional
+	public Result authenticate() {
+		LOGGER.debug(".authenticate");
+		Form<Login> loginForm = formFactory.form(Login.class).bindFromRequest();
+		String email = loginForm.data().get("email");
+		String password = loginForm.data().get("password");
+
+		if (authenticationService.isRepeatedLoginAttempt(email)) {
+			return returnBadRequestDueToRepeatedLoginAttempt(loginForm, email);
+		} else if (!authenticationService.authenticate(email, password)) {
+			return returnBadRequestDueToFailedAuth(loginForm, email);
 		} else {
-			loginForm.reject("Invalid user or password");
+			authenticationService.writeSessionCookieAndSessionCache(session(),
+					email, request().host());
+			if (HttpUtils.isAjax()) {
+				return ok();
+			} else {
+				return redirect(controllers.gui.routes.Home.home());
+			}
+		}
+	}
+
+	private Result returnBadRequestDueToRepeatedLoginAttempt(
+			Form<Login> loginForm, String email) {
+		LOGGER.warn("Authentication failed: host " + request().host()
+				+ " failed repeatedly for email " + email);
+		if (HttpUtils.isAjax()) {
+			return badRequest(MessagesStrings.FAILED_THREE_TIMES);
+		} else {
+			loginForm.reject(MessagesStrings.FAILED_THREE_TIMES);
+			return badRequest(views.html.gui.auth.login.render(loginForm));
+		}
+	}
+
+	private Result returnBadRequestDueToFailedAuth(Form<Login> loginForm,
+			String email) {
+		LOGGER.warn("Authentication failed: host " + request().host()
+				+ " failed for email " + email);
+		if (HttpUtils.isAjax()) {
+			return badRequest(MessagesStrings.INVALID_USER_OR_PASSWORD);
+		} else {
+			loginForm.reject(MessagesStrings.INVALID_USER_OR_PASSWORD);
 			return badRequest(views.html.gui.auth.login.render(loginForm));
 		}
 	}
 
 	/**
-	 * Shows login view with an logout message.
+	 * Removes user from session and shows login view with an logout message.
 	 */
+	@Transactional
+	@Authenticated
 	public Result logout() {
-		LOGGER.info(".logout: " + session(Users.SESSION_EMAIL));
-		session().remove(Users.SESSION_EMAIL);
-		FlashScopeMessaging.success(MessagesStrings.YOUVE_BEEN_LOGGED_OUT);
+		LOGGER.info(".logout: "
+				+ session(AuthenticationService.SESSION_USER_EMAIL));
+		User loggedInUser = authenticationService.getLoggedInUser();
+		authenticationService.clearSessionCookieAndSessionCache(session(),
+				loggedInUser.getEmail(), request().host());
+		FlashScopeMessaging.success("You've been logged out.");
 		return redirect(controllers.gui.routes.Authentication.login());
 	}
 
 	/**
-	 * Inner class needed for login template
+	 * Simple model class needed for login template
 	 */
 	public static class Login {
+
+		public static final String EMAIL = "email";
+		public static final String PASSWORD = "password";
+
 		public String email;
 		public String password;
 	}

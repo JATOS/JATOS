@@ -212,12 +212,15 @@ $(document).ready(function() {
 		var tr = $(this).closest('tr');
 		var row = resultsTable.row(tr);
 		if (row.child.isShown()) {
-			row.child.hide();
-			tr.removeClass('shown');
+			$('div.slider', row.child()).slideUp( function () {
+				row.child.hide();
+				tr.removeClass('shown');
+			});
 		} else {
-			row.child(childRowFormat(row.data())).show();
+			row.child(childRowFormat(row.data())).show();	
 			tr.addClass('shown');
 			tr.next().addClass('info');
+			$('div.slider', row.child()).slideDown();
 		}
 		$(this).find('.glyphicon-chevron-down, .glyphicon-chevron-right')
 				.toggleClass('glyphicon-chevron-right glyphicon-chevron-down');
@@ -264,9 +267,9 @@ $(document).ready(function() {
 		var title = "Confirm Delete";
 		var htmlText = "<p>You are about to delete the study results "
 			+ "(ID " + ids.join(", ") + ") " 
-			+ "<b>with all their component results</b> (cannot be undone).</p>"
-			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+			+ "<b>with all their component results</b>.</p>"
+			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = '/jatos/studyResult?studyResultIds=' + ids.toString();
 			$.ajax({
 				url : url,
@@ -286,9 +289,9 @@ $(document).ready(function() {
 	function deleteAllResults(e, dt, node, config) {
 		var title = "Confirm Delete";
 		var htmlText = "<p>You are about to delete <b>ALL</b> study results "
-			+ "<b>with all their component results</b> (cannot be undone).</p>"
-			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+			+ "<b>with all their component results</b>.</p>"
+			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+		askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 			var url = "@controllers.gui.routes.StudyResults.removeAllOfStudy(study.getId())";
 			$.ajax({
 				url : url,
@@ -306,7 +309,8 @@ $(document).ready(function() {
 	function childRowFormat(data) {
 		// `data` is the original data object for the row
 		var html = [];
-		html.push('<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
+		html.push('<div class="slider" style="display: none">',
+			'<table class="table borderless" cellpadding="5" cellspacing="0" border="0">',
 			'<tr class="info">',
 			'<td><b>Comp. Result ID</b></td>',
 			'<td><b>Comp. ID</b></td>',
@@ -334,7 +338,7 @@ $(document).ready(function() {
 					'<td colspan="6">empty</td>',
 					'</tr>');
 			}
-			html.push('</table>');
+			html.push('</table>', '</div>');
 		return html.join("");
 	}
 

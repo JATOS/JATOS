@@ -23,7 +23,9 @@ import com.google.inject.Injector;
 
 import daos.common.StudyDao;
 import daos.common.UserDao;
+import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
+import exceptions.gui.NotFoundException;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
@@ -71,15 +73,12 @@ public class TestHelper {
 	@Inject
 	private IOUtils ioUtils;
 
-	@Inject
-	private Common common;
-
 	public void removeStudyAssetsRootDir() throws IOException {
-		File assetsRoot = new File(common.getStudyAssetsRootPath());
+		File assetsRoot = new File(Common.getStudyAssetsRootPath());
 		if (assetsRoot.list() != null && assetsRoot.list().length > 0) {
 			Logger.warn(TestHelper.class.getSimpleName()
 					+ ".removeStudyAssetsRootDir: Study assets root directory "
-					+ common.getStudyAssetsRootPath()
+					+ Common.getStudyAssetsRootPath()
 					+ " is not empty after finishing testing. This should not happen.");
 		}
 		FileUtils.deleteDirectory(assetsRoot);
@@ -102,19 +101,33 @@ public class TestHelper {
 			User user = userDao.findByEmail(email);
 			if (user == null) {
 				user = new User(email, name);
-				userService.createAndPersistUser(user, password);
+				userService.createAndPersistUser(user, password, false);
 			}
 			return user;
 		});
 	}
 
-	public Study createAndPersistExampleStudyForAdmin(Injector injector) {
-		return jpaApi.withTransaction(() -> {
-			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			Study exampleStudy;
+	public void removeUser(String userEmail) {
+		jpaApi.withTransaction(() -> {
 			try {
-				exampleStudy = importExampleStudy(admin, injector);
-				studyService.createAndPersistStudy(admin, exampleStudy);
+				userService.removeUser(userEmail);
+			} catch (NotFoundException | ForbiddenException | IOException e) {
+				throw new RuntimeException(e);
+			}
+		});
+	}
+
+	public Study createAndPersistExampleStudyForAdmin(Injector injector) {
+		return createAndPersistExampleStudy(injector, UserService.ADMIN_EMAIL);
+	}
+
+	public Study createAndPersistExampleStudy(Injector injector,
+			String userEmail) {
+		return jpaApi.withTransaction(() -> {
+			User user = userDao.findByEmail(userEmail);
+			try {
+				Study exampleStudy = importExampleStudy(injector);
+				studyService.createAndPersistStudy(user, exampleStudy);
 				return exampleStudy;
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
@@ -122,8 +135,7 @@ public class TestHelper {
 		});
 	}
 
-	public Study importExampleStudy(User user, Injector injector)
-			throws IOException {
+	public Study importExampleStudy(Injector injector) throws IOException {
 		File studyZip = new File(BASIC_EXAMPLE_STUDY_ZIP);
 		File tempUnzippedStudyDir = ZipUtil.unzip(studyZip);
 		File[] studyFileList = ioUtils.findFiles(tempUnzippedStudyDir, "",
@@ -140,18 +152,16 @@ public class TestHelper {
 		tempUnzippedStudyDir.delete();
 
 		// Every study has a default batch
-		importedStudy
-				.addBatch(batchService.createDefaultBatch(importedStudy, user));
+		importedStudy.addBatch(batchService.createDefaultBatch(importedStudy));
 		return importedStudy;
 	}
 
-	public void removeStudy(Long studyId) throws IOException {
+	public void removeStudy(Long studyId) {
 		jpaApi.withTransaction(() -> {
 			try {
 				Study study = studyDao.findById(studyId);
 				if (study != null) {
-					ioUtils.removeStudyAssetsDir(study.getDirName());
-					studyService.remove(study);
+					studyService.removeStudyInclAssets(study);
 				}
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
@@ -163,8 +173,7 @@ public class TestHelper {
 		jpaApi.withTransaction(() -> {
 			studyDao.findAll().forEach(study -> {
 				try {
-					ioUtils.removeStudyAssetsDir(study.getDirName());
-					studyService.remove(study);
+					studyService.removeStudyInclAssets(study);
 				} catch (IOException e) {
 					throw new UncheckedIOException(e);
 				}

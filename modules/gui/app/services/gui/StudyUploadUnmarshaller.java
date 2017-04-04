@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.legacy.StudyV2;
+import play.libs.Json;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
@@ -38,7 +39,7 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 	 */
 	@Override
 	protected Study concreteUnmarshaling(String jsonStr) throws IOException {
-		JsonNode node = JsonUtils.OBJECTMAPPER.readTree(jsonStr)
+		JsonNode node = Json.mapper().readTree(jsonStr)
 				.findValue(JsonUtils.VERSION);
 		int version = node.asInt();
 		if (version > Study.SERIAL_VERSION) {
@@ -48,17 +49,14 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 		case 0:
 		case 2:
 			// Version 2
-			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr)
-					.findValue(JsonUtils.DATA);
-			StudyV2 studyV2 = JsonUtils.OBJECTMAPPER.treeToValue(node,
-					StudyV2.class);
+			node = Json.mapper().readTree(jsonStr).findValue(JsonUtils.DATA);
+			StudyV2 studyV2 = Json.mapper().treeToValue(node, StudyV2.class);
 			study = bindV2(studyV2);
 			break;
 		case 3:
 			// Current version
-			node = JsonUtils.OBJECTMAPPER.readTree(jsonStr)
-					.findValue(JsonUtils.DATA);
-			study = JsonUtils.OBJECTMAPPER.treeToValue(node, Study.class);
+			node = Json.mapper().readTree(jsonStr).findValue(JsonUtils.DATA);
+			study = Json.mapper().treeToValue(node, Study.class);
 			break;
 		default:
 			throw new IOException(MessagesStrings.UNSUPPORTED_STUDY_VERSION);

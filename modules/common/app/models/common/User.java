@@ -1,29 +1,25 @@
 package models.common;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import general.common.MessagesStrings;
 import models.common.workers.JatosWorker;
-import play.data.validation.ValidationError;
 
 /**
- * Domain model / entity of a user. Used for JSON marshalling and JPA
- * persistance.
+ * Domain entity of a user. Used for JSON marshalling and JPA persistance.
  * 
  * @author Kristian Lange
  */
@@ -31,11 +27,14 @@ import play.data.validation.ValidationError;
 @Table(name = "User")
 public class User {
 
-	public static final String NAME = "name";
-	public static final String EMAIL = "email";
-	public static final String PASSWORD = "password";
-	public static final String PASSWORD_REPEAT = "passwordRepeat";
-	public static final String OLD_PASSWORD = "oldPassword";
+	/**
+	 * Roles are used for authorization within JATOS GUI
+	 */
+	public enum Role {
+		USER, // Normal JATOS user
+		ADMIN; // Allows to create/change/delete other users (don't confuse role
+				// ADMIN with user 'admin'
+	}
 
 	/**
 	 * Email address is used as ID.
@@ -43,16 +42,30 @@ public class User {
 	@Id
 	private String email;
 
+	/**
+	 * User's name
+	 */
 	private String name;
+
+	/**
+	 * A list of Roles used for authorization. It has to be fetched eagerly
+	 * otherwise Hibernate has problems with the Worker's inheritance.
+	 */
+	@ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
+	@Enumerated(EnumType.STRING)
+	private Set<Role> roleList = new HashSet<>();
 
 	/**
 	 * Corresponding JatosWorker. This relationship is bidirectional.
 	 */
 	@JsonIgnore
-	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+	@OneToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "worker_id")
 	private JatosWorker worker;
 
-	// Password is stored as a hash
+	/**
+	 * Hash of the user's password
+	 */
 	@JsonIgnore
 	private String passwordHash;
 
@@ -93,12 +106,40 @@ public class User {
 		return this.name;
 	}
 
+	public Set<Role> getRoleList() {
+		return roleList;
+	}
+
+	public void setRoleList(Set<Role> roleList) {
+		this.roleList = roleList;
+	}
+
+	public void addRole(Role role) {
+		this.roleList.add(role);
+	}
+
+	public void removeRole(Role role) {
+		this.roleList.remove(role);
+	}
+
+	public boolean hasRole(Role role) {
+		return roleList.contains(role);
+	}
+
 	public void setPasswordHash(String passwordHash) {
 		this.passwordHash = passwordHash;
 	}
 
 	public String getPasswordHash() {
 		return this.passwordHash;
+	}
+
+	public void setWorker(JatosWorker worker) {
+		this.worker = worker;
+	}
+
+	public JatosWorker getWorker() {
+		return this.worker;
 	}
 
 	public void setStudyList(Set<Study> studyList) {
@@ -113,12 +154,12 @@ public class User {
 		this.studyList.add(study);
 	}
 
-	public void setWorker(JatosWorker worker) {
-		this.worker = worker;
+	public void removeStudy(Study study) {
+		this.studyList.remove(study);
 	}
 
-	public JatosWorker getWorker() {
-		return this.worker;
+	public boolean hasStudy(Study study) {
+		return this.studyList.contains(study);
 	}
 
 	@Override
@@ -158,35 +199,6 @@ public class User {
 			return false;
 		}
 		return true;
-	}
-
-	public List<ValidationError> validate() {
-		List<ValidationError> errorList = new ArrayList<>();
-		if (email == null || email.trim().isEmpty()) {
-			errorList.add(
-					new ValidationError(EMAIL, MessagesStrings.MISSING_EMAIL));
-		}
-		if (email != null && email.length() > 255) {
-			errorList.add(
-					new ValidationError(EMAIL, MessagesStrings.EMAIL_TOO_LONG));
-		}
-		if (email != null && !Jsoup.isValid(email, Whitelist.none())) {
-			errorList.add(new ValidationError(EMAIL,
-					MessagesStrings.NO_HTML_ALLOWED));
-		}
-		if (name == null || name.trim().isEmpty()) {
-			errorList.add(
-					new ValidationError(NAME, MessagesStrings.MISSING_NAME));
-		}
-		if (name != null && name.length() > 255) {
-			errorList.add(
-					new ValidationError(NAME, MessagesStrings.NAME_TOO_LONG));
-		}
-		if (name != null && !Jsoup.isValid(name, Whitelist.none())) {
-			errorList.add(
-					new ValidationError(NAME, MessagesStrings.NO_HTML_ALLOWED));
-		}
-		return errorList.isEmpty() ? null : errorList;
 	}
 
 }

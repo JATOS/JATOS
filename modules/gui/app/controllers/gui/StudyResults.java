@@ -32,12 +32,12 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.ResultRemover;
 import services.gui.ResultService;
-import services.gui.UserService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -47,7 +47,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class StudyResults extends Controller {
 
@@ -56,7 +55,7 @@ public class StudyResults extends Controller {
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final Checker checker;
 	private final JsonUtils jsonUtils;
-	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final ResultRemover resultRemover;
 	private final ResultService resultService;
@@ -67,14 +66,14 @@ public class StudyResults extends Controller {
 
 	@Inject
 	StudyResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			Checker checker, UserService userService,
+			Checker checker, AuthenticationService authenticationService,
 			BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
 			ResultService resultService, StudyDao studyDao, BatchDao batchDao,
 			JsonUtils jsonUtils, WorkerDao workerDao,
 			StudyResultDao studyResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
-		this.userService = userService;
+		this.authenticationService = authenticationService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.resultRemover = resultRemover;
 		this.resultService = resultService;
@@ -89,10 +88,11 @@ public class StudyResults extends Controller {
 	 * Shows view with all StudyResults of a study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result studysStudyResults(Long studyId) throws JatosGuiException {
-		LOGGER.info(".studysStudyResults: studyId " + studyId);
+		LOGGER.debug(".studysStudyResults: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -111,13 +111,14 @@ public class StudyResults extends Controller {
 	 * Shows view with all StudyResults of a batch.
 	 */
 	@Transactional
+	@Authenticated
 	public Result batchesStudyResults(Long studyId, Long batchId,
 			String workerType) throws JatosGuiException {
-		LOGGER.info(".batchesStudyResults: studyId " + studyId + ", "
+		LOGGER.debug(".batchesStudyResults: studyId " + studyId + ", "
 				+ "batchId " + batchId);
 		Batch batch = batchDao.findById(batchId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 			checker.checkStandardForBatch(batch, study, batchId);
@@ -142,9 +143,10 @@ public class StudyResults extends Controller {
 	 * Shows view with all StudyResults of a worker.
 	 */
 	@Transactional
+	@Authenticated
 	public Result workersStudyResults(Long workerId) throws JatosGuiException {
-		LOGGER.info(".workersStudyResults: " + "workerId " + workerId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		LOGGER.debug(".workersStudyResults: " + "workerId " + workerId);
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Worker worker = workerDao.findById(workerId);
 		try {
 			checker.checkWorker(worker, workerId);
@@ -167,9 +169,10 @@ public class StudyResults extends Controller {
 	 * StudyResult always removes it's ComponentResults.
 	 */
 	@Transactional
+	@Authenticated
 	public Result remove(String studyResultIds) throws JatosGuiException {
-		LOGGER.info(".remove: studyResultIds " + studyResultIds);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		LOGGER.debug(".remove: studyResultIds " + studyResultIds);
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			resultRemover.removeStudyResults(studyResultIds, loggedInUser);
 		} catch (ForbiddenException | BadRequestException
@@ -185,10 +188,11 @@ public class StudyResults extends Controller {
 	 * Removes all StudyResults of the given study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result removeAllOfStudy(Long studyId) throws JatosGuiException {
-		LOGGER.info(".removeAllOfStudy: studyId " + studyId);
+		LOGGER.debug(".removeAllOfStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
 		} catch (ForbiddenException | BadRequestException e) {
@@ -210,10 +214,11 @@ public class StudyResults extends Controller {
 	 * logged-in user is allowed to delete (only if he's a user of the study).
 	 */
 	@Transactional
+	@Authenticated
 	public Result removeAllOfWorker(Long workerId) throws JatosGuiException {
-		LOGGER.info(".removeAllOfWorker: workerId " + workerId);
+		LOGGER.debug(".removeAllOfWorker: workerId " + workerId);
 		Worker worker = workerDao.findById(workerId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			checker.checkWorker(worker, workerId);
 		} catch (BadRequestException e) {
@@ -233,10 +238,11 @@ public class StudyResults extends Controller {
 	 * Ajax request: Returns all StudyResults of a study in JSON format.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByStudy(Long studyId) throws JatosGuiException {
-		LOGGER.info(".tableDataByStudy: studyId " + studyId);
+		LOGGER.debug(".tableDataByStudy: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		JsonNode dataAsJson = null;
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -258,12 +264,13 @@ public class StudyResults extends Controller {
 	 * will only be of this type.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByBatch(Long studyId, Long batchId,
 			String workerType) throws JatosGuiException {
-		LOGGER.info(".tableDataByStudy: studyId " + studyId);
+		LOGGER.debug(".tableDataByBatch: studyId " + studyId);
 		Study study = studyDao.findById(studyId);
 		Batch batch = batchDao.findById(batchId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		JsonNode dataAsJson = null;
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -293,9 +300,10 @@ public class StudyResults extends Controller {
 	 * Ajax request: Returns all StudyResults belonging to a worker as JSON.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByWorker(Long workerId) throws JatosGuiException {
-		LOGGER.info(".tableDataByWorker: workerId " + workerId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		LOGGER.debug(".tableDataByWorker: workerId " + workerId);
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Worker worker = workerDao.findById(workerId);
 		try {
 			checker.checkWorker(worker, workerId);

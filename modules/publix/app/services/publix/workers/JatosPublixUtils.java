@@ -65,7 +65,7 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
 	 * ForbiddenPublixException if none is logged-in.
 	 */
 	public User retrieveLoggedInUser() throws ForbiddenPublixException {
-		String email = Publix.session(JatosPublix.SESSION_EMAIL);
+		String email = Publix.session(JatosPublix.SESSION_USER_EMAIL);
 		if (email == null) {
 			throw new ForbiddenPublixException(
 					JatosErrorMessages.NO_USER_LOGGED_IN);

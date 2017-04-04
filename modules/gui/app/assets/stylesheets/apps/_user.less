@@ -1,0 +1,58 @@
+
+/*
+ * Define user button colors
+ */
+@btn-user-color:   #ffffff;
+@btn-user-bg:      #b17632;
+@btn-user-border:  #8e5e28;
+
+.btn-user,
+.btn-user:hover,
+.btn-user:focus,
+.btn-user:active,
+.btn-user:visited {
+	color: @btn-user-color;
+	background-color: @btn-user-bg;
+	border-color: @btn-user-border;
+}
+
+/*
+ * No wrapping in button group
+ */
+.userBtnGroup {
+	display: -webkit-box;
+	display: -moz-box;
+	display: -ms-flexbox;
+	display: flex;
+	user-select: none;
+}
+
+/*
+ * DataTables
+ */
+.table tbody > tr > td.adminRole {
+	text-align: center;
+	user-select: none;
+}
+#userTable_wrapper .pagination > li.active > a {
+	color: @btn-user-color;
+	background-color: @btn-user-bg;
+	border-color: darken(@btn-user-bg, 5%);
+}
+#userTable_wrapper .pagination > li.active > a:hover {
+	background-color: darken(@btn-user-bg, 10%);
+}
+#userTable_wrapper .pagination > li > a {
+	color: @btn-default-color;
+	background-color: @btn-default-bg;
+	border-color: darken(@btn-default-bg, 20%);
+}
+#userTable_wrapper .pagination > li:not(.disabled):not(.active) > a:hover {
+	background-color: darken(@btn-default-bg, 10%);
+}
+#userTable_wrapper .pagination > li.disabled > a {
+	color: lighten(@btn-default-color, 20%);
+}
+#userTable_wrapper .pagination > li.next > a {
+	margin-right: 10px;
+}

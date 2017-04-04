@@ -28,11 +28,11 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.Checker;
 import services.gui.JatosGuiExceptionThrower;
 import services.gui.ResultRemover;
-import services.gui.UserService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -42,7 +42,6 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 @GuiAccessLogging
-@Authenticated
 @Singleton
 public class ComponentResults extends Controller {
 
@@ -50,7 +49,7 @@ public class ComponentResults extends Controller {
 
 	private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
 	private final Checker checker;
-	private final UserService userService;
+	private final AuthenticationService authenticationService;
 	private final BreadcrumbsService breadcrumbsService;
 	private final ResultRemover resultRemover;
 	private final JsonUtils jsonUtils;
@@ -60,13 +59,13 @@ public class ComponentResults extends Controller {
 
 	@Inject
 	ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower,
-			Checker checker, UserService userService,
+			Checker checker, AuthenticationService authenticationService,
 			BreadcrumbsService breadcrumbsService, ResultRemover resultRemover,
 			JsonUtils jsonUtils, StudyDao studyDao, ComponentDao componentDao,
 			ComponentResultDao componentResultDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
-		this.userService = userService;
+		this.authenticationService = authenticationService;
 		this.breadcrumbsService = breadcrumbsService;
 		this.resultRemover = resultRemover;
 		this.jsonUtils = jsonUtils;
@@ -79,12 +78,13 @@ public class ComponentResults extends Controller {
 	 * Shows a view with all component results of a component of a study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result componentResults(Long studyId, Long componentId,
 			String errorMsg, int httpStatus) throws JatosGuiException {
-		LOGGER.info(".componentResults: studyId " + studyId + ", "
+		LOGGER.debug(".componentResults: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -103,12 +103,14 @@ public class ComponentResults extends Controller {
 	}
 
 	@Transactional
+	@Authenticated
 	public Result componentResults(Long studyId, Long componentId,
 			String errorMsg) throws JatosGuiException {
 		return componentResults(studyId, componentId, errorMsg, Http.Status.OK);
 	}
 
 	@Transactional
+	@Authenticated
 	public Result componentResults(Long studyId, Long componentId)
 			throws JatosGuiException {
 		return componentResults(studyId, componentId, null, Http.Status.OK);
@@ -121,9 +123,10 @@ public class ComponentResults extends Controller {
 	 * a comma separated list of of ComponentResult IDs as a String.
 	 */
 	@Transactional
+	@Authenticated
 	public Result remove(String componentResultIds) throws JatosGuiException {
-		LOGGER.info(".remove: componentResultIds " + componentResultIds);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		LOGGER.debug(".remove: componentResultIds " + componentResultIds);
+		User loggedInUser = authenticationService.getLoggedInUser();
 		try {
 			// Permission check is done in service for each result individually
 			resultRemover.removeComponentResults(componentResultIds,
@@ -141,12 +144,13 @@ public class ComponentResults extends Controller {
 	 * Removes all ComponentResults of the given component and study.
 	 */
 	@Transactional
+	@Authenticated
 	public Result removeAllOfComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".removeAllOfComponent: studyId " + studyId + ", "
+		LOGGER.debug(".removeAllOfComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);
@@ -169,12 +173,13 @@ public class ComponentResults extends Controller {
 	 * Returns all ComponentResults as JSON for a given component.
 	 */
 	@Transactional
+	@Authenticated
 	public Result tableDataByComponent(Long studyId, Long componentId)
 			throws JatosGuiException {
-		LOGGER.info(".tableDataByComponent: studyId " + studyId + ", "
+		LOGGER.debug(".tableDataByComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId);
 		Study study = studyDao.findById(studyId);
-		User loggedInUser = userService.retrieveLoggedInUser();
+		User loggedInUser = authenticationService.getLoggedInUser();
 		Component component = componentDao.findById(componentId);
 		try {
 			checker.checkStandardForStudy(study, studyId, loggedInUser);

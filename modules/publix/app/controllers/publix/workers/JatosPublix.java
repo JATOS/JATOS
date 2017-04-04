@@ -82,9 +82,9 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 
 	/**
 	 * Name of a key in the session. It stores the email address of the logged
-	 * in user.
+	 * in JATOS user.
 	 */
-	public static final String SESSION_EMAIL = "email";
+	public static final String SESSION_USER_EMAIL = "userEmail";
 
 	private final JatosPublixUtils publixUtils;
 	private final JatosStudyAuthorisation studyAuthorisation;
@@ -111,7 +111,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			throws PublixException {
 		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
 				+ batchId + ", " + "logged-in user's email "
-				+ session(SESSION_EMAIL));
+				+ session(SESSION_USER_EMAIL));
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatchByIdOrDefault(batchId, study);
 		JatosWorker worker = publixUtils.retrieveLoggedInUser().getWorker();
@@ -150,7 +150,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		LOGGER.info(".startComponent: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "studyResultId "
 				+ studyResultId + ", " + "logged-in user's email "
-				+ session(SESSION_EMAIL));
+				+ session(SESSION_USER_EMAIL));
 		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -203,7 +203,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			throws PublixException {
 		LOGGER.info(".startNextComponent: studyId " + studyId + ", "
 				+ "studyResultId " + studyResultId + ", "
-				+ "logged-in user's email " + session(SESSION_EMAIL));
+				+ "logged-in user's email " + session(SESSION_USER_EMAIL));
 		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -251,7 +251,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			throws PublixException {
 		LOGGER.info(".abortStudy: studyId " + studyId + ", " + "studyResultId "
 				+ studyResultId + ", " + "logged-in user email "
-				+ session(SESSION_EMAIL) + ", " + "message \"" + message
+				+ session(SESSION_USER_EMAIL) + ", " + "message \"" + message
 				+ "\"");
 		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
@@ -283,7 +283,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			Boolean successful, String errorMsg) throws PublixException {
 		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
 				+ studyResultId + ", " + "logged-in user email "
-				+ session(SESSION_EMAIL) + ", " + "successful " + successful
+				+ session(SESSION_USER_EMAIL) + ", " + "successful " + successful
 				+ ", " + "errorMsg \"" + errorMsg + "\"");
 		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);

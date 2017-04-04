@@ -6,7 +6,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class HashUtils {
 
-	public static String getHashMDFive(String str) throws RuntimeException {
+	public static String getHashMDFive(String str) {
 		try {
 			byte[] strBytes = str.getBytes("UTF-8");
 			MessageDigest md = MessageDigest.getInstance("MD5");

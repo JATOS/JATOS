@@ -6,6 +6,7 @@
 # Authentication controller
 GET     /jatos/login                                 @controllers.gui.Authentication.login()
 POST    /jatos/login                                 @controllers.gui.Authentication.authenticate()
+POST    /jatos/loginldap                             @controllers.gui.Authentication.authenticateLdap()
 GET     /jatos/logout                                @controllers.gui.Authentication.logout()
 
 # Home controller
@@ -13,13 +14,22 @@ GET     /jatos/sidebarStudyList                      @controllers.gui.Home.sideb
 GET     /jatos                                       @controllers.gui.Home.home()
 GET     /jatos/                                      @controllers.gui.Home.home()
 GET     /                                            @controllers.gui.Home.home()
+# /jatos/admin/log is deprecated and /jatos/log should be used instead
 GET     /jatos/admin/log                             @controllers.gui.Home.log(limit: Integer ?= 1000)
+GET     /jatos/log                                   @controllers.gui.Home.log(limit: Integer ?= 1000)
+GET     /jatos/ldap                                  @controllers.gui.Home.ldap()
 
 # Users controller
-POST    /jatos/user                                  @controllers.gui.Users.submit()
+GET     /jatos/userManager                           @controllers.gui.Users.userManager()
+GET     /jatos/userData                              @controllers.gui.Users.allUserData()
+POST    /jatos/user                                  @controllers.gui.Users.submitCreated()
 POST    /jatos/user/:email/profile                   @controllers.gui.Users.submitEditedProfile(email: String)
+GET     /jatos/user/:email/userData                  @controllers.gui.Users.singleUserData(email: String)
 POST    /jatos/user/:email/password                  @controllers.gui.Users.submitChangedPassword(email: String)
+POST    /jatos/user/:email/admin                     @controllers.gui.Users.toggleAdmin(email: String, admin: Boolean)
 GET     /jatos/user/:email                           @controllers.gui.Users.profile(email: String)
+# Play doesn't allow data in body in a DELETE request, so I use POST instead
+POST    /jatos/user/:email/delete                    @controllers.gui.Users.remove(email: String)
 
 # ComponentResults & StudyResults controller
 GET     /jatos/worker/:workerId/tableData            @controllers.gui.StudyResults.tableDataByWorker(workerId: Long)
@@ -46,8 +56,8 @@ GET     /jatos/:studyId/batch/:batchId/workerSetup   @controllers.gui.Workers.wo
 POST    /jatos/study                                 @controllers.gui.Studies.submitCreated()
 GET     /jatos/:studyId/properties                   @controllers.gui.Studies.properties(studyId: Long)
 POST    /jatos/:studyId/properties                   @controllers.gui.Studies.submitEdited(studyId: Long)
-GET     /jatos/:studyId/users                        @controllers.gui.Studies.users(studyId: Long)
-POST    /jatos/:studyId/users                        @controllers.gui.Studies.submitChangedUsers(studyId: Long)
+POST    /jatos/:studyId/memberUser                   @controllers.gui.Studies.toggleMemberUser(studyId: Long, email: String, isMember: Boolean)
+GET     /jatos/:studyId/memberUsers                  @controllers.gui.Studies.memberUsers(studyId: Long)
 DELETE  /jatos/:studyId                              @controllers.gui.Studies.remove(studyId: Long)
 POST    /jatos/:studyId/componentOrder               @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, newPosition: String)
 GET     /jatos/:studyId/run                          @controllers.gui.Studies.runStudy(studyId: Long, batchId: Long ?= -1)

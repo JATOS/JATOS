@@ -23,7 +23,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import akka.stream.Materializer;
-import controllers.gui.Users;
 import controllers.publix.workers.JatosPublix;
 import controllers.publix.workers.JatosPublix.JatosRun;
 import daos.common.UserDao;
@@ -45,6 +44,7 @@ import play.mvc.Http.Cookie;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
+import services.gui.AuthenticationService;
 import services.gui.StudyService;
 import services.gui.UserService;
 
@@ -56,7 +56,7 @@ import services.gui.UserService;
 public class StudyAssetsTest {
 
 	private Injector injector;
-	
+
 	@Inject
 	private static Application fakeApplication;
 
@@ -65,9 +65,6 @@ public class StudyAssetsTest {
 
 	@Inject
 	private JPAApi jpaApi;
-
-	@Inject
-	private Common common;
 
 	@Inject
 	private StudyService studyService;
@@ -110,7 +107,7 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testStudyAssetsRootPath() {
-		File studyAssetsRoot = new File(common.getStudyAssetsRootPath());
+		File studyAssetsRoot = new File(Common.getStudyAssetsRootPath());
 		assertThat(studyAssetsRoot.exists());
 		assertThat(studyAssetsRoot.isDirectory());
 		assertThat(studyAssetsRoot.isAbsolute());
@@ -118,8 +115,7 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testVersioned() throws IOException, PublixException {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(injector);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
@@ -138,7 +134,8 @@ public class StudyAssetsTest {
 		String url = "/publix/" + study.getId() + "/start?"
 				+ JatosPublix.JATOS_WORKER_ID + "=" + admin.getWorker().getId();
 		RequestBuilder request = new RequestBuilder().method(GET).uri(url)
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.session(JatosPublix.SESSION_JATOS_RUN,
 						JatosRun.RUN_STUDY.name());
 		return route(request);
@@ -146,8 +143,7 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testVersionedNotFound() throws IOException, PublixException {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(injector);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
@@ -162,8 +158,7 @@ public class StudyAssetsTest {
 	@Test
 	public void testVersionedWrongStudyDir()
 			throws IOException, PublixException {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(injector);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
@@ -178,8 +173,7 @@ public class StudyAssetsTest {
 
 	@Test
 	public void testVersionedWrongAssets() throws IOException, PublixException {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(injector);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Study otherStudy = cloneStudy(study);
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
@@ -210,8 +204,7 @@ public class StudyAssetsTest {
 	@Test
 	public void testVersionedPathTraversalAttack()
 			throws IOException, PublixException {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(injector);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Result startStudyResult = startStudy(study);
 		Cookie idCookie = startStudyResult.cookie("JATOS_IDS_0");
 
@@ -230,8 +223,7 @@ public class StudyAssetsTest {
 			throws IOException, NotFoundPublixException {
 		testHelper.mockContext();
 
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(injector);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Result result = studyAssets.retrieveComponentHtmlFile(
 				study.getDirName(),
@@ -248,8 +240,7 @@ public class StudyAssetsTest {
 	@Test
 	public void testRetrieveComponentHtmlFileNotFound()
 			throws IOException, PublixException {
-		Study study = testHelper
-				.createAndPersistExampleStudyForAdmin(injector);
+		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		try {
 			studyAssets.retrieveComponentHtmlFile(study.getDirName(),

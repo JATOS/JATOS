@@ -1,8 +1,7 @@
 package services.gui;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -16,13 +15,15 @@ import daos.common.BatchDao;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
+import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
+import exceptions.gui.ForbiddenException;
 import general.common.MessagesStrings;
-import general.gui.RequestScopeMessaging;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
+import models.common.workers.JatosWorker;
 import models.gui.StudyProperties;
 import play.Logger;
 import play.Logger.ALogger;
@@ -30,7 +31,7 @@ import play.data.validation.ValidationError;
 import utils.common.IOUtils;
 
 /**
- * Service class for JATOS Controllers (not Publix).
+ * Service class for everthing Study related. Used by controllers
  * 
  * @author Kristian Lange
  */
@@ -48,18 +49,20 @@ public class StudyService {
 	private final ComponentDao componentDao;
 	private final BatchDao batchDao;
 	private final UserDao userDao;
+	private final WorkerDao workerDao;
 	private final IOUtils ioUtils;
 
 	@Inject
 	StudyService(BatchService batchService, ComponentService componentService,
 			StudyDao studyDao, ComponentDao componentDao, BatchDao batchDao,
-			UserDao userDao, IOUtils ioUtils) {
+			UserDao userDao, WorkerDao workerDao, IOUtils ioUtils) {
 		this.batchService = batchService;
 		this.componentService = componentService;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.batchDao = batchDao;
 		this.userDao = userDao;
+		this.workerDao = workerDao;
 		this.ioUtils = ioUtils;
 	}
 
@@ -116,39 +119,26 @@ public class StudyService {
 		return cloneTitle;
 	}
 
-	/**
-	 * Deletes all current users of the given study and adds the new users. A
-	 * user is identified by its email. In case of an empty list an
-	 * BadRequestException is thrown.
-	 */
-	public void exchangeUsers(Study study, String[] userEmailArray)
-			throws BadRequestException {
-		if (userEmailArray == null) {
-			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_USER;
-			throw new BadRequestException(errorMsg);
-		}
-		List<User> userList = new ArrayList<>();
-		for (String email : userEmailArray) {
-			User user = userDao.findByEmail(email);
-			if (user == null) {
-				String errorMsg = MessagesStrings.userNotExist(email);
-				RequestScopeMessaging.error(errorMsg);
-				throw new BadRequestException(errorMsg);
+	public void changeUserMember(Study study, User userToChange,
+			boolean isMember) throws ForbiddenException {
+		Set<User> userList = study.getUserList();
+		if (isMember) {
+			if (userList.contains(userToChange)) {
+				return;
 			}
-			userList.add(user);
+			study.addUser(userToChange);
+		} else {
+			if (!userList.contains(userToChange)) {
+				return;
+			}
+			if (userList.size() <= 1) {
+				throw new ForbiddenException(
+						MessagesStrings.STUDY_AT_LEAST_ONE_USER);
+			}
+			study.removeUser(userToChange);
 		}
-		if (userList.isEmpty()) {
-			String errorMsg = MessagesStrings.STUDY_AT_LEAST_ONE_USER;
-			RequestScopeMessaging.error(errorMsg);
-			throw new BadRequestException(errorMsg);
-		}
-		study.getUserList().clear();
-		for (User user : userList) {
-			study.addUser(user);
-			user.addStudy(study);
-			studyDao.update(study);
-			userDao.update(user);
-		}
+		studyDao.update(study);
+		userDao.update(userToChange);
 	}
 
 	/**
@@ -206,30 +196,42 @@ public class StudyService {
 		}
 		studyDao.create(study);
 
-		if (study.getBatchList().isEmpty()) {
-			// Create default batch if we have no batch
-			Batch defaultBatch = batchService.createDefaultBatch(study,
-					loggedInUser);
-			study.addBatch(defaultBatch);
-			batchDao.create(defaultBatch);
-		} else {
-			study.getBatchList().forEach(
-					b -> batchService.createBatch(b, study, loggedInUser));
-			study.getBatchList().forEach(b -> batchDao.create(b));
-		}
-
-		// Add user
-		study.addUser(loggedInUser);
-		loggedInUser.addStudy(study);
-		userDao.update(loggedInUser);
-
 		// Create components
 		study.getComponentList()
 				.forEach(c -> componentService.createComponent(study, c));
 		study.getComponentList().forEach(c -> componentDao.create(c));
 
+		if (study.getBatchList().isEmpty()) {
+			// Create default batch if we have no batch
+			Batch defaultBatch = batchService.createDefaultBatch(study);
+			study.addBatch(defaultBatch);
+			batchDao.create(defaultBatch);
+		} else {
+			study.getBatchList()
+					.forEach(b -> batchService.createBatch(b, study));
+			study.getBatchList().forEach(b -> batchDao.create(b));
+		}
+
+		// Add user
+		addUserToStudy(study, loggedInUser);
+
 		studyDao.update(study);
 		return study;
+	}
+
+	private void addUserToStudy(Study study, User user) {
+		study.addUser(user);
+		user.addStudy(study);
+		studyDao.update(study);
+		userDao.update(user);
+
+		// For each of the study's batches add the user's JatosWorker
+		JatosWorker jatosWorker = user.getWorker();
+		for (Batch batch : study.getBatchList()) {
+			batch.addWorker(jatosWorker);
+			batchDao.update(batch);
+		}
+		workerDao.update(jatosWorker);
 	}
 
 	/**
@@ -268,7 +270,7 @@ public class StudyService {
 
 	/**
 	 * Update properties of study with properties of updatedStudy (excluding
-	 * study's dir name).
+	 * study's dir name). Does not persist.
 	 */
 	public void bindToStudyWithoutDirName(Study study,
 			StudyProperties studyProperties) {
@@ -327,7 +329,7 @@ public class StudyService {
 	 * results, group results and batches and persists the changes to the
 	 * database.
 	 */
-	public void remove(Study study) {
+	private void remove(Study study) {
 		// Remove all study's components and their ComponentResults
 		Lists.newArrayList(study.getComponentList())
 				.forEach(componentService::remove);
@@ -335,7 +337,23 @@ public class StudyService {
 		// Remove all study's batches and their StudyResults and GroupResults
 		Lists.newArrayList(study.getBatchList()).forEach(batchService::remove);
 
+		// Remove this study from all member users
+		for (User user : study.getUserList()) {
+			user.removeStudy(study);
+			userDao.update(user);
+		}
+
 		studyDao.remove(study);
+	}
+
+	/**
+	 * Removes the given study, its components, component results, study
+	 * results, group results and batches and persists the changes to the
+	 * database. It also deletes the study's assets from the disk.
+	 */
+	public void removeStudyInclAssets(Study study) throws IOException {
+		remove(study);
+		ioUtils.removeStudyAssetsDir(study.getDirName());
 	}
 
 }

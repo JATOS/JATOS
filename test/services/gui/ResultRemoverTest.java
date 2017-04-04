@@ -236,6 +236,9 @@ public class ResultRemoverTest {
 					.findAllByStudy(study);
 			assertThat(studyResultList.size()).isEqualTo(2);
 		});
+
+		// Clean-up
+		testHelper.removeUser("bla@bla.com");
 	}
 
 	@Test

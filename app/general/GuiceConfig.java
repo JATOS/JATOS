@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule;
 
 import general.common.Common;
 import play.libs.akka.AkkaGuiceSupport;
+import utils.common.JsonObjectMapper;
 
 /**
  * Initial configuration of Guice dependency injection
@@ -18,6 +19,7 @@ public class GuiceConfig extends AbstractModule implements AkkaGuiceSupport {
 		bind(Common.class).asEagerSingleton();
 		bind(Initializer.class).asEagerSingleton();
 		bind(OnStartStop.class).asEagerSingleton();
+		bind(JsonObjectMapper.class).asEagerSingleton();
 	}
 
 }

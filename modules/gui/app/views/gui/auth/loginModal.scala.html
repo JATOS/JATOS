@@ -1,0 +1,71 @@
+@(loggedInUser: common.User)
+
+<!-- Login Modal (used in case of session timeout)-->
+<div class="modal fade" id="loginModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-sm">
+		<div class="modal-content">
+			<div class="modal-body">
+				<form id="loginForm" method="post" action="/" class="form-horizontal" role="form">
+					<h2 class="form-login-heading">Please log in again</h2>
+					<label class="explanation"></label>
+					<!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
+					<input type="hidden" class="form-control email" name="@controllers.gui.Authentication.Login.EMAIL" value="@loggedInUser.getEmail()" required>
+					<div class="form-group">
+						<div class="col-sm-12">
+							<label for="email">Password for @loggedInUser.getEmail()</label>
+							<input type="password" class="form-control" name="@controllers.gui.Authentication.Login.PASSWORD" placeholder="Password" autocomplete="off" required autofocus>
+						</div>
+					</div>
+					<button type="submit" class="btn btn-lg btn-primary btn-block">Log in</button>
+					<label>Or <a href="/jatos/login">login as a different user</a>.</label>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+
+// Let a background worker check for session timeouts
+var sessionTimeoutWorker;
+if (window.Worker) {
+	sessionTimeoutWorker = new Worker('@controllers.gui.routes.Assets.versioned("lib/jatos-gui/javascripts/sessionTimoutChecker.js")');
+	sessionTimeoutWorker.postMessage([@general.common.Common.getSessionTimeout(), @general.common.Common.getSessionInactivity()]);
+	sessionTimeoutWorker.onmessage = function(msg) {
+		showLoginModal(msg.data);
+	}
+}
+
+function showLoginModal(explanationText) {
+	removeAlerts('#loginModal');
+	removeFormErrors('#loginModal')
+	$('#loginModal .explanation').text(explanationText);
+	clearForm("#loginForm");
+	$('#loginModal').modal('show');
+}
+
+$("#loginForm").submit(function(event) {
+	event.preventDefault();
+	$.ajax({
+		type: 'POST',
+		url: "@controllers.gui.routes.Authentication.authenticate()",
+		data: $('#loginForm').serialize(),
+		success: function(response) {
+			removeAlerts('#loginModal');
+			sessionTimeoutWorker.postMessage([@general.common.Common.getSessionTimeout(), @general.common.Common.getSessionInactivity()]);
+			$('#loginModal').modal('hide');
+		},
+		error: function(response) {
+			removeAlerts('#loginModal');
+			showModalError("#loginModal .explanation", response);
+		}
+	});
+});
+
+// In case of another modal under the login modal make the other one scrollable after the login one closes
+// http://stackoverflow.com/questions/19305821
+$(document).on('hidden.bs.modal', '.modal', function () {
+	$('.modal:visible').length && $(document.body).addClass('modal-open');
+});
+	
+</script>

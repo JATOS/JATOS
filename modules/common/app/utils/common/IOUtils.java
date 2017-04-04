@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.apache.commons.io.FileUtils;
@@ -38,13 +37,6 @@ public class IOUtils {
 	public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f\\*\\?\\\"\\\\\0/,`<>|:~!§$%&^°]";
 
 	private static final int MAX_FILENAME_LENGTH = 100;
-
-	private final Common common;
-
-	@Inject
-	IOUtils(Common common) {
-		this.common = common;
-	}
 
 	/**
 	 * Reads the given file and returns the content as String.
@@ -194,14 +186,14 @@ public class IOUtils {
 	 * Generates a study assets directory path.
 	 */
 	public String generateStudyAssetsPath(String dirName) {
-		return common.getStudyAssetsRootPath() + File.separator + dirName;
+		return Common.getStudyAssetsRootPath() + File.separator + dirName;
 	}
 
 	/**
 	 * Remove study assets' directory if exists.
 	 */
 	public void removeStudyAssetsDir(String dirName) throws IOException {
-		File dir = getFileSecurely(common.getStudyAssetsRootPath(), dirName);
+		File dir = getFileSecurely(Common.getStudyAssetsRootPath(), dirName);
 		if (!dir.exists()) {
 			return;
 		}
@@ -256,7 +248,7 @@ public class IOUtils {
 	 */
 	public synchronized String cloneStudyAssetsDirectory(String srcDirName)
 			throws IOException {
-		File srcDir = getFileSecurely(common.getStudyAssetsRootPath(),
+		File srcDir = getFileSecurely(Common.getStudyAssetsRootPath(),
 				srcDirName);
 		if (!srcDir.isDirectory()) {
 			throw new IOException(
@@ -306,7 +298,7 @@ public class IOUtils {
 	 */
 	public void moveStudyAssetsDir(File srcDir, String targetDirName)
 			throws IOException {
-		File targetDir = getFileSecurely(common.getStudyAssetsRootPath(),
+		File targetDir = getFileSecurely(Common.getStudyAssetsRootPath(),
 				targetDirName);
 		if (targetDir.exists()) {
 			throw new IOException(
@@ -324,7 +316,7 @@ public class IOUtils {
 	 * @throws IOException
 	 */
 	public void createStudyAssetsDir(String dirName) throws IOException {
-		File dir = getFileSecurely(common.getStudyAssetsRootPath(), dirName);
+		File dir = getFileSecurely(Common.getStudyAssetsRootPath(), dirName);
 		if (dir.exists()) {
 			throw new IOException(MessagesStrings
 					.studyAssetsDirNotCreatedBecauseExists(dir.getName()));

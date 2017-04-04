@@ -34,11 +34,12 @@ import play.Environment;
 import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
-import utils.common.JsonUtils;
+import services.gui.AuthenticationService;
 
 /**
  * Testing actions of controller.Components.
@@ -91,11 +92,13 @@ public class ComponentsControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
-						controllers.gui.routes.Components
-								.runComponent(study.getId(),
-										study.getComponent(1).getId(), -1l)
-								.url());
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
+				.uri(controllers.gui.routes.Components
+						.runComponent(study.getId(),
+								study.getComponent(1).getId(), -1l)
+						.url());
 		Result result = route(request);
 
 		assertEquals(SEE_OTHER, result.status());
@@ -122,11 +125,13 @@ public class ComponentsControllerTest {
 		});
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
-						controllers.gui.routes.Components
-								.runComponent(study.getId(),
-										study.getComponent(1).getId(), -1l)
-								.url());
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
+				.uri(controllers.gui.routes.Components
+						.runComponent(study.getId(),
+								study.getComponent(1).getId(), -1l)
+						.url());
 		// Empty html path must lead to an JatosGuiException with a HTTP status
 		// of 400
 		testHelper.assertJatosGuiException(request, Http.Status.BAD_REQUEST);
@@ -141,11 +146,11 @@ public class ComponentsControllerTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
-						controllers.gui.routes.Components
-								.properties(study.getId(),
-										study.getFirstComponent().getId())
-								.url());
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
+				.uri(controllers.gui.routes.Components.properties(study.getId(),
+						study.getFirstComponent().getId()).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
@@ -153,8 +158,7 @@ public class ComponentsControllerTest {
 		assertThat(result.contentType().get()).isEqualTo("application/json");
 
 		// Check properties in JSON
-		JsonNode node = JsonUtils.OBJECTMAPPER
-				.readTree(contentAsString(result));
+		JsonNode node = Json.mapper().readTree(contentAsString(result));
 		assertThat(node.get(ComponentProperties.TITLE).toString())
 				.isEqualTo("\"" + study.getFirstComponent().getTitle() + "\"");
 		assertThat(node.get(ComponentProperties.ACTIVE).toString()).isEqualTo(
@@ -196,7 +200,9 @@ public class ComponentsControllerTest {
 		form.put(ComponentProperties.COMMENTS, "Comments test test.");
 		form.put(ComponentProperties.JSON_DATA, "{}");
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
+				.bodyForm(form)
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Components
 						.submitCreated(study.getId()).url());
 		Result result = route(request);
@@ -222,11 +228,13 @@ public class ComponentsControllerTest {
 		form.put(ComponentProperties.JSON_DATA, "{}");
 		RequestBuilder request = new RequestBuilder().method("POST")
 				.bodyForm(form)
-				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
-						controllers.gui.routes.Components
-								.submitEdited(study.getId(),
-										study.getFirstComponent().getId())
-								.url());
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
+				.uri(controllers.gui.routes.Components
+						.submitEdited(study.getId(),
+								study.getFirstComponent().getId())
+						.url());
 		Result result = route(request);
 
 		assertEquals(OK, result.status());
@@ -248,14 +256,15 @@ public class ComponentsControllerTest {
 		form.put(ComponentProperties.JSON_DATA, "{");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE_AND_RUN);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(form).session(Users.SESSION_EMAIL, admin.getEmail())
+				.bodyForm(form)
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Components
 						.submitCreated(study.getId()).url());
 		Result result = route(request);
 
 		assertThat(result.contentType().get()).isEqualTo("application/json");
-		JsonNode node = JsonUtils.OBJECTMAPPER
-				.readTree(contentAsString(result));
+		JsonNode node = Json.mapper().readTree(contentAsString(result));
 		assertThat(node.get(ComponentProperties.TITLE).toString())
 				.isEqualTo("[\"" + MessagesStrings.MISSING_TITLE + "\"]");
 		assertThat(node.get(ComponentProperties.HTML_FILE_PATH).toString())
@@ -273,11 +282,13 @@ public class ComponentsControllerTest {
 		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(Users.SESSION_EMAIL, admin.getEmail()).uri(
-						controllers.gui.routes.Components
-								.toggleActive(study.getId(),
-										study.getComponent(1).getId(), true)
-								.url());
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
+				.uri(controllers.gui.routes.Components
+						.toggleActive(study.getId(),
+								study.getComponent(1).getId(), true)
+						.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
@@ -288,7 +299,9 @@ public class ComponentsControllerTest {
 		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(
+						AuthenticationService.SESSION_USER_EMAIL, admin
+								.getEmail())
 				.uri(controllers.gui.routes.Components.cloneComponent(
 						study.getId(), study.getComponent(1).getId()).url());
 		Result result = route(request);
@@ -301,7 +314,8 @@ public class ComponentsControllerTest {
 		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		RequestBuilder request = new RequestBuilder().method("DELETE")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
 				.uri(controllers.gui.routes.Components
 						.remove(study.getId(), study.getComponent(1).getId())
 						.url());

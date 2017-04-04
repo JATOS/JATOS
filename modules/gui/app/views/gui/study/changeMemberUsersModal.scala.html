@@ -1,0 +1,199 @@
+@(loggedInUser: common.User)
+
+<div class="modal fade" id="changeMemberUsersModal"
+	data-backdrop="static" data-keyboard="false" tabindex="-1"
+	role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+					<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+				</button>
+				<h4 class="modal-title">Change who is member of this study</h4>
+			</div>
+			<div class="modal-body">
+				<form id="addMemberToStudyForm" action="#"
+					class="form-horizontal col-xs-12" role="form">
+					<label class="control-label" for="email">Add user by email
+						<span class="glyphicon glyphicon-info-sign gray-light"
+						data-toggle="tooltip"
+						title="They have to be a user of JATOS already."
+						aria-hidden="true"></span>
+					</label>
+					<div class="input-group">
+						<!-- Don't change to type="email". The admin user wouldn't be able to sign in. -->
+						<input type="text" class="form-control email" name="email"
+							placeholder="User's email"> <span class="input-group-btn">
+							<input type="submit" class="btn btn-primary" type="button"
+							value="Add">
+						</span>
+					</div>
+				</form>
+				<div class="form-group">&nbsp;</div>
+				<table id="memberUserTable" class="table" width="100%">
+					<thead>
+						<tr>
+							<th>Member</th>
+							<th>Name</th>
+						</tr>
+					</thead>
+					<!-- Member users are added in JS -->
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Template for member toggle button in user's row -->
+<div id="memberToggleButtonDiv" style="display: none">
+	<button type="button" class="btn btn-sm btn-default memberToggleButton"
+		data-toggle="tooltip" data-placement="bottom" title="">
+		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+	</button>
+</div>
+
+<script>
+
+// Max length of each worker table before pagination kicks in
+var paginationLength = 10;
+var memberUserTable;
+
+$('#studyToolbar').on('click', '#changeMemberUsersLink', function() {
+	removeAlerts("#changeMemberUsersModal");
+	removeFormErrors("#changeMemberUsersModal");
+	clearForm("#addMemberToStudyForm");
+	initMemberUserTable();
+	$('#changeMemberUsersModal').modal('show');
+});
+
+function initMemberUserTable() {
+	if (memberUserTable) {
+		memberUserTable.ajax.reload();
+		memberUserTable.draw();
+		return;
+	}
+	
+	memberUserTable = $('#memberUserTable').DataTable({
+		"ajax": {
+			"type": "GET",
+			"url" : "/jatos/" + studyId + "/memberUsers",
+			"error": function(reason) {
+				showError("Couldn't read member data.", "#changeMemberUsersModal .modal-header");
+			}
+		},
+		"initComplete": toggleTablePagination,
+		"dom": 'tp',
+		"order": [[ 1, "asc" ]],
+		"pageLength": paginationLength,
+		"columns": [
+			{ "class": 'memberInStudyColumn',
+				"data": null,
+				"defaultContent": '',
+				"width": "1%",
+				"orderable": false,
+				"searchable": false,
+				"searchable": false,
+				"render": function (data, type, full, meta) {
+					var button = $('#memberToggleButtonDiv button:first-child').clone();
+					setMemberButton(button, data.isMember);
+					return button.prop('outerHTML');
+				}
+			},
+			{ "data": "name" }
+		]
+	});
+}
+
+function setMemberButton(button, isMember) {
+	if (isMember) {
+		button.addClass('isMember');
+		button.removeClass('btn-default');
+		button.addClass('btn-primary');
+		button.attr('title', "Click to remove this user from this study");
+		button.html($(button.html())
+				.removeClass('glyphicon-remove')
+				.addClass('glyphicon-ok').prop('outerHTML'));
+	} else {
+		button.removeClass('isMember');
+		button.removeClass('btn-primary');
+		button.addClass('btn-default');
+		button.attr('title', "Click to let this user become a member of this study");
+		button.html($(button.html())
+				.removeClass('glyphicon-ok')
+				.addClass('glyphicon-remove').prop('outerHTML'));
+	}
+}
+
+function toggleTablePagination() {
+	var rowNumber = memberUserTable.rows().count();
+	var hidePaging = rowNumber <= paginationLength;
+	$('#memberUserTable').parent().find('.dataTables_paginate').toggle(!hidePaging);
+}
+
+$('#addMemberToStudyForm').submit(function() {
+	event.preventDefault();
+	var emailToChange = $('#addMemberToStudyForm .email').val();
+	$.ajax({
+		url : '/jatos/' + studyId + '/memberUser?email=' + emailToChange + '&isMember=true', 
+		type : "POST",
+		success: function(user) {
+			removeAlerts("#changeMemberUsersModal");
+			alterTableAfterUserAdding(user);
+		},
+		error : function(err) {
+			removeAlerts("#changeMemberUsersModal");
+			showError(err.responseText, "#changeMemberUsersModal .modal-header");
+		}
+	});
+});
+
+function alterTableAfterUserAdding(user) {
+	var isAlreadyInTable = false;
+	memberUserTable.rows().every(function(rowIdx, tableLoop, rowLoop) {
+		var tableMember = this.data();
+		if (tableMember.email == user.email) {
+			isAlreadyInTable = true;
+			if (tableMember.isMember) {
+				var msg = "User " + user.name + " (" + user.email + ") is already member."; 
+				showInfo(msg, "#changeMemberUsersModal .modal-header");
+			} else {
+				var button = $(this.node()).find('.memberToggleButton');
+				setMemberButton(button, user.isMember);
+			}
+			this.data(user);
+			return;
+		}
+	});
+	if (!isAlreadyInTable) {
+		memberUserTable.row.add(user).draw(false);
+		toggleTablePagination();
+	}
+}
+
+$('#memberUserTable').on('click', '.memberToggleButton', function() {
+	var button = this;
+	var tr = $(this).closest('tr');
+	var tableMember = memberUserTable.row(tr).data();
+	//var isMember = $(this).hasClass('isMember');
+	if (tableMember.email === "@loggedInUser.getEmail()" && !tableMember.removeConfirmation) {
+		showWarning("Are you sure you want to remove yourself from this study? "
+			+ "Then click again on the member checkbox.", "#changeMemberUsersModal .modal-header");
+		tableMember.removeConfirmation = true;
+		return;
+	}
+	$.ajax({
+		url : '/jatos/' + studyId + '/memberUser?email=' + tableMember.email + '&isMember=' + !tableMember.isMember, 
+		type : "POST",
+		success: function(user) {
+			removeAlerts("#changeMemberUsersModal");
+			memberUserTable.row(tr).data(user);
+			setMemberButton($(button), user.isMember);
+		},
+		error : function(err) {
+			removeAlerts("#changeMemberUsersModal");
+			showError(err.responseText, "#changeMemberUsersModal .modal-header");
+		}
+	});
+});
+
+</script>

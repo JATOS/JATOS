@@ -170,6 +170,16 @@ a:focus {
   background-color: #428bca;
 }
 
+/*
+ * Login modal
+ * Setup if another modal there (http://stackoverflow.com/questions/19305821)
+ */
+.modal:nth-of-type(even) {
+	z-index: 1042 !important;
+}
+.modal-backdrop.in:nth-of-type(even) {
+	z-index: 1041 !important;
+}
 
 /*
  * Main content
@@ -194,24 +204,6 @@ a:focus {
 	margin-top: 10px;
 }
 
-
-/*
- * JATOS buttons
- */
-
-.btn-study {
-	&:extend(.btn-primary all);
-}
-
-.btn-component {
-	&:extend(.btn-info all);
-}
-
-.btn-batch {
-	&:extend(.btn-success all);
-}
-
-
 .grayout {
 	opacity: 0.6; /* Real browsers */
 	filter: alpha(opacity=60); /* MSIE */
@@ -219,6 +211,7 @@ a:focus {
 
 
 @import 'apps/_study.less';         // Study related views
+@import 'apps/_user.less';          // User related views
 @import 'apps/_batch.less';         // Batch related views
 @import 'apps/_result.less';        // Results views
 @import 'apps/_edit.less';          // Edit forms

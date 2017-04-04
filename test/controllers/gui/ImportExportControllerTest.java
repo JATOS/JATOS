@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -17,10 +16,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import general.AbstractTest;
 import models.common.Study;
 import play.api.mvc.AnyContentAsMultipartFormData;
+import play.libs.Json;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
+import services.gui.AuthenticationService;
 import services.gui.ImportExportService;
-import utils.common.JsonUtils;
 
 /**
  * Testing actions of controller.ImportExport
@@ -55,8 +55,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		// Tests
 		assertThat(result.status()).isEqualTo(OK);
 		// Check returned JSON
-		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
-				.readTree(contentAsString(result));
+		JsonNode jsonNode = Json.mapper().readTree(contentAsString(result));
 		// Study does not exist
 		assertThat(!jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean());
 		assertThat(jsonNode.has(ImportExportService.STUDY_TITLE));
@@ -87,7 +86,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		Study importedStudy = studyDao
 				.findByUuid("5c85bd82-0258-45c6-934a-97ecc1ad6617");
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.Studies
 						.remove(importedStudy.getId()).url());
 		result = route(request);
@@ -121,8 +120,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		// Tests
 		assertThat(result.status()).isEqualTo(OK);
 		// Check returned JSON
-		JsonNode jsonNode = JsonUtils.OBJECTMAPPER
-				.readTree(contentAsString(result));
+		JsonNode jsonNode = Json.mapper().readTree(contentAsString(result));
 		// Study exists already
 		assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean());
 		// Study assets dir exists already
@@ -176,7 +174,7 @@ public class ImportExportControllerTest extends AbstractTest {
 	 * ImportExportController.importComponentConfirmed(). Both calls always
 	 * happen one after another.
 	 */
-//	@Test
+	// @Test
 	public synchronized void checkCallImportComponent() throws Exception {
 		// Import study manually and remove first component
 		Study study = importExampleStudy();
@@ -190,7 +188,8 @@ public class ImportExportControllerTest extends AbstractTest {
 		// First call: ImportExport.importComponent()
 		// TODO doesn't work due to the same reason as in callImportStudy()
 		// RequestBuilder request = new RequestBuilder().method("GET")
-		// .session(Users.SESSION_EMAIL, admin.getEmail()).bodyRaw(
+		// .session(Authentication.SESSION_USER_EMAIL,
+		// admin.getEmail()).bodyRaw(
 		// getMultiPartFormDataForFileUpload(componentFile,
 		// Component.COMPONENT,
 		// "application/json").asRaw())
@@ -201,7 +200,8 @@ public class ImportExportControllerTest extends AbstractTest {
 		// Result result = callAction(
 		// controllers.gui.routes.ref.ImportExport
 		// .importComponent(study.getId()),
-		// fakeRequest().withSession(Users.SESSION_EMAIL, admin.getEmail())
+		// fakeRequest().withSession(Authentication.SESSION_USER_EMAIL,
+		// admin.getEmail())
 		// .withAnyContent(
 		// getMultiPartFormDataForFileUpload(componentFile,
 		// Component.COMPONENT,
@@ -233,7 +233,8 @@ public class ImportExportControllerTest extends AbstractTest {
 		// result = callAction(
 		// controllers.gui.routes.ref.ImportExport
 		// .importComponentConfirmed(study.getId()),
-		// fakeRequest().withSession(Users.SESSION_EMAIL, admin.getEmail())
+		// fakeRequest().withSession(Authentication.SESSION_USER_EMAIL,
+		// admin.getEmail())
 		// .withSession(
 		// ImportExportService.SESSION_TEMP_COMPONENT_FILE,
 		// sessionFileName));
@@ -251,13 +252,13 @@ public class ImportExportControllerTest extends AbstractTest {
 		// removeStudy(study);
 	}
 
-//	@Test
+	// @Test
 	public synchronized void checkCallExportStudy() throws Exception {
 		Study study = importExampleStudy();
 		addStudy(study);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport
 						.exportStudy(study.getId()).url());
 		Result result = route(request);
@@ -269,13 +270,13 @@ public class ImportExportControllerTest extends AbstractTest {
 		removeStudy(study);
 	}
 
-//	@Test
+	// @Test
 	public synchronized void checkCallExportComponent() throws Exception {
 		Study study = importExampleStudy();
 		addStudy(study);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport.exportComponent(
 						study.getId(), study.getComponent(1).getId()).url());
 		Result result = route(request);
@@ -300,7 +301,7 @@ public class ImportExportControllerTest extends AbstractTest {
 		// http://stackoverflow.com/questions/32791562/unit-testing-file-upload-in-a-controller-with-java-play-framework-2-3-x
 		// http://stackoverflow.com/questions/33962838/play-2-4-how-to-write-a-test-case-for-file-upload-with-multipartformdata
 		RequestBuilder requestBuilder = new RequestBuilder().method("POST")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.uri(controllers.gui.routes.ImportExport.importStudy().url());
 
 		// Tried with a mock but get Scala scala.MatchError
@@ -310,7 +311,8 @@ public class ImportExportControllerTest extends AbstractTest {
 		// RequestBuilder mockReqBuilder = mock(RequestBuilder.class);
 		// when(mockReqBuilder.bodyAsAnyContent()).thenReturn(any);
 		// when(mockReqBuilder.session()).thenReturn(
-		// ImmutableMap.of(Users.SESSION_EMAIL, admin.getEmail()));
+		// ImmutableMap.of(Authentication.SESSION_USER_EMAIL,
+		// admin.getEmail()));
 		// when(mockReqBuilder.method()).thenReturn(Helpers.POST);
 		// when(mockReqBuilder.build()).thenReturn(requestBuilder.build());
 		// Result result = route(mockReqBuilder);
@@ -318,7 +320,8 @@ public class ImportExportControllerTest extends AbstractTest {
 		// Old version from Play 2.3.8
 		// Result result = callAction(
 		// controllers.gui.routes.ref.ImportExport.importStudy(),
-		// fakeRequest().withSession(Users.SESSION_EMAIL, admin.getEmail())
+		// fakeRequest().withSession(Authentication.SESSION_USER_EMAIL,
+		// admin.getEmail())
 		// .withAnyContent(
 		// getMultiPartFormDataForFileUpload(studyZipBkp,
 		// Study.STUDY, "application/zip"),
@@ -355,13 +358,13 @@ public class ImportExportControllerTest extends AbstractTest {
 
 	private Result callImportStudyConfirmed(String unzippedStudyDirName,
 			boolean overrideProperties, boolean overrideDir) {
-		ObjectNode jsonObj = JsonUtils.OBJECTMAPPER.createObjectNode();
+		ObjectNode jsonObj = Json.mapper().createObjectNode();
 		jsonObj.put(ImportExportService.STUDYS_ENTITY_CONFIRM,
 				overrideProperties);
 		jsonObj.put(ImportExportService.STUDYS_DIR_CONFIRM, overrideDir);
 
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(Users.SESSION_EMAIL, admin.getEmail())
+				.session(AuthenticationService.SESSION_USER_EMAIL, admin.getEmail())
 				.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR,
 						unzippedStudyDirName)
 				.bodyJson(jsonObj).uri(controllers.gui.routes.ImportExport

@@ -47,8 +47,8 @@
 						Clone
 					</a>
 				</li>
-				<li data-toggle="tooltip" data-placement="bottom" title="Change who can admin this study">
-					<a id="changeUsersLink" href="#">
+				<li data-toggle="tooltip" data-placement="bottom" title="Change who is member of this study">
+					<a id="changeMemberUsersLink" href="#">
 						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
 						Change&nbsp;Users
 					</a>
@@ -180,7 +180,7 @@
 	</div>
 </div>
 
-@views.html.gui.study.changeUsersModal()
+@views.html.gui.study.changeMemberUsersModal(loggedInUser)
 @views.html.gui.study.componentPropertiesModal(study)
 
 <script type="text/javascript">
@@ -229,11 +229,13 @@ $(document).ready(function() {
 				}
 			},
 			{
+				"class": "componentId",
 				"data": "id",
 				"width": "1px"
 			},
 			{ 
-				"data": "title",
+				"class": "componentTitle",
+				"data": "title"
 			},
 			{
 				"class": "toolbar",
@@ -303,8 +305,8 @@ $(document).ready(function() {
 		var title = "Confirm Delete";
 		var htmlText = "<p>You are about to delete component \"" + componentTitle 
 			+ "\" (ID " + componentId + ") <b>with all its results</b>.</p>"
-			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Delete', function() {
+			+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+		askConfirmation(title, htmlText, 'Delete', 'btn-component', function() {
 			$.ajax({
 				url : "/jatos/" + @study.getId() +"/" + componentId,
 				type : 'DELETE',
@@ -341,9 +343,9 @@ $(document).ready(function() {
 	
 	function setRowActive(tr, active) {
 		if (active) {
-			tr.removeClass("grayout");
+			tr.find('.btn, .componentId, .componentTitle').removeClass("grayout");
 		} else {
-			tr.addClass("grayout");
+			tr.find('.btn, .componentId, .componentTitle').addClass("grayout");
 		}
 	}
 	
@@ -483,8 +485,8 @@ $('#studyToolbar').on('click', '#removeStudy', function() {
 		+ "(ID @study.getId()) "
 		+ "<b>with all its components, results, and the entire study assets directory, "
 		+ "including the HTML files</b>.</p>"
-		+ "<p>Do you want to proceed?</p>";
-	askConfirmation(title, htmlText, 'Delete', function() {
+		+ "<p><b>This cannot be undone.</b> Do you want to proceed?</p>";
+	askConfirmation(title, htmlText, 'Delete', 'btn-primary', function() {
 		$.ajax({
 			url : '@controllers.gui.routes.Studies.remove(study.getId())',
 			type : 'DELETE',
@@ -541,7 +543,7 @@ function importComponentConfirm(response) {
 		var htmlText = "<p>It seems a component \"" + response.componentTitle 
 			+ "\" already exists in this study.</p>"
 			+ "<p>Do you want to overwrite this component?</p>";
-		askConfirmation(title, htmlText, 'Overwrite', function() {
+		askConfirmation(title, htmlText, 'Overwrite', 'btn-component', function() {
 			postComponentImportConfirm();
 		});
 	} else {
@@ -549,7 +551,7 @@ function importComponentConfirm(response) {
 		var htmlText = "<p>You are about to create the component \""
 			+ response.componentTitle + "\".</p>"
 			+ "<p>Do you want to proceed?</p>";
-		askConfirmation(title, htmlText, 'Create', function() {
+		askConfirmation(title, htmlText, 'Create', 'btn-component', function() {
 			postComponentImportConfirm();
 		});
 	}
