@@ -66,6 +66,21 @@ public class Common {
 	 */
 	private static int sessionInactivity;
 
+	/**
+	 * Database URL as defined in application.conf
+	 */
+	private static String dbDefaultUrl;
+
+	/**
+	 * Database driver as defined in application.conf
+	 */
+	private static String dbDefaultDriver;
+
+	/**
+	 * JPA persistence unit as defined in application.conf
+	 */
+	private static String jpaDefault;
+
 	@Inject
 	Common(Application application, Configuration configuration) {
 		basepath = fillBasePath(application);
@@ -74,6 +89,9 @@ public class Common {
 				.contains("jdbc:h2:mem:");
 		sessionTimeout = configuration.getInt("jatos.session.timeout");
 		sessionInactivity = configuration.getInt("jatos.session.inactivity");
+		dbDefaultUrl = configuration.getString("db.default.url");
+		dbDefaultDriver = configuration.getString("db.default.driver");
+		jpaDefault = configuration.getString("jpa.default");
 	}
 
 	private String fillBasePath(Application application) {
@@ -139,6 +157,18 @@ public class Common {
 
 	public static int getSessionInactivity() {
 		return sessionInactivity;
+	}
+
+	public static String getDbDefaultUrl() {
+		return dbDefaultUrl;
+	}
+
+	public static String getDbDefaultDriver() {
+		return dbDefaultDriver;
+	}
+
+	public static String getJpaDefault() {
+		return jpaDefault;
 	}
 
 }

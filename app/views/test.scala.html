@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<title>JATOS</title>
+<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="stylesheet" href="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/jquery-ui-1.12.1.custom/jquery-ui.min.css")">
+<script src="@controllers.gui.routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.1.1.min.js")"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="Cache-Control" content="max-age=0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+<meta http-equiv="Expires" content="0" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+</head>
+
+<body>
+
+<p><b>JATOS configuration</b><br>
+Version: @general.common.Common.getJatosVersion()<br>
+Basepath: @general.common.Common.getBasepath()<br>
+Study assets root path: @general.common.Common.getStudyAssetsRootPath()<br>
+Uses in-memory DB: @general.common.Common.isInMemoryDb()<br>
+Session timeout: @general.common.Common.getSessionTimeout()<br>
+Session inactivity: @general.common.Common.getSessionInactivity()<br>
+DB URL: @general.common.Common.getDbDefaultUrl()<br>
+DB driver: @general.common.Common.getDbDefaultDriver()<br>
+JPA unit: @general.common.Common.getJpaDefault()<br>
+Request URL: @utils.common.HttpUtils.getRequestUrl()<br>
+Used memory: @((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024*1024)) MB<br>
+Max memory: @(Runtime.getRuntime.maxMemory() / (1024*1024)) MB
+</p>
+
+<p><b>Tests</b><br>
+Connect to database: <span id="testDatabaseResult"></span><br>
+Access to study assets root folder: <span id="testStudyAssetsRootFolderResult"></span><br>
+Acess internal cache: <span id="testCacheResult"></span><br>
+Internal JSON serialization: <span id="testJsonSerializationResult"></span><br>
+Read jatos.js: <span id="testJatosJsResult"></span><br>
+Open WebSocket: <span id="testWebSocketResult"></span><br>
+Correct Request URL: <span id="testRequestUrlResult"></span>
+</p>
+
+<script>
+
+testDatabase();
+testStudyAssetsRootFolder();
+testCache();
+testJsonSerialization();
+testJatosJs();
+testWebSocket();
+testRequestUrl();
+
+function testDatabase() {
+	$.ajax({
+		type: 'GET',
+		url: '@controllers.routes.Tests.testDatabase()',
+		success: function(result) {
+			$('#testDatabaseResult').html('<font color="green">OK</font>');
+		},
+		error : function(err) {
+			$('#testDatabaseResult').html('<font color="red">FAIL</font>');
+		}
+	});
+}
+
+function testStudyAssetsRootFolder() {
+	$.ajax({
+		type: 'GET',
+		url: '@controllers.routes.Tests.testStudyAssetsRootFolder()',
+		success: function(result) {
+			$('#testStudyAssetsRootFolderResult').html('<font color="green">OK</font>');
+		},
+		error : function(err) {
+			$('#testStudyAssetsRootFolderResult').html('<font color="red">FAIL</font>');
+		}
+	});
+}
+
+function testCache() {
+	$.ajax({
+		type: 'GET',
+		url: '@controllers.routes.Tests.testCache()',
+		success: function(result) {
+			$('#testCacheResult').html('<font color="green">OK</font>');
+		},
+		error : function(err) {
+			$('#testCacheResult').html('<font color="red">FAIL</font>');
+		}
+	});
+}
+
+function testJsonSerialization() {
+	$.ajax({
+		type: 'GET',
+		url: '@controllers.routes.Tests.testJsonSerialization()',
+		success: function(result) {
+			$('#testJsonSerializationResult').html('<font color="green">OK</font>');
+		},
+		error : function(err) {
+			$('#testJsonSerializationResult').html('<font color="red">FAIL</font>');
+		}
+	});
+}
+
+function testJatosJs() {
+	$.ajax({
+		type: 'GET',
+		url: "/assets/javascripts/jatos.js",
+		dataType: "text",
+		success: function(result) {
+			$('#testJatosJsResult').html('<font color="green">OK</font>');
+		},
+		error : function(err) {
+			$('#testJatosJsResult').html('<font color="red">FAIL</font>');
+		}
+	});
+}
+
+function testWebSocket() {
+	var webSocket = new WebSocket(((
+			window.location.protocol === "https:") ? "wss://" : "ws://")
+			+ window.location.host
+			+ "@controllers.routes.Tests.testWebSocket()");
+	webSocket.onerror = function () {
+		$('#testWebSocketResult').html('<font color="red">FAIL</font>');
+	};
+			
+	webSocket.onmessage = function (event) {
+		if (event.data != "test message") {
+			$('#testWebSocketResult').html('<font color="red">FAIL</font>');
+		} else {
+			$('#testWebSocketResult').html('<font color="green">OK</font>');
+		}
+	};
+	webSocket.onopen = function (event) {
+		webSocket.send("test message");
+	};
+}
+
+function testRequestUrl() {
+	var jatosRequestUrl = "@utils.common.HttpUtils.getRequestUrl()";
+	var browserUrl = window.location.origin;
+	if (jatosRequestUrl == browserUrl) {
+		$('#testRequestUrlResult').html('<font color="green">OK</font>');
+	} else {
+		$('#testRequestUrlResult').html('<font color="red">FAIL</font>');
+	}
+}
+
+</script>
+
+</body>
+</html>
