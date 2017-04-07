@@ -20,7 +20,9 @@ import play.test.Helpers;
 
 /**
  * Testing controller actions of Batches whether they have proper access
- * control: only the right user should be allowed to do the action.
+ * control: only the right user should be allowed to do the action. For most
+ * actions only the denial of access is tested here - the actual function of the
+ * action (that includes positive access) is tested in the specific test class.
  * 
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
@@ -62,7 +64,7 @@ public class AuthenticationUserAccessTest {
 	}
 
 	@Test
-	public void callBatchesRunManager() throws Exception {
+	public void callLogout() throws Exception {
 		Call call = controllers.gui.routes.Authentication.logout();
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 	}

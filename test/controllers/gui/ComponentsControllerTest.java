@@ -26,7 +26,6 @@ import daos.common.ComponentDao;
 import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.Study;
-import models.common.User;
 import models.gui.ComponentProperties;
 import play.Application;
 import play.ApplicationLoader;
@@ -39,7 +38,6 @@ import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
-import services.gui.AuthenticationService;
 
 /**
  * Testing actions of controller.Components.
@@ -88,17 +86,16 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callRunComponent() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(
-						AuthenticationService.SESSION_USER_EMAIL, admin
-								.getEmail())
-				.uri(controllers.gui.routes.Components
-						.runComponent(study.getId(),
-								study.getComponent(1).getId(), -1l)
-						.url());
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM).uri(
+						controllers.gui.routes.Components
+								.runComponent(study.getId(),
+										study.getComponent(1).getId(), -1l)
+								.url());
 		Result result = route(request);
 
 		assertEquals(SEE_OTHER, result.status());
@@ -116,7 +113,6 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callRunComponentNoHtml() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		jpaApi.withTransaction(() -> {
@@ -124,17 +120,18 @@ public class ComponentsControllerTest {
 			componentDao.update(study.getComponent(1));
 		});
 
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(
-						AuthenticationService.SESSION_USER_EMAIL, admin
-								.getEmail())
-				.uri(controllers.gui.routes.Components
-						.runComponent(study.getId(),
-								study.getComponent(1).getId(), -1l)
-						.url());
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM).uri(
+						controllers.gui.routes.Components
+								.runComponent(study.getId(),
+										study.getComponent(1).getId(), -1l)
+								.url());
 		// Empty html path must lead to an JatosGuiException with a HTTP status
 		// of 400
-		testHelper.assertJatosGuiException(request, Http.Status.BAD_REQUEST);
+		testHelper.assertJatosGuiException(request, Http.Status.BAD_REQUEST,
+				"HTML file path is empty");
 	}
 
 	/**
@@ -142,15 +139,16 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callProperties() throws IOException {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(
-						AuthenticationService.SESSION_USER_EMAIL, admin
-								.getEmail())
-				.uri(controllers.gui.routes.Components.properties(study.getId(),
-						study.getFirstComponent().getId()).url());
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM).uri(
+						controllers.gui.routes.Components
+								.properties(study.getId(),
+										study.getFirstComponent().getId())
+								.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
@@ -189,7 +187,6 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitCreated() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Map<String, String> form = new HashMap<String, String>();
@@ -199,11 +196,12 @@ public class ComponentsControllerTest {
 				"html_file_path_test.html");
 		form.put(ComponentProperties.COMMENTS, "Comments test test.");
 		form.put(ComponentProperties.JSON_DATA, "{}");
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(form)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
-				.uri(controllers.gui.routes.Components
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.bodyForm(form).uri(controllers.gui.routes.Components
 						.submitCreated(study.getId()).url());
 		Result result = route(request);
 
@@ -216,7 +214,6 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitEdited() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Map<String, String> form = new HashMap<String, String>();
@@ -226,15 +223,16 @@ public class ComponentsControllerTest {
 				"html_file_path_test.html");
 		form.put(ComponentProperties.COMMENTS, "Comments test test.");
 		form.put(ComponentProperties.JSON_DATA, "{}");
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(form)
-				.session(
-						AuthenticationService.SESSION_USER_EMAIL, admin
-								.getEmail())
-				.uri(controllers.gui.routes.Components
-						.submitEdited(study.getId(),
-								study.getFirstComponent().getId())
-						.url());
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.bodyForm(form).uri(
+						controllers.gui.routes.Components
+								.submitEdited(study.getId(),
+										study.getFirstComponent().getId())
+								.url());
 		Result result = route(request);
 
 		assertEquals(OK, result.status());
@@ -245,7 +243,6 @@ public class ComponentsControllerTest {
 	 */
 	@Test
 	public void callSubmitValidationError() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		Map<String, String> form = new HashMap<String, String>();
@@ -255,11 +252,12 @@ public class ComponentsControllerTest {
 		form.put(ComponentProperties.COMMENTS, "Comments test <i>.");
 		form.put(ComponentProperties.JSON_DATA, "{");
 		form.put(Components.EDIT_SUBMIT_NAME, Components.EDIT_SAVE_AND_RUN);
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(form)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
-				.uri(controllers.gui.routes.Components
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.bodyForm(form).uri(controllers.gui.routes.Components
 						.submitCreated(study.getId()).url());
 		Result result = route(request);
 
@@ -279,16 +277,16 @@ public class ComponentsControllerTest {
 
 	@Test
 	public void callChangeProperty() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(
-						AuthenticationService.SESSION_USER_EMAIL, admin
-								.getEmail())
-				.uri(controllers.gui.routes.Components
-						.toggleActive(study.getId(),
-								study.getComponent(1).getId(), true)
-						.url());
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM).uri(
+						controllers.gui.routes.Components
+								.toggleActive(study.getId(),
+										study.getComponent(1).getId(), true)
+								.url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
@@ -296,12 +294,12 @@ public class ComponentsControllerTest {
 
 	@Test
 	public void callCloneComponent() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(
-						AuthenticationService.SESSION_USER_EMAIL, admin
-								.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Components.cloneComponent(
 						study.getId(), study.getComponent(1).getId()).url());
 		Result result = route(request);
@@ -311,11 +309,12 @@ public class ComponentsControllerTest {
 
 	@Test
 	public void callRemove() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("DELETE")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Components
 						.remove(study.getId(), study.getComponent(1).getId())
 						.url());

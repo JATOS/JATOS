@@ -24,7 +24,9 @@ import play.test.Helpers;
 
 /**
  * Testing controller actions of StudyResults whether they have proper access
- * control: only the right user should be allowed to do the action.
+ * control: only the right user should be allowed to do the action. For most
+ * actions only the denial of access is tested here - the actual function of the
+ * action (that includes positive access) is tested in the specific test class.
  * 
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
@@ -71,8 +73,10 @@ public class StudyResultsUserAccessTest {
 		Call call = controllers.gui.routes.StudyResults
 				.studysStudyResults(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -82,8 +86,10 @@ public class StudyResultsUserAccessTest {
 		Call call = controllers.gui.routes.StudyResults.batchesStudyResults(
 				study.getId(), batch.getId(), JatosWorker.WORKER_TYPE);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -92,6 +98,8 @@ public class StudyResultsUserAccessTest {
 		Call call = controllers.gui.routes.StudyResults
 				.workersStudyResults(admin.getWorker().getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -106,7 +114,7 @@ public class StudyResultsUserAccessTest {
 		Call call = controllers.gui.routes.StudyResults
 				.removeAllOfStudy(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.DELETE);
 	}
 
@@ -124,8 +132,10 @@ public class StudyResultsUserAccessTest {
 		Call call = controllers.gui.routes.StudyResults
 				.tableDataByStudy(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -135,14 +145,18 @@ public class StudyResultsUserAccessTest {
 		Call call = controllers.gui.routes.StudyResults.tableDataByBatch(
 				study.getId(), batch.getId(), JatosWorker.WORKER_TYPE);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
 	public void callTableDataByWorker() throws Exception {
 		Call call = controllers.gui.routes.StudyResults.tableDataByWorker(1l);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 }

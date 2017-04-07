@@ -38,10 +38,10 @@ import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 import play.libs.Json;
+import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
-import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 import services.gui.UserService;
 import utils.common.JsonUtils;
@@ -52,6 +52,8 @@ import utils.common.JsonUtils;
  * @author Kristian Lange
  */
 public class StudiesControllerTest {
+
+	private static final String BLA_AT_BLA_COM = "bla@bla.com";
 
 	private Injector injector;
 
@@ -95,10 +97,10 @@ public class StudiesControllerTest {
 	public void callStudy() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.study(study.getId()).url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(OK);
@@ -120,10 +122,11 @@ public class StudiesControllerTest {
 		formMap.put(StudyProperties.JSON_DATA, "{}");
 
 		User admin = testHelper.getAdmin();
+
+		Http.Session session = testHelper.mockSessionCookieandCache(admin);
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
@@ -160,11 +163,12 @@ public class StudiesControllerTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test <i>.");
 		formMap.put(StudyProperties.DIRNAME, "%.test");
 		formMap.put(StudyProperties.JSON_DATA, "{");
+
 		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper.mockSessionCookieandCache(admin);
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
@@ -194,11 +198,12 @@ public class StudiesControllerTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, study.getDirName());
 		formMap.put(StudyProperties.JSON_DATA, "{}");
-		User admin = testHelper.getAdmin();
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
 
@@ -213,10 +218,10 @@ public class StudiesControllerTest {
 	public void callProperties() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.properties(study.getId())
 						.url());
 		Result result = route(request);
@@ -258,13 +263,13 @@ public class StudiesControllerTest {
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
 		formMap.put(StudyProperties.DIRNAME, "dirName_submitEdited");
 		formMap.put(StudyProperties.JSON_DATA, "{}");
-		User admin = testHelper.getAdmin();
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.bodyForm(formMap)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
-				.uri(controllers.gui.routes.Studies.submitEdited(study.getId())
-						.url());
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.bodyForm(formMap).uri(controllers.gui.routes.Studies
+						.submitEdited(study.getId()).url());
 		Result result = route(request);
 
 		assertEquals(OK, result.status());
@@ -287,10 +292,10 @@ public class StudiesControllerTest {
 	@Test
 	public void callToggleLock() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.toggleLock(study.getId())
 						.url());
 		Result result = route(request);
@@ -305,10 +310,10 @@ public class StudiesControllerTest {
 	@Test
 	public void callRemove() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("DELETE")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.remove(study.getId())
 						.url());
 		Result result = route(request);
@@ -321,10 +326,10 @@ public class StudiesControllerTest {
 	@Test
 	public void callCloneStudy() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.cloneStudy(study.getId())
 						.url());
 		Result result = route(request);
@@ -338,10 +343,10 @@ public class StudiesControllerTest {
 	@Test
 	public void callMemberUsers() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.memberUsers(study.getId())
 						.url());
 		Result result = route(request);
@@ -359,33 +364,33 @@ public class StudiesControllerTest {
 	public void callToggleMemberUser() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
-		User someUser = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+		User someUser = testHelper.createAndPersistUser(BLA_AT_BLA_COM, "Bla",
 				"bla");
 
 		// Add someUser as member to study
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), someUser.getEmail(), true).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
-		assertThat(contentAsString(result)).isEqualTo("true");
+		assertThat(contentAsString(result)).contains("\"isMember\":true");
 
 		// Remove admin as member from study
-		request = new RequestBuilder().method("POST")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+		request = new RequestBuilder().method("POST").session(session)
+				.host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), admin.getEmail(), false).url());
 		result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
-		assertThat(contentAsString(result)).isEqualTo("false");
+		assertThat(contentAsString(result)).contains("\"isMember\":false");
 
 		// Clean-up
-		testHelper.removeUser("bla@bla.com");
+		testHelper.removeUser(BLA_AT_BLA_COM);
 	}
 
 	/**
@@ -399,9 +404,10 @@ public class StudiesControllerTest {
 
 		// Remove admin as last member from study must lead to HTTP status
 		// FORBIDDEN
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), admin.getEmail(), false).url());
 		Result result = route(request);
@@ -415,14 +421,14 @@ public class StudiesControllerTest {
 	@Test
 	public void callToggleMemberUserNotKnown() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
 
 		// Adding a user that doesn't exist in th DB leads to HTTP status
 		// NOT_FOUND
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of("bla", "blu"))
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), "non.existing@mail.com", true).url());
 		Result result = route(request);
@@ -436,12 +442,13 @@ public class StudiesControllerTest {
 	@Test
 	public void callChangeComponentOrder() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
+
 		// Move first component to second position
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
 				.uri(controllers.gui.routes.Studies
 						.changeComponentOrder(study.getId(),
 								study.getComponentList().get(0).getId(), "2")
@@ -451,10 +458,9 @@ public class StudiesControllerTest {
 		assertThat(result.status()).isEqualTo(OK);
 
 		// Move second component to first position
-		request = new RequestBuilder().method("POST")
+		request = new RequestBuilder().method("POST").session(session)
+				.host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
 				.uri(controllers.gui.routes.Studies
 						.changeComponentOrder(study.getId(),
 								study.getComponentList().get(1).getId(), "1")
@@ -470,11 +476,12 @@ public class StudiesControllerTest {
 	@Test
 	public void callRunStudy() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
 				.uri(controllers.gui.routes.Studies.runStudy(study.getId(), -1l)
 						.url());
 		Result result = route(request);
@@ -488,10 +495,11 @@ public class StudiesControllerTest {
 	@Test
 	public void callTableDataByStudy() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies
 						.tableDataByStudy(study.getId()).url());
 		Result result = route(request);
@@ -507,10 +515,11 @@ public class StudiesControllerTest {
 	@Test
 	public void callWorkers() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		User admin = testHelper.getAdmin();
+
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.workers(study.getId())
 						.url());
 		Result result = route(request);

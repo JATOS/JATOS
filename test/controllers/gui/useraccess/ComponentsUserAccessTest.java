@@ -23,7 +23,9 @@ import play.test.Helpers;
 
 /**
  * Testing controller actions of Components whether they have proper access
- * control: only the right user should be allowed to do the action.
+ * control: only the right user should be allowed to do the action. For most
+ * actions only the denial of access is tested here - the actual function of the
+ * action (that includes positive access) is tested in the specific test class.
  * 
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
@@ -70,7 +72,7 @@ public class ComponentsUserAccessTest {
 		Call call = controllers.gui.routes.Components.runComponent(
 				study.getId(), study.getComponent(1).getId(), -1l);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
 	}
 
@@ -80,7 +82,7 @@ public class ComponentsUserAccessTest {
 		Call call = controllers.gui.routes.Components
 				.submitCreated(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -90,8 +92,10 @@ public class ComponentsUserAccessTest {
 		Call call = controllers.gui.routes.Components.properties(study.getId(),
 				study.getComponent(1).getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -100,7 +104,7 @@ public class ComponentsUserAccessTest {
 		Call call = controllers.gui.routes.Components
 				.submitEdited(study.getId(), study.getComponent(1).getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -110,7 +114,7 @@ public class ComponentsUserAccessTest {
 		Call call = controllers.gui.routes.Components.toggleActive(
 				study.getId(), study.getComponent(1).getId(), true);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -120,7 +124,7 @@ public class ComponentsUserAccessTest {
 		Call call = controllers.gui.routes.Components
 				.cloneComponent(study.getId(), study.getComponent(1).getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
 	}
 
@@ -130,7 +134,7 @@ public class ComponentsUserAccessTest {
 		Call call = controllers.gui.routes.Components.remove(study.getId(),
 				study.getComponent(1).getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.DELETE);
 	}
 

@@ -17,17 +17,16 @@ import com.google.inject.Injector;
 
 import general.TestHelper;
 import models.common.Study;
-import models.common.User;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 import play.libs.Json;
+import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
-import services.gui.AuthenticationService;
 
 /**
  * Testing actions of controller.Batches.
@@ -67,15 +66,15 @@ public class BatchesControllerTest {
 
 	@Test
 	public void callCreatePersonalSingleRun() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		JsonNode jsonNode = Json.mapper()
 				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyJson(jsonNode)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
 				.uri(controllers.gui.routes.Batches.createPersonalSingleRun(
 						study.getId(), study.getDefaultBatch().getId()).url());
 		Result result = route(request);
@@ -89,15 +88,15 @@ public class BatchesControllerTest {
 
 	@Test
 	public void callCreatePersonalMultipleRun() throws Exception {
-		User admin = testHelper.getAdmin();
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
 		JsonNode jsonNode = Json.mapper()
 				.readTree("{\"comment\": \"test comment\",\"amount\": 10}");
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyJson(jsonNode)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
 				.uri(controllers.gui.routes.Batches.createPersonalMultipleRun(
 						study.getId(), study.getDefaultBatch().getId()).url());
 		Result result = route(request);

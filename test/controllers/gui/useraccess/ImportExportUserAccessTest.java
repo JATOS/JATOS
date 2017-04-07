@@ -23,7 +23,9 @@ import play.test.Helpers;
 
 /**
  * Testing controller actions of ImportExport whether they have proper access
- * control: only the right user should be allowed to do the action.
+ * control: only the right user should be allowed to do the action. For most
+ * actions only the denial of access is tested here - the actual function of the
+ * action (that includes positive access) is tested in the specific test class.
  * 
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
@@ -82,7 +84,7 @@ public class ImportExportUserAccessTest {
 		Call call = controllers.gui.routes.ImportExport
 				.exportStudy(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
 	}
 
@@ -92,7 +94,7 @@ public class ImportExportUserAccessTest {
 		Call call = controllers.gui.routes.ImportExport
 				.exportComponent(study.getId(), study.getComponent(1).getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
 	}
 
@@ -102,7 +104,7 @@ public class ImportExportUserAccessTest {
 		Call call = controllers.gui.routes.ImportExport
 				.importComponent(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -112,7 +114,7 @@ public class ImportExportUserAccessTest {
 		Call call = controllers.gui.routes.ImportExport
 				.importComponentConfirmed(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -129,7 +131,7 @@ public class ImportExportUserAccessTest {
 		Call call = controllers.gui.routes.ImportExport
 				.exportDataOfAllStudyResults(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
 	}
 
@@ -148,7 +150,7 @@ public class ImportExportUserAccessTest {
 				.exportDataOfAllComponentResults(study.getId(),
 						component.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
 	}
 

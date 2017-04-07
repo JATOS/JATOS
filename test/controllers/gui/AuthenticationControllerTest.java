@@ -19,12 +19,12 @@ import com.google.inject.Guice;
 
 import controllers.gui.Authentication.Login;
 import general.TestHelper;
-import models.common.User;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
+import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
@@ -66,10 +66,10 @@ public class AuthenticationControllerTest {
 	 */
 	@Test
 	public void callLogin() {
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Authentication.login().url());
 		Result result = route(request);
 
@@ -84,10 +84,10 @@ public class AuthenticationControllerTest {
 	 */
 	@Test
 	public void callLogout() throws Exception {
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Authentication.logout().url());
 		Result result = route(request);
 
@@ -104,6 +104,7 @@ public class AuthenticationControllerTest {
 	@Test
 	public void authenticateSuccess() {
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL,
 						Login.PASSWORD, UserService.ADMIN_PASSWORD))
 				.uri(controllers.gui.routes.Authentication.authenticate()
@@ -123,6 +124,7 @@ public class AuthenticationControllerTest {
 	@Test
 	public void authenticateFailure() {
 		RequestBuilder request = new RequestBuilder().method("POST")
+				.host(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL,
 						Login.PASSWORD, "bla"))
 				.uri(controllers.gui.routes.Authentication.authenticate()

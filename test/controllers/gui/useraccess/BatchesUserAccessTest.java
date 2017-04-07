@@ -22,7 +22,9 @@ import play.test.Helpers;
 
 /**
  * Testing controller actions of Batches whether they have proper access
- * control: only the right user should be allowed to do the action.
+ * control: only the right user should be allowed to do the action. For most
+ * actions only the denial of access is tested here - the actual function of the
+ * action (that includes positive access) is tested in the specific test class.
  * 
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
@@ -68,8 +70,10 @@ public class BatchesUserAccessTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Call call = controllers.gui.routes.Batches.batchManager(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -78,8 +82,10 @@ public class BatchesUserAccessTest {
 		Call call = controllers.gui.routes.Batches
 				.batchesByStudy(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -87,7 +93,7 @@ public class BatchesUserAccessTest {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		Call call = controllers.gui.routes.Batches.submitCreated(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -97,8 +103,10 @@ public class BatchesUserAccessTest {
 		Call call = controllers.gui.routes.Batches.properties(study.getId(),
 				study.getDefaultBatch().getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -107,7 +115,7 @@ public class BatchesUserAccessTest {
 		Call call = controllers.gui.routes.Batches.submitEditedProperties(
 				study.getId(), study.getDefaultBatch().getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -117,7 +125,7 @@ public class BatchesUserAccessTest {
 		Call call = controllers.gui.routes.Batches.toggleActive(study.getId(),
 				study.getDefaultBatch().getId(), true);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -128,7 +136,7 @@ public class BatchesUserAccessTest {
 				study.getId(), study.getDefaultBatch().getId(),
 				JatosWorker.WORKER_TYPE, true);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -138,7 +146,7 @@ public class BatchesUserAccessTest {
 		Call call = controllers.gui.routes.Batches.remove(study.getId(),
 				study.getDefaultBatch().getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.DELETE);
 	}
 
@@ -148,7 +156,7 @@ public class BatchesUserAccessTest {
 		Call call = controllers.gui.routes.Batches
 				.createPersonalSingleRun(study.getId(), -1l);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 
@@ -158,7 +166,7 @@ public class BatchesUserAccessTest {
 		Call call = controllers.gui.routes.Batches
 				.createPersonalMultipleRun(study.getId(), -1l);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.POST);
 	}
 

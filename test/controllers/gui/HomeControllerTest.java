@@ -24,7 +24,6 @@ import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
-import services.gui.AuthenticationService;
 import services.gui.BreadcrumbsService;
 
 /**
@@ -62,10 +61,10 @@ public class HomeControllerTest {
 
 	@Test
 	public void callHome() throws Exception {
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Home.home().url());
 		Result result = route(request);
 
@@ -77,10 +76,10 @@ public class HomeControllerTest {
 
 	@Test
 	public void callLog() throws Exception {
-		User admin = testHelper.getAdmin();
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						admin.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Home.log(1000).url());
 		Result result = route(request);
 
@@ -95,11 +94,12 @@ public class HomeControllerTest {
 		User notAdminUser = testHelper.createAndPersistUser("bla@bla.com",
 				"Bla", "bla");
 
+		Http.Session session = testHelper
+				.mockSessionCookieandCache(notAdminUser);
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						notAdminUser.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Home.log(1000).url());
-		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN);
+		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, "");
 
 		testHelper.removeUser("bla@bla.com");
 	}

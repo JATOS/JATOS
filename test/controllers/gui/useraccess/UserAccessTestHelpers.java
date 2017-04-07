@@ -2,6 +2,7 @@ package controllers.gui.useraccess;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static play.mvc.Http.Status.FORBIDDEN;
+import static play.mvc.Http.Status.OK;
 import static play.mvc.Http.Status.SEE_OTHER;
 import static play.test.Helpers.route;
 
@@ -47,6 +48,17 @@ public class UserAccessTestHelpers {
 		assertThat(result.redirectLocation().get()).contains("/jatos/login");
 	}
 
+	public void checkAccessGranted(Call call, String method, User user) {
+		Http.Session session = testHelper.mockSessionCookieandCache(user);
+
+		RequestBuilder request = new RequestBuilder().method(method)
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.uri(call.url());
+		Result result = route(request);
+
+		assertThat(result.status()).isEqualTo(OK);
+	}
+
 	/**
 	 * Calls the given action/call with the given method (GET, POST, ...) with
 	 * an User that does not have the ADMIN role. This must lead to an HTTP
@@ -54,10 +66,12 @@ public class UserAccessTestHelpers {
 	 */
 	public void checkDeniedAccessDueToAuthorization(Call call, String method) {
 		// Persist User without ADMIN role
-		testHelper.createAndPersistUser("bla@bla.org", "Bla Bla", "bla");
+		User user = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
+				"bla");
+		Http.Session session = testHelper.mockSessionCookieandCache(user);
+
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						"bla@bla.org")
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(call.url());
 		Result result = route(request);
 
@@ -69,15 +83,24 @@ public class UserAccessTestHelpers {
 	 * study. Then calls the action with the admin user logged-in (in the
 	 * session). This should trigger a JatosGuiException with a 403 HTTP code.
 	 */
-	public void checkNotTheRightUser(Call call, Long studyId, String method) {
+	public void checkNotTheRightUserForStudy(Call call, Long studyId,
+			String method) {
 		User admin = testHelper.getAdmin();
 		// We have to get the study from the database again because it's
 		// detached (Hibernate)
 		jpaApi.withTransaction(() -> {
 			Study study = studyDao.findById(studyId);
 			study.removeUser(admin);
+			studyDao.update(study);
 		});
-		checkThatCallIsForbidden(call, method, admin);
+
+		checkThatCallIsForbidden(call, method, admin, "isn't user of study");
+
+		jpaApi.withTransaction(() -> {
+			Study study = studyDao.findById(studyId);
+			study.addUser(admin);
+			studyDao.update(study);
+		});
 	}
 
 	/**
@@ -92,7 +115,7 @@ public class UserAccessTestHelpers {
 						admin.getEmail())
 				.uri(call.url());
 
-		testHelper.assertJatosGuiException(request, Http.Status.SEE_OTHER);
+		testHelper.assertJatosGuiException(request, Http.Status.SEE_OTHER, "");
 	}
 
 	/**
@@ -100,12 +123,14 @@ public class UserAccessTestHelpers {
 	 * JatosGuiException with a HTTP status code 403. Uses the given user in the
 	 * session for authentication.
 	 */
-	public void checkThatCallIsForbidden(Call call, String method, User user) {
+	public void checkThatCallIsForbidden(Call call, String method, User user,
+			String errorMsg) {
+		Http.Session session = testHelper.mockSessionCookieandCache(user);
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(AuthenticationService.SESSION_USER_EMAIL,
-						user.getEmail())
+				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
 				.uri(call.url());
-		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN);
+		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN,
+				errorMsg);
 	}
 
 }

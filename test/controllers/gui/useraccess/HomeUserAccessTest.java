@@ -20,7 +20,9 @@ import play.test.Helpers;
 
 /**
  * Testing controller actions of Home whether they have proper access control:
- * only the right user should be allowed to do the action.
+ * only the right user should be allowed to do the action. For most actions only
+ * the denial of access is tested here - the actual function of the action (that
+ * includes positive access) is tested in the specific test class.
  * 
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
@@ -65,12 +67,16 @@ public class HomeUserAccessTest {
 	public void callHome() throws Exception {
 		Call call = controllers.gui.routes.Home.home();
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
 	public void callSidebarStudyList() throws Exception {
 		Call call = controllers.gui.routes.Home.sidebarStudyList();
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -79,6 +85,8 @@ public class HomeUserAccessTest {
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 }

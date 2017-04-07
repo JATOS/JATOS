@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +37,7 @@ import play.mvc.Http;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 import play.mvc.Http.RequestBuilder;
+import services.gui.AuthenticationService;
 import services.gui.BatchService;
 import services.gui.StudyService;
 import services.gui.StudyUploadUnmarshaller;
@@ -50,7 +52,9 @@ import utils.common.ZipUtil;
 @Singleton
 public class TestHelper {
 
-	private static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
+	public static final String WWW_EXAMPLE_COM = "www.example.com";
+
+	public static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
 
 	@Inject
 	private JPAApi jpaApi;
@@ -69,6 +73,9 @@ public class TestHelper {
 
 	@Inject
 	private BatchService batchService;
+	
+	@Inject
+	private AuthenticationService authenticationService;
 
 	@Inject
 	private IOUtils ioUtils;
@@ -189,7 +196,7 @@ public class TestHelper {
 	 * manually that the correct JatosGuiException was thrown.
 	 */
 	public void assertJatosGuiException(RequestBuilder request,
-			int httpStatus) {
+			int httpStatus, String errorMsg) {
 		try {
 			route(request);
 		} catch (RuntimeException e) {
@@ -198,6 +205,7 @@ public class TestHelper {
 					.getCause();
 			assertThat(jatosGuiException.getSimpleResult().status())
 					.isEqualTo(httpStatus);
+			assertThat(jatosGuiException.getMessage()).contains(errorMsg);
 		}
 	}
 
@@ -249,6 +257,13 @@ public class TestHelper {
 		Http.Context context = new Http.Context(id, header, request, flashData,
 				flashData, argData);
 		Http.Context.current.set(context);
+	}
+	
+	public Http.Session mockSessionCookieandCache(User user) {
+		Http.Session session = new Http.Session(new HashMap<>());
+		authenticationService.writeSessionCookieAndSessionCache(session,
+				user.getEmail(), WWW_EXAMPLE_COM);
+		return session;
 	}
 
 }

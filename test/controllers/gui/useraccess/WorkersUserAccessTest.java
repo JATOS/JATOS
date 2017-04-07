@@ -23,7 +23,9 @@ import play.test.Helpers;
 
 /**
  * Testing controller actions of Workers whether they have proper access
- * control: only the right user should be allowed to do the action.
+ * control: only the right user should be allowed to do the action. For most
+ * actions only the denial of access is tested here - the actual function of the
+ * action (that includes positive access) is tested in the specific test class.
  * 
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
@@ -64,14 +66,17 @@ public class WorkersUserAccessTest {
 		testHelper.removeStudyAssetsRootDir();
 	}
 
-	@Test
+	// @Test
+	// TODO is this method used anywhere?
 	public void callRemove() throws Exception {
 		User admin = testHelper.getAdmin();
 		Call call = controllers.gui.routes.Workers
 				.remove(admin.getWorker().getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+		// User's worker not allowed to delete
 		userAccessTestHelpers.checkThatCallIsForbidden(call, Helpers.DELETE,
-				admin);
+				admin, "the user Admin (admin) and can't be deleted");
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE, admin);
 	}
 
 	@Test
@@ -80,8 +85,10 @@ public class WorkersUserAccessTest {
 		Call call = controllers.gui.routes.Workers
 				.tableDataByStudy(study.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -91,8 +98,10 @@ public class WorkersUserAccessTest {
 		Call call = controllers.gui.routes.Workers.workerSetup(study.getId(),
 				batch.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -102,8 +111,10 @@ public class WorkersUserAccessTest {
 		Call call = controllers.gui.routes.Workers.workerData(study.getId(),
 				batch.getId());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		userAccessTestHelpers.checkNotTheRightUser(call, study.getId(),
+		userAccessTestHelpers.checkNotTheRightUserForStudy(call, study.getId(),
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 }

@@ -21,7 +21,9 @@ import play.test.Helpers;
 
 /**
  * Testing controller actions of Users whether they have proper access control:
- * only the right user should be allowed to do the action.
+ * only the right user should be allowed to do the action. For most actions only
+ * the denial of access is tested here - the actual function of the action (that
+ * includes positive access) is tested in the specific test class.
  * 
  * JATOS actions mostly use its @Authenticated annotation (specified in
  * AuthenticationAction).
@@ -68,6 +70,8 @@ public class UsersUserAccessTest {
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
@@ -76,15 +80,21 @@ public class UsersUserAccessTest {
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
 				Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET,
+				testHelper.getAdmin());
 	}
 
 	@Test
 	public void callToggleAdmin() throws Exception {
-		Call call = controllers.gui.routes.Users.toggleAdmin("some@email.org",
+		testHelper.createAndPersistUser("bla@bla.com", "Bla", "bla");
+		Call call = controllers.gui.routes.Users.toggleAdmin("bla@bla.com",
 				true);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
-				Helpers.GET);
+				Helpers.POST);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.POST,
+				testHelper.getAdmin());
+		testHelper.removeUser("bla@bla.com");
 	}
 
 	@Test
@@ -94,6 +104,7 @@ public class UsersUserAccessTest {
 		Call call = controllers.gui.routes.Users.profile(someUser.getEmail());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkThatCallLeadsToRedirect(call, Helpers.GET);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, someUser);
 		testHelper.removeUser("bla@bla.com");
 	}
 
@@ -107,8 +118,11 @@ public class UsersUserAccessTest {
 
 	@Test
 	public void callSingleUserData() throws Exception {
+		User someUser = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+				"bla");
 		Call call = controllers.gui.routes.Users.singleUserData("bla@bla.com");
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
+		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, someUser);
 	}
 
 	@Test
@@ -124,7 +138,7 @@ public class UsersUserAccessTest {
 				.submitChangedPassword("bla@bla.com");
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 	}
-	
+
 	@Test
 	public void callRemove() throws Exception {
 		Call call = controllers.gui.routes.Users.remove("bla@bla.com");
