@@ -210,17 +210,19 @@ public class UserServiceTest {
 	 */
 	@Test
 	public void checkUpdatePassword() {
+		User blaUser = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
+				"bla");
+
 		jpaApi.withTransaction(() -> {
 			try {
-				userService.updatePassword(UserService.ADMIN_EMAIL,
-						"newPassword");
+				userService.updatePassword(blaUser.getEmail(), "newPassword");
 			} catch (NotFoundException e) {
 				throw new RuntimeException(e);
 			}
 		});
 
 		jpaApi.withTransaction(() -> {
-			authenticationService.authenticate(UserService.ADMIN_EMAIL,
+			authenticationService.authenticate(blaUser.getEmail(),
 					"newPassword");
 		});
 	}
@@ -408,6 +410,7 @@ public class UserServiceTest {
 		jpaApi.withTransaction(() -> {
 			try {
 				userService.removeUser(UserService.ADMIN_EMAIL);
+				Fail.fail();
 			} catch (NotFoundException | IOException e) {
 				Fail.fail();
 			} catch (ForbiddenException e) {

@@ -91,17 +91,18 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkAuthenticateNotAdminUser() {
-		testHelper.createAndPersistUser(BLA_AT_BLA_ORG, "Bla Bla", "bla");
+		testHelper.createAndPersistUser("oliver.zumba@gmail.com", "Bla Bla",
+				"bla");
 
 		jpaApi.withTransaction(() -> {
-			assertThat(
-					authenticationService.authenticate(BLA_AT_BLA_ORG, "bla"))
-							.isTrue();
-			assertThat(authenticationService.authenticate(BLA_AT_BLA_ORG,
-					"wrongPassword")).isFalse();
+			assertThat(authenticationService
+					.authenticate("oliver.zumba@gmail.com", "bla")).isTrue();
+			assertThat(authenticationService
+					.authenticate("oliver.zumba@gmail.com", "wrongPassword"))
+							.isFalse();
 		});
 
-		testHelper.removeUser(BLA_AT_BLA_ORG);
+		testHelper.removeUser("oliver.zumba@gmail.com");
 	}
 
 	/**
