@@ -109,7 +109,7 @@ public class GroupDispatcher extends UntypedActor {
 			// A GroupChannel has to be reassigned
 			reassignChannel((ReassignChannel) msg);
 		} else if (msg instanceof PoisonChannel) {
-			// Comes from ChannelService: close a group channel
+			// Comes from GroupChannelService: close a group channel
 			poisonAGroupChannel((PoisonChannel) msg);
 		} else {
 			unhandled(msg);
@@ -392,7 +392,7 @@ public class GroupDispatcher extends UntypedActor {
 	 * Tells the GroupChannel to close itself. The GroupChannel then sends a
 	 * ChannelClosed back to this GroupDispatcher during postStop and then we
 	 * can remove the channel from the group registry and tell all other members
-	 * about it. Also send false back to the sender (ChannelService) if the
+	 * about it. Also send false back to the sender (GroupChannelService) if the
 	 * GroupChannel wasn't handled by this GroupDispatcher.
 	 */
 	private void poisonAGroupChannel(PoisonChannel poison) {

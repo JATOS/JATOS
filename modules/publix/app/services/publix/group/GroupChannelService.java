@@ -34,9 +34,9 @@ import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.ItsTh
  * @author Kristian Lange (2015)
  */
 @Singleton
-public class ChannelService {
+public class GroupChannelService {
 
-	private static final ALogger LOGGER = Logger.of(ChannelService.class);
+	private static final ALogger LOGGER = Logger.of(GroupChannelService.class);
 
 	/**
 	 * Time to wait for an answer after asking an Akka actor

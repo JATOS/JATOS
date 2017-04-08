@@ -26,7 +26,7 @@ import play.mvc.Result;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
-import services.publix.group.ChannelService;
+import services.publix.group.GroupChannelService;
 import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
@@ -95,13 +95,15 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			JatosStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator,
 			GroupAdministration groupAdministration,
-			ChannelService channelService, IdCookieService idCookieService,
-			JatosErrorMessages errorMessages, StudyAssets studyAssets,
-			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
+			GroupChannelService groupChannelService,
+			IdCookieService idCookieService, JatosErrorMessages errorMessages,
+			StudyAssets studyAssets, JsonUtils jsonUtils,
+			ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
-				channelService, idCookieService, errorMessages, studyAssets,
-				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
+				groupChannelService, idCookieService, errorMessages,
+				studyAssets, jsonUtils, componentResultDao, studyResultDao,
+				groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;

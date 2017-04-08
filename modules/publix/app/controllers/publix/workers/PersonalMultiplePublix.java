@@ -20,7 +20,7 @@ import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ResultCreator;
-import services.publix.group.ChannelService;
+import services.publix.group.GroupChannelService;
 import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalMultipleErrorMessages;
@@ -53,14 +53,16 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 			PersonalMultipleStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator,
 			GroupAdministration groupAdministration,
-			ChannelService channelService, IdCookieService idCookieService,
+			GroupChannelService groupChannelService,
+			IdCookieService idCookieService,
 			PersonalMultipleErrorMessages errorMessages,
 			StudyAssets studyAssets, JsonUtils jsonUtils,
 			ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
-				channelService, idCookieService, errorMessages, studyAssets,
-				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
+				groupChannelService, idCookieService, errorMessages,
+				studyAssets, jsonUtils, componentResultDao, studyResultDao,
+				groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;

@@ -35,7 +35,7 @@ import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
-import services.publix.group.ChannelService;
+import services.publix.group.GroupChannelService;
 import services.publix.group.GroupAdministration;
 import services.publix.group.WebSocketBuilder;
 import services.publix.idcookie.IdCookieModel;
@@ -59,7 +59,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	protected final PublixUtils<T> publixUtils;
 	protected final StudyAuthorisation<T> studyAuthorisation;
 	protected final GroupAdministration groupAdministration;
-	protected final ChannelService channelService;
+	protected final GroupChannelService groupChannelService;
 	protected final IdCookieService idCookieService;
 	protected final PublixErrorMessages errorMessages;
 	protected final StudyAssets studyAssets;
@@ -71,15 +71,16 @@ public abstract class Publix<T extends Worker> extends Controller
 	public Publix(JPAApi jpa, PublixUtils<T> publixUtils,
 			StudyAuthorisation<T> studyAuthorisation,
 			GroupAdministration groupAdministration,
-			ChannelService channelService, IdCookieService idCookieService,
-			PublixErrorMessages errorMessages, StudyAssets studyAssets,
-			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
+			GroupChannelService groupChannelService,
+			IdCookieService idCookieService, PublixErrorMessages errorMessages,
+			StudyAssets studyAssets, JsonUtils jsonUtils,
+			ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		this.jpa = jpa;
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.groupAdministration = groupAdministration;
-		this.channelService = channelService;
+		this.groupChannelService = groupChannelService;
 		this.idCookieService = idCookieService;
 		this.errorMessages = errorMessages;
 		this.studyAssets = studyAssets;
@@ -219,7 +220,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		// openGroupChannel has to be outside of the transaction
 		if (studyResult != null) {
 			try {
-				return channelService.openGroupChannel(studyResult);
+				return groupChannelService.openGroupChannel(studyResult);
 			} catch (InternalServerErrorPublixException e) {
 				return WebSocketBuilder.reject(internalServerError());
 			}
@@ -248,7 +249,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		} else {
 			GroupResult groupResult = groupAdministration.join(studyResult,
 					batch);
-			channelService.sendJoinedMsg(studyResult);
+			groupChannelService.sendJoinedMsg(studyResult);
 			LOGGER.info(".joinGroup: studyId " + studyId + ", " + "workerId "
 					+ idCookie.getWorkerId() + " joined group result "
 					+ groupResult.getId());
@@ -274,8 +275,8 @@ public abstract class Publix<T extends Worker> extends Controller
 		GroupResult currentGroupResult = studyResult.getActiveGroupResult();
 		GroupResult differentGroupResult = groupAdministration
 				.reassign(studyResult, batch);
-		channelService.reassignGroupChannel(studyResult, currentGroupResult,
-				differentGroupResult);
+		groupChannelService.reassignGroupChannel(studyResult,
+				currentGroupResult, differentGroupResult);
 		LOGGER.info(".reassignGroup: studyId " + studyId + ", " + "workerId "
 				+ idCookie.getWorkerId() + " reassigned to group result "
 				+ differentGroupResult.getId());
@@ -303,8 +304,8 @@ public abstract class Publix<T extends Worker> extends Controller
 			return ok();
 		}
 		groupAdministration.leave(studyResult);
-		channelService.closeGroupChannel(studyResult, groupResult);
-		channelService.sendLeftMsg(studyResult, groupResult);
+		groupChannelService.closeGroupChannel(studyResult, groupResult);
+		groupChannelService.sendLeftMsg(studyResult, groupResult);
 		LOGGER.info(".leaveGroup: studyId " + studyId + ", " + "workerId "
 				+ idCookie.getWorkerId() + " left group result "
 				+ groupResult.getId());

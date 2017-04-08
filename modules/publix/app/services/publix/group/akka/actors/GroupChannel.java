@@ -23,11 +23,11 @@ import services.publix.group.akka.messages.GroupDispatcherProtocol.UnregisterCha
  * the GroupResult.
  * 
  * A GroupChannel belongs to a GroupDispatcher. A GroupChannel is created by the
- * ChannelService and registers itself by sending a RegisterChannel message to
- * its GroupDispatcher. It closes down after receiving a PoisonChannel message
- * or if the WebSocket is closed. While closing down it unregisters from the
- * GroupDispatcher by sending a UnregisterChannel message. A GroupChannel can,
- * if it's told to, reassign itself to a different GroupDispatcher.
+ * GroupChannelService and registers itself by sending a RegisterChannel message
+ * to its GroupDispatcher. It closes down after receiving a PoisonChannel
+ * message or if the WebSocket is closed. While closing down it unregisters from
+ * the GroupDispatcher by sending a UnregisterChannel message. A GroupChannel
+ * can, if it's told to, reassign itself to a different GroupDispatcher.
  * 
  * @author Kristian Lange (2015)
  */

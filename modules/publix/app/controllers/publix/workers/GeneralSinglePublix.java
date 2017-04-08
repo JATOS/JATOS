@@ -21,7 +21,7 @@ import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
-import services.publix.group.ChannelService;
+import services.publix.group.GroupChannelService;
 import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.GeneralSingleCookieService;
@@ -55,15 +55,17 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 	GeneralSinglePublix(JPAApi jpa, GeneralSinglePublixUtils publixUtils,
 			GeneralSingleStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator, WorkerCreator workerCreator,
-			GroupAdministration groupAdministration, ChannelService channelService,
+			GroupAdministration groupAdministration,
+			GroupChannelService groupChannelService,
 			IdCookieService idCookieService,
 			GeneralSingleCookieService generalSingleCookieService,
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
-				channelService, idCookieService, errorMessages, studyAssets,
-				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
+				groupChannelService, idCookieService, errorMessages,
+				studyAssets, jsonUtils, componentResultDao, studyResultDao,
+				groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;

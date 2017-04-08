@@ -26,7 +26,7 @@ import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
-import services.publix.group.ChannelService;
+import services.publix.group.GroupChannelService;
 import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
@@ -70,14 +70,16 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 			MTStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator, WorkerCreator workerCreator,
 			GroupAdministration groupAdministration,
-			ChannelService channelService, IdCookieService idCookieService,
-			MTErrorMessages errorMessages, StudyAssets studyAssets,
-			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
+			GroupChannelService groupChannelService,
+			IdCookieService idCookieService, MTErrorMessages errorMessages,
+			StudyAssets studyAssets, JsonUtils jsonUtils,
+			ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao,
 			GroupResultDao groupResultDao) {
 		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
-				channelService, idCookieService, errorMessages, studyAssets,
-				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
+				groupChannelService, idCookieService, errorMessages,
+				studyAssets, jsonUtils, componentResultDao, studyResultDao,
+				groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;

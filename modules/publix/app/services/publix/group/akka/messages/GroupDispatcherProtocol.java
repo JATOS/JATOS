@@ -129,9 +129,9 @@ public class GroupDispatcherProtocol {
 
 	/**
 	 * Message to signal that a GroupChannel has to change its GroupDispatcher.
-	 * It originates in the ChannelService and send to the GroupDispatcher who
-	 * currently handles the GroupChannel. There it is forwarded to the actual
-	 * GroupChannel.
+	 * It originates in the GroupChannelService and send to the GroupDispatcher
+	 * who currently handles the GroupChannel. There it is forwarded to the
+	 * actual GroupChannel.
 	 */
 	public static class ReassignChannel {
 

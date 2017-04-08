@@ -32,7 +32,7 @@ import services.publix.ResultCreator;
 @Singleton
 public class GroupAdministration {
 
-	private final ChannelService channelService;
+	private final GroupChannelService groupChannelService;
 	private final ResultCreator resultCreator;
 	private final StudyResultDao studyResultDao;
 	private final GroupResultDao groupResultDao;
@@ -40,10 +40,11 @@ public class GroupAdministration {
 	private final PublixErrorMessages errorMessages;
 
 	@Inject
-	GroupAdministration(ChannelService channelService, ResultCreator resultCreator,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-			JPAApi jpa, PublixErrorMessages errorMessages) {
-		this.channelService = channelService;
+	GroupAdministration(GroupChannelService groupChannelService,
+			ResultCreator resultCreator, StudyResultDao studyResultDao,
+			GroupResultDao groupResultDao, JPAApi jpa,
+			PublixErrorMessages errorMessages) {
+		this.groupChannelService = groupChannelService;
 		this.resultCreator = resultCreator;
 		this.studyResultDao = studyResultDao;
 		this.groupResultDao = groupResultDao;
@@ -217,8 +218,8 @@ public class GroupAdministration {
 		if (study.isGroupStudy() && groupResult != null) {
 			moveToHistory(studyResult);
 			checkAndFinishGroup(groupResult);
-			channelService.closeGroupChannel(studyResult, groupResult);
-			channelService.sendLeftMsg(studyResult, groupResult);
+			groupChannelService.closeGroupChannel(studyResult, groupResult);
+			groupChannelService.sendLeftMsg(studyResult, groupResult);
 		}
 	}
 
