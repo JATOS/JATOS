@@ -12,7 +12,6 @@ import com.google.inject.Injector;
 import general.TestHelper;
 import models.common.Batch;
 import models.common.Study;
-import models.common.User;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
@@ -64,19 +63,6 @@ public class WorkersUserAccessTest {
 
 		Helpers.stop(fakeApplication);
 		testHelper.removeStudyAssetsRootDir();
-	}
-
-	// @Test
-	// TODO is this method used anywhere?
-	public void callRemove() throws Exception {
-		User admin = testHelper.getAdmin();
-		Call call = controllers.gui.routes.Workers
-				.remove(admin.getWorker().getId());
-		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
-		// User's worker not allowed to delete
-		userAccessTestHelpers.checkThatCallIsForbidden(call, Helpers.DELETE,
-				admin, "the user Admin (admin) and can't be deleted");
-		userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE, admin);
 	}
 
 	@Test
