@@ -31,13 +31,13 @@ import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Unreg
  * 
  * A GroupDispatcher only handles the GroupChannels but is not responsible for
  * the actual joining of a GroupResult. This is done prior to creating a
- * GroupDispatcher by the GroupService which persists all data in a GroupResult.
- * Who's member in a group is defined by the GroupResult.
+ * GroupDispatcher by the GroupAdministration which persists all data in a
+ * GroupResult. Who's member in a group is defined by the GroupResult.
  * 
  * A GroupChannel is only opened after a StudyResult joined a GroupResult, which
- * is done in the GroupService. Group data (e.g. who's member) are persisted in
- * a GroupResult entity. A GroupChannel is closed after the StudyResult left the
- * group.
+ * is done in the GroupAdministration. Group data (e.g. who's member) are
+ * persisted in a GroupResult entity. A GroupChannel is closed after the
+ * StudyResult left the group.
  * 
  * A GroupDispatcher handles all messages specified in the
  * GroupDispatcherProtocol.

@@ -15,7 +15,7 @@ import models.common.workers.Worker;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
-import services.publix.group.GroupService;
+import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieService;
 
 /**
@@ -29,14 +29,15 @@ public class PersonalMultiplePublixUtils
 
 	@Inject
 	PersonalMultiplePublixUtils(ResultCreator resultCreator,
-			IdCookieService idCookieService, GroupService groupService,
+			IdCookieService idCookieService,
+			GroupAdministration groupAdministration,
 			PersonalMultipleErrorMessages errorMessages, StudyDao studyDao,
 			StudyResultDao studyResultDao, ComponentDao componentDao,
 			ComponentResultDao componentResultDao, WorkerDao workerDao,
 			BatchDao batchDao) {
-		super(resultCreator, idCookieService, groupService, errorMessages, studyDao,
-				studyResultDao, componentDao, componentResultDao, workerDao,
-				batchDao);
+		super(resultCreator, idCookieService, groupAdministration,
+				errorMessages, studyDao, studyResultDao, componentDao,
+				componentResultDao, workerDao, batchDao);
 	}
 
 	@Override

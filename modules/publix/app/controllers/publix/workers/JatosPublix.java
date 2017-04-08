@@ -27,7 +27,7 @@ import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
-import services.publix.group.GroupService;
+import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.JatosErrorMessages;
@@ -93,12 +93,13 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	@Inject
 	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
-			ResultCreator resultCreator, GroupService groupService,
+			ResultCreator resultCreator,
+			GroupAdministration groupAdministration,
 			ChannelService channelService, IdCookieService idCookieService,
 			JatosErrorMessages errorMessages, StudyAssets studyAssets,
 			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupService,
+		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
 				channelService, idCookieService, errorMessages, studyAssets,
 				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
@@ -264,7 +265,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
-			groupService.finishStudyResultInGroup(studyResult);
+			groupAdministration.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
 		if (HttpUtils.isAjax()) {
@@ -283,8 +284,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 			Boolean successful, String errorMsg) throws PublixException {
 		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
 				+ studyResultId + ", " + "logged-in user email "
-				+ session(SESSION_USER_EMAIL) + ", " + "successful " + successful
-				+ ", " + "errorMsg \"" + errorMsg + "\"");
+				+ session(SESSION_USER_EMAIL) + ", " + "successful "
+				+ successful + ", " + "errorMsg \"" + errorMsg + "\"");
 		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -296,7 +297,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 				studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
-			groupService.finishStudyResultInGroup(studyResult);
+			groupAdministration.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
 		if (HttpUtils.isAjax()) {

@@ -36,7 +36,7 @@ import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
 import services.publix.group.ChannelService;
-import services.publix.group.GroupService;
+import services.publix.group.GroupAdministration;
 import services.publix.group.WebSocketBuilder;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
@@ -58,7 +58,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	protected final JPAApi jpa;
 	protected final PublixUtils<T> publixUtils;
 	protected final StudyAuthorisation<T> studyAuthorisation;
-	protected final GroupService groupService;
+	protected final GroupAdministration groupAdministration;
 	protected final ChannelService channelService;
 	protected final IdCookieService idCookieService;
 	protected final PublixErrorMessages errorMessages;
@@ -69,7 +69,8 @@ public abstract class Publix<T extends Worker> extends Controller
 	protected final GroupResultDao groupResultDao;
 
 	public Publix(JPAApi jpa, PublixUtils<T> publixUtils,
-			StudyAuthorisation<T> studyAuthorisation, GroupService groupService,
+			StudyAuthorisation<T> studyAuthorisation,
+			GroupAdministration groupAdministration,
 			ChannelService channelService, IdCookieService idCookieService,
 			PublixErrorMessages errorMessages, StudyAssets studyAssets,
 			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
@@ -77,7 +78,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		this.jpa = jpa;
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
-		this.groupService = groupService;
+		this.groupAdministration = groupAdministration;
 		this.channelService = channelService;
 		this.idCookieService = idCookieService;
 		this.errorMessages = errorMessages;
@@ -220,10 +221,10 @@ public abstract class Publix<T extends Worker> extends Controller
 			try {
 				return channelService.openGroupChannel(studyResult);
 			} catch (InternalServerErrorPublixException e) {
-				return WebSocketBuilder.reject(internalServerError()); 
+				return WebSocketBuilder.reject(internalServerError());
 			}
 		} else {
-			return WebSocketBuilder.reject(internalServerError()); 
+			return WebSocketBuilder.reject(internalServerError());
 		}
 	}
 
@@ -237,7 +238,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		publixUtils.checkStudyIsGroupStudy(study);
 		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
 				studyResultId);
-		groupService.checkHistoryGroupResult(studyResult);
+		groupAdministration.checkHistoryGroupResult(studyResult);
 
 		if (studyResult.getActiveGroupResult() != null) {
 			GroupResult groupResult = studyResult.getActiveGroupResult();
@@ -245,7 +246,8 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ idCookie.getWorkerId()
 					+ " already member of group result " + groupResult.getId());
 		} else {
-			GroupResult groupResult = groupService.join(studyResult, batch);
+			GroupResult groupResult = groupAdministration.join(studyResult,
+					batch);
 			channelService.sendJoinedMsg(studyResult);
 			LOGGER.info(".joinGroup: studyId " + studyId + ", " + "workerId "
 					+ idCookie.getWorkerId() + " joined group result "
@@ -267,11 +269,11 @@ public abstract class Publix<T extends Worker> extends Controller
 		publixUtils.checkStudyIsGroupStudy(study);
 		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
 				studyResultId);
-		groupService.checkHistoryGroupResult(studyResult);
+		groupAdministration.checkHistoryGroupResult(studyResult);
 
 		GroupResult currentGroupResult = studyResult.getActiveGroupResult();
-		GroupResult differentGroupResult = groupService.reassign(studyResult,
-				batch);
+		GroupResult differentGroupResult = groupAdministration
+				.reassign(studyResult, batch);
 		channelService.reassignGroupChannel(studyResult, currentGroupResult,
 				differentGroupResult);
 		LOGGER.info(".reassignGroup: studyId " + studyId + ", " + "workerId "
@@ -300,7 +302,7 @@ public abstract class Publix<T extends Worker> extends Controller
 					+ " isn't member of a group result - can't leave.");
 			return ok();
 		}
-		groupService.leave(studyResult);
+		groupAdministration.leave(studyResult);
 		channelService.closeGroupChannel(studyResult, groupResult);
 		channelService.sendLeftMsg(studyResult, groupResult);
 		LOGGER.info(".leaveGroup: studyId " + studyId + ", " + "workerId "
@@ -428,7 +430,7 @@ public abstract class Publix<T extends Worker> extends Controller
 				studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.abortStudy(message, studyResult);
-			groupService.finishStudyResultInGroup(studyResult);
+			groupAdministration.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
 		if (HttpUtils.isAjax()) {
@@ -454,7 +456,7 @@ public abstract class Publix<T extends Worker> extends Controller
 				studyResultId);
 		if (!PublixHelpers.studyDone(studyResult)) {
 			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
-			groupService.finishStudyResultInGroup(studyResult);
+			groupAdministration.finishStudyResultInGroup(studyResult);
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
 		if (HttpUtils.isAjax()) {

@@ -21,7 +21,7 @@ import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ResultCreator;
 import services.publix.group.ChannelService;
-import services.publix.group.GroupService;
+import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalSingleErrorMessages;
 import services.publix.workers.PersonalSinglePublixUtils;
@@ -51,12 +51,13 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
 	@Inject
 	PersonalSinglePublix(JPAApi jpa, PersonalSinglePublixUtils publixUtils,
 			PersonalSingleStudyAuthorisation studyAuthorisation,
-			ResultCreator resultCreator, GroupService groupService,
+			ResultCreator resultCreator,
+			GroupAdministration groupAdministration,
 			ChannelService channelService, IdCookieService idCookieService,
 			PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupService,
+		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
 				channelService, idCookieService, errorMessages, studyAssets,
 				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;

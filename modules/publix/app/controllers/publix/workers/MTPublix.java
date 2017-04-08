@@ -27,7 +27,7 @@ import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
 import services.publix.group.ChannelService;
-import services.publix.group.GroupService;
+import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.MTErrorMessages;
@@ -69,13 +69,13 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 	MTPublix(JPAApi jpa, MTPublixUtils publixUtils,
 			MTStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator, WorkerCreator workerCreator,
-			GroupService groupService, ChannelService channelService,
-			IdCookieService idCookieService, MTErrorMessages errorMessages,
-			StudyAssets studyAssets, JsonUtils jsonUtils,
-			ComponentResultDao componentResultDao,
+			GroupAdministration groupAdministration,
+			ChannelService channelService, IdCookieService idCookieService,
+			MTErrorMessages errorMessages, StudyAssets studyAssets,
+			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao,
 			GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupService,
+		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
 				channelService, idCookieService, errorMessages, studyAssets,
 				jsonUtils, componentResultDao, studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
@@ -156,7 +156,7 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		if (!PublixHelpers.studyDone(studyResult)) {
 			confirmationCode = publixUtils.finishStudyResult(successful,
 					errorMsg, studyResult);
-			groupService.finishStudyResultInGroup(studyResult);
+			groupAdministration.finishStudyResultInGroup(studyResult);
 		} else {
 			confirmationCode = studyResult.getConfirmationCode();
 		}

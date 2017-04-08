@@ -18,9 +18,9 @@ import services.publix.group.akka.messages.GroupDispatcherProtocol.UnregisterCha
  * the JATOS server.
  * 
  * A GroupChannel is only be opened after a StudyResult joined a group, which is
- * done in the GroupService. Group data (e.g. who's member) are persisted in a
- * GroupResult entity. A GroupChannel is closed after the StudyResult left the
- * GroupResult.
+ * done in the GroupAdministration. Group data (e.g. who's member) are persisted
+ * in a GroupResult entity. A GroupChannel is closed after the StudyResult left
+ * the GroupResult.
  * 
  * A GroupChannel belongs to a GroupDispatcher. A GroupChannel is created by the
  * ChannelService and registers itself by sending a RegisterChannel message to

@@ -30,7 +30,7 @@ import services.publix.ResultCreator;
  * @author Kristian Lange (2015)
  */
 @Singleton
-public class GroupService {
+public class GroupAdministration {
 
 	private final ChannelService channelService;
 	private final ResultCreator resultCreator;
@@ -40,7 +40,7 @@ public class GroupService {
 	private final PublixErrorMessages errorMessages;
 
 	@Inject
-	GroupService(ChannelService channelService, ResultCreator resultCreator,
+	GroupAdministration(ChannelService channelService, ResultCreator resultCreator,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao,
 			JPAApi jpa, PublixErrorMessages errorMessages) {
 		this.channelService = channelService;
