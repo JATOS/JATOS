@@ -45,7 +45,6 @@ GET      /jatos/:studyId/resultsTableData                                   @con
 DELETE   /jatos/:studyId/allResults                                         @controllers.gui.StudyResults.removeAllOfStudy(studyId: Long)
 
 # Workers controller
-DELETE   /jatos/worker/:workerId                                            @controllers.gui.Workers.remove(workerId: Long)
 GET      /jatos/:studyId/workersTableData                                   @controllers.gui.Workers.tableDataByStudy(studyId: Long)
 GET      /jatos/:studyId/batch/:batchId/workerData                          @controllers.gui.Workers.workerData(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/workerSetup                         @controllers.gui.Workers.workerSetup(studyId: Long, batchId: Long)

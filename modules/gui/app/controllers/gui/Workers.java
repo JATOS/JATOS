@@ -13,7 +13,6 @@ import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
-import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.JatosGuiException;
@@ -53,14 +52,12 @@ public class Workers extends Controller {
 	private final JsonUtils jsonUtils;
 	private final StudyDao studyDao;
 	private final BatchDao batchDao;
-	private final WorkerDao workerDao;
 
 	@Inject
 	Workers(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
 			AuthenticationService authenticationService,
 			WorkerService workerService, BreadcrumbsService breadcrumbsService,
-			JsonUtils jsonUtils, StudyDao studyDao, BatchDao batchDao,
-			WorkerDao workerDao) {
+			JsonUtils jsonUtils, StudyDao studyDao, BatchDao batchDao) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.authenticationService = authenticationService;
@@ -69,34 +66,6 @@ public class Workers extends Controller {
 		this.jsonUtils = jsonUtils;
 		this.studyDao = studyDao;
 		this.batchDao = batchDao;
-		this.workerDao = workerDao;
-	}
-
-	/**
-	 * Ajax request
-	 * 
-	 * Remove a worker including its results.
-	 */
-	@Transactional
-	@Authenticated
-	public Result remove(Long workerId) throws JatosGuiException {
-		LOGGER.debug(".remove: workerId " + workerId);
-		Worker worker = workerDao.findById(workerId);
-		User loggedInUser = authenticationService.getLoggedInUser();
-		try {
-			checker.checkWorker(worker, workerId);
-		} catch (BadRequestException e) {
-			jatosGuiExceptionThrower.throwRedirect(e,
-					controllers.gui.routes.Home.home());
-		}
-
-		try {
-			checker.checkRemovalAllowed(worker, loggedInUser);
-		} catch (ForbiddenException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwAjax(e);
-		}
-		workerDao.remove(worker);
-		return ok();
 	}
 
 	/**
