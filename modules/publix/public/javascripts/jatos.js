@@ -797,9 +797,8 @@ var jatos = {};
 					callOnUpdate(callbacks);
 				}
 				break;
-			case "UPDATE":
-				// onUpdate
-				// Got update
+			case "FIXED":
+				// The group is now fixed (no new members)
 				callOnUpdate(callbacks);
 				break;
 			case "SESSION_ACK":

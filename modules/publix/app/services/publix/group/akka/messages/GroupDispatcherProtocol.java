@@ -93,7 +93,15 @@ public class GroupDispatcherProtocol {
 		 * All possible group actions a group action message can have.
 		 */
 		public enum GroupAction {
-			JOINED, LEFT, OPENED, CLOSED, SESSION, SESSION_ACK, SESSION_FAIL, FIXED, UPDATE, ERROR
+			JOINED, // Signals to every group member that a new member joined
+			LEFT, // Signals to every member that a member left
+			OPENED, // Signals to every member that a new group channel opened
+			CLOSED, // Signals to every member that a group channel was closed
+			SESSION, // Signals this message contains a group session update
+			SESSION_ACK, // Signals that the session update was successful
+			SESSION_FAIL, // Signals that the session update failed
+			FIXED, // Signals that this group is now fixed (no new members)
+			ERROR // Used to send an error back to the sender
 		};
 
 		public GroupActionMsg(ObjectNode jsonNode) {

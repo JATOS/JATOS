@@ -190,7 +190,7 @@ public class GroupDispatcher extends UntypedActor {
 			if (groupResult != null) {
 				groupResult.setGroupState(GroupState.FIXED);
 				updateGroupResult(groupResult);
-				tellAllFullGroupAction(GroupAction.UPDATE, groupResult);
+				tellAllFullGroupAction(GroupAction.FIXED, groupResult);
 			} else {
 				String errorMsg = "Couldn't fix the group result.";
 				sendErrorBackToSender(errorMsg);
