@@ -108,10 +108,11 @@ var jatos = {};
 	 */
 	jatos.groupSessionTimeoutTime = 5000;
 	/**
-	 * Intermediate storage for the groupSessionData during uploading to the JATOS
-	 * server
+	 * Intermediate storage for the groupSessionPatch during uploading to the JATOS
+	 * server; used for resubmitting after fail
 	 */
-	var groupSessionDataFrozen;
+	var groupSessionPatchFrozen;
+	var groupSessionObserver;
 	/**
 	 * Timeout for group session upload: How long to we wait for an answer from
 	 * JATOS.
@@ -196,15 +197,18 @@ var jatos = {};
 		if (!jQueryExists()) {
 			return;
 		}
-		// Plugin to retry ajax calls 
-		jatos.jQuery.ajax({
-			url: "/public/lib/jatos-publix/javascripts/jquery.ajax-retry.min.js",
-			dataType: "script",
-			cache: true,
-			error: function (err) {
-				callingOnError(null, getAjaxErrorMsg(err));
-			}
-		}).done(onSuccess);
+		jatos.jQuery.when(
+			// Plugin to retry ajax calls 
+			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/jquery.ajax-retry.min.js"),
+			// JSON path library https://github.com/Starcounter-Jack/JSON-Patch
+			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/json-patch-duplex.js"),
+			jatos.jQuery.Deferred(function(deferred){
+				jatos.jQuery(deferred.resolve);
+			})
+		).done(onSuccess
+		).fail(function (err) {
+			callingOnError(null, getAjaxErrorMsg(err));
+		});
 	}
 
 	/**
@@ -308,7 +312,7 @@ var jatos = {};
 		 * Puts the ajax response into the different jatos variables.
 		 */
 		function setInitData(initData) {
-			// Session data
+			// Study session data
 			try {
 				jatos.studySessionData = jatos.jQuery.parseJSON(initData.studySessionData);
 			} catch (e) {
@@ -719,7 +723,10 @@ var jatos = {};
 			jatos.groupState = null;
 			jatos.groupMembers = [];
 			jatos.groupChannels = [];
-			jatos.groupSessionData = null;
+			if (groupSessionObserver) {
+				groupSessionObserver.unobserve();
+			}
+			jatos.groupSessionData = {};
 			groupSessionVersion = null;
 			if (callbacks.onClose) {
 				callbacks.onClose();
@@ -735,7 +742,7 @@ var jatos = {};
 	 */
 	function handleGroupMsg(msg, callbacks) {
 		var groupMsg = jatos.jQuery.parseJSON(msg);
-		updateGroupVars(groupMsg);
+		updateGroupVars(groupMsg, callbacks);
 		// Now handle the action and map them to callbacks that were given as
 		// parameter to joinGroup
 		callGroupActionCallbacks(groupMsg, callbacks);
@@ -745,6 +752,44 @@ var jatos = {};
 		}
 	};
 
+	/**
+	* Update the group variables that usually come with an group action
+	*/
+	function updateGroupVars(groupMsg, callbacks) {
+		if (groupMsg.groupResultId) {
+			jatos.groupResultId = groupMsg.groupResultId.toString();
+			// Group member ID is equal to study result ID
+			jatos.groupMemberId = jatos.studyResultId;
+		}
+		if (groupMsg.groupState) {
+			jatos.groupState = groupMsg.groupState;
+		}
+		try {
+			if (groupMsg.members) {
+				jatos.groupMembers = groupMsg.members;
+			}
+			if (groupMsg.channels) {
+				jatos.groupChannels = groupMsg.channels;
+			}
+			if (groupMsg.groupSessionPatch) {
+				jsonpatch.apply(jatos.groupSessionData, groupMsg.groupSessionPatch);
+				jsonpatch.generate(groupSessionObserver); // reset observer
+			}
+			if (groupMsg.groupSessionData) {
+				if (groupSessionObserver) {
+					groupSessionObserver.unobserve();
+				}
+				jatos.groupSessionData = jatos.jQuery.parseJSON(groupMsg.groupSessionData);
+				groupSessionObserver = jsonpatch.observe(jatos.groupSessionData);
+			}
+			if (groupMsg.groupSessionVersion) {
+				groupSessionVersion = groupMsg.groupSessionVersion;
+			}
+		} catch (error) {
+			callingOnError(callbacks.onError, error);
+		}
+	}
+	
 	function callGroupActionCallbacks(groupMsg, callbacks) {
 		if (!groupMsg.action) {
 			return;
@@ -803,12 +848,15 @@ var jatos = {};
 				break;
 			case "SESSION_ACK":
 				sendingGroupSession = false;
-				window.clearTimeout(groupSessionTimeout);
+				groupSessionTimeout.cancel();
+				if (callbacks.onGroupSession) {
+					callbacks.onGroupSession(jatos.groupSessionData);
+					callOnUpdate(callbacks);
+				}
 				break;
 			case "SESSION_FAIL":
 				sendingGroupSession = false;
-				window.clearTimeout(groupSessionTimeout);
-				uploadGroupSessionData(groupSessionDataFrozen);
+				groupSessionTimeout.trigger();
 				break;
 			case "ERROR":
 				// onError or jatos.onError
@@ -817,36 +865,6 @@ var jatos = {};
 				break;
 		}
 	};
-
-	/**
-	* Update the group variables that usually come with an group action
-	*/
-	function updateGroupVars(groupMsg) {
-		if (groupMsg.groupResultId) {
-			jatos.groupResultId = groupMsg.groupResultId.toString();
-			// Group member ID is equal to study result ID
-			jatos.groupMemberId = jatos.studyResultId;
-		}
-		if (groupMsg.groupState) {
-			jatos.groupState = groupMsg.groupState;
-		}
-		try {
-			if (groupMsg.members) {
-				jatos.groupMembers = groupMsg.members;
-			}
-			if (groupMsg.channels) {
-				jatos.groupChannels = groupMsg.channels;
-			}
-			if (groupMsg.groupSessionData) {
-				jatos.groupSessionData = jatos.jQuery.parseJSON(groupMsg.groupSessionData);
-			}
-			if (groupMsg.groupSessionVersion) {
-				groupSessionVersion = groupMsg.groupSessionVersion;
-			}
-		} catch (error) {
-			callingOnError(callbacks.onError, error);
-		}
-	}
 
 	function callOnUpdate(callbacks) {
 		if (callbacks.onUpdate) {
@@ -924,12 +942,12 @@ var jatos = {};
 		if (groupSessionData) {
 			jatos.groupSessionData = groupSessionData;
 		}
-		// Store the current state in case we have to resent it
-		groupSessionDataFrozen = Object.freeze(jatos.groupSessionData);
-		uploadGroupSessionData(jatos.groupSessionData, onError);
+		// Store the current state in case we have to send it again
+		var groupSessionPatch = jsonpatch.generate(groupSessionObserver);
+		uploadGroupSessionPatch(groupSessionPatch, onError);
 	};
 
-	function uploadGroupSessionData(groupSessionData, onError) {
+	function uploadGroupSessionPatch(groupSessionPatch, onError) {
 		if (!groupChannel || groupChannel.readyState != 1) {
 			return;
 		}
@@ -937,17 +955,33 @@ var jatos = {};
 
 		var msgObj = {};
 		msgObj.action = "SESSION";
-		msgObj.groupSessionData = groupSessionData;
+		msgObj.groupSessionPatch = groupSessionPatch;
 		msgObj.groupSessionVersion = groupSessionVersion;
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			groupSessionTimeout = window.setTimeout(function () {
-				callingOnError(onError, "Couldn't set group session.");
-			}, jatos.groupSessionTimeoutTime);
+			groupSessionTimeout = setTriggerTimeout(
+					jatos.groupSessionTimeoutTime, function () {
+							callingOnError(onError, "Couldn't set group session.");
+					});
 		} catch (error) {
 			callingOnError(onError, error);
 		}
+	}
+	
+	function setTriggerTimeout(delay, timeoutCallback) {
+		var timeoutId;
+		timeoutId = setTimeout(timeoutCallback, delay);
+		return {
+			cancel: function() {
+				clearTimeout(timeoutId);
+			},
+			trigger: function() {
+				
+				clearTimeout(timeoutId);
+				return timeoutCallback();
+			}
+		};
 	}
 
 	/**

@@ -9,8 +9,8 @@ import javax.inject.Singleton;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.UntypedActor;
-import daos.common.GroupResultDao;
-import play.db.jpa.JPAApi;
+import services.publix.group.akka.actors.services.GroupActionHandler;
+import services.publix.group.akka.actors.services.GroupActionMsgBuilder;
 import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Get;
 import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
 import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
@@ -30,16 +30,18 @@ public class GroupDispatcherRegistry extends UntypedActor {
 	 * GroupResult's ID to the ActorRef.
 	 */
 	private final Map<Long, ActorRef> groupDispatcherMap = new HashMap<Long, ActorRef>();
-	private final JPAApi jpa;
+
 	private final ActorSystem actorSystem;
-	private final GroupResultDao groupResultDao;
+	private final GroupActionHandler groupActionHandler;
+	private final GroupActionMsgBuilder groupActionMsgBuilder;
 
 	@Inject
-	public GroupDispatcherRegistry(JPAApi jpa, ActorSystem actorSystem,
-			GroupResultDao groupResultDao) {
-		this.jpa = jpa;
+	public GroupDispatcherRegistry(ActorSystem actorSystem,
+			GroupActionHandler groupActionHandler,
+			GroupActionMsgBuilder groupActionMsgBuilder) {
 		this.actorSystem = actorSystem;
-		this.groupResultDao = groupResultDao;
+		this.groupActionHandler = groupActionHandler;
+		this.groupActionMsgBuilder = groupActionMsgBuilder;
 	}
 
 	@Override
@@ -70,8 +72,9 @@ public class GroupDispatcherRegistry extends UntypedActor {
 		ActorRef groupDispatcher = groupDispatcherMap
 				.get(getOrCreate.groupResultId);
 		if (groupDispatcher == null) {
-			groupDispatcher = actorSystem.actorOf(GroupDispatcher.props(jpa,
-					self(), groupResultDao, getOrCreate.groupResultId));
+			groupDispatcher = actorSystem
+					.actorOf(GroupDispatcher.props(self(), groupActionHandler,
+							groupActionMsgBuilder, getOrCreate.groupResultId));
 			groupDispatcherMap.put(getOrCreate.groupResultId, groupDispatcher);
 		}
 		ItsThisOne answer = new ItsThisOne(groupDispatcher);

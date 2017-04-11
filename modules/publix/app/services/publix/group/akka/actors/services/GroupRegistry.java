@@ -1,4 +1,4 @@
-package services.publix.group.akka.actors;
+package services.publix.group.akka.actors.services;
 
 import java.util.Collection;
 import java.util.Set;
@@ -14,29 +14,29 @@ import akka.actor.ActorRef;
  * result IDs together with their corresponding group channels.
  * 
  * This GroupRegistry does not define who is member of a group - it just stores
- * the open group channels. It possible the a client is a member of a group but
- * currently doesn't have an open channel.
+ * the open group channels. It's possible the a client is a member of a group
+ * but currently doesn't have an open channel.
  * 
  * @author Kristian Lange (2016)
  */
 public class GroupRegistry {
 
 	/**
-	 * Contains the members that are handled by this GroupDispatcher. Maps
+	 * Contains the members that are handled by a GroupDispatcher. Maps
 	 * StudyResult's IDs <-> ActorRefs. Using a bidirectional map because it's a
 	 * one-to-one relationship.
 	 */
 	private final BidiMap<Long, ActorRef> groupChannelMap = new DualHashBidiMap<>();
 
-	public void register(Long studyResultId, ActorRef groupChannel) {
+	public void register(long studyResultId, ActorRef groupChannel) {
 		groupChannelMap.put(studyResultId, groupChannel);
 	}
 
-	public void unregister(Long studyResultId) {
+	public void unregister(long studyResultId) {
 		groupChannelMap.remove(studyResultId);
 	}
 
-	public ActorRef getGroupChannel(Long studyResultId) {
+	public ActorRef getGroupChannel(long studyResultId) {
 		return groupChannelMap.get(studyResultId);
 	}
 
@@ -56,7 +56,7 @@ public class GroupRegistry {
 		return groupChannelMap.values();
 	}
 
-	public Long getStudyResult(ActorRef groupChannel) {
+	public long getStudyResult(ActorRef groupChannel) {
 		return groupChannelMap.getKey(groupChannel);
 	}
 

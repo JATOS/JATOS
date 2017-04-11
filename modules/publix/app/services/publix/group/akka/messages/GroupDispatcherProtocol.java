@@ -104,8 +104,15 @@ public class GroupDispatcherProtocol {
 			ERROR // Used to send an error back to the sender
 		};
 
-		public GroupActionMsg(ObjectNode jsonNode) {
+		public enum TellWhom {
+			ALL, ALL_BUT_SENDER, SENDER_ONLY
+		};
+
+		public TellWhom tellWhom;
+
+		public GroupActionMsg(ObjectNode jsonNode, TellWhom tellWhom) {
 			super(jsonNode);
+			this.tellWhom = tellWhom;
 		}
 
 		/**
@@ -118,6 +125,7 @@ public class GroupDispatcherProtocol {
 		public static final String MEMBERS = "members";
 		public static final String CHANNELS = "channels";
 		public static final String GROUP_SESSION_DATA = "groupSessionData";
+		public static final String GROUP_SESSION_PATCH = "groupSessionPatch";
 		public static final String GROUP_SESSION_VERSION = "groupSessionVersion";
 		public static final String ERROR_MSG = "errorMsg";
 

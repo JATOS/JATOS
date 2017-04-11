@@ -1,7 +1,8 @@
-package services.publix.group.akka.actors;
+package services.publix.group.akka.actors.services;
 
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -10,18 +11,19 @@ import models.common.StudyResult;
 import play.libs.Json;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
 
 /**
  * Helper class with some methods that all create an GroupActionMsg.
  * 
  * @author Kristian Lange (2016)
  */
-public class GroupActionMsgUtils {
+public class GroupActionMsgJsonBuilder {
 
 	/**
 	 * Creates a GroupActionMsg. The GroupActionMsg includes a whole bunch of
-	 * data including the action, all currently open channels, the group session
-	 * data and the group session version.
+	 * data including the action, all currently open channels, and the group
+	 * session version - but not the group session data.
 	 * 
 	 * @param studyResultId
 	 *            Which group member initiated this action
@@ -30,14 +32,38 @@ public class GroupActionMsgUtils {
 	 * @param GroupResult
 	 *            The GroupResult of this group
 	 */
-	public static GroupActionMsg buildFullActionMsg(Long studyResultId,
-			GroupAction action, GroupResult groupResult,
-			Set<Long> studyResultIdSet) {
+	public static GroupActionMsg buildActionMsg(GroupResult groupResult,
+			long studyResultId, Set<Long> studyResultIdSet, GroupAction action,
+			TellWhom tellWhom) {
+		return buildActionMsg(groupResult, studyResultId, studyResultIdSet,
+				false, action, tellWhom);
+	}
+
+	/**
+	 * Creates a GroupActionMsg. The GroupActionMsg includes a whole bunch of
+	 * data including the action, all currently open channels, the group session
+	 * version, and the group session data.
+	 * 
+	 * @param studyResultId
+	 *            Which group member initiated this action
+	 * @param action
+	 *            The action of the GroupActionMsg
+	 * @param GroupResult
+	 *            The GroupResult of this group
+	 */
+	public static GroupActionMsg buildActionMsgWithSession(
+			GroupResult groupResult, long studyResultId,
+			Set<Long> studyResultIdSet, GroupAction action, TellWhom tellWhom) {
+		return buildActionMsg(groupResult, studyResultId, studyResultIdSet,
+				true, action, tellWhom);
+	}
+
+	private static GroupActionMsg buildActionMsg(GroupResult groupResult,
+			long studyResultId, Set<Long> studyResultIdSet, boolean sessionData,
+			GroupAction action, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, action.toString());
-		if (studyResultId != null) {
-			objectNode.put(GroupActionMsg.MEMBER_ID, studyResultId);
-		}
+		objectNode.put(GroupActionMsg.MEMBER_ID, studyResultId);
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResult.getId());
 		objectNode.put(GroupActionMsg.GROUP_STATE,
 				groupResult.getGroupState().name());
@@ -51,11 +77,13 @@ public class GroupActionMsgUtils {
 			channels.add(String.valueOf(id));
 		}
 		objectNode.set(GroupActionMsg.CHANNELS, channels);
-		objectNode.put(GroupActionMsg.GROUP_SESSION_DATA,
-				groupResult.getGroupSessionData());
+		if (sessionData) {
+			objectNode.put(GroupActionMsg.GROUP_SESSION_DATA,
+					groupResult.getGroupSessionData());
+		}
 		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
 				groupResult.getGroupSessionVersion());
-		return new GroupActionMsg(objectNode);
+		return new GroupActionMsg(objectNode, tellWhom);
 	}
 
 	/**
@@ -67,15 +95,16 @@ public class GroupActionMsgUtils {
 	 * @param GroupResult
 	 *            The GroupResult of this group
 	 */
-	public static GroupActionMsg buildSessionActionMsg(Long studyResultId,
-			GroupResult groupResult) {
+	public static GroupActionMsg buildSessionPatchActionMsg(GroupResult groupResult, long studyResultId,
+			JsonNode groupSessionPatchNode,
+			TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, GroupAction.SESSION.toString());
-		objectNode.put(GroupActionMsg.GROUP_SESSION_DATA,
-				groupResult.getGroupSessionData());
+		objectNode.set(GroupActionMsg.GROUP_SESSION_PATCH,
+				groupSessionPatchNode);
 		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
 				groupResult.getGroupSessionVersion());
-		return new GroupActionMsg(objectNode);
+		return new GroupActionMsg(objectNode, tellWhom);
 	}
 
 	/**
@@ -87,24 +116,26 @@ public class GroupActionMsgUtils {
 	 * @param GroupResult
 	 *            The GroupResult of this group
 	 */
-	public static GroupActionMsg buildSimpleActionMsg(GroupAction action,
-			Long groupResultId) {
+	public static GroupActionMsg buildSimpleActionMsg(GroupResult groupResult,
+			GroupAction action, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, action.toString());
-		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResultId);
-		return new GroupActionMsg(objectNode);
+		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResult.getId());
+		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
+				groupResult.getGroupSessionVersion());
+		return new GroupActionMsg(objectNode, tellWhom);
 	}
 
 	/**
 	 * Creates an ERROR group action message.
 	 */
-	public static GroupActionMsg buildErrorActionMsg(String errorMsg,
-			Long groupResultId) {
+	public static GroupActionMsg buildErrorActionMsg(long groupResultId,
+			String errorMsg, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, GroupAction.ERROR.toString());
 		objectNode.put(GroupActionMsg.ERROR_MSG, errorMsg);
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResultId);
-		return new GroupActionMsg(objectNode);
+		return new GroupActionMsg(objectNode, tellWhom);
 	}
 
 }

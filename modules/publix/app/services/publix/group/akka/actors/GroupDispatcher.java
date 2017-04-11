@@ -1,21 +1,22 @@
 package services.publix.group.akka.actors;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import daos.common.GroupResultDao;
-import models.common.GroupResult;
-import models.common.GroupResult.GroupState;
 import play.Logger;
 import play.Logger.ALogger;
-import play.db.jpa.JPAApi;
+import play.libs.Json;
+import services.publix.group.akka.actors.services.GroupActionHandler;
+import services.publix.group.akka.actors.services.GroupActionMsgBuilder;
+import services.publix.group.akka.actors.services.GroupActionMsgBundle;
+import services.publix.group.akka.actors.services.GroupRegistry;
 import services.publix.group.akka.messages.GroupDispatcherProtocol;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
+import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupMsg;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.Joined;
 import services.publix.group.akka.messages.GroupDispatcherProtocol.Left;
@@ -60,26 +61,28 @@ public class GroupDispatcher extends UntypedActor {
 	public static final String ACTOR_NAME = "GroupDispatcher";
 
 	private GroupRegistry groupRegistry = new GroupRegistry();
-	private final JPAApi jpa;
 	private final ActorRef groupDispatcherRegistry;
-	private final GroupResultDao groupResultDao;
+	private final GroupActionHandler groupActionHandler;
+	private final GroupActionMsgBuilder groupActionMsgBuilder;
 	private long groupResultId;
 
 	/**
 	 * Akka method to get this Actor started. Changes in props must be done in
 	 * the constructor too.
 	 */
-	public static Props props(JPAApi jpa, ActorRef groupDispatcherRegistry,
-			GroupResultDao groupResultDao, long groupResultId) {
-		return Props.create(GroupDispatcher.class, jpa, groupDispatcherRegistry,
-				groupResultDao, groupResultId);
+	public static Props props(ActorRef groupDispatcherRegistry,
+			GroupActionHandler groupActionHandler,
+			GroupActionMsgBuilder groupActionBuilder, long groupResultId) {
+		return Props.create(GroupDispatcher.class, groupDispatcherRegistry,
+				groupActionHandler, groupActionBuilder, groupResultId);
 	}
 
-	public GroupDispatcher(JPAApi jpa, ActorRef groupDispatcherRegistry,
-			GroupResultDao groupResultDao, long groupResultId) {
-		this.jpa = jpa;
+	public GroupDispatcher(ActorRef groupDispatcherRegistry,
+			GroupActionHandler groupActionHandler,
+			GroupActionMsgBuilder groupActionMsgBuilder, long groupResultId) {
 		this.groupDispatcherRegistry = groupDispatcherRegistry;
-		this.groupResultDao = groupResultDao;
+		this.groupActionHandler = groupActionHandler;
+		this.groupActionMsgBuilder = groupActionMsgBuilder;
 		this.groupResultId = groupResultId;
 	}
 
@@ -124,6 +127,8 @@ public class GroupDispatcher extends UntypedActor {
 	 * @see GroupDispatcherProtocol.GroupActionMsg
 	 */
 	private void handleGroupMsg(GroupMsg groupMsg) {
+		LOGGER.debug(".handleGroupMsg: groupResultId {}, groupMsg {}",
+				groupResultId, Json.stringify(groupMsg.jsonNode));
 		ObjectNode jsonNode = groupMsg.jsonNode;
 		if (jsonNode.has(GroupActionMsg.ACTION)) {
 			// We have a group action message
@@ -142,78 +147,13 @@ public class GroupDispatcher extends UntypedActor {
 	 * Handles group actions originating from a client
 	 */
 	private void handleGroupActionMsg(ObjectNode jsonNode) {
-		String action = jsonNode.get(GroupActionMsg.ACTION).asText();
-		GroupAction.SESSION.name();
-		switch (GroupAction.valueOf(action)) {
-		case SESSION:
-			handleActionGroupSession(jsonNode);
-			break;
-		case FIXED:
-			handleActionFix(jsonNode);
-			break;
-		default:
-			String errorMsg = "Unknown action " + action;
-			sendErrorBackToSender(errorMsg);
-			break;
+		long studyResultId = groupRegistry.getStudyResult(sender());
+		GroupActionMsgBundle msgBundle = groupActionHandler
+				.handleGroupActionMsg(groupResultId, studyResultId,
+						groupRegistry, jsonNode);
+		for (GroupActionMsg msg : msgBundle.getAll()) {
+			tellGroupActionMsg(msg);
 		}
-	}
-
-	/**
-	 * Persists GroupSession and tells everyone
-	 */
-	private void handleActionGroupSession(ObjectNode jsonNode) {
-		jpa.withTransaction(() -> {
-			Long clientsVersion = Long.valueOf(jsonNode
-					.get(GroupActionMsg.GROUP_SESSION_VERSION).asText());
-			JsonNode updatedSessionData = jsonNode
-					.get(GroupActionMsg.GROUP_SESSION_DATA);
-			GroupResult groupResult = groupResultDao.findById(groupResultId);
-			boolean success = persistGroupSessionData(groupResult,
-					clientsVersion, updatedSessionData);
-			if (success) {
-				Long studyResultId = groupRegistry.getStudyResult(sender());
-				tellAllSessionGroupAction(studyResultId, groupResult);
-				tellSenderOnlySimpleGroupAction(GroupAction.SESSION_ACK);
-			} else {
-				tellSenderOnlySimpleGroupAction(GroupAction.SESSION_FAIL);
-			}
-		});
-	}
-
-	/**
-	 * Changes state of GroupResult to FIXED and sends an update to all group
-	 * members
-	 */
-	private void handleActionFix(ObjectNode jsonNode) {
-		jpa.withTransaction(() -> {
-			GroupResult groupResult = groupResultDao.findById(groupResultId);
-			if (groupResult != null) {
-				groupResult.setGroupState(GroupState.FIXED);
-				updateGroupResult(groupResult);
-				tellAllFullGroupAction(GroupAction.FIXED, groupResult);
-			} else {
-				String errorMsg = "Couldn't fix the group result.";
-				sendErrorBackToSender(errorMsg);
-			}
-		});
-	}
-
-	/**
-	 * Persists the given sessionData in the GroupResult and increases the
-	 * groupSessionVersion by 1 - but only if the stored version is equal to the
-	 * received one. Returns true if this was successful - otherwise false.
-	 */
-	private boolean persistGroupSessionData(GroupResult groupResult,
-			Long version, JsonNode sessionData) {
-		if (groupResult != null && version != null && sessionData != null
-				&& groupResult.getGroupSessionVersion().equals(version)) {
-			groupResult.setGroupSessionData(sessionData.toString());
-			long newVersion = groupResult.getGroupSessionVersion() + 1l;
-			groupResult.setGroupSessionVersion(newVersion);
-			updateGroupResult(groupResult);
-			return true;
-		}
-		return false;
 	}
 
 	/**
@@ -229,7 +169,7 @@ public class GroupDispatcher extends UntypedActor {
 			String errorMsg = "Recipient "
 					+ jsonNode.get(GroupMsg.RECIPIENT).asText()
 					+ " isn't a study result ID.";
-			sendErrorBackToSender(errorMsg);
+			tellErrorSenderOnly(errorMsg);
 		}
 		return recipientStudyResultId;
 	}
@@ -239,9 +179,18 @@ public class GroupDispatcher extends UntypedActor {
 	 * everyone in this group.
 	 */
 	private void registerChannel(RegisterChannel registerChannel) {
+		LOGGER.debug(".registerChannel: groupResultId {}, studyResultId {}",
+				groupResultId, registerChannel.studyResultId);
 		long studyResultId = registerChannel.studyResultId;
 		groupRegistry.register(studyResultId, sender());
-		tellAllFullGroupAction(studyResultId, GroupAction.OPENED);
+		GroupActionMsg msg1 = groupActionMsgBuilder.buildWithSession(
+				groupResultId, studyResultId, groupRegistry, GroupAction.OPENED,
+				TellWhom.SENDER_ONLY);
+		tellGroupActionMsg(msg1);
+		GroupActionMsg msg2 = groupActionMsgBuilder.build(groupResultId,
+				studyResultId, groupRegistry, GroupAction.OPENED,
+				TellWhom.ALL_BUT_SENDER);
+		tellGroupActionMsg(msg2);
 	}
 
 	/**
@@ -250,13 +199,18 @@ public class GroupDispatcher extends UntypedActor {
 	 * PoisonPill to this GroupDispatcher itself.
 	 */
 	private void unregisterChannel(UnregisterChannel unregisterChannel) {
+		LOGGER.debug(".unregisterChannel: groupResultId {}, studyResultId {}",
+				groupResultId, unregisterChannel.studyResultId);
 		long studyResultId = unregisterChannel.studyResultId;
 		// Only unregister GroupChannel if it's the one from the sender (there
 		// might be a new GroupChannel for the same StudyResult after a reload)
 		if (groupRegistry.containsStudyResult(studyResultId) && groupRegistry
 				.getGroupChannel(studyResultId).equals(sender())) {
 			groupRegistry.unregister(unregisterChannel.studyResultId);
-			tellAllFullGroupAction(studyResultId, GroupAction.CLOSED);
+			GroupActionMsg msg = groupActionMsgBuilder.build(groupResultId,
+					studyResultId, groupRegistry, GroupAction.CLOSED,
+					TellWhom.ALL_BUT_SENDER);
+			tellGroupActionMsg(msg);
 		}
 
 		// Tell this dispatcher to kill itself if it has no more members
@@ -269,6 +223,8 @@ public class GroupDispatcher extends UntypedActor {
 	 * Forwards this ReassignChannel message to the right group channel.
 	 */
 	private void reassignChannel(ReassignChannel reassignChannel) {
+		LOGGER.debug(".reassignChannel: groupResultId {}, studyResultId {}",
+				groupResultId, reassignChannel.studyResultId);
 		long studyResultId = reassignChannel.studyResultId;
 		if (groupRegistry.containsStudyResult(studyResultId)) {
 			ActorRef groupChannel = groupRegistry
@@ -278,7 +234,7 @@ public class GroupDispatcher extends UntypedActor {
 			String errorMsg = "StudyResult with ID " + studyResultId
 					+ " not handled by GroupDispatcher for GroupResult with ID "
 					+ groupResultId + ".";
-			sendErrorBackToSender(errorMsg);
+			tellErrorSenderOnly(errorMsg);
 		}
 	}
 
@@ -287,7 +243,12 @@ public class GroupDispatcher extends UntypedActor {
 	 * the group is specified in the given Joined object.
 	 */
 	private void joined(Joined joined) {
-		tellAllFullGroupAction(joined.studyResultId, GroupAction.JOINED);
+		LOGGER.debug(".joined: groupResultId {}, studyResultId {}",
+				groupResultId, joined.studyResultId);
+		GroupActionMsg msg = groupActionMsgBuilder.build(groupResultId,
+				joined.studyResultId, groupRegistry, GroupAction.JOINED,
+				TellWhom.ALL_BUT_SENDER);
+		tellGroupActionMsg(msg);
 	}
 
 	/**
@@ -295,97 +256,12 @@ public class GroupDispatcher extends UntypedActor {
 	 * group is specified in the given Left object.
 	 */
 	private void left(Left left) {
-		tellAllFullGroupAction(left.studyResultId, GroupAction.LEFT);
-	}
-
-	/**
-	 * Wrapper around {@link #tellAllFullGroupAction(Long, String, GroupResult)
-	 * tellGroupAction} but retrieves the GroupResult from the database before
-	 * calling it.
-	 */
-	private void tellAllFullGroupAction(long studyResultId,
-			GroupAction action) {
-		// The current group data are persisted in a GroupResult entity. The
-		// GroupResult determines who is member of the group - and not
-		// the group registry.
-		jpa.withTransaction(() -> {
-			GroupResult groupResult = groupResultDao.findById(groupResultId);
-			if (groupResult == null) {
-				String errorMsg = "Couldn't find group result with ID "
-						+ groupResultId + " in database.";
-				sendErrorBackToSender(errorMsg);
-				return;
-			}
-			tellAllFullGroupAction(studyResultId, action, groupResult);
-		});
-	}
-
-	/**
-	 * Wrapper around {@link #tellAllFullGroupAction(Long, String, GroupResult)
-	 * but for an action that originates in JATOS itself and not in a client.
-	 */
-	private void tellAllFullGroupAction(GroupAction action,
-			GroupResult groupResult) {
-		tellAllFullGroupAction(null, action, groupResult);
-	}
-
-	/**
-	 * Sends a full group action message it to all group members. The message
-	 * includes a whole bunch of data including the action, all currently open
-	 * channels, the group session data and the group session version.
-	 * 
-	 * @param studyResultId
-	 *            Which group member initiated this action
-	 * @param action
-	 *            The action of the GroupActionMsg
-	 * @param GroupResult
-	 *            The GroupResult of this group
-	 */
-	private void tellAllFullGroupAction(Long studyResultId, GroupAction action,
-			GroupResult groupResult) {
-		LOGGER.debug(".tellAllFullGroupAction: studyResultId " + studyResultId
-				+ ", action " + action + ", groupResultId "
-				+ groupResult.getId());
-		GroupActionMsg msg = GroupActionMsgUtils.buildFullActionMsg(
-				studyResultId, action, groupResult,
-				groupRegistry.getAllStudyResultIds());
-		tellAll(msg);
-	}
-
-	/**
-	 * Sends a group action message with the current group session data and
-	 * version to all members.
-	 */
-	private void tellAllSessionGroupAction(Long studyResultId,
-			GroupResult groupResult) {
-		LOGGER.debug(".tellAllFullGroupAction: studyResultId " + studyResultId
-				+ ", action " + GroupAction.SESSION + ", groupResultId "
-				+ groupResult.getId());
-		GroupActionMsg msg = GroupActionMsgUtils
-				.buildSessionActionMsg(studyResultId, groupResult);
-		tellAll(msg);
-	}
-
-	/**
-	 * Sends a simple group action message to the sender only.
-	 */
-	private void tellSenderOnlySimpleGroupAction(GroupAction action) {
-		LOGGER.debug(".tellSenderOnlySimpleGroupAction: action " + action
-				+ ", groupResultId " + groupResultId);
-		GroupActionMsg msg = GroupActionMsgUtils.buildSimpleActionMsg(action,
-				groupResultId);
-		tellSenderOnly(msg);
-	}
-
-	/**
-	 * Sends an error group action message back to the sender.
-	 */
-	private void sendErrorBackToSender(String errorMsg) {
-		LOGGER.debug(".sendErrorBackToSender: groupResultId " + groupResultId
-				+ " - " + errorMsg);
-		GroupActionMsg msg = GroupActionMsgUtils.buildErrorActionMsg(errorMsg,
-				groupResultId);
-		tellSenderOnly(msg);
+		LOGGER.debug(".left: groupResultId {}, studyResultId {}", groupResultId,
+				left.studyResultId);
+		GroupActionMsg msg = groupActionMsgBuilder.build(groupResultId,
+				left.studyResultId, groupRegistry, GroupAction.LEFT,
+				TellWhom.ALL_BUT_SENDER);
+		tellGroupActionMsg(msg);
 	}
 
 	/**
@@ -396,6 +272,8 @@ public class GroupDispatcher extends UntypedActor {
 	 * GroupChannel wasn't handled by this GroupDispatcher.
 	 */
 	private void poisonAGroupChannel(PoisonChannel poison) {
+		LOGGER.debug(".poisonAGroupChannel: groupResultId {}, studyResultId {}",
+				groupResultId, poison.studyResultIdOfTheOneToPoison);
 		long studyResultId = poison.studyResultIdOfTheOneToPoison;
 		ActorRef groupChannel = groupRegistry.getGroupChannel(studyResultId);
 		if (groupChannel != null) {
@@ -411,9 +289,13 @@ public class GroupDispatcher extends UntypedActor {
 	 * result ID.
 	 */
 	private void tellRecipientOnly(GroupMsg msg, Long recipientStudyResultId) {
+		LOGGER.debug(
+				".tellRecipientOnly: groupResultId {}, studyResultId {}, msg {}",
+				groupResultId, recipientStudyResultId,
+				Json.stringify(msg.jsonNode));
 		if (recipientStudyResultId == null) {
 			String errorMsg = "No recipient specified.";
-			sendErrorBackToSender(errorMsg);
+			tellErrorSenderOnly(errorMsg);
 			return;
 		}
 		ActorRef groupChannel = groupRegistry
@@ -424,15 +306,42 @@ public class GroupDispatcher extends UntypedActor {
 			String errorMsg = "Recipient "
 					+ String.valueOf(recipientStudyResultId)
 					+ " isn't member of this group.";
-			sendErrorBackToSender(errorMsg);
+			tellErrorSenderOnly(errorMsg);
 		}
+	}
+
+	private void tellGroupActionMsg(GroupActionMsg msg) {
+		if (msg == null) {
+			return;
+		}
+		switch (msg.tellWhom) {
+		case ALL:
+			tellAll(msg);
+			break;
+		case ALL_BUT_SENDER:
+			tellAllButSender(msg);
+			break;
+		case SENDER_ONLY:
+			tellSenderOnly(msg);
+			break;
+		}
+	}
+
+	private void tellErrorSenderOnly(String errorMsg) {
+		LOGGER.debug(".tellErrorSenderOnly: groupResultId {}, errorMsg {}",
+				groupResultId, errorMsg);
+		GroupActionMsg groupActionMsg = groupActionMsgBuilder
+				.buildError(groupResultId, errorMsg, TellWhom.SENDER_ONLY);
+		tellGroupActionMsg(groupActionMsg);
 	}
 
 	/**
 	 * Sends the message to everyone in the group registry except the sender of
 	 * this message.
 	 */
-	private void tellAllButSender(Object msg) {
+	private void tellAllButSender(GroupMsg msg) {
+		LOGGER.debug(".tellAllButSender: groupResultId {}, msg {}",
+				groupResultId, Json.stringify(msg.jsonNode));
 		for (ActorRef actorRef : groupRegistry.getAllGroupChannels()) {
 			if (actorRef != sender()) {
 				actorRef.tell(msg, self());
@@ -443,7 +352,9 @@ public class GroupDispatcher extends UntypedActor {
 	/**
 	 * Sends the message to everyone in group registry.
 	 */
-	private void tellAll(Object msg) {
+	private void tellAll(GroupMsg msg) {
+		LOGGER.debug(".tellAll: groupResultId {}, msg {}", groupResultId,
+				Json.stringify(msg.jsonNode));
 		for (ActorRef actorRef : groupRegistry.getAllGroupChannels()) {
 			actorRef.tell(msg, self());
 		}
@@ -453,16 +364,18 @@ public class GroupDispatcher extends UntypedActor {
 	 * Sends the message only to the sender.
 	 */
 	private void tellSenderOnly(Object msg) {
+		LOGGER.debug(".tellSenderOnly: groupResultId {}, msg {}", groupResultId,
+				msg);
 		sender().tell(msg, self());
 	}
 
 	/**
-	 * Persists the changes in the GroupResult.
+	 * Sends the message only to the sender.
 	 */
-	private void updateGroupResult(GroupResult groupResult) {
-		jpa.withTransaction(() -> {
-			groupResultDao.update(groupResult);
-		});
+	private void tellSenderOnly(GroupMsg msg) {
+		LOGGER.debug(".tellSenderOnly: groupResultId {}, msg {}", groupResultId,
+				Json.stringify(msg.jsonNode));
+		sender().tell(msg, self());
 	}
 
 }
