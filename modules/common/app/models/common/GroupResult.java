@@ -58,13 +58,12 @@ public class GroupResult {
 	private GroupState groupState;
 
 	/**
-	 * Temporary, global data storage that can be used via Publix API (from
-	 * JavaScript in the browser) to exchange data in between a group while the
-	 * study is running. All members of this group share the same
-	 * groupSessionData. It will be deleted after the group is finished. It's
-	 * stored as a normal string but jatos.js is converting it into JSON. We use
-	 * versioning to prevent concurrent changes of the data. It's initialised
-	 * with an empty JSON object.
+	 * Temporary, global data storage that can be accessed via jatos.js to
+	 * exchange data in between a group while the study is running. All members
+	 * of this group share the same groupSessionData. It will be deleted after
+	 * the group is finished. It's stored as a normal string but jatos.js
+	 * converts it into JSON. We use versioning to prevent concurrent changes of
+	 * the data. It's initialised with an empty JSON object.
 	 */
 	@Lob
 	private String groupSessionData = "{}";

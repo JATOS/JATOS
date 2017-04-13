@@ -167,7 +167,8 @@ public class Batches extends Controller {
 	@Authenticated
 	public Result properties(Long studyId, Long batchId)
 			throws JatosGuiException {
-		LOGGER.debug(".properties: studyId " + studyId + ", batchId " + batchId);
+		LOGGER.debug(
+				".properties: studyId " + studyId + ", batchId " + batchId);
 		Study study = studyDao.findById(studyId);
 		Batch batch = batchDao.findById(batchId);
 		User loggedInUser = authenticationService.getLoggedInUser();
@@ -191,8 +192,8 @@ public class Batches extends Controller {
 	@Authenticated
 	public Result submitEditedProperties(Long studyId, Long batchId)
 			throws JatosGuiException {
-		LOGGER.debug(".submitEditedProperties: studyId " + studyId + ", batchId "
-				+ batchId);
+		LOGGER.debug(".submitEditedProperties: studyId " + studyId
+				+ ", batchId " + batchId);
 		Study study = studyDao.findById(studyId);
 		User loggedInUser = authenticationService.getLoggedInUser();
 		Batch currentBatch = batchDao.findById(batchId);
@@ -218,7 +219,11 @@ public class Batches extends Controller {
 					.forEach(batchProperties::addAllowedWorkerType);
 		}
 
-		batchService.updateBatch(currentBatch, batchProperties);
+		try {
+			batchService.updateBatch(currentBatch, batchProperties);
+		} catch (BadRequestException e) {
+			return badRequest(e.getMessage());
+		}
 		return ok();
 	}
 

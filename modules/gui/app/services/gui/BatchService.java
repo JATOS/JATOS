@@ -10,6 +10,7 @@ import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
+import exceptions.gui.BadRequestException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.workers.JatosWorker;
@@ -111,7 +112,19 @@ public class BatchService {
 		study.getUserList().forEach(user -> batch.addWorker(user.getWorker()));
 	}
 
-	public void updateBatch(Batch batch, BatchProperties updatedBatchProps) {
+	/**
+	 * Updates the given batch in the database with the given BatchProperties
+	 * but only if both batch session versions are equal.
+	 */
+	public void updateBatch(Batch batch, BatchProperties updatedBatchProps)
+			throws BadRequestException {
+		if (batch.getBatchSessionVersion() != updatedBatchProps
+				.getBatchSessionVersion()) {
+			throw new BadRequestException(
+					"The batch session was altered in between and couldn't be saved.");
+		} else {
+			batch.setBatchSessionVersion(batch.getBatchSessionVersion() + 1);
+		}
 		batch.setTitle(updatedBatchProps.getTitle());
 		batch.setActive(updatedBatchProps.isActive());
 		batch.setMaxActiveMembers(updatedBatchProps.getMaxActiveMembers());
@@ -120,6 +133,8 @@ public class BatchService {
 		batch.getAllowedWorkerTypes().clear();
 		updatedBatchProps.getAllowedWorkerTypes()
 				.forEach(batch::addAllowedWorkerType);
+		batch.setComments(updatedBatchProps.getComments());
+		batch.setBatchSessionData(updatedBatchProps.getBatchSessionData());
 		batchDao.update(batch);
 	}
 
@@ -135,6 +150,9 @@ public class BatchService {
 		props.setMaxTotalWorkerLimited(batch.getMaxTotalWorkers() != null);
 		props.setMaxTotalWorkers(batch.getMaxTotalWorkers());
 		batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
+		props.setComments(batch.getComments());
+		props.setBatchSessionData(batch.getBatchSessionData());
+		props.setBatchSessionVersion(batch.getBatchSessionVersion());
 		return props;
 	}
 
@@ -158,6 +176,8 @@ public class BatchService {
 			batch.setMaxTotalWorkers(null);
 		}
 		props.getAllowedWorkerTypes().forEach(batch::addAllowedWorkerType);
+		batch.setComments(props.getComments());
+		batch.setBatchSessionData(props.getBatchSessionData());
 		return batch;
 	}
 

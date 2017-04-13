@@ -10,6 +10,7 @@ import org.jsoup.safety.Whitelist;
 
 import general.common.MessagesStrings;
 import play.data.validation.ValidationError;
+import utils.common.JsonUtils;
 
 /**
  * Model of batch properties for UI (not persisted in DB). Only used together
@@ -37,6 +38,9 @@ public class BatchProperties {
 	public static final String MAX_TOTAL_WORKER_LIMITED = "maxTotalWorkerLimited";
 	public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
 	public static final String WORKERS = "workers";
+	public static final String COMMENTS = "comments";
+	public static final String BATCH_SESSION_DATA = "batchSessionData";
+	public static final String BATCH_SESSION_VERSION = "batchSessionVersion";
 
 	private Long id;
 
@@ -91,6 +95,29 @@ public class BatchProperties {
 	 * type is not in this list, it has no permission to run this study.
 	 */
 	private Set<String> allowedWorkerTypes = new HashSet<>();
+
+	/**
+	 * User comments, reminders, something to share with others. They have no
+	 * further meaning.
+	 */
+	private String comments;
+
+	/**
+	 * Temporary, global data storage that can be accessed via jatos.js to
+	 * exchange data between all study runs of this batch. All members of this
+	 * batch share the same batchSessionData. It's stored as a normal string in
+	 * the database but jatos.js converts it into JSON. We use versioning to
+	 * prevent concurrent changes of the data. It's initialised with an empty
+	 * JSON object.
+	 */
+	private String batchSessionData;
+
+	/**
+	 * Current version of the batchSessionVersion. With each change of the data
+	 * it is increased by 1. We use versioning to prevent concurrent changes of
+	 * the data.
+	 */
+	private Long batchSessionVersion;
 
 	public void setId(Long id) {
 		this.id = id;
@@ -184,6 +211,30 @@ public class BatchProperties {
 		return allowedWorkerTypes.contains(workerType);
 	}
 
+	public String getComments() {
+		return comments;
+	}
+
+	public void setComments(String comments) {
+		this.comments = comments;
+	}
+
+	public String getBatchSessionData() {
+		return batchSessionData;
+	}
+
+	public void setBatchSessionData(String batchSessionData) {
+		this.batchSessionData = batchSessionData;
+	}
+
+	public Long getBatchSessionVersion() {
+		return batchSessionVersion;
+	}
+
+	public void setBatchSessionVersion(Long batchSessionVersion) {
+		this.batchSessionVersion = batchSessionVersion;
+	}
+
 	@Override
 	public String toString() {
 		return String.valueOf(id) + " " + title;
@@ -224,6 +275,15 @@ public class BatchProperties {
 		if (maxTotalWorkerLimited && maxTotalWorkers == null) {
 			errorList.add(new ValidationError(MAX_TOTAL_WORKERS,
 					MessagesStrings.BATCH_MAX_TOTAL_WORKER_SET));
+		}
+		if (comments != null && !Jsoup.isValid(comments, Whitelist.none())) {
+			errorList.add(new ValidationError(COMMENTS,
+					MessagesStrings.NO_HTML_ALLOWED));
+		}
+		if (batchSessionData != null
+				&& !JsonUtils.isValidJSON(batchSessionData)) {
+			errorList.add(new ValidationError(BATCH_SESSION_DATA,
+					MessagesStrings.INVALID_JSON_FORMAT));
 		}
 
 		return errorList.isEmpty() ? null : errorList;

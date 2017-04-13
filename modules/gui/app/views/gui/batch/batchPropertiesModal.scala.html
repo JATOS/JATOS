@@ -16,12 +16,21 @@
 							<p class="@models.gui.BatchProperties.ID"></p>
 						</div>
 					</div>
+					
 					<div class="form-group row">
 						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.TITLE">Title</label>
 						<div class="col-xs-9">
 							<input type="text" class="form-control @models.gui.BatchProperties.TITLE" name="@models.gui.BatchProperties.TITLE" placeholder="Your batch title">
 						</div>
 					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.COMMENTS">Comments&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Something you want to share or just don't want to forget?" aria-hidden="true"></span></label>
+						<div class="col-xs-9">
+							<textarea rows="3" class="form-control @models.gui.BatchProperties.COMMENTS" id="@models.gui.BatchProperties.COMMENTS" name="@models.gui.BatchProperties.COMMENTS" placeholder="Your comments"></textarea>
+						</div>
+					</div>
+					
 					<div class="form-group row">
 						<label class="control-label col-xs-3" for="allowedWorkerTypes">Allowed worker types&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Which worker types are allowed to run this study?" aria-hidden="true"></span></label>
 						<div class="col-xs-9" id="allowedWorkerTypes">
@@ -56,6 +65,7 @@
 							</label>
 						</div>
 					</div>
+					
 					<div class="form-group row">
 						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED">Max total workers &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the total number of workers this batch is allowed to have. It's unlimited if you don't specify it." aria-hidden="true"></span></label>
 						<div class="col-xs-3">
@@ -70,6 +80,17 @@
 							</div>
 						</div>
 					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.BATCH_SESSION_DATA">Batch session&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" aria-hidden="true"></span>
+							<br><button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
+						</label>
+						<div class="col-xs-9">
+							<textarea rows="6" class="form-control @models.gui.BatchProperties.BATCH_SESSION_DATA" id="@models.gui.BatchProperties.BATCH_SESSION_DATA" name="@models.gui.BatchProperties.BATCH_SESSION_DATA" placeholder="Put your JSON string here"></textarea>
+						</div>
+					</div>
+					<input type="hidden" class="form-control @models.gui.BatchProperties.BATCH_SESSION_VERSION" name="@models.gui.BatchProperties.BATCH_SESSION_VERSION" required>
+					
 					<div class="well groupProperties">
 						<h4>Group Properties</h4>
 						<p class="notGroupStudyText">This is not a group study. Enable this option in the study properties.</p>
@@ -87,6 +108,7 @@
 								</div>
 							</div>
 						</div>
+						
 						<div class="form-group row">
 							<label class="control-label col-xs-3" for="@models.gui.BatchProperties.MAX_ACTIVE_MEMBER_LIMITED">Max active members &nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Enter the max number of active members a group can have at the same time. It's unlimited if you don't specify it." aria-hidden="true"></span></label>
 							<div class="col-xs-3">
@@ -102,6 +124,7 @@
 							</div>
 						</div>
 					</div>
+					
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -149,12 +172,15 @@ function fillbatchPropertiesForm(properties) {
 	$('#batchPropertiesModal').data(properties);
 	$('#batchPropertiesModal .@models.gui.BatchProperties.ID').text(properties['@models.gui.BatchProperties.ID']);
 	$('#batchPropertiesModal .@models.gui.BatchProperties.TITLE').val(properties['@models.gui.BatchProperties.TITLE']);
+	$('#batchPropertiesModal .@models.gui.BatchProperties.COMMENTS').val(properties['@models.gui.BatchProperties.COMMENTS']);
 	setInputGroupWithCheckbox('batchPropertiesModal',
 			'@models.gui.BatchProperties.MAX_TOTAL_WORKER_LIMITED',
 			'@models.gui.BatchProperties.MAX_TOTAL_WORKERS', properties);
 	$.each(properties['allowedWorkerTypes'], function(index, workerType) {
 		$('#batchPropertiesModal' + ' .' + workerType).prop('checked', true);
 	});
+	$('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA').val(properties['@models.gui.BatchProperties.BATCH_SESSION_DATA']);
+	$('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_VERSION').val(properties['@models.gui.BatchProperties.BATCH_SESSION_VERSION']);
 	// Group properties
 	@if(!study.isGroupStudy) {
 		$('#batchPropertiesModal .groupProperties').fadeTo(0, 0.5);
@@ -189,6 +215,17 @@ function setInputGroupWithCheckbox(modal, checkboxVarName, inputVarName, propert
 		$('#' + modal + ' .' + inputVarName).val('');
 	}
 }
+
+$("#batchPropertiesForm .prettyButton").click(function(event) {
+	var sessionJson = $('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA').val();
+	removeSingleFormError('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA');
+	try {
+		var sessionJsonPretty = JSON.stringify(JSON.parse(sessionJson), null, 2);
+		$('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA').val(sessionJsonPretty);
+	} catch (e) {
+		showSingleFormError('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
+	}
+});
 
 $("#batchPropertiesForm").submit(function(event) {
 	event.preventDefault();

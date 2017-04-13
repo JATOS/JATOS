@@ -11,6 +11,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -113,6 +114,35 @@ public class Batch {
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	@ElementCollection
 	private Set<String> allowedWorkerTypes = new HashSet<>();
+
+	/**
+	 * User comments, reminders, something to share with others. They have no
+	 * further meaning.
+	 */
+	@Lob
+	@JsonView({ JsonUtils.JsonForIO.class })
+	private String comments;
+
+	/**
+	 * Temporary, global data storage that can be accessed via jatos.js to
+	 * exchange data between all study runs of this batch. All members of this
+	 * batch share the same batchSessionData. It's stored as a normal string in
+	 * the database but jatos.js converts it into JSON. We use versioning to
+	 * prevent concurrent changes of the data. It's initialised with an empty
+	 * JSON object.
+	 */
+	@JsonIgnore
+	@Lob
+	private String batchSessionData = "{}";
+
+	/**
+	 * Current version of the batchSessionVersion. With each change of the data
+	 * it is increased by 1. We use versioning to prevent concurrent changes of
+	 * the data.
+	 */
+	@JsonIgnore
+	@Column(nullable = false)
+	private Long batchSessionVersion = 1l;
 
 	public Batch() {
 	}
@@ -222,6 +252,30 @@ public class Batch {
 
 	public boolean hasWorker(Worker worker) {
 		return workerList.contains(worker);
+	}
+
+	public String getComments() {
+		return comments;
+	}
+
+	public void setComments(String comments) {
+		this.comments = comments;
+	}
+
+	public String getBatchSessionData() {
+		return batchSessionData;
+	}
+
+	public void setBatchSessionData(String batchSessionData) {
+		this.batchSessionData = batchSessionData;
+	}
+
+	public Long getBatchSessionVersion() {
+		return batchSessionVersion;
+	}
+
+	public void setBatchSessionVersion(Long batchSessionVersion) {
+		this.batchSessionVersion = batchSessionVersion;
 	}
 
 	@Override
