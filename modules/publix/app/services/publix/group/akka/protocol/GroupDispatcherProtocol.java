@@ -1,4 +1,4 @@
-package services.publix.group.akka.messages;
+package services.publix.group.akka.protocol;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -92,7 +92,7 @@ public class GroupDispatcherProtocol {
 		/**
 		 * All possible group actions a group action message can have.
 		 */
-		public enum GroupAction {
+		public enum BatchAction {
 			JOINED, // Signals to every group member that a new member joined
 			LEFT, // Signals to every member that a member left
 			OPENED, // Signals to every member that a new group channel opened

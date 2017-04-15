@@ -17,9 +17,10 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.libs.Json;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.BatchAction;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
+import session.Registry;
 
 /**
  * @author Kristian Lange (2017)
@@ -47,14 +48,13 @@ public class GroupActionHandler {
 	 * Handles group actions originating from a client
 	 */
 	public GroupActionMsgBundle handleGroupActionMsg(long groupResultId,
-			long studyResultId, GroupRegistry groupRegistry,
-			ObjectNode jsonNode) {
+			long studyResultId, Registry groupRegistry, ObjectNode jsonNode) {
 		LOGGER.debug(
 				".handleGroupActionMsg:"
 						+ " groupResultId {}, studyResultId {}, jsonNode {}",
 				groupResultId, studyResultId, Json.stringify(jsonNode));
 		String action = jsonNode.get(GroupActionMsg.ACTION).asText();
-		switch (GroupAction.valueOf(action)) {
+		switch (BatchAction.valueOf(action)) {
 		case SESSION:
 			return handleGroupActionSessionPatch(groupResultId, studyResultId,
 					groupRegistry, jsonNode);
@@ -73,7 +73,7 @@ public class GroupActionHandler {
 	 * Persists GroupSession and tells everyone
 	 */
 	private GroupActionMsgBundle handleGroupActionSessionPatch(
-			long groupResultId, long studyResultId, GroupRegistry groupRegistry,
+			long groupResultId, long studyResultId, Registry groupRegistry,
 			ObjectNode jsonNode) {
 		return jpa.withTransaction(() -> {
 			Long clientsVersion = Long.valueOf(jsonNode
@@ -100,7 +100,7 @@ public class GroupActionHandler {
 			} catch (IOException | JsonPatchException e) {
 				LOGGER.debug(".handleActionGroupSessionPatch: ", e);
 				GroupActionMsg msg = groupActionMsgBuilder.buildSimple(
-						groupResult, GroupAction.SESSION_FAIL,
+						groupResult, BatchAction.SESSION_FAIL,
 						TellWhom.SENDER_ONLY);
 				return GroupActionMsgBundle.build(msg);
 			}
@@ -120,12 +120,12 @@ public class GroupActionHandler {
 						groupResult, studyResultId, groupSessionPatchNode,
 						TellWhom.ALL_BUT_SENDER);
 				GroupActionMsg msg2 = groupActionMsgBuilder.buildSimple(
-						groupResult, GroupAction.SESSION_ACK,
+						groupResult, BatchAction.SESSION_ACK,
 						TellWhom.SENDER_ONLY);
 				return GroupActionMsgBundle.build(msg1, msg2);
 			} else {
 				GroupActionMsg msg = groupActionMsgBuilder.buildSimple(
-						groupResult, GroupAction.SESSION_FAIL,
+						groupResult, BatchAction.SESSION_FAIL,
 						TellWhom.SENDER_ONLY);
 				return GroupActionMsgBundle.build(msg);
 			}
@@ -173,15 +173,14 @@ public class GroupActionHandler {
 	 * members
 	 */
 	private GroupActionMsgBundle handleActionFix(long groupResultId,
-			long studyResultId, GroupRegistry groupRegistry,
-			ObjectNode jsonNode) {
+			long studyResultId, Registry groupRegistry, ObjectNode jsonNode) {
 		return jpa.withTransaction(() -> {
 			GroupResult groupResult = groupResultDao.findById(groupResultId);
 			if (groupResult != null) {
 				groupResult.setGroupState(GroupState.FIXED);
 				groupResultDao.update(groupResult);
 				GroupActionMsg msg = groupActionMsgBuilder.build(groupResultId,
-						studyResultId, groupRegistry, GroupAction.FIXED,
+						studyResultId, groupRegistry, BatchAction.FIXED,
 						TellWhom.ALL);
 				return GroupActionMsgBundle.build(msg);
 			} else {

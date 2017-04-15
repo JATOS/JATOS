@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.common.GroupResult;
 import models.common.StudyResult;
 import play.libs.Json;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.BatchAction;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
 
 /**
  * Helper class with some methods that all create an GroupActionMsg.
@@ -33,7 +33,7 @@ public class GroupActionMsgJsonBuilder {
 	 *            The GroupResult of this group
 	 */
 	public static GroupActionMsg buildActionMsg(GroupResult groupResult,
-			long studyResultId, Set<Long> studyResultIdSet, GroupAction action,
+			long studyResultId, Set<Long> studyResultIdSet, BatchAction action,
 			TellWhom tellWhom) {
 		return buildActionMsg(groupResult, studyResultId, studyResultIdSet,
 				false, action, tellWhom);
@@ -53,14 +53,14 @@ public class GroupActionMsgJsonBuilder {
 	 */
 	public static GroupActionMsg buildActionMsgWithSession(
 			GroupResult groupResult, long studyResultId,
-			Set<Long> studyResultIdSet, GroupAction action, TellWhom tellWhom) {
+			Set<Long> studyResultIdSet, BatchAction action, TellWhom tellWhom) {
 		return buildActionMsg(groupResult, studyResultId, studyResultIdSet,
 				true, action, tellWhom);
 	}
 
 	private static GroupActionMsg buildActionMsg(GroupResult groupResult,
 			long studyResultId, Set<Long> studyResultIdSet, boolean sessionData,
-			GroupAction action, TellWhom tellWhom) {
+			BatchAction action, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, action.toString());
 		objectNode.put(GroupActionMsg.MEMBER_ID, studyResultId);
@@ -99,7 +99,7 @@ public class GroupActionMsgJsonBuilder {
 			JsonNode groupSessionPatchNode,
 			TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
-		objectNode.put(GroupActionMsg.ACTION, GroupAction.SESSION.toString());
+		objectNode.put(GroupActionMsg.ACTION, BatchAction.SESSION.toString());
 		objectNode.set(GroupActionMsg.GROUP_SESSION_PATCH,
 				groupSessionPatchNode);
 		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
@@ -117,7 +117,7 @@ public class GroupActionMsgJsonBuilder {
 	 *            The GroupResult of this group
 	 */
 	public static GroupActionMsg buildSimpleActionMsg(GroupResult groupResult,
-			GroupAction action, TellWhom tellWhom) {
+			BatchAction action, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, action.toString());
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResult.getId());
@@ -132,7 +132,7 @@ public class GroupActionMsgJsonBuilder {
 	public static GroupActionMsg buildErrorActionMsg(long groupResultId,
 			String errorMsg, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
-		objectNode.put(GroupActionMsg.ACTION, GroupAction.ERROR.toString());
+		objectNode.put(GroupActionMsg.ACTION, BatchAction.ERROR.toString());
 		objectNode.put(GroupActionMsg.ERROR_MSG, errorMsg);
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResultId);
 		return new GroupActionMsg(objectNode, tellWhom);

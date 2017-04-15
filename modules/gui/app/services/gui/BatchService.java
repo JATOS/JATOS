@@ -110,6 +110,7 @@ public class BatchService {
 		batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 		study.getUserList().forEach(user -> batch.addWorker(user.getWorker()));
+		batch.setBatchSessionData("{}");
 	}
 
 	/**

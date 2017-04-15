@@ -26,6 +26,7 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalMultipleErrorMessages;
 import services.publix.workers.PersonalMultiplePublixUtils;
 import services.publix.workers.PersonalMultipleStudyAuthorisation;
+import session.batch.BatchChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -52,6 +53,7 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 	PersonalMultiplePublix(JPAApi jpa, PersonalMultiplePublixUtils publixUtils,
 			PersonalMultipleStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator,
+			BatchChannelService batchChannelService,
 			GroupAdministration groupAdministration,
 			GroupChannelService groupChannelService,
 			IdCookieService idCookieService,
@@ -59,10 +61,10 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
 			StudyAssets studyAssets, JsonUtils jsonUtils,
 			ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
-				groupChannelService, idCookieService, errorMessages,
-				studyAssets, jsonUtils, componentResultDao, studyResultDao,
-				groupResultDao);
+		super(jpa, publixUtils, studyAuthorisation, batchChannelService,
+				groupAdministration, groupChannelService, idCookieService,
+				errorMessages, studyAssets, jsonUtils, componentResultDao,
+				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;

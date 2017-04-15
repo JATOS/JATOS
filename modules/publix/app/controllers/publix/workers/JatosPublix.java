@@ -33,6 +33,7 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.JatosErrorMessages;
 import services.publix.workers.JatosPublixUtils;
 import services.publix.workers.JatosStudyAuthorisation;
+import session.batch.BatchChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -94,16 +95,17 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 	JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
 			JatosStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator,
+			BatchChannelService batchChannelService,
 			GroupAdministration groupAdministration,
 			GroupChannelService groupChannelService,
 			IdCookieService idCookieService, JatosErrorMessages errorMessages,
 			StudyAssets studyAssets, JsonUtils jsonUtils,
 			ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
-				groupChannelService, idCookieService, errorMessages,
-				studyAssets, jsonUtils, componentResultDao, studyResultDao,
-				groupResultDao);
+		super(jpa, publixUtils, studyAuthorisation, batchChannelService,
+				groupAdministration, groupChannelService, idCookieService,
+				errorMessages, studyAssets, jsonUtils, componentResultDao,
+				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;

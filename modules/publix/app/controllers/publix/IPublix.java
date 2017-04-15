@@ -72,6 +72,11 @@ public interface IPublix {
 	Result getInitData(Long studyId, Long componentId, Long studyResultId)
 			throws PublixException, IOException;
 
+	LegacyWebSocket<JsonNode> openBatch(Long studyId, Long studyResultId)
+			throws PublixException;
+
+	Result closeBatch(Long studyId, Long studyResultId) throws PublixException;
+
 	/**
 	 * HTTP type: WebSocket
 	 * 

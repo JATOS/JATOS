@@ -102,11 +102,12 @@ var jatos = {};
 	 * Group session data shared in between members of the group. 
 	 */
 	jatos.groupSessionData = {};
+	var batchSessionData = {};
 	/**
 	 * How long in ms should jatos.js wait for an answer after a group session
 	 * upload.
 	 */
-	jatos.groupSessionTimeoutTime = 5000;
+	jatos.sessionTimeoutTime = 5000;
 	/**
 	 * Intermediate storage for the groupSessionPatch during uploading to the JATOS
 	 * server; used for resubmitting after fail
@@ -118,16 +119,19 @@ var jatos = {};
 	 * JATOS.
 	 */
 	var groupSessionTimeout;
+	var batchSessionTimeout;
 	/**
 	 * Version of the current group session data. This is used to prevent concurrent
 	 * changes of the data.
 	 */
 	var groupSessionVersion;
+	var batchSessionVersion;
 	/**
 	 * Group channel WebSocket to exchange messages between workers of a group.
 	 * Not to be confused with 'jatos.groupChannels'. Accessible only by jatos.js.
 	 */
 	var groupChannel;
+	var batchChannel;
 	/**
 	 * WebSocket support by the browser is needed for group channel.
 	 */
@@ -144,6 +148,7 @@ var jatos = {};
 	 */
 	var initialized = false;
 	var onJatosLoadCalled = false;
+	var openingBatchChannel = false;
 	var startingComponent = false;
 	var endingComponent = false;
 	var submittingResultData = false;
@@ -198,7 +203,7 @@ var jatos = {};
 			return;
 		}
 		jatos.jQuery.when(
-			// Plugin to retry ajax calls 
+			// Plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
 			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/jquery.ajax-retry.min.js"),
 			// JSON path library https://github.com/Starcounter-Jack/JSON-Patch
 			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/json-patch-duplex.js"),
@@ -220,9 +225,23 @@ var jatos = {};
 			return;
 		}
 
-		// Extract all URL query parameter.
-		// Afterwards they can be called with urlQueryParameter["name"].
-		var urlQueryParameter = (function (a) {
+		jatos.studyResultId = getUrlQueryParameter("srid");
+		readIdCookie();
+		
+		getInitData()
+			.then(openBatchChannel)
+			.then(ready);
+		
+		if (window.Worker) {
+			heartbeatWorker = new Worker("/public/lib/jatos-publix/javascripts/heartbeat.js");
+			heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
+		}
+		
+		/**
+		 * Extracts the given URL query parameter from the URL query string
+		 */
+		function getUrlQueryParameter(parameter) {
+			var a = window.location.search.substr(1).split('&');
 			if (a == "") return {};
 			var b = {};
 			for (var i = 0; i < a.length; ++i) {
@@ -232,18 +251,9 @@ var jatos = {};
 				else
 					b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
 			}
-			return b;
-		})(window.location.search.substr(1).split('&'));
-
-		jatos.studyResultId = urlQueryParameter["srid"];
-
-		readIdCookie();
-		getInitData();
+			return b[parameter];
+		};
 		
-		if (window.Worker) {
-			heartbeatWorker = new Worker("/public/lib/jatos-publix/javascripts/heartbeat.js");
-			heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
-		}
 		/**
 		 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
 		 * and stores all key-value pairs into jatos scope.
@@ -295,9 +305,9 @@ var jatos = {};
 		 * jatos.componentJsonInput.
 		 */
 		function getInitData() {
-			jatos.jQuery.ajax({
+			return jatos.jQuery.ajax({
 				url: "/publix/" + jatos.studyId + "/" + jatos.componentId
-				+ "/initData" + "?srid=" + jatos.studyResultId,
+						+ "/initData" + "?srid=" + jatos.studyResultId,
 				type: "GET",
 				dataType: 'json',
 				timeout: jatos.httpTimeout,
@@ -354,8 +364,71 @@ var jatos = {};
 
 			// Initialising finished
 			initialized = true;
-			ready();
 		}
+		
+		function openBatchChannel() {
+			var deferred = $.Deferred();
+				
+			if (!webSocketSupported) {
+				callingOnError(null, "This browser does not support WebSockets.");
+				return;
+			}
+			// WebSocket's readyState:
+			//		CONNECTING 0 The connection is not yet open.
+			//		OPEN       1 The connection is open and ready to communicate.
+			//		CLOSING    2 The connection is in the process of closing.
+			//		CLOSED     3 The connection is closed or couldn't be opened.
+			if (!jatos.jQuery || openingBatchChannel ||
+					(batchChannel && batchChannel.readyState != 3)) {
+				return;
+			}
+			openingBatchChannel = true;
+
+			batchChannel = new WebSocket(
+				((window.location.protocol === "https:") ? "wss://" : "ws://")
+				+ window.location.host
+				+ "/publix/" + jatos.studyId + "/batch/open" + "?srid=" + jatos.studyResultId);
+			batchChannel.onopen = function(event) {
+				openingBatchChannel = false;
+				deferred.resolve();
+			};
+			batchChannel.onmessage = function(event) {
+				openingBatchChannel = false;
+				deferred.resolve();
+				handleBatchMsg(event.data);
+			};
+			batchChannel.onerror = function() {
+				openingBatchChannel = false;
+				deferred.resolve();
+				callingOnError(null, "Couldn't open a batch channel");
+			};
+			batchChannel.onclose = function() {
+				openingBatchChannel = false;
+				deferred.resolve();
+				batchSessionData = {};
+				batchSessionVersion = null;
+			};
+			
+			return deferred.promise();
+		}
+		
+		function handleBatchMsg(msg) {
+			var batchMsg = jatos.jQuery.parseJSON(msg);
+			try {
+				if (batchMsg.batchSessionPatch) {
+					jsonpatch.apply(batchSessionData, batchMsg.batchSessionPatch);
+				}
+				if (batchMsg.batchSessionData) {
+					batchSessionData = jatos.jQuery.parseJSON(batchMsg.batchSessionData);
+				}
+				if (batchMsg.batchSessionVersion) {
+					batchSessionVersion = batchMsg.batchSessionVersion;
+				}
+			} catch (error) {
+				callingOnError(null, error);
+			}
+		}
+		
 	}
 
 	/**
@@ -439,6 +512,7 @@ var jatos = {};
 		} else if (onJatosError) {
 			onJatosError(errorMsg);
 		}
+		console.error(errorMsg);
 	}
 
 	/**
@@ -703,8 +777,8 @@ var jatos = {};
 		}
 		joiningGroup = true;
 
-		groupChannel = new WebSocket(((
-			window.location.protocol === "https:") ? "wss://" : "ws://")
+		groupChannel = new WebSocket(
+			((window.location.protocol === "https:") ? "wss://" : "ws://")
 			+ window.location.host
 			+ "/publix/" + jatos.studyId + "/group/join" + "?srid=" + jatos.studyResultId);
 		groupChannel.onmessage = function (event) {
@@ -961,7 +1035,7 @@ var jatos = {};
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
 			groupSessionTimeout = setTriggerTimeout(
-					jatos.groupSessionTimeoutTime, function () {
+					jatos.sessionTimeoutTime, function () {
 							callingOnError(onError, "Couldn't set group session.");
 					});
 		} catch (error) {
@@ -1299,6 +1373,7 @@ var jatos = {};
 	jatos.addJatosIds = function (obj) {
 		obj.studyId = jatos.studyId;
 		obj.studyTitle = jatos.studyProperties.title;
+		obj.batchId = jatos.batchId;
 		obj.componentId = jatos.componentId;
 		obj.componentPos = jatos.componentPos;
 		obj.componentTitle = jatos.componentProperties.title;

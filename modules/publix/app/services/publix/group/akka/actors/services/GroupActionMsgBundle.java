@@ -1,6 +1,6 @@
 package services.publix.group.akka.actors.services;
 
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
 
 /**
  * Just a basic container for up to 3 GroupActionMsgs

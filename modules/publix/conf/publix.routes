@@ -8,6 +8,8 @@
 GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long, batchId: Long ?= -1)
 GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, srid: Long, successful: Boolean ?= true, errorMsg: String ?= null)
 GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, srid: Long, message: String ?= null)
+GET     /publix/:studyId/batch/open                      @controllers.publix.PublixInterceptor.openBatch(studyId: Long, srid: Long)
+GET     /publix/:studyId/batch/close                     @controllers.publix.PublixInterceptor.closeBatch(studyId: Long, srid: Long)
 GET     /publix/:studyId/group/join                      @controllers.publix.PublixInterceptor.joinGroup(studyId: Long, srid: Long)
 GET     /publix/:studyId/group/reassign                  @controllers.publix.PublixInterceptor.reassignGroup(studyId: Long, srid: Long)
 GET     /publix/:studyId/group/leave                     @controllers.publix.PublixInterceptor.leaveGroup(studyId: Long, srid: Long)

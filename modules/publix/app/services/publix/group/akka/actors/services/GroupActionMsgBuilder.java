@@ -10,9 +10,10 @@ import models.common.GroupResult;
 import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.BatchAction;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
+import session.Registry;
 
 /**
  * @author Kristian Lange (2017)
@@ -34,7 +35,7 @@ public class GroupActionMsgBuilder {
 	}
 
 	public GroupActionMsg buildSimple(GroupResult groupResult,
-			GroupAction action, TellWhom tellWhom) {
+			BatchAction action, TellWhom tellWhom) {
 		GroupActionMsg msg = GroupActionMsgJsonBuilder
 				.buildSimpleActionMsg(groupResult, action, tellWhom);
 		return msg;
@@ -63,8 +64,7 @@ public class GroupActionMsgBuilder {
 	 * TODO
 	 */
 	public GroupActionMsg build(long groupResultId, long studyResultId,
-			GroupRegistry groupRegistry, GroupAction action,
-			TellWhom tellWhom) {
+			Registry groupRegistry, BatchAction action, TellWhom tellWhom) {
 		// The current group data are persisted in a GroupResult entity. The
 		// GroupResult determines who is member of the group - and not
 		// the group registry.
@@ -90,7 +90,7 @@ public class GroupActionMsgBuilder {
 	 * Sends a TODO
 	 */
 	public GroupActionMsg buildWithSession(long groupResultId,
-			long studyResultId, GroupRegistry groupRegistry, GroupAction action,
+			long studyResultId, Registry groupRegistry, BatchAction action,
 			TellWhom tellWhom) {
 		LOGGER.debug(
 				".buildWithSession: groupResultId {}, studyResultId {}, action {}, tellWhom {}",

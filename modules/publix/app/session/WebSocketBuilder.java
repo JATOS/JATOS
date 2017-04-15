@@ -1,4 +1,4 @@
-package services.publix.group;
+package session;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -9,9 +9,10 @@ import play.mvc.Result;
 import play.mvc.WebSocket.In;
 import play.mvc.WebSocket.Out;
 import services.publix.group.akka.actors.GroupChannel;
+import session.batch.akka.actors.BatchChannel;
 
 /**
- * Builds new WebSockets for group channel.
+ * Builds new WebSockets for either group or batch channel.
  * 
  * @author Kristian Lange
  */
@@ -19,6 +20,16 @@ public class WebSocketBuilder {
 
 	public static LegacyWebSocket<JsonNode> withGroupChannel(long studyResultId,
 			ActorRef groupDispatcher) {
+		return withChannel(studyResultId, groupDispatcher, GroupChannel.class);
+	}
+
+	public static LegacyWebSocket<JsonNode> withBatchChannel(long studyResultId,
+			ActorRef batchDispatcher) {
+		return withChannel(studyResultId, batchDispatcher, BatchChannel.class);
+	}
+
+	public static <T> LegacyWebSocket<JsonNode> withChannel(long studyResultId,
+			ActorRef dispatcher, Class<T> channelClass) {
 		return new LegacyWebSocket<JsonNode>() {
 			public void onReady(In<JsonNode> in, Out<JsonNode> out) {
 			}
@@ -29,8 +40,8 @@ public class WebSocketBuilder {
 
 			public Props actorProps(ActorRef out) {
 				try {
-					return Props.create(GroupChannel.class, out, studyResultId,
-							groupDispatcher);
+					return Props.create(channelClass, out, studyResultId,
+							dispatcher);
 				} catch (RuntimeException e) {
 					throw e;
 				} catch (Error e) {

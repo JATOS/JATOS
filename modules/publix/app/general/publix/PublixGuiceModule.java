@@ -22,6 +22,7 @@ import services.publix.workers.PersonalMultiplePublixUtils;
 import services.publix.workers.PersonalMultipleStudyAuthorisation;
 import services.publix.workers.PersonalSinglePublixUtils;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
+import session.batch.akka.actors.BatchDispatcherRegistry;
 
 /**
  * Configuration of Guice dependency injection for Publix module
@@ -58,6 +59,7 @@ public class PublixGuiceModule extends AbstractModule implements AkkaGuiceSuppor
 
 		// Config which Akka actors should be handled by Guice
 		bindActor(GroupDispatcherRegistry.class, "group-dispatcher-registry-actor");
+		bindActor(BatchDispatcherRegistry.class, "batch-dispatcher-registry-actor");
 	}
 
 }

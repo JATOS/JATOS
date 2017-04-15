@@ -1,37 +1,23 @@
 package services.publix.group.akka.actors;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.UntypedActor;
+import akka.actor.Props;
 import services.publix.group.akka.actors.services.GroupActionHandler;
 import services.publix.group.akka.actors.services.GroupActionMsgBuilder;
-import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Get;
-import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
-import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
-import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Unregister;
+import session.DispatcherRegistry;
 
 /**
  * A GroupDispatcherRegistry is an Akka Actor keeps track of all
  * GroupDispatchers Actors.
  * 
- * @author Kristian Lange (2015)
+ * @author Kristian Lange (2015, 2017)
  */
 @Singleton
-public class GroupDispatcherRegistry extends UntypedActor {
+public class GroupDispatcherRegistry extends DispatcherRegistry {
 
-	/**
-	 * Contains the GroupDispatchers that are currently registered. Maps the
-	 * GroupResult's ID to the ActorRef.
-	 */
-	private final Map<Long, ActorRef> groupDispatcherMap = new HashMap<Long, ActorRef>();
-
-	private final ActorSystem actorSystem;
 	private final GroupActionHandler groupActionHandler;
 	private final GroupActionMsgBuilder groupActionMsgBuilder;
 
@@ -39,46 +25,15 @@ public class GroupDispatcherRegistry extends UntypedActor {
 	public GroupDispatcherRegistry(ActorSystem actorSystem,
 			GroupActionHandler groupActionHandler,
 			GroupActionMsgBuilder groupActionMsgBuilder) {
-		this.actorSystem = actorSystem;
+		super(actorSystem);
 		this.groupActionHandler = groupActionHandler;
 		this.groupActionMsgBuilder = groupActionMsgBuilder;
 	}
 
 	@Override
-	public void onReceive(Object msg) throws Exception {
-		if (msg instanceof Get) {
-			// Someone wants to know the GroupDispatcher for a group result ID
-			tellGroupDispatcher((Get) msg);
-		} else if (msg instanceof GetOrCreate) {
-			// Someone wants to know the GroupDispatcher for a group result ID.
-			// If it doesn't exist, create a new one.
-			createAndTellGroupDispatcher((GetOrCreate) msg);
-		} else if (msg instanceof Unregister) {
-			// A GroupDispatcher closed down and wants to unregister
-			Unregister unregister = (Unregister) msg;
-			groupDispatcherMap.remove(unregister.groupResultId);
-		} else {
-			unhandled(msg);
-		}
-	}
-
-	private void tellGroupDispatcher(Get get) {
-		ActorRef groupDispatcher = groupDispatcherMap.get(get.groupResultId);
-		ItsThisOne answer = new ItsThisOne(groupDispatcher);
-		sender().tell(answer, self());
-	}
-
-	private void createAndTellGroupDispatcher(GetOrCreate getOrCreate) {
-		ActorRef groupDispatcher = groupDispatcherMap
-				.get(getOrCreate.groupResultId);
-		if (groupDispatcher == null) {
-			groupDispatcher = actorSystem
-					.actorOf(GroupDispatcher.props(self(), groupActionHandler,
-							groupActionMsgBuilder, getOrCreate.groupResultId));
-			groupDispatcherMap.put(getOrCreate.groupResultId, groupDispatcher);
-		}
-		ItsThisOne answer = new ItsThisOne(groupDispatcher);
-		sender().tell(answer, self());
+	protected Props getProps(long groupResultId) {
+		return GroupDispatcher.props(self(), groupActionHandler,
+				groupActionMsgBuilder, groupResultId);
 	}
 
 }

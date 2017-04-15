@@ -1,4 +1,4 @@
-package services.publix.group.akka.actors;
+package session.batch.akka.actors;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -6,11 +6,10 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupMsg;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.PoisonChannel;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.ReassignChannel;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.RegisterChannel;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.UnregisterChannel;
+import session.batch.akka.actors.BatchDispatcherProtocol.BatchMsg;
+import session.batch.akka.actors.BatchDispatcherProtocol.PoisonChannel;
+import session.batch.akka.actors.BatchDispatcherProtocol.RegisterChannel;
+import session.batch.akka.actors.BatchDispatcherProtocol.UnregisterChannel;
 
 /**
  * GroupChannel is an Akka Actor that represents the group channel's WebSocket.
@@ -31,40 +30,40 @@ import services.publix.group.akka.protocol.GroupDispatcherProtocol.UnregisterCha
  * 
  * @author Kristian Lange (2015)
  */
-public class GroupChannel extends UntypedActor {
+public class BatchChannel extends UntypedActor {
 
 	/**
 	 * Output of the WebSocket: JATOS -> client
 	 */
 	private final ActorRef out;
 	private final long studyResultId;
-	private ActorRef groupDispatcher;
+	private ActorRef batchDispatcher;
 
 	/**
 	 * Akka method to get this Actor started. Changes in props must be done in
 	 * the constructor too.
 	 */
 	public static Props props(ActorRef out, long studyResultId,
-			ActorRef groupDispatcher) {
-		return Props.create(GroupChannel.class, out, studyResultId,
-				groupDispatcher);
+			ActorRef batchDispatcher) {
+		return Props.create(BatchChannel.class, out, studyResultId,
+				batchDispatcher);
 	}
 
-	public GroupChannel(ActorRef out, long studyResultId,
-			ActorRef groupDispatcher) {
+	public BatchChannel(ActorRef out, long studyResultId,
+			ActorRef batchDispatcher) {
 		this.out = out;
 		this.studyResultId = studyResultId;
-		this.groupDispatcher = groupDispatcher;
+		this.batchDispatcher = batchDispatcher;
 	}
 
 	@Override
 	public void preStart() {
-		groupDispatcher.tell(new RegisterChannel(studyResultId), self());
+		batchDispatcher.tell(new RegisterChannel(studyResultId), self());
 	}
 
 	@Override
 	public void postStop() {
-		groupDispatcher.tell(new UnregisterChannel(studyResultId), self());
+		batchDispatcher.tell(new UnregisterChannel(studyResultId), self());
 	}
 
 	@Override
@@ -74,20 +73,12 @@ public class GroupChannel extends UntypedActor {
 			// If we receive a JsonNode (only from the client) wrap it in a
 			// GroupMsg and forward it to the GroupDispatcher
 			ObjectNode jsonNode = (ObjectNode) msg;
-			groupDispatcher.tell(new GroupMsg(jsonNode), self());
-		} else if (msg instanceof GroupMsg) {
+			batchDispatcher.tell(new BatchMsg(jsonNode), self());
+		} else if (msg instanceof BatchMsg) {
 			// If we receive a GroupMsg (only from the GroupDispatcher) send
 			// the wrapped JsonNode to the client
-			GroupMsg groupMsg = (GroupMsg) msg;
-			out.tell(groupMsg.jsonNode, self());
-		} else if (msg instanceof ReassignChannel) {
-			// This group channel has to reassign to a different dispatcher
-			ReassignChannel reassignChannel = (ReassignChannel) msg;
-			this.groupDispatcher.tell(new UnregisterChannel(studyResultId),
-					self());
-			this.groupDispatcher = reassignChannel.differentGroupDispatcher;
-			this.groupDispatcher.tell(new RegisterChannel(studyResultId),
-					self());
+			BatchMsg batchMsg = (BatchMsg) msg;
+			out.tell(batchMsg.jsonNode, self());
 		} else if (msg instanceof PoisonChannel) {
 			// Kill this group channel
 			self().tell(PoisonPill.getInstance(), self());

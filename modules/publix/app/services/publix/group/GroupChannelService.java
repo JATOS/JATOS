@@ -19,13 +19,14 @@ import play.mvc.LegacyWebSocket;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.Joined;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.Left;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.PoisonChannel;
-import services.publix.group.akka.messages.GroupDispatcherProtocol.ReassignChannel;
-import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.Get;
-import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.GetOrCreate;
-import services.publix.group.akka.messages.GroupDispatcherRegistryProtocol.ItsThisOne;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.Joined;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.Left;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.PoisonChannel;
+import services.publix.group.akka.protocol.GroupDispatcherProtocol.ReassignChannel;
+import session.WebSocketBuilder;
+import session.DispatcherRegistryProtocol.Get;
+import session.DispatcherRegistryProtocol.GetOrCreate;
+import session.DispatcherRegistryProtocol.ItsThisOne;
 
 /**
  * Service class that handles of opening and closing of group channels with
@@ -165,7 +166,7 @@ public class GroupChannelService {
 			throws InternalServerErrorPublixException {
 		ItsThisOne answer = (ItsThisOne) askGroupDispatcherRegistry(
 				new Get(groupResult.getId()));
-		return answer.groupDispatcher;
+		return answer.dispatcher;
 	}
 
 	/**
@@ -180,7 +181,7 @@ public class GroupChannelService {
 			throws InternalServerErrorPublixException {
 		ItsThisOne answer = (ItsThisOne) askGroupDispatcherRegistry(
 				new GetOrCreate(groupResult.getId()));
-		return answer.groupDispatcher;
+		return answer.dispatcher;
 	}
 
 	/**

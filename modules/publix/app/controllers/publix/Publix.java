@@ -35,11 +35,12 @@ import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
-import services.publix.group.GroupChannelService;
 import services.publix.group.GroupAdministration;
-import services.publix.group.WebSocketBuilder;
+import services.publix.group.GroupChannelService;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
+import session.WebSocketBuilder;
+import session.batch.BatchChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -58,6 +59,7 @@ public abstract class Publix<T extends Worker> extends Controller
 	protected final JPAApi jpa;
 	protected final PublixUtils<T> publixUtils;
 	protected final StudyAuthorisation<T> studyAuthorisation;
+	protected final BatchChannelService batchChannelService;
 	protected final GroupAdministration groupAdministration;
 	protected final GroupChannelService groupChannelService;
 	protected final IdCookieService idCookieService;
@@ -70,6 +72,7 @@ public abstract class Publix<T extends Worker> extends Controller
 
 	public Publix(JPAApi jpa, PublixUtils<T> publixUtils,
 			StudyAuthorisation<T> studyAuthorisation,
+			BatchChannelService batchChannelService,
 			GroupAdministration groupAdministration,
 			GroupChannelService groupChannelService,
 			IdCookieService idCookieService, PublixErrorMessages errorMessages,
@@ -79,6 +82,7 @@ public abstract class Publix<T extends Worker> extends Controller
 		this.jpa = jpa;
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
+		this.batchChannelService = batchChannelService;
 		this.groupAdministration = groupAdministration;
 		this.groupChannelService = groupChannelService;
 		this.idCookieService = idCookieService;
@@ -191,6 +195,66 @@ public abstract class Publix<T extends Worker> extends Controller
 
 	@Override
 	// Due to returning a WebSocket and not a Result we don't throw exceptions
+	public LegacyWebSocket<JsonNode> openBatch(Long studyId,
+			Long studyResultId) {
+		LOGGER.info(".openBatch: studyId " + studyId + ", studyResultId "
+				+ studyResultId);
+		// The @Transactional annotation can only be used with Actions.
+		// Since WebSockets aren't considered Actions in Play we have to do
+		// it manually. Additionally we have to catch the PublixExceptions
+		// manually because the PublixAction wouldn't send a rejected WebSocket
+		// but normal HTTP responses.
+		StudyResult studyResult = jpa.withTransaction(() -> {
+			try {
+				IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+				T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+				Study study = publixUtils.retrieveStudy(studyId);
+				Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+				studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+				return publixUtils.retrieveStudyResult(worker, study,
+						studyResultId);
+			} catch (NotFoundPublixException e) {
+				LOGGER.info(".openBatch: " + e.getMessage());
+				return null;
+			} catch (ForbiddenPublixException e) {
+				LOGGER.info(".openBatch: " + e.getMessage());
+				return null;
+			} catch (Throwable e) {
+				LOGGER.error(".openBatch: ", e);
+				return null;
+			}
+		});
+		// openGroupChannel has to be outside of the transaction
+		if (studyResult != null) {
+			try {
+				return batchChannelService.openBatchChannel(studyResult);
+			} catch (InternalServerErrorPublixException e) {
+				LOGGER.error(".openBatch: ", e);
+				return WebSocketBuilder.reject(internalServerError());
+			}
+		} else {
+			return WebSocketBuilder.reject(internalServerError());
+		}
+	}
+
+	@Override
+	public Result closeBatch(Long studyId, Long studyResultId)
+			throws PublixException {
+		LOGGER.info(".closeBatch: studyId " + studyId + ", studyResultId "
+				+ studyResultId);
+		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+		Study study = publixUtils.retrieveStudy(studyId);
+		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+				studyResultId);
+		batchChannelService.closeBatchChannel(studyResult, batch);
+		return ok();
+	}
+
+	@Override
+	// Due to returning a WebSocket and not a Result we don't throw exceptions
 	public LegacyWebSocket<JsonNode> joinGroup(Long studyId,
 			Long studyResultId) {
 		LOGGER.info(".joinGroup: studyId " + studyId + ", " + "studyResultId "
@@ -205,15 +269,12 @@ public abstract class Publix<T extends Worker> extends Controller
 				return joinGroupTransactional(studyId, studyResultId);
 			} catch (NotFoundPublixException e) {
 				LOGGER.info(".joinGroup: " + e.getMessage());
-				// return WebSocketBuilder.reject(notFound());
 				return null;
 			} catch (ForbiddenPublixException e) {
 				LOGGER.info(".joinGroup: " + e.getMessage());
-				// return WebSocketBuilder.reject(forbidden());
 				return null;
 			} catch (Throwable e) {
 				LOGGER.error(".joinGroup: ", e);
-				// return WebSocketBuilder.reject(internalServerError());
 				return null;
 			}
 		});

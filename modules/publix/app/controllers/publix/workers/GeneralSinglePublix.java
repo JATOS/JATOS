@@ -28,6 +28,7 @@ import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
+import session.batch.BatchChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -55,6 +56,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 	GeneralSinglePublix(JPAApi jpa, GeneralSinglePublixUtils publixUtils,
 			GeneralSingleStudyAuthorisation studyAuthorisation,
 			ResultCreator resultCreator, WorkerCreator workerCreator,
+			BatchChannelService batchChannelService,
 			GroupAdministration groupAdministration,
 			GroupChannelService groupChannelService,
 			IdCookieService idCookieService,
@@ -62,10 +64,10 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
 			GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
 			JsonUtils jsonUtils, ComponentResultDao componentResultDao,
 			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		super(jpa, publixUtils, studyAuthorisation, groupAdministration,
-				groupChannelService, idCookieService, errorMessages,
-				studyAssets, jsonUtils, componentResultDao, studyResultDao,
-				groupResultDao);
+		super(jpa, publixUtils, studyAuthorisation, batchChannelService,
+				groupAdministration, groupChannelService, idCookieService,
+				errorMessages, studyAssets, jsonUtils, componentResultDao,
+				studyResultDao, groupResultDao);
 		this.publixUtils = publixUtils;
 		this.studyAuthorisation = studyAuthorisation;
 		this.resultCreator = resultCreator;

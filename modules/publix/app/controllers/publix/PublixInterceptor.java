@@ -246,6 +246,76 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
+	public LegacyWebSocket<JsonNode> openBatch(Long studyId, Long studyResultId)
+			throws PublixException {
+		LegacyWebSocket<JsonNode> result = null;
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
+		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
+		case MTSandboxWorker.WORKER_TYPE:
+			result = instanceOfPublix(MTPublix.class).openBatch(studyId,
+					studyResultId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = instanceOfPublix(JatosPublix.class).openBatch(studyId,
+					studyResultId);
+			break;
+		case PersonalMultipleWorker.WORKER_TYPE:
+			result = instanceOfPublix(PersonalMultiplePublix.class)
+					.openBatch(studyId, studyResultId);
+			break;
+		case PersonalSingleWorker.WORKER_TYPE:
+			result = instanceOfPublix(PersonalSinglePublix.class)
+					.openBatch(studyId, studyResultId);
+			break;
+		case GeneralSingleWorker.WORKER_TYPE:
+			result = instanceOfPublix(GeneralSinglePublix.class)
+					.openBatch(studyId, studyResultId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		}
+		return result;
+	}
+
+	@Override
+	@Transactional
+	public Result closeBatch(Long studyId, Long studyResultId)
+			throws PublixException {
+		Result result = null;
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
+		case MTWorker.WORKER_TYPE:
+			// Handle MTWorker like MTSandboxWorker
+		case MTSandboxWorker.WORKER_TYPE:
+			result = instanceOfPublix(MTPublix.class).closeBatch(studyId,
+					studyResultId);
+			break;
+		case JatosWorker.WORKER_TYPE:
+			result = instanceOfPublix(JatosPublix.class).closeBatch(studyId,
+					studyResultId);
+			break;
+		case PersonalMultipleWorker.WORKER_TYPE:
+			result = instanceOfPublix(PersonalMultiplePublix.class)
+					.closeBatch(studyId, studyResultId);
+			break;
+		case PersonalSingleWorker.WORKER_TYPE:
+			result = instanceOfPublix(PersonalSinglePublix.class)
+					.closeBatch(studyId, studyResultId);
+			break;
+		case GeneralSingleWorker.WORKER_TYPE:
+			result = instanceOfPublix(GeneralSinglePublix.class)
+					.closeBatch(studyId, studyResultId);
+			break;
+		default:
+			throw new BadRequestPublixException(
+					PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		}
+		return result;
+	}
+
+	@Override
+	@Transactional
 	public LegacyWebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId)
 			throws PublixException {
 		LegacyWebSocket<JsonNode> result = null;
