@@ -400,7 +400,7 @@ public class AuthenticationServiceTest {
 		Map<String, String> data = new HashMap<>();
 		// Make sure login time is older than what is allowed in the configured
 		// session timeout
-		Instant loginTime = Instant.now().minus(Common.getSessionTimeout() + 1,
+		Instant loginTime = Instant.now().minus(Common.getUserSessionTimeout() + 1,
 				ChronoUnit.MINUTES);
 		data.put(AuthenticationService.SESSION_LOGIN_TIME,
 				String.valueOf(loginTime.toEpochMilli()));
@@ -437,7 +437,7 @@ public class AuthenticationServiceTest {
 	public void checkIsSessionInactivityFail() {
 		Map<String, String> data = new HashMap<>();
 		Instant lastActivityTime = Instant.now()
-				.minus(Common.getSessionInactivity() + 1, ChronoUnit.MINUTES);
+				.minus(Common.getUserSessionInactivity() + 1, ChronoUnit.MINUTES);
 		data.put(AuthenticationService.SESSION_LAST_ACTIVITY_TIME,
 				String.valueOf(lastActivityTime.toEpochMilli()));
 		Http.Session session = new Http.Session(data);

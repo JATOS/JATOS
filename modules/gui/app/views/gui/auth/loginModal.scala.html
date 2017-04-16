@@ -30,7 +30,7 @@
 var sessionTimeoutWorker;
 if (window.Worker) {
 	sessionTimeoutWorker = new Worker('@controllers.gui.routes.Assets.versioned("lib/jatos-gui/javascripts/sessionTimoutChecker.js")');
-	sessionTimeoutWorker.postMessage([@general.common.Common.getSessionTimeout(), @general.common.Common.getSessionInactivity()]);
+	sessionTimeoutWorker.postMessage([@general.common.Common.getUserSessionTimeout(), @general.common.Common.getUserSessionInactivity()]);
 	sessionTimeoutWorker.onmessage = function(msg) {
 		showLoginModal(msg.data);
 	}
@@ -52,7 +52,7 @@ $("#loginForm").submit(function(event) {
 		data: $('#loginForm').serialize(),
 		success: function(response) {
 			removeAlerts('#loginModal');
-			sessionTimeoutWorker.postMessage([@general.common.Common.getSessionTimeout(), @general.common.Common.getSessionInactivity()]);
+			sessionTimeoutWorker.postMessage([@general.common.Common.getUserSessionTimeout(), @general.common.Common.getUserSessionInactivity()]);
 			$('#loginModal').modal('hide');
 		},
 		error: function(response) {

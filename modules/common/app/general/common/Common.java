@@ -58,13 +58,13 @@ public class Common {
 	 * Time in minutes when the Play session will timeout (defined in
 	 * application.conf)
 	 */
-	private static int sessionTimeout;
+	private static int userSessionTimeout;
 
 	/**
 	 * Time in minutes a user can be inactive before he will be logged-out
 	 * (defined in application.conf)
 	 */
-	private static int sessionInactivity;
+	private static int userSessionInactivity;
 
 	/**
 	 * Database URL as defined in application.conf
@@ -87,8 +87,8 @@ public class Common {
 		studyAssetsRootPath = fillStudyAssetsRootPath(configuration);
 		inMemoryDb = configuration.getString("db.default.url")
 				.contains("jdbc:h2:mem:");
-		sessionTimeout = configuration.getInt("jatos.session.timeout");
-		sessionInactivity = configuration.getInt("jatos.session.inactivity");
+		userSessionTimeout = configuration.getInt("jatos.userSession.timeout");
+		userSessionInactivity = configuration.getInt("jatos.userSession.inactivity");
 		dbDefaultUrl = configuration.getString("db.default.url");
 		dbDefaultDriver = configuration.getString("db.default.driver");
 		jpaDefault = configuration.getString("jpa.default");
@@ -151,12 +151,12 @@ public class Common {
 		return inMemoryDb;
 	}
 
-	public static int getSessionTimeout() {
-		return sessionTimeout;
+	public static int getUserSessionTimeout() {
+		return userSessionTimeout;
 	}
 
-	public static int getSessionInactivity() {
-		return sessionInactivity;
+	public static int getUserSessionInactivity() {
+		return userSessionInactivity;
 	}
 
 	public static String getDbDefaultUrl() {

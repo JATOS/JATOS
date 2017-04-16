@@ -195,7 +195,7 @@ public class AuthenticationService {
 			Instant loginTime = Instant.ofEpochMilli(
 					Long.parseLong(session.get(SESSION_LOGIN_TIME)));
 			Instant now = Instant.now();
-			Instant allowedUntil = loginTime.plus(Common.getSessionTimeout(),
+			Instant allowedUntil = loginTime.plus(Common.getUserSessionTimeout(),
 					ChronoUnit.MINUTES);
 			return allowedUntil.isBefore(now);
 		} catch (Exception e) {
@@ -215,7 +215,7 @@ public class AuthenticationService {
 					Long.parseLong(session.get(SESSION_LAST_ACTIVITY_TIME)));
 			Instant now = Instant.now();
 			Instant allowedUntil = lastActivityTime
-					.plus(Common.getSessionInactivity(), ChronoUnit.MINUTES);
+					.plus(Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
 			return allowedUntil.isBefore(now);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage());
