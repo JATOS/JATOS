@@ -156,6 +156,7 @@ var jatos = {};
 	var reassigningGroup = false;
 	var leavingGroup = false;
 	var sendingGroupSession = false;
+	var sendingBatchSession = false;
 	var abortingComponent = false;
 
 	/**
@@ -184,8 +185,7 @@ var jatos = {};
 		script.src = url;
 		var head = document.getElementsByTagName('head')[0], done = false;
 		script.onload = script.onreadystatechange = function () {
-			if (!done && (!this.readyState || this.readyState == 'loaded'
-				|| this.readyState == 'complete')) {
+			if (!done && (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')) {
 				done = true;
 				onSuccess();
 				script.onload = script.onreadystatechange = null;
@@ -207,6 +207,7 @@ var jatos = {};
 			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/jquery.ajax-retry.min.js"),
 			// JSON path library https://github.com/Starcounter-Jack/JSON-Patch
 			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/json-patch-duplex.js"),
+			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/jsonpointer.js"),
 			jatos.jQuery.Deferred(function(deferred){
 				jatos.jQuery(deferred.resolve);
 			})
@@ -242,7 +243,7 @@ var jatos = {};
 		 */
 		function getUrlQueryParameter(parameter) {
 			var a = window.location.search.substr(1).split('&');
-			if (a == "") return {};
+			if (a === "") return {};
 			var b = {};
 			for (var i = 0; i < a.length; ++i) {
 				var p = a[i].split('=', 2);
@@ -252,7 +253,7 @@ var jatos = {};
 					b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
 			}
 			return b[parameter];
-		};
+		}
 		
 		/**
 		 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
@@ -261,6 +262,9 @@ var jatos = {};
 		function readIdCookie() {
 			var idCookieName = "JATOS_IDS";
 			var cookieArray = document.cookie.split(';');
+			var fillJatos = function(key, value) {
+				jatos[key] = value;
+			};
 			for (var i = 0; i < cookieArray.length; i++) {
 				var cookie = cookieArray[i];
 				// Remove leading spaces in cookie string
@@ -276,9 +280,7 @@ var jatos = {};
 				var idArray = cookieStr.split("&");
 				var idMap = getIdsFromCookie(idArray);
 				if (idMap.studyResultId == jatos.studyResultId) {
-					jatos.jQuery.each(idMap, function (key, value) {
-						jatos[key] = value;
-					});
+					jatos.jQuery.each(idMap, fillJatos);
 					// Convert component's position to int
 					jatos.componentPos = parseInt(jatos.componentPos);
 					break;
@@ -306,8 +308,8 @@ var jatos = {};
 		 */
 		function getInitData() {
 			return jatos.jQuery.ajax({
-				url: "/publix/" + jatos.studyId + "/" + jatos.componentId
-						+ "/initData" + "?srid=" + jatos.studyResultId,
+				url: "/publix/" + jatos.studyId + "/" + jatos.componentId +
+						"/initData" + "?srid=" + jatos.studyResultId,
 				type: "GET",
 				dataType: 'json',
 				timeout: jatos.httpTimeout,
@@ -367,7 +369,7 @@ var jatos = {};
 		}
 		
 		function openBatchChannel() {
-			var deferred = $.Deferred();
+			var deferred = jatos.jQuery.Deferred();
 				
 			if (!webSocketSupported) {
 				callingOnError(null, "This browser does not support WebSockets.");
@@ -385,9 +387,9 @@ var jatos = {};
 			openingBatchChannel = true;
 
 			batchChannel = new WebSocket(
-				((window.location.protocol === "https:") ? "wss://" : "ws://")
-				+ window.location.host
-				+ "/publix/" + jatos.studyId + "/batch/open" + "?srid=" + jatos.studyResultId);
+				((window.location.protocol === "https:") ? "wss://" : "ws://") +
+						window.location.host + "/publix/" + jatos.studyId + 
+						"/batch/open" + "?srid=" + jatos.studyResultId);
 			batchChannel.onopen = function(event) {
 				openingBatchChannel = false;
 				deferred.resolve();
@@ -415,8 +417,8 @@ var jatos = {};
 		function handleBatchMsg(msg) {
 			var batchMsg = jatos.jQuery.parseJSON(msg);
 			try {
-				if (batchMsg.batchSessionPatch) {
-					jsonpatch.apply(batchSessionData, batchMsg.batchSessionPatch);
+				if (batchMsg.batchSessionPatches) {
+					jsonpatch.apply(batchSessionData, batchMsg.batchSessionPatches);
 				}
 				if (batchMsg.batchSessionData) {
 					batchSessionData = jatos.jQuery.parseJSON(batchMsg.batchSessionData);
@@ -427,10 +429,98 @@ var jatos = {};
 			} catch (error) {
 				callingOnError(null, error);
 			}
+			
+			if (batchMsg.action) {
+				handleBatchAction(batchMsg);
+			}
+		}
+		
+		function handleBatchAction(batchMsg) {
+			switch (batchMsg.action) {
+				case "SESSION":
+					break;
+				case "SESSION_ACK":
+					sendingBatchSession = false;
+					batchSessionTimeout.cancel();
+					break;
+				case "SESSION_FAIL":
+					sendingBatchSession = false;
+					batchSessionTimeout.trigger();
+					break;
+				case "ERROR":
+					// onError or jatos.onError
+					// Got an error
+					callingOnError(null, batchMsg.errorMsg);
+					break;
+			}
 		}
 		
 	}
+	
+	jatos.batchSession = {};
+	
+	jatos.batchSession.get = function (path) {
+		return jsonpointer.get(batchSessionData, path);
+	};
+	
+	jatos.batchSession.add = function (path, value) {
+		var patch = {};
+		patch.op = "add";
+		patch.path = path;
+		patch.value = value;
+		sendBatchSessionPatch(patch);
+	};
+	
+	jatos.batchSession.remove = function (path) {
+	};
+	
+	jatos.batchSession.replace = function (path, value) {
+	};
+	
+	jatos.batchSession.copy = function (from, path) {
+	};
+	
+	jatos.batchSession.move = function (from, path) {
+	};
+	
+	jatos.batchSession.test = function (path, value) {
+	};
 
+	function sendBatchSessionPatch(batchSessionPatch) {
+		if (!batchChannel || batchChannel.readyState != 1) {
+			callingOnError(null, "No open batch channel");
+			return;
+		}
+		if (sendingBatchSession) {
+			callingOnError(null, "Can send only one batch session patch at a time");
+			return;
+		}
+		sendingBatchSession = true;
+		
+		var msgObj = {};
+		msgObj.action = "SESSION";
+		msgObj.batchSessionPatches = [];
+		msgObj.batchSessionPatches.push(batchSessionPatch);
+		msgObj.batchSessionVersion = batchSessionVersion;
+		try {
+			batchChannel.send(JSON.stringify(msgObj));
+			// Setup timeout: How long to wait for an answer from JATOS.
+			batchSessionTimeout = setTriggerTimeout(
+					jatos.sessionTimeoutTime, function () {
+						sendingBatchSession = false;
+						callingOnError(null, "Couldn't set batch session.");
+					});
+		} catch (error) {
+			callingOnError(null, error);
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
 	/**
 	 * Should be called in the beginning of each function that wants to use jQuery.
 	 */
@@ -496,8 +586,7 @@ var jatos = {};
 			if (jqxhr.responseText) {
 				return jqxhr.statusText + ": " + jqxhr.responseText;
 			} else {
-				return jqxhr.statusText + ": "
-					+ "Error during Ajax call to JATOS server.";
+				return jqxhr.statusText + ": " + "Error during Ajax call to JATOS server.";
 			}
 		}
 	}
@@ -532,8 +621,8 @@ var jatos = {};
 		}
 		submittingResultData = true;
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/" + jatos.componentId
-			+ "/resultData" + "?srid=" + jatos.studyResultId,
+			url: "/publix/" + jatos.studyId + "/" + jatos.componentId + 
+					"/resultData" + "?srid=" + jatos.studyResultId,
 			data: resultData,
 			processData: false,
 			type: "POST",
@@ -616,8 +705,8 @@ var jatos = {};
 		}
 		startingComponent = true;
 		var onComplete = function () {
-			window.location.href = "/publix/" + jatos.studyId + "/" + componentId
-				+ "/start" + "?srid=" + jatos.studyResultId;
+			window.location.href = "/publix/" + jatos.studyId + "/" + componentId +
+					"/start" + "?srid=" + jatos.studyResultId;
 		};
 		jatos.setStudySessionData(jatos.studySessionData, onComplete);
 	};
@@ -634,8 +723,8 @@ var jatos = {};
 		}
 		startingComponent = true;
 		var onComplete = function () {
-			window.location.href = "/publix/" + jatos.studyId
-				+ "/component/start?position=" + componentPos + "&srid=" + jatos.studyResultId;
+			window.location.href = "/publix/" + jatos.studyId +
+					"/component/start?position=" + componentPos + "&srid=" + jatos.studyResultId;
 		};
 		jatos.setStudySessionData(jatos.studySessionData, onComplete);
 	};
@@ -650,8 +739,8 @@ var jatos = {};
 		}
 		startingComponent = true;
 		var callbackWhenComplete = function () {
-			window.location.href = "/publix/" + jatos.studyId
-				+ "/nextComponent/start" + "?srid=" + jatos.studyResultId;
+			window.location.href = "/publix/" + jatos.studyId +
+					"/nextComponent/start" + "?srid=" + jatos.studyResultId;
 		};
 		jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
 	};
@@ -693,7 +782,8 @@ var jatos = {};
 		}
 		endingComponent = true;
 		var onComplete = function () {
-			var url = "/publix/" + jatos.studyId + "/" + jatos.componentId + "/end" + "?srid=" + jatos.studyResultId;
+			var url = "/publix/" + jatos.studyId + "/" + jatos.componentId +
+					"/end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
 			if (undefined === successful || undefined === errorMsg) {
 				fullUrl = url;
@@ -702,8 +792,7 @@ var jatos = {};
 			} else if (undefined === errorMsg) {
 				fullUrl = url + "?successful=" + successful;
 			} else {
-				fullUrl = url + "?successful=" + successful + "&errorMsg="
-					+ errorMsg;
+				fullUrl = url + "?successful=" + successful + "&errorMsg=" + errorMsg;
 			}
 			jatos.jQuery.ajax({
 				url: fullUrl,
@@ -730,8 +819,8 @@ var jatos = {};
 	 * succeeds opens the group channel's WebSocket.
 	 * 
 	 * @param {Object} callbacks - Defining callback functions for group
-	 * 			events. All callbacks are optional. These callbacks functions can
-	 * 			be:
+	 *			events. All callbacks are optional. These callbacks functions can
+	 *			be:
 	 *		onOpen: to be called when the group channel is successfully opened
 	 *		onClose: to be called when the group channel is closed
 	 *		onError: to be called if an error during opening of the group
@@ -739,7 +828,7 @@ var jatos = {};
 	 *			group channel (e.g. the group session data couldn't be updated). If
 	 *			this function is not defined jatos.js will try to call the global
 	 *			onJatosError function.
-	 * 		onMessage(msg): to be called if a message from another group member is
+	 *		onMessage(msg): to be called if a message from another group member is
 	 *			received. It gets the message as a parameter.
 	 *		onMemberJoin(memberId): to be called when another member (not the worker
 	 *			running this study) joined the group. It gets the group member ID as
@@ -771,16 +860,16 @@ var jatos = {};
 		//		OPEN       1 The connection is open and ready to communicate.
 		//		CLOSING    2 The connection is in the process of closing.
 		//		CLOSED     3 The connection is closed or couldn't be opened.
-		if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup
-			|| !callbacks || (groupChannel && groupChannel.readyState != 3)) {
+		if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup ||
+				!callbacks || (groupChannel && groupChannel.readyState != 3)) {
 			return;
 		}
 		joiningGroup = true;
 
 		groupChannel = new WebSocket(
-			((window.location.protocol === "https:") ? "wss://" : "ws://")
-			+ window.location.host
-			+ "/publix/" + jatos.studyId + "/group/join" + "?srid=" + jatos.studyResultId);
+				((window.location.protocol === "https:") ? "wss://" : "ws://") +
+				window.location.host + "/publix/" + jatos.studyId +
+				"/group/join" + "?srid=" + jatos.studyResultId);
 		groupChannel.onmessage = function (event) {
 			joiningGroup = false;
 			handleGroupMsg(event.data, callbacks);
@@ -824,7 +913,7 @@ var jatos = {};
 		if (groupMsg.msg && callbacks.onMessage) {
 			callbacks.onMessage(groupMsg.msg);
 		}
-	};
+	}
 
 	/**
 	* Update the group variables that usually come with an group action
@@ -845,8 +934,8 @@ var jatos = {};
 			if (groupMsg.channels) {
 				jatos.groupChannels = groupMsg.channels;
 			}
-			if (groupMsg.groupSessionPatch) {
-				jsonpatch.apply(jatos.groupSessionData, groupMsg.groupSessionPatch);
+			if (groupMsg.groupSessionPatches) {
+				jsonpatch.apply(jatos.groupSessionData, groupMsg.groupSessionPatches);
 				jsonpatch.generate(groupSessionObserver); // reset observer
 			}
 			if (groupMsg.groupSessionData) {
@@ -875,8 +964,7 @@ var jatos = {};
 				// this study and others
 				if (groupMsg.memberId == jatos.groupMemberId && callbacks.onOpen) {
 					callbacks.onOpen(groupMsg.memberId);
-				} else if (groupMsg.memberId != jatos.groupMemberId
-					&& callbacks.onMemberOpen) {
+				} else if (groupMsg.memberId != jatos.groupMemberId && callbacks.onMemberOpen) {
 					callbacks.onMemberOpen(groupMsg.memberId);
 					callOnUpdate(callbacks);
 				}
@@ -938,13 +1026,13 @@ var jatos = {};
 				callingOnError(callbacks.onError, groupMsg.errorMsg);
 				break;
 		}
-	};
+	}
 
 	function callOnUpdate(callbacks) {
 		if (callbacks.onUpdate) {
 			callbacks.onUpdate();
 		}
-	};
+	}
 
 	/**
 	 * Asks the JATOS server to reassign this study run to a different group.
@@ -955,8 +1043,8 @@ var jatos = {};
 	 *            reassignment was unsuccessful. 
 	 */
 	jatos.reassignGroup = function (onSuccess, onFail) {
-		if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup
-			|| (groupChannel && groupChannel.readyState != 1)) {
+		if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup || 
+				(groupChannel && groupChannel.readyState != 1)) {
 			return;
 		}
 		reassigningGroup = true;
@@ -1017,11 +1105,11 @@ var jatos = {};
 			jatos.groupSessionData = groupSessionData;
 		}
 		// Store the current state in case we have to send it again
-		var groupSessionPatch = jsonpatch.generate(groupSessionObserver);
-		uploadGroupSessionPatch(groupSessionPatch, onError);
+		var groupSessionPatches = jsonpatch.generate(groupSessionObserver);
+		uploadGroupSessionPatches(groupSessionPatches, onError);
 	};
 
-	function uploadGroupSessionPatch(groupSessionPatch, onError) {
+	function uploadGroupSessionPatches(groupSessionPatches, onError) {
 		if (!groupChannel || groupChannel.readyState != 1) {
 			return;
 		}
@@ -1029,7 +1117,7 @@ var jatos = {};
 
 		var msgObj = {};
 		msgObj.action = "SESSION";
-		msgObj.groupSessionPatch = groupSessionPatch;
+		msgObj.groupSessionPatches = groupSessionPatches;
 		msgObj.groupSessionVersion = groupSessionVersion;
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
@@ -1051,7 +1139,6 @@ var jatos = {};
 				clearTimeout(timeoutId);
 			},
 			trigger: function() {
-				
 				clearTimeout(timeoutId);
 				return timeoutCallback();
 			}
@@ -1082,8 +1169,8 @@ var jatos = {};
 	 * use jatos.hasOpenGroupChannel.
 	 */
 	jatos.hasJoinedGroup = function () {
-		return jatos.groupResultId != null;
-	}
+		return jatos.groupResultId !== null;
+	};
 
 	/**
 	 * Returns true if we currently have an open group channel and false otherwise.
@@ -1092,7 +1179,7 @@ var jatos = {};
 	 */
 	jatos.hasOpenGroupChannel = function () {
 		return groupChannel && groupChannel.readyState == 1;
-	}
+	};
 
 	/**
 	 * @return {Boolean} True if the group has reached the maximum amount of active
@@ -1100,7 +1187,7 @@ var jatos = {};
 	 *         that each member has an open group channel.
 	 */
 	jatos.isMaxActiveMemberReached = function () {
-		if (jatos.batchProperties.maxActiveMembers == null) {
+		if (jatos.batchProperties.maxActiveMembers === null) {
 			return false;
 		} else {
 			return jatos.groupMembers.length >= jatos.batchProperties.maxActiveMembers;
@@ -1113,7 +1200,7 @@ var jatos = {};
 	 *         open group channel.
 	 */
 	jatos.isMaxActiveMemberOpen = function () {
-		if (jatos.batchProperties.maxActiveMembers == null) {
+		if (jatos.batchProperties.maxActiveMembers === null) {
 			return false;
 		} else {
 			return jatos.groupChannels.length >= jatos.batchProperties.maxActiveMembers;
@@ -1327,8 +1414,7 @@ var jatos = {};
 		} else if (undefined === errorMsg) {
 			window.location.href = url + "&successful=" + successful;
 		} else {
-			window.location.href = url + "&successful=" + successful + "&errorMsg="
-				+ errorMsg;
+			window.location.href = url + "&successful=" + successful + "&errorMsg=" + errorMsg;
 		}
 	};
 
@@ -1348,8 +1434,8 @@ var jatos = {};
 			return;
 		}
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/" + jatos.componentId
-			+ "/log" + "?srid=" + jatos.studyResultId,
+			url: "/publix/" + jatos.studyId + "/" + jatos.componentId +
+					"/log" + "?srid=" + jatos.studyResultId,
 			data: logMsg,
 			processData: false,
 			type: "POST",

@@ -9,6 +9,8 @@
  * Licensed under Apache License 2.0
  */
 
+// jshint ignore: start
+
 "use strict";
 
 /**
@@ -32,7 +34,7 @@ onmessage = function(e) {
 	if (!ajax) {
 		send();
 	}
-}
+};
 
 function send() {
 	ajax = new XMLHttpRequest();
