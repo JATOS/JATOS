@@ -125,7 +125,7 @@ public class GroupDispatcherProtocol {
 		public static final String MEMBERS = "members";
 		public static final String CHANNELS = "channels";
 		public static final String GROUP_SESSION_DATA = "groupSessionData";
-		public static final String GROUP_SESSION_PATCH = "groupSessionPatch";
+		public static final String GROUP_SESSION_PATCHES = "groupSessionPatches";
 		public static final String GROUP_SESSION_VERSION = "groupSessionVersion";
 		public static final String ERROR_MSG = "errorMsg";
 

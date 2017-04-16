@@ -54,7 +54,7 @@ public class BatchActionMsgBuilder {
 				batch.getId());
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(BatchActionMsg.ACTION, BatchAction.SESSION.toString());
-		objectNode.set(BatchActionMsg.BATCH_SESSION_PATCH,
+		objectNode.set(BatchActionMsg.BATCH_SESSION_PATCHES,
 				batchSessionPatchNode);
 		objectNode.put(BatchActionMsg.BATCH_SESSION_VERSION,
 				batch.getBatchSessionVersion());

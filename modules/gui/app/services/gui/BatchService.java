@@ -81,6 +81,7 @@ public class BatchService {
 		batch.setTitle(BatchProperties.DEFAULT_TITLE);
 		initBatch(batch, study);
 		batch.setStudy(study);
+		batch.setBatchSessionData("{}");
 		return batch;
 	}
 

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
+import com.google.common.base.Strings;
 
 import daos.common.BatchDao;
 import models.common.Batch;
@@ -74,7 +75,7 @@ public class BatchActionHandler {
 			Long clientsVersion = Long.valueOf(jsonNode
 					.get(BatchActionMsg.BATCH_SESSION_VERSION).asText());
 			JsonNode batchSessionPatchNode = jsonNode
-					.get(BatchActionMsg.BATCH_SESSION_PATCH);
+					.get(BatchActionMsg.BATCH_SESSION_PATCHES);
 
 			// Get batch from DB
 			Batch batch = batchDao.findById(batchId);
@@ -92,7 +93,12 @@ public class BatchActionHandler {
 				patchedSessionData = patchBatchSessionData(batch,
 						batchSessionPatchNode);
 			} catch (IOException | JsonPatchException e) {
-				LOGGER.debug(".handleBatchActionSessionPatch: ", e);
+				LOGGER.debug(
+						".handleBatchActionSessionPatch:"
+								+ " batchId {}, clientsVersion {},"
+								+ " batchSessionPatch {}, error: {}",
+						batchId, clientsVersion,
+						Json.stringify(batchSessionPatchNode), e.getMessage());
 				BatchActionMsg msg = batchActionMsgBuilder.buildSimple(batch,
 						BatchAction.SESSION_FAIL, TellWhom.SENDER_ONLY);
 				return BatchActionMsgBundle.build(msg);
@@ -110,8 +116,7 @@ public class BatchActionHandler {
 					clientsVersion, patchedSessionData);
 			if (success) {
 				BatchActionMsg msg1 = batchActionMsgBuilder.buildSessionPatch(
-						batch, batchSessionPatchNode,
-						TellWhom.ALL_BUT_SENDER);
+						batch, batchSessionPatchNode, TellWhom.ALL);
 				BatchActionMsg msg2 = batchActionMsgBuilder.buildSimple(batch,
 						BatchAction.SESSION_ACK, TellWhom.SENDER_ONLY);
 				return BatchActionMsgBundle.build(msg1, msg2);
@@ -127,8 +132,13 @@ public class BatchActionHandler {
 			JsonNode batchSessionPatchNode)
 			throws IOException, JsonPatchException {
 		JsonPatch batchSessionPatch = JsonPatch.fromJson(batchSessionPatchNode);
-		JsonNode currentBatchSessionData = Json.mapper()
-				.readTree(batch.getBatchSessionData());
+		JsonNode currentBatchSessionData;
+		if (Strings.isNullOrEmpty(batch.getBatchSessionData())) {
+			currentBatchSessionData = Json.mapper().readTree("{}");
+		} else {
+			currentBatchSessionData = Json.mapper()
+					.readTree(batch.getBatchSessionData());
+		}
 		return batchSessionPatch.apply(currentBatchSessionData);
 	}
 

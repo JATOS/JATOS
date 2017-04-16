@@ -107,7 +107,7 @@ var jatos = {};
 	 * How long in ms should jatos.js wait for an answer after a group session
 	 * upload.
 	 */
-	jatos.sessionTimeoutTime = 5000;
+	jatos.sessionTimeoutTime = 10000;
 	/**
 	 * Intermediate storage for the groupSessionPatch during uploading to the JATOS
 	 * server; used for resubmitting after fail
@@ -417,14 +417,14 @@ var jatos = {};
 		function handleBatchMsg(msg) {
 			var batchMsg = jatos.jQuery.parseJSON(msg);
 			try {
-				if (batchMsg.batchSessionPatches) {
-					jsonpatch.apply(batchSessionData, batchMsg.batchSessionPatches);
+				if (batchMsg && typeof batchMsg.patches !== 'undefined') {
+					jsonpatch.apply(batchSessionData, batchMsg.patches);
 				}
-				if (batchMsg.batchSessionData) {
-					batchSessionData = jatos.jQuery.parseJSON(batchMsg.batchSessionData);
+				if (batchMsg && typeof batchMsg.data !== 'undefined') {
+					batchSessionData = jatos.jQuery.parseJSON(batchMsg.data);
 				}
-				if (batchMsg.batchSessionVersion) {
-					batchSessionVersion = batchMsg.batchSessionVersion;
+				if (batchMsg && typeof batchMsg.version !== 'undefined') {
+					batchSessionVersion = batchMsg.version;
 				}
 			} catch (error) {
 				callingOnError(null, error);
@@ -440,11 +440,9 @@ var jatos = {};
 				case "SESSION":
 					break;
 				case "SESSION_ACK":
-					sendingBatchSession = false;
 					batchSessionTimeout.cancel();
 					break;
 				case "SESSION_FAIL":
-					sendingBatchSession = false;
 					batchSessionTimeout.trigger();
 					break;
 				case "ERROR":
@@ -459,34 +457,70 @@ var jatos = {};
 	
 	jatos.batchSession = {};
 	
-	jatos.batchSession.get = function (path) {
+	jatos.batchSession.get = function (name) {
+		return jsonpointer.get(batchSessionData, "/" + name);
+	};
+	
+	jatos.batchSession.get = function (name) {
+		return jsonpointer.get(batchSessionData, "/" + name);
+	};
+	
+	jatos.batchSession.find = function (path) {
 		return jsonpointer.get(batchSessionData, path);
 	};
 	
 	jatos.batchSession.add = function (path, value) {
-		var patch = {};
-		patch.op = "add";
-		patch.path = path;
-		patch.value = value;
-		sendBatchSessionPatch(patch);
+		var patch = generatePatch("add", path, value, null);
+		return sendBatchSessionPatch(patch);
+	};
+	
+	jatos.batchSession.set = function (name, value) {
+		var patch = generatePatch("add", "/" + name, value, null);
+		return sendBatchSessionPatch(patch);
 	};
 	
 	jatos.batchSession.remove = function (path) {
+		var patch = generatePatch("remove", path, null, null);
+		return sendBatchSessionPatch(patch);
 	};
 	
 	jatos.batchSession.replace = function (path, value) {
+		var patch = generatePatch("replace", path, value, null);
+		return sendBatchSessionPatch(patch);
 	};
 	
 	jatos.batchSession.copy = function (from, path) {
+		var patch = generatePatch("copy", path, null, from);
+		return sendBatchSessionPatch(patch);
 	};
 	
 	jatos.batchSession.move = function (from, path) {
+		var patch = generatePatch("move", path, null, from);
+		return sendBatchSessionPatch(patch);
 	};
 	
 	jatos.batchSession.test = function (path, value) {
+		var patches = [];
+		patches.push(generatePatch("test", path, value, null));
+		return jsonpatch.apply(batchSessionData, patches);
 	};
-
-	function sendBatchSessionPatch(batchSessionPatch) {
+	
+	function generatePatch(op, path, value, from) {
+		var patch = {};
+		patch.op = op;
+		if (path !== null) {
+			patch.path = path;
+		}
+		if (value !== null) {
+			patch.value = value;
+		}
+		if (from !== null) {
+			patch.from = from;
+		}
+		return patch;
+	}
+	
+	function sendBatchSessionPatch(patch) {
 		if (!batchChannel || batchChannel.readyState != 1) {
 			callingOnError(null, "No open batch channel");
 			return;
@@ -496,30 +530,42 @@ var jatos = {};
 			return;
 		}
 		sendingBatchSession = true;
+		var deferred = jatos.jQuery.Deferred();
 		
 		var msgObj = {};
 		msgObj.action = "SESSION";
-		msgObj.batchSessionPatches = [];
-		msgObj.batchSessionPatches.push(batchSessionPatch);
-		msgObj.batchSessionVersion = batchSessionVersion;
+		msgObj.patches = [];
+		msgObj.patches.push(patch);
+		msgObj.version = batchSessionVersion;
 		try {
 			batchChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			batchSessionTimeout = setTriggerTimeout(
-					jatos.sessionTimeoutTime, function () {
-						sendingBatchSession = false;
-						callingOnError(null, "Couldn't set batch session.");
-					});
+			batchSessionTimeout = setBatchSessionSendTimeout(
+					jatos.sessionTimeoutTime, deferred);
 		} catch (error) {
 			callingOnError(null, error);
 		}
+		return deferred.promise();
 	}
 	
-	
-	
-	
-	
-	
+	function setBatchSessionSendTimeout(delay, deferred) {
+		var timeoutId = setTimeout(function() {
+			sendingBatchSession = false;
+			deferred.reject("Timeout sending batch session patch");
+		}, delay);
+		return {
+			cancel: function() {
+				clearTimeout(timeoutId);
+				sendingBatchSession = false;
+				deferred.resolve("Patched batch session");
+			},
+			trigger: function() {
+				clearTimeout(timeoutId);
+				sendingBatchSession = false;
+				deferred.reject("Error patching batch session");
+			}
+		};
+	}
 	
 	/**
 	 * Should be called in the beginning of each function that wants to use jQuery.
@@ -1472,4 +1518,3 @@ var jatos = {};
 	};
 
 })();
-

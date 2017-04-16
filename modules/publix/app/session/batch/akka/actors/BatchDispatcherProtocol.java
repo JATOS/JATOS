@@ -82,9 +82,9 @@ public class BatchDispatcherProtocol {
 		 * JSON variables that can be send in a GroupActionMsg
 		 */
 		public static final String ACTION = "action";
-		public static final String BATCH_SESSION_DATA = "batchSessionData";
-		public static final String BATCH_SESSION_PATCH = "batchSessionPatch";
-		public static final String BATCH_SESSION_VERSION = "batchSessionVersion";
+		public static final String BATCH_SESSION_DATA = "data";
+		public static final String BATCH_SESSION_PATCHES = "patches";
+		public static final String BATCH_SESSION_VERSION = "version";
 		public static final String ERROR_MSG = "errorMsg";
 
 	}

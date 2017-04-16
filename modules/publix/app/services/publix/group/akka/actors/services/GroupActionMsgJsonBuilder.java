@@ -100,7 +100,7 @@ public class GroupActionMsgJsonBuilder {
 			TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, BatchAction.SESSION.toString());
-		objectNode.set(GroupActionMsg.GROUP_SESSION_PATCH,
+		objectNode.set(GroupActionMsg.GROUP_SESSION_PATCHES,
 				groupSessionPatchNode);
 		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
 				groupResult.getGroupSessionVersion());

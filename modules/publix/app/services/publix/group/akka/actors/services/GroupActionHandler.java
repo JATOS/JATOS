@@ -79,7 +79,7 @@ public class GroupActionHandler {
 			Long clientsVersion = Long.valueOf(jsonNode
 					.get(GroupActionMsg.GROUP_SESSION_VERSION).asText());
 			JsonNode groupSessionPatchNode = jsonNode
-					.get(GroupActionMsg.GROUP_SESSION_PATCH);
+					.get(GroupActionMsg.GROUP_SESSION_PATCHES);
 
 			// Get group result from DB
 			GroupResult groupResult = groupResultDao.findById(groupResultId);
