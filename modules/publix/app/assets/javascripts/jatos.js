@@ -148,21 +148,27 @@ var jatos = {};
 	 */
 	var initialized = false;
 	var onJatosLoadCalled = false;
-	var openingBatchChannel = false;
 	var startingComponent = false;
-	var endingComponent = false;
-	var submittingResultData = false;
 	var joiningGroup = false;
 	var reassigningGroup = false;
 	var leavingGroup = false;
 	var sendingGroupSession = false;
-	var sendingBatchSession = false;
-	var abortingComponent = false;
-
+	/**
+	 * jQuery.Deferred objects
+	 */
+	var openingBatchChannelDeferred;
+	var sendingBatchSessionDeferred;
+	var submittingResultDataDeferred;
+	var endingDeferred;
+	var abortingDeferred;
 	/**
 	 * Callback function defined via jatos.onLoad.
 	 */
 	var onJatosLoad;
+	/**
+	 * Callback function defined via jatos.onBatchSessionChange
+	 */
+	var onJatosBatchSessionChange;
 	/**
 	 * Callback function if jatos.js produces an error, defined via jatos.onError.
 	 */
@@ -183,7 +189,8 @@ var jatos = {};
 	function getScript(url, onSuccess) {
 		var script = document.createElement('script');
 		script.src = url;
-		var head = document.getElementsByTagName('head')[0], done = false;
+		var head = document.getElementsByTagName('head')[0],
+			done = false;
 		script.onload = script.onreadystatechange = function () {
 			if (!done && (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')) {
 				done = true;
@@ -208,11 +215,10 @@ var jatos = {};
 			// JSON path library https://github.com/Starcounter-Jack/JSON-Patch
 			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/json-patch-duplex.js"),
 			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/jsonpointer.js"),
-			jatos.jQuery.Deferred(function(deferred){
+			jatos.jQuery.Deferred(function (deferred) {
 				jatos.jQuery(deferred.resolve);
 			})
-		).done(onSuccess
-		).fail(function (err) {
+		).done(onSuccess).fail(function (err) {
 			callingOnError(null, getAjaxErrorMsg(err));
 		});
 	}
@@ -228,16 +234,16 @@ var jatos = {};
 
 		jatos.studyResultId = getUrlQueryParameter("srid");
 		readIdCookie();
-		
+
 		getInitData()
 			.then(openBatchChannel)
 			.then(ready);
-		
+
 		if (window.Worker) {
 			heartbeatWorker = new Worker("/public/lib/jatos-publix/javascripts/heartbeat.js");
 			heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId]);
 		}
-		
+
 		/**
 		 * Extracts the given URL query parameter from the URL query string
 		 */
@@ -254,7 +260,7 @@ var jatos = {};
 			}
 			return b[parameter];
 		}
-		
+
 		/**
 		 * Reads JATOS' ID cookies, finds the right one (same studyResultId)
 		 * and stores all key-value pairs into jatos scope.
@@ -262,7 +268,7 @@ var jatos = {};
 		function readIdCookie() {
 			var idCookieName = "JATOS_IDS";
 			var cookieArray = document.cookie.split(';');
-			var fillJatos = function(key, value) {
+			var fillJatos = function (key, value) {
 				jatos[key] = value;
 			};
 			for (var i = 0; i < cookieArray.length; i++) {
@@ -293,7 +299,7 @@ var jatos = {};
 			idArray.forEach(function (entry) {
 				var keyValuePair = entry.split("=");
 				var value = decodeURIComponent(keyValuePair[1]);
-				idMap[keyValuePair[0]] = value; 
+				idMap[keyValuePair[0]] = value;
 			});
 			return idMap;
 		}
@@ -309,7 +315,7 @@ var jatos = {};
 		function getInitData() {
 			return jatos.jQuery.ajax({
 				url: "/publix/" + jatos.studyId + "/" + jatos.componentId +
-						"/initData" + "?srid=" + jatos.studyResultId,
+					"/initData" + "?srid=" + jatos.studyResultId,
 				type: "GET",
 				dataType: 'json',
 				timeout: jatos.httpTimeout,
@@ -317,7 +323,10 @@ var jatos = {};
 				error: function (err) {
 					callingOnError(null, getAjaxErrorMsg(err));
 				}
-			}).retry({ times: jatos.httpRetry, timeout: jatos.httpRetryWait });
+			}).retry({
+				times: jatos.httpRetry,
+				timeout: jatos.httpRetryWait
+			});
 		}
 
 		/**
@@ -333,9 +342,6 @@ var jatos = {};
 					onJatosError(e);
 				}
 			}
-			jatos.studySessionDataFrozen = Object.freeze({
-				"studySessionDataStr": initData.studySessionData
-			});
 
 			// Study properties
 			jatos.studyProperties = initData.studyProperties;
@@ -367,10 +373,12 @@ var jatos = {};
 			// Initialising finished
 			initialized = true;
 		}
-		
+
+		/**
+		 * Opens the WebSocket for the batch channel which is used to get and
+		 * update the batch session data
+		 */
 		function openBatchChannel() {
-			var deferred = jatos.jQuery.Deferred();
-				
 			if (!webSocketSupported) {
 				callingOnError(null, "This browser does not support WebSockets.");
 				return;
@@ -380,61 +388,75 @@ var jatos = {};
 			//		OPEN       1 The connection is open and ready to communicate.
 			//		CLOSING    2 The connection is in the process of closing.
 			//		CLOSED     3 The connection is closed or couldn't be opened.
-			if (!jatos.jQuery || openingBatchChannel ||
-					(batchChannel && batchChannel.readyState != 3)) {
+			if (!jatos.jQuery || isDeferredPending(openingBatchChannelDeferred) ||
+				(batchChannel && batchChannel.readyState != 3)) {
 				return;
 			}
-			openingBatchChannel = true;
+			openingBatchChannelDeferred = jatos.jQuery.Deferred();
 
 			batchChannel = new WebSocket(
 				((window.location.protocol === "https:") ? "wss://" : "ws://") +
-						window.location.host + "/publix/" + jatos.studyId + 
-						"/batch/open" + "?srid=" + jatos.studyResultId);
-			batchChannel.onopen = function(event) {
-				openingBatchChannel = false;
-				deferred.resolve();
+				window.location.host + "/publix/" + jatos.studyId +
+				"/batch/open" + "?srid=" + jatos.studyResultId);
+			batchChannel.onopen = function (event) {
+				openingBatchChannelDeferred.resolve();
 			};
-			batchChannel.onmessage = function(event) {
-				openingBatchChannel = false;
-				deferred.resolve();
+			batchChannel.onmessage = function (event) {
 				handleBatchMsg(event.data);
 			};
-			batchChannel.onerror = function() {
-				openingBatchChannel = false;
-				deferred.resolve();
+			batchChannel.onerror = function () {
+				openingBatchChannelDeferred.resolve();
 				callingOnError(null, "Couldn't open a batch channel");
 			};
-			batchChannel.onclose = function() {
-				openingBatchChannel = false;
-				deferred.resolve();
+			batchChannel.onclose = function () {
+				openingBatchChannelDeferred.resolve();
 				batchSessionData = {};
 				batchSessionVersion = null;
 			};
-			
-			return deferred.promise();
+
+			return openingBatchChannelDeferred.promise();
 		}
-		
+
+		/**
+		 * Handles a batch msg received via the batch channel
+		 */
 		function handleBatchMsg(msg) {
-			var batchMsg = jatos.jQuery.parseJSON(msg);
+			var batchMsg;
 			try {
-				if (batchMsg && typeof batchMsg.patches !== 'undefined') {
-					jsonpatch.apply(batchSessionData, batchMsg.patches);
-				}
-				if (batchMsg && typeof batchMsg.data !== 'undefined') {
-					batchSessionData = jatos.jQuery.parseJSON(batchMsg.data);
-				}
-				if (batchMsg && typeof batchMsg.version !== 'undefined') {
-					batchSessionVersion = batchMsg.version;
-				}
+				batchMsg = jatos.jQuery.parseJSON(msg);
 			} catch (error) {
 				callingOnError(null, error);
+				return;
 			}
-			
+
+			if (typeof batchMsg.patches !== 'undefined') {
+				jsonpatch.apply(batchSessionData, batchMsg.patches);
+				if (onJatosBatchSessionChange && batchMsg.patches[0] &&
+					batchMsg.patches[0].path) {
+					onJatosBatchSessionChange(batchMsg.patches[0].path);
+				} else if (onJatosBatchSessionChange) {
+					onJatosBatchSessionChange();
+				}
+			}
+			if (typeof batchMsg.data !== 'undefined') {
+				if (batchMsg.data === null) {
+					batchSessionData = jatos.jQuery.parseJSON("{}");
+				} else {
+					batchSessionData = jatos.jQuery.parseJSON(batchMsg.data);
+				}
+			}
+			if (typeof batchMsg.version !== 'undefined') {
+				batchSessionVersion = batchMsg.version;
+			}
+
 			if (batchMsg.action) {
 				handleBatchAction(batchMsg);
 			}
 		}
-		
+
+		/**
+		 * Handels a batch action message received via the batch channel
+		 */
 		function handleBatchAction(batchMsg) {
 			switch (batchMsg.action) {
 				case "SESSION":
@@ -452,59 +474,93 @@ var jatos = {};
 					break;
 			}
 		}
-		
+
 	}
-	
+
+	/**
+	 * Object contains all batch session functions
+	 */
 	jatos.batchSession = {};
-	
+
+	/**
+	 * Getter for a field in the batch session data. Takes a name
+	 * and returns the matching value. Works only on the first
+	 * level of the object tree. For all other levels use
+	 * jatos.batchSession.find.
+	 */
 	jatos.batchSession.get = function (name) {
 		return jsonpointer.get(batchSessionData, "/" + name);
 	};
-	
-	jatos.batchSession.get = function (name) {
-		return jsonpointer.get(batchSessionData, "/" + name);
-	};
-	
+
+	/**
+	 * Getter for a field in the batch session data. Takes a
+	 * JSON Pointer and returns the matching value.
+	 */
 	jatos.batchSession.find = function (path) {
 		return jsonpointer.get(batchSessionData, path);
 	};
-	
+
+	/**
+	 * JSON Patch add operation
+	 */
 	jatos.batchSession.add = function (path, value) {
 		var patch = generatePatch("add", path, value, null);
 		return sendBatchSessionPatch(patch);
 	};
-	
+
+	/**
+	 * Like JSON Patch add operation, but instead of a path accepts
+	 * a name, thus works only on the first level of the object tree.
+	 */
 	jatos.batchSession.set = function (name, value) {
 		var patch = generatePatch("add", "/" + name, value, null);
 		return sendBatchSessionPatch(patch);
 	};
-	
+
+	/**
+	 * JSON Patch remove operation
+	 */
 	jatos.batchSession.remove = function (path) {
 		var patch = generatePatch("remove", path, null, null);
 		return sendBatchSessionPatch(patch);
 	};
-	
+
+	/**
+	 * JSON Patch replace operation
+	 */
 	jatos.batchSession.replace = function (path, value) {
 		var patch = generatePatch("replace", path, value, null);
 		return sendBatchSessionPatch(patch);
 	};
-	
+
+	/**
+	 * JSON Patch copy operation
+	 */
 	jatos.batchSession.copy = function (from, path) {
 		var patch = generatePatch("copy", path, null, from);
 		return sendBatchSessionPatch(patch);
 	};
-	
+
+	/**
+	 * JSON Patch move operation
+	 */
 	jatos.batchSession.move = function (from, path) {
 		var patch = generatePatch("move", path, null, from);
 		return sendBatchSessionPatch(patch);
 	};
-	
+
+	/**
+	 * JSON Patch test operation
+	 */
 	jatos.batchSession.test = function (path, value) {
 		var patches = [];
 		patches.push(generatePatch("test", path, value, null));
 		return jsonpatch.apply(batchSessionData, patches);
 	};
-	
+
+	/**
+	 * Generates an abstract JSON Patch
+	 */
 	function generatePatch(op, path, value, from) {
 		var patch = {};
 		patch.op = op;
@@ -519,19 +575,22 @@ var jatos = {};
 		}
 		return patch;
 	}
-	
+
+	/**
+	 * Sends a JSON Patch via the batch channel to JATOS and subsequently to all
+	 * other study currently running in this batch
+	 */
 	function sendBatchSessionPatch(patch) {
 		if (!batchChannel || batchChannel.readyState != 1) {
 			callingOnError(null, "No open batch channel");
 			return;
 		}
-		if (sendingBatchSession) {
+		if (isDeferredPending(sendingBatchSessionDeferred)) {
 			callingOnError(null, "Can send only one batch session patch at a time");
 			return;
 		}
-		sendingBatchSession = true;
-		var deferred = jatos.jQuery.Deferred();
-		
+		sendingBatchSessionDeferred = jatos.jQuery.Deferred();
+
 		var msgObj = {};
 		msgObj.action = "SESSION";
 		msgObj.patches = [];
@@ -540,44 +599,12 @@ var jatos = {};
 		try {
 			batchChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			batchSessionTimeout = setBatchSessionSendTimeout(
-					jatos.sessionTimeoutTime, deferred);
+			batchSessionTimeout = setSessionSendingTimeout(
+				jatos.sessionTimeoutTime, sendingBatchSessionDeferred);
 		} catch (error) {
 			callingOnError(null, error);
 		}
-		return deferred.promise();
-	}
-	
-	function setBatchSessionSendTimeout(delay, deferred) {
-		var timeoutId = setTimeout(function() {
-			sendingBatchSession = false;
-			deferred.reject("Timeout sending batch session patch");
-		}, delay);
-		return {
-			cancel: function() {
-				clearTimeout(timeoutId);
-				sendingBatchSession = false;
-				deferred.resolve("Patched batch session");
-			},
-			trigger: function() {
-				clearTimeout(timeoutId);
-				sendingBatchSession = false;
-				deferred.reject("Error patching batch session");
-			}
-		};
-	}
-	
-	/**
-	 * Should be called in the beginning of each function that wants to use jQuery.
-	 */
-	function jQueryExists() {
-		if (!jatos.jQuery) {
-			if (onJatosError) {
-				onJatosError("jatos.js' jQuery not (yet?) loaded");
-			}
-			return false;
-		}
-		return true;
+		return sendingBatchSessionDeferred.promise();
 	}
 
 	/**
@@ -601,7 +628,8 @@ var jatos = {};
 	jatos.setHeartbeatPeriod = function (heartbeatPeriod) {
 		if (typeof heartbeatPeriod === 'number' && heartbeatWorker) {
 			heartbeatWorker.postMessage([jatos.studyId, jatos.studyResultId,
-					heartbeatPeriod]);
+				heartbeatPeriod
+			]);
 		}
 	};
 
@@ -618,37 +646,17 @@ var jatos = {};
 	 * Defines callback function that is to be called in case jatos.js produces an
 	 * error, e.g. Ajax errors.
 	 */
-	jatos.onError = function (onError) {
-		onJatosError = onError;
+	jatos.onBatchSessionChange = function (onBatchSessionChange) {
+		onJatosBatchSessionChange = onBatchSessionChange;
 	};
 
 	/**
-	 * Takes a jQuery Ajax response and returns an error message.
+	 * Defines callback function that is to be called in case jatos.js produces an
+	 * error, e.g. Ajax errors.
 	 */
-	function getAjaxErrorMsg(jqxhr) {
-		if (jqxhr.statusText == 'timeout') {
-			return "JATOS server not responding while trying to get URL";
-		} else {
-			if (jqxhr.responseText) {
-				return jqxhr.statusText + ": " + jqxhr.responseText;
-			} else {
-				return jqxhr.statusText + ": " + "Error during Ajax call to JATOS server.";
-			}
-		}
-	}
-
-	/**
-	 * Little helper function that calls error functions. First it tries to call the
-	 * given onError one. If this fails it tries the onJatosError.
-	 */
-	function callingOnError(onError, errorMsg) {
-		if (onError) {
-			onError(errorMsg);
-		} else if (onJatosError) {
-			onJatosError(errorMsg);
-		}
-		console.error(errorMsg);
-	}
+	jatos.onError = function (onError) {
+		onJatosError = onError;
+	};
 
 	/**
 	 * Posts resultData back to the JATOS server.
@@ -657,34 +665,41 @@ var jatos = {};
 	 *            resultData - String to be submitted
 	 * @param {optional
 	 *            Function} onSuccess - Function to be called in case of successful
-	 *            submit
 	 * @param {optional
-	 *            Function} onError - Function to be called in case of error
+	 *            Function} onError - (DEPRECATED) Function to be called in case
+	 *            of error
+	 * @return {jQuery.Deferred}
 	 */
 	jatos.submitResultData = function (resultData, onSuccess, onError) {
-		if (!jQueryExists() || submittingResultData) {
+		if (!jQueryExists() || isDeferredPending(submittingResultDataDeferred)) {
 			return;
 		}
-		submittingResultData = true;
+		submittingResultDataDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
-			url: "/publix/" + jatos.studyId + "/" + jatos.componentId + 
-					"/resultData" + "?srid=" + jatos.studyResultId,
+			url: "/publix/" + jatos.studyId + "/" +
+				jatos.componentId + "/resultData" +
+				"?srid=" + jatos.studyResultId,
 			data: resultData,
 			processData: false,
 			type: "POST",
 			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
 			success: function (response) {
-				submittingResultData = false;
 				if (onSuccess) {
 					onSuccess(response);
 				}
+				submittingResultDataDeferred.resolve(response);
 			},
 			error: function (err) {
-				submittingResultData = false;
-				callingOnError(onError, getAjaxErrorMsg(err));
+				var errMsg = getAjaxErrorMsg(err);
+				callingOnError(onError, errMsg);
+				submittingResultDataDeferred.reject(errMsg);
 			}
-		}).retry({ times: jatos.httpRetry, timeout: jatos.httpRetryWait });
+		}).retry({
+			times: jatos.httpRetry,
+			timeout: jatos.httpRetryWait
+		});
+		return submittingResultDataDeferred;
 	};
 
 	/**
@@ -697,28 +712,22 @@ var jatos = {};
 	 * @param {optional
 	 *            Function} onComplete - Function to be called after this function is
 	 *            finished
+	 * @return {jQuery.Deferred}
 	 */
 	jatos.setStudySessionData = function (studySessionData, onComplete) {
 		if (!jQueryExists()) {
 			return;
 		}
+		var deferred = jatos.jQuery.Deferred();
 		var studySessionDataStr;
 		try {
 			studySessionDataStr = JSON.stringify(studySessionData);
 		} catch (error) {
-			if (onJatosError) {
-				onJatosError(error);
-			}
+			callingOnError(null, error);
 			if (onComplete) {
 				onComplete();
 			}
-			return;
-		}
-		if (jatos.studySessionDataFrozen.studySessionDataStr == studySessionDataStr) {
-			// If old and new session data are equal don't post it
-			if (onComplete) {
-				onComplete();
-			}
+			deferred.reject(error);
 			return;
 		}
 		jatos.jQuery.ajax({
@@ -732,11 +741,18 @@ var jatos = {};
 				if (onComplete) {
 					onComplete();
 				}
+				deferred.complete();
 			},
 			error: function (err) {
-				callingOnError(null, getAjaxErrorMsg(err));
+				var errMsg = getAjaxErrorMsg(err);
+				callingOnError(null, errMsg);
+				deferred.reject(errMsg);
 			}
-		}).retry({ times: jatos.httpRetry, timeout: jatos.httpRetryWait });
+		}).retry({
+			times: jatos.httpRetry,
+			timeout: jatos.httpRetryWait
+		});
+		return deferred;
 	};
 
 	/**
@@ -752,9 +768,9 @@ var jatos = {};
 		startingComponent = true;
 		var onComplete = function () {
 			window.location.href = "/publix/" + jatos.studyId + "/" + componentId +
-					"/start" + "?srid=" + jatos.studyResultId;
+				"/start" + "?srid=" + jatos.studyResultId;
 		};
-		jatos.setStudySessionData(jatos.studySessionData, onComplete);
+		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
 	};
 
 	/**
@@ -770,9 +786,9 @@ var jatos = {};
 		startingComponent = true;
 		var onComplete = function () {
 			window.location.href = "/publix/" + jatos.studyId +
-					"/component/start?position=" + componentPos + "&srid=" + jatos.studyResultId;
+				"/component/start?position=" + componentPos + "&srid=" + jatos.studyResultId;
 		};
-		jatos.setStudySessionData(jatos.studySessionData, onComplete);
+		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
 	};
 
 	/**
@@ -784,11 +800,11 @@ var jatos = {};
 			return;
 		}
 		startingComponent = true;
-		var callbackWhenComplete = function () {
+		var onComplete = function () {
 			window.location.href = "/publix/" + jatos.studyId +
-					"/nextComponent/start" + "?srid=" + jatos.studyResultId;
+				"/nextComponent/start" + "?srid=" + jatos.studyResultId;
 		};
-		jatos.setStudySessionData(jatos.studySessionData, callbackWhenComplete);
+		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
 	};
 
 	/**
@@ -805,6 +821,7 @@ var jatos = {};
 	};
 
 	/**
+	 * @DEPRECATED since jatos.js 3.1.1
 	 * Finishes component. Usually this is not necessary because the last component
 	 * is automatically finished if the new component is started. Nevertheless it's
 	 * useful to explicitly tell about a FAIL and submit an error message. Finishing
@@ -823,13 +840,16 @@ var jatos = {};
 	 *            Function} onError - Function to be called in case of error
 	 */
 	jatos.endComponent = function (successful, errorMsg, onSuccess, onError) {
-		if (!jQueryExists() || endingComponent) {
+		if (!jQueryExists() || isDeferredPending(endingDeferred)) {
 			return;
 		}
-		endingComponent = true;
+		endingDeferred = jatos.jQuery.Deferred();
+		console.warn("Usage of jatos.endComponent is deprecated. " +
+			"Use jatos.startComponent, jatos.startComponentByPos, jatos.startNextComponent, " +
+			"jatos.startLastComponent instead. See http://www.jatos.org/jatos.js-Reference.html.");
 		var onComplete = function () {
 			var url = "/publix/" + jatos.studyId + "/" + jatos.componentId +
-					"/end" + "?srid=" + jatos.studyResultId;
+				"/end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
 			if (undefined === successful || undefined === errorMsg) {
 				fullUrl = url;
@@ -846,18 +866,19 @@ var jatos = {};
 				type: "GET",
 				timeout: jatos.httpTimeout,
 				success: function (response) {
-					endingComponent = false;
 					if (onSuccess) {
 						onSuccess(response);
 					}
 				},
 				error: function (err) {
-					endingComponent = false;
 					callingOnError(onError, getAjaxErrorMsg(err));
 				}
-			}).retry({ times: jatos.httpRetry, timeout: jatos.httpRetryWait });
+			}).retry({
+				times: jatos.httpRetry,
+				timeout: jatos.httpRetryWait
+			});
 		};
-		jatos.setStudySessionData(jatos.studySessionData, onComplete);
+		jatos.setStudySessionData(jatos.studySessionData).always(onComplete);
 	};
 
 	/**
@@ -907,15 +928,15 @@ var jatos = {};
 		//		CLOSING    2 The connection is in the process of closing.
 		//		CLOSED     3 The connection is closed or couldn't be opened.
 		if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup ||
-				!callbacks || (groupChannel && groupChannel.readyState != 3)) {
+			!callbacks || (groupChannel && groupChannel.readyState != 3)) {
 			return;
 		}
 		joiningGroup = true;
 
 		groupChannel = new WebSocket(
-				((window.location.protocol === "https:") ? "wss://" : "ws://") +
-				window.location.host + "/publix/" + jatos.studyId +
-				"/group/join" + "?srid=" + jatos.studyResultId);
+			((window.location.protocol === "https:") ? "wss://" : "ws://") +
+			window.location.host + "/publix/" + jatos.studyId +
+			"/group/join" + "?srid=" + jatos.studyResultId);
 		groupChannel.onmessage = function (event) {
 			joiningGroup = false;
 			handleGroupMsg(event.data, callbacks);
@@ -962,8 +983,8 @@ var jatos = {};
 	}
 
 	/**
-	* Update the group variables that usually come with an group action
-	*/
+	 * Update the group variables that usually come with an group action
+	 */
 	function updateGroupVars(groupMsg, callbacks) {
 		if (groupMsg.groupResultId) {
 			jatos.groupResultId = groupMsg.groupResultId.toString();
@@ -998,7 +1019,7 @@ var jatos = {};
 			callingOnError(callbacks.onError, error);
 		}
 	}
-	
+
 	function callGroupActionCallbacks(groupMsg, callbacks) {
 		if (!groupMsg.action) {
 			return;
@@ -1089,8 +1110,8 @@ var jatos = {};
 	 *            reassignment was unsuccessful. 
 	 */
 	jatos.reassignGroup = function (onSuccess, onFail) {
-		if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup || 
-				(groupChannel && groupChannel.readyState != 1)) {
+		if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup ||
+			(groupChannel && groupChannel.readyState != 1)) {
 			return;
 		}
 		reassigningGroup = true;
@@ -1169,22 +1190,23 @@ var jatos = {};
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
 			groupSessionTimeout = setTriggerTimeout(
-					jatos.sessionTimeoutTime, function () {
-							callingOnError(onError, "Couldn't set group session.");
-					});
+				jatos.sessionTimeoutTime,
+				function () {
+					callingOnError(onError, "Couldn't set group session.");
+				});
 		} catch (error) {
 			callingOnError(onError, error);
 		}
 	}
-	
+
 	function setTriggerTimeout(delay, timeoutCallback) {
 		var timeoutId;
 		timeoutId = setTimeout(timeoutCallback, delay);
 		return {
-			cancel: function() {
+			cancel: function () {
 				clearTimeout(timeoutId);
 			},
-			trigger: function() {
+			trigger: function () {
 				clearTimeout(timeoutId);
 				return timeoutCallback();
 			}
@@ -1325,7 +1347,10 @@ var jatos = {};
 				leavingGroup = false;
 				callingOnError(onError, getAjaxErrorMsg(err));
 			}
-		}).retry({ times: jatos.httpRetry, timeout: jatos.httpRetryWait });
+		}).retry({
+			times: jatos.httpRetry,
+			timeout: jatos.httpRetryWait
+		});
 	};
 
 	/**
@@ -1338,12 +1363,13 @@ var jatos = {};
 	 *            submit
 	 * @param {optional
 	 *            Function} onError - Function to be called in case of error
+	 * @return {jQuery.Deferred}
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
-		if (!jQueryExists() || abortingComponent) {
+		if (!jQueryExists() || isDeferredPending(abortingDeferred)) {
 			return;
 		}
-		abortingComponent = true;
+		abortingDeferred = jatos.jQuery.Deferred();
 		var url = "/publix/" + jatos.studyId + "/abort" + "?srid=" + jatos.studyResultId;
 		var fullUrl;
 		if (undefined === message) {
@@ -1357,16 +1383,21 @@ var jatos = {};
 			type: "GET",
 			timeout: jatos.httpTimeout,
 			success: function (response) {
-				abortingComponent = false;
 				if (onSuccess) {
 					onSuccess(response);
 				}
+				abortingDeferred.complete(response);
 			},
 			error: function (err) {
-				abortingComponent = false;
-				callingOnError(onError, getAjaxErrorMsg(err));
+				var errMsg = getAjaxErrorMsg(err);
+				callingOnError(onError, errMsg);
+				abortingDeferred.reject(errMsg);
 			}
-		}).retry({ times: jatos.httpRetry, timeout: jatos.httpRetryWait });
+		}).retry({
+			times: jatos.httpRetry,
+			timeout: jatos.httpRetryWait
+		});
+		return abortingDeferred;
 	};
 
 	/**
@@ -1376,10 +1407,10 @@ var jatos = {};
 	 *            String} message - Message that should be logged
 	 */
 	jatos.abortStudy = function (message) {
-		if (abortingComponent) {
+		if (isDeferredPending(abortingDeferred)) {
 			return;
 		}
-		abortingComponent = true;
+		abortingDeferred = jatos.jQuery.Deferred();
 		var url = "/publix/" + jatos.studyId + "/abort" + "?srid=" + jatos.studyResultId;
 		if (undefined === message) {
 			window.location.href = url;
@@ -1402,12 +1433,13 @@ var jatos = {};
 	 *            submit
 	 * @param {optional
 	 *            Function} onError - Function to be called in case of error
+	 * @return {jQuery.Deferred}
 	 */
 	jatos.endStudyAjax = function (successful, errorMsg, onSuccess, onError) {
-		if (!jQueryExists() || endingComponent) {
+		if (!jQueryExists() || isDeferredPending(endingDeferred)) {
 			return;
 		}
-		endingComponent = true;
+		endingDeferred = jatos.jQuery.Deferred();
 		var url = "/publix/" + jatos.studyId + "/end" + "?srid=" + jatos.studyResultId;
 		var fullUrl;
 		if (undefined === successful || undefined === errorMsg) {
@@ -1425,16 +1457,21 @@ var jatos = {};
 			type: "GET",
 			timeout: jatos.httpTimeout,
 			success: function (response) {
-				endingComponent = false;
 				if (onSuccess) {
 					onSuccess(response);
 				}
+				endingDeferred.complete(response);
 			},
 			error: function (err) {
-				endingComponent = false;
-				callingOnError(onError, getAjaxErrorMsg(err));
+				var errMsg = getAjaxErrorMsg(err);
+				callingOnError(onError, errMsg);
+				endingDeferred.reject(errMsg);
 			}
-		}).retry({ times: jatos.httpRetry, timeout: jatos.httpRetryWait });
+		}).retry({
+			times: jatos.httpRetry,
+			timeout: jatos.httpRetryWait
+		});
+		return endingDeferred;
 	};
 
 	/**
@@ -1448,10 +1485,10 @@ var jatos = {};
 	 *            String} errorMsg - Error message that should be logged.
 	 */
 	jatos.endStudy = function (successful, errorMsg) {
-		if (endingComponent) {
+		if (isDeferredPending(endingDeferred)) {
 			return;
 		}
-		endingComponent = true;
+		endingDeferred = jatos.jQuery.Deferred();
 		var url = "/publix/" + jatos.studyId + "/end" + "?srid=" + jatos.studyResultId;
 		if (undefined === successful || undefined === errorMsg) {
 			window.location.href = url;
@@ -1481,7 +1518,7 @@ var jatos = {};
 		}
 		jatos.jQuery.ajax({
 			url: "/publix/" + jatos.studyId + "/" + jatos.componentId +
-					"/log" + "?srid=" + jatos.studyResultId,
+				"/log" + "?srid=" + jatos.studyResultId,
 			data: logMsg,
 			processData: false,
 			type: "POST",
@@ -1490,7 +1527,10 @@ var jatos = {};
 			error: function (err) {
 				callingOnError(null, getAjaxErrorMsg(err));
 			}
-		}).retry({ times: jatos.httpRetry, timeout: jatos.httpRetryWait });
+		}).retry({
+			times: jatos.httpRetry,
+			timeout: jatos.httpRetryWait
+		});
 	};
 
 	/**
@@ -1516,5 +1556,69 @@ var jatos = {};
 		obj.groupMemberId = jatos.groupMemberId;
 		return obj;
 	};
+
+	/**
+	 * Should be called in the beginning of each function that wants to use jQuery.
+	 */
+	function jQueryExists() {
+		if (!jatos.jQuery) {
+			if (onJatosError) {
+				onJatosError("jatos.js' jQuery not (yet?) loaded");
+			}
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Takes a jQuery Ajax response and returns an error message.
+	 */
+	function getAjaxErrorMsg(jqxhr) {
+		if (jqxhr.statusText == 'timeout') {
+			return "JATOS server not responding while trying to get URL";
+		} else {
+			if (jqxhr.responseText) {
+				return jqxhr.statusText + ": " + jqxhr.responseText;
+			} else {
+				return jqxhr.statusText + ": " + "Error during Ajax call to JATOS server.";
+			}
+		}
+	}
+
+	/**
+	 * Little helper function that calls error functions. First it tries to call the
+	 * given onError one. If this fails it tries the onJatosError.
+	 */
+	function callingOnError(onError, errorMsg) {
+		if (onError) {
+			onError(errorMsg);
+		} else if (onJatosError) {
+			onJatosError(errorMsg);
+		}
+		console.error(errorMsg);
+	}
+
+	function setSessionSendingTimeout(delay, deferred) {
+		var timeoutId = setTimeout(function () {
+			deferred.reject("Timeout sending session patch");
+		}, delay);
+		return {
+			cancel: function () {
+				clearTimeout(timeoutId);
+				deferred.resolve("Patched session");
+			},
+			trigger: function () {
+				clearTimeout(timeoutId);
+				deferred.reject("Error patching session");
+			}
+		};
+	}
+
+	/**
+	 * Checks if the given jQuery Deferred object exists and is not in state pending
+	 */
+	function isDeferredPending(deferred) {
+		return typeof deferred !== 'undefined' && deferred.state() === 'pending';
+	}
 
 })();
