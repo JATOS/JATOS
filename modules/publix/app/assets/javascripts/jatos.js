@@ -440,9 +440,9 @@ var jatos = {};
 			}
 			if (typeof batchMsg.data !== 'undefined') {
 				if (batchMsg.data === null) {
-					batchSessionData = jatos.jQuery.parseJSON("{}");
+					batchSessionData = {};
 				} else {
-					batchSessionData = jatos.jQuery.parseJSON(batchMsg.data);
+					batchSessionData = batchMsg.data;
 				}
 			}
 			if (typeof batchMsg.version !== 'undefined') {

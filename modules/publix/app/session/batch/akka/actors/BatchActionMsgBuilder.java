@@ -1,5 +1,7 @@
 package session.batch.akka.actors;
 
+import java.io.IOException;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -97,11 +99,23 @@ public class BatchActionMsgBuilder {
 			BatchAction action, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(BatchActionMsg.ACTION, action.toString());
-		if (Strings.isNullOrEmpty(batch.getBatchSessionData())) {
-			objectNode.put(BatchActionMsg.BATCH_SESSION_DATA, "{}");
-		} else {
-			objectNode.put(BatchActionMsg.BATCH_SESSION_DATA,
-					batch.getBatchSessionData());
+		try {
+			if (Strings.isNullOrEmpty(batch.getBatchSessionData())) {
+				objectNode.set(BatchActionMsg.BATCH_SESSION_DATA,
+						Json.mapper().createObjectNode());
+			} else {
+				objectNode.set(BatchActionMsg.BATCH_SESSION_DATA,
+						Json.mapper().readTree(batch.getBatchSessionData()));
+			}
+		} catch (IOException e) {
+			LOGGER.debug(
+					".buildSessionActionMsg:"
+							+ " batchId {}, clientsVersion {},"
+							+ " batchSessionData {}, error: {}",
+					batch.getId(), batch.getBatchSessionVersion(),
+					batch.getBatchSessionData(), e.getMessage());
+			objectNode.set(BatchActionMsg.BATCH_SESSION_DATA,
+					Json.mapper().createObjectNode());
 		}
 		objectNode.put(BatchActionMsg.BATCH_SESSION_VERSION,
 				batch.getBatchSessionVersion());

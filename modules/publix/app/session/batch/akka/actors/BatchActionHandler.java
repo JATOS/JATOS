@@ -134,7 +134,7 @@ public class BatchActionHandler {
 		JsonPatch batchSessionPatch = JsonPatch.fromJson(batchSessionPatchNode);
 		JsonNode currentBatchSessionData;
 		if (Strings.isNullOrEmpty(batch.getBatchSessionData())) {
-			currentBatchSessionData = Json.mapper().readTree("{}");
+			currentBatchSessionData = Json.mapper().createObjectNode();
 		} else {
 			currentBatchSessionData = Json.mapper()
 					.readTree(batch.getBatchSessionData());
