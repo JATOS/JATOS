@@ -5,6 +5,7 @@ import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 
 import daos.common.BatchDao;
 import models.common.Batch;
@@ -96,13 +97,17 @@ public class BatchActionMsgBuilder {
 			BatchAction action, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(BatchActionMsg.ACTION, action.toString());
-		objectNode.put(BatchActionMsg.BATCH_SESSION_DATA,
-				batch.getBatchSessionData());
+		if (Strings.isNullOrEmpty(batch.getBatchSessionData())) {
+			objectNode.put(BatchActionMsg.BATCH_SESSION_DATA, "{}");
+		} else {
+			objectNode.put(BatchActionMsg.BATCH_SESSION_DATA,
+					batch.getBatchSessionData());
+		}
 		objectNode.put(BatchActionMsg.BATCH_SESSION_VERSION,
 				batch.getBatchSessionVersion());
 		return new BatchActionMsg(objectNode, tellWhom);
 	}
-	
+
 	public BatchActionMsg buildError(long batchId, String errorMsg,
 			TellWhom tellWhom) {
 		return buildErrorActionMsg(errorMsg, tellWhom);
