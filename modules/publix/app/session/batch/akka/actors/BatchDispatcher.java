@@ -113,10 +113,10 @@ public class BatchDispatcher extends UntypedActor {
 
 	/**
 	 * Registers the given channel and sends an OPENED action batch message to
-	 * everyone in this group.
+	 * everyone in this batch.
 	 */
 	private void registerChannel(RegisterChannel registerChannel) {
-		LOGGER.debug(".registerChannel: groupResultId {}, studyResultId {}",
+		LOGGER.debug(".registerChannel: batchId {}, studyResultId {}",
 				batchId, registerChannel.studyResultId);
 		long studyResultId = registerChannel.studyResultId;
 		batchRegistry.register(studyResultId, sender());
@@ -127,7 +127,7 @@ public class BatchDispatcher extends UntypedActor {
 
 	/**
 	 * Unregisters the given channel and sends an CLOSED action batch message to
-	 * everyone in this batch. Then if the group is now empty it sends a
+	 * everyone in this batch. Then if the batch is now empty it sends a
 	 * PoisonPill to this BatchDispatcher itself.
 	 */
 	private void unregisterChannel(UnregisterChannel unregisterChannel) {
