@@ -90,6 +90,11 @@ public class Component {
 	@JsonView({ JsonUtils.JsonForIO.class })
 	private String comments;
 
+	/**
+	 * Data in JSON format: every component run of this Component gets access to
+	 * them. They can be changed in the GUI but not via jatos.js. Can be used
+	 * for initial data and configuration.
+	 */
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	@Lob
 	private String jsonData;

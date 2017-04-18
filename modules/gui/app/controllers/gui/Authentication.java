@@ -3,7 +3,6 @@ package controllers.gui;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import controllers.gui.Authentication.Login;
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import general.common.MessagesStrings;

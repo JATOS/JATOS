@@ -107,7 +107,9 @@ public class Study {
 	private String comments;
 
 	/**
-	 * Data in JSON format that are responded after public APIs 'getData' call.
+	 * Data in JSON format: every study run of this Study gets access to them.
+	 * They can be changed in the GUI but not via jatos.js. Can be used for
+	 * initial data and configuration.
 	 */
 	@Lob
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
