@@ -1,12 +1,22 @@
 /**
  * jatos.js (JATOS JavaScript Library)
  * http://www.jatos.org
- * Author Kristian Lange 2014 - 2016
+ * Author Kristian Lange 2014 - 2017
  * Licensed under Apache License 2.0
  * 
  * Uses plugin jquery.ajax-retry:
  * https://github.com/johnkpaul/jquery-ajax-retry
  * Copyright (c) 2012 John Paul
+ * Licensed under the MIT license.
+ * 
+ * Uses Starcounter-Jack/JSON-Patch:
+ * https://github.com/Starcounter-Jack/JSON-Patch
+ * Copyright (c) 2013, 2014 Joachim Wester
+ * Licensed under the MIT license.
+ * 
+ * Uses jsonpointer.js:
+ * https://github.com/alexeykuzmin/jsonpointer.js
+ * Copyright (c) 2013 Alexey Kuzmin
  * Licensed under the MIT license.
  */
 
@@ -20,7 +30,7 @@ var jatos = {};
 	/**
 	 * jatos.js version
 	 */
-	jatos.version = "2.3.1";
+	jatos.version = "3.1.1";
 	/**
 	 * How long should JATOS wait until to retry the HTTP call. Warning: There is a
 	 * general problem with JATOS and HTTP retries. In many cases a JATOS regards a
@@ -99,13 +109,16 @@ var jatos = {};
 	 */
 	jatos.groupChannels = [];
 	/**
-	 * Group session data shared in between members of the group. 
+	 * Group session data: shared in between members of the group
 	 */
 	jatos.groupSessionData = {};
+	/**
+	 * Batch session data: shared in between study runs of the same batch 
+	 */
 	var batchSessionData = {};
 	/**
-	 * How long in ms should jatos.js wait for an answer after a group session
-	 * upload.
+	 * How long in ms should jatos.js wait for an answer after a group or batch
+	 * session upload.
 	 */
 	jatos.sessionTimeoutTime = 10000;
 	/**
@@ -115,14 +128,13 @@ var jatos = {};
 	var groupSessionPatchFrozen;
 	var groupSessionObserver;
 	/**
-	 * Timeout for group session upload: How long to we wait for an answer from
-	 * JATOS.
+	 * JS timeout objects for group and batch session
 	 */
 	var groupSessionTimeout;
 	var batchSessionTimeout;
 	/**
-	 * Version of the current group session data. This is used to prevent concurrent
-	 * changes of the data.
+	 * Version of the current group and batch session data. This is used to prevent
+	 * concurrent changes of the data.
 	 */
 	var groupSessionVersion;
 	var batchSessionVersion;
@@ -131,6 +143,9 @@ var jatos = {};
 	 * Not to be confused with 'jatos.groupChannels'. Accessible only by jatos.js.
 	 */
 	var groupChannel;
+	/**
+	 * Batch channel WebSocket: exchange date between study runs of a batch
+	 */
 	var batchChannel;
 	/**
 	 * WebSocket support by the browser is needed for group channel.
@@ -192,7 +207,8 @@ var jatos = {};
 		var head = document.getElementsByTagName('head')[0],
 			done = false;
 		script.onload = script.onreadystatechange = function () {
-			if (!done && (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')) {
+			if (!done && (!this.readyState || this.readyState === 'loaded' ||
+					this.readyState === 'complete')) {
 				done = true;
 				onSuccess();
 				script.onload = script.onreadystatechange = null;
@@ -212,8 +228,9 @@ var jatos = {};
 		jatos.jQuery.when(
 			// Plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
 			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/jquery.ajax-retry.min.js"),
-			// JSON path library https://github.com/Starcounter-Jack/JSON-Patch
+			// JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
 			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/json-patch-duplex.js"),
+			// JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
 			jatos.jQuery.getScript("/public/lib/jatos-publix/javascripts/jsonpointer.js"),
 			jatos.jQuery.Deferred(function (deferred) {
 				jatos.jQuery(deferred.resolve);
@@ -227,7 +244,6 @@ var jatos = {};
 	 * Initialising jatos.js
 	 */
 	function initJatos() {
-
 		if (!jQueryExists()) {
 			return;
 		}
@@ -337,15 +353,12 @@ var jatos = {};
 			try {
 				jatos.studySessionData = jatos.jQuery.parseJSON(initData.studySessionData);
 			} catch (e) {
-				jatos.studySessionData = "Error parsing JSON";
-				if (onJatosError) {
-					onJatosError(e);
-				}
+				callingOnError(null, error);
 			}
 
 			// Study properties
 			jatos.studyProperties = initData.studyProperties;
-			if (jatos.studyProperties.jsonData) {
+			if (typeof jatos.studyProperties.jsonData !== 'undefined') {
 				jatos.studyJsonInput = jatos.jQuery
 					.parseJSON(jatos.studyProperties.jsonData);
 			} else {
@@ -362,7 +375,7 @@ var jatos = {};
 
 			// Component properties
 			jatos.componentProperties = initData.componentProperties;
-			if (jatos.componentProperties.jsonData) {
+			if (typeof jatos.componentProperties.jsonData !== 'undefined') {
 				jatos.componentJsonInput = jatos.jQuery
 					.parseJSON(jatos.componentProperties.jsonData);
 			} else {
@@ -388,7 +401,7 @@ var jatos = {};
 			//		OPEN       1 The connection is open and ready to communicate.
 			//		CLOSING    2 The connection is in the process of closing.
 			//		CLOSED     3 The connection is closed or couldn't be opened.
-			if (!jatos.jQuery || isDeferredPending(openingBatchChannelDeferred) ||
+			if (isDeferredPending(openingBatchChannelDeferred) ||
 				(batchChannel && batchChannel.readyState != 3)) {
 				return;
 			}
@@ -449,7 +462,7 @@ var jatos = {};
 				batchSessionVersion = batchMsg.version;
 			}
 
-			if (batchMsg.action) {
+			if (typeof batchMsg.action !== 'undefined') {
 				handleBatchAction(batchMsg);
 			}
 		}
@@ -581,7 +594,7 @@ var jatos = {};
 	 * other study currently running in this batch
 	 */
 	function sendBatchSessionPatch(patch) {
-		if (!batchChannel || batchChannel.readyState != 1) {
+		if (!batchChannel || batchChannel.readyState !== 1) {
 			callingOnError(null, "No open batch channel");
 			return;
 		}
@@ -671,7 +684,7 @@ var jatos = {};
 	 * @return {jQuery.Deferred}
 	 */
 	jatos.submitResultData = function (resultData, onSuccess, onError) {
-		if (!jQueryExists() || isDeferredPending(submittingResultDataDeferred)) {
+		if (isDeferredPending(submittingResultDataDeferred)) {
 			return;
 		}
 		submittingResultDataDeferred = jatos.jQuery.Deferred();
@@ -715,9 +728,6 @@ var jatos = {};
 	 * @return {jQuery.Deferred}
 	 */
 	jatos.setStudySessionData = function (studySessionData, onComplete) {
-		if (!jQueryExists()) {
-			return;
-		}
 		var deferred = jatos.jQuery.Deferred();
 		var studySessionDataStr;
 		try {
@@ -840,7 +850,7 @@ var jatos = {};
 	 *            Function} onError - Function to be called in case of error
 	 */
 	jatos.endComponent = function (successful, errorMsg, onSuccess, onError) {
-		if (!jQueryExists() || isDeferredPending(endingDeferred)) {
+		if (isDeferredPending(endingDeferred)) {
 			return;
 		}
 		endingDeferred = jatos.jQuery.Deferred();
@@ -927,7 +937,7 @@ var jatos = {};
 		//		OPEN       1 The connection is open and ready to communicate.
 		//		CLOSING    2 The connection is in the process of closing.
 		//		CLOSED     3 The connection is closed or couldn't be opened.
-		if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup ||
+		if (joiningGroup || reassigningGroup || leavingGroup ||
 			!callbacks || (groupChannel && groupChannel.readyState != 3)) {
 			return;
 		}
@@ -986,33 +996,33 @@ var jatos = {};
 	 * Update the group variables that usually come with an group action
 	 */
 	function updateGroupVars(groupMsg, callbacks) {
-		if (groupMsg.groupResultId) {
+		if (typeof groupMsg.groupResultId !== 'undefined') {
 			jatos.groupResultId = groupMsg.groupResultId.toString();
 			// Group member ID is equal to study result ID
 			jatos.groupMemberId = jatos.studyResultId;
 		}
-		if (groupMsg.groupState) {
+		if (typeof groupMsg.groupState !== 'undefined') {
 			jatos.groupState = groupMsg.groupState;
 		}
 		try {
-			if (groupMsg.members) {
+			if (typeof groupMsg.members !== 'undefined') {
 				jatos.groupMembers = groupMsg.members;
 			}
-			if (groupMsg.channels) {
+			if (typeof groupMsg.channels !== 'undefined') {
 				jatos.groupChannels = groupMsg.channels;
 			}
-			if (groupMsg.groupSessionPatches) {
+			if (typeof groupMsg.groupSessionPatches !== 'undefined') {
 				jsonpatch.apply(jatos.groupSessionData, groupMsg.groupSessionPatches);
 				jsonpatch.generate(groupSessionObserver); // reset observer
 			}
-			if (groupMsg.groupSessionData) {
+			if (typeof groupMsg.groupSessionData !== 'undefined') {
 				if (groupSessionObserver) {
 					groupSessionObserver.unobserve();
 				}
 				jatos.groupSessionData = jatos.jQuery.parseJSON(groupMsg.groupSessionData);
 				groupSessionObserver = jsonpatch.observe(jatos.groupSessionData);
 			}
-			if (groupMsg.groupSessionVersion) {
+			if (typeof groupMsg.groupSessionVersion !== 'undefined') {
 				groupSessionVersion = groupMsg.groupSessionVersion;
 			}
 		} catch (error) {
@@ -1110,7 +1120,7 @@ var jatos = {};
 	 *            reassignment was unsuccessful. 
 	 */
 	jatos.reassignGroup = function (onSuccess, onFail) {
-		if (!jatos.jQuery || joiningGroup || reassigningGroup || leavingGroup ||
+		if (joiningGroup || reassigningGroup || leavingGroup ||
 			(groupChannel && groupChannel.readyState != 1)) {
 			return;
 		}
@@ -1223,9 +1233,7 @@ var jatos = {};
 			try {
 				groupChannel.send(JSON.stringify(msgObj));
 			} catch (error) {
-				if (onJatosError) {
-					onJatosError(error);
-				}
+				callingOnError(null, error);
 			}
 		}
 	};
@@ -1327,7 +1335,7 @@ var jatos = {};
 	 * @param {optional Function} onError - Function to be called in case of error.
 	 */
 	jatos.leaveGroup = function (onSuccess, onError) {
-		if (!jQueryExists() || joiningGroup || reassigningGroup || leavingGroup) {
+		if (joiningGroup || reassigningGroup || leavingGroup) {
 			return;
 		}
 		leavingGroup = true;
@@ -1366,7 +1374,7 @@ var jatos = {};
 	 * @return {jQuery.Deferred}
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
-		if (!jQueryExists() || isDeferredPending(abortingDeferred)) {
+		if (isDeferredPending(abortingDeferred)) {
 			return;
 		}
 		abortingDeferred = jatos.jQuery.Deferred();
@@ -1436,7 +1444,7 @@ var jatos = {};
 	 * @return {jQuery.Deferred}
 	 */
 	jatos.endStudyAjax = function (successful, errorMsg, onSuccess, onError) {
-		if (!jQueryExists() || isDeferredPending(endingDeferred)) {
+		if (isDeferredPending(endingDeferred)) {
 			return;
 		}
 		endingDeferred = jatos.jQuery.Deferred();
@@ -1513,9 +1521,6 @@ var jatos = {};
 	 * Logs a message within the JATOS log on the server side.
 	 */
 	jatos.log = function (logMsg) {
-		if (!jQueryExists()) {
-			return;
-		}
 		jatos.jQuery.ajax({
 			url: "/publix/" + jatos.studyId + "/" + jatos.componentId +
 				"/log" + "?srid=" + jatos.studyResultId,
