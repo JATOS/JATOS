@@ -349,6 +349,16 @@ var jatos = {};
 		 * Puts the ajax response into the different jatos variables.
 		 */
 		function setInitData(initData) {
+			// Batch properties
+			jatos.batchProperties = initData.batchProperties;
+			if (typeof jatos.batchProperties.jsonData !== 'undefined') {
+				jatos.batchJsonInput = jatos.jQuery
+					.parseJSON(jatos.batchProperties.jsonData);
+			} else {
+				jatos.batchJsonInput = {};
+			}
+			delete jatos.batchProperties.jsonData;
+			
 			// Study session data
 			try {
 				jatos.studySessionData = jatos.jQuery.parseJSON(initData.studySessionData);
@@ -365,9 +375,6 @@ var jatos = {};
 				jatos.studyJsonInput = {};
 			}
 			delete jatos.studyProperties.jsonData;
-
-			// Batch properties
-			jatos.batchProperties = initData.batchProperties;
 
 			// Study's component list and study length
 			jatos.componentList = initData.componentList;
