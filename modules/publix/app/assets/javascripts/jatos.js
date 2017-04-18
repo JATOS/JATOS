@@ -361,7 +361,7 @@ var jatos = {};
 			
 			// Study session data
 			try {
-				jatos.studySessionData = jatos.jQuery.parseJSON(initData.studySessionData);
+				jatos.studySessionData = JSON.parse(initData.studySessionData);
 			} catch (e) {
 				callingOnError(null, error);
 			}
@@ -443,7 +443,7 @@ var jatos = {};
 		function handleBatchMsg(msg) {
 			var batchMsg;
 			try {
-				batchMsg = jatos.jQuery.parseJSON(msg);
+				batchMsg = JSON.parse(msg);
 			} catch (error) {
 				callingOnError(null, error);
 				return;
@@ -988,7 +988,7 @@ var jatos = {};
 	 * from the JATOS server is always in JSON format.
 	 */
 	function handleGroupMsg(msg, callbacks) {
-		var groupMsg = jatos.jQuery.parseJSON(msg);
+		var groupMsg = JSON.parse(msg);
 		updateGroupVars(groupMsg, callbacks);
 		// Now handle the action and map them to callbacks that were given as
 		// parameter to joinGroup
@@ -1026,7 +1026,7 @@ var jatos = {};
 				if (groupSessionObserver) {
 					groupSessionObserver.unobserve();
 				}
-				jatos.groupSessionData = jatos.jQuery.parseJSON(groupMsg.groupSessionData);
+				jatos.groupSessionData = JSON.parse(groupMsg.groupSessionData);
 				groupSessionObserver = jsonpatch.observe(jatos.groupSessionData);
 			}
 			if (typeof groupMsg.groupSessionVersion !== 'undefined') {
