@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
@@ -30,6 +31,7 @@ import play.data.Form;
 import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.libs.F.Function3;
+import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.gui.AuthenticationService;
@@ -156,6 +158,29 @@ public class Batches extends Controller {
 
 		batchService.createAndPersistBatch(batch, study);
 		return ok(batch.getId().toString());
+	}
+
+	/**
+	 * Ajax GET request to get the batch session data as String
+	 * 
+	 * @throws JatosGuiException
+	 */
+	@Transactional
+	@Authenticated
+	public Result batchSessionData(Long studyId, Long batchId)
+			throws JatosGuiException {
+		LOGGER.debug(".batchSessionData: studyId " + studyId + ", batchId "
+				+ batchId);
+		Study study = studyDao.findById(studyId);
+		Batch batch = batchDao.findById(batchId);
+		User loggedInUser = authenticationService.getLoggedInUser();
+		try {
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStandardForBatch(batch, study, batchId);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+		return ok(batch.getBatchSessionData());
 	}
 
 	/**
