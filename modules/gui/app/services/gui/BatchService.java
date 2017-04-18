@@ -47,7 +47,8 @@ public class BatchService {
 	}
 
 	/**
-	 * Clones a Batch but does not persists
+	 * Clones a Batch but does not persists. Doesn't copy batch session data and
+	 * version.
 	 */
 	public Batch clone(Batch batch) {
 		Batch clone = new Batch();
@@ -60,6 +61,7 @@ public class BatchService {
 		clone.setMaxTotalWorkers(batch.getMaxTotalWorkers());
 		batch.getWorkerList().forEach(clone::addWorker);
 		batch.getAllowedWorkerTypes().forEach(clone::addAllowedWorkerType);
+		clone.setJsonData(batch.getJsonData());
 		return clone;
 	}
 
@@ -116,17 +118,9 @@ public class BatchService {
 
 	/**
 	 * Updates the given batch in the database with the given BatchProperties
-	 * but only if both batch session versions are equal.
 	 */
 	public void updateBatch(Batch batch, BatchProperties updatedBatchProps)
 			throws BadRequestException {
-		if (batch.getBatchSessionVersion() != updatedBatchProps
-				.getBatchSessionVersion()) {
-			throw new BadRequestException(
-					"The batch session was altered in between and couldn't be saved.");
-		} else {
-			batch.setBatchSessionVersion(batch.getBatchSessionVersion() + 1);
-		}
 		batch.setTitle(updatedBatchProps.getTitle());
 		batch.setActive(updatedBatchProps.isActive());
 		batch.setMaxActiveMembers(updatedBatchProps.getMaxActiveMembers());
@@ -136,7 +130,7 @@ public class BatchService {
 		updatedBatchProps.getAllowedWorkerTypes()
 				.forEach(batch::addAllowedWorkerType);
 		batch.setComments(updatedBatchProps.getComments());
-		batch.setBatchSessionData(updatedBatchProps.getBatchSessionData());
+		batch.setJsonData(updatedBatchProps.getJsonData());
 		batchDao.update(batch);
 	}
 
@@ -153,8 +147,7 @@ public class BatchService {
 		props.setMaxTotalWorkers(batch.getMaxTotalWorkers());
 		batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
 		props.setComments(batch.getComments());
-		props.setBatchSessionData(batch.getBatchSessionData());
-		props.setBatchSessionVersion(batch.getBatchSessionVersion());
+		props.setJsonData(batch.getJsonData());
 		return props;
 	}
 
@@ -179,7 +172,7 @@ public class BatchService {
 		}
 		props.getAllowedWorkerTypes().forEach(batch::addAllowedWorkerType);
 		batch.setComments(props.getComments());
-		batch.setBatchSessionData(props.getBatchSessionData());
+		batch.setJsonData(props.getJsonData());
 		return batch;
 	}
 

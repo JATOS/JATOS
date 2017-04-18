@@ -124,12 +124,20 @@ public class Batch {
 	private String comments;
 
 	/**
+	 * Data in JSON format: every study run of this Batch gets access to them.
+	 * They can be changed in the GUI but not via jatos.js. Can be used for
+	 * initial data and configuration.
+	 */
+	@Lob
+	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
+	private String jsonData;
+
+	/**
 	 * Temporary, global data storage that can be accessed via jatos.js to
 	 * exchange data between all study runs of this batch. All members of this
 	 * batch share the same batchSessionData. It's stored as a normal string in
 	 * the database but jatos.js converts it into JSON. We use versioning to
-	 * prevent concurrent changes of the data. It's initialised with an empty
-	 * JSON object.
+	 * prevent concurrent changes of the data.
 	 */
 	@JsonIgnore
 	@Lob
@@ -260,6 +268,14 @@ public class Batch {
 
 	public void setComments(String comments) {
 		this.comments = comments;
+	}
+	
+	public String getJsonData() {
+		return jsonData;
+	}
+
+	public void setJsonData(String jsonData) {
+		this.jsonData = JsonUtils.asStringForDB(jsonData);
 	}
 
 	public String getBatchSessionData() {

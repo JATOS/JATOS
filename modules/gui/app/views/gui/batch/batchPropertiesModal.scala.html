@@ -82,14 +82,13 @@
 					</div>
 					
 					<div class="form-group row">
-						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.BATCH_SESSION_DATA">Batch session&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" aria-hidden="true"></span>
-							<br><button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
+						<label class="control-label col-xs-3" for="@models.gui.BatchProperties.JSON_DATA">JSON input&nbsp;<span class="glyphicon glyphicon-info-sign gray-light" data-toggle="tooltip" title="Your component scripts can ask for this input data. If you need a larger field you can increase the size with the button in the bottom-right corner. You can also leave it empty if not needed." aria-hidden="true"></span>
+							<button type="button" class="btn btn-default btn-sm prettyButton">Pretty</button>
 						</label>
 						<div class="col-xs-9">
-							<textarea rows="6" class="form-control @models.gui.BatchProperties.BATCH_SESSION_DATA" id="@models.gui.BatchProperties.BATCH_SESSION_DATA" name="@models.gui.BatchProperties.BATCH_SESSION_DATA" placeholder="Put your JSON string here"></textarea>
+							<textarea rows="6" class="form-control @models.gui.BatchProperties.JSON_DATA" id="@models.gui.BatchProperties.JSON_DATA" name="@models.gui.BatchProperties.JSON_DATA" placeholder="Put your JSON string here"></textarea>
 						</div>
 					</div>
-					<input type="hidden" class="form-control @models.gui.BatchProperties.BATCH_SESSION_VERSION" name="@models.gui.BatchProperties.BATCH_SESSION_VERSION" required>
 					
 					<div class="well groupProperties">
 						<h4>Group Properties</h4>
@@ -179,8 +178,13 @@ function fillbatchPropertiesForm(properties) {
 	$.each(properties['allowedWorkerTypes'], function(index, workerType) {
 		$('#batchPropertiesModal' + ' .' + workerType).prop('checked', true);
 	});
-	$('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA').val(properties['@models.gui.BatchProperties.BATCH_SESSION_DATA']);
-	$('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_VERSION').val(properties['@models.gui.BatchProperties.BATCH_SESSION_VERSION']);
+	try {
+		var jsonInput = (properties['@models.gui.BatchProperties.JSON_DATA']) ? properties['@models.gui.BatchProperties.JSON_DATA'] : "";
+		var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+		$('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA').val(jsonInputPretty);
+	} catch (e) {
+		$('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA').val("");
+	}
 	// Group properties
 	@if(!study.isGroupStudy) {
 		$('#batchPropertiesModal .groupProperties').fadeTo(0, 0.5);
@@ -217,13 +221,13 @@ function setInputGroupWithCheckbox(modal, checkboxVarName, inputVarName, propert
 }
 
 $("#batchPropertiesForm .prettyButton").click(function(event) {
-	var sessionJson = $('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA').val();
-	removeSingleFormError('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA');
+	var jsonInput = $('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA').val();
+	removeSingleFormError('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA');
 	try {
-		var sessionJsonPretty = JSON.stringify(JSON.parse(sessionJson), null, 2);
-		$('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA').val(sessionJsonPretty);
+		var jsonInputPretty = JSON.stringify(JSON.parse(jsonInput), null, 2);
+		$('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA').val(jsonInputPretty);
 	} catch (e) {
-		showSingleFormError('#batchPropertiesModal .@models.gui.BatchProperties.BATCH_SESSION_DATA', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
+		showSingleFormError('#batchPropertiesModal .@models.gui.BatchProperties.JSON_DATA', "@general.common.MessagesStrings.INVALID_JSON_FORMAT");
 	}
 });
 

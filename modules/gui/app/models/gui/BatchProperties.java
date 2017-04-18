@@ -39,8 +39,7 @@ public class BatchProperties {
 	public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
 	public static final String WORKERS = "workers";
 	public static final String COMMENTS = "comments";
-	public static final String BATCH_SESSION_DATA = "batchSessionData";
-	public static final String BATCH_SESSION_VERSION = "batchSessionVersion";
+	public static final String JSON_DATA = "jsonData";
 
 	private Long id;
 
@@ -103,21 +102,11 @@ public class BatchProperties {
 	private String comments;
 
 	/**
-	 * Temporary, global data storage that can be accessed via jatos.js to
-	 * exchange data between all study runs of this batch. All members of this
-	 * batch share the same batchSessionData. It's stored as a normal string in
-	 * the database but jatos.js converts it into JSON. We use versioning to
-	 * prevent concurrent changes of the data. It's initialised with an empty
-	 * JSON object.
+	 * Data in JSON format: every study run of this Batch gets access to them.
+	 * They can be changed in the GUI but not via jatos.js. Can be used for
+	 * initial data and configuration.
 	 */
-	private String batchSessionData;
-
-	/**
-	 * Current version of the batchSessionVersion. With each change of the data
-	 * it is increased by 1. We use versioning to prevent concurrent changes of
-	 * the data.
-	 */
-	private Long batchSessionVersion;
+	private String jsonData;
 
 	public void setId(Long id) {
 		this.id = id;
@@ -219,20 +208,12 @@ public class BatchProperties {
 		this.comments = comments;
 	}
 
-	public String getBatchSessionData() {
-		return batchSessionData;
+	public String getJsonData() {
+		return jsonData;
 	}
 
-	public void setBatchSessionData(String batchSessionData) {
-		this.batchSessionData = batchSessionData;
-	}
-
-	public Long getBatchSessionVersion() {
-		return batchSessionVersion;
-	}
-
-	public void setBatchSessionVersion(Long batchSessionVersion) {
-		this.batchSessionVersion = batchSessionVersion;
+	public void setJsonData(String jsonData) {
+		this.jsonData = jsonData;
 	}
 
 	@Override
@@ -280,9 +261,8 @@ public class BatchProperties {
 			errorList.add(new ValidationError(COMMENTS,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (batchSessionData != null
-				&& !JsonUtils.isValidJSON(batchSessionData)) {
-			errorList.add(new ValidationError(BATCH_SESSION_DATA,
+		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
+			errorList.add(new ValidationError(JSON_DATA,
 					MessagesStrings.INVALID_JSON_FORMAT));
 		}
 
