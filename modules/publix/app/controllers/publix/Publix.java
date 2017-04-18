@@ -206,11 +206,14 @@ public abstract class Publix<T extends Worker> extends Controller
 		// but normal HTTP responses.
 		StudyResult studyResult = jpa.withTransaction(() -> {
 			try {
-				IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-				T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+				IdCookieModel idCookie = idCookieService
+						.getIdCookie(studyResultId);
+				T worker = publixUtils
+						.retrieveTypedWorker(idCookie.getWorkerId());
 				Study study = publixUtils.retrieveStudy(studyId);
 				Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-				studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+				studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
+						batch);
 				return publixUtils.retrieveStudyResult(worker, study,
 						studyResultId);
 			} catch (NotFoundPublixException e) {
@@ -235,22 +238,6 @@ public abstract class Publix<T extends Worker> extends Controller
 		} else {
 			return WebSocketBuilder.reject(internalServerError());
 		}
-	}
-
-	@Override
-	public Result closeBatch(Long studyId, Long studyResultId)
-			throws PublixException {
-		LOGGER.info(".closeBatch: studyId " + studyId + ", studyResultId "
-				+ studyResultId);
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		batchChannelService.closeBatchChannel(studyResult, batch);
-		return ok();
 	}
 
 	@Override

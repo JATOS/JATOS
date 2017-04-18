@@ -72,10 +72,23 @@ public interface IPublix {
 	Result getInitData(Long studyId, Long componentId, Long studyResultId)
 			throws PublixException, IOException;
 
+	/**
+	 * HTTP type: WebSocket
+	 * 
+	 * Opens a WebSocket for the batch channel that is used to exchange data
+	 * (batch session data) between study runs of a batch. All batch session
+	 * data are stored in a Batch model and the batch channels will be handled
+	 * by a BatchDispatcher which uses Akka.
+	 * 
+	 * @param studyId
+	 *            Study's ID
+	 * @param studyResultId
+	 *            StudyResult's ID
+	 * @return WebSocket that transports JSON strings.
+	 * @throws PublixException
+	 */
 	LegacyWebSocket<JsonNode> openBatch(Long studyId, Long studyResultId)
 			throws PublixException;
-
-	Result closeBatch(Long studyId, Long studyResultId) throws PublixException;
 
 	/**
 	 * HTTP type: WebSocket
