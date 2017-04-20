@@ -305,7 +305,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
 		}
 		idCookieService.discardIdCookie(studyResult.getId());
 		if (HttpUtils.isAjax()) {
-			return ok(errorMsg);
+			return ok();
 		} else {
 			if (errorMsg != null) {
 				Controller.flash("info",
