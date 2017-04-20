@@ -1,13 +1,17 @@
 package services.publix.group.akka.actors.services;
 
+import java.io.IOException;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
 
 import models.common.GroupResult;
 import models.common.StudyResult;
+import play.Logger;
+import play.Logger.ALogger;
 import play.libs.Json;
 import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
 import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.BatchAction;
@@ -19,6 +23,9 @@ import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMs
  * @author Kristian Lange (2016)
  */
 public class GroupActionMsgJsonBuilder {
+
+	private static final ALogger LOGGER = Logger
+			.of(GroupActionMsgJsonBuilder.class);
 
 	/**
 	 * Creates a GroupActionMsg. The GroupActionMsg includes a whole bunch of
@@ -78,12 +85,31 @@ public class GroupActionMsgJsonBuilder {
 		}
 		objectNode.set(GroupActionMsg.CHANNELS, channels);
 		if (sessionData) {
-			objectNode.put(GroupActionMsg.GROUP_SESSION_DATA,
-					groupResult.getGroupSessionData());
+			objectNode.set(GroupActionMsg.GROUP_SESSION_DATA,
+					getSessionData(groupResult));
 		}
 		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
 				groupResult.getGroupSessionVersion());
 		return new GroupActionMsg(objectNode, tellWhom);
+	}
+
+	private static JsonNode getSessionData(GroupResult groupResult) {
+		try {
+			if (Strings.isNullOrEmpty(groupResult.getGroupSessionData())) {
+				return Json.mapper().createObjectNode();
+			} else {
+				return Json.mapper()
+						.readTree(groupResult.getGroupSessionData());
+			}
+		} catch (IOException e) {
+			LOGGER.error(
+					".getSessionData: invalid session data in DB -"
+							+ " groupResultId {}, groupSessionVersion {},"
+							+ " groupSessionData {}, error: {}",
+					groupResult.getId(), groupResult.getGroupSessionVersion(),
+					groupResult.getGroupSessionData(), e.getMessage());
+			return Json.mapper().createObjectNode();
+		}
 	}
 
 	/**
@@ -95,9 +121,9 @@ public class GroupActionMsgJsonBuilder {
 	 * @param GroupResult
 	 *            The GroupResult of this group
 	 */
-	public static GroupActionMsg buildSessionPatchActionMsg(GroupResult groupResult, long studyResultId,
-			JsonNode groupSessionPatchNode,
-			TellWhom tellWhom) {
+	public static GroupActionMsg buildSessionPatchActionMsg(
+			GroupResult groupResult, long studyResultId,
+			JsonNode groupSessionPatchNode, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, BatchAction.SESSION.toString());
 		objectNode.set(GroupActionMsg.GROUP_SESSION_PATCHES,

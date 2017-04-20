@@ -72,12 +72,7 @@ public class BatchActionHandler {
 	private BatchActionMsgBundle handleBatchActionSessionPatch(long batchId,
 			long studyResultId, Registry batchRegistry, ObjectNode jsonNode) {
 		return jpa.withTransaction(() -> {
-			Long clientsVersion = Long.valueOf(jsonNode
-					.get(BatchActionMsg.BATCH_SESSION_VERSION).asText());
-			JsonNode batchSessionPatchNode = jsonNode
-					.get(BatchActionMsg.BATCH_SESSION_PATCHES);
 
-			// Get batch from DB
 			Batch batch = batchDao.findById(batchId);
 			if (batch == null) {
 				String errorMsg = "Couldn't find batch with ID " + batchId
@@ -87,30 +82,33 @@ public class BatchActionHandler {
 				return BatchActionMsgBundle.build(msg);
 			}
 
-			// Apply patch
+			Long clientsVersion;
+			JsonNode batchSessionPatchNode;
 			JsonNode patchedSessionData;
 			try {
+				clientsVersion = Long.valueOf(jsonNode
+						.get(BatchActionMsg.BATCH_SESSION_VERSION).asText());
+				batchSessionPatchNode = jsonNode
+						.get(BatchActionMsg.BATCH_SESSION_PATCHES);
 				patchedSessionData = patchBatchSessionData(batch,
 						batchSessionPatchNode);
-			} catch (IOException | JsonPatchException e) {
 				LOGGER.debug(
 						".handleBatchActionSessionPatch:"
 								+ " batchId {}, clientsVersion {},"
-								+ " batchSessionPatch {}, error: {}",
+								+ " batchSessionPatch {}, updatedSessionData {}",
 						batchId, clientsVersion,
-						Json.stringify(batchSessionPatchNode), e.getMessage());
+						Json.stringify(batchSessionPatchNode),
+						Json.stringify(patchedSessionData));
+			} catch (Exception e) {
+				LOGGER.warn(
+						".handleBatchActionSessionPatch:"
+								+ " batchId {}, jsonNode {}, {}: {}",
+						batchId, Json.stringify(jsonNode),
+						e.getClass().getName(), e.getMessage());
 				BatchActionMsg msg = batchActionMsgBuilder.buildSimple(batch,
 						BatchAction.SESSION_FAIL, TellWhom.SENDER_ONLY);
 				return BatchActionMsgBundle.build(msg);
 			}
-
-			LOGGER.debug(
-					".handleBatchActionSessionPatch:"
-							+ " batchId {}, clientsVersion {},"
-							+ " batchSessionPatch {}, updatedSessionData {}",
-					batchId, clientsVersion,
-					Json.stringify(batchSessionPatchNode),
-					Json.stringify(patchedSessionData));
 
 			boolean success = checkVersionAndPersistBatchSessionData(batch,
 					clientsVersion, patchedSessionData);
@@ -126,6 +124,7 @@ public class BatchActionHandler {
 				return BatchActionMsgBundle.build(msg);
 			}
 		});
+
 	}
 
 	private JsonNode patchBatchSessionData(Batch batch,

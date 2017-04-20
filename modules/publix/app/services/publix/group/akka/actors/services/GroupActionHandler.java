@@ -76,12 +76,6 @@ public class GroupActionHandler {
 			long groupResultId, long studyResultId, Registry groupRegistry,
 			ObjectNode jsonNode) {
 		return jpa.withTransaction(() -> {
-			Long clientsVersion = Long.valueOf(jsonNode
-					.get(GroupActionMsg.GROUP_SESSION_VERSION).asText());
-			JsonNode groupSessionPatchNode = jsonNode
-					.get(GroupActionMsg.GROUP_SESSION_PATCHES);
-
-			// Get group result from DB
 			GroupResult groupResult = groupResultDao.findById(groupResultId);
 			if (groupResult == null) {
 				String errorMsg = "Couldn't find group result with ID "
@@ -92,33 +86,41 @@ public class GroupActionHandler {
 				return GroupActionMsgBundle.build(msg);
 			}
 
-			// Apply patch
+			Long clientsVersion;
+			JsonNode groupSessionPatchNode;
 			JsonNode patchedSessionData;
 			try {
+				clientsVersion = Long.valueOf(jsonNode
+						.get(GroupActionMsg.GROUP_SESSION_VERSION).asText());
+				groupSessionPatchNode = jsonNode
+						.get(GroupActionMsg.GROUP_SESSION_PATCHES);
 				patchedSessionData = patchGroupSessionData(groupResult,
 						groupSessionPatchNode);
-			} catch (IOException | JsonPatchException e) {
-				LOGGER.debug(".handleActionGroupSessionPatch: ", e);
+				LOGGER.debug(
+						".handleActionGroupSessionPatch:"
+								+ " groupResultId {}, clientsVersion {},"
+								+ " groupSessionPatch {}, updatedSessionData {}",
+						groupResultId, clientsVersion,
+						Json.stringify(groupSessionPatchNode),
+						Json.stringify(patchedSessionData));
+			} catch (Exception e) {
+				LOGGER.warn(
+						".handleActionGroupSessionPatch:"
+								+ " batchId {}, jsonNode {}, {}: {}",
+						groupResultId, Json.stringify(jsonNode),
+						e.getClass().getName(), e.getMessage());
 				GroupActionMsg msg = groupActionMsgBuilder.buildSimple(
 						groupResult, BatchAction.SESSION_FAIL,
 						TellWhom.SENDER_ONLY);
 				return GroupActionMsgBundle.build(msg);
 			}
 
-			LOGGER.debug(
-					".handleActionGroupSessionPatch:"
-							+ " groupResultId {}, clientsVersion {},"
-							+ " groupSessionPatch {}, updatedSessionData {}",
-					groupResultId, clientsVersion,
-					Json.stringify(groupSessionPatchNode),
-					Json.stringify(patchedSessionData));
-
 			boolean success = checkVersionAndPersistGroupSessionData(
 					groupResult, clientsVersion, patchedSessionData);
 			if (success) {
 				GroupActionMsg msg1 = groupActionMsgBuilder.buildSessionPatch(
 						groupResult, studyResultId, groupSessionPatchNode,
-						TellWhom.ALL_BUT_SENDER);
+						TellWhom.ALL);
 				GroupActionMsg msg2 = groupActionMsgBuilder.buildSimple(
 						groupResult, BatchAction.SESSION_ACK,
 						TellWhom.SENDER_ONLY);

@@ -53,8 +53,7 @@ public class BatchActionMsgBuilder {
 	 */
 	public BatchActionMsg buildSessionPatch(Batch batch,
 			JsonNode batchSessionPatchNode, TellWhom tellWhom) {
-		LOGGER.debug(".buildSessionPatch: batchId {}, studyResultId {}",
-				batch.getId());
+		LOGGER.debug(".buildSessionPatch: batchId {}", batch.getId());
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(BatchActionMsg.ACTION, BatchAction.SESSION.toString());
 		objectNode.set(BatchActionMsg.BATCH_SESSION_PATCHES,
@@ -108,9 +107,9 @@ public class BatchActionMsgBuilder {
 						Json.mapper().readTree(batch.getBatchSessionData()));
 			}
 		} catch (IOException e) {
-			LOGGER.debug(
-					".buildSessionActionMsg:"
-							+ " batchId {}, clientsVersion {},"
+			LOGGER.error(
+					".buildSessionActionMsg: invalid session data in DB -"
+							+ " batchId {}, batchSessionVersion {},"
 							+ " batchSessionData {}, error: {}",
 					batch.getId(), batch.getBatchSessionVersion(),
 					batch.getBatchSessionData(), e.getMessage());
