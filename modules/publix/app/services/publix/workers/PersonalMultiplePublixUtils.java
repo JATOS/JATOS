@@ -15,8 +15,8 @@ import models.common.workers.Worker;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
-import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieService;
+import session.group.GroupAdministration;
 
 /**
  * PersonalMultiplePublix' implementation of PublixUtils

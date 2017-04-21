@@ -1,4 +1,4 @@
-package services.publix.group;
+package session.group;
 
 import java.util.List;
 

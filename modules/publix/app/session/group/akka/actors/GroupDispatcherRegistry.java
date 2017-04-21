@@ -1,13 +1,13 @@
-package services.publix.group.akka.actors;
+package session.group.akka.actors;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import services.publix.group.akka.actors.services.GroupActionHandler;
-import services.publix.group.akka.actors.services.GroupActionMsgBuilder;
 import session.DispatcherRegistry;
+import session.group.akka.actors.services.GroupActionHandler;
+import session.group.akka.actors.services.GroupActionMsgBuilder;
 
 /**
  * A GroupDispatcherRegistry is an Akka Actor keeps track of all

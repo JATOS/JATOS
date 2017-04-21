@@ -1,8 +1,9 @@
-package services.publix.group.akka.protocol;
+package session.group.akka.protocol;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import akka.actor.ActorRef;
+import models.common.GroupResult.GroupState;
 
 /**
  * Contains all messages that can be used by the GroupDispatcher Akka Actor.
@@ -85,24 +86,11 @@ public class GroupDispatcherProtocol {
 	 * Special GroupMsg that contains a GroupAction. A group action message is
 	 * like a system event and used solely for messages between the
 	 * GroupDispatcher and its group members. A GroupActionMsg is specified by
-	 * an key named 'action' in the JSON node.
+	 * an key named 'action' in the JSON node. Optionally it can define an field
+	 * of type TellWhom, which is used by the dispatcher to determine the
+	 * recipients.
 	 */
 	public static class GroupActionMsg extends GroupMsg {
-
-		/**
-		 * All possible group actions a group action message can have.
-		 */
-		public enum BatchAction {
-			JOINED, // Signals to every group member that a new member joined
-			LEFT, // Signals to every member that a member left
-			OPENED, // Signals to every member that a new group channel opened
-			CLOSED, // Signals to every member that a group channel was closed
-			SESSION, // Signals this message contains a group session update
-			SESSION_ACK, // Signals that the session update was successful
-			SESSION_FAIL, // Signals that the session update failed
-			FIXED, // Signals that this group is now fixed (no new members)
-			ERROR // Used to send an error back to the sender
-		};
 
 		public enum TellWhom {
 			ALL, ALL_BUT_SENDER, SENDER_ONLY
@@ -116,17 +104,66 @@ public class GroupDispatcherProtocol {
 		}
 
 		/**
-		 * JSON variables that can be send in a GroupActionMsg
+		 * All possible group actions a group action message can have. They are
+		 * used as values in JSON message's action field.
+		 */
+		public enum GroupAction {
+			JOINED, // Signals to every group member that a new member joined
+			LEFT, // Signals to every member that a member left
+			OPENED, // Signals to every member that a new group channel opened
+			CLOSED, // Signals to every member that a group channel was closed
+			SESSION, // Signals this message contains a group session update
+			SESSION_ACK, // Signals that the session update was successful
+			SESSION_FAIL, // Signals that the session update failed
+			FIXED, // Signals that this group is now fixed (no new members)
+			ERROR // Used to send an error back to the sender
+		};
+
+		/**
+		 * JSON key name for an action (mandatory for an GroupActionMsg)
 		 */
 		public static final String ACTION = "action";
+		/**
+		 * JSON key name for the group result ID
+		 */
 		public static final String GROUP_RESULT_ID = "groupResultId";
+		/**
+		 * JSON key name containing the {@link GroupState}
+		 */
 		public static final String GROUP_STATE = "groupState";
+		/**
+		 * JSON key name containing the group member ID (which is the study
+		 * result ID)
+		 */
 		public static final String MEMBER_ID = "memberId";
+		/**
+		 * JSON key name containing all active members of the group defined by
+		 * their study result ID
+		 */
 		public static final String MEMBERS = "members";
+		/**
+		 * JSON key name containing all open group channels defined by their
+		 * study result ID
+		 */
 		public static final String CHANNELS = "channels";
+		/**
+		 * JSON key name for session data (must be accompanied with a session
+		 * version)
+		 */
 		public static final String GROUP_SESSION_DATA = "sessionData";
+		/**
+		 * JSON key name for a session patches (must be accompanied with a
+		 * session version)
+		 */
 		public static final String GROUP_SESSION_PATCHES = "sessionPatches";
+		/**
+		 * JSON key name for the group session version (always together with
+		 * either session data or patches)
+		 */
 		public static final String GROUP_SESSION_VERSION = "sessionVersion";
+		/**
+		 * JSON key name for an error message
+		 */
 		public static final String ERROR_MSG = "errorMsg";
 
 	}

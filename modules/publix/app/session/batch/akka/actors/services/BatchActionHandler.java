@@ -1,4 +1,4 @@
-package session.batch.akka.actors;
+package session.batch.akka.actors.services;
 
 import java.io.IOException;
 
@@ -18,11 +18,15 @@ import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.libs.Json;
 import session.Registry;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg.BatchAction;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg.TellWhom;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg.BatchAction;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg.TellWhom;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchMsg;
 
 /**
+ * Handles batch action messages (BatchActionMsg) received by an BatchDispatcher
+ * from a client via a batch channel.
+ * 
  * @author Kristian Lange (2017)
  */
 @Singleton
@@ -45,23 +49,27 @@ public class BatchActionHandler {
 	}
 
 	/**
-	 * Handles batch actions originating from a client
+	 * Handles batch action messages originating from a client: Gets a batch
+	 * actions message and returns a BatchActionMsgBundle. The batch action
+	 * messages in the BatchActionMsgBundle will be send by the BatchDispatcher
+	 * to their receivers.
 	 */
-	public BatchActionMsgBundle handleBatchActionMsg(long batchId,
-			long studyResultId, Registry batchRegistry, ObjectNode jsonNode) {
+	public BatchActionMsgBundle handleBatchActionMsg(BatchMsg batchActionMsg,
+			long batchId, long studyResultId, Registry batchRegistry) {
+		ObjectNode batchActionMsgJson = batchActionMsg.jsonNode;
 		LOGGER.debug(
 				".handleBatchActionMsg:"
 						+ " batchId {}, studyResultId {}, jsonNode {}",
-				batchId, studyResultId, Json.stringify(jsonNode));
-		String action = jsonNode.get(BatchActionMsg.ACTION).asText();
+				batchId, studyResultId, Json.stringify(batchActionMsgJson));
+		String action = batchActionMsgJson.get(BatchActionMsg.ACTION).asText();
 		switch (BatchAction.valueOf(action)) {
 		case SESSION:
-			return handleBatchActionSessionPatch(batchId, studyResultId,
-					batchRegistry, jsonNode);
+			return handleBatchActionSessionPatch(batchActionMsgJson, batchId,
+					studyResultId, batchRegistry);
 		default:
 			String errorMsg = "Unknown action " + action;
-			BatchActionMsg msg = batchActionMsgBuilder.buildError(batchId,
-					errorMsg, TellWhom.SENDER_ONLY);
+			BatchActionMsg msg = batchActionMsgBuilder.buildError(errorMsg,
+					TellWhom.SENDER_ONLY);
 			return BatchActionMsgBundle.build(msg);
 		}
 	}
@@ -69,16 +77,17 @@ public class BatchActionHandler {
 	/**
 	 * Persists batch session and tells everyone
 	 */
-	private BatchActionMsgBundle handleBatchActionSessionPatch(long batchId,
-			long studyResultId, Registry batchRegistry, ObjectNode jsonNode) {
+	private BatchActionMsgBundle handleBatchActionSessionPatch(
+			ObjectNode batchActionMsgJson, long batchId, long studyResultId,
+			Registry batchRegistry) {
 		return jpa.withTransaction(() -> {
 
 			Batch batch = batchDao.findById(batchId);
 			if (batch == null) {
 				String errorMsg = "Couldn't find batch with ID " + batchId
 						+ " in database.";
-				BatchActionMsg msg = batchActionMsgBuilder.buildError(batchId,
-						errorMsg, TellWhom.SENDER_ONLY);
+				BatchActionMsg msg = batchActionMsgBuilder.buildError(errorMsg,
+						TellWhom.SENDER_ONLY);
 				return BatchActionMsgBundle.build(msg);
 			}
 
@@ -86,12 +95,12 @@ public class BatchActionHandler {
 			JsonNode batchSessionPatchNode;
 			JsonNode patchedSessionData;
 			try {
-				clientsVersion = Long.valueOf(jsonNode
+				clientsVersion = Long.valueOf(batchActionMsgJson
 						.get(BatchActionMsg.BATCH_SESSION_VERSION).asText());
-				batchSessionPatchNode = jsonNode
+				batchSessionPatchNode = batchActionMsgJson
 						.get(BatchActionMsg.BATCH_SESSION_PATCHES);
-				patchedSessionData = patchBatchSessionData(batch,
-						batchSessionPatchNode);
+				patchedSessionData = patchBatchSessionData(
+						batchSessionPatchNode, batch);
 				LOGGER.debug(
 						".handleBatchActionSessionPatch:"
 								+ " batchId {}, clientsVersion {},"
@@ -103,15 +112,15 @@ public class BatchActionHandler {
 				LOGGER.warn(
 						".handleBatchActionSessionPatch:"
 								+ " batchId {}, jsonNode {}, {}: {}",
-						batchId, Json.stringify(jsonNode),
+						batchId, Json.stringify(batchActionMsgJson),
 						e.getClass().getName(), e.getMessage());
 				BatchActionMsg msg = batchActionMsgBuilder.buildSimple(batch,
 						BatchAction.SESSION_FAIL, TellWhom.SENDER_ONLY);
 				return BatchActionMsgBundle.build(msg);
 			}
 
-			boolean success = checkVersionAndPersistBatchSessionData(batch,
-					clientsVersion, patchedSessionData);
+			boolean success = checkVersionAndPersistBatchSessionData(
+					patchedSessionData, batch, clientsVersion);
 			if (success) {
 				BatchActionMsg msg1 = batchActionMsgBuilder.buildSessionPatch(
 						batch, batchSessionPatchNode, TellWhom.ALL);
@@ -127,9 +136,8 @@ public class BatchActionHandler {
 
 	}
 
-	private JsonNode patchBatchSessionData(Batch batch,
-			JsonNode batchSessionPatchNode)
-			throws IOException, JsonPatchException {
+	private JsonNode patchBatchSessionData(JsonNode batchSessionPatchNode,
+			Batch batch) throws IOException, JsonPatchException {
 		JsonPatch batchSessionPatch = JsonPatch.fromJson(batchSessionPatchNode);
 		JsonNode currentBatchSessionData;
 		if (Strings.isNullOrEmpty(batch.getBatchSessionData())) {
@@ -147,8 +155,8 @@ public class BatchActionHandler {
 	 * is equal to the received one. Returns true if this was successful -
 	 * otherwise false.
 	 */
-	private boolean checkVersionAndPersistBatchSessionData(Batch batch,
-			Long version, JsonNode sessionData) {
+	private boolean checkVersionAndPersistBatchSessionData(JsonNode sessionData,
+			Batch batch, Long version) {
 		if (batch != null && version != null && sessionData != null
 				&& batch.getBatchSessionVersion().equals(version)) {
 			batch.setBatchSessionData(sessionData.toString());

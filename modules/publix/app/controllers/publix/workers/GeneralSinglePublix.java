@@ -21,14 +21,14 @@ import play.db.jpa.JPAApi;
 import play.mvc.Result;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
-import services.publix.group.GroupChannelService;
-import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
 import session.batch.BatchChannelService;
+import session.group.GroupAdministration;
+import session.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 

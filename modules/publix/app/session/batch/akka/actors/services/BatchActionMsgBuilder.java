@@ -1,4 +1,4 @@
-package session.batch.akka.actors;
+package session.batch.akka.actors.services;
 
 import java.io.IOException;
 
@@ -15,11 +15,14 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.libs.Json;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg.BatchAction;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg.TellWhom;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg.BatchAction;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg.TellWhom;
 
 /**
+ * Utility class that builds BatchActionMsgs. So it mostly handles the JSON node
+ * creation.
+ * 
  * @author Kristian Lange (2017)
  */
 @Singleton
@@ -38,8 +41,12 @@ public class BatchActionMsgBuilder {
 		this.batchDao = batchDao;
 	}
 
+	/**
+	 * Builds a simple BatchActionMsg with the action and the session version
+	 */
 	public BatchActionMsg buildSimple(Batch batch, BatchAction action,
 			TellWhom tellWhom) {
+		LOGGER.debug(".buildSimple: batchId {}", batch.getId());
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(BatchActionMsg.ACTION, action.toString());
 		objectNode.put(BatchActionMsg.BATCH_SESSION_VERSION,
@@ -48,8 +55,17 @@ public class BatchActionMsgBuilder {
 	}
 
 	/**
-	 * Sends a batch action message with the current batch session data and
-	 * version to all members.
+	 * Creates a simple BatchActionMsg with an error message
+	 */
+	public BatchActionMsg buildError(String errorMsg, TellWhom tellWhom) {
+		ObjectNode objectNode = Json.mapper().createObjectNode();
+		objectNode.put(BatchActionMsg.ACTION, BatchAction.ERROR.toString());
+		objectNode.put(BatchActionMsg.ERROR_MSG, errorMsg);
+		return new BatchActionMsg(objectNode, tellWhom);
+	}
+
+	/**
+	 * Builds a BatchActionMessage with the batch session patch and version
 	 */
 	public BatchActionMsg buildSessionPatch(Batch batch,
 			JsonNode batchSessionPatchNode, TellWhom tellWhom) {
@@ -64,11 +80,11 @@ public class BatchActionMsgBuilder {
 	}
 
 	/**
-	 * Sends a TODO
+	 * Builds a BatchActionMsg with the current batch session data and version
 	 */
-	public BatchActionMsg buildWithSession(long batchId, BatchAction action,
+	public BatchActionMsg buildSessionData(long batchId, BatchAction action,
 			TellWhom tellWhom) {
-		LOGGER.debug(".buildWithSession: batchId {}, action {}, tellWhom {}",
+		LOGGER.debug(".buildSessionData: batchId {}, action {}, tellWhom {}",
 				batchId, action, tellWhom.name());
 		return jpa.withTransaction(() -> {
 			Batch batch = batchDao.findById(batchId);
@@ -77,23 +93,11 @@ public class BatchActionMsgBuilder {
 			} else {
 				String errorMsg = "Couldn't find batch with ID " + batchId
 						+ " in database.";
-				return buildErrorActionMsg(errorMsg, TellWhom.SENDER_ONLY);
+				return buildError(errorMsg, TellWhom.SENDER_ONLY);
 			}
 		});
 	}
 
-	/**
-	 * Creates a BatchActionMsg. The BatchActionMsg includes a whole bunch of
-	 * data including the action, all currently open channels, the group session
-	 * version, and the group session data.
-	 * 
-	 * @param studyResultId
-	 *            Which group member initiated this action
-	 * @param action
-	 *            The action of the GroupActionMsg
-	 * @param GroupResult
-	 *            The GroupResult of this group
-	 */
 	private BatchActionMsg buildSessionActionMsg(Batch batch,
 			BatchAction action, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
@@ -118,22 +122,6 @@ public class BatchActionMsgBuilder {
 		}
 		objectNode.put(BatchActionMsg.BATCH_SESSION_VERSION,
 				batch.getBatchSessionVersion());
-		return new BatchActionMsg(objectNode, tellWhom);
-	}
-
-	public BatchActionMsg buildError(long batchId, String errorMsg,
-			TellWhom tellWhom) {
-		return buildErrorActionMsg(errorMsg, tellWhom);
-	}
-
-	/**
-	 * Creates an ERROR group action message.
-	 */
-	private BatchActionMsg buildErrorActionMsg(String errorMsg,
-			TellWhom tellWhom) {
-		ObjectNode objectNode = Json.mapper().createObjectNode();
-		objectNode.put(BatchActionMsg.ACTION, BatchAction.ERROR.toString());
-		objectNode.put(BatchActionMsg.ERROR_MSG, errorMsg);
 		return new BatchActionMsg(objectNode, tellWhom);
 	}
 

@@ -26,14 +26,14 @@ import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.ResultCreator;
 import services.publix.WorkerCreator;
-import services.publix.group.GroupChannelService;
-import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.MTErrorMessages;
 import services.publix.workers.MTPublixUtils;
 import services.publix.workers.MTStudyAuthorisation;
 import session.batch.BatchChannelService;
+import session.group.GroupAdministration;
+import session.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 

@@ -13,8 +13,6 @@ import akka.util.Timeout;
 import exceptions.publix.InternalServerErrorPublixException;
 import models.common.Batch;
 import models.common.StudyResult;
-import play.Logger;
-import play.Logger.ALogger;
 import play.mvc.LegacyWebSocket;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
@@ -23,7 +21,7 @@ import session.DispatcherRegistryProtocol.Get;
 import session.DispatcherRegistryProtocol.GetOrCreate;
 import session.DispatcherRegistryProtocol.ItsThisOne;
 import session.WebSocketBuilder;
-import session.batch.akka.actors.BatchDispatcherProtocol.PoisonChannel;
+import session.batch.akka.protocol.BatchDispatcherProtocol.PoisonChannel;
 
 /**
  * Service class that handles of opening and closing of batch channels with
@@ -33,8 +31,6 @@ import session.batch.akka.actors.BatchDispatcherProtocol.PoisonChannel;
  */
 @Singleton
 public class BatchChannelService {
-
-	private static final ALogger LOGGER = Logger.of(BatchChannelService.class);
 
 	/**
 	 * Time to wait for an answer after asking an Akka actor

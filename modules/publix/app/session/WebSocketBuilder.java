@@ -8,8 +8,8 @@ import play.mvc.LegacyWebSocket;
 import play.mvc.Result;
 import play.mvc.WebSocket.In;
 import play.mvc.WebSocket.Out;
-import services.publix.group.akka.actors.GroupChannel;
 import session.batch.akka.actors.BatchChannel;
+import session.group.akka.actors.GroupChannel;
 
 /**
  * Builds new WebSockets for either group or batch channel.

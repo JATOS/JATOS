@@ -11,15 +11,37 @@ import play.Logger.ALogger;
 import play.libs.Json;
 import session.DispatcherRegistryProtocol.Unregister;
 import session.Registry;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg.BatchAction;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg.TellWhom;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchMsg;
-import session.batch.akka.actors.BatchDispatcherProtocol.PoisonChannel;
-import session.batch.akka.actors.BatchDispatcherProtocol.RegisterChannel;
-import session.batch.akka.actors.BatchDispatcherProtocol.UnregisterChannel;
+import session.batch.akka.actors.services.BatchActionHandler;
+import session.batch.akka.actors.services.BatchActionMsgBuilder;
+import session.batch.akka.actors.services.BatchActionMsgBundle;
+import session.batch.akka.protocol.BatchDispatcherProtocol;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg.BatchAction;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg.TellWhom;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchMsg;
+import session.batch.akka.protocol.BatchDispatcherProtocol.PoisonChannel;
+import session.batch.akka.protocol.BatchDispatcherProtocol.RegisterChannel;
+import session.batch.akka.protocol.BatchDispatcherProtocol.UnregisterChannel;
 
 /**
+ * A BatchDispatcher is an Akka Actor responsible for distributing messages
+ * (BatchMsg) within a batch.
+ * 
+ * A BatchChannel is always opened during initialization of jatos.js.
+ * 
+ * A BatchChannel registers in a BatchDispatcher by sending the RegisterChannel
+ * message and unregisters by sending a UnregisterChannel message.
+ * 
+ * A new BatchDispatcher is created by the BatchDispatcherRegistry. If a
+ * BatchDispatcher has no more members it closes itself.
+ * 
+ * A BatchDispatcher handles all messages specified in the
+ * BatchDispatcherProtocol. Fundamentally these are batch session patches.
+ * 
+ * The batch session patches are JSON Patches after RFC 6902 and used to
+ * describe changes in the batch session data. The session data are stored in
+ * the Batch.
+ * 
  * @author Kristian Lange (2017)
  */
 public class BatchDispatcher extends UntypedActor {
@@ -91,7 +113,7 @@ public class BatchDispatcher extends UntypedActor {
 		ObjectNode jsonNode = batchMsg.jsonNode;
 		if (jsonNode.has(BatchActionMsg.ACTION)) {
 			// We have a batch action message
-			handleBatchActionMsg(jsonNode);
+			handleBatchActionMsg(batchMsg);
 		} else {
 			// We have broadcast message: Just tell everyone except the sender
 			tellAllButSender(batchMsg);
@@ -101,11 +123,11 @@ public class BatchDispatcher extends UntypedActor {
 	/**
 	 * Handles batch actions originating from a client
 	 */
-	private void handleBatchActionMsg(ObjectNode jsonNode) {
+	private void handleBatchActionMsg(BatchMsg batchActionMessage) {
 		long studyResultId = batchRegistry.getStudyResult(sender());
 		BatchActionMsgBundle msgBundle = batchActionHandler
-				.handleBatchActionMsg(batchId, studyResultId, batchRegistry,
-						jsonNode);
+				.handleBatchActionMsg(batchActionMessage, batchId,
+						studyResultId, batchRegistry);
 		for (BatchActionMsg msg : msgBundle.getAll()) {
 			tellBatchActionMsg(msg);
 		}
@@ -116,11 +138,11 @@ public class BatchDispatcher extends UntypedActor {
 	 * everyone in this batch.
 	 */
 	private void registerChannel(RegisterChannel registerChannel) {
-		LOGGER.debug(".registerChannel: batchId {}, studyResultId {}",
-				batchId, registerChannel.studyResultId);
+		LOGGER.debug(".registerChannel: batchId {}, studyResultId {}", batchId,
+				registerChannel.studyResultId);
 		long studyResultId = registerChannel.studyResultId;
 		batchRegistry.register(studyResultId, sender());
-		BatchActionMsg msg1 = batchActionMsgBuilder.buildWithSession(batchId,
+		BatchActionMsg msg1 = batchActionMsgBuilder.buildSessionData(batchId,
 				BatchAction.OPENED, TellWhom.SENDER_ONLY);
 		tellBatchActionMsg(msg1);
 	}

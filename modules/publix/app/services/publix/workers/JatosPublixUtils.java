@@ -20,8 +20,8 @@ import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
-import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieService;
+import session.group.GroupAdministration;
 
 /**
  * JatosPublix' implementation of PublixUtils (studies or components started via

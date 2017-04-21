@@ -6,6 +6,8 @@ import javax.inject.Singleton;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import session.DispatcherRegistry;
+import session.batch.akka.actors.services.BatchActionHandler;
+import session.batch.akka.actors.services.BatchActionMsgBuilder;
 
 /**
  * A BatchDispatcherRegistry is an Akka Actor keeps track of all

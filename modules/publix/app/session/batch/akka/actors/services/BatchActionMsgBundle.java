@@ -1,9 +1,9 @@
-package session.batch.akka.actors;
+package session.batch.akka.actors.services;
 
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchActionMsg;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchActionMsg;
 
 /**
- * Just a basic container for up to 3 BatchActionMsgs
+ * Just a basic container for up to three BatchActionMsgs
  * 
  * @author Kristian Lange (2017)
  */

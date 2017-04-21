@@ -1,4 +1,4 @@
-package services.publix.group.akka.actors.services;
+package session.group.akka.actors.services;
 
 import java.io.IOException;
 
@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
+import com.google.common.base.Strings;
 
 import daos.common.GroupResultDao;
 import models.common.GroupResult;
@@ -17,10 +18,11 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.libs.Json;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.BatchAction;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
 import session.Registry;
+import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
+import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
+import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
+import session.group.akka.protocol.GroupDispatcherProtocol.GroupMsg;
 
 /**
  * @author Kristian Lange (2017)
@@ -47,20 +49,21 @@ public class GroupActionHandler {
 	/**
 	 * Handles group actions originating from a client
 	 */
-	public GroupActionMsgBundle handleGroupActionMsg(long groupResultId,
-			long studyResultId, Registry groupRegistry, ObjectNode jsonNode) {
+	public GroupActionMsgBundle handleGroupActionMsg(GroupMsg groupActionMsg,
+			long groupResultId, long studyResultId, Registry groupRegistry) {
+		ObjectNode groupActionMsgJson = groupActionMsg.jsonNode;
 		LOGGER.debug(
 				".handleGroupActionMsg:"
 						+ " groupResultId {}, studyResultId {}, jsonNode {}",
-				groupResultId, studyResultId, Json.stringify(jsonNode));
-		String action = jsonNode.get(GroupActionMsg.ACTION).asText();
-		switch (BatchAction.valueOf(action)) {
+				groupResultId, studyResultId,
+				Json.stringify(groupActionMsgJson));
+		String action = groupActionMsgJson.get(GroupActionMsg.ACTION).asText();
+		switch (GroupAction.valueOf(action)) {
 		case SESSION:
-			return handleGroupActionSessionPatch(groupResultId, studyResultId,
-					groupRegistry, jsonNode);
+			return handleGroupActionSessionPatch(groupActionMsgJson,
+					groupResultId, studyResultId, groupRegistry);
 		case FIXED:
-			return handleActionFix(groupResultId, studyResultId, groupRegistry,
-					jsonNode);
+			return handleActionFix(groupResultId, studyResultId, groupRegistry);
 		default:
 			String errorMsg = "Unknown action " + action;
 			GroupActionMsg msg = groupActionMsgBuilder.buildError(groupResultId,
@@ -73,16 +76,15 @@ public class GroupActionHandler {
 	 * Persists GroupSession and tells everyone
 	 */
 	private GroupActionMsgBundle handleGroupActionSessionPatch(
-			long groupResultId, long studyResultId, Registry groupRegistry,
-			ObjectNode jsonNode) {
+			ObjectNode groupActionMsgJson, long groupResultId,
+			long studyResultId, Registry groupRegistry) {
 		return jpa.withTransaction(() -> {
 			GroupResult groupResult = groupResultDao.findById(groupResultId);
 			if (groupResult == null) {
 				String errorMsg = "Couldn't find group result with ID "
 						+ groupResultId + " in database.";
-				GroupActionMsg msg = GroupActionMsgJsonBuilder
-						.buildErrorActionMsg(groupResultId, errorMsg,
-								TellWhom.SENDER_ONLY);
+				GroupActionMsg msg = groupActionMsgBuilder.buildError(
+						groupResultId, errorMsg, TellWhom.SENDER_ONLY);
 				return GroupActionMsgBundle.build(msg);
 			}
 
@@ -90,12 +92,12 @@ public class GroupActionHandler {
 			JsonNode groupSessionPatchNode;
 			JsonNode patchedSessionData;
 			try {
-				clientsVersion = Long.valueOf(jsonNode
+				clientsVersion = Long.valueOf(groupActionMsgJson
 						.get(GroupActionMsg.GROUP_SESSION_VERSION).asText());
-				groupSessionPatchNode = jsonNode
+				groupSessionPatchNode = groupActionMsgJson
 						.get(GroupActionMsg.GROUP_SESSION_PATCHES);
-				patchedSessionData = patchGroupSessionData(groupResult,
-						groupSessionPatchNode);
+				patchedSessionData = patchGroupSessionData(
+						groupSessionPatchNode, groupResult);
 				LOGGER.debug(
 						".handleActionGroupSessionPatch:"
 								+ " groupResultId {}, clientsVersion {},"
@@ -106,40 +108,44 @@ public class GroupActionHandler {
 			} catch (Exception e) {
 				LOGGER.warn(
 						".handleActionGroupSessionPatch:"
-								+ " batchId {}, jsonNode {}, {}: {}",
-						groupResultId, Json.stringify(jsonNode),
+								+ " groupResultId {}, jsonNode {}, {}: {}",
+						groupResultId, Json.stringify(groupActionMsgJson),
 						e.getClass().getName(), e.getMessage());
 				GroupActionMsg msg = groupActionMsgBuilder.buildSimple(
-						groupResult, BatchAction.SESSION_FAIL,
+						groupResult, GroupAction.SESSION_FAIL,
 						TellWhom.SENDER_ONLY);
 				return GroupActionMsgBundle.build(msg);
 			}
 
 			boolean success = checkVersionAndPersistGroupSessionData(
-					groupResult, clientsVersion, patchedSessionData);
+					patchedSessionData, groupResult, clientsVersion);
 			if (success) {
 				GroupActionMsg msg1 = groupActionMsgBuilder.buildSessionPatch(
 						groupResult, studyResultId, groupSessionPatchNode,
 						TellWhom.ALL);
 				GroupActionMsg msg2 = groupActionMsgBuilder.buildSimple(
-						groupResult, BatchAction.SESSION_ACK,
+						groupResult, GroupAction.SESSION_ACK,
 						TellWhom.SENDER_ONLY);
 				return GroupActionMsgBundle.build(msg1, msg2);
 			} else {
 				GroupActionMsg msg = groupActionMsgBuilder.buildSimple(
-						groupResult, BatchAction.SESSION_FAIL,
+						groupResult, GroupAction.SESSION_FAIL,
 						TellWhom.SENDER_ONLY);
 				return GroupActionMsgBundle.build(msg);
 			}
 		});
 	}
 
-	private JsonNode patchGroupSessionData(GroupResult groupResult,
-			JsonNode groupSessionPatchNode)
-			throws IOException, JsonPatchException {
+	private JsonNode patchGroupSessionData(JsonNode groupSessionPatchNode,
+			GroupResult groupResult) throws IOException, JsonPatchException {
 		JsonPatch groupSessionPatch = JsonPatch.fromJson(groupSessionPatchNode);
-		JsonNode currentGroupSessionData = Json.mapper()
-				.readTree(groupResult.getGroupSessionData());
+		JsonNode currentGroupSessionData;
+		if (Strings.isNullOrEmpty(groupResult.getGroupSessionData())) {
+			currentGroupSessionData = Json.mapper().createObjectNode();
+		} else {
+			currentGroupSessionData = Json.mapper()
+					.readTree(groupResult.getGroupSessionData());
+		}
 		return groupSessionPatch.apply(currentGroupSessionData);
 	}
 
@@ -148,8 +154,8 @@ public class GroupActionHandler {
 	 * groupSessionVersion by 1 - but only if the stored version is equal to the
 	 * received one. Returns true if this was successful - otherwise false.
 	 */
-	private boolean checkVersionAndPersistGroupSessionData(
-			GroupResult groupResult, Long version, JsonNode sessionData) {
+	private boolean checkVersionAndPersistGroupSessionData(JsonNode sessionData,
+			GroupResult groupResult, Long version) {
 		if (groupResult != null && version != null && sessionData != null
 				&& groupResult.getGroupSessionVersion().equals(version)) {
 			groupResult.setGroupSessionData(sessionData.toString());
@@ -175,14 +181,14 @@ public class GroupActionHandler {
 	 * members
 	 */
 	private GroupActionMsgBundle handleActionFix(long groupResultId,
-			long studyResultId, Registry groupRegistry, ObjectNode jsonNode) {
+			long studyResultId, Registry groupRegistry) {
 		return jpa.withTransaction(() -> {
 			GroupResult groupResult = groupResultDao.findById(groupResultId);
 			if (groupResult != null) {
 				groupResult.setGroupState(GroupState.FIXED);
 				groupResultDao.update(groupResult);
 				GroupActionMsg msg = groupActionMsgBuilder.build(groupResultId,
-						studyResultId, groupRegistry, BatchAction.FIXED,
+						studyResultId, groupRegistry, GroupAction.FIXED,
 						TellWhom.ALL);
 				return GroupActionMsgBundle.build(msg);
 			} else {

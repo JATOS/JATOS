@@ -35,12 +35,12 @@ import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
-import services.publix.group.GroupAdministration;
-import services.publix.group.GroupChannelService;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
 import session.WebSocketBuilder;
 import session.batch.BatchChannelService;
+import session.group.GroupAdministration;
+import session.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 

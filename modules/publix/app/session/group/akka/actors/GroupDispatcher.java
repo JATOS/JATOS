@@ -1,4 +1,4 @@
-package services.publix.group.akka.actors;
+package session.group.akka.actors;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -9,26 +9,26 @@ import akka.actor.UntypedActor;
 import play.Logger;
 import play.Logger.ALogger;
 import play.libs.Json;
-import services.publix.group.akka.actors.services.GroupActionHandler;
-import services.publix.group.akka.actors.services.GroupActionMsgBuilder;
-import services.publix.group.akka.actors.services.GroupActionMsgBundle;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.BatchAction;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
-import session.Registry;
 import session.DispatcherRegistryProtocol.Unregister;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.GroupMsg;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.Joined;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.Left;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.PoisonChannel;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.ReassignChannel;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.RegisterChannel;
-import services.publix.group.akka.protocol.GroupDispatcherProtocol.UnregisterChannel;
+import session.Registry;
+import session.group.akka.actors.services.GroupActionHandler;
+import session.group.akka.actors.services.GroupActionMsgBuilder;
+import session.group.akka.actors.services.GroupActionMsgBundle;
+import session.group.akka.protocol.GroupDispatcherProtocol;
+import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
+import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
+import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
+import session.group.akka.protocol.GroupDispatcherProtocol.GroupMsg;
+import session.group.akka.protocol.GroupDispatcherProtocol.Joined;
+import session.group.akka.protocol.GroupDispatcherProtocol.Left;
+import session.group.akka.protocol.GroupDispatcherProtocol.PoisonChannel;
+import session.group.akka.protocol.GroupDispatcherProtocol.ReassignChannel;
+import session.group.akka.protocol.GroupDispatcherProtocol.RegisterChannel;
+import session.group.akka.protocol.GroupDispatcherProtocol.UnregisterChannel;
 
 /**
  * A GroupDispatcher is an Akka Actor responsible for distributing messages
- * (GroupMsg) within a group.
+ * (GroupMsg) within a group. Thus it is the central class handling a group.
  * 
  * A GroupDispatcher only handles the GroupChannels but is not responsible for
  * the actual joining of a GroupResult. This is done prior to creating a
@@ -40,17 +40,20 @@ import services.publix.group.akka.protocol.GroupDispatcherProtocol.UnregisterCha
  * persisted in a GroupResult entity. A GroupChannel is closed after the
  * StudyResult left the group.
  * 
- * A GroupDispatcher handles all messages specified in the
- * GroupDispatcherProtocol.
- * 
- * For the group session the GroupDispatcher is a message broker in a simple pub
- * sub system with receipt messages to assure delivery or its absence.
- * 
  * A GroupChannel registers in a GroupDispatcher by sending the RegisterChannel
  * message and unregisters by sending a UnregisterChannel message.
  * 
  * A new GroupDispatcher is created by the GroupDispatcherRegistry. If a
  * GroupDispatcher has no more members it closes itself.
+ * 
+ * A GroupDispatcher handles all messages specified in the
+ * GroupDispatcherProtocol. There are fundamentally three different message
+ * types: 1) group session patches, 2) broadcast messages, and 3) direct
+ * messages intended for a certain group member.
+ * 
+ * The group session patches are JSON Patches after RFC 6902 and used to
+ * describe changes in the group session data. The session data are stored in
+ * the GroupResult.
  * 
  * @author Kristian Lange (2015)
  */
@@ -132,7 +135,7 @@ public class GroupDispatcher extends UntypedActor {
 		ObjectNode jsonNode = groupMsg.jsonNode;
 		if (jsonNode.has(GroupActionMsg.ACTION)) {
 			// We have a group action message
-			handleGroupActionMsg(jsonNode);
+			handleGroupActionMsg(groupMsg);
 		} else if (jsonNode.has(GroupMsg.RECIPIENT)) {
 			// We have a message intended for only one recipient
 			Long recipient = retrieveRecipient(jsonNode);
@@ -146,11 +149,11 @@ public class GroupDispatcher extends UntypedActor {
 	/**
 	 * Handles group actions originating from a client
 	 */
-	private void handleGroupActionMsg(ObjectNode jsonNode) {
+	private void handleGroupActionMsg(GroupMsg groupMsg) {
 		long studyResultId = groupRegistry.getStudyResult(sender());
 		GroupActionMsgBundle msgBundle = groupActionHandler
-				.handleGroupActionMsg(groupResultId, studyResultId,
-						groupRegistry, jsonNode);
+				.handleGroupActionMsg(groupMsg, groupResultId, studyResultId,
+						groupRegistry);
 		for (GroupActionMsg msg : msgBundle.getAll()) {
 			tellGroupActionMsg(msg);
 		}
@@ -183,12 +186,12 @@ public class GroupDispatcher extends UntypedActor {
 				groupResultId, registerChannel.studyResultId);
 		long studyResultId = registerChannel.studyResultId;
 		groupRegistry.register(studyResultId, sender());
-		GroupActionMsg msg1 = groupActionMsgBuilder.buildWithSession(
-				groupResultId, studyResultId, groupRegistry, BatchAction.OPENED,
+		GroupActionMsg msg1 = groupActionMsgBuilder.buildSessionData(
+				groupResultId, studyResultId, groupRegistry, GroupAction.OPENED,
 				TellWhom.SENDER_ONLY);
 		tellGroupActionMsg(msg1);
 		GroupActionMsg msg2 = groupActionMsgBuilder.build(groupResultId,
-				studyResultId, groupRegistry, BatchAction.OPENED,
+				studyResultId, groupRegistry, GroupAction.OPENED,
 				TellWhom.ALL_BUT_SENDER);
 		tellGroupActionMsg(msg2);
 	}
@@ -208,7 +211,7 @@ public class GroupDispatcher extends UntypedActor {
 				&& groupRegistry.getChannel(studyResultId).equals(sender())) {
 			groupRegistry.unregister(unregisterChannel.studyResultId);
 			GroupActionMsg msg = groupActionMsgBuilder.build(groupResultId,
-					studyResultId, groupRegistry, BatchAction.CLOSED,
+					studyResultId, groupRegistry, GroupAction.CLOSED,
 					TellWhom.ALL_BUT_SENDER);
 			tellGroupActionMsg(msg);
 		}
@@ -245,7 +248,7 @@ public class GroupDispatcher extends UntypedActor {
 		LOGGER.debug(".joined: groupResultId {}, studyResultId {}",
 				groupResultId, joined.studyResultId);
 		GroupActionMsg msg = groupActionMsgBuilder.build(groupResultId,
-				joined.studyResultId, groupRegistry, BatchAction.JOINED,
+				joined.studyResultId, groupRegistry, GroupAction.JOINED,
 				TellWhom.ALL_BUT_SENDER);
 		tellGroupActionMsg(msg);
 	}
@@ -258,7 +261,7 @@ public class GroupDispatcher extends UntypedActor {
 		LOGGER.debug(".left: groupResultId {}, studyResultId {}", groupResultId,
 				left.studyResultId);
 		GroupActionMsg msg = groupActionMsgBuilder.build(groupResultId,
-				left.studyResultId, groupRegistry, BatchAction.LEFT,
+				left.studyResultId, groupRegistry, GroupAction.LEFT,
 				TellWhom.ALL_BUT_SENDER);
 		tellGroupActionMsg(msg);
 	}

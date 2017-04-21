@@ -6,29 +6,26 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import session.batch.akka.actors.BatchDispatcherProtocol.BatchMsg;
-import session.batch.akka.actors.BatchDispatcherProtocol.PoisonChannel;
-import session.batch.akka.actors.BatchDispatcherProtocol.RegisterChannel;
-import session.batch.akka.actors.BatchDispatcherProtocol.UnregisterChannel;
+import session.batch.akka.protocol.BatchDispatcherProtocol.BatchMsg;
+import session.batch.akka.protocol.BatchDispatcherProtocol.PoisonChannel;
+import session.batch.akka.protocol.BatchDispatcherProtocol.RegisterChannel;
+import session.batch.akka.protocol.BatchDispatcherProtocol.UnregisterChannel;
 
 /**
- * GroupChannel is an Akka Actor that represents the group channel's WebSocket.
- * A group channel is a WebSocket connecting a client who's running a study with
+ * BatchChannel is an Akka Actor that represents the batch channel's WebSocket.
+ * A batch channel is a WebSocket connecting a client who's running a study with
  * the JATOS server.
  * 
- * A GroupChannel is only be opened after a StudyResult joined a group, which is
- * done in the GroupAdministration. Group data (e.g. who's member) are persisted
- * in a GroupResult entity. A GroupChannel is closed after the StudyResult left
- * the GroupResult.
+ * A BatchChannel is always opened during initialization of jatos.js.
  * 
- * A GroupChannel belongs to a GroupDispatcher. A GroupChannel is created by the
- * GroupChannelService and registers itself by sending a RegisterChannel message
- * to its GroupDispatcher. It closes down after receiving a PoisonChannel
+ * A BatchChannel belongs to a BatchDispatcher. A BatchChannel is created by the
+ * BatchChannelService and registers itself by sending a RegisterChannel message
+ * to its BatchDispatcher. It closes down after receiving a PoisonChannel
  * message or if the WebSocket is closed. While closing down it unregisters from
- * the GroupDispatcher by sending a UnregisterChannel message. A GroupChannel
- * can, if it's told to, reassign itself to a different GroupDispatcher.
+ * the BatchDispatcher by sending a UnregisterChannel message. A BatchChannel
+ * can, if it's told to, reassign itself to a different BatchDispatcher.
  * 
- * @author Kristian Lange (2015)
+ * @author Kristian Lange (2017)
  */
 public class BatchChannel extends UntypedActor {
 
@@ -71,16 +68,16 @@ public class BatchChannel extends UntypedActor {
 	public void onReceive(Object msg) throws Exception {
 		if (msg instanceof ObjectNode) {
 			// If we receive a JsonNode (only from the client) wrap it in a
-			// GroupMsg and forward it to the GroupDispatcher
+			// BatchMsg and forward it to the BatchDispatcher
 			ObjectNode jsonNode = (ObjectNode) msg;
 			batchDispatcher.tell(new BatchMsg(jsonNode), self());
 		} else if (msg instanceof BatchMsg) {
-			// If we receive a GroupMsg (only from the GroupDispatcher) send
+			// If we receive a BatchMsg (only from the BatchDispatcher) send
 			// the wrapped JsonNode to the client
 			BatchMsg batchMsg = (BatchMsg) msg;
 			out.tell(batchMsg.jsonNode, self());
 		} else if (msg instanceof PoisonChannel) {
-			// Kill this group channel
+			// Kill this batch channel
 			self().tell(PoisonPill.getInstance(), self());
 		} else {
 			unhandled(msg);

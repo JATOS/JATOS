@@ -10,7 +10,6 @@ import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import play.libs.akka.AkkaGuiceSupport;
 import services.publix.StudyAuthorisation;
-import services.publix.group.akka.actors.GroupDispatcherRegistry;
 import services.publix.PublixUtils;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
@@ -23,6 +22,7 @@ import services.publix.workers.PersonalMultipleStudyAuthorisation;
 import services.publix.workers.PersonalSinglePublixUtils;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
 import session.batch.akka.actors.BatchDispatcherRegistry;
+import session.group.akka.actors.GroupDispatcherRegistry;
 
 /**
  * Configuration of Guice dependency injection for Publix module

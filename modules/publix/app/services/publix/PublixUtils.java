@@ -23,8 +23,8 @@ import models.common.Study;
 import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
-import services.publix.group.GroupAdministration;
 import services.publix.idcookie.IdCookieService;
+import session.group.GroupAdministration;
 
 /**
  * Service class with functions that are common for all classes that extend
