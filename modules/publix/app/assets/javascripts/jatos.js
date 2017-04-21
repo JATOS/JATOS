@@ -946,6 +946,7 @@ var jatos = {};
 	 * @return {jQuery.Deferred}
 	 */
 	jatos.joinGroup = function (callbacks) {
+		callbacks = callbacks ? callbacks : {}; 
 		if (!webSocketSupported) {
 			callingOnError(callbacks.onError,
 				"This browser does not support WebSockets.");
@@ -981,8 +982,6 @@ var jatos = {};
 		};
 		groupChannel.onclose = function () {
 			joiningGroupDeferred.reject();
-			reassigningGroupDeferred.reject();
-			leavingGroupDeferred.reject();
 			jatos.groupMemberId = null;
 			jatos.groupResultId = null;
 			jatos.groupState = null;
