@@ -479,7 +479,7 @@ var jatos = {};
 					// Call onJatosBatchSession with JSON Patch's path
 					if (batchMsg.patches[0] && batchMsg.patches[0].path) {
 						callFunctionIfExist(onJatosBatchSession, batchMsg.patches[0].path);
-					} else if (onJatosBatchSession) {
+					} else {
 						callFunctionIfExist(onJatosBatchSession);
 					}
 					break;
@@ -508,81 +508,145 @@ var jatos = {};
 	 * Getter for a field in the batch session data. Takes a name
 	 * and returns the matching value. Works only on the first
 	 * level of the object tree. For all other levels use
-	 * jatos.batchSession.find.
+	 * jatos.batchSession.find. Gets the object from the
+	 * locally stored copy of the session and does not call
+	 * the server.
 	 */
 	jatos.batchSession.get = function (name) {
-		return jsonpointer.get(batchSessionData, "/" + name);
+		var obj = jsonpointer.get(batchSessionData, "/" + name);
+		return cloneJsonObj(obj);
 	};
 
 	/**
-	 * Returns the complete batch session data.
+	 * Returns the complete batch session data (might be bad performancewise)
+	 * Gets the object from the locally stored copy of the session
+	 * and does not call the server.
 	 */
 	jatos.batchSession.getAll = function () {
-		return jatos.batchSession.find("");
+		var obj = jatos.batchSession.find("");
+		return cloneJsonObj(obj);
 	};
 
 	/**	
 	 * Getter for a field in the batch session data. Takes a
-	 * JSON Pointer and returns the matching value.
+	 * JSON Pointer and returns the matching value. Gets the
+	 * object from the locally stored copy of the session
+	 * and does not call the server.
 	 */
 	jatos.batchSession.find = function (path) {
-		return jsonpointer.get(batchSessionData, path);
+		var obj = jsonpointer.get(batchSessionData, path);
+		return cloneJsonObj(obj);
 	};
 
 	/**
 	 * JSON Patch add operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.batchSession.add = function (path, value) {
+	jatos.batchSession.add = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("add", path, value, null);
-		return sendBatchSessionPatch(patch);
+		return sendBatchSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
 	 * Like JSON Patch add operation, but instead of a path accepts
 	 * a name, thus works only on the first level of the object tree.
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.batchSession.set = function (name, value) {
+	jatos.batchSession.set = function (name, value, onSuccess, onFail) {
 		var patch = generatePatch("add", "/" + name, value, null);
-		return sendBatchSessionPatch(patch);
+		return sendBatchSessionPatch(patch, onSuccess, onFail);
+	};
+
+	/**
+	 * Replaces the whole session data (might be bad performancewise)
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
+	 */
+	jatos.batchSession.setAll = function (value, onSuccess, onFail) {
+		return jatos.batchSession.replace("", value, onSuccess, onFail);
 	};
 
 	/**
 	 * JSON Patch remove operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.batchSession.remove = function (path) {
+	jatos.batchSession.remove = function (path, onSuccess, onFail) {
 		var patch = generatePatch("remove", path, null, null);
-		return sendBatchSessionPatch(patch);
+		return sendBatchSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
 	 * Clears the batch session data and sets it to an empty object
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.batchSession.clear = function () {
-		return jatos.batchSession.remove("");
+	jatos.batchSession.clear = function (onSuccess, onFail) {
+		return jatos.batchSession.remove("", onSuccess, onFail);
 	};
 
 	/**
 	 * JSON Patch replace operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.batchSession.replace = function (path, value) {
+	jatos.batchSession.replace = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("replace", path, value, null);
-		return sendBatchSessionPatch(patch);
+		return sendBatchSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
 	 * JSON Patch copy operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.batchSession.copy = function (from, path) {
+	jatos.batchSession.copy = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("copy", path, null, from);
-		return sendBatchSessionPatch(patch);
+		return sendBatchSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
 	 * JSON Patch move operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.batchSession.move = function (from, path) {
+	jatos.batchSession.move = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("move", path, null, from);
-		return sendBatchSessionPatch(patch);
+		return sendBatchSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
@@ -616,7 +680,7 @@ var jatos = {};
 	 * Sends a JSON Patch via the batch channel to JATOS and subsequently to all
 	 * other study currently running in this batch
 	 */
-	function sendBatchSessionPatch(patch) {
+	function sendBatchSessionPatch(patch, onSuccess, onFail) {
 		if (!batchChannel || batchChannel.readyState != 1) {
 			callingOnError(null, "No open batch channel");
 			return rejectedPromise();
@@ -636,7 +700,7 @@ var jatos = {};
 			batchChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
 			batchSessionTimeout = setSessionSendingTimeout(
-				jatos.sessionTimeoutTime, sendingBatchSessionDeferred);
+				jatos.sessionTimeoutTime, sendingBatchSessionDeferred, onSuccess, onFail);
 		} catch (error) {
 			callingOnError(null, error);
 			sendingBatchSessionDeferred.reject();
@@ -938,7 +1002,9 @@ var jatos = {};
 	 *		onMemberClose(memberId): to be called when another member (not the worker
 	 *			running this study) closed his group channel. It gets the group 
 	 *			member ID as a parameter.
-	 *		onGroupSession(): to be called when the group session is updated.
+	 *		onGroupSession(path): to be called when the group session is updated. It gets
+	 *			a JSON Pointer as a parameter that points to the changed object within
+	 *			the session.
 	 *		onUpdate(): Combines several other callbacks. It's called if one of the
 	 *			following is called: onMemberJoin, onMemberOpen, onMemberLeave,
 	 *			onMemberClose, or onGroupSession (the group session can then be read
@@ -946,7 +1012,7 @@ var jatos = {};
 	 * @return {jQuery.Deferred}
 	 */
 	jatos.joinGroup = function (callbacks) {
-		callbacks = callbacks ? callbacks : {}; 
+		callbacks = callbacks ? callbacks : {};
 		if (!webSocketSupported) {
 			callingOnError(callbacks.onError,
 				"This browser does not support WebSockets.");
@@ -1096,7 +1162,7 @@ var jatos = {};
 				// Call onGroupSession with JSON Patch's path
 				if (groupMsg.sessionPatches[0] && groupMsg.sessionPatches[0].path) {
 					callFunctionIfExist(callbacks.onGroupSession, groupMsg.sessionPatches[0].path);
-				} else if (onJatosBatchSession) {
+				} else {
 					callFunctionIfExist(callbacks.onGroupSession);
 				}
 				callFunctionIfExist(callbacks.onUpdate);
@@ -1128,81 +1194,144 @@ var jatos = {};
 	 * Getter for a field in the group session data. Takes a name
 	 * and returns the matching value. Works only on the first
 	 * level of the object tree. For all other levels use
-	 * jatos.groupSession.find.
+	 * jatos.groupSession.find. Gets the object from the
+	 * locally stored copy of the group session and does not call
+	 * the server.
 	 */
 	jatos.groupSession.get = function (name) {
-		return jsonpointer.get(groupSessionData, "/" + name);
+		var obj = jsonpointer.get(groupSessionData, "/" + name);
+		return cloneJsonObj(obj);
 	};
 
 	/**
-	 * Returns the complete group session data.
+	 * Returns the complete group session data (might be bad performancewise)
+	 * Gets the object from the locally stored copy of the group session and
+	 * does not call the server.
 	 */
 	jatos.groupSession.getAll = function () {
-		return jatos.groupSession.find("");
+		var obj = jatos.groupSession.find("");
+		return cloneJsonObj(obj);
 	};
 
 	/**
 	 * Getter for a field in the group session data. Takes a
-	 * JSON Pointer and returns the matching value.
+	 * JSON Pointer and returns the matching value. Gets the object from the
+	 * locally stored copy of the group session and does not call the server.
 	 */
 	jatos.groupSession.find = function (path) {
-		return jsonpointer.get(groupSessionData, path);
+		var obj = jsonpointer.get(groupSessionData, path);
+		return cloneJsonObj(obj);
 	};
 
 	/**
 	 * JSON Patch add operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.groupSession.add = function (path, value) {
+	jatos.groupSession.add = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("add", path, value, null);
-		return sendGroupSessionPatch(patch);
+		return sendGroupSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
 	 * Like JSON Patch add operation, but instead of a path accepts
 	 * a name, thus works only on the first level of the object tree.
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.groupSession.set = function (name, value) {
+	jatos.groupSession.set = function (name, value, onSuccess, onFail) {
 		var patch = generatePatch("add", "/" + name, value, null);
-		return sendGroupSessionPatch(patch);
+		return sendGroupSessionPatch(patch, onSuccess, onFail);
+	};
+
+	/**
+	 * Replaces the whole session data (might be bad performancewise)
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
+	 */
+	jatos.groupSession.setAll = function (value, onSuccess, onFail) {
+		return jatos.groupSession.replace("", value, onSuccess, onFail);
 	};
 
 	/**
 	 * JSON Patch remove operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.groupSession.remove = function (path) {
+	jatos.groupSession.remove = function (path, onSuccess, onFail) {
 		var patch = generatePatch("remove", path, null, null);
-		return sendGroupSessionPatch(patch);
+		return sendGroupSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
 	 * Clears the group session data and sets it to an empty object
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.groupSession.clear = function () {
-		return jatos.groupSession.remove("");
+	jatos.groupSession.clear = function (onSuccess, onFail) {
+		return jatos.groupSession.remove("", onSuccess, onFail);
 	};
 
 	/**
 	 * JSON Patch replace operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.groupSession.replace = function (path, value) {
+	jatos.groupSession.replace = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("replace", path, value, null);
-		return sendGroupSessionPatch(patch);
+		return sendGroupSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
 	 * JSON Patch copy operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.groupSession.copy = function (from, path) {
+	jatos.groupSession.copy = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("copy", path, null, from);
-		return sendGroupSessionPatch(patch);
+		return sendGroupSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
 	 * JSON Patch move operation
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             this patch was successfully applied on the server and
+	 *             the client side
+	 * @param {optional callback} onError - Function to be called if
+	 *             this patch failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.groupSession.move = function (from, path) {
+	jatos.groupSession.move = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("move", path, null, from);
-		return sendGroupSessionPatch(patch);
+		return sendGroupSessionPatch(patch, onSuccess, onFail);
 	};
 
 	/**
@@ -1218,7 +1347,7 @@ var jatos = {};
 	 * Sends a JSON Patch via the group channel to JATOS and subsequently to all
 	 * other study currently running in this group
 	 */
-	function sendGroupSessionPatch(patch) {
+	function sendGroupSessionPatch(patch, onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != 1) {
 			callingOnError(null, "No open group channel");
 			return rejectedPromise();
@@ -1238,83 +1367,13 @@ var jatos = {};
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
 			groupSessionTimeout = setSessionSendingTimeout(
-				jatos.sessionTimeoutTime, sendingGroupSessionDeferred);
+				jatos.sessionTimeoutTime, sendingGroupSessionDeferred, onSuccess, onFail);
 		} catch (error) {
 			callingOnError(null, error);
 			sendingGroupSessionDeferred.reject();
 		}
 		return sendingGroupSessionDeferred.promise();
 	}
-
-	/**
-	 * Sends the group session data via the group channel WebSocket to the JATOS
-	 * server where it's stored and broadcasted to all members of this group. It
-	 * either takes an Object as parameter or uses jatos.groupSessionData. jatos.js
-	 * tries several times to upload the session data, but if there are many
-	 * concurrent members updating at the same time it might fail. But
-	 * jatos.js/JATOS guarantees that it either persists the updated session data
-	 * or calls the onError callback.
-	 * 
-	 * @param {optional Object} sessionData - An object in JSON; If it's not
-	 *             given take jatos.groupSessionData
-	 * @param {optional Object} onError - Function to be called if this upload was
-	 *             unsuccessful
-	 */
-	// TODO
-	/*jatos.setGroupSessionData = function (sessionData, onError) {
-		if (!groupChannel || groupChannel.readyState != 1) {
-			callingOnError(onError, "No open group channel");
-			return;
-		}
-		if (sendingGroupSession) {
-			callingOnError(onError, "Can send only one group session at a time");
-			return;
-		}
-		sendingGroupSession = true;
-		if (sessionData) {
-			groupSessionData = sessionData;
-		}
-		// Store the current state in case we have to send it again
-		var patches = jsonpatch.generate(groupSessionObserver);
-		uploadGroupSessionPatches(patches, onError);
-	};
-
-	function uploadGroupSessionPatches(patches, onError) {
-		if (!groupChannel || groupChannel.readyState != 1) {
-			return;
-		}
-		sendingGroupSession = true;
-
-		var msgObj = {};
-		msgObj.action = "SESSION";
-		msgObj.sessionPatches = patches;
-		msgObj.sessionVersion = groupSessionVersion;
-		try {
-			groupChannel.send(JSON.stringify(msgObj));
-			// Setup timeout: How long to wait for an answer from JATOS.
-			groupSessionTimeout = setTriggerTimeout(
-				jatos.sessionTimeoutTime,
-				function () {
-					callingOnError(onError, "Couldn't set group session.");
-				});
-		} catch (error) {
-			callingOnError(onError, error);
-		}
-	}
-
-	function setTriggerTimeout(delay, timeoutCallback) {
-		var timeoutId;
-		timeoutId = setTimeout(timeoutCallback, delay);
-		return {
-			cancel: function () {
-				clearTimeout(timeoutId);
-			},
-			trigger: function () {
-				clearTimeout(timeoutId);
-				return timeoutCallback();
-			}
-		};
-	}*/
 
 	/**
 	 * Ask the JATOS server to fix this group.
@@ -1605,16 +1664,16 @@ var jatos = {};
 			endingDeferred = jatos.jQuery.Deferred();
 			var url = "/publix/" + jatos.studyId + "/end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
-			if (typeof successful != 'undefined' && typeof errorMsg != 'undefined') {
+			if (typeof successful == 'boolean' && typeof errorMsg == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"successful": successful,
 					"errorMsg": errorMsg
 				});
-			} else if (typeof successful != 'undefined') {
+			} else if (typeof successful == 'boolean' && typeof errorMsg != 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"successful": successful
 				});
-			} else if (typeof errorMsg != 'undefined') {
+			} else if (typeof successful != 'boolean' && typeof errorMsg == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"errorMsg": errorMsg
 				});
@@ -1664,16 +1723,16 @@ var jatos = {};
 			endingDeferred = jatos.jQuery.Deferred();
 			var url = "/publix/" + jatos.studyId + "/end" + "?srid=" + jatos.studyResultId;
 			var fullUrl;
-			if (typeof successful != 'undefined' && typeof errorMsg != 'undefined') {
+			if (typeof successful == 'boolean' && typeof errorMsg == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"successful": successful,
 					"errorMsg": errorMsg
 				});
-			} else if (typeof successful != 'undefined') {
+			} else if (typeof successful == 'boolean' && typeof errorMsg != 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"successful": successful
 				});
-			} else if (typeof errorMsg != 'undefined') {
+			} else if (typeof successful != 'boolean' && typeof errorMsg == 'string') {
 				fullUrl = url + "&" + jatos.jQuery.param({
 					"errorMsg": errorMsg
 				});
@@ -1790,17 +1849,20 @@ var jatos = {};
 		console.error(errorMsg);
 	}
 
-	function setSessionSendingTimeout(delay, deferred) {
+	function setSessionSendingTimeout(delay, deferred, onSuccess, onFail) {
 		var timeoutId = setTimeout(function () {
+			callFunctionIfExist(onFail, "Timeout sending session patch");
 			deferred.reject("Timeout sending session patch");
 		}, delay);
 		return {
 			cancel: function () {
 				clearTimeout(timeoutId);
+				callFunctionIfExist(onSuccess, "Patched session");
 				deferred.resolve("Patched session");
 			},
 			trigger: function () {
 				clearTimeout(timeoutId);
+				callFunctionIfExist(onFail, "Error patching session");
 				deferred.reject("Error patching session");
 			}
 		};
@@ -1823,6 +1885,33 @@ var jatos = {};
 		var deferred = jatos.jQuery.Deferred();
 		deferred.resolve();
 		return deferred.promise();
+	}
+
+	function cloneJsonObj(obj) {
+		var copy;
+
+		// Handle the 3 simple types, and null or undefined
+		if (null === obj || "object" != typeof obj) return obj;
+
+		// Handle Array
+		if (obj instanceof Array) {
+			copy = [];
+			for (var i = 0, len = obj.length; i < len; i++) {
+				copy[i] = cloneJsonObj(obj[i]);
+			}
+			return copy;
+		}
+
+		// Handle Object
+		if (obj instanceof Object) {
+			copy = {};
+			for (var attr in obj) {
+				if (obj.hasOwnProperty(attr)) copy[attr] = cloneJsonObj(obj[attr]);
+			}
+			return copy;
+		}
+
+		throw new Error("Unable to copy obj! Its type isn't supported.");
 	}
 
 })();
