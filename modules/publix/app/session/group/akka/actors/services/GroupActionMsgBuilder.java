@@ -54,6 +54,8 @@ public class GroupActionMsgBuilder {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, action.toString());
 		objectNode.put(GroupActionMsg.GROUP_RESULT_ID, groupResult.getId());
+		objectNode.put(GroupActionMsg.GROUP_STATE,
+				groupResult.getGroupState().name());
 		objectNode.put(GroupActionMsg.GROUP_SESSION_VERSION,
 				groupResult.getGroupSessionVersion());
 		return new GroupActionMsg(objectNode, tellWhom);

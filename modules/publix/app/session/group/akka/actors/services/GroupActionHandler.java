@@ -187,9 +187,8 @@ public class GroupActionHandler {
 			if (groupResult != null) {
 				groupResult.setGroupState(GroupState.FIXED);
 				groupResultDao.update(groupResult);
-				GroupActionMsg msg = groupActionMsgBuilder.build(groupResultId,
-						studyResultId, groupRegistry, GroupAction.FIXED,
-						TellWhom.ALL);
+				GroupActionMsg msg = groupActionMsgBuilder.buildSimple(
+						groupResult, GroupAction.FIXED, TellWhom.ALL);
 				return GroupActionMsgBundle.build(msg);
 			} else {
 				String errorMsg = "Couldn't find group result with ID "
