@@ -983,7 +983,7 @@ var jatos = {};
 	 *		callbacks are optional. These callbacks functions can be:
 	 *		onOpen: to be called when the group channel is successfully opened
 	 *		onClose: to be called when the group channel is closed
-	 *		onError: to be called if an error during opening of the group
+	 *		onError(errorMsg): to be called if an error during opening of the group
 	 *			channel's WebSocket occurs or if an error is received via the
 	 *			group channel (e.g. the group session data couldn't be updated). If
 	 *			this function is not defined jatos.js will try to call the global
@@ -1007,8 +1007,7 @@ var jatos = {};
 	 *			the session.
 	 *		onUpdate(): Combines several other callbacks. It's called if one of the
 	 *			following is called: onMemberJoin, onMemberOpen, onMemberLeave,
-	 *			onMemberClose, or onGroupSession (the group session can then be read
-	 *			via jatos.groupSessionData).
+	 *			onMemberClose, or onGroupSession.
 	 * @return {jQuery.Deferred}
 	 */
 	jatos.joinGroup = function (callbacks) {
