@@ -122,11 +122,14 @@ public class BatchServiceTest {
 				.isEqualTo(batch.getMaxTotalWorkers());
 		assertThat(clone.getTitle()).isEqualTo(batch.getTitle());
 		assertThat(clone.getWorkerList()).isEqualTo(batch.getWorkerList());
+		assertThat(clone.getComments()).isEqualTo(batch.getComments());
+		assertThat(clone.getJsonData()).isEqualTo(batch.getJsonData());
 
 		// Check fields that weren't cloned
 		assertThat(clone.getId()).isNotEqualTo(batch.getId());
 		assertThat(clone.getStudy()).isNotEqualTo(batch.getStudy());
 		assertThat(clone.getUuid()).isNotEqualTo(batch.getUuid());
+		assertThat(clone.getBatchSessionData()).isNotEqualTo(batch.getBatchSessionData());
 	}
 
 	private Batch createDummyBatch(Study study) {
