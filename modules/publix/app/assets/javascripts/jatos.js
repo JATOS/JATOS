@@ -121,15 +121,16 @@ var jatos = {};
 	 */
 	var batchSessionData = {};
 	/**
-	 * How long in ms should jatos.js wait for an answer after a group or batch
-	 * session upload.
+	 * How long in ms should jatos.js wait for an answer after message was sent via
+	 * a group or batch channel.
 	 */
-	jatos.sessionTimeoutTime = 10000;
+	jatos.channelSendingTimeoutTime = 10000;
 	/**
-	 * JS timeout objects for group and batch session
+	 * JS timeout objects
 	 */
-	var groupSessionTimeout;
 	var batchSessionTimeout;
+	var groupSessionTimeout;
+	var groupFixedTimeout;
 	/**
 	 * Version of the current group and batch session data. This is used to prevent
 	 * concurrent changes of the data.
@@ -169,6 +170,7 @@ var jatos = {};
 	var sendingBatchSessionDeferred;
 	var joiningGroupDeferred;
 	var sendingGroupSessionDeferred;
+	var sendingGroupFixedDeferred;
 	var reassigningGroupDeferred;
 	var leavingGroupDeferred;
 	var submittingResultDataDeferred;
@@ -682,11 +684,11 @@ var jatos = {};
 	 */
 	function sendBatchSessionPatch(patch, onSuccess, onFail) {
 		if (!batchChannel || batchChannel.readyState != 1) {
-			callingOnError(null, "No open batch channel");
+			callingOnError(onFail, "No open batch channel");
 			return rejectedPromise();
 		}
 		if (isDeferredPending(sendingBatchSessionDeferred)) {
-			callingOnError(null, "Can send only one batch session patch at a time");
+			callingOnError(onFail, "Can send only one batch session patch at a time");
 			return rejectedPromise();
 		}
 
@@ -699,10 +701,10 @@ var jatos = {};
 		try {
 			batchChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			batchSessionTimeout = setSessionSendingTimeout(
-				jatos.sessionTimeoutTime, sendingBatchSessionDeferred, onSuccess, onFail);
+			batchSessionTimeout = setChannelSendingTimeout(
+				sendingBatchSessionDeferred, onSuccess, onFail);
 		} catch (error) {
-			callingOnError(null, error);
+			callingOnError(onFail, error);
 			sendingBatchSessionDeferred.reject();
 		}
 		return sendingBatchSessionDeferred.promise();
@@ -1168,6 +1170,7 @@ var jatos = {};
 				break;
 			case "FIXED":
 				// The group is now fixed (no new members)
+				groupFixedTimeout.cancel();
 				callFunctionIfExist(callbacks.onUpdate);
 				break;
 			case "SESSION_ACK":
@@ -1348,11 +1351,11 @@ var jatos = {};
 	 */
 	function sendGroupSessionPatch(patch, onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != 1) {
-			callingOnError(null, "No open group channel");
+			callingOnError(onFail, "No open group channel");
 			return rejectedPromise();
 		}
 		if (isDeferredPending(sendingGroupSessionDeferred)) {
-			callingOnError(null, "Can send only one group session patch at a time");
+			callingOnError(onFail, "Can send only one group session patch at a time");
 			return rejectedPromise();
 		}
 
@@ -1365,10 +1368,10 @@ var jatos = {};
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			groupSessionTimeout = setSessionSendingTimeout(
-				jatos.sessionTimeoutTime, sendingGroupSessionDeferred, onSuccess, onFail);
+			groupSessionTimeout = setChannelSendingTimeout(
+				sendingGroupSessionDeferred, onSuccess, onFail);
 		} catch (error) {
-			callingOnError(null, error);
+			callingOnError(onFail, error);
 			sendingGroupSessionDeferred.reject();
 		}
 		return sendingGroupSessionDeferred.promise();
@@ -1376,17 +1379,36 @@ var jatos = {};
 
 	/**
 	 * Ask the JATOS server to fix this group.
+	 * @param {optional callback} onSuccess - Function to be called if
+	 *             the fixing was successful
+	 * @param {optional callback} onFail - Function to be called if
+	 *             the fixing failed
+	 * @return {jQuery.Deferred}
 	 */
-	jatos.setGroupFixed = function () {
-		if (groupChannel && groupChannel.readyState == 1) {
-			var msgObj = {};
-			msgObj.action = "FIXED";
-			try {
-				groupChannel.send(JSON.stringify(msgObj));
-			} catch (error) {
-				callingOnError(null, error);
-			}
+	jatos.setGroupFixed = function (onSuccess, onFail) {
+		if (!groupChannel || groupChannel.readyState != 1) {
+			callingOnError(onFail, "No open group channel");
+			return rejectedPromise();
 		}
+
+		if (isDeferredPending(sendingGroupFixedDeferred)) {
+			callingOnError(onFail, "Can fix group only once");
+			return rejectedPromise();
+		}
+
+		sendingGroupFixedDeferred = jatos.jQuery.Deferred();
+		var msgObj = {};
+		msgObj.action = "FIXED";
+		try {
+			groupChannel.send(JSON.stringify(msgObj));
+			// Setup timeout: How long to wait for an answer from JATOS.
+			groupFixedTimeout = setChannelSendingTimeout(
+				sendingGroupFixedDeferred, onSuccess, onFail);
+		} catch (error) {
+			callingOnError(onFail, error);
+			sendingGroupFixedDeferred.reject();
+		}
+		return sendingGroupFixedDeferred.promise();
 	};
 
 	/**
@@ -1848,21 +1870,25 @@ var jatos = {};
 		console.error(errorMsg);
 	}
 
-	function setSessionSendingTimeout(delay, deferred, onSuccess, onFail) {
+	/**
+	 * Sets a timeout and returns an object with two functions 1) to cancel the
+	 * timeout and 2) to trigger the timeout prematurely
+	 */
+	function setChannelSendingTimeout(deferred, onSuccess, onFail) {
 		var timeoutId = setTimeout(function () {
-			callFunctionIfExist(onFail, "Timeout sending session patch");
-			deferred.reject("Timeout sending session patch");
-		}, delay);
+			callFunctionIfExist(onFail, "Timeout sending message");
+			deferred.reject("Timeout sending message");
+		}, jatos.channelSendingTimeoutTime);
 		return {
 			cancel: function () {
 				clearTimeout(timeoutId);
-				callFunctionIfExist(onSuccess, "Patched session");
-				deferred.resolve("Patched session");
+				callFunctionIfExist(onSuccess, "success");
+				deferred.resolve("success");
 			},
 			trigger: function () {
 				clearTimeout(timeoutId);
-				callFunctionIfExist(onFail, "Error patching session");
-				deferred.reject("Error patching session");
+				callFunctionIfExist(onFail, "Error sending message");
+				deferred.reject("Error sending message");
 			}
 		};
 	}
