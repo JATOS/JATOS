@@ -31,9 +31,9 @@
 		<appender-ref ref="STDOUT" />
 	</appender>
 
-	<logger name="play" level="DEBUG" />
-	<logger name="services" level="DEBUG" />
-	<logger name="session" level="DEBUG" />
+	<logger name="play" level="INFO" />
+	<logger name="services" level="INFO" />
+	<logger name="session" level="INFO" />
 
 	<root level="INFO">
 		<appender-ref ref="ASYNCFILE" />
