@@ -58,7 +58,7 @@ testRequestUrl();
 function testDatabase() {
 	$.ajax({
 		type: 'GET',
-		url: '@controllers.routes.Tests.testDatabase()',
+		url: '@controllers.gui.routes.Tests.testDatabase()',
 		success: function(result) {
 			$('#testDatabaseResult').html('<font color="green">OK</font>');
 		},
@@ -71,7 +71,7 @@ function testDatabase() {
 function testStudyAssetsRootFolder() {
 	$.ajax({
 		type: 'GET',
-		url: '@controllers.routes.Tests.testStudyAssetsRootFolder()',
+		url: '@controllers.gui.routes.Tests.testStudyAssetsRootFolder()',
 		success: function(result) {
 			$('#testStudyAssetsRootFolderResult').html('<font color="green">OK</font>');
 		},
@@ -84,7 +84,7 @@ function testStudyAssetsRootFolder() {
 function testCache() {
 	$.ajax({
 		type: 'GET',
-		url: '@controllers.routes.Tests.testCache()',
+		url: '@controllers.gui.routes.Tests.testCache()',
 		success: function(result) {
 			$('#testCacheResult').html('<font color="green">OK</font>');
 		},
@@ -97,7 +97,7 @@ function testCache() {
 function testJsonSerialization() {
 	$.ajax({
 		type: 'GET',
-		url: '@controllers.routes.Tests.testJsonSerialization()',
+		url: '@controllers.gui.routes.Tests.testJsonSerialization()',
 		success: function(result) {
 			$('#testJsonSerializationResult').html('<font color="green">OK</font>');
 		},
@@ -125,7 +125,7 @@ function testWebSocket() {
 	var webSocket = new WebSocket(((
 			window.location.protocol === "https:") ? "wss://" : "ws://")
 			+ window.location.host
-			+ "@controllers.routes.Tests.testWebSocket()");
+			+ "@controllers.gui.routes.Tests.testWebSocket()");
 	webSocket.onerror = function () {
 		$('#testWebSocketResult').html('<font color="red">FAIL</font>');
 	};

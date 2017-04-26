@@ -3,15 +3,6 @@
 # Order is important!
 # ~~~~
 
-# Tests controller
-GET      /jatos/test                          @controllers.Tests.test()
-GET      /jatos/testDatabase                  @controllers.Tests.testDatabase()
-GET      /jatos/testStudyAssetsRootFolder     @controllers.Tests.testStudyAssetsRootFolder()
-GET      /jatos/testCache                     @controllers.Tests.testCache()
-GET      /jatos/testJsonSerialization         @controllers.Tests.testJsonSerialization()
-GET      /jatos/testWebSocket                 @controllers.Tests.testWebSocket()
-
-
 ### Static resources ###
 GET     /favicon.ico                       controllers.Assets.versioned(path="/public", file="favicon.ico")
 GET     /favicon-16x16.png                 controllers.Assets.versioned(path="/public", file="favicon-16x16.png")

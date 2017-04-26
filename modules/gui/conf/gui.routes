@@ -3,6 +3,14 @@
 # Order is important!
 # ~~~~
 
+# Tests controller
+GET      /jatos/test                                                        @controllers.gui.Tests.test()
+GET      /jatos/testDatabase                                                @controllers.gui.Tests.testDatabase()
+GET      /jatos/testStudyAssetsRootFolder                                   @controllers.gui.Tests.testStudyAssetsRootFolder()
+GET      /jatos/testCache                                                   @controllers.gui.Tests.testCache()
+GET      /jatos/testJsonSerialization                                       @controllers.gui.Tests.testJsonSerialization()
+GET      /jatos/testWebSocket                                               @controllers.gui.Tests.testWebSocket()
+
 # Authentication controller
 GET      /jatos/login                                                       @controllers.gui.Authentication.login()
 POST     /jatos/login                                                       @controllers.gui.Authentication.authenticate()
