@@ -1834,6 +1834,7 @@ var jatos = {};
 		obj.studyId = jatos.studyId;
 		obj.studyTitle = jatos.studyProperties.title;
 		obj.batchId = jatos.batchId;
+		obj.batchTitle = jatos.batchProperties.title;
 		obj.componentId = jatos.componentId;
 		obj.componentPos = jatos.componentPos;
 		obj.componentTitle = jatos.componentProperties.title;
