@@ -513,6 +513,8 @@ var jatos = {};
 	 * jatos.batchSession.find. Gets the object from the
 	 * locally stored copy of the session and does not call
 	 * the server.
+	 * @param {string} name - name of the field 
+	 * @return {object}
 	 */
 	jatos.batchSession.get = function (name) {
 		var obj = jsonpointer.get(batchSessionData, "/" + name);
@@ -520,9 +522,10 @@ var jatos = {};
 	};
 
 	/**
-	 * Returns the complete batch session data (might be bad performancewise)
+	 * Returns the complete batch session data (might be bad performance-wise)
 	 * Gets the object from the locally stored copy of the session
 	 * and does not call the server.
+	 * @return {object}
 	 */
 	jatos.batchSession.getAll = function () {
 		var obj = jatos.batchSession.find("");
@@ -534,6 +537,8 @@ var jatos = {};
 	 * JSON Pointer and returns the matching value. Gets the
 	 * object from the locally stored copy of the session
 	 * and does not call the server.
+	 * @param {string} path - JSON pointer path
+	 * @return {object}
 	 */
 	jatos.batchSession.find = function (path) {
 		var obj = jsonpointer.get(batchSessionData, path);
@@ -542,12 +547,14 @@ var jatos = {};
 
 	/**
 	 * JSON Patch add operation
+	 * @param {string} path - JSON pointer path 
+	 * @param {object} value - value to be stored
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.add = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("add", path, value, null);
@@ -556,13 +563,16 @@ var jatos = {};
 
 	/**
 	 * Like JSON Patch add operation, but instead of a path accepts
-	 * a name, thus works only on the first level of the object tree.
+	 * a name of the field to be stored. Works only on the first level
+	 * of the object tree.
+	 * @param {string} name - name of the field 
+	 * @param {object} value - value to be stored
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.set = function (name, value, onSuccess, onFail) {
 		var patch = generatePatch("add", "/" + name, value, null);
@@ -570,13 +580,14 @@ var jatos = {};
 	};
 
 	/**
-	 * Replaces the whole session data (might be bad performancewise)
+	 * Replaces the whole session data (might be bad performance-wise)
+	 * @param {object} value - value to be stored in the session
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.setAll = function (value, onSuccess, onFail) {
 		return jatos.batchSession.replace("", value, onSuccess, onFail);
@@ -584,12 +595,14 @@ var jatos = {};
 
 	/**
 	 * JSON Patch remove operation
+	 * @param {string} path - JSON pointer path to the field that should
+	 *             be removed
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.remove = function (path, onSuccess, onFail) {
 		var patch = generatePatch("remove", path, null, null);
@@ -603,7 +616,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.clear = function (onSuccess, onFail) {
 		return jatos.batchSession.remove("", onSuccess, onFail);
@@ -611,12 +624,14 @@ var jatos = {};
 
 	/**
 	 * JSON Patch replace operation
+	 * @param {string} path - JSON pointer path 
+	 * @param {object} value - value to be replaced with
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.replace = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("replace", path, value, null);
@@ -625,12 +640,14 @@ var jatos = {};
 
 	/**
 	 * JSON Patch copy operation
+	 * @param {string} from - JSON pointer path to the origin 
+	 * @param {string} path - JSON pointer path to the target
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.copy = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("copy", path, null, from);
@@ -639,12 +656,14 @@ var jatos = {};
 
 	/**
 	 * JSON Patch move operation
+	 * @param {string} from - JSON pointer path to the origin 
+	 * @param {string} path - JSON pointer path to the target
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.move = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("move", path, null, from);
@@ -653,6 +672,9 @@ var jatos = {};
 
 	/**
 	 * JSON Patch test operation
+	 * @param {string} path - JSON pointer path to be tested
+	 * @param {object} value - value to be tested
+	 * @return {boolean}
 	 */
 	jatos.batchSession.test = function (path, value) {
 		var patches = [];
@@ -771,7 +793,7 @@ var jatos = {};
 	 * @param {optional
 	 *            Function} onError - (DEPRECATED) Function to be called in case
 	 *            of error
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.submitResultData = function (resultData, onSuccess, onError) {
 		if (isDeferredPending(submittingResultDataDeferred)) {
@@ -815,7 +837,7 @@ var jatos = {};
 	 * @param {optional
 	 *            Function} onComplete - Function to be called after this function is
 	 *            finished
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.setStudySessionData = function (studySessionData, onComplete) {
 		var deferred = jatos.jQuery.Deferred();
@@ -1010,7 +1032,7 @@ var jatos = {};
 	 *		onUpdate(): Combines several other callbacks. It's called if one of the
 	 *			following is called: onMemberJoin, onMemberOpen, onMemberLeave,
 	 *			onMemberClose, or onGroupSession.
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.joinGroup = function (callbacks) {
 		callbacks = callbacks ? callbacks : {};
@@ -1199,6 +1221,7 @@ var jatos = {};
 	 * jatos.groupSession.find. Gets the object from the
 	 * locally stored copy of the group session and does not call
 	 * the server.
+	 * @return {object}
 	 */
 	jatos.groupSession.get = function (name) {
 		var obj = jsonpointer.get(groupSessionData, "/" + name);
@@ -1206,9 +1229,10 @@ var jatos = {};
 	};
 
 	/**
-	 * Returns the complete group session data (might be bad performancewise)
+	 * Returns the complete group session data (might be bad performance-wise)
 	 * Gets the object from the locally stored copy of the group session and
 	 * does not call the server.
+	 * @return {object}
 	 */
 	jatos.groupSession.getAll = function () {
 		var obj = jatos.groupSession.find("");
@@ -1219,6 +1243,7 @@ var jatos = {};
 	 * Getter for a field in the group session data. Takes a
 	 * JSON Pointer and returns the matching value. Gets the object from the
 	 * locally stored copy of the group session and does not call the server.
+	 * @return {object}
 	 */
 	jatos.groupSession.find = function (path) {
 		var obj = jsonpointer.get(groupSessionData, path);
@@ -1232,7 +1257,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.add = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("add", path, value, null);
@@ -1247,7 +1272,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.set = function (name, value, onSuccess, onFail) {
 		var patch = generatePatch("add", "/" + name, value, null);
@@ -1255,13 +1280,13 @@ var jatos = {};
 	};
 
 	/**
-	 * Replaces the whole session data (might be bad performancewise)
+	 * Replaces the whole session data (might be bad performance-wise)
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.setAll = function (value, onSuccess, onFail) {
 		return jatos.groupSession.replace("", value, onSuccess, onFail);
@@ -1274,7 +1299,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.remove = function (path, onSuccess, onFail) {
 		var patch = generatePatch("remove", path, null, null);
@@ -1288,7 +1313,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.clear = function (onSuccess, onFail) {
 		return jatos.groupSession.remove("", onSuccess, onFail);
@@ -1301,7 +1326,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.replace = function (path, value, onSuccess, onFail) {
 		var patch = generatePatch("replace", path, value, null);
@@ -1315,7 +1340,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.copy = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("copy", path, null, from);
@@ -1329,7 +1354,7 @@ var jatos = {};
 	 *             the client side
 	 * @param {optional callback} onError - Function to be called if
 	 *             this patch failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.move = function (from, path, onSuccess, onFail) {
 		var patch = generatePatch("move", path, null, from);
@@ -1338,6 +1363,7 @@ var jatos = {};
 
 	/**
 	 * JSON Patch test operation
+	 * @return {boolean}
 	 */
 	jatos.groupSession.test = function (path, value) {
 		var patches = [];
@@ -1383,7 +1409,7 @@ var jatos = {};
 	 *             the fixing was successful
 	 * @param {optional callback} onFail - Function to be called if
 	 *             the fixing failed
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.setGroupFixed = function (onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != 1) {
@@ -1505,7 +1531,7 @@ var jatos = {};
 	 *            reassignment was successful
 	 * @param {optional Function} onFail - Function to be called if the
 	 *            reassignment was unsuccessful. 
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.reassignGroup = function (onSuccess, onFail) {
 		if (isDeferredPending(joiningGroupDeferred) ||
@@ -1551,7 +1577,7 @@ var jatos = {};
 	 * @param {optional Function} onSuccess - Function to be called after the group
 	 *            is left.
 	 * @param {optional Function} onError - Function to be called in case of error.
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.leaveGroup = function (onSuccess, onError) {
 		if (isDeferredPending(joiningGroupDeferred) ||
@@ -1593,7 +1619,7 @@ var jatos = {};
 	 *            submit
 	 * @param {optional
 	 *            Function} onError - Function to be called in case of error
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.abortStudyAjax = function (message, onSuccess, onError) {
 		if (isDeferredPending(abortingDeferred)) {
@@ -1673,7 +1699,7 @@ var jatos = {};
 	 *            submit
 	 * @param {optional
 	 *            Function} onError - Function to be called in case of error
-	 * @return {jQuery.Deferred}
+	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.endStudyAjax = function (successful, errorMsg, onSuccess, onError) {
 		if (isDeferredPending(endingDeferred)) {
