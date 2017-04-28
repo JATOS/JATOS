@@ -2,11 +2,12 @@
 # JATOS loader for Linux and MacOS X
 
 # Change IP address and port here
+# Alternatively you can use command-line arguments -Dhttp.address and -Dhttp.port
 address="127.0.0.1"
 port="9000"
 
 # Don't change after here unless you know what you're doing
-#####################################
+###########################################################
 
 # Get JATOS directory
 dir="$( cd "$( dirname "$0" )" && pwd )"
