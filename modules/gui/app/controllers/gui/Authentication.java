@@ -67,7 +67,7 @@ public class Authentication extends Controller {
 			return returnBadRequestDueToFailedAuth(loginForm, email);
 		} else {
 			authenticationService.writeSessionCookieAndSessionCache(session(),
-					email, request().host());
+					email, request().remoteAddress());
 			if (HttpUtils.isAjax()) {
 				return ok();
 			} else {
@@ -78,8 +78,9 @@ public class Authentication extends Controller {
 
 	private Result returnBadRequestDueToRepeatedLoginAttempt(
 			Form<Login> loginForm, String email) {
-		LOGGER.warn("Authentication failed: host " + request().host()
-				+ " failed repeatedly for email " + email);
+		LOGGER.warn("Authentication failed: remote address "
+				+ request().remoteAddress() + " failed repeatedly for email "
+				+ email);
 		if (HttpUtils.isAjax()) {
 			return badRequest(MessagesStrings.FAILED_THREE_TIMES);
 		} else {
@@ -90,8 +91,8 @@ public class Authentication extends Controller {
 
 	private Result returnBadRequestDueToFailedAuth(Form<Login> loginForm,
 			String email) {
-		LOGGER.warn("Authentication failed: host " + request().host()
-				+ " failed for email " + email);
+		LOGGER.warn("Authentication failed: remote address "
+				+ request().remoteAddress() + " failed for email " + email);
 		if (HttpUtils.isAjax()) {
 			return badRequest(MessagesStrings.INVALID_USER_OR_PASSWORD);
 		} else {
@@ -110,7 +111,7 @@ public class Authentication extends Controller {
 				+ session(AuthenticationService.SESSION_USER_EMAIL));
 		User loggedInUser = authenticationService.getLoggedInUser();
 		authenticationService.clearSessionCookieAndSessionCache(session(),
-				loggedInUser.getEmail(), request().host());
+				loggedInUser.getEmail(), request().remoteAddress());
 		FlashScopeMessaging.success("You've been logged out.");
 		return redirect(controllers.gui.routes.Authentication.login());
 	}

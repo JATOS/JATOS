@@ -25,25 +25,26 @@ public class UserSessionCacheAccessor {
 		this.cache = cache;
 	}
 
-	public String getUserSessionId(String email, String host) {
+	public String getUserSessionId(String email, String remoteAddress) {
 		UserSession userSession = cache.get(email);
 		if (userSession != null) {
-			return userSession.getSessionId(host);
+			return userSession.getSessionId(remoteAddress);
 		} else {
 			return null;
 		}
 	}
 
-	public void setUserSessionId(String email, String host, String sessionId) {
+	public void setUserSessionId(String email, String remoteAddress,
+			String sessionId) {
 		UserSession userSession = findOrCreateByEmail(email);
-		userSession.addSessionId(host, sessionId);
+		userSession.addSessionId(remoteAddress, sessionId);
 	}
 
-	public boolean removeUserSessionId(String email, String host) {
+	public boolean removeUserSessionId(String email, String remoteAddress) {
 		UserSession userSession = cache.get(email);
 		if (userSession != null) {
 			// Only remove the session ID - leave the UserSession in the Cache
-			String sessionId = userSession.removeSessionId(host);
+			String sessionId = userSession.removeSessionId(remoteAddress);
 			return sessionId != null;
 		} else {
 			return false;

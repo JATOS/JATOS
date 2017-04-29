@@ -127,9 +127,10 @@ public class AuthenticationService {
 	 * authenticate() for this).
 	 */
 	public void writeSessionCookieAndSessionCache(Http.Session session,
-			String email, String host) {
+			String email, String remoteAddress) {
 		String sessionId = generateSessionId();
-		userSessionCacheAccessor.setUserSessionId(email, host, sessionId);
+		userSessionCacheAccessor.setUserSessionId(email, remoteAddress,
+				sessionId);
 		session.put(SESSION_ID, sessionId);
 		session.put(SESSION_USER_EMAIL, email);
 		session.put(SESSION_LOGIN_TIME,
@@ -168,8 +169,8 @@ public class AuthenticationService {
 	 * done during a user logout.
 	 */
 	public void clearSessionCookieAndSessionCache(Http.Session session,
-			String email, String host) {
-		userSessionCacheAccessor.removeUserSessionId(email, host);
+			String email, String remoteAddress) {
+		userSessionCacheAccessor.removeUserSessionId(email, remoteAddress);
 		session.clear();
 	}
 
@@ -178,10 +179,10 @@ public class AuthenticationService {
 	 * same as stored in the cache during the last login.
 	 */
 	public boolean isValidSessionId(Http.Session session, String email,
-			String host) {
+			String remoteAddress) {
 		String cookieSessionId = session.get(SESSION_ID);
 		String cachedSessionId = userSessionCacheAccessor
-				.getUserSessionId(email, host);
+				.getUserSessionId(email, remoteAddress);
 		return cookieSessionId != null && cachedSessionId != null
 				&& cookieSessionId.equals(cachedSessionId);
 	}
@@ -195,8 +196,8 @@ public class AuthenticationService {
 			Instant loginTime = Instant.ofEpochMilli(
 					Long.parseLong(session.get(SESSION_LOGIN_TIME)));
 			Instant now = Instant.now();
-			Instant allowedUntil = loginTime.plus(Common.getUserSessionTimeout(),
-					ChronoUnit.MINUTES);
+			Instant allowedUntil = loginTime
+					.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
 			return allowedUntil.isBefore(now);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage());
@@ -214,8 +215,8 @@ public class AuthenticationService {
 			Instant lastActivityTime = Instant.ofEpochMilli(
 					Long.parseLong(session.get(SESSION_LAST_ACTIVITY_TIME)));
 			Instant now = Instant.now();
-			Instant allowedUntil = lastActivityTime
-					.plus(Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
+			Instant allowedUntil = lastActivityTime.plus(
+					Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
 			return allowedUntil.isBefore(now);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage());

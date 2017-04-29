@@ -20,12 +20,13 @@ public class UserSession {
 	private String email;
 
 	/**
-	 * This map maps the request's host to its session ID. This ID is used in
-	 * Play's session cookie to add an additional layer of security. It
-	 * identifies the current session. If a user logs out, the session ID
-	 * becomes null. This way the session can't be reused after the user
-	 * logged-out. The ID is stored together with its host so this ID can't be
-	 * used from a different host (session hijacking).
+	 * This map maps the request's remote address (usually an IP) to its session
+	 * ID. This ID is used in Play's session cookie to add an additional layer
+	 * of security. It identifies the current session. If a user logs out, the
+	 * session ID becomes null. This way the session can't be reused after the
+	 * user logged-out. The ID is stored together with its remote address so
+	 * this ID can't be used from a different remote address (session
+	 * hijacking).
 	 */
 	private Map<String, String> sessionIdMap = new ConcurrentHashMap<String, String>();
 
@@ -45,16 +46,16 @@ public class UserSession {
 		return email;
 	}
 
-	public String getSessionId(String host) {
-		return sessionIdMap.get(host);
+	public String getSessionId(String remoteAddress) {
+		return sessionIdMap.get(remoteAddress);
 	}
 
-	public void addSessionId(String host, String sessionId) {
-		sessionIdMap.put(host, sessionId);
+	public void addSessionId(String remoteAddress, String sessionId) {
+		sessionIdMap.put(remoteAddress, sessionId);
 	}
 
-	public String removeSessionId(String host) {
-		return sessionIdMap.remove(host);
+	public String removeSessionId(String remoteAddress) {
+		return sessionIdMap.remove(remoteAddress);
 	}
 
 	public Instant getOldestLoginTime() {

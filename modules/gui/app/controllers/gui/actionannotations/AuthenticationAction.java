@@ -94,24 +94,24 @@ public class AuthenticationAction extends Action<Authenticated> {
 				.getLoggedInUserBySessionCookie(ctx.session());
 		if (loggedInUser == null) {
 			authenticationService.clearSessionCookie(ctx.session());
-			return callForbiddenDueToAuthentication(ctx.request().host(),
+			return callForbiddenDueToAuthentication(ctx.request().remoteAddress(),
 					ctx.request().path());
 		}
 		RequestScope.put(AuthenticationService.LOGGED_IN_USER, loggedInUser);
 
 		// Check user's session ID
 		if (!authenticationService.isValidSessionId(ctx.session(),
-				loggedInUser.getEmail(), ctx.request().host())) {
+				loggedInUser.getEmail(), ctx.request().remoteAddress())) {
 			authenticationService.clearSessionCookie(ctx.session());
 			return callForbiddenDueToInvalidSession(loggedInUser.getEmail(),
-					ctx.request().host(), ctx.request().path());
+					ctx.request().remoteAddress(), ctx.request().path());
 		}
 
 		// Check session timeout
 		if (authenticationService.isSessionTimeout(ctx.session())) {
 			authenticationService.clearSessionCookieAndSessionCache(
 					ctx.session(), loggedInUser.getEmail(),
-					ctx.request().host());
+					ctx.request().remoteAddress());
 			return callForbiddenDueToSessionTimeout(loggedInUser.getEmail());
 		}
 
@@ -119,7 +119,7 @@ public class AuthenticationAction extends Action<Authenticated> {
 		if (authenticationService.isInactivityTimeout(ctx.session())) {
 			authenticationService.clearSessionCookieAndSessionCache(
 					ctx.session(), loggedInUser.getEmail(),
-					ctx.request().host());
+					ctx.request().remoteAddress());
 			return callForbiddenDueToInactivityTimeout(loggedInUser.getEmail());
 		}
 
@@ -142,8 +142,8 @@ public class AuthenticationAction extends Action<Authenticated> {
 	}
 
 	private CompletionStage<Result> callForbiddenDueToAuthentication(
-			String requestHost, String urlPath) {
-		LOGGER.warn("Authentication failed: host " + requestHost
+			String remoteAddress, String urlPath) {
+		LOGGER.warn("Authentication failed: remote address " + remoteAddress
 				+ " tried to access page " + urlPath);
 		if (HttpUtils.isAjax()) {
 			return CompletableFuture
@@ -157,10 +157,10 @@ public class AuthenticationAction extends Action<Authenticated> {
 	}
 
 	private CompletionStage<Result> callForbiddenDueToInvalidSession(
-			String userEmail, String requestHost, String urlPath) {
-		LOGGER.warn(
-				"Invalid session: user " + userEmail + " tried to access page "
-						+ urlPath + " from host " + requestHost + ".");
+			String userEmail, String remoteAddress, String urlPath) {
+		LOGGER.warn("Invalid session: user " + userEmail
+				+ " tried to access page " + urlPath + " from remote address "
+				+ remoteAddress + ".");
 		if (HttpUtils.isAjax()) {
 			return CompletableFuture
 					.completedFuture(forbidden("Invalid session"));
