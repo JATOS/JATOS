@@ -9,7 +9,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
 
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
@@ -31,7 +30,6 @@ import play.data.Form;
 import play.data.FormFactory;
 import play.db.jpa.Transactional;
 import play.libs.F.Function3;
-import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.gui.AuthenticationService;

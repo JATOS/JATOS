@@ -1,7 +1,6 @@
 package controllers.gui;
 
 import java.io.File;
-import java.net.URL;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -19,7 +18,6 @@ import play.mvc.LegacyWebSocket;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.gui.UserService;
-import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
 /**
