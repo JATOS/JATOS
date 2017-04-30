@@ -24,6 +24,7 @@ import models.common.Study;
 import models.common.User;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
+import models.gui.BatchSession;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.Form;
@@ -178,7 +179,47 @@ public class Batches extends Controller {
 		} catch (ForbiddenException | BadRequestException e) {
 			jatosGuiExceptionThrower.throwAjax(e);
 		}
-		return ok(batch.getBatchSessionData());
+
+		BatchSession batchSession = batchService.bindToBatchSession(batch);
+		return ok(JsonUtils.asJsonNode(batchSession));
+	}
+
+	/**
+	 * Ajax POST request to submit changed batch session data
+	 * 
+	 * @throws JatosGuiException
+	 */
+	@Transactional
+	@Authenticated
+	public Result submitEditedBatchSessionData(Long studyId, Long batchId)
+			throws JatosGuiException {
+		LOGGER.debug(".submitEditedBatchSessionData: studyId " + studyId
+				+ ", batchId " + batchId);
+		Study study = studyDao.findById(studyId);
+		User loggedInUser = authenticationService.getLoggedInUser();
+		Batch batch = batchDao.findById(batchId);
+		try {
+			checker.checkStandardForStudy(study, studyId, loggedInUser);
+			checker.checkStudyLocked(study);
+			checker.checkStandardForBatch(batch, study, batchId);
+		} catch (ForbiddenException | BadRequestException e) {
+			jatosGuiExceptionThrower.throwAjax(e);
+		}
+
+		Form<BatchSession> form = formFactory.form(BatchSession.class)
+				.bindFromRequest();
+		if (form.hasErrors()) {
+			return badRequest(form.errorsAsJson());
+		}
+
+		BatchSession batchSession = form.get();
+		boolean success = batchService.updateBatchSession(batch.getId(),
+				batchSession);
+		if (!success) {
+			return forbidden("Could not save batch session due to "
+					+ "wrong version - try reloading the page.");
+		}
+		return ok();
 	}
 
 	/**
@@ -242,11 +283,7 @@ public class Batches extends Controller {
 					.forEach(batchProperties::addAllowedWorkerType);
 		}
 
-		try {
-			batchService.updateBatch(currentBatch, batchProperties);
-		} catch (BadRequestException e) {
-			return badRequest(e.getMessage());
-		}
+		batchService.updateBatch(currentBatch, batchProperties);
 		return ok();
 	}
 

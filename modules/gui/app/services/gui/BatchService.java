@@ -5,12 +5,13 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.google.common.base.Strings;
+
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
-import exceptions.gui.BadRequestException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.workers.JatosWorker;
@@ -18,6 +19,7 @@ import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
+import models.gui.BatchSession;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -119,8 +121,7 @@ public class BatchService {
 	/**
 	 * Updates the given batch in the database with the given BatchProperties
 	 */
-	public void updateBatch(Batch batch, BatchProperties updatedBatchProps)
-			throws BadRequestException {
+	public void updateBatch(Batch batch, BatchProperties updatedBatchProps) {
 		batch.setTitle(updatedBatchProps.getTitle());
 		batch.setActive(updatedBatchProps.isActive());
 		batch.setMaxActiveMembers(updatedBatchProps.getMaxActiveMembers());
@@ -174,6 +175,31 @@ public class BatchService {
 		batch.setComments(props.getComments());
 		batch.setJsonData(props.getJsonData());
 		return batch;
+	}
+
+	public BatchSession bindToBatchSession(Batch batch) {
+		BatchSession batchSession = new BatchSession();
+		batchSession.setVersion(batch.getBatchSessionVersion());
+		batchSession.setData(batch.getBatchSessionData());
+		return batchSession;
+	}
+
+	public boolean updateBatchSession(long batchId, BatchSession batchSession) {
+		Batch currentBatch = batchDao.findById(batchId);
+		if (currentBatch == null || batchSession.getVersion() != currentBatch
+				.getBatchSessionVersion()) {
+			return false;
+		}
+
+		currentBatch.setBatchSessionVersion(
+				currentBatch.getBatchSessionVersion() + 1);
+		if (Strings.isNullOrEmpty(batchSession.getData())) {
+			currentBatch.setBatchSessionData("{}");
+		} else {
+			currentBatch.setBatchSessionData(batchSession.getData());
+		}
+		batchDao.update(currentBatch);
+		return true;
 	}
 
 	/**

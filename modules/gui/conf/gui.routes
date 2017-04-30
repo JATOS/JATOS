@@ -81,6 +81,7 @@ POST     /jatos/:studyId/batch/:batchId/properties/active                   @con
 GET      /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.Batches.properties(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/batch/:batchId/properties                          @controllers.gui.Batches.submitEditedProperties(studyId: Long, batchId: Long)
 GET      /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.Batches.batchSessionData(studyId: Long, batchId: Long)
+POST     /jatos/:studyId/batch/:batchId/batchSessionData                    @controllers.gui.Batches.submitEditedBatchSessionData(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/batch/:batchId/personalSingleRun                   @controllers.gui.Batches.createPersonalSingleRun(studyId: Long, batchId: Long)
 POST     /jatos/:studyId/batch/:batchId/personalMultipleRun                 @controllers.gui.Batches.createPersonalMultipleRun(studyId: Long, batchId: Long)
 DELETE   /jatos/:studyId/batch/:batchId                                     @controllers.gui.Batches.remove(studyId: Long, batchId: Long)

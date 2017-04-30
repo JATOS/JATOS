@@ -34,6 +34,9 @@
 					<button type="button" class="batchPropertiesButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
 						title="Edit this batch's properties">
 						Properties <span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span></button>
+					<button type="button" class="batchSessionButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
+						title="Edit this batch's session data">
+						Session Data <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span></button>	
 					<button type="button" class="batchResultsButton btn btn-batch" data-toggle="tooltip" data-placement="bottom"
 						title="Shows the study results of this batch">
 						Results <span class="resultsBadge badge" data-toggle="tooltip" data-placement="bottom"
@@ -45,12 +48,6 @@
 							More <span class="caret"></span>
 						</button>
 						<ul class="dropdown-menu dropdown-menu-right" role="menu">
-							<li data-toggle="tooltip" data-placement="bottom"
-								title="Shows this batch's session data">
-								<a class="showBatchSessionData" href="#"><span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>
-									Batch Session Data
-								</a>
-							</li>
 							<li data-toggle="tooltip" data-placement="bottom"
 								title="Deletes this batch but doesn't delete any results">
 								<a class="removeBatch" href="#"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
@@ -102,24 +99,9 @@
 	</div>
 </div>
 
-<!-- Show Batch Session Data Modal -->
-<div class="modal fade" id="showBatchSessionDataModal" data-backdrop="static"
-	data-keyboard="false" tabindex="-1" role="dialog"
-	aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-				<h4 class="modal-title">Current Batch Session Data</h4>
-			</div>
-			<div class="modal-body">
-				<pre><code></code></pre>
-			</div>
-		</div>
-	</div>
-</div>
-
 @views.html.gui.batch.batchPropertiesModal(study)
+@views.html.gui.batch.batchSessionModal(study)
+
 <script>
 
 loadBatchList();
@@ -239,24 +221,6 @@ function setRowActive(row, active) {
 				.addClass('glyphicon-remove').prop('outerHTML'));
 	}
 }
-
-$('#batchTable').on('click', '.showBatchSessionData', function() {
-	var batch = getBatchData(this);
-	if (!batch) {return} // should never happen
-	$.ajax({
-		type: 'GET',
-		url: "/jatos/@study.getId()/batch/" + batch.id + "/batchSessionData",
-		success: function(batchSessionData) {
-			batchSessionData = batchSessionData ? batchSessionData : "";
-			var batchSessionDataPretty = JSON.stringify(JSON.parse(batchSessionData), null, 2);
-			$('#showBatchSessionDataModal code').text(batchSessionDataPretty);
-			$('#showBatchSessionDataModal').modal('show');
-		},
-		error: function(response) {
-			showError("Couldn't load batch session data.");
-		}
-	});
-});
 
 $('#batchTable').on('click', '.removeBatch', function() {
 	var element = this;
