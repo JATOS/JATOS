@@ -6,6 +6,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
@@ -159,7 +160,11 @@ public class BatchActionHandler {
 			Batch batch, Long version) {
 		if (batch != null && version != null && sessionData != null
 				&& batch.getBatchSessionVersion().equals(version)) {
-			batch.setBatchSessionData(sessionData.toString());
+			if (sessionData instanceof MissingNode) {
+				batch.setBatchSessionData("{}");
+			} else {
+				batch.setBatchSessionData(sessionData.toString());
+			}
 			long newVersion = batch.getBatchSessionVersion() + 1l;
 			batch.setBatchSessionVersion(newVersion);
 			updateBatch(batch);
