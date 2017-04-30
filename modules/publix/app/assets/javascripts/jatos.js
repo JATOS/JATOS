@@ -835,18 +835,21 @@ var jatos = {};
 	 * @param {Object}
 	 *            studySessionData - Object to be submitted
 	 * @param {optional
-	 *            Function} onComplete - Function to be called after this function is
+	 *            Function} onSuccess - Function to be called after this function is
 	 *            finished
+	 * @param {optional
+	 *            Function} onFail - Function to be called after if this this
+	 *            functions fails
 	 * @return {jQuery.deferred.promise}
 	 */
-	jatos.setStudySessionData = function (studySessionData, onComplete) {
+	jatos.setStudySessionData = function (studySessionData, onSuccess, onFail) {
 		var deferred = jatos.jQuery.Deferred();
 		var studySessionDataStr;
 		try {
 			studySessionDataStr = JSON.stringify(studySessionData);
 		} catch (error) {
 			callingOnError(null, error);
-			callFunctionIfExist(onComplete);
+			callFunctionIfExist(onFail);
 			deferred.reject(errMsg);
 			return deferred;
 		}
@@ -857,13 +860,13 @@ var jatos = {};
 			type: "POST",
 			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
-			complete: function () {
-				callFunctionIfExist(onComplete);
+			success: function () {
+				callFunctionIfExist(onSuccess);
 				deferred.resolve();
 			},
 			error: function (err) {
 				var errMsg = getAjaxErrorMsg(err);
-				callingOnError(null, errMsg);
+				callingOnError(onFail, errMsg);
 				deferred.reject(errMsg);
 			}
 		}).retry({
