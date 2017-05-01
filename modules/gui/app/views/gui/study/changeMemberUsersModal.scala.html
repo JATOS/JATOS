@@ -67,7 +67,7 @@ $('#studyToolbar').on('click', '#changeMemberUsersLink', function() {
 });
 
 function initMemberUserTable() {
-	if (memberUserTable) {
+	if (typeof memberUserTable != 'undefined') {
 		memberUserTable.ajax.reload();
 		memberUserTable.draw();
 		return;
