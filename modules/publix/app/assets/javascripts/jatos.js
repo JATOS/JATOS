@@ -1195,7 +1195,9 @@ var jatos = {};
 				break;
 			case "FIXED":
 				// The group is now fixed (no new members)
-				groupFixedTimeout.cancel();
+				if (groupFixedTimeout) {
+					groupFixedTimeout.cancel();
+				}
 				callFunctionIfExist(callbacks.onUpdate);
 				break;
 			case "SESSION_ACK":
