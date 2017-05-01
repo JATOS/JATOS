@@ -130,7 +130,7 @@ function toggleTablePagination() {
 	$('#memberUserTable').parent().find('.dataTables_paginate').toggle(!hidePaging);
 }
 
-$('#addMemberToStudyForm').submit(function() {
+$('#addMemberToStudyForm').submit(function(event) {
 	event.preventDefault();
 	var emailToChange = $('#addMemberToStudyForm .email').val();
 	$.ajax({
