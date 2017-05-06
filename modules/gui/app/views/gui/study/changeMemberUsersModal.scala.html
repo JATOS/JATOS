@@ -30,7 +30,7 @@
 					</div>
 				</form>
 				<div class="form-group">&nbsp;</div>
-				<table id="memberUserTable" class="table" width="100%">
+				<table class="table" width="100%">
 					<thead>
 						<tr>
 							<th>Member</th>
@@ -73,7 +73,7 @@ function initMemberUserTable() {
 		return;
 	}
 	
-	memberUserTable = $('#memberUserTable').DataTable({
+	memberUserTable = $('#changeMemberUsersModal .table').DataTable({
 		"ajax": {
 			"type": "GET",
 			"url" : "/jatos/" + studyId + "/memberUsers",
@@ -127,7 +127,7 @@ function setMemberButton(button, isMember) {
 function toggleTablePagination() {
 	var rowNumber = memberUserTable.rows().count();
 	var hidePaging = rowNumber <= paginationLength;
-	$('#memberUserTable').parent().find('.dataTables_paginate').toggle(!hidePaging);
+	$('#changeMemberUsersModal .table').parent().find('.dataTables_paginate').toggle(!hidePaging);
 }
 
 $('#addMemberToStudyForm').submit(function(event) {
@@ -170,7 +170,7 @@ function alterTableAfterUserAdding(user) {
 	}
 }
 
-$('#memberUserTable').on('click', '.memberToggleButton', function() {
+$('#changeMemberUsersModal .table').on('click', '.memberToggleButton', function() {
 	var button = this;
 	var tr = $(this).closest('tr');
 	var tableMember = memberUserTable.row(tr).data();
