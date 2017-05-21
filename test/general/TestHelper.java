@@ -56,6 +56,8 @@ public class TestHelper {
 
 	public static final String BASIC_EXAMPLE_STUDY_ZIP = "test/resources/basic_example_study.zip";
 
+	public static final String BLA_EMAIL = "bla@bla.org";
+
 	@Inject
 	private JPAApi jpaApi;
 
@@ -118,8 +120,10 @@ public class TestHelper {
 		jpaApi.withTransaction(() -> {
 			try {
 				userService.removeUser(userEmail);
-			} catch (NotFoundException | ForbiddenException | IOException e) {
+			} catch (ForbiddenException | IOException e) {
 				throw new RuntimeException(e);
+			} catch (NotFoundException e) {
+				// We don't care
 			}
 		});
 	}

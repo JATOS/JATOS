@@ -91,10 +91,10 @@ public class ComponentsControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM).uri(
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM).uri(
 						controllers.gui.routes.Components
 								.runComponent(study.getId(),
-										study.getComponent(1).getId(), -1l)
+										study.getComponent(1).getId(), -1L)
 								.url());
 		Result result = route(request);
 
@@ -123,10 +123,10 @@ public class ComponentsControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM).uri(
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM).uri(
 						controllers.gui.routes.Components
 								.runComponent(study.getId(),
-										study.getComponent(1).getId(), -1l)
+										study.getComponent(1).getId(), -1L)
 								.url());
 		// Empty html path must lead to an JatosGuiException with a HTTP status
 		// of 400
@@ -144,7 +144,7 @@ public class ComponentsControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM).uri(
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM).uri(
 						controllers.gui.routes.Components
 								.properties(study.getId(),
 										study.getFirstComponent().getId())
@@ -189,7 +189,7 @@ public class ComponentsControllerTest {
 	public void callSubmitCreated() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		Map<String, String> form = new HashMap<String, String>();
+		Map<String, String> form = new HashMap<>();
 		form.put(ComponentProperties.TITLE, "Title Test");
 		form.put(ComponentProperties.RELOADABLE, "true");
 		form.put(ComponentProperties.HTML_FILE_PATH,
@@ -200,7 +200,7 @@ public class ComponentsControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(form).uri(controllers.gui.routes.Components
 						.submitCreated(study.getId()).url());
 		Result result = route(request);
@@ -216,7 +216,7 @@ public class ComponentsControllerTest {
 	public void callSubmitEdited() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		Map<String, String> form = new HashMap<String, String>();
+		Map<String, String> form = new HashMap<>();
 		form.put(ComponentProperties.TITLE, "Title Test");
 		form.put(ComponentProperties.RELOADABLE, "true");
 		form.put(ComponentProperties.HTML_FILE_PATH,
@@ -227,7 +227,7 @@ public class ComponentsControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(form).uri(
 						controllers.gui.routes.Components
 								.submitEdited(study.getId(),
@@ -245,7 +245,7 @@ public class ComponentsControllerTest {
 	public void callSubmitValidationError() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		Map<String, String> form = new HashMap<String, String>();
+		Map<String, String> form = new HashMap<>();
 		form.put(ComponentProperties.TITLE, "");
 		form.put(ComponentProperties.RELOADABLE, "true");
 		form.put(ComponentProperties.HTML_FILE_PATH, "%.test");
@@ -256,7 +256,7 @@ public class ComponentsControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(form).uri(controllers.gui.routes.Components
 						.submitCreated(study.getId()).url());
 		Result result = route(request);
@@ -282,7 +282,7 @@ public class ComponentsControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM).uri(
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM).uri(
 						controllers.gui.routes.Components
 								.toggleActive(study.getId(),
 										study.getComponent(1).getId(), true)
@@ -299,7 +299,7 @@ public class ComponentsControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Components.cloneComponent(
 						study.getId(), study.getComponent(1).getId()).url());
 		Result result = route(request);
@@ -314,7 +314,7 @@ public class ComponentsControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("DELETE")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Components
 						.remove(study.getId(), study.getComponent(1).getId())
 						.url());

@@ -112,7 +112,7 @@ public class ComponentResultUserAccessTest {
 		// Logged-in user must be an user of the study to which the
 		// ComponentResult belongs that is to be deleted - if not an HTTP 403 is
 		// expected
-		User someUser = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+		User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
 				"bla");
 		userAccessTestHelpers.checkThatCallIsForbidden(call, Helpers.DELETE,
 				someUser, "isn't user of study");
@@ -120,7 +120,7 @@ public class ComponentResultUserAccessTest {
 		userAccessTestHelpers.checkAccessGranted(call, Helpers.DELETE,
 				testHelper.getAdmin());
 
-		testHelper.removeUser("bla@bla.com");
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	private StudyResult createTwoComponentResults(Study study) {

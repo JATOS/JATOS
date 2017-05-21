@@ -69,7 +69,7 @@ public class AuthenticationControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Authentication.login().url());
 		Result result = route(request);
 
@@ -87,7 +87,7 @@ public class AuthenticationControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Authentication.logout().url());
 		Result result = route(request);
 
@@ -104,7 +104,7 @@ public class AuthenticationControllerTest {
 	@Test
 	public void authenticateSuccess() {
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.host(TestHelper.WWW_EXAMPLE_COM)
+				.remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL,
 						Login.PASSWORD, UserService.ADMIN_PASSWORD))
 				.uri(controllers.gui.routes.Authentication.authenticate()
@@ -124,7 +124,7 @@ public class AuthenticationControllerTest {
 	@Test
 	public void authenticateFailure() {
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.host(TestHelper.WWW_EXAMPLE_COM)
+				.remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Login.EMAIL, UserService.ADMIN_EMAIL,
 						Login.PASSWORD, "bla"))
 				.uri(controllers.gui.routes.Authentication.authenticate()

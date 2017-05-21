@@ -44,7 +44,7 @@ import services.publix.workers.JatosPublixUtils;
 /**
  * A study can be locked. Then it shouldn't be possible to change its
  * properties, or its component's properties, or its batch's properties.
- * 
+ *
  * @author Kristian Lange
  */
 public class LockedStudyControllerTest {
@@ -107,7 +107,7 @@ public class LockedStudyControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(call.url());
 		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN, "");
 	}
@@ -322,7 +322,7 @@ public class LockedStudyControllerTest {
 	public void callExportComponentResults()
 			throws IOException, ForbiddenReloadException {
 		// Create a study with a StudyResult
-		jpaApi.withTransaction(() -> {
+		long firstComponentResultId = jpaApi.withTransaction(() -> {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			Study study;
 			try {
@@ -343,14 +343,16 @@ public class LockedStudyControllerTest {
 			} catch (ForbiddenReloadException e) {
 				e.printStackTrace();
 			}
+			return studyResult.getComponentResultList().get(0).getId();
 		});
 
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.ImportExport
-						.exportDataOfComponentResults("1").url());
+						.exportDataOfComponentResults(
+								String.valueOf(firstComponentResultId)).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(Http.Status.OK);

@@ -113,7 +113,7 @@ public class ResultRemoverTest {
 				Fail.fail();
 			} catch (NotFoundException | BadRequestException e) {
 				assertThat(e.getMessage())
-						.isEqualTo(MessagesStrings.componentResultNotExist(1l));
+						.isEqualTo(MessagesStrings.componentResultNotExist(1L));
 			}
 		});
 	}
@@ -129,7 +129,7 @@ public class ResultRemoverTest {
 		// Now try to remove the results but one of the result IDs doesn't exist
 		jpaApi.withTransaction(() -> {
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
-			long notExistingId = 1111l;
+			long notExistingId = 1111L;
 			try {
 				resultRemover.removeComponentResults(ids + ", " + notExistingId,
 						admin);
@@ -216,7 +216,7 @@ public class ResultRemoverTest {
 
 		// And now try to remove them with the wrong user
 		jpaApi.withTransaction(() -> {
-			User testUser = testHelper.createAndPersistUser("bla@bla.com",
+			User testUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 					"Bla", "bla");
 			try {
 				resultRemover.removeAllStudyResults(study, testUser);
@@ -238,7 +238,7 @@ public class ResultRemoverTest {
 		});
 
 		// Clean-up
-		testHelper.removeUser("bla@bla.com");
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	@Test

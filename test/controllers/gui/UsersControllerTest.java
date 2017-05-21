@@ -38,12 +38,10 @@ import services.gui.UserService;
 
 /**
  * Testing actions of controller.gui.Users: basic integration tests
- * 
+ *
  * @author Kristian Lange (2017)
  */
 public class UsersControllerTest {
-
-	private static final String BLA_AT_BLA_ORG = "bla@bla.org";
 
 	@Inject
 	private static Application fakeApplication;
@@ -85,7 +83,7 @@ public class UsersControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Users.userManager().url());
 		Result result = route(request);
 
@@ -104,7 +102,7 @@ public class UsersControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Users.allUserData().url());
 		Result result = route(request);
 
@@ -118,13 +116,13 @@ public class UsersControllerTest {
 	 */
 	@Test
 	public void callToggleAdmin() throws Exception {
-		testHelper.createAndPersistUser(BLA_AT_BLA_ORG, "Bla Bla", "bla");
+		testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Users
-						.toggleAdmin(BLA_AT_BLA_ORG, true).url());
+						.toggleAdmin(TestHelper.BLA_EMAIL, true).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
@@ -132,7 +130,7 @@ public class UsersControllerTest {
 		assertThat(result.contentType().get()).isEqualTo("application/json");
 
 		// Clean-up
-		testHelper.removeUser(BLA_AT_BLA_ORG);
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	/**
@@ -143,7 +141,7 @@ public class UsersControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Users
 						.profile(UserService.ADMIN_EMAIL).url());
 		Result result = route(request);
@@ -162,7 +160,7 @@ public class UsersControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Users
 						.singleUserData(UserService.ADMIN_EMAIL).url());
 		Result result = route(request);
@@ -188,7 +186,7 @@ public class UsersControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
 				.uri(controllers.gui.routes.Users.submitCreated().url());
 		Result result = route(request);
@@ -201,7 +199,7 @@ public class UsersControllerTest {
 	 */
 	@Test
 	public void callSubmitEditedProfile() throws Exception {
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
 		Map<String, String> formMap = new HashMap<String, String>();
@@ -209,15 +207,15 @@ public class UsersControllerTest {
 
 		Http.Session session = testHelper.mockSessionCookieandCache(userBla);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap).uri(controllers.gui.routes.Users
-						.submitEditedProfile(BLA_AT_BLA_ORG).url());
+						.submitEditedProfile(TestHelper.BLA_EMAIL).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 
 		// Clean-up
-		testHelper.removeUser(BLA_AT_BLA_ORG);
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	/**
@@ -228,7 +226,7 @@ public class UsersControllerTest {
 	 */
 	@Test
 	public void callSubmitChangedPasswordByUserSelf() throws Exception {
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
 		Map<String, String> formMap = new HashMap<String, String>();
@@ -240,15 +238,15 @@ public class UsersControllerTest {
 
 		Http.Session session = testHelper.mockSessionCookieandCache(userBla);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap).uri(controllers.gui.routes.Users
-						.submitChangedPassword(BLA_AT_BLA_ORG).url());
+						.submitChangedPassword(TestHelper.BLA_EMAIL).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 
 		// Clean-up
-		testHelper.removeUser(BLA_AT_BLA_ORG);
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	/**
@@ -259,7 +257,7 @@ public class UsersControllerTest {
 	 */
 	@Test
 	public void callSubmitChangedPasswordByAdmin() throws Exception {
-		testHelper.createAndPersistUser(BLA_AT_BLA_ORG, "Bla Bla", "bla");
+		testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put(ChangePasswordModel.ADMIN_PASSWORD,
@@ -272,28 +270,28 @@ public class UsersControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap).uri(controllers.gui.routes.Users
-						.submitChangedPassword(BLA_AT_BLA_ORG).url());
+						.submitChangedPassword(TestHelper.BLA_EMAIL).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 
 		// Clean-up
-		testHelper.removeUser(BLA_AT_BLA_ORG);
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	/**
 	 * Action Users.submitChangedPassword(): there are two uses: 1) user changes
 	 * his own password, 2) an admin changes the password of another user. This
 	 * tests the second case.
-	 * 
+	 * <p>
 	 * If the wrong admin password is given an 403 is returned.
 	 */
 	@Test
 	public void callSubmitChangedPasswordByAdminWrongPassword()
 			throws Exception {
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
 		Map<String, String> formMap = new HashMap<String, String>();
@@ -305,28 +303,28 @@ public class UsersControllerTest {
 
 		Http.Session session = testHelper.mockSessionCookieandCache(userBla);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap).uri(controllers.gui.routes.Users
-						.submitChangedPassword(BLA_AT_BLA_ORG).url());
+						.submitChangedPassword(TestHelper.BLA_EMAIL).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(FORBIDDEN);
 
 		// Clean-up
-		testHelper.removeUser(BLA_AT_BLA_ORG);
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	/**
 	 * Action Users.submitChangedPassword(): there are two uses: 1) user changes
 	 * his own password, 2) an admin changes the password of another user. This
 	 * tests the second case.
-	 * 
+	 * <p>
 	 * If the wrong user password is given an 403 is returned.
 	 */
 	@Test
 	public void callSubmitChangedPasswordByUserSelfWrongPassword()
 			throws Exception {
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
 		Map<String, String> formMap = new HashMap<String, String>();
@@ -338,15 +336,15 @@ public class UsersControllerTest {
 
 		Http.Session session = testHelper.mockSessionCookieandCache(userBla);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap).uri(controllers.gui.routes.Users
-						.submitChangedPassword(BLA_AT_BLA_ORG).url());
+						.submitChangedPassword(TestHelper.BLA_EMAIL).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(FORBIDDEN);
 
 		// Clean-up
-		testHelper.removeUser(BLA_AT_BLA_ORG);
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	/**
@@ -357,7 +355,7 @@ public class UsersControllerTest {
 	 */
 	@Test
 	public void callRemoveByAdmin() throws Exception {
-		testHelper.createAndPersistUser(BLA_AT_BLA_ORG, "Bla Bla", "bla");
+		testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
 		Map<String, String> formMap = new HashMap<String, String>();
 		formMap.put("password", UserService.ADMIN_PASSWORD);
@@ -365,15 +363,15 @@ public class UsersControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
-				.uri(controllers.gui.routes.Users.remove(BLA_AT_BLA_ORG).url());
+				.uri(controllers.gui.routes.Users.remove(TestHelper.BLA_EMAIL).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 
 		jpaApi.withTransaction(() -> {
-			assertThat(userDao.findByEmail(BLA_AT_BLA_ORG)).isNull();
+			assertThat(userDao.findByEmail(TestHelper.BLA_EMAIL)).isNull();
 		});
 	}
 
@@ -385,7 +383,7 @@ public class UsersControllerTest {
 	 */
 	@Test
 	public void callRemoveByUserSelf() throws Exception {
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
 		Map<String, String> formMap = new HashMap<String, String>();
@@ -393,15 +391,15 @@ public class UsersControllerTest {
 
 		Http.Session session = testHelper.mockSessionCookieandCache(userBla);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
-				.uri(controllers.gui.routes.Users.remove(BLA_AT_BLA_ORG).url());
+				.uri(controllers.gui.routes.Users.remove(TestHelper.BLA_EMAIL).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(OK);
 
 		jpaApi.withTransaction(() -> {
-			assertThat(userDao.findByEmail(BLA_AT_BLA_ORG)).isNull();
+			assertThat(userDao.findByEmail(TestHelper.BLA_EMAIL)).isNull();
 		});
 	}
 
@@ -409,21 +407,21 @@ public class UsersControllerTest {
 	 * Action Users.remove(): this action can be used in two ways: 1) by an
 	 * admin (with ADMIN role) to delete another user, or 2) by the user himself
 	 * to delete its own user account. This tests the second way.
-	 * 
+	 * <p>
 	 * In case the user has no ADMIN role but wants to delete another user a 403
 	 * is returned.
 	 */
 	@Test
 	public void callRemoveButNoAdminRole() throws Exception {
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put("password", "bla");
 
 		Http.Session session = testHelper.mockSessionCookieandCache(userBla);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
 				.uri(controllers.gui.routes.Users.remove("foo@foo.org").url());
 		Result result = route(request);
@@ -431,7 +429,7 @@ public class UsersControllerTest {
 		assertThat(result.status()).isEqualTo(FORBIDDEN);
 
 		// Clean-up
-		testHelper.removeUser(BLA_AT_BLA_ORG);
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	/**
@@ -440,23 +438,23 @@ public class UsersControllerTest {
 	 */
 	@Test
 	public void callRemoveWrongPassword() throws Exception {
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put("password", "wrong password");
 
 		Http.Session session = testHelper.mockSessionCookieandCache(userBla);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
-				.uri(controllers.gui.routes.Users.remove(BLA_AT_BLA_ORG).url());
+				.uri(controllers.gui.routes.Users.remove(TestHelper.BLA_EMAIL).url());
 		Result result = route(request);
 
 		assertThat(result.status()).isEqualTo(FORBIDDEN);
 
 		// Clean-up
-		testHelper.removeUser(BLA_AT_BLA_ORG);
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 }

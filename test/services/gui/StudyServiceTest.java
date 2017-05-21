@@ -36,7 +36,7 @@ import utils.common.IOUtils;
 
 /**
  * Tests StudyService class
- * 
+ *
  * @author Kristian Lange
  */
 public class StudyServiceTest {
@@ -145,7 +145,7 @@ public class StudyServiceTest {
 	public void checkChangeUserMember() {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		User userBla = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
 				"bla");
 		testHelper.createAndPersistUser("blu@blu.com", "Blu", "blu");
 
@@ -195,7 +195,7 @@ public class StudyServiceTest {
 	public void checkChangeUserMemberDouble() {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		User userBla = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
 				"bla");
 
 		// Add user Bla twice: no exception should be thrown
@@ -271,7 +271,7 @@ public class StudyServiceTest {
 
 		// But if the user to be removed isn't member of the study it doesn't
 		// lead to an exception
-		User userBla = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
 				"bla");
 		jpaApi.withTransaction(() -> {
 			try {
@@ -331,7 +331,7 @@ public class StudyServiceTest {
 	}
 
 	private void checkChangeToPosition(int fromPosition, int toPosition,
-			long studyId) {
+									   long studyId) {
 		jpaApi.withTransaction(() -> {
 			Study s = studyDao.findById(studyId);
 			Component c = s.getComponent(fromPosition);
@@ -441,7 +441,7 @@ public class StudyServiceTest {
 			study.getUserList()
 					.forEach(u -> assertThat(
 							userDao.findByEmail(u.getEmail()).hasStudy(s))
-									.isFalse());
+							.isFalse());
 		});
 
 		// Check study assets are removed

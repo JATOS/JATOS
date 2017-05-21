@@ -74,6 +74,7 @@ public class UserServiceTest {
 		// Clean up
 		testHelper.removeAllStudies();
 		testHelper.removeStudyAssetsRootDir();
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	@Test
@@ -117,7 +118,7 @@ public class UserServiceTest {
 	@Test
 	public void checkBindToUserAndPersist() {
 		NewUserModel userModelBla = new NewUserModel();
-		userModelBla.setEmail("bla@bla.org");
+		userModelBla.setEmail(TestHelper.BLA_EMAIL);
 		userModelBla.setName("Bla Bla");
 		userModelBla.setAdminPassword("nobodyCaresAtThisPoint");
 		userModelBla.setPassword("blaPw");
@@ -169,7 +170,7 @@ public class UserServiceTest {
 	@Test
 	public void checkCreateAndPersistUser() {
 		User userBla = new User();
-		userBla.setEmail("bla1@bla.org");
+		userBla.setEmail(TestHelper.BLA_EMAIL);
 		userBla.setName("Bla Bla");
 
 		jpaApi.withTransaction(() -> {
@@ -189,7 +190,7 @@ public class UserServiceTest {
 
 		// Store another user that is not an admin
 		User userFoo = new User();
-		userFoo.setEmail("foo1@foo.org");
+		userFoo.setEmail("foo@foo.org");
 		userFoo.setName("Foo Foo");
 		jpaApi.withTransaction(() -> {
 			userService.createAndPersistUser(userFoo, "fooPassword", false);
@@ -210,7 +211,7 @@ public class UserServiceTest {
 	 */
 	@Test
 	public void checkUpdatePassword() {
-		User blaUser = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
+		User blaUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla",
 				"bla");
 
 		jpaApi.withTransaction(() -> {
@@ -249,7 +250,7 @@ public class UserServiceTest {
 	 */
 	@Test
 	public void checkChangeAdminRole() {
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla",
 				"bla");
 		defineLoggedInUser(testHelper.getAdmin());
 
@@ -310,7 +311,7 @@ public class UserServiceTest {
 	@Test
 	public void checkChangeAdminRoleAdminAlwaysAdmin() {
 		// Put a different user than 'admin' in RequestScope as logged-in
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla",
 				"bla");
 		defineLoggedInUser(userBla);
 
@@ -334,7 +335,7 @@ public class UserServiceTest {
 	 */
 	@Test
 	public void checkChangeAdminRoleLoggedInCantLoose() {
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla",
 				"bla");
 		defineLoggedInUser(testHelper.getAdmin());
 
@@ -371,7 +372,7 @@ public class UserServiceTest {
 	 */
 	@Test
 	public void checkRemoveUser() {
-		User userBla = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla",
 				"bla");
 
 		// Create a study where the user is member

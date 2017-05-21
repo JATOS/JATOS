@@ -86,26 +86,26 @@ public class UsersUserAccessTest {
 
 	@Test
 	public void callToggleAdmin() throws Exception {
-		testHelper.createAndPersistUser("bla@bla.com", "Bla", "bla");
-		Call call = controllers.gui.routes.Users.toggleAdmin("bla@bla.com",
+		testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla", "bla");
+		Call call = controllers.gui.routes.Users.toggleAdmin(TestHelper.BLA_EMAIL,
 				true);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
 				Helpers.POST);
 		userAccessTestHelpers.checkAccessGranted(call, Helpers.POST,
 				testHelper.getAdmin());
-		testHelper.removeUser("bla@bla.com");
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	@Test
 	public void callProfile() throws Exception {
-		User someUser = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+		User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
 				"bla");
 		Call call = controllers.gui.routes.Users.profile(someUser.getEmail());
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkThatCallLeadsToRedirect(call, Helpers.GET);
 		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, someUser);
-		testHelper.removeUser("bla@bla.com");
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	@Test
@@ -118,9 +118,9 @@ public class UsersUserAccessTest {
 
 	@Test
 	public void callSingleUserData() throws Exception {
-		User someUser = testHelper.createAndPersistUser("bla@bla.com", "Bla",
+		User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
 				"bla");
-		Call call = controllers.gui.routes.Users.singleUserData("bla@bla.com");
+		Call call = controllers.gui.routes.Users.singleUserData(TestHelper.BLA_EMAIL);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkAccessGranted(call, Helpers.GET, someUser);
 	}
@@ -128,20 +128,20 @@ public class UsersUserAccessTest {
 	@Test
 	public void callSubmitEditedProfile() throws Exception {
 		Call call = controllers.gui.routes.Users
-				.submitEditedProfile("bla@bla.com");
+				.submitEditedProfile(TestHelper.BLA_EMAIL);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 	}
 
 	@Test
 	public void callSubmitChangedPassword() throws Exception {
 		Call call = controllers.gui.routes.Users
-				.submitChangedPassword("bla@bla.com");
+				.submitChangedPassword(TestHelper.BLA_EMAIL);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 	}
 
 	@Test
 	public void callRemove() throws Exception {
-		Call call = controllers.gui.routes.Users.remove("bla@bla.com");
+		Call call = controllers.gui.routes.Users.remove(TestHelper.BLA_EMAIL);
 		userAccessTestHelpers.checkDeniedAccessAndRedirectToLogin(call);
 		userAccessTestHelpers.checkDeniedAccessDueToAuthorization(call,
 				Helpers.POST);

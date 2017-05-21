@@ -34,7 +34,7 @@ import play.inject.guice.GuiceApplicationLoader;
 
 /**
  * Tests ResultService
- * 
+ *
  * @author Kristian Lange
  */
 public class ResultServiceTest {
@@ -103,7 +103,7 @@ public class ResultServiceTest {
 
 		// Not valid due to letter instead of number
 		try {
-			resultIdList = resultService.extractResultIds("1,b,3");
+			resultService.extractResultIds("1,b,3");
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage())
@@ -112,7 +112,7 @@ public class ResultServiceTest {
 
 		// Not valid due to empty
 		try {
-			resultIdList = resultService.extractResultIds("");
+			resultService.extractResultIds("");
 			Fail.fail();
 		} catch (BadRequestException e) {
 			assertThat(e.getMessage())
@@ -122,9 +122,9 @@ public class ResultServiceTest {
 
 	private void checkForProperResultIdList(List<Long> resultIdList) {
 		assertThat(resultIdList.size() == 3);
-		assertThat(resultIdList.contains(1l));
-		assertThat(resultIdList.contains(2l));
-		assertThat(resultIdList.contains(3l));
+		assertThat(resultIdList.contains(1L));
+		assertThat(resultIdList.contains(2L));
+		assertThat(resultIdList.contains(3L));
 	}
 
 	@Test
@@ -157,8 +157,9 @@ public class ResultServiceTest {
 
 		// Check results with wrong user
 		jpaApi.withTransaction(() -> {
-			User testUser = testHelper.createAndPersistUser("bla@bla.com",
-					"Bla", "bla");
+			User testUser =
+					testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
+							"Bla", "bla");
 			try {
 				List<Long> idList = resultService.extractResultIds(ids);
 				List<ComponentResult> componentResultList = resultService
@@ -174,7 +175,7 @@ public class ResultServiceTest {
 			}
 		});
 
-		testHelper.removeUser("bla@bla.com");
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	@Test
@@ -295,8 +296,8 @@ public class ResultServiceTest {
 		jpaApi.withTransaction(() -> {
 			try {
 				List<Long> idList = resultService.extractResultIds(ids);
-				List<ComponentResult> componentResultList = null;
-				componentResultList = resultService.getComponentResults(idList);
+				List<ComponentResult> componentResultList =
+						resultService.getComponentResults(idList);
 				assertThat(componentResultList.size()).isEqualTo(2);
 			} catch (BadRequestException | NotFoundException e) {
 				throw new RuntimeException(e);
@@ -312,7 +313,7 @@ public class ResultServiceTest {
 
 		// If one of the IDs don't exist it throws an exception
 		jpaApi.withTransaction(() -> {
-			long nonExistingId = 1111l;
+			long nonExistingId = 1111L;
 			try {
 				List<Long> idList = resultService
 						.extractResultIds(ids + ", " + nonExistingId);
@@ -340,7 +341,7 @@ public class ResultServiceTest {
 				Fail.fail();
 			} catch (NotFoundException e) {
 				assertThat(e.getMessage())
-						.isEqualTo(MessagesStrings.componentResultNotExist(1l));
+						.isEqualTo(MessagesStrings.componentResultNotExist(1L));
 			} catch (BadRequestException e) {
 				throw new RuntimeException(e);
 			}
@@ -379,7 +380,7 @@ public class ResultServiceTest {
 				Fail.fail();
 			} catch (NotFoundException e) {
 				assertThat(e.getMessage())
-						.isEqualTo(MessagesStrings.studyResultNotExist(1l));
+						.isEqualTo(MessagesStrings.studyResultNotExist(1L));
 			} catch (BadRequestException e) {
 				throw new RuntimeException(e);
 			}
@@ -441,15 +442,16 @@ public class ResultServiceTest {
 
 		// Use wrong user to retrieve results
 		jpaApi.withTransaction(() -> {
-			User testUser = testHelper.createAndPersistUser("bla@bla.com",
-					"Bla", "bla");
+			User testUser =
+					testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
+							"Bla", "bla");
 			User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
 			List<StudyResult> studyResultList = resultService
 					.getAllowedStudyResultList(admin, testUser.getWorker());
 			assertThat(studyResultList).isEmpty();
 		});
 
-		testHelper.removeUser("bla@bla.com");
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 }

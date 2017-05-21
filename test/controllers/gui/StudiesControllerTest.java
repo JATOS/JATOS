@@ -53,8 +53,6 @@ import utils.common.JsonUtils;
  */
 public class StudiesControllerTest {
 
-	private static final String BLA_AT_BLA_COM = "bla@bla.com";
-
 	private Injector injector;
 
 	@Inject
@@ -100,7 +98,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.study(study.getId()).url());
 		Result result = route(request);
 		assertThat(result.status()).isEqualTo(OK);
@@ -114,7 +112,7 @@ public class StudiesControllerTest {
 	 */
 	@Test
 	public void callSubmitCreated() throws Exception {
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
 		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
@@ -125,7 +123,7 @@ public class StudiesControllerTest {
 
 		Http.Session session = testHelper.mockSessionCookieandCache(admin);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
@@ -155,9 +153,9 @@ public class StudiesControllerTest {
 	 */
 	@Test
 	public void callSubmitCreatedValidationError()
-			throws JsonProcessingException, IOException {
+			throws IOException {
 		// Fill with non-valid values
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(StudyProperties.TITLE, " ");
 		formMap.put(StudyProperties.DESCRIPTION, "Description test <b>.");
 		formMap.put(StudyProperties.COMMENTS, "Comments test <i>.");
@@ -167,7 +165,7 @@ public class StudiesControllerTest {
 		User admin = testHelper.getAdmin();
 		Http.Session session = testHelper.mockSessionCookieandCache(admin);
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
@@ -192,7 +190,7 @@ public class StudiesControllerTest {
 	@Test
 	public void callSubmitCreatedStudyAssetsDirExists() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
 		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
@@ -202,7 +200,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap)
 				.uri(controllers.gui.routes.Studies.submitCreated().url());
 		Result result = route(request);
@@ -221,7 +219,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.properties(study.getId())
 						.url());
 		Result result = route(request);
@@ -257,7 +255,7 @@ public class StudiesControllerTest {
 	public void callSubmitEdited() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(StudyProperties.TITLE, "Title Test");
 		formMap.put(StudyProperties.DESCRIPTION, "Description test.");
 		formMap.put(StudyProperties.COMMENTS, "Comments test.");
@@ -267,7 +265,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(formMap).uri(controllers.gui.routes.Studies
 						.submitEdited(study.getId()).url());
 		Result result = route(request);
@@ -295,7 +293,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.toggleLock(study.getId())
 						.url());
 		Result result = route(request);
@@ -313,7 +311,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("DELETE")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.remove(study.getId())
 						.url());
 		Result result = route(request);
@@ -329,7 +327,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.cloneStudy(study.getId())
 						.url());
 		Result result = route(request);
@@ -346,7 +344,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.memberUsers(study.getId())
 						.url());
 		Result result = route(request);
@@ -364,14 +362,14 @@ public class StudiesControllerTest {
 	public void callToggleMemberUser() throws Exception {
 		Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 		User admin = testHelper.getAdmin();
-		User someUser = testHelper.createAndPersistUser(BLA_AT_BLA_COM, "Bla",
+		User someUser = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla",
 				"bla");
 
 		// Add someUser as member to study
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), someUser.getEmail(), true).url());
 		Result result = route(request);
@@ -381,7 +379,7 @@ public class StudiesControllerTest {
 
 		// Remove admin as member from study
 		request = new RequestBuilder().method("POST").session(session)
-				.host(TestHelper.WWW_EXAMPLE_COM)
+				.remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), admin.getEmail(), false).url());
 		result = route(request);
@@ -390,7 +388,7 @@ public class StudiesControllerTest {
 		assertThat(contentAsString(result)).contains("\"isMember\":false");
 
 		// Clean-up
-		testHelper.removeUser(BLA_AT_BLA_COM);
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	/**
@@ -407,7 +405,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), admin.getEmail(), false).url());
 		Result result = route(request);
@@ -427,7 +425,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of("bla", "blu"))
 				.uri(controllers.gui.routes.Studies.toggleMemberUser(
 						study.getId(), "non.existing@mail.com", true).url());
@@ -447,7 +445,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
 				.uri(controllers.gui.routes.Studies
 						.changeComponentOrder(study.getId(),
@@ -459,7 +457,7 @@ public class StudiesControllerTest {
 
 		// Move second component to first position
 		request = new RequestBuilder().method("POST").session(session)
-				.host(TestHelper.WWW_EXAMPLE_COM)
+				.remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
 				.uri(controllers.gui.routes.Studies
 						.changeComponentOrder(study.getId(),
@@ -480,9 +478,9 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyForm(ImmutableMap.of(Study.USERS, "admin"))
-				.uri(controllers.gui.routes.Studies.runStudy(study.getId(), -1l)
+				.uri(controllers.gui.routes.Studies.runStudy(study.getId(), -1L)
 						.url());
 		Result result = route(request);
 
@@ -499,7 +497,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies
 						.tableDataByStudy(study.getId()).url());
 		Result result = route(request);
@@ -519,7 +517,7 @@ public class StudiesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("GET")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(controllers.gui.routes.Studies.workers(study.getId())
 						.url());
 		Result result = route(request);

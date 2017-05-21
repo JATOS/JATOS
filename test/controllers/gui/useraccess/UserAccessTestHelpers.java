@@ -52,7 +52,7 @@ public class UserAccessTestHelpers {
 		Http.Session session = testHelper.mockSessionCookieandCache(user);
 
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(call.url());
 		Result result = route(request);
 
@@ -66,12 +66,12 @@ public class UserAccessTestHelpers {
 	 */
 	public void checkDeniedAccessDueToAuthorization(Call call, String method) {
 		// Persist User without ADMIN role
-		User user = testHelper.createAndPersistUser("bla@bla.org", "Bla Bla",
+		User user = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla",
 				"bla");
 		Http.Session session = testHelper.mockSessionCookieandCache(user);
 
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(call.url());
 		Result result = route(request);
 
@@ -127,7 +127,7 @@ public class UserAccessTestHelpers {
 			String errorMsg) {
 		Http.Session session = testHelper.mockSessionCookieandCache(user);
 		RequestBuilder request = new RequestBuilder().method(method)
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.uri(call.url());
 		testHelper.assertJatosGuiException(request, Http.Status.FORBIDDEN,
 				errorMsg);

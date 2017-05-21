@@ -29,14 +29,10 @@ import play.mvc.Http;
 
 /**
  * Tests AuthenticationService
- * 
+ *
  * @author Kristian Lange (2017)
  */
 public class AuthenticationServiceTest {
-
-	private static final String BLA_AT_BLA_ORG = "bla@bla.org";
-
-	private static final String WWW_EXAMPLE_COM = "www.example.com";
 
 	private Injector injector;
 
@@ -62,6 +58,7 @@ public class AuthenticationServiceTest {
 
 	@After
 	public void stopApp() throws Exception {
+		testHelper.removeUser(TestHelper.BLA_EMAIL);
 	}
 
 	@Test
@@ -78,10 +75,10 @@ public class AuthenticationServiceTest {
 		jpaApi.withTransaction(() -> {
 			assertThat(authenticationService.authenticate(
 					UserService.ADMIN_EMAIL, UserService.ADMIN_PASSWORD))
-							.isTrue();
+					.isTrue();
 			assertThat(authenticationService
 					.authenticate(UserService.ADMIN_EMAIL, "wrongPassword"))
-							.isFalse();
+					.isFalse();
 		});
 	}
 
@@ -99,7 +96,7 @@ public class AuthenticationServiceTest {
 					.authenticate("oliver.zumba@gmail.com", "bla")).isTrue();
 			assertThat(authenticationService
 					.authenticate("oliver.zumba@gmail.com", "wrongPassword"))
-							.isFalse();
+					.isFalse();
 		});
 
 		testHelper.removeUser("oliver.zumba@gmail.com");
@@ -111,15 +108,15 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkIsRepeatedLoginAttempt() {
-		testHelper.createAndPersistUser(BLA_AT_BLA_ORG, "Bla Bla", "bla");
+		testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
-		assertThat(authenticationService.isRepeatedLoginAttempt(BLA_AT_BLA_ORG))
+		assertThat(authenticationService.isRepeatedLoginAttempt(TestHelper.BLA_EMAIL))
 				.isFalse();
-		assertThat(authenticationService.isRepeatedLoginAttempt(BLA_AT_BLA_ORG))
+		assertThat(authenticationService.isRepeatedLoginAttempt(TestHelper.BLA_EMAIL))
 				.isFalse();
-		assertThat(authenticationService.isRepeatedLoginAttempt(BLA_AT_BLA_ORG))
+		assertThat(authenticationService.isRepeatedLoginAttempt(TestHelper.BLA_EMAIL))
 				.isFalse();
-		assertThat(authenticationService.isRepeatedLoginAttempt(BLA_AT_BLA_ORG))
+		assertThat(authenticationService.isRepeatedLoginAttempt(TestHelper.BLA_EMAIL))
 				.isTrue();
 
 		// Try a different email - should still return true
@@ -139,11 +136,11 @@ public class AuthenticationServiceTest {
 			Http.Session session = new Http.Session(data);
 			assertThat(authenticationService
 					.getLoggedInUserBySessionCookie(session))
-							.isEqualTo(testHelper.getAdmin());
+					.isEqualTo(testHelper.getAdmin());
 		});
 
 		// Try again with another non-admin user
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 		jpaApi.withTransaction(() -> {
 			Map<String, String> data = new HashMap<>();
@@ -152,7 +149,7 @@ public class AuthenticationServiceTest {
 			Http.Session session = new Http.Session(data);
 			assertThat(authenticationService
 					.getLoggedInUserBySessionCookie(session))
-							.isEqualTo(userBla);
+					.isEqualTo(userBla);
 		});
 	}
 
@@ -180,7 +177,7 @@ public class AuthenticationServiceTest {
 	public void checkGetLoggedInUser() {
 		testHelper.mockContext();
 
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 		RequestScope.put(AuthenticationService.LOGGED_IN_USER, userBla);
 
@@ -202,14 +199,14 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkWriteSessionCookieAndSessionCache() {
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 		Map<String, String> data = new HashMap<>();
 		Http.Session session = new Http.Session(data);
 
 		jpaApi.withTransaction(() -> {
 			authenticationService.writeSessionCookieAndSessionCache(session,
-					userBla.getEmail(), WWW_EXAMPLE_COM);
+					userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM);
 		});
 
 		// Check session cookie
@@ -220,12 +217,12 @@ public class AuthenticationServiceTest {
 				.isNotEmpty();
 		assertThat(
 				session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME))
-						.isNotEmpty();
+				.isNotEmpty();
 
 		// Check that user session cache and that the session ID is the same as
 		// in the session cookie
 		String cachedUserSessionId = userSessionCacheAccessor
-				.getUserSessionId(userBla.getEmail(), WWW_EXAMPLE_COM);
+				.getUserSessionId(userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM);
 		assertThat(cachedUserSessionId)
 				.isEqualTo(session.get(AuthenticationService.SESSION_ID));
 	}
@@ -243,7 +240,7 @@ public class AuthenticationServiceTest {
 
 		assertThat(
 				session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME))
-						.isNotEqualTo("blafasel");
+				.isNotEqualTo("blafasel");
 	}
 
 	/**
@@ -263,7 +260,7 @@ public class AuthenticationServiceTest {
 		// Check that session is cleared
 		assertThat(
 				session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME))
-						.isNull();
+				.isNull();
 		assertThat(session.get(AuthenticationService.SESSION_ID)).isNull();
 		assertThat(session.get(AuthenticationService.SESSION_LOGIN_TIME))
 				.isNull();
@@ -278,7 +275,7 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkClearSessionCookieAndSessionCache() {
-		User userBla = testHelper.createAndPersistUser(BLA_AT_BLA_ORG,
+		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 		Map<String, String> data = new HashMap<>();
 		data.put(AuthenticationService.SESSION_LAST_ACTIVITY_TIME, "blafasel");
@@ -288,13 +285,13 @@ public class AuthenticationServiceTest {
 		Http.Session session = new Http.Session(data);
 		jpaApi.withTransaction(() -> {
 			authenticationService.clearSessionCookieAndSessionCache(session,
-					userBla.getEmail(), WWW_EXAMPLE_COM);
+					userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM);
 		});
 
 		// Check that session is cleared
 		assertThat(
 				session.get(AuthenticationService.SESSION_LAST_ACTIVITY_TIME))
-						.isNull();
+				.isNull();
 		assertThat(session.get(AuthenticationService.SESSION_ID)).isNull();
 		assertThat(session.get(AuthenticationService.SESSION_LOGIN_TIME))
 				.isNull();
@@ -304,7 +301,7 @@ public class AuthenticationServiceTest {
 		// Check that the session ID that was stored in cached user session is
 		// removed
 		String cachedUserSessionId = userSessionCacheAccessor
-				.getUserSessionId(userBla.getEmail(), WWW_EXAMPLE_COM);
+				.getUserSessionId(userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM);
 		assertThat(cachedUserSessionId).isNull();
 	}
 
@@ -314,15 +311,15 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkIsValidSessionIdIsValid() {
-		userSessionCacheAccessor.setUserSessionId(BLA_AT_BLA_ORG,
-				WWW_EXAMPLE_COM, "this-is-a-session-id");
+		userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL,
+				TestHelper.WWW_EXAMPLE_COM, "this-is-a-session-id");
 
 		Map<String, String> data = new HashMap<>();
 		data.put(AuthenticationService.SESSION_ID, "this-is-a-session-id");
 		Http.Session session = new Http.Session(data);
 
 		assertThat(authenticationService.isValidSessionId(session,
-				BLA_AT_BLA_ORG, WWW_EXAMPLE_COM)).isTrue();
+				TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM)).isTrue();
 	}
 
 	/**
@@ -331,8 +328,8 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkIsValidSessionIdIsNotValid() {
-		userSessionCacheAccessor.setUserSessionId(BLA_AT_BLA_ORG,
-				WWW_EXAMPLE_COM, "this-is-a-session-id");
+		userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL,
+				TestHelper.WWW_EXAMPLE_COM, "this-is-a-session-id");
 
 		Map<String, String> data = new HashMap<>();
 		data.put(AuthenticationService.SESSION_ID,
@@ -340,7 +337,7 @@ public class AuthenticationServiceTest {
 		Http.Session session = new Http.Session(data);
 
 		assertThat(authenticationService.isValidSessionId(session,
-				BLA_AT_BLA_ORG, WWW_EXAMPLE_COM)).isFalse();
+				TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM)).isFalse();
 	}
 
 	/**
@@ -354,7 +351,7 @@ public class AuthenticationServiceTest {
 		Http.Session session = new Http.Session(data);
 
 		assertThat(authenticationService.isValidSessionId(session,
-				BLA_AT_BLA_ORG, WWW_EXAMPLE_COM)).isFalse();
+				TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM)).isFalse();
 	}
 
 	/**
@@ -363,14 +360,14 @@ public class AuthenticationServiceTest {
 	 */
 	@Test
 	public void checkIsValidSessionIdNullInSession() {
-		userSessionCacheAccessor.setUserSessionId(BLA_AT_BLA_ORG,
-				WWW_EXAMPLE_COM, "this-is-a-session-id");
+		userSessionCacheAccessor.setUserSessionId(TestHelper.BLA_EMAIL,
+				TestHelper.WWW_EXAMPLE_COM, "this-is-a-session-id");
 
 		Map<String, String> data = new HashMap<>();
 		Http.Session session = new Http.Session(data);
 
 		assertThat(authenticationService.isValidSessionId(session,
-				BLA_AT_BLA_ORG, WWW_EXAMPLE_COM)).isFalse();
+				TestHelper.BLA_EMAIL, TestHelper.WWW_EXAMPLE_COM)).isFalse();
 	}
 
 	/**

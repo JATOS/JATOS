@@ -73,7 +73,7 @@ public class BatchesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyJson(jsonNode)
 				.uri(controllers.gui.routes.Batches.createPersonalSingleRun(
 						study.getId(), study.getDefaultBatch().getId()).url());
@@ -95,7 +95,7 @@ public class BatchesControllerTest {
 		Http.Session session = testHelper
 				.mockSessionCookieandCache(testHelper.getAdmin());
 		RequestBuilder request = new RequestBuilder().method("POST")
-				.session(session).host(TestHelper.WWW_EXAMPLE_COM)
+				.session(session).remoteAddress(TestHelper.WWW_EXAMPLE_COM)
 				.bodyJson(jsonNode)
 				.uri(controllers.gui.routes.Batches.createPersonalMultipleRun(
 						study.getId(), study.getDefaultBatch().getId()).url());

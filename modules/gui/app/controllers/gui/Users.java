@@ -93,7 +93,7 @@ public class Users extends Controller {
 
 	/**
 	 * Ajax POST
-	 * 
+	 * <p>
 	 * Request to add or remove the ADMIN role from a user.
 	 */
 	@Transactional
@@ -235,14 +235,15 @@ public class Users extends Controller {
 	/**
 	 * POST request to delete a user. Is called from user manager and user
 	 * profile.
-	 * 
+	 * <p>
 	 * It can't be a HTTP DELETE because it contains form data and Play doesn't
 	 * handle body data in a DELETE request.
 	 */
 	@Transactional
 	@Authenticated
 	public Result remove(String emailOfUserToRemove) throws JatosGuiException {
-		LOGGER.debug(".remove: " + "emailOfUserToRemove " + emailOfUserToRemove);
+		LOGGER.debug(".remove: " + "emailOfUserToRemove "
+				+ emailOfUserToRemove);
 
 		User loggedInUser = authenticationService.getLoggedInUser();
 		String loggedInUserEmail = loggedInUser.getEmail();
@@ -253,7 +254,8 @@ public class Users extends Controller {
 
 		DynamicForm requestData = formFactory.form().bindFromRequest();
 		String password = requestData.get("password");
-		if (!authenticationService.authenticate(loggedInUserEmail, password)) {
+		if (password == null || !authenticationService
+				.authenticate(loggedInUserEmail, password)) {
 			return forbidden(MessagesStrings.WRONG_PASSWORD);
 		}
 
