@@ -40,7 +40,7 @@ import utils.common.JsonUtils;
 /**
  * Implementation of JATOS' public API for studies that are started via MTurk. A
  * MTurk run is done by a MTWorker or a MTSandboxWorker.
- * 
+ *
  * @author Kristian Lange
  */
 @Singleton
@@ -48,7 +48,6 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
 	private static final ALogger LOGGER = Logger.of(MTPublix.class);
 
-	public static final String HIT_ID = "hitId";
 	public static final String ASSIGNMENT_ID = "assignmentId";
 
 	/**
@@ -96,7 +95,6 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 		// Get MTurk query parameters
 		String mtWorkerId = HttpUtils.getQueryString(MT_WORKER_ID);
 		String mtAssignmentId = HttpUtils.getQueryString(ASSIGNMENT_ID);
-		// String mtHitId = getQueryString(HIT_ID);
 		LOGGER.info(".startStudy: studyId " + studyId + ", " + "batchId "
 				+ batchId);
 
