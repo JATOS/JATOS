@@ -17,24 +17,24 @@ args=${@:2}
 function start() {
 	checkAlreadyRunning
 	checkJava
-	
+
 	echo -n "Starting JATOS"
 
 	# Generate application secret for the Play framework
-	secret="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1)"
+	secret="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom 2>/dev/null | dd bs=64 count=1 2>/dev/null)"
 
 	if [ ! -f "$dir/bin/jatos" ]
 	then
 		echo -e "\n$dir/bin/jatos doesn't exist!"
 		exit 1
 	fi
-	
+
 	# In case './bin/jatos' isn't executable set the x bit
 	chmod u+x "$dir/bin/jatos"
-	
+
 	# Start JATOS with configuration file and application secret
 	"$dir/bin/jatos" -Dconfig.file="$dir/conf/production.conf" -Dplay.crypto.secret=$secret -Dhttp.port=$port -Dhttp.address=$address -J-server $args > /dev/null &
-	
+
 	echo "...started"
 	printAddressAndPort
 }
@@ -78,7 +78,7 @@ function checkJava() {
 		echo "Found Java in JAVA_HOME"
 		java_version=$($JAVA_HOME/bin/java -version 2>&1 | sed 's/.*version "\(.*\)\.\(.*\)\..*"/\1\2/; 1q')
 	fi
-	
+
 	# If we don't have a version or if the version is not a number or if the version is smaller 18 (Java 8) try to find a local Java installation
 	if [[ -z "$java_version" ]] || [[ ! "$java_version" =~ ^[0-9]+$ ]] || [[ "$java_version" -lt 18 ]]
 	then
@@ -127,7 +127,7 @@ case "$1" in
 	restart)
 		stop
 		# Check that JATOS' port is free
-		while lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 
+		while lsof -Pi :$port -sTCP:LISTEN -t >/dev/null
 		do
 			sleep 1
 		done
