@@ -216,8 +216,8 @@ public class Batches extends Controller {
 		boolean success = batchService.updateBatchSession(batch.getId(),
 				batchSession);
 		if (!success) {
-			return forbidden("Could not save batch session due to "
-					+ "wrong version - try reloading the page.");
+			return forbidden("The Batch Session has been updated since you " +
+					"loaded this page. Reload before trying to save again.");
 		}
 		return ok();
 	}
