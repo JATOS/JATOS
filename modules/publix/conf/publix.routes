@@ -21,7 +21,8 @@ GET     /publix/:studyId/component/start                 @controllers.publix.Pub
 GET     /publix/:studyId/:componentId/start              @controllers.publix.PublixInterceptor.startComponent(studyId: Long, componentId: Long, srid: Long)
 GET     /publix/:studyId/:componentId/end                @controllers.publix.PublixInterceptor.finishComponent(studyId: Long, componentId: Long, srid: Long, successful: Boolean ?= true, errorMsg: String ?= null)
 GET     /publix/:studyId/:componentId/initData           @controllers.publix.PublixInterceptor.getInitData(studyId: Long, componentId: Long, srid: Long)
-POST    /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long, srid: Long)
+PUT     /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long, srid: Long)
+POST    /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.appendResultData(studyId: Long, componentId: Long, srid: Long)
 POST    /publix/:studyId/:componentId/log                @controllers.publix.PublixInterceptor.log(studyId: Long, componentId: Long, srid: Long)
 
 

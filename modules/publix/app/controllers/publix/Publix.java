@@ -11,11 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
-import exceptions.publix.ForbiddenPublixException;
-import exceptions.publix.ForbiddenReloadException;
-import exceptions.publix.InternalServerErrorPublixException;
-import exceptions.publix.NotFoundPublixException;
-import exceptions.publix.PublixException;
+import exceptions.publix.*;
 import models.common.Batch;
 import models.common.Component;
 import models.common.ComponentResult;
@@ -47,7 +43,7 @@ import utils.common.JsonUtils;
 /**
  * Abstract controller class for all controllers that implement the IPublix
  * interface. It defines common methods and constants.
- * 
+ *
  * @author Kristian Lange
  */
 @Singleton
@@ -399,6 +395,22 @@ public abstract class Publix<T extends Worker> extends Controller
 		LOGGER.info(".submitResultData: studyId " + studyId + ", "
 				+ "componentId " + componentId + ", " + "studyResultId "
 				+ studyResultId);
+		return submitOrAppendResultData(studyId, componentId, studyResultId,
+				false);
+	}
+
+	@Override
+	public Result appendResultData(Long studyId, Long componentId,
+			Long studyResultId) throws PublixException {
+		LOGGER.info(".appendResultData: studyId " + studyId + ", "
+				+ "componentId " + componentId + ", " + "studyResultId "
+				+ studyResultId);
+		return submitOrAppendResultData(studyId, componentId, studyResultId,
+				true);
+	}
+
+	private Result submitOrAppendResultData(Long studyId, Long componentId,
+			Long studyResultId, boolean append) throws PublixException {
 		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
 		Study study = publixUtils.retrieveStudy(studyId);
 		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
@@ -414,11 +426,19 @@ public abstract class Publix<T extends Worker> extends Controller
 		if (componentResult == null) {
 			String error = PublixErrorMessages.componentNeverStarted(studyId,
 					componentId, "submitResultData");
-			return redirect(controllers.publix.routes.PublixInterceptor
+			return redirect(routes.PublixInterceptor
 					.finishStudy(studyId, studyResult.getId(), false, error));
 		}
 
-		String resultData = request().body().asText();
+		String postedResultData = request().body().asText();
+		String resultData;
+		if (append) {
+			String currentResultData = componentResult.getData();
+			resultData = currentResultData != null ?
+					currentResultData + postedResultData : postedResultData;
+		} else {
+			resultData = postedResultData;
+		}
 		componentResult.setData(resultData);
 		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
 		componentResultDao.update(componentResult);

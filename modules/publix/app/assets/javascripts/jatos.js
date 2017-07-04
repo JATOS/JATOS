@@ -784,31 +784,59 @@ var jatos = {};
 	};
 
 	/**
-	 * Posts resultData back to the JATOS server.
+	 * Posts result data for the currently running component back to the JATOS
+	 * server. Already stored result data for this component will be overwritten.
+	 * It offers callbacks, either as parameter or via jQuery.deferred.promise,
+	 * to signal success or failure in the transfer.
 	 * 
 	 * @param {Object}
 	 *            resultData - String to be submitted
 	 * @param {optional
 	 *            Function} onSuccess - Function to be called in case of successful
 	 * @param {optional
-	 *            Function} onError - (DEPRECATED) Function to be called in case
-	 *            of error
+	 *            Function} onError - Function to be called in case of error
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.submitResultData = function (resultData, onSuccess, onError) {
+		return submitOrAppendResultData(resultData, false, onSuccess, onError);
+	};
+
+	/**
+	 * Appends result data for the currently running component back to the JATOS
+     * server. Contrary to jatos.submitResultData it does not overwrite the result
+	 * data. It offers callbacks, either as parameter or via jQuery.deferred.promise,
+	 * to signal success or failure in the transfer.
+	 *
+	 * @param {Object}
+	 *            resultData - String to be appended
+	 * @param {optional
+	 *            Function} onSuccess - Function to be called in case of successful
+	 * @param {optional
+	 *            Function} onError - Function to be called in case of error
+	 * @return {jQuery.deferred.promise}
+	 */
+	jatos.appendResultData = function (resultData, onSuccess, onError) {
+		return submitOrAppendResultData(resultData, true, onSuccess, onError);
+	};
+
+	/**
+	 * Does the sending of the result data. Uses PUT for submitResultData and
+	 * POST for appendResultData.
+	 */
+	function submitOrAppendResultData(resultData, append, onSuccess, onError) {
 		if (isDeferredPending(submittingResultDataDeferred)) {
 			callingOnError(onError, "Can send only one result data at a time");
 			return rejectedPromise();
 		}
 
+		var httpMethod = append ? "POST" : "PUT";
 		submittingResultDataDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
 			url: "/publix/" + jatos.studyId + "/" +
-				jatos.componentId + "/resultData" +
-				"?srid=" + jatos.studyResultId,
+			jatos.componentId + "/resultData" +	"?srid=" + jatos.studyResultId,
 			data: resultData,
 			processData: false,
-			type: "POST",
+			type: httpMethod,
 			contentType: "text/plain; charset=UTF-8",
 			timeout: jatos.httpTimeout,
 			success: function (response) {
@@ -825,7 +853,7 @@ var jatos = {};
 			timeout: jatos.httpRetryWait
 		});
 		return submittingResultDataDeferred;
-	};
+	}
 
 	/**
 	 * Posts study session data back to the JATOS server. This function is called by

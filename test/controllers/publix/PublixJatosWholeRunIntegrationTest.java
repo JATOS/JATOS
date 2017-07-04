@@ -4,10 +4,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import static play.api.test.Helpers.testServerPort;
 import static play.mvc.Http.Status.OK;
 import static play.mvc.Http.Status.SEE_OTHER;
-import static play.test.Helpers.GET;
-import static play.test.Helpers.POST;
-import static play.test.Helpers.contentAsString;
-import static play.test.Helpers.route;
+import static play.test.Helpers.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -55,7 +52,7 @@ import utils.common.JsonUtils;
 /**
  * Integration test that does a whole run with the JatosWorker (calls all the
  * endpoints of a run with a JatosWorker)
- * 
+ *
  * @author Kristian Lange
  */
 public class PublixJatosWholeRunIntegrationTest {
@@ -212,6 +209,24 @@ public class PublixJatosWholeRunIntegrationTest {
 		// Check componentResult
 		assertThat(firstComponentResult.getData())
 				.isEqualTo("That's a test result data.");
+
+		// *************************************************************
+		// Send request appendResultData:
+		// studyResult -> DATA_RETRIEVED, componentResult -> RESULTDATA_POSTED
+		result = appendResultData(studyResult, admin, idCookie);
+
+		studyResult = retrieveStudyResult(studyResult.getId());
+		firstComponentResult = retrieveComponentResult(studyResult.getId(), 0);
+
+		// Check response
+		assertThat(result.status()).isEqualTo(OK);
+		checkStates(studyResult, StudyState.DATA_RETRIEVED,
+				firstComponentResult, ComponentState.RESULTDATA_POSTED);
+
+		// Check componentResult
+		assertThat(firstComponentResult.getData())
+				.isEqualTo(
+						"That's a test result data. And here are appended data.");
 
 		// *************************************************************
 		// Send request setStudySessionData:
@@ -516,12 +531,28 @@ public class PublixJatosWholeRunIntegrationTest {
 		String url = "/publix/" + studyResult.getStudy().getId() + "/"
 				+ studyResult.getStudy().getFirstComponent().getId()
 				+ "/resultData?srid=" + studyResult.getId();
-		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
+		RequestBuilder request = new RequestBuilder().method(PUT).uri(url)
 				.session(AuthenticationService.SESSION_USER_EMAIL,
 						admin.getEmail())
 				.cookie(idCookie)
 				.header(HeaderNames.HOST, "localhost:" + testServerPort())
 				.bodyText("That's a test result data.");
+		result = route(request, 10000);
+		return result;
+	}
+
+	private Result appendResultData(StudyResult studyResult, User admin,
+			Cookie idCookie) {
+		Result result;
+		String url = "/publix/" + studyResult.getStudy().getId() + "/"
+				+ studyResult.getStudy().getFirstComponent().getId()
+				+ "/resultData?srid=" + studyResult.getId();
+		RequestBuilder request = new RequestBuilder().method(POST).uri(url)
+				.session(AuthenticationService.SESSION_USER_EMAIL,
+						admin.getEmail())
+				.cookie(idCookie)
+				.header(HeaderNames.HOST, "localhost:" + testServerPort())
+				.bodyText(" And here are appended data.");
 		result = route(request, 10000);
 		return result;
 	}

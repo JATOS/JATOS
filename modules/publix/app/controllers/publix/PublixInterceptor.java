@@ -491,6 +491,41 @@ public class PublixInterceptor extends Controller implements IPublix {
 
 	@Override
 	@Transactional
+	public Result appendResultData(Long studyId, Long componentId,
+			Long studyResultId) throws PublixException {
+		Result result = null;
+		switch (getWorkerTypeFromIdCookie(studyResultId)) {
+			case MTWorker.WORKER_TYPE:
+				// Handle MTWorker like MTSandboxWorker
+			case MTSandboxWorker.WORKER_TYPE:
+				result = instanceOfPublix(MTPublix.class).appendResultData(studyId,
+						componentId, studyResultId);
+				break;
+			case JatosWorker.WORKER_TYPE:
+				result = instanceOfPublix(JatosPublix.class)
+						.appendResultData(studyId, componentId, studyResultId);
+				break;
+			case PersonalMultipleWorker.WORKER_TYPE:
+				result = instanceOfPublix(PersonalMultiplePublix.class)
+						.appendResultData(studyId, componentId, studyResultId);
+				break;
+			case PersonalSingleWorker.WORKER_TYPE:
+				result = instanceOfPublix(PersonalSinglePublix.class)
+						.appendResultData(studyId, componentId, studyResultId);
+				break;
+			case GeneralSingleWorker.WORKER_TYPE:
+				result = instanceOfPublix(GeneralSinglePublix.class)
+						.appendResultData(studyId, componentId, studyResultId);
+				break;
+			default:
+				throw new BadRequestPublixException(
+						PublixErrorMessages.UNKNOWN_WORKER_TYPE);
+		}
+		return result;
+	}
+
+	@Override
+	@Transactional
 	public Result finishComponent(Long studyId, Long componentId,
 			Long studyResultId, Boolean successful, String errorMsg)
 			throws PublixException {
