@@ -1879,6 +1879,9 @@ var jatos = {};
 		return obj;
 	};
 
+	/**
+	 * Calls the function f it f exists. It calls f with parameter a if a exists.
+	 */
 	function callFunctionIfExist(f, a) {
 		if (f && typeof f == 'function') {
 			if (typeof a != 'undefined') {
