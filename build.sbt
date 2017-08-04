@@ -60,7 +60,7 @@ PlayKeys.externalizeResources := false
 	
 // JATOS root project with GUI. Container for all the submodules
 lazy val jatos: Project = (project in file("."))
-	.enablePlugins(PlayJava, SbtWeb)
+	.enablePlugins(PlayJava, PlayScala, SbtWeb)
 	.aggregate(publix, common, gui)
 	.dependsOn(publix, common, gui)
 	.settings(
@@ -89,13 +89,13 @@ sources in (Compile, doc) := Seq.empty
 publishArtifact in (Compile, packageDoc) := false
 
 // Add loader.sh to distribution
-mappings in Universal in packageBin += file(baseDirectory.value + "/loader.sh") -> ("loader.sh")
+mappings in Universal in packageBin += file(baseDirectory.value + "/loader.sh") -> "loader.sh"
 
 // Add loader.sh to distribution
-mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> ("loader.bat")
+mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> "loader.bat"
 
 // Add conf/production.conf to distribution
-mappings in Universal += file(baseDirectory.value + "/conf/production.conf") -> ("conf/production.conf")
+mappings in Universal += file(baseDirectory.value + "/conf/production.conf") -> "conf/production.conf"
 
 // Don't include dev config to distribution
 mappings in Universal := (mappings in Universal).value filter {
@@ -112,7 +112,7 @@ mappings in Universal := (mappings in Universal).value filter {
 	case (file, path) => ! path.endsWith("jatos.bat")
 }
 
-// Don't include Java docs to distribution
+// Don't include docs to distribution
 mappings in Universal := (mappings in Universal).value filter { 
 	case (file, path) => ! path.contains("share/doc")
 }
