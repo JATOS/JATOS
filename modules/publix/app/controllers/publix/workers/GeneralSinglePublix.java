@@ -1,8 +1,5 @@
 package controllers.publix.workers;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
@@ -31,6 +28,9 @@ import session.group.GroupAdministration;
 import session.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Implementation of JATOS' public API for general single study runs (open to

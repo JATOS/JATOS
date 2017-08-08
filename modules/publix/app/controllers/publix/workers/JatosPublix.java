@@ -1,8 +1,5 @@
 package controllers.publix.workers;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
@@ -12,11 +9,7 @@ import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
-import models.common.Batch;
-import models.common.Component;
-import models.common.ComponentResult;
-import models.common.Study;
-import models.common.StudyResult;
+import models.common.*;
 import models.common.workers.JatosWorker;
 import play.Logger;
 import play.Logger.ALogger;
@@ -36,6 +29,9 @@ import session.group.GroupAdministration;
 import session.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Implementation of JATOS' public API for studies and components that are

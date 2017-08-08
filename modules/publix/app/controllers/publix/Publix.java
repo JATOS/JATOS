@@ -1,24 +1,12 @@
 package controllers.publix;
 
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.Date;
-
-import javax.inject.Singleton;
-
 import com.fasterxml.jackson.databind.JsonNode;
-
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.*;
-import models.common.Batch;
-import models.common.Component;
-import models.common.ComponentResult;
+import models.common.*;
 import models.common.ComponentResult.ComponentState;
-import models.common.GroupResult;
-import models.common.Study;
-import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
@@ -39,6 +27,11 @@ import session.group.GroupAdministration;
 import session.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
+
+import javax.inject.Singleton;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.Date;
 
 /**
  * Abstract controller class for all controllers that implement the IPublix

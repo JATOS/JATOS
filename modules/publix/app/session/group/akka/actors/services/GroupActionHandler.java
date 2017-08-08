@@ -18,7 +18,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.libs.Json;
-import session.Registry;
+import session.RegistryS;
 import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
 import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
 import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
@@ -50,7 +50,7 @@ public class GroupActionHandler {
 	 * Handles group actions originating from a client
 	 */
 	public GroupActionMsgBundle handleGroupActionMsg(GroupMsg groupActionMsg,
-			long groupResultId, long studyResultId, Registry groupRegistry) {
+			long groupResultId, long studyResultId, RegistryS groupRegistry) {
 		ObjectNode groupActionMsgJson = groupActionMsg.jsonNode;
 		LOGGER.debug(
 				".handleGroupActionMsg:"
@@ -77,7 +77,7 @@ public class GroupActionHandler {
 	 */
 	private GroupActionMsgBundle handleGroupActionSessionPatch(
 			ObjectNode groupActionMsgJson, long groupResultId,
-			long studyResultId, Registry groupRegistry) {
+			long studyResultId, RegistryS groupRegistry) {
 		return jpa.withTransaction(() -> {
 			GroupResult groupResult = groupResultDao.findById(groupResultId);
 			if (groupResult == null) {
@@ -181,7 +181,7 @@ public class GroupActionHandler {
 	 * members
 	 */
 	private GroupActionMsgBundle handleActionFix(long groupResultId,
-			long studyResultId, Registry groupRegistry) {
+			long studyResultId, RegistryS groupRegistry) {
 		return jpa.withTransaction(() -> {
 			GroupResult groupResult = groupResultDao.findById(groupResultId);
 			if (groupResult != null) {

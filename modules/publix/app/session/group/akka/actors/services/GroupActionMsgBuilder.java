@@ -17,7 +17,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.db.jpa.JPAApi;
 import play.libs.Json;
-import session.Registry;
+import session.RegistryS;
 import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg;
 import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.GroupAction;
 import session.group.akka.protocol.GroupDispatcherProtocol.GroupActionMsg.TellWhom;
@@ -94,7 +94,7 @@ public class GroupActionMsgBuilder {
 	 * Builds a GroupActionMsg with the current group session data and version
 	 */
 	public GroupActionMsg buildSessionData(long groupResultId,
-			long studyResultId, Registry groupRegistry, GroupAction action,
+			long studyResultId, RegistryS groupRegistry, GroupAction action,
 			TellWhom tellWhom) {
 		LOGGER.debug(
 				".buildSessionData: groupResultId {}, studyResultId {}, action {}, tellWhom {}",
@@ -118,7 +118,7 @@ public class GroupActionMsgBuilder {
 	 * version
 	 */
 	public GroupActionMsg build(long groupResultId, long studyResultId,
-			Registry groupRegistry, GroupAction action, TellWhom tellWhom) {
+			RegistryS groupRegistry, GroupAction action, TellWhom tellWhom) {
 		// The current group data are persisted in a GroupResult entity. The
 		// GroupResult determines who is member of the group - and not
 		// the group registry.
@@ -140,7 +140,7 @@ public class GroupActionMsgBuilder {
 	}
 
 	private GroupActionMsg buildActionMsg(GroupResult groupResult,
-			long studyResultId, Registry groupRegistry,
+			long studyResultId, RegistryS groupRegistry,
 			boolean includeSessionData, GroupAction action, TellWhom tellWhom) {
 		ObjectNode objectNode = Json.mapper().createObjectNode();
 		objectNode.put(GroupActionMsg.ACTION, action.toString());

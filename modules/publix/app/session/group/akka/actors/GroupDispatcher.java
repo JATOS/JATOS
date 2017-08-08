@@ -10,7 +10,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.libs.Json;
 import session.DispatcherRegistryProtocol.Unregister;
-import session.Registry;
+import session.RegistryS;
 import session.group.akka.actors.services.GroupActionHandler;
 import session.group.akka.actors.services.GroupActionMsgBuilder;
 import session.group.akka.actors.services.GroupActionMsgBundle;
@@ -63,7 +63,7 @@ public class GroupDispatcher extends UntypedActor {
 
 	public static final String ACTOR_NAME = "GroupDispatcher";
 
-	private Registry groupRegistry = new Registry();
+	private RegistryS groupRegistry = new RegistryS();
 	private final ActorRef groupDispatcherRegistry;
 	private final GroupActionHandler groupActionHandler;
 	private final GroupActionMsgBuilder groupActionMsgBuilder;
