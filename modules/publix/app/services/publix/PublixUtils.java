@@ -24,7 +24,7 @@ import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import services.publix.idcookie.IdCookieService;
-import session.group.GroupAdministration;
+import session2.group.GroupAdministration;
 
 /**
  * Service class with functions that are common for all classes that extend

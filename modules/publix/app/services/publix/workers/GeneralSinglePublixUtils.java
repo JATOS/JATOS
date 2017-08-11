@@ -18,7 +18,7 @@ import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieService;
-import session.group.GroupAdministration;
+import session2.group.GroupAdministration;
 
 /**
  * GeneralSinglePublix' implementation of PublixUtils

@@ -5,6 +5,7 @@ import java.io.IOException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import exceptions.publix.PublixException;
+import play.api.mvc.WebSocket;
 import play.mvc.LegacyWebSocket;
 import play.mvc.Result;
 
@@ -85,7 +86,7 @@ public interface IPublix {
 	 * @return WebSocket that transports JSON strings.
 	 * @throws PublixException
 	 */
-	LegacyWebSocket<JsonNode> openBatch(Long studyId, Long studyResultId)
+	WebSocket openBatch(Long studyId, Long studyResultId)
 			throws PublixException;
 
 	/**

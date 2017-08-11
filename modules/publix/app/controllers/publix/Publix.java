@@ -1,5 +1,6 @@
 package controllers.publix;
 
+import batch.BatchChannelService;
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
@@ -11,6 +12,7 @@ import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
+import play.api.mvc.WebSocket;
 import play.db.jpa.JPAApi;
 import play.mvc.Controller;
 import play.mvc.LegacyWebSocket;
@@ -21,10 +23,9 @@ import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
-import session.WebSocketBuilder;
-import session.batch.BatchChannelService;
-import session.group.GroupAdministration;
-import session.group.GroupChannelService;
+import session2.WebSocketBuilder;
+import session2.group.GroupAdministration;
+import session2.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -184,7 +185,7 @@ public abstract class Publix<T extends Worker> extends Controller
 
 	@Override
 	// Due to returning a WebSocket and not a Result we don't throw exceptions
-	public LegacyWebSocket<JsonNode> openBatch(Long studyId,
+	public WebSocket openBatch(Long studyId,
 			Long studyResultId) {
 		LOGGER.info(".openBatch: studyId " + studyId + ", studyResultId "
 				+ studyResultId);
@@ -217,16 +218,21 @@ public abstract class Publix<T extends Worker> extends Controller
 			}
 		});
 		// openGroupChannel has to be outside of the transaction
-		if (studyResult != null) {
-			try {
-				return batchChannelService.openBatchChannel(studyResult);
-			} catch (InternalServerErrorPublixException e) {
-				LOGGER.error(".openBatch: ", e);
-				return WebSocketBuilder.reject(internalServerError());
-			}
-		} else {
-			return WebSocketBuilder.reject(internalServerError());
-		}
+		return batchChannelService.openBatchChannel(studyResult);
+
+//			if (studyResult != null) {
+//				try {
+//					return batchChannelService.openBatchChannel(studyResult);
+//				} catch (InternalServerErrorPublixException e) {
+//					LOGGER.error(".openBatch: ", e);
+//					return CompletableFuture.completedFuture(
+//							F.Either.Left(internalServerError()));
+//				}
+//			} else {
+//				return CompletableFuture
+//						.completedFuture(F.Either.Left(internalServerError()));
+//			}
+//		});
 	}
 
 	@Override

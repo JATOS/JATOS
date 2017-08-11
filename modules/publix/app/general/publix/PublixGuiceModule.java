@@ -1,29 +1,15 @@
 package general.publix;
 
+import batch.BatchDispatcher;
+import batch.BatchDispatcherRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
-
-import models.common.workers.GeneralSingleWorker;
-import models.common.workers.JatosWorker;
-import models.common.workers.MTWorker;
-import models.common.workers.PersonalMultipleWorker;
-import models.common.workers.PersonalSingleWorker;
+import models.common.workers.*;
 import play.libs.akka.AkkaGuiceSupport;
-import services.publix.StudyAuthorisation;
 import services.publix.PublixUtils;
-import services.publix.workers.GeneralSinglePublixUtils;
-import services.publix.workers.GeneralSingleStudyAuthorisation;
-import services.publix.workers.JatosPublixUtils;
-import services.publix.workers.JatosStudyAuthorisation;
-import services.publix.workers.MTPublixUtils;
-import services.publix.workers.MTStudyAuthorisation;
-import services.publix.workers.PersonalMultiplePublixUtils;
-import services.publix.workers.PersonalMultipleStudyAuthorisation;
-import services.publix.workers.PersonalSinglePublixUtils;
-import services.publix.workers.PersonalSingleStudyAuthorisation;
-import session.batch.BatchDispatcher;
-import session.batch.BatchDispatcherRegistry;
-import session.group.akka.actors.GroupDispatcherRegistry;
+import services.publix.StudyAuthorisation;
+import services.publix.workers.*;
+import session2.group.akka.actors.GroupDispatcherRegistry;
 
 /**
  * Configuration of Guice dependency injection for Publix module

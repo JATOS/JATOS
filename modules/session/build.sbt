@@ -1,18 +1,10 @@
-name := "jatos-gui"
+name := "jatos-session"
 
 scalaVersion := "2.11.11"
 
-includeFilter in(Assets, LessKeys.less) := "*.less"
-
-excludeFilter in(Assets, LessKeys.less) := "_*.less"
-
 libraryDependencies ++= Seq(
-  javaCore,
-  javaJdbc,
-  javaJpa,
-  javaWs,
-  cache,
-  "org.webjars" % "bootstrap" % "3.3.4"
+  "org.apache.commons" % "commons-collections4" % "4.0",
+  "org.gnieh" % "diffson-play-json_2.11" % "2.2.1"
 )
 
 // Routes from submodules

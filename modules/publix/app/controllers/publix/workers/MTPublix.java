@@ -1,5 +1,6 @@
 package controllers.publix.workers;
 
+import batch.BatchChannelService;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
@@ -28,9 +29,8 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.MTErrorMessages;
 import services.publix.workers.MTPublixUtils;
 import services.publix.workers.MTStudyAuthorisation;
-import session.batch.BatchChannelService;
-import session.group.GroupAdministration;
-import session.group.GroupChannelService;
+import session2.group.GroupAdministration;
+import session2.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 

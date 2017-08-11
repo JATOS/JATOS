@@ -15,7 +15,7 @@ import models.common.workers.Worker;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieService;
-import session.group.GroupAdministration;
+import session2.group.GroupAdministration;
 
 /**
  * MTPublix' implementation of PublixUtils (studies started via MTurk).

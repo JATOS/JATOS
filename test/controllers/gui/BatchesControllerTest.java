@@ -22,7 +22,6 @@ import play.ApplicationLoader;
 import play.Environment;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
-import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
