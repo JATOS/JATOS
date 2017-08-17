@@ -23,7 +23,7 @@ import utils.common.HttpUtils;
  * This class offers a simple interface to extract, write and discard IdCookies.
  *
  * Internally this class accesses JATOS' ID cookies in the HTTP Request or
- * Response. It stores the extracted {@link IdCookies} in a
+ * Response. It stores the extracted {@link IdCookieModel} in a
  * {@link IdCookieCollection}. Additionally it puts the
  * {@link IdCookieCollection} in the {@link RequestScope} for easier retrieval
  * in subsequent calls within the same Request.
@@ -232,7 +232,7 @@ public class IdCookieAccessor {
 	 * @param cookieName
 	 *            Name of the cookie
 	 * @return
-	 * @throws MalformedIdCookieException
+	 * @throws IdCookieMalformedException
 	 *             Throws a MalformedIdCookieException if the a cookie value is
 	 *             malformed.
 	 */
@@ -265,7 +265,7 @@ public class IdCookieAccessor {
 	 * @param cookieName
 	 *            Name of the cookie
 	 * @return
-	 * @throws MalformedIdCookieException
+	 * @throws IdCookieMalformedException
 	 *             Throws a MalformedIdCookieException if the cookie value is
 	 *             malformed.
 	 */

@@ -62,10 +62,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
     public enum JatosRun {
         RUN_STUDY, // A full study run
         RUN_COMPONENT_START, // Single component run just started
-        RUN_COMPONENT_FINISHED; // Single component run in finished state
+        RUN_COMPONENT_FINISHED // Single component run in finished state
     }
-
-    ;
 
     /**
      * Name of a key in the session. It stores what will be mapped to JatosRun.

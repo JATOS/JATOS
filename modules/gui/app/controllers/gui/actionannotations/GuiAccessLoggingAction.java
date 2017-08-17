@@ -31,7 +31,7 @@ public class GuiAccessLoggingAction extends Action<GuiAccessLogging> {
 	public @interface GuiAccessLogging {
 	}
 
-	private ALogger guiLogger = Logger.of("gui_access");
+	private final ALogger guiLogger = Logger.of("gui_access");
 
 	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();

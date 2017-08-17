@@ -45,7 +45,7 @@ public class Component {
 	 * same UUID, although it is allowed to have other studies that have this
 	 * component with this UUID.
 	 */
-	@Column(unique = false, nullable = false)
+	@Column(nullable = false)
 	@JsonView({ JsonUtils.JsonForPublix.class, JsonUtils.JsonForIO.class })
 	private String uuid;
 

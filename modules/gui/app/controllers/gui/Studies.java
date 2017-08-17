@@ -301,8 +301,7 @@ public class Studies extends Controller {
 	 */
 	@Transactional
 	@Authenticated
-	public Result toggleMemberUser(Long studyId, String email, boolean isMember)
-			throws JatosGuiException {
+	public Result toggleMemberUser(Long studyId, String email, boolean isMember) {
 		LOGGER.debug(".toggleMemberUser: studyId " + studyId + ", email " + email
 				+ ", isMember " + isMember);
 		Study study = studyDao.findById(studyId);

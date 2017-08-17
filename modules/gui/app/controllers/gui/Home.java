@@ -96,7 +96,7 @@ public class Home extends Controller {
 	 */
 	@Transactional
 	@Authenticated(Role.ADMIN)
-	public Result log(Integer lineLimit) throws JatosGuiException {
+	public Result log(Integer lineLimit) {
 		LOGGER.debug(".log: " + "lineLimit " + lineLimit);
 		return ok().chunked(logFileReader.read(lineLimit))
 				.as("text/plain; charset=utf-8");

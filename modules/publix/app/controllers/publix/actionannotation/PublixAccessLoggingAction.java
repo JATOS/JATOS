@@ -29,7 +29,7 @@ public class PublixAccessLoggingAction extends Action<PublixAccessLogging> {
 	public @interface PublixAccessLogging {
 	}
 
-	private ALogger logger = Logger.of("publix_access");
+	private final ALogger logger = Logger.of("publix_access");
 
 	public CompletionStage<Result> call(Http.Context ctx) {
 		final Request request = ctx.request();

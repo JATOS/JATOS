@@ -11,8 +11,8 @@ import java.util.List;
 public class Breadcrumbs {
 
     public static class Breadcrumb {
-        public String name;
-        public String url;
+        public final String name;
+        public final String url;
 
         Breadcrumb(String name, String url) {
             this.name = name;
@@ -20,7 +20,7 @@ public class Breadcrumbs {
         }
     }
 
-    private List<Breadcrumb> breadcrumbs = new ArrayList<>();
+    private final List<Breadcrumb> breadcrumbs = new ArrayList<>();
 
     public void addBreadcrumb(String name, String url) {
         breadcrumbs.add(new Breadcrumb(name, url));

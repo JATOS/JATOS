@@ -71,7 +71,7 @@ public class Users extends Controller {
 
 	@Transactional
 	@Authenticated(Role.ADMIN)
-	public Result userManager() throws JatosGuiException {
+	public Result userManager() {
 		LOGGER.debug(".userManager");
 		User loggedInUser = authenticationService.getLoggedInUser();
 		String breadcrumbs = breadcrumbsService
@@ -98,8 +98,7 @@ public class Users extends Controller {
 	 */
 	@Transactional
 	@Authenticated(Role.ADMIN)
-	public Result toggleAdmin(String emailOfUserToChange, Boolean adminRole)
-			throws JatosGuiException {
+	public Result toggleAdmin(String emailOfUserToChange, Boolean adminRole) {
 		LOGGER.debug(".toggleAdmin: emailOfUserToChange " + emailOfUserToChange
 				+ ", " + "adminRole " + adminRole);
 		boolean hasAdminRole;
@@ -241,7 +240,7 @@ public class Users extends Controller {
 	 */
 	@Transactional
 	@Authenticated
-	public Result remove(String emailOfUserToRemove) throws JatosGuiException {
+	public Result remove(String emailOfUserToRemove) {
 		LOGGER.debug(".remove: " + "emailOfUserToRemove "
 				+ emailOfUserToRemove);
 

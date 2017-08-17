@@ -6,7 +6,7 @@ import play.mvc.Result;
  * Exception for any kind of exceptional behaviour within one of JATOS' GUI
  * actions. A Result is defined that will be displayed instead of the
  * normal action's output. All JatosGuiExceptions are caught by the
- * {@link GuiExceptionAction} annotation.
+ * ErrorHandler.
  * 
  * @author Kristian Lange
  */

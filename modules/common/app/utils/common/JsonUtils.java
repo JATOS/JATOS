@@ -168,8 +168,7 @@ public class JsonUtils {
      * Returns all studyResults as a JSON string. It's including the
      * studyResult's componentResults.
      */
-    public JsonNode allStudyResultsForUI(List<StudyResult> studyResultList)
-            throws JsonProcessingException {
+    public JsonNode allStudyResultsForUI(List<StudyResult> studyResultList) {
         ObjectNode allStudyResultsNode = Json.mapper().createObjectNode();
         ArrayNode arrayNode = allStudyResultsNode.arrayNode();
         for (StudyResult studyResult : studyResultList) {
@@ -185,8 +184,7 @@ public class JsonUtils {
      * string is intended for use in JATOS' GUI.
      */
     public JsonNode allComponentResultsForUI(
-            List<ComponentResult> componentResultList)
-            throws JsonProcessingException {
+            List<ComponentResult> componentResultList) {
         ObjectNode allComponentResultsNode = Json.mapper().createObjectNode();
         ArrayNode arrayNode = allComponentResultsNode.arrayNode();
         for (ComponentResult componentResult : componentResultList) {
@@ -299,8 +297,7 @@ public class JsonUtils {
      * Returns JSON string of the given study. This JSON is intended for JATOS'
      * GUI.
      */
-    public JsonNode studyForUI(Study study, int resultCount)
-            throws JsonProcessingException {
+    public JsonNode studyForUI(Study study, int resultCount) {
         ObjectNode studyNode = Json.mapper().valueToTree(study);
         studyNode.put("resultCount", resultCount);
         return studyNode;
@@ -601,8 +598,7 @@ public class JsonUtils {
         return Json.mapper().readTree(tmpStr);
     }
 
-    private JsonNode wrapNodeWithVersion(JsonNode jsonNode, String version)
-            throws IOException {
+    private JsonNode wrapNodeWithVersion(JsonNode jsonNode, String version) {
         ObjectNode node = Json.mapper().createObjectNode();
         node.put(VERSION, version);
         node.set(DATA, jsonNode);

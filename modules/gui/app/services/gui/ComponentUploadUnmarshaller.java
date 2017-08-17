@@ -20,8 +20,6 @@ import java.io.IOException;
  */
 public class ComponentUploadUnmarshaller extends UploadUnmarshaller<Component> {
 
-    private Component component;
-
     @Inject
     ComponentUploadUnmarshaller(IOUtils ioUtils, JsonUtils jsonUtils) {
         super(ioUtils, jsonUtils);
@@ -44,6 +42,7 @@ public class ComponentUploadUnmarshaller extends UploadUnmarshaller<Component> {
             throw new IOException(MessagesStrings.TOO_NEW_COMPONENT_VERSION);
         }
 
+        Component component;
         switch (version) {
             case 0:
             case 1:

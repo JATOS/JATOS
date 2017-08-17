@@ -66,7 +66,7 @@ public class AuthenticationService {
 	 */
 	public static final String LOGGED_IN_USER = "loggedInUser";
 
-	private static SecureRandom random = new SecureRandom();
+	private static final SecureRandom random = new SecureRandom();
 
 	private final UserDao userDao;
 	private final UserSessionCacheAccessor userSessionCacheAccessor;

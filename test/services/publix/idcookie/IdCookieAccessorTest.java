@@ -1,21 +1,12 @@
 package services.publix.idcookie;
 
-import static org.fest.assertions.Assertions.assertThat;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
-
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import general.TestHelper;
+import general.common.RequestScope;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
-import general.TestHelper;
-import general.common.RequestScope;
 import play.ApplicationLoader;
 import play.Environment;
 import play.inject.guice.GuiceApplicationBuilder;
@@ -23,213 +14,213 @@ import play.inject.guice.GuiceApplicationLoader;
 import play.mvc.Http.Cookie;
 import services.publix.idcookie.exception.IdCookieAlreadyExistsException;
 
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.fest.assertions.Assertions.assertThat;
+
 /**
  * Tests class IdCookieAccessor
- * 
+ *
  * @author Kristian Lange
  */
 public class IdCookieAccessorTest {
 
-	private Injector injector;
+    @Inject
+    private TestHelper testHelper;
 
-	@Inject
-	private TestHelper testHelper;
+    @Inject
+    private IdCookieAccessor idCookieAccessor;
 
-	@Inject
-	private IdCookieAccessor idCookieAccessor;
+    @Inject
+    private IdCookieTestHelper idCookieTestHelper;
 
-	@Inject
-	private IdCookieTestHelper idCookieTestHelper;
+    @Before
+    public void startApp() throws Exception {
+        GuiceApplicationBuilder builder = new GuiceApplicationLoader()
+                .builder(new ApplicationLoader.Context(Environment.simple()));
+        Injector injector = Guice.createInjector(builder.applicationModule());
+        injector.injectMembers(this);
+    }
 
-	@Before
-	public void startApp() throws Exception {
-		GuiceApplicationBuilder builder = new GuiceApplicationLoader()
-				.builder(new ApplicationLoader.Context(Environment.simple()));
-		injector = Guice.createInjector(builder.applicationModule());
-		injector.injectMembers(this);
-	}
+    @Test
+    public void checkExtractSize() throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
+        List<Cookie> cookieList = new ArrayList<>();
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
 
-	@After
-	public void stopApp() throws Exception {
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkExtractSize() throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		IdCookieModel idCookie2 = idCookieTestHelper.buildDummyIdCookie(2l);
-		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie2));
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        assertThat(idCookieCollection.size()).isEqualTo(2);
+        assertThat(idCookieCollection.findWithStudyResultId(1l))
+                .isEqualTo(idCookie1);
+        assertThat(idCookieCollection.findWithStudyResultId(2l))
+                .isEqualTo(idCookie2);
+    }
 
-		testHelper.mockContext(cookieList);
+    @Test
+    public void checkExtractEmpty() throws IdCookieAlreadyExistsException {
+        List<Cookie> cookieList = new ArrayList<>();
 
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		assertThat(idCookieCollection.size()).isEqualTo(2);
-		assertThat(idCookieCollection.findWithStudyResultId(1l))
-				.isEqualTo(idCookie1);
-		assertThat(idCookieCollection.findWithStudyResultId(2l))
-				.isEqualTo(idCookie2);
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkExtractEmpty() throws IdCookieAlreadyExistsException {
-		List<Cookie> cookieList = new ArrayList<>();
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        assertThat(idCookieCollection.size()).isEqualTo(0);
+    }
 
-		testHelper.mockContext(cookieList);
+    @Test
+    public void checkExtractCheckValues()
+            throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        List<Cookie> cookieList = new ArrayList<>();
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		assertThat(idCookieCollection.size()).isEqualTo(0);
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkExtractCheckValues()
-			throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        assertThat(idCookieCollection.size()).isEqualTo(1);
+        IdCookieModel idCookie1Extracted = idCookieCollection
+                .findWithStudyResultId(1l);
+        idCookieTestHelper.checkDummyIdCookie(idCookie1Extracted);
+        assertThat(RequestScope.has(IdCookieCollection.class.getSimpleName()))
+                .isTrue();
+    }
 
-		testHelper.mockContext(cookieList);
+    @Test
+    public void checkExtractMalformedIndex()
+            throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        idCookie1.setName("JATOS_IDS"); // No index
+        List<Cookie> cookieList = new ArrayList<>();
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		assertThat(idCookieCollection.size()).isEqualTo(1);
-		IdCookieModel idCookie1Extracted = idCookieCollection
-				.findWithStudyResultId(1l);
-		idCookieTestHelper.checkDummyIdCookie(idCookie1Extracted);
-		assertThat(RequestScope.has(IdCookieCollection.class.getSimpleName()))
-				.isTrue();
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkExtractMalformedIndex()
-			throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		idCookie1.setName("JATOS_IDS"); // No index
-		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        // Since cookie is malformed it should be removed
+        assertThat(idCookieCollection.size()).isEqualTo(0);
+    }
 
-		testHelper.mockContext(cookieList);
+    @Test
+    public void checkExtractMalformedIdStrict()
+            throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        idCookie1.setBatchId(null);
+        List<Cookie> cookieList = new ArrayList<>();
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		// Since cookie is malformed it should be removed
-		assertThat(idCookieCollection.size()).isEqualTo(0);
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkExtractMalformedIdStrict()
-			throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		idCookie1.setBatchId(null);
-		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        // Since cookie is malformed it should be removed
+        assertThat(idCookieCollection.size()).isEqualTo(0);
+    }
 
-		testHelper.mockContext(cookieList);
+    @Test
+    public void checkExtractMalformedIdNotStrict()
+            throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        idCookie1.setComponentId(null); // Not necessary
+        List<Cookie> cookieList = new ArrayList<>();
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		// Since cookie is malformed it should be removed
-		assertThat(idCookieCollection.size()).isEqualTo(0);
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkExtractMalformedIdNotStrict()
-			throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		idCookie1.setComponentId(null); // Not necessary
-		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        // Component ID is not necessary
+        assertThat(idCookieCollection.size()).isEqualTo(1);
+    }
 
-		testHelper.mockContext(cookieList);
+    @Test
+    public void checkExtractMalformedName()
+            throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        idCookie1.setName("FOO_0"); // Wrong name but with index
+        List<Cookie> cookieList = new ArrayList<>();
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		// Component ID is not necessary
-		assertThat(idCookieCollection.size()).isEqualTo(1);
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkExtractMalformedName()
-			throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		idCookie1.setName("FOO_0"); // Wrong name but with index
-		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        // Since cookie is malformed it should be removed
+        assertThat(idCookieCollection.size()).isEqualTo(0);
+    }
 
-		testHelper.mockContext(cookieList);
+    @Test
+    public void checkExtractMalformedStudyAssets()
+            throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        idCookie1.setStudyAssets(""); // Malformed study assets
+        List<Cookie> cookieList = new ArrayList<>();
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		// Since cookie is malformed it should be removed
-		assertThat(idCookieCollection.size()).isEqualTo(0);
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkExtractMalformedStudyAssets()
-			throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		idCookie1.setStudyAssets(""); // Malformed study assets
-		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        // Since cookie is malformed it should be removed
+        assertThat(idCookieCollection.size()).isEqualTo(0);
+    }
 
-		testHelper.mockContext(cookieList);
+    @Test
+    public void checkExtractJatosRun() throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        idCookie1.setJatosRun(null); // JatosRun can be null
+        List<Cookie> cookieList = new ArrayList<>();
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		// Since cookie is malformed it should be removed
-		assertThat(idCookieCollection.size()).isEqualTo(0);
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkExtractJatosRun() throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		idCookie1.setJatosRun(null); // JatosRun can be null
-		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        assertThat(idCookieCollection.size()).isEqualTo(1);
+    }
 
-		testHelper.mockContext(cookieList);
+    @Test
+    public void checkExtractFromRequestScope()
+            throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        IdCookieCollection idCookieCollection = new IdCookieCollection();
+        idCookieCollection.add(idCookie1);
 
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		assertThat(idCookieCollection.size()).isEqualTo(1);
-	}
+        RequestScope.put(IdCookieCollection.class.getSimpleName(),
+                idCookieCollection);
 
-	@Test
-	public void checkExtractFromRequestScope()
-			throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		IdCookieCollection idCookieCollection = new IdCookieCollection();
-		idCookieCollection.add(idCookie1);
+        // Extract from RequestScope instead of Request object
+        idCookieCollection = idCookieAccessor.extract();
+        assertThat(idCookieCollection.size()).isEqualTo(1);
+        IdCookieModel idCookie1Extracted = idCookieCollection
+                .findWithStudyResultId(1l);
+        idCookieTestHelper.checkDummyIdCookie(idCookie1Extracted);
+        assertThat(RequestScope.has(IdCookieCollection.class.getSimpleName()))
+                .isTrue();
+    }
 
-		RequestScope.put(IdCookieCollection.class.getSimpleName(),
-				idCookieCollection);
+    @Test
+    public void checkDiscard() throws IdCookieAlreadyExistsException {
+        IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
+        List<Cookie> cookieList = new ArrayList<>();
+        cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
 
-		// Extract from RequestScope instead of Request object
-		idCookieCollection = idCookieAccessor.extract();
-		assertThat(idCookieCollection.size()).isEqualTo(1);
-		IdCookieModel idCookie1Extracted = idCookieCollection
-				.findWithStudyResultId(1l);
-		idCookieTestHelper.checkDummyIdCookie(idCookie1Extracted);
-		assertThat(RequestScope.has(IdCookieCollection.class.getSimpleName()))
-				.isTrue();
-	}
+        testHelper.mockContext(cookieList);
 
-	@Test
-	public void checkDiscard() throws IdCookieAlreadyExistsException {
-		IdCookieModel idCookie1 = idCookieTestHelper.buildDummyIdCookie(1l);
-		List<Cookie> cookieList = new ArrayList<>();
-		cookieList.add(idCookieTestHelper.buildCookie(idCookie1));
+        // extract() puts it in the RequestScope too
+        IdCookieCollection idCookieCollection = idCookieAccessor.extract();
+        assertThat(idCookieCollection.size()).isEqualTo(1);
 
-		testHelper.mockContext(cookieList);
+        idCookieAccessor.discard(1l);
 
-		// extract() puts it in the RequestScope too
-		IdCookieCollection idCookieCollection = idCookieAccessor.extract();
-		assertThat(idCookieCollection.size()).isEqualTo(1);
+        // Check in RequestScope
+        idCookieCollection = (IdCookieCollection) RequestScope
+                .get(IdCookieCollection.class.getSimpleName());
+        assertThat(idCookieCollection.size()).isEqualTo(0);
 
-		idCookieAccessor.discard(1l);
-
-		// Check in RequestScope
-		idCookieCollection = (IdCookieCollection) RequestScope
-				.get(IdCookieCollection.class.getSimpleName());
-		assertThat(idCookieCollection.size()).isEqualTo(0);
-
-		// Check in Response object
-		// TODO How to check response?
-		// assertThat(Http.Context.current.get().response().cookie("JATOS_IDS_0"))
-		// .isNull();
-	}
+        // Check in Response object
+        // TODO How to check response?
+        // assertThat(Http.Context.current.get().response().cookie("JATOS_IDS_0"))
+        // .isNull();
+    }
 
 }

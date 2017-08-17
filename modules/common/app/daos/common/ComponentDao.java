@@ -44,10 +44,6 @@ public class ComponentDao extends AbstractDao {
 		super.remove(component);
 	}
 
-	public void remove(Study study, Component component) {
-		super.remove(component);
-	}
-
 	public Component findById(Long id) {
 		return jpa.em().find(Component.class, id);
 	}

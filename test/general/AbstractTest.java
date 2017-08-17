@@ -92,9 +92,9 @@ public abstract class AbstractTest {
 	protected User admin;
 	protected EntityManager entityManager;
 
-	public abstract void before() throws Exception;
+	public abstract void before();
 
-	public abstract void after() throws Exception;
+	public abstract void after();
 
 	@Before
 	public void startApp() throws Exception {
@@ -262,8 +262,7 @@ public abstract class AbstractTest {
 		return componentFileBkp;
 	}
 
-	protected synchronized Study cloneAndPersistStudy(Study studyToBeCloned)
-			throws IOException {
+	protected synchronized Study cloneAndPersistStudy(Study studyToBeCloned) {
 		return jpa.withTransaction(entityManager -> {
 			return cloneAndPersistStudy2(studyToBeCloned);
 		});

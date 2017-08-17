@@ -188,7 +188,7 @@ public class StudyAssetsTest {
 		assertThat(result.status()).isEqualTo(FORBIDDEN);
 	}
 
-	private Study cloneStudy(Study study) throws IOException {
+	private Study cloneStudy(Study study) {
 		return jpaApi.withTransaction(() -> {
 			try {
 				User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);

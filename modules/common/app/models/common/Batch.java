@@ -43,7 +43,7 @@ public class Batch {
 	/**
 	 * Universally (world-wide) unique ID.
 	 */
-	@Column(unique = false, nullable = false)
+	@Column(nullable = false)
 	@JsonView(JsonUtils.JsonForIO.class)
 	private String uuid;
 
