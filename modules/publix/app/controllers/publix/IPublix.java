@@ -1,207 +1,186 @@
 package controllers.publix;
 
-import java.io.IOException;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
 import exceptions.publix.PublixException;
 import play.api.mvc.WebSocket;
-import play.mvc.LegacyWebSocket;
 import play.mvc.Result;
+
+import java.io.IOException;
 
 /**
  * Interface to Publix the public, RESTful API of JATOS. With these methods the
  * studies and components (running in the browser) can communicate (e.g. start,
  * finish components/studies, retrieve/persist data, join a group) with the
  * JATOS server (running on the server side).
- * <p>
- * The Publix can be seen as a state machine (it's RESTful). State is stored in
- * the StudyResults, ComponentResults, and GroupResult. The methods of Publix
- * react differently based on the state.
+ *
+ * Group and batch channel are handled by the ChannelInterceptor.
  *
  * @author Kristian Lange
  */
 public interface IPublix {
 
-	/**
-	 * HTTP type: Normal GET request
-	 * <p>
-	 * Starts the study within a batch. Then automatically starts it's first
-	 * component.
-	 */
-	Result startStudy(Long studyId, Long batchId) throws PublixException;
+    /**
+     * HTTP type: Normal GET request
+     * <p>
+     * Starts the study within a batch. Then automatically starts it's first
+     * component.
+     */
+    Result startStudy(Long studyId, Long batchId) throws PublixException;
 
-	/**
-	 * HTTP type: Normal GET request
-	 * <p>
-	 * Starts the component with the given componentId that belongs to the study
-	 * with the studyId.
-	 */
-	Result startComponent(Long studyId, Long componentId, Long studyResultId)
-			throws PublixException;
+    /**
+     * HTTP type: Normal GET request
+     * <p>
+     * Starts the component with the given componentId that belongs to the study
+     * with the studyId.
+     */
+    Result startComponent(Long studyId, Long componentId, Long studyResultId)
+            throws PublixException;
 
-	/**
-	 * HTTP type: Normal GET request
-	 * <p>
-	 * Starts the component in the given position that belongs to the study with
-	 * the studyId.
-	 */
-	Result startComponentByPosition(Long studyId, Integer position,
-			Long studyResultId) throws PublixException;
+    /**
+     * HTTP type: Normal GET request
+     * <p>
+     * Starts the component in the given position that belongs to the study with
+     * the studyId.
+     */
+    Result startComponentByPosition(Long studyId, Integer position,
+            Long studyResultId) throws PublixException;
 
-	/**
-	 * HTTP type: Normal GET request
-	 * <p>
-	 * Starts the next component of the study with the given ID. Components
-	 * within a study are ordered. This method starts the component after the
-	 * current one. If there are no more components in the study, the study will
-	 * be finished successfully.
-	 */
-	Result startNextComponent(Long studyId, Long studyResultId)
-			throws PublixException;
+    /**
+     * HTTP type: Normal GET request
+     * <p>
+     * Starts the next component of the study with the given ID. Components
+     * within a study are ordered. This method starts the component after the
+     * current one. If there are no more components in the study, the study will
+     * be finished successfully.
+     */
+    Result startNextComponent(Long studyId, Long studyResultId)
+            throws PublixException;
 
-	/**
-	 * HTTP type: Ajax GET request
-	 * <p>
-	 * Returns the study's properties, component's properties, and study's
-	 * session data in JSON format.
-	 * <p>
-	 * Hint: Study session data are individual for each study run and determined
-	 * by the study running in the browser. The study session data are different
-	 * from Play's session and stored within the study results.
-	 */
-	Result getInitData(Long studyId, Long componentId, Long studyResultId)
-			throws PublixException, IOException;
+    /**
+     * HTTP type: Ajax GET request
+     * <p>
+     * Returns the study's properties, component's properties, and study's
+     * session data in JSON format.
+     * <p>
+     * Hint: Study session data are individual for each study run and determined
+     * by the study running in the browser. The study session data are different
+     * from Play's session and stored within the study results.
+     */
+    Result getInitData(Long studyId, Long componentId, Long studyResultId)
+            throws PublixException, IOException;
 
-	/**
-	 * HTTP type: WebSocket
-	 * <p>
-	 * Opens a WebSocket for the batch channel that is used to exchange data
-	 * (batch session data) between study runs of a batch. All batch session
-	 * data are stored in a Batch model and the batch channels will be handled
-	 * by a BatchDispatcher which uses Akka.
-	 *
-	 * @param studyId       Study's ID
-	 * @param studyResultId StudyResult's ID
-	 * @return WebSocket that transports JSON strings.
-	 * @throws PublixException
-	 */
-	WebSocket openBatch(Long studyId, Long studyResultId)
-			throws PublixException;
+    /**
+     * HTTP type: WebSocket
+     * <p>
+     * Let the worker (actually it's StudyResult) join a group (actually a
+     * GroupResult) and open a WebSocket (group channel). Only works if this
+     * study is a group study. All group data are stored in a GroupResult and
+     * the group channels will be handled by a GroupDispatcher which uses Akka.
+     *
+     * @param studyId Study's ID
+     * @return WebSocket that transports JSON strings.
+     * @throws PublixException
+     */
+    WebSocket joinGroup(Long studyId, Long studyResultId)
+            throws PublixException;
 
-	/**
-	 * HTTP type: WebSocket
-	 * <p>
-	 * Let the worker (actually it's StudyResult) join a group (actually a
-	 * GroupResult) and open a WebSocket (group channel). Only works if this
-	 * study is a group study. All group data are stored in a GroupResult and
-	 * the group channels will be handled by a GroupDispatcher which uses Akka.
-	 *
-	 * @param studyId Study's ID
-	 * @return WebSocket that transports JSON strings.
-	 * @throws PublixException
-	 */
-	LegacyWebSocket<JsonNode> joinGroup(Long studyId, Long studyResultId)
-			throws PublixException;
+    /**
+     * HTTP type: Ajax GET request
+     * <p>
+     * Try to find a different group for this StudyResult. It reuses the already
+     * opened group channel and just reassigns it to a different group (or in
+     * more detail to a different GroupResult and GroupDispatcher). If it is
+     * successful it returns an 200 (OK) HTTP status code. If it can't find any
+     * other group it returns a 204 (NO CONTENT) HTTP status code.
+     *
+     * @param studyId Study's ID
+     * @throws PublixException
+     */
+    Result reassignGroup(Long studyId, Long studyResultId)
+            throws PublixException;
 
-	/**
-	 * HTTP type: Ajax GET request
-	 * <p>
-	 * Try to find a different group for this StudyResult. It reuses the already
-	 * opened group channel and just reassigns it to a different group (or in
-	 * more detail to a different GroupResult and GroupDispatcher). If it is
-	 * successful it returns an 200 (OK) HTTP status code. If it can't find any
-	 * other group it returns a 204 (NO CONTENT) HTTP status code.
-	 *
-	 * @param studyId Study's ID
-	 * @throws PublixException
-	 */
-	Result reassignGroup(Long studyId, Long studyResultId)
-			throws PublixException;
+    /**
+     * HTTP type: Ajax GET request
+     * <p>
+     * Let the worker leave the group (actually a GroupResult) he joined before
+     * and closes the group channel. Only works if this study is a group study.
+     */
+    Result leaveGroup(Long studyId, Long studyResultId) throws PublixException;
 
-	/**
-	 * HTTP type: Ajax GET request
-	 * <p>
-	 * Let the worker leave the group (actually a GroupResult) he joined before
-	 * and closes the group channel. Only works if this study is a group study.
-	 */
-	Result leaveGroup(Long studyId, Long studyResultId) throws PublixException;
+    /**
+     * HTTP type: Ajax POST request
+     * <p>
+     * Expects the study's session data in JSON format and sets them in the
+     * study result that belong to the specified study. Study session data are
+     * individual for each study run and determined by the study running in the
+     * browser. The study session data are different from Play's session and
+     * stored within the study results.
+     */
+    Result setStudySessionData(Long studyId, Long studyResultId)
+            throws PublixException;
 
-	/**
-	 * HTTP type: Ajax POST request
-	 * <p>
-	 * Expects the study's session data in JSON format and sets them in the
-	 * study result that belong to the specified study. Study session data are
-	 * individual for each study run and determined by the study running in the
-	 * browser. The study session data are different from Play's session and
-	 * stored within the study results.
-	 */
-	Result setStudySessionData(Long studyId, Long studyResultId)
-			throws PublixException;
+    /**
+     * HTTP type: Ajax POST request
+     * <p>
+     * Heartbeat of a study result: when was the study run last seen. jatos.js
+     * periodically sends an Ajax request to this endpoint. The time when this
+     * request arrives is stored in StudyResult's lastSeenDate field.
+     */
+    Result heartbeat(Long studyId, Long studyResultId) throws PublixException;
 
-	/**
-	 * HTTP type: Ajax POST request
-	 * <p>
-	 * Heartbeat of a study result: when was the study run last seen. jatos.js
-	 * periodically sends an Ajax request to this endpoint. The time when this
-	 * request arrives is stored in StudyResult's lastSeenDate field.
-	 */
-	Result heartbeat(Long studyId, Long studyResultId) throws PublixException;
+    /**
+     * HTTP type: Ajax PUT request
+     * <p>
+     * Persists the submitted data in the ComponentResult specified by the given
+     * study and component ID. Already submitted data will be overwritten.
+     */
+    Result submitResultData(Long studyId, Long componentId, Long studyResultId)
+            throws PublixException;
 
-	/**
-	 * HTTP type: Ajax PUT request
-	 * <p>
-	 * Persists the submitted data in the ComponentResult specified by the given
-	 * study and component ID. Already submitted data will be overwritten.
-	 */
-	Result submitResultData(Long studyId, Long componentId, Long studyResultId)
-			throws PublixException;
+    /**
+     * HTTP type: Ajax POST request
+     * <p>
+     * Appends the submitted data to the already stored result data in the
+     * ComponentResult specified by the given study and component ID.
+     */
+    Result appendResultData(Long studyId, Long componentId, Long studyResultId)
+            throws PublixException;
 
-	/**
-	 * HTTP type: Ajax POST request
-	 * <p>
-	 * Appends the submitted data to the already stored result data in the
-	 * ComponentResult specified by the given study and component ID.
-	 */
-	Result appendResultData(Long studyId, Long componentId, Long studyResultId)
-			throws PublixException;
+    /**
+     * HTTP type: Ajax GET request
+     * <p>
+     * Finishes the component specified by the given study and component ID.
+     * Optionally it can be specified whether the component was successful and
+     * and error message.
+     */
+    Result finishComponent(Long studyId, Long componentId, Long studyResultId,
+            Boolean successful, String errorMsg) throws PublixException;
 
-	/**
-	 * HTTP type: Ajax GET request
-	 * <p>
-	 * Finishes the component specified by the given study and component ID.
-	 * Optionally it can be specified whether the component was successful and
-	 * and error message.
-	 */
-	Result finishComponent(Long studyId, Long componentId, Long studyResultId,
-			Boolean successful, String errorMsg) throws PublixException;
+    /**
+     * HTTP type: Normal or Ajax GET request
+     * <p>
+     * Aborts the study with the given ID (StudyResult state will be ABORTED).
+     * Optionally a message can be given describing the reasons for the
+     * abortion.
+     */
+    Result abortStudy(Long studyId, Long studyResultId, String message)
+            throws PublixException;
 
-	/**
-	 * HTTP type: Normal or Ajax GET request
-	 * <p>
-	 * Aborts the study with the given ID (StudyResult state will be ABORTED).
-	 * Optionally a message can be given describing the reasons for the
-	 * abortion.
-	 */
-	Result abortStudy(Long studyId, Long studyResultId, String message)
-			throws PublixException;
+    /**
+     * HTTP type: Normal or Ajax GET request
+     * <p>
+     * Finishes the study with the given ID (StudyResult state will be FINISHED
+     * or FAIL). Optionally it can be specified whether the study was successful
+     * and an error message.
+     */
+    Result finishStudy(Long studyId, Long studyResultId, Boolean successful,
+            String errorMsg) throws PublixException;
 
-	/**
-	 * HTTP type: Normal or Ajax GET request
-	 * <p>
-	 * Finishes the study with the given ID (StudyResult state will be FINISHED
-	 * or FAIL). Optionally it can be specified whether the study was successful
-	 * and an error message.
-	 */
-	Result finishStudy(Long studyId, Long studyResultId, Boolean successful,
-			String errorMsg) throws PublixException;
-
-	/**
-	 * HTTP type: Ajax POST request
-	 * <p>
-	 * With this method the client side can log into the server's log.
-	 */
-	Result log(Long studyId, Long componentId, Long studyResultId)
-			throws PublixException;
+    /**
+     * HTTP type: Ajax POST request
+     * <p>
+     * With this method the client side can log into the server's log.
+     */
+    Result log(Long studyId, Long componentId, Long studyResultId)
+            throws PublixException;
 
 }

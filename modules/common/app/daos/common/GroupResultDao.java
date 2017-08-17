@@ -24,8 +24,9 @@ public class GroupResultDao extends AbstractDao {
 		super(jpa);
 	}
 
-	public void create(GroupResult groupResult) {
+	public GroupResult create(GroupResult groupResult) {
 		persist(groupResult);
+		return groupResult;
 	}
 
 	public void update(GroupResult groupResult) {

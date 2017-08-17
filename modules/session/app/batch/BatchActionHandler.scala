@@ -2,7 +2,7 @@ package batch
 
 import javax.inject.{Inject, Singleton}
 
-import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchActionMsg, TellWhom}
+import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
 import com.google.common.base.Strings
 import daos.common.BatchDao
 import gnieh.diffson.playJson._
@@ -14,7 +14,7 @@ import play.db.jpa.JPAApi
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 
 /**
-  * Handles batch action messages (BatchActionMsg) received by an BatchDispatcher
+  * Handles batch action messages received by an BatchDispatcher
   * from a client via a batch channel.
   *
   * @author Kristian Lange (2017)
@@ -32,8 +32,8 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
     * messages in the BatchActionMsgBundle will be send by the BatchDispatcher
     * to their receivers.
     */
-  def handleActionMsg(actionMsg: BatchActionMsg,
-                      batchId: Long): List[BatchActionMsg] = {
+  def handleActionMsg(actionMsg: BatchMsg,
+                      batchId: Long): List[BatchMsg] = {
     val actionValue = (actionMsg.json \ BatchActionJsonKey.Action.toString).as[String]
     val action = BatchAction.withName(actionValue)
     action match {
@@ -47,8 +47,7 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
   /**
     * Persists batch session patch and tells everyone
     */
-  def handlePatch(json: JsObject,
-                  batchId: Long): List[BatchActionMsg] = {
+  def handlePatch(json: JsObject, batchId: Long): List[BatchMsg] = {
     jpa.withTransaction(asJavaSupplier(() => {
       val batch = batchDao.findById(batchId)
       if (batch == null) {
@@ -94,8 +93,8 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Persists the given sessionData in the Batch and does the versioning: and
-    * increases the batchSessionVersion by 1 - but only if the stored version
+    * Persists the given sessionData in the Batch and increases
+    * the batchSessionVersion by 1 - but only if the stored version
     * is equal to the received one. Returns true if this was successful -
     * otherwise false.
     */

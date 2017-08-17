@@ -68,7 +68,7 @@ object BatchDispatcher {
     */
   object BatchActionJsonKey extends Enumeration {
     type BatchActionKey = Value
-    val Action = Value("action") // JSON key name for an action (mandatory for an BatchActionMsg)
+    val Action = Value("action") // JSON key name for an action (mandatory for an BatchMsg)
     val SessionData = Value("data") // JSON key name for session data (must be accompanied with a session version)
     val SessionPatches = Value("patches") // JSON key name for a session patches (must be accompanied with a session version)
     val SessionVersion = Value("version") // JSON key name for the batch session version (always together with either session data or patches)
@@ -93,7 +93,7 @@ object BatchDispatcher {
     * Message used for an action message. It has a JSON string and the JSON
     * contains an 'action' field. Additionally it can be addressed with TellWhom.
     */
-  case class BatchActionMsg(json: JsObject, tellWhom: TellWhom = TellWhom.Unknown)
+  case class BatchMsg(json: JsObject, tellWhom: TellWhom = TellWhom.Unknown)
 
 }
 
@@ -111,7 +111,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   }
 
   def receive = {
-    case actionMsg: BatchActionMsg =>
+    case actionMsg: BatchMsg =>
       handleActionMsg(actionMsg)
     case RegisterChannel(studyResultId: Long) =>
       registerChannel(studyResultId)
@@ -125,7 +125,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Handles batch actions originating from a client
     */
-  private def handleActionMsg(actionMsg: BatchActionMsg) = {
+  private def handleActionMsg(actionMsg: BatchMsg) = {
     logger.debug(s".handleActionMsg: batchId $batchId, " +
       s"studyResultId ${channelRegistry.getStudyResult(sender).get}, " +
       s"actionMsg ${Json.stringify(actionMsg.json)}")
@@ -180,7 +180,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
     else tellSenderOnly(false)
   }
 
-  private def tellActionMsg(msgList: List[BatchActionMsg]) = {
+  private def tellActionMsg(msgList: List[BatchMsg]) = {
     msgList.foreach(msg =>
       msg.tellWhom match {
         case TellWhom.All => tellAll(msg)
@@ -193,17 +193,17 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   /**
     * Sends the message to everyone in batch channelRegistry.
     */
-  private def tellAll(msg: BatchActionMsg) = {
+  private def tellAll(msg: BatchMsg) = {
     logger.debug(s".tellAll: batchId $batchId, msg ${Json.stringify(msg.json)}")
     for (actorRef <- channelRegistry.getAllChannels) {
-      actorRef ! (msg, self)
+      actorRef ! msg
     }
   }
 
   /**
     * Sends the message only to the sender.
     */
-  private def tellSenderOnly(msg: BatchActionMsg) = {
+  private def tellSenderOnly(msg: BatchMsg) = {
     logger.debug(s".tellSenderOnly: batchId $batchId, msg ${Json.stringify(msg.json)}")
     sender ! msg
   }

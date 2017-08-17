@@ -167,7 +167,7 @@ public class Studies extends Controller {
 		checkStandardForStudy(studyId, study, loggedInUser);
 
 		StudyProperties studyProperties = studyService.bindToProperties(study);
-		return ok(JsonUtils.asJsonNode(studyProperties));
+		return ok(jsonUtils.asJsonNode(studyProperties));
 	}
 
 	/**

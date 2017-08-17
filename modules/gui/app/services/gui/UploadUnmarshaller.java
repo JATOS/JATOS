@@ -2,6 +2,7 @@ package services.gui;
 
 import general.common.MessagesStrings;
 import utils.common.IOUtils;
+import utils.common.JsonUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,9 +15,11 @@ import java.io.IOException;
 public abstract class UploadUnmarshaller<T> {
 
 	private final IOUtils ioUtils;
+	protected final JsonUtils jsonUtils;
 	
-	UploadUnmarshaller(IOUtils ioUtils) {
+	UploadUnmarshaller(IOUtils ioUtils, JsonUtils jsonUtils) {
 		this.ioUtils = ioUtils;
+		this.jsonUtils = jsonUtils;
 	}
 	
 	public T unmarshalling(File file) throws IOException {

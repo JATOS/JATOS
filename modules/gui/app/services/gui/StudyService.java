@@ -29,6 +29,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
+import utils.common.JsonUtils;
 
 /**
  * Service class for everthing Study related. Used by controllers
@@ -51,11 +52,12 @@ public class StudyService {
 	private final UserDao userDao;
 	private final WorkerDao workerDao;
 	private final IOUtils ioUtils;
+	private final JsonUtils jsonUtils;
 
 	@Inject
 	StudyService(BatchService batchService, ComponentService componentService,
 			StudyDao studyDao, ComponentDao componentDao, BatchDao batchDao,
-			UserDao userDao, WorkerDao workerDao, IOUtils ioUtils) {
+			UserDao userDao, WorkerDao workerDao, IOUtils ioUtils, JsonUtils jsonUtils) {
 		this.batchService = batchService;
 		this.componentService = componentService;
 		this.studyDao = studyDao;
@@ -64,6 +66,7 @@ public class StudyService {
 		this.userDao = userDao;
 		this.workerDao = workerDao;
 		this.ioUtils = ioUtils;
+		this.jsonUtils = jsonUtils;
 	}
 
 	/**

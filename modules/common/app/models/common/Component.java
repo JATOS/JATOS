@@ -20,7 +20,7 @@ import utils.common.JsonUtils;
 
 /**
  * Domain model / entity of a component. It's used by JPA and JSON marshaling.
- * The corresponding UI model is {@link models.gui.ComponentProperties}.
+ * The corresponding UI model is models.gui.ComponentProperties.
  * 
  * @author Kristian Lange
  */

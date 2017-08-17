@@ -56,12 +56,13 @@ public class Components extends Controller {
 	private final StudyDao studyDao;
 	private final ComponentDao componentDao;
 	private final FormFactory formFactory;
+	private final JsonUtils jsonUtils;
 
 	@Inject
 	Components(JatosGuiExceptionThrower jatosGuiExceptionThrower,
 			Checker checker, ComponentService componentService,
 			AuthenticationService authenticationService, StudyDao studyDao,
-			ComponentDao componentDao, FormFactory formFactory) {
+			ComponentDao componentDao, FormFactory formFactory, JsonUtils jsonUtils) {
 		this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
 		this.checker = checker;
 		this.componentService = componentService;
@@ -69,6 +70,7 @@ public class Components extends Controller {
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.formFactory = formFactory;
+		this.jsonUtils = jsonUtils;
 	}
 
 	/**
@@ -154,7 +156,7 @@ public class Components extends Controller {
 		}
 
 		ComponentProperties p = componentService.bindToProperties(component);
-		return ok(JsonUtils.asJsonNode(p));
+		return ok(jsonUtils.asJsonNode(p));
 	}
 
 	/**
@@ -211,7 +213,7 @@ public class Components extends Controller {
 		if (active != null) {
 			componentDao.changeActive(component, active);
 		}
-		return ok(JsonUtils.asJsonNode(component.isActive()));
+		return ok(jsonUtils.asJsonNode(component.isActive()));
 	}
 
 	/**

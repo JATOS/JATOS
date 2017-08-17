@@ -1,0 +1,67 @@
+package group
+
+import javax.inject.{Inject, Singleton}
+
+import akka.actor.{Actor, ActorRef, ActorSystem}
+import group.GroupDispatcherRegistry.{Get, GetOrCreate, ItsThisOne, Unregister}
+import play.api.Logger
+import play.api.libs.concurrent.InjectedActorSupport
+
+import scala.collection.mutable
+
+/**
+  * A GroupDispatcherRegistry is an Akka Actor keeps track of all
+  * GroupDispatchers Actors.
+  *
+  * @author Kristian Lange (2015, 2017)
+  */
+object GroupDispatcherRegistry {
+
+  abstract class RegistryProtocol
+
+  case class ItsThisOne(groupDispatcherOption: Option[ActorRef]) extends RegistryProtocol
+
+  case class Get(groupResultId: Long) extends RegistryProtocol
+
+  case class GetOrCreate(groupResultId: Long) extends RegistryProtocol
+
+  case class Unregister(groupResultId: Long) extends RegistryProtocol
+
+}
+
+@Singleton
+class GroupDispatcherRegistry @Inject()(actorSystem: ActorSystem,
+                                        dispatcherFactory: GroupDispatcher.Factory,
+                                        actionHandler: GroupActionHandler,
+                                        actionMsgBuilder: GroupActionMsgBuilder)
+  extends Actor with InjectedActorSupport {
+
+  private val logger: Logger = Logger(this.getClass)
+
+  /**
+    * Contains the dispatchers that are currently registered. Maps the an ID to
+    * the ActorRef.
+    */
+  private val dispatcherMap = mutable.HashMap[Long, ActorRef]()
+
+  def receive = {
+    case Get(groupResultId: Long) =>
+      // Someone wants to know the Dispatcher to a certain ID
+      sender ! ItsThisOne(dispatcherMap.get(groupResultId))
+    case GetOrCreate(groupResultId: Long) =>
+      // Someone wants to know the Dispatcher to a particular ID
+      // If it doesn't exist, create a new one.
+      if (!dispatcherMap.contains(groupResultId)) {
+        val dispatcher = injectedChild(
+          dispatcherFactory(self, actionHandler, actionMsgBuilder, groupResultId),
+          groupResultId.toString)
+        dispatcherMap += (groupResultId -> dispatcher)
+        logger.debug(s".receive: registered dispatcher for groupResult ID $groupResultId")
+      }
+      sender ! ItsThisOne(dispatcherMap.get(groupResultId))
+    case Unregister(groupResultId: Long) =>
+      // A Dispatcher closed down and wants to unregister
+      dispatcherMap -= groupResultId
+      logger.debug(s".receive: unregistered dispatcher for groupResult ID $groupResultId")
+  }
+}

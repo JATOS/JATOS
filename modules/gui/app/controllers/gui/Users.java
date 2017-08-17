@@ -111,7 +111,7 @@ public class Users extends Controller {
 		} catch (ForbiddenException e) {
 			return forbidden(e.getMessage());
 		}
-		return ok(JsonUtils.asJsonNode(hasAdminRole));
+		return ok(jsonUtils.asJsonNode(hasAdminRole));
 	}
 
 	/**

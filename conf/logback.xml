@@ -1,43 +1,43 @@
 <configuration>
 
-	<conversionRule conversionWord="coloredLevel"
-		converterClass="play.api.libs.logback.ColoredLevel" />
+    <conversionRule conversionWord="coloredLevel"
+                    converterClass="play.api.libs.logback.ColoredLevel"/>
 
-	<appender name="FILE"
-		class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>logs/application.log</file>
-		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<!-- Daily rollover with compression -->
-			<fileNamePattern>logs/application-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
-			<!-- keep 30 days worth of history -->
-			<maxHistory>30</maxHistory>
-		</rollingPolicy>
-		<encoder>
-			<pattern>%date [%level] - %logger{5} - %message%n%xException</pattern>
-		</encoder>
-	</appender>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/application.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Daily rollover with compression -->
+            <fileNamePattern>logs/application-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <!-- keep 30 days worth of history -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%date [%level] - %logger{5} - %message%n%xException</pattern>
+        </encoder>
+    </appender>
 
-	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-		<encoder>
-			<pattern>%d{HH:mm:ss.SSS} %coloredLevel - %logger{5} - %message%n%xException</pattern>
-		</encoder>
-	</appender>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %coloredLevel - %logger{5} - %message%n%xException</pattern>
+        </encoder>
+    </appender>
 
-	<appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
-		<appender-ref ref="FILE" />
-	</appender>
+    <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+    </appender>
 
-	<appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
-		<appender-ref ref="STDOUT" />
-	</appender>
+    <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STDOUT"/>
+    </appender>
 
-	<logger name="play" level="INFO" />
-	<logger name="services" level="INFO" />
-	<logger name="session" level="DEBUG" />
+    <logger name="play" level="INFO"/>
+    <logger name="services" level="INFO"/>
+    <logger name="batch" level="DEBUG"/>
+    <logger name="group" level="DEBUG"/>
 
-	<root level="INFO">
-		<appender-ref ref="ASYNCFILE" />
-		<appender-ref ref="ASYNCSTDOUT" />
-	</root>
+    <root level="INFO">
+        <appender-ref ref="ASYNCFILE"/>
+        <appender-ref ref="ASYNCSTDOUT"/>
+    </root>
 
 </configuration>

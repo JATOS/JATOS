@@ -24,19 +24,19 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
     Future.successful(
       statusCode match {
         case Http.Status.BAD_REQUEST =>
-          logger.info(s".onClientError - bad request: $message")
+          logger.info(s"bad request: $message")
           BadRequest("bad request")
         case Http.Status.NOT_FOUND =>
-          logger.info(s".onClientError - not found: Requested page  ${request.uri} couldn't be found.")
+          logger.info(s"not found: Requested page  ${request.uri} couldn't be found.")
           NotFound(s"Requested page ${request.uri} couldn't be found.")
         case Http.Status.FORBIDDEN =>
-          logger.info(s".onClientError - forbidden: $message")
+          logger.info(s"forbidden: $message")
           Forbidden("You're not allowed to access this resource.")
         case Http.Status.REQUEST_ENTITY_TOO_LARGE =>
-          logger.info(s".onClientError - request entity too large: $message")
+          logger.info(s"request entity too large: $message")
           Status(statusCode)("Request entity too large: You probably tried  to upload a file that is too large")
         case _ =>
-          logger.warn(s".onClientError - HTTP status code $statusCode: $message")
+          logger.warn(s"HTTP status code $statusCode: $message")
           Status(statusCode)(s"JATOS error: $statusCode")
       }
     )
@@ -49,16 +49,16 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
     Future.successful(
       throwable match {
         case e: JatosGuiException =>
-          logger.info(s".onServerError - JatosGuiException during call ${request.uri}: ${e.getMessage}")
+          logger.info(s"JatosGuiException during call ${request.uri}: ${e.getMessage}")
           e.getSimpleResult.asScala()
         case e: InternalServerErrorPublixException =>
-          logger.error(s".onServerError - InternalServerErrorPublixException during call ${request.uri}: ${e.getMessage}")
+          logger.error(s"InternalServerErrorPublixException during call ${request.uri}: ${e.getMessage}")
           e.getSimpleResult.asScala()
         case e: PublixException =>
-          logger.info(s".onServerError - PublixException during call ${request.uri}: ${e.getMessage}")
+          logger.info(s"PublixException during call ${request.uri}: ${e.getMessage}")
           e.getSimpleResult.asScala()
         case _ =>
-          logger.error(".onServerError - Internal JATOS error", throwable)
+          logger.error("Internal JATOS error", throwable)
           val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more information."
           if (HttpUtils.isAjax) InternalServerError(msg)
           else InternalServerError(views.html.error.render(msg))

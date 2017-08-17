@@ -21,18 +21,18 @@ import utils.common.HttpUtils;
 
 /**
  * This class offers a simple interface to extract, write and discard IdCookies.
- * 
+ *
  * Internally this class accesses JATOS' ID cookies in the HTTP Request or
  * Response. It stores the extracted {@link IdCookies} in a
  * {@link IdCookieCollection}. Additionally it puts the
  * {@link IdCookieCollection} in the {@link RequestScope} for easier retrieval
  * in subsequent calls within the same Request.
- * 
+ *
  * Each browser can run up to IdCookieCollection.MAX_ID_COOKIES ID studies at
  * the same time. This means that there are the same number of ID cookies stored
  * in the browser as studies are currently running (although part of them might
  * be abandoned).
- * 
+ *
  * @author Kristian Lange (2016)
  */
 @Singleton
@@ -161,7 +161,7 @@ public class IdCookieAccessor {
 
 	/**
 	 * Extract and returns a Map with the given Cookie's key-value pairs.
-	 * 
+	 *
 	 * @throws IdCookieMalformedException
 	 */
 	private Map<String, String> getCookiesKeyValuePairs(Cookie cookie)
@@ -221,7 +221,7 @@ public class IdCookieAccessor {
 	/**
 	 * Searches the given map the given key and returns the corresponding value
 	 * as Long. Does some simple validation.
-	 * 
+	 *
 	 * @param cookieMap
 	 *            Map with cookie's key-value pairs
 	 * @param key
@@ -254,7 +254,7 @@ public class IdCookieAccessor {
 	/**
 	 * Searches the given map the given key and returns the corresponding value
 	 * as Integer. Does some simple validation.
-	 * 
+	 *
 	 * @param cookieMap
 	 *            Map with cookie's key-value pairs
 	 * @param key

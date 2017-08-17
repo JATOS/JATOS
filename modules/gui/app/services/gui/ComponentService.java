@@ -21,6 +21,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
 import utils.common.IOUtils;
+import utils.common.JsonUtils;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -37,16 +38,18 @@ public class ComponentService {
 	private final ComponentDao componentDao;
 	private final ComponentResultDao componentResultDao;
 	private final IOUtils ioUtils;
+	private final JsonUtils jsonUtils;
 
 	@Inject
 	ComponentService(ResultRemover resultRemover, StudyDao studyDao,
 			ComponentDao componentDao, ComponentResultDao componentResultDao,
-			IOUtils ioUtils) {
+			IOUtils ioUtils, JsonUtils jsonUtils) {
 		this.resultRemover = resultRemover;
 		this.studyDao = studyDao;
 		this.componentDao = componentDao;
 		this.componentResultDao = componentResultDao;
 		this.ioUtils = ioUtils;
+		this.jsonUtils = jsonUtils;
 	}
 
 	/**

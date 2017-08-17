@@ -11,7 +11,7 @@ import play.api.libs.json.{JsNumber, JsValue, Json}
 import play.db.jpa.JPAApi
 import batch.BatchDispatcher.BatchAction.BatchAction
 import batch.BatchDispatcher.TellWhom.TellWhom
-import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchActionMsg, TellWhom}
+import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
 
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 
@@ -27,24 +27,24 @@ class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
   private val logger: Logger = Logger(this.getClass)
 
   /**
-    * Creates a simple BatchActionMsg with an error message
+    * Creates a simple BatchMsg with an error message
     */
   def buildError(errorMsg: String, tellWhom: TellWhom) = {
     val json = Json.obj(
       BatchActionJsonKey.Action.toString -> BatchAction.Error.toString,
       BatchActionJsonKey.ErrorMsg.toString -> errorMsg)
-    BatchActionMsg(json, tellWhom)
+    BatchMsg(json, tellWhom)
   }
 
   /**
-    * Builds a simple BatchActionMsg with the action and the session version
+    * Builds a simple BatchMsg with the action and the session version
     */
   def buildSimple(batch: Batch, action: BatchAction, tellWhom: TellWhom) = {
     logger.debug(s".buildSimple: batchId ${batch.getId}")
     val json = Json.obj(
       BatchActionJsonKey.Action.toString -> action.toString,
       BatchActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(batch.getBatchSessionVersion)))
-    BatchActionMsg(json, tellWhom)
+    BatchMsg(json, tellWhom)
   }
 
   /**
@@ -56,11 +56,11 @@ class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
       BatchActionJsonKey.Action.toString -> BatchAction.Session.toString,
       BatchActionJsonKey.SessionPatches.toString -> patch,
       BatchActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(batch.getBatchSessionVersion)))
-    BatchActionMsg(json, tellWhom)
+    BatchMsg(json, tellWhom)
   }
 
   /**
-    * Builds a BatchActionMsg with the current batch session data and version
+    * Builds a BatchMsg with the current batch session data and version
     */
   def buildSessionData(batchId: Long, action: BatchAction, tellWhom: TellWhom) = {
     jpa.withTransaction(asJavaSupplier(() => {
@@ -87,7 +87,7 @@ class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
       BatchActionJsonKey.Action.toString -> action.toString,
       BatchActionJsonKey.SessionData.toString -> sessionData,
       BatchActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(batch.getBatchSessionVersion)))
-    BatchActionMsg(json, tellWhom)
+    BatchMsg(json, tellWhom)
   }
 
 }

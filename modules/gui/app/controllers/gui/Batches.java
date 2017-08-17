@@ -181,7 +181,7 @@ public class Batches extends Controller {
 		}
 
 		BatchSession batchSession = batchService.bindToBatchSession(batch);
-		return ok(JsonUtils.asJsonNode(batchSession));
+		return ok(jsonUtils.asJsonNode(batchSession));
 	}
 
 	/**
@@ -244,7 +244,7 @@ public class Batches extends Controller {
 		}
 
 		BatchProperties batchProperties = batchService.bindToProperties(batch);
-		return ok(JsonUtils.asJsonNode(batchProperties));
+		return ok(jsonUtils.asJsonNode(batchProperties));
 	}
 
 	/**
@@ -314,7 +314,7 @@ public class Batches extends Controller {
 			batch.setActive(active);
 			batchDao.update(batch);
 		}
-		return ok(JsonUtils.asJsonNode(batch.isActive()));
+		return ok(jsonUtils.asJsonNode(batch.isActive()));
 	}
 
 	/**
@@ -350,7 +350,7 @@ public class Batches extends Controller {
 		} else {
 			return badRequest();
 		}
-		return ok(JsonUtils.asJsonNode(batch.getAllowedWorkerTypes()));
+		return ok(jsonUtils.asJsonNode(batch.getAllowedWorkerTypes()));
 	}
 
 	/**
@@ -441,7 +441,7 @@ public class Batches extends Controller {
 			return internalServerError();
 		}
 
-		return ok(JsonUtils.asJsonNode(workerIdList));
+		return ok(jsonUtils.asJsonNode(workerIdList));
 	}
 
 }

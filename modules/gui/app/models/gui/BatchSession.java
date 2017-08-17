@@ -38,7 +38,7 @@ public class BatchSession {
 	public List<ValidationError> validate() {
 		List<ValidationError> errorList = new ArrayList<>();
 		if (data != null
-				&& !JsonUtils.isValidJSON(data)) {
+				&& !JsonUtils.isValid(data)) {
 			errorList.add(new ValidationError(DATA,
 					MessagesStrings.INVALID_JSON_FORMAT));
 		}

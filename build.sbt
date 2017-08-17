@@ -1,10 +1,8 @@
 import com.typesafe.sbt.packager.docker._
 
-// Settings that are common to all modules are in project/Common.scala
-
 name := "JATOS"
-version := "3.1.7",
-organization := "org.jatos",
+version := "3.1.7"
+organization := "org.jatos"
 scalaVersion := "2.11.11"
 
 libraryDependencies ++= Seq(
@@ -60,7 +58,7 @@ lazy val session = (project in file("modules/session"))
 
 // Submodule jatos-publix: responsible for running studies
 lazy val publix = (project in file("modules/publix"))
-  .enablePlugins(PlayJava)
+  .enablePlugins(PlayJava, PlayScala)
   .dependsOn(common, session)
 
 // Submodule jatos-gui: responsible for running studies

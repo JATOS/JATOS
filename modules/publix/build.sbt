@@ -7,8 +7,7 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaJpa,
   javaWs,
-  "org.apache.commons" % "commons-collections4" % "4.0",
-  "com.github.fge" % "json-patch" % "1.9"
+  "org.apache.commons" % "commons-collections4" % "4.0"
 )
 
 // Routes from submodules

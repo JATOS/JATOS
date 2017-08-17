@@ -8,8 +8,8 @@ import utils.common.JsonUtils;
  * Passes on messages (info/warning/error/success) to the view. Uses Play's
  * flash scope. JATOS has two similar messaging services, this and one using
  * RequestScopeMessaging. Difference to RequestScopeMessaging: only one of each
- * kind, but it survives a redirect (according to Play's documentation, flash
- * scope isn't reliable).
+ * kind (info/warning/error/success), but it survives a redirect (according to
+ * Play's documentation, flash scope isn't reliable).
  * 
  * @author Kristian Lange
  */

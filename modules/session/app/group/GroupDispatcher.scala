@@ -5,8 +5,8 @@ import javax.inject.Inject
 import akka.actor.{Actor, ActorRef, PoisonPill}
 import com.google.inject.assistedinject.Assisted
 import general.ChannelRegistry
-import group.GroupDispatcherS.TellWhom.TellWhom
-import group.GroupDispatcherS._
+import group.GroupDispatcher.TellWhom.TellWhom
+import group.GroupDispatcher._
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 
@@ -19,12 +19,12 @@ import play.api.libs.json.{JsObject, Json}
   * GroupDispatcher by the GroupAdministration which persists all data in a
   * GroupResult. Who's member in a group is defined by the GroupResult.
   *
-  * A GroupChannel is only opened after a StudyResult joined a GroupResult, which
+  * A GroupChannelActor is only opened after a StudyResult joined a GroupResult, which
   * is done in the GroupAdministration. Group data (e.g. who's member) are
-  * persisted in a GroupResult entity. A GroupChannel is closed after the
+  * persisted in a GroupResult entity. A GroupChannelActor is closed after the
   * StudyResult left the group.
   *
-  * A GroupChannel registers in a GroupDispatcher by sending the RegisterChannel
+  * A GroupChannelActor registers in a GroupDispatcher by sending the RegisterChannel
   * message and unregisters by sending a UnregisterChannel message.
   *
   * A new GroupDispatcher is created by the GroupDispatcherRegistry. If a
@@ -41,11 +41,11 @@ import play.api.libs.json.{JsObject, Json}
   *
   * @author Kristian Lange (2015, 2017)
   */
-object GroupDispatcherS {
+object GroupDispatcher {
 
   trait Factory {
-    def apply(dispatcherRegistry: ActorRef, actionHandler: GroupActionHandlerS,
-              actionMsgBuilder: GroupActionMsgBuilderS, batchId: Long): Actor
+    def apply(dispatcherRegistry: ActorRef, actionHandler: GroupActionHandler,
+              actionMsgBuilder: GroupActionMsgBuilder, groupResultId: Long): Actor
   }
 
   /**
@@ -65,27 +65,27 @@ object GroupDispatcherS {
   case class Left(studyResultId: Long)
 
   /**
-    * Message a GroupChannel can send to register in a GroupDispatcher.
+    * Message a GroupChannelActor can send to register in a GroupDispatcher.
     */
   case class RegisterChannel(studyResultId: Long)
 
   /**
-    * Message an GroupChannel can send to its GroupDispatcher to indicate it's
+    * Message an GroupChannelActor can send to its GroupDispatcher to indicate it's
     * closure.
     */
   case class UnregisterChannel(studyResultId: Long)
 
   /**
-    * Message to signal that a GroupChannel has to change its GroupDispatcher.
+    * Message to signal that a GroupChannelActor has to change its GroupDispatcher.
     * It originates in the GroupChannelService and send to the GroupDispatcher
-    * who currently handles the GroupChannel. There it is forwarded to the
-    * actual GroupChannel.
+    * who currently handles the GroupChannelActor. There it is forwarded to the
+    * actual GroupChannelActor.
     */
   case class ReassignChannel(studyResultId: Long, differentGroupDispatcher: ActorRef)
 
   /**
-    * Message that forces a GroupChannel to close itself. Send to a
-    * GroupDispatcher it will be forwarded to the right GroupChannel.
+    * Message that forces a GroupChannelActor to close itself. Send to a
+    * GroupDispatcher it will be forwarded to the right GroupChannelActor.
     */
   case class PoisonChannel(studyResultId: Long)
 
@@ -122,7 +122,7 @@ object GroupDispatcherS {
     val Channels = Value("channels") // JSON key name containing all open group channels defined by their study result ID
     val SessionData = Value("sessionData") // JSON key name for session data (must be accompanied with a session version)
     val SessionPatches = Value("sessionPatches") // JSON key name for a session patches (must be accompanied with a session version)
-    val SessionVersion = Value("sessionVersion") // JSON key name for the batch session version (always together with either session data or patches)
+    val SessionVersion = Value("sessionVersion") // JSON key name for the group session version (always together with either session data or patches)
     val ErrorMsg = Value("errorMsg") // JSON key name for an error message
   }
 
@@ -143,10 +143,10 @@ object GroupDispatcherS {
 
 }
 
-class GroupDispatcherS @Inject()(@Assisted dispatcherRegistry: ActorRef,
-                                 @Assisted actionHandler: GroupActionHandlerS,
-                                 @Assisted actionMsgBuilder: GroupActionMsgBuilderS,
-                                 @Assisted groupResultId: Long) extends Actor {
+class GroupDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
+                                @Assisted actionHandler: GroupActionHandler,
+                                @Assisted actionMsgBuilder: GroupActionMsgBuilder,
+                                @Assisted groupResultId: Long) extends Actor {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -167,13 +167,13 @@ class GroupDispatcherS @Inject()(@Assisted dispatcherRegistry: ActorRef,
       // A member left
       left(studyResultId)
     case RegisterChannel(studyResultId: Long) =>
-      // A GroupChannel wants to register
+      // A GroupChannelActor wants to register
       registerChannel(studyResultId)
     case UnregisterChannel(studyResultId: Long) =>
-      // A GroupChannel wants to unregister
+      // A GroupChannelActor wants to unregister
       unregisterChannel(studyResultId)
     case rc: ReassignChannel =>
-      // A GroupChannel has to be reassigned
+      // A GroupChannelActor has to be reassigned
       reassignChannel(rc)
     case p: PoisonChannel =>
       // Comes from GroupChannelService: close a group channel
@@ -187,9 +187,12 @@ class GroupDispatcherS @Inject()(@Assisted dispatcherRegistry: ActorRef,
     */
   private def handleGroupMsg(msg: GroupMsg) = {
     logger.debug(s".handleGroupMsg: groupResultId $groupResultId, groupMsg ${Json.stringify(msg.json)}")
-    val actionValueOpt = (msg.json \ GroupActionJsonKey.Action.toString).asOpt[String]
-    if (actionValueOpt.isDefined)
-      handleGroupActionMsg(msg) // We have a group action message
+    if (msg.json.keys.contains(GroupActionJsonKey.Action.toString)) {
+      // We have a group action message
+      val studyResultId = channelRegistry.getStudyResult(sender).get
+      val msgList = actionHandler.handleActionMsg(msg, groupResultId, studyResultId, channelRegistry)
+      tellActionMsg(msgList)
+    }
     else if (msg.json.keys.contains(GroupActionJsonKey.Recipient.toString)) {
       // We have a message intended for only one recipient (direct msg)
       val recipientOpt = (msg.json \ GroupActionJsonKey.Recipient.toString).asOpt[Long]
@@ -197,10 +200,6 @@ class GroupDispatcherS @Inject()(@Assisted dispatcherRegistry: ActorRef,
     }
     else
       tellAllButSender(msg) // We have broadcast msg: Tell everyone except the sender
-  }
-
-  private def handleGroupActionMsg(msg: GroupMsg) = {
-
   }
 
   /**
@@ -225,8 +224,8 @@ class GroupDispatcherS @Inject()(@Assisted dispatcherRegistry: ActorRef,
   private def unregisterChannel(studyResultId: Long) = {
     logger.debug(s".unregisterChannel: groupResultId $groupResultId, studyResultId $studyResultId")
 
-    // Only unregister GroupChannel if it's the one from the sender (there
-    // might be a new GroupChannel for the same StudyResult after a reload)
+    // Only unregister GroupChannelActor if it's the one from the sender (there
+    // might be a new GroupChannelActor for the same StudyResult after a reload)
     if (channelRegistry.containsStudyResult(studyResultId)
       && channelRegistry.getChannel(studyResultId) == sender) {
       channelRegistry.unregister(studyResultId)
@@ -255,11 +254,11 @@ class GroupDispatcherS @Inject()(@Assisted dispatcherRegistry: ActorRef,
   }
 
   /**
-    * Tells the GroupChannel to close itself. The GroupChannel then sends a
+    * Tells the GroupChannelActor to close itself. The GroupChannelActor then sends a
     * ChannelClosed back to this GroupDispatcher during postStop and then we
     * can remove the channel from the group registry and tell all other members
     * about it. Also send false back to the sender (GroupChannelService) if the
-    * GroupChannel wasn't handled by this GroupDispatcher.
+    * GroupChannelActor wasn't handled by this GroupDispatcher.
     */
   private def poisonChannel(poison: PoisonChannel) = {
     logger.debug(s".poisonGroupChannel: groupResultId $groupResultId, studyResultId ${poison.studyResultId}")

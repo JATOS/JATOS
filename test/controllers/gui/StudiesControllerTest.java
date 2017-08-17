@@ -1,36 +1,18 @@
 package controllers.gui;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static play.mvc.Http.Status.FORBIDDEN;
-import static play.mvc.Http.Status.NOT_FOUND;
-import static play.mvc.Http.Status.OK;
-import static play.mvc.Http.Status.SEE_OTHER;
-import static play.test.Helpers.contentAsString;
-import static play.test.Helpers.route;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import daos.common.StudyDao;
 import general.TestHelper;
 import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.User;
 import models.gui.StudyProperties;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
@@ -45,6 +27,17 @@ import play.test.Helpers;
 import services.gui.BreadcrumbsService;
 import services.gui.UserService;
 import utils.common.JsonUtils;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static play.mvc.Http.Status.*;
+import static play.test.Helpers.contentAsString;
+import static play.test.Helpers.route;
 
 /**
  * Testing actions of controller.Studies.

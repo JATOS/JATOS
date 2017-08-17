@@ -33,11 +33,14 @@ public class Tests extends Controller {
 	private static final ALogger LOGGER = Logger.of(Tests.class);
 
 	private final UserDao userDao;
+	private final JsonUtils jsonUtils;
 	private final CacheApi cache;
 
 	@Inject
-	Tests(UserDao userDao, @NamedCache("user-session-cache") CacheApi cache) {
+	Tests(UserDao userDao, JsonUtils jsonUtils,
+			@NamedCache("user-session-cache") CacheApi cache) {
 		this.userDao = userDao;
+		this.jsonUtils = jsonUtils;
 		this.cache = cache;
 	}
 
@@ -93,7 +96,7 @@ public class Tests extends Controller {
 	public Result testJsonSerialization() {
 		LOGGER.debug(".testJsonSerialization");
 		try {
-			JsonUtils.asStringForDB("{\"test\":\"test\"}");
+			jsonUtils.asStringForDB("{\"test\":\"test\"}");
 		} catch (Exception e) {
 			return badRequest();
 		}

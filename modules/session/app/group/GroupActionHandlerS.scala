@@ -1,5 +1,0 @@
-package group
-
-class GroupActionHandlerS {
-
-}

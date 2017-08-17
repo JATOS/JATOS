@@ -36,7 +36,7 @@ import utils.common.JsonUtils;
  * 
  * Default values, where necessary, are at the fields or in the constructor.
  * 
- * For the GUI a different model {@link models.gui.StudyProperties} is used.
+ * For the GUI a different model (models.gui.StudyProperties) is used.
  * 
  * @author Kristian Lange (2014)
  */

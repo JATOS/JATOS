@@ -22,14 +22,14 @@ import play.api.libs.json.JsObject
   *
   * @author Kristian Lange (2017)
   */
-object BatchChannel {
+object BatchChannelActor {
   def props(out: ActorRef, studyResultId: Long, batchDispatcher: ActorRef) =
-    Props(new BatchChannel(out, studyResultId, batchDispatcher))
+    Props(new BatchChannelActor(out, studyResultId, batchDispatcher))
 }
 
-class BatchChannel @Inject()(out: ActorRef,
-                             studyResultId: Long,
-                             batchDispatcher: ActorRef) extends Actor {
+class BatchChannelActor @Inject()(out: ActorRef,
+                                  studyResultId: Long,
+                                  batchDispatcher: ActorRef) extends Actor {
 
   override def preStart() = {
     batchDispatcher ! RegisterChannel(studyResultId)
@@ -42,10 +42,10 @@ class BatchChannel @Inject()(out: ActorRef,
   def receive = {
     case msg: JsObject =>
       // If we receive an JSON object (can only come from the client) wrap it in a
-      // BatchActionMsg and forward it to the BatchDispatcher
-      batchDispatcher ! BatchActionMsg(msg)
-    case msg: BatchActionMsg =>
-      // If we receive a BatchActionMsg (can only come from the BatchDispatcher)
+      // BatchMsg and forward it to the BatchDispatcher
+      batchDispatcher ! BatchMsg(msg)
+    case msg: BatchMsg =>
+      // If we receive a BatchMsg (can only come from the BatchDispatcher)
       // send the unwrapped JSON to the client
       out ! msg.json
     case PoisonChannel =>

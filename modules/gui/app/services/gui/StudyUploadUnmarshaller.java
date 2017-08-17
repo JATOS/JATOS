@@ -26,8 +26,8 @@ public class StudyUploadUnmarshaller extends UploadUnmarshaller<Study> {
 	private Study study;
 
 	@Inject
-	StudyUploadUnmarshaller(IOUtils ioUtils) {
-		super(ioUtils);
+	StudyUploadUnmarshaller(IOUtils ioUtils, JsonUtils jsonUtils) {
+		super(ioUtils, jsonUtils);
 	}
 
 	/**

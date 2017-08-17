@@ -20,6 +20,7 @@ import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import models.gui.BatchSession;
+import utils.common.JsonUtils;
 
 /**
  * Service class for JATOS Controllers (not Publix).
@@ -35,17 +36,19 @@ public class BatchService {
 	private final WorkerDao workerDao;
 	private final StudyResultDao studyResultDao;
 	private final GroupResultDao groupResultDao;
+	private final JsonUtils jsonUtils;
 
 	@Inject
 	BatchService(ResultRemover resultRemover, BatchDao batchDao,
 			StudyDao studyDao, WorkerDao workerDao,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+			StudyResultDao studyResultDao, GroupResultDao groupResultDao, JsonUtils jsonUtils) {
 		this.resultRemover = resultRemover;
 		this.batchDao = batchDao;
 		this.studyDao = studyDao;
 		this.workerDao = workerDao;
 		this.studyResultDao = studyResultDao;
 		this.groupResultDao = groupResultDao;
+		this.jsonUtils = jsonUtils;
 	}
 
 	/**

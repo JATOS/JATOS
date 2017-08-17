@@ -1,6 +1,5 @@
 package controllers.publix.workers;
 
-import batch.BatchChannelService;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
@@ -8,6 +7,8 @@ import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
+import group.GroupAdministration;
+import group.GroupChannelService;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -24,8 +25,6 @@ import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleErrorMessages;
 import services.publix.workers.GeneralSinglePublixUtils;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
-import session2.group.GroupAdministration;
-import session2.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -56,7 +55,6 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
     GeneralSinglePublix(JPAApi jpa, GeneralSinglePublixUtils publixUtils,
             GeneralSingleStudyAuthorisation studyAuthorisation,
             ResultCreator resultCreator, WorkerCreator workerCreator,
-            BatchChannelService batchChannelService,
             GroupAdministration groupAdministration,
             GroupChannelService groupChannelService,
             IdCookieService idCookieService,
@@ -64,7 +62,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
             GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
             JsonUtils jsonUtils, ComponentResultDao componentResultDao,
             StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-        super(jpa, publixUtils, studyAuthorisation, batchChannelService,
+        super(jpa, publixUtils, studyAuthorisation,
                 groupAdministration, groupChannelService, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao,
                 studyResultDao, groupResultDao);

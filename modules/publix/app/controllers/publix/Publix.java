@@ -1,11 +1,15 @@
 package controllers.publix;
 
-import batch.BatchChannelService;
-import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
-import exceptions.publix.*;
+import exceptions.publix.ForbiddenPublixException;
+import exceptions.publix.ForbiddenReloadException;
+import exceptions.publix.NotFoundPublixException;
+import exceptions.publix.PublixException;
+import group.GroupAdministration;
+import group.GroupChannelService;
+import group.GroupException;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
@@ -15,7 +19,6 @@ import play.Logger.ALogger;
 import play.api.mvc.WebSocket;
 import play.db.jpa.JPAApi;
 import play.mvc.Controller;
-import play.mvc.LegacyWebSocket;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixHelpers;
@@ -23,9 +26,6 @@ import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
 import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
-import session2.WebSocketBuilder;
-import session2.group.GroupAdministration;
-import session2.group.GroupChannelService;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
 
@@ -42,516 +42,468 @@ import java.util.Date;
  */
 @Singleton
 public abstract class Publix<T extends Worker> extends Controller
-		implements IPublix {
+        implements IPublix {
 
-	private static final ALogger LOGGER = Logger.of(Publix.class);
+    private static final ALogger LOGGER = Logger.of(Publix.class);
 
-	protected final JPAApi jpa;
-	protected final PublixUtils<T> publixUtils;
-	protected final StudyAuthorisation<T> studyAuthorisation;
-	protected final BatchChannelService batchChannelService;
-	protected final GroupAdministration groupAdministration;
-	protected final GroupChannelService groupChannelService;
-	protected final IdCookieService idCookieService;
-	protected final PublixErrorMessages errorMessages;
-	protected final StudyAssets studyAssets;
-	protected final JsonUtils jsonUtils;
-	protected final ComponentResultDao componentResultDao;
-	protected final StudyResultDao studyResultDao;
-	protected final GroupResultDao groupResultDao;
+    protected final JPAApi jpa;
+    protected final PublixUtils<T> publixUtils;
+    protected final StudyAuthorisation<T> studyAuthorisation;
+    protected final GroupAdministration groupAdministration;
+    protected final GroupChannelService groupChannelService;
+    protected final IdCookieService idCookieService;
+    protected final PublixErrorMessages errorMessages;
+    protected final StudyAssets studyAssets;
+    protected final JsonUtils jsonUtils;
+    protected final ComponentResultDao componentResultDao;
+    protected final StudyResultDao studyResultDao;
+    protected final GroupResultDao groupResultDao;
 
-	public Publix(JPAApi jpa, PublixUtils<T> publixUtils,
-			StudyAuthorisation<T> studyAuthorisation,
-			BatchChannelService batchChannelService,
-			GroupAdministration groupAdministration,
-			GroupChannelService groupChannelService,
-			IdCookieService idCookieService, PublixErrorMessages errorMessages,
-			StudyAssets studyAssets, JsonUtils jsonUtils,
-			ComponentResultDao componentResultDao,
-			StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-		this.jpa = jpa;
-		this.publixUtils = publixUtils;
-		this.studyAuthorisation = studyAuthorisation;
-		this.batchChannelService = batchChannelService;
-		this.groupAdministration = groupAdministration;
-		this.groupChannelService = groupChannelService;
-		this.idCookieService = idCookieService;
-		this.errorMessages = errorMessages;
-		this.studyAssets = studyAssets;
-		this.jsonUtils = jsonUtils;
-		this.componentResultDao = componentResultDao;
-		this.studyResultDao = studyResultDao;
-		this.groupResultDao = groupResultDao;
-	}
+    public Publix(JPAApi jpa, PublixUtils<T> publixUtils,
+            StudyAuthorisation<T> studyAuthorisation,
+            GroupAdministration groupAdministration,
+            GroupChannelService groupChannelService,
+            IdCookieService idCookieService, PublixErrorMessages errorMessages,
+            StudyAssets studyAssets, JsonUtils jsonUtils,
+            ComponentResultDao componentResultDao,
+            StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+        this.jpa = jpa;
+        this.publixUtils = publixUtils;
+        this.studyAuthorisation = studyAuthorisation;
+        this.groupAdministration = groupAdministration;
+        this.groupChannelService = groupChannelService;
+        this.idCookieService = idCookieService;
+        this.errorMessages = errorMessages;
+        this.studyAssets = studyAssets;
+        this.jsonUtils = jsonUtils;
+        this.componentResultDao = componentResultDao;
+        this.studyResultDao = studyResultDao;
+        this.groupResultDao = groupResultDao;
+    }
 
-	@Override
-	public Result startComponent(Long studyId, Long componentId,
-			Long studyResultId) throws PublixException {
-		LOGGER.info(".startComponent: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "studyResultId "
-				+ studyResultId);
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		Component component = publixUtils.retrieveComponent(study, componentId);
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		publixUtils.setPreStudyStateByComponentId(studyResult, study,
-				componentId);
+    @Override
+    public Result startComponent(Long studyId, Long componentId,
+            Long studyResultId) throws PublixException {
+        LOGGER.info(".startComponent: studyId " + studyId + ", "
+                + "componentId " + componentId + ", " + "studyResultId "
+                + studyResultId);
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        Component component = publixUtils.retrieveComponent(study, componentId);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        publixUtils.setPreStudyStateByComponentId(studyResult, study,
+                componentId);
 
-		ComponentResult componentResult = null;
-		try {
-			componentResult = publixUtils.startComponent(component,
-					studyResult);
-		} catch (ForbiddenReloadException e) {
-			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, studyResult.getId(), false,
-							e.getMessage()));
-		}
+        ComponentResult componentResult = null;
+        try {
+            componentResult = publixUtils.startComponent(component,
+                    studyResult);
+        } catch (ForbiddenReloadException e) {
+            return redirect(controllers.publix.routes.PublixInterceptor
+                    .finishStudy(studyId, studyResult.getId(), false,
+                            e.getMessage()));
+        }
 
-		idCookieService.writeIdCookie(worker, batch, studyResult,
-				componentResult);
-		return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
-				component.getHtmlFilePath());
-	}
+        idCookieService.writeIdCookie(worker, batch, studyResult,
+                componentResult);
+        return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
+                component.getHtmlFilePath());
+    }
 
-	@Override
-	public Result startComponentByPosition(Long studyId, Integer position,
-			Long studyResultId) throws PublixException {
-		LOGGER.info(".startComponentByPosition: studyId " + studyId + ", "
-				+ "position " + position + ", " + ", " + "studyResultId "
-				+ studyResultId);
-		Component component = publixUtils.retrieveComponentByPosition(studyId,
-				position);
-		return startComponent(studyId, component.getId(), studyResultId);
-	}
+    @Override
+    public Result startComponentByPosition(Long studyId, Integer position,
+            Long studyResultId) throws PublixException {
+        LOGGER.info(".startComponentByPosition: studyId " + studyId + ", "
+                + "position " + position + ", " + ", " + "studyResultId "
+                + studyResultId);
+        Component component = publixUtils.retrieveComponentByPosition(studyId,
+                position);
+        return startComponent(studyId, component.getId(), studyResultId);
+    }
 
-	@Override
-	public Result startNextComponent(Long studyId, Long studyResultId)
-			throws PublixException {
-		LOGGER.info(".startNextComponent: studyId " + studyId + ", "
-				+ "studyResultId " + studyResultId);
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Study study = publixUtils.retrieveStudy(studyId);
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
+    @Override
+    public Result startNextComponent(Long studyId, Long studyResultId)
+            throws PublixException {
+        LOGGER.info(".startNextComponent: studyId " + studyId + ", "
+                + "studyResultId " + studyResultId);
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Study study = publixUtils.retrieveStudy(studyId);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
 
-		Component nextComponent = publixUtils
-				.retrieveNextActiveComponent(studyResult);
-		if (nextComponent == null) {
-			// Study has no more components -> finish it
-			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, studyResult.getId(), true, null));
-		}
-		return redirect(
-				controllers.publix.routes.PublixInterceptor.startComponent(
-						studyId, nextComponent.getId(), studyResult.getId()));
-	}
+        Component nextComponent = publixUtils
+                .retrieveNextActiveComponent(studyResult);
+        if (nextComponent == null) {
+            // Study has no more components -> finish it
+            return redirect(controllers.publix.routes.PublixInterceptor
+                    .finishStudy(studyId, studyResult.getId(), true, null));
+        }
+        return redirect(
+                controllers.publix.routes.PublixInterceptor.startComponent(
+                        studyId, nextComponent.getId(), studyResult.getId()));
+    }
 
-	@Override
-	public Result getInitData(Long studyId, Long componentId,
-			Long studyResultId) throws PublixException, IOException {
-		LOGGER.info(".getInitData: studyId " + studyId + ", " + "componentId "
-				+ componentId + ", " + "studyResultId " + studyResultId);
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		Component component = publixUtils.retrieveComponent(study, componentId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		publixUtils.checkComponentBelongsToStudy(study, component);
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		ComponentResult componentResult;
-		try {
-			componentResult = publixUtils
-					.retrieveStartedComponentResult(component, studyResult);
-		} catch (ForbiddenReloadException e) {
-			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, studyResult.getId(), false,
-							e.getMessage()));
-		}
-		if (studyResult.getStudyState() != StudyState.PRE) {
-			studyResult.setStudyState(StudyState.DATA_RETRIEVED);
-		}
-		studyResultDao.update(studyResult);
-		componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
-		componentResultDao.update(componentResult);
+    @Override
+    public Result getInitData(Long studyId, Long componentId,
+            Long studyResultId) throws PublixException, IOException {
+        LOGGER.info(".getInitData: studyId " + studyId + ", " + "componentId "
+                + componentId + ", " + "studyResultId " + studyResultId);
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        Component component = publixUtils.retrieveComponent(study, componentId);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        publixUtils.checkComponentBelongsToStudy(study, component);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        ComponentResult componentResult;
+        try {
+            componentResult = publixUtils
+                    .retrieveStartedComponentResult(component, studyResult);
+        } catch (ForbiddenReloadException e) {
+            return redirect(controllers.publix.routes.PublixInterceptor
+                    .finishStudy(studyId, studyResult.getId(), false,
+                            e.getMessage()));
+        }
+        if (studyResult.getStudyState() != StudyState.PRE) {
+            studyResult.setStudyState(StudyState.DATA_RETRIEVED);
+        }
+        studyResultDao.update(studyResult);
+        componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
+        componentResultDao.update(componentResult);
 
-		return ok(jsonUtils.initData(batch, studyResult, study, component));
-	}
+        return ok(jsonUtils.initData(batch, studyResult, study, component));
+    }
 
-	@Override
-	// Due to returning a WebSocket and not a Result we don't throw exceptions
-	public WebSocket openBatch(Long studyId,
-			Long studyResultId) {
-		LOGGER.info(".openBatch: studyId " + studyId + ", studyResultId "
-				+ studyResultId);
-		// The @Transactional annotation can only be used with Actions.
-		// Since WebSockets aren't considered Actions in Play we have to do
-		// it manually. Additionally we have to catch the PublixExceptions
-		// manually because the PublixAction wouldn't send a rejected WebSocket
-		// but normal HTTP responses.
-		StudyResult studyResult = jpa.withTransaction(() -> {
-			try {
-				IdCookieModel idCookie = idCookieService
-						.getIdCookie(studyResultId);
-				T worker = publixUtils
-						.retrieveTypedWorker(idCookie.getWorkerId());
-				Study study = publixUtils.retrieveStudy(studyId);
-				Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-				studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
-						batch);
-				return publixUtils.retrieveStudyResult(worker, study,
-						studyResultId);
-			} catch (NotFoundPublixException e) {
-				LOGGER.info(".openBatch: " + e.getMessage());
-				return null;
-			} catch (ForbiddenPublixException e) {
-				LOGGER.info(".openBatch: " + e.getMessage());
-				return null;
-			} catch (Throwable e) {
-				LOGGER.error(".openBatch: ", e);
-				return null;
-			}
-		});
-		// openGroupChannel has to be outside of the transaction
-		return batchChannelService.openBatchChannel(studyResult);
-
-//			if (studyResult != null) {
-//				try {
-//					return batchChannelService.openBatchChannel(studyResult);
-//				} catch (InternalServerErrorPublixException e) {
-//					LOGGER.error(".openBatch: ", e);
-//					return CompletableFuture.completedFuture(
-//							F.Either.Left(internalServerError()));
-//				}
-//			} else {
-//				return CompletableFuture
-//						.completedFuture(F.Either.Left(internalServerError()));
+    @Override
+    // Due to returning a WebSocket and not a Result we don't throw exceptions
+    public WebSocket joinGroup(Long studyId, Long studyResultId) {
+        LOGGER.info(".joinGroup: studyId " + studyId + ", " + "studyResultId "
+                + studyResultId);
+        // The @Transactional annotation can only be used with Actions.
+        // Since WebSockets aren't considered Actions in Play we have to do
+        // it manually. Additionally we have to catch the PublixExceptions
+        // manually because the PublixAction wouldn't send a rejected WebSocket
+        // but normal HTTP responses.
+        StudyResult studyResult = jpa.withTransaction(() -> {
+            try {
+                return joinGroupTransactional(studyId, studyResultId);
+            } catch (NotFoundPublixException | ForbiddenPublixException | GroupException e) {
+                LOGGER.info(".joinGroup: " + e.getMessage());
+                return null;
+            } catch (Throwable e) {
+                LOGGER.error(".joinGroup: ", e);
+                return null;
+            }
+        });
+        // openGroupChannel has to be outside of the transaction
+        return groupChannelService.openGroupChannel(studyResult);
+//		if (studyResult != null) {
+//			try {
+//				return groupChannelService.openGroupChannel(studyResult);
+//			} catch (InternalServerErrorPublixException e) {
+//				return WebSocketBuilder.reject(internalServerError());
 //			}
-//		});
-	}
+//		} else {
+//			return WebSocketBuilder.reject(internalServerError());
+//		}
+    }
 
-	@Override
-	// Due to returning a WebSocket and not a Result we don't throw exceptions
-	public LegacyWebSocket<JsonNode> joinGroup(Long studyId,
-			Long studyResultId) {
-		LOGGER.info(".joinGroup: studyId " + studyId + ", " + "studyResultId "
-				+ studyResultId);
-		// The @Transactional annotation can only be used with Actions.
-		// Since WebSockets aren't considered Actions in Play we have to do
-		// it manually. Additionally we have to catch the PublixExceptions
-		// manually because the PublixAction wouldn't send a rejected WebSocket
-		// but normal HTTP responses.
-		StudyResult studyResult = jpa.withTransaction(() -> {
-			try {
-				return joinGroupTransactional(studyId, studyResultId);
-			} catch (NotFoundPublixException e) {
-				LOGGER.info(".joinGroup: " + e.getMessage());
-				return null;
-			} catch (ForbiddenPublixException e) {
-				LOGGER.info(".joinGroup: " + e.getMessage());
-				return null;
-			} catch (Throwable e) {
-				LOGGER.error(".joinGroup: ", e);
-				return null;
-			}
-		});
-		// openGroupChannel has to be outside of the transaction
-		if (studyResult != null) {
-			try {
-				return groupChannelService.openGroupChannel(studyResult);
-			} catch (InternalServerErrorPublixException e) {
-				return WebSocketBuilder.reject(internalServerError());
-			}
-		} else {
-			return WebSocketBuilder.reject(internalServerError());
-		}
-	}
+    private StudyResult joinGroupTransactional(Long studyId, Long studyResultId)
+            throws PublixException, GroupException {
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        publixUtils.checkStudyIsGroupStudy(study);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        groupAdministration.checkHistoryGroupResult(studyResult);
 
-	private StudyResult joinGroupTransactional(Long studyId, Long studyResultId)
-			throws PublixException {
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		publixUtils.checkStudyIsGroupStudy(study);
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		groupAdministration.checkHistoryGroupResult(studyResult);
+        if (studyResult.getActiveGroupResult() != null) {
+            GroupResult groupResult = studyResult.getActiveGroupResult();
+            LOGGER.info(".joinGroup: studyId " + studyId + ", " + "workerId "
+                    + idCookie.getWorkerId()
+                    + " already member of group result " + groupResult.getId());
+        } else {
+            GroupResult groupResult = groupAdministration.join(studyResult,
+                    batch);
+            groupChannelService.sendJoinedMsg(studyResult);
+            LOGGER.info(".joinGroup: studyId " + studyId + ", " + "workerId "
+                    + idCookie.getWorkerId() + " joined group result "
+                    + groupResult.getId());
+        }
+        return studyResult;
+    }
 
-		if (studyResult.getActiveGroupResult() != null) {
-			GroupResult groupResult = studyResult.getActiveGroupResult();
-			LOGGER.info(".joinGroup: studyId " + studyId + ", " + "workerId "
-					+ idCookie.getWorkerId()
-					+ " already member of group result " + groupResult.getId());
-		} else {
-			GroupResult groupResult = groupAdministration.join(studyResult,
-					batch);
-			groupChannelService.sendJoinedMsg(studyResult);
-			LOGGER.info(".joinGroup: studyId " + studyId + ", " + "workerId "
-					+ idCookie.getWorkerId() + " joined group result "
-					+ groupResult.getId());
-		}
-		return studyResult;
-	}
+    @Override
+    public Result reassignGroup(Long studyId, Long studyResultId)
+            throws PublixException {
+        LOGGER.info(".reassignGroup: studyId " + studyId + ", "
+                + "studyResultId " + studyResultId);
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        publixUtils.checkStudyIsGroupStudy(study);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        try {
+            groupAdministration.checkHistoryGroupResult(studyResult);
+        } catch (GroupException e) {
+            throw new ForbiddenPublixException(e.getMessage());
+        }
 
-	@Override
-	public Result reassignGroup(Long studyId, Long studyResultId)
-			throws PublixException {
-		LOGGER.info(".reassignGroup: studyId " + studyId + ", "
-				+ "studyResultId " + studyResultId);
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		publixUtils.checkStudyIsGroupStudy(study);
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		groupAdministration.checkHistoryGroupResult(studyResult);
+        try {
+            GroupResult currentGroupResult = studyResult.getActiveGroupResult();
+            GroupResult differentGroupResult =
+                    groupAdministration.reassign(studyResult, batch);
+            groupChannelService.reassignGroupChannel(studyResult,
+                    currentGroupResult, differentGroupResult);
+            LOGGER.info(
+                    ".reassignGroup: studyId " + studyId + ", " + "workerId "
+                            + idCookie.getWorkerId() +
+                            " reassigned to group result "
+                            + differentGroupResult.getId());
+        } catch (GroupException e) {
+            throw new ForbiddenPublixException(e.getMessage());
+        }
+        return ok();
+    }
 
-		GroupResult currentGroupResult = studyResult.getActiveGroupResult();
-		GroupResult differentGroupResult = groupAdministration
-				.reassign(studyResult, batch);
-		groupChannelService.reassignGroupChannel(studyResult,
-				currentGroupResult, differentGroupResult);
-		LOGGER.info(".reassignGroup: studyId " + studyId + ", " + "workerId "
-				+ idCookie.getWorkerId() + " reassigned to group result "
-				+ differentGroupResult.getId());
-		return ok();
-	}
+    @Override
+    public Result leaveGroup(Long studyId, Long studyResultId)
+            throws PublixException {
+        LOGGER.info(".leaveGroup: studyId " + studyId + ", " + "studyResultId "
+                + studyResultId);
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        publixUtils.checkStudyIsGroupStudy(study);
+        GroupResult groupResult = studyResult.getActiveGroupResult();
+        if (groupResult == null) {
+            LOGGER.info(".leaveGroup: studyId " + studyId + ", " + "workerId "
+                    + idCookie.getWorkerId()
+                    + " isn't member of a group result - can't leave.");
+            return ok();
+        }
+        groupAdministration.leave(studyResult);
+        groupChannelService.closeGroupChannel(studyResult, groupResult);
+        groupChannelService.sendLeftMsg(studyResult, groupResult);
+        LOGGER.info(".leaveGroup: studyId " + studyId + ", " + "workerId "
+                + idCookie.getWorkerId() + " left group result "
+                + groupResult.getId());
+        return ok();
+    }
 
-	@Override
-	public Result leaveGroup(Long studyId, Long studyResultId)
-			throws PublixException {
-		LOGGER.info(".leaveGroup: studyId " + studyId + ", " + "studyResultId "
-				+ studyResultId);
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		publixUtils.checkStudyIsGroupStudy(study);
-		GroupResult groupResult = studyResult.getActiveGroupResult();
-		if (groupResult == null) {
-			LOGGER.info(".leaveGroup: studyId " + studyId + ", " + "workerId "
-					+ idCookie.getWorkerId()
-					+ " isn't member of a group result - can't leave.");
-			return ok();
-		}
-		groupAdministration.leave(studyResult);
-		groupChannelService.closeGroupChannel(studyResult, groupResult);
-		groupChannelService.sendLeftMsg(studyResult, groupResult);
-		LOGGER.info(".leaveGroup: studyId " + studyId + ", " + "workerId "
-				+ idCookie.getWorkerId() + " left group result "
-				+ groupResult.getId());
-		return ok();
-	}
+    @Override
+    public Result setStudySessionData(Long studyId, Long studyResultId)
+            throws PublixException {
+        LOGGER.info(".setStudySessionData: studyId " + studyId + ", "
+                + "studyResultId " + studyResultId);
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        String studySessionData = request().body().asText();
+        studyResult.setStudySessionData(studySessionData);
+        studyResultDao.update(studyResult);
+        return ok();
+    }
 
-	@Override
-	public Result setStudySessionData(Long studyId, Long studyResultId)
-			throws PublixException {
-		LOGGER.info(".setStudySessionData: studyId " + studyId + ", "
-				+ "studyResultId " + studyResultId);
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		String studySessionData = request().body().asText();
-		studyResult.setStudySessionData(studySessionData);
-		studyResultDao.update(studyResult);
-		return ok();
-	}
+    @Override
+    public Result heartbeat(Long studyId, Long studyResultId)
+            throws PublixException {
+        LOGGER.debug(".heartbeat: studyId " + studyId + ", " + "studyResultId "
+                + studyResultId);
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        Study study = publixUtils.retrieveStudy(studyId);
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        studyResult.setLastSeenDate(new Timestamp(new Date().getTime()));
+        studyResultDao.update(studyResult);
+        return ok();
+    }
 
-	@Override
-	public Result heartbeat(Long studyId, Long studyResultId)
-			throws PublixException {
-		LOGGER.debug(".heartbeat: studyId " + studyId + ", " + "studyResultId "
-				+ studyResultId);
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		Study study = publixUtils.retrieveStudy(studyId);
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		studyResult.setLastSeenDate(new Timestamp(new Date().getTime()));
-		studyResultDao.update(studyResult);
-		return ok();
-	}
+    @Override
+    public Result submitResultData(Long studyId, Long componentId,
+            Long studyResultId) throws PublixException {
+        LOGGER.info(".submitResultData: studyId " + studyId + ", "
+                + "componentId " + componentId + ", " + "studyResultId "
+                + studyResultId);
+        return submitOrAppendResultData(studyId, componentId, studyResultId,
+                false);
+    }
 
-	@Override
-	public Result submitResultData(Long studyId, Long componentId,
-			Long studyResultId) throws PublixException {
-		LOGGER.info(".submitResultData: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "studyResultId "
-				+ studyResultId);
-		return submitOrAppendResultData(studyId, componentId, studyResultId,
-				false);
-	}
+    @Override
+    public Result appendResultData(Long studyId, Long componentId,
+            Long studyResultId) throws PublixException {
+        LOGGER.info(".appendResultData: studyId " + studyId + ", "
+                + "componentId " + componentId + ", " + "studyResultId "
+                + studyResultId);
+        return submitOrAppendResultData(studyId, componentId, studyResultId,
+                true);
+    }
 
-	@Override
-	public Result appendResultData(Long studyId, Long componentId,
-			Long studyResultId) throws PublixException {
-		LOGGER.info(".appendResultData: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "studyResultId "
-				+ studyResultId);
-		return submitOrAppendResultData(studyId, componentId, studyResultId,
-				true);
-	}
+    private Result submitOrAppendResultData(Long studyId, Long componentId,
+            Long studyResultId, boolean append) throws PublixException {
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Component component = publixUtils.retrieveComponent(study, componentId);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        publixUtils.checkComponentBelongsToStudy(study, component);
 
-	private Result submitOrAppendResultData(Long studyId, Long componentId,
-			Long studyResultId, boolean append) throws PublixException {
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Component component = publixUtils.retrieveComponent(study, componentId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		publixUtils.checkComponentBelongsToStudy(study, component);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        ComponentResult componentResult = publixUtils
+                .retrieveCurrentComponentResult(studyResult);
+        if (componentResult == null) {
+            String error = PublixErrorMessages.componentNeverStarted(studyId,
+                    componentId, "submitResultData");
+            return redirect(routes.PublixInterceptor
+                    .finishStudy(studyId, studyResult.getId(), false, error));
+        }
 
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		ComponentResult componentResult = publixUtils
-				.retrieveCurrentComponentResult(studyResult);
-		if (componentResult == null) {
-			String error = PublixErrorMessages.componentNeverStarted(studyId,
-					componentId, "submitResultData");
-			return redirect(routes.PublixInterceptor
-					.finishStudy(studyId, studyResult.getId(), false, error));
-		}
+        String postedResultData = request().body().asText();
+        String resultData;
+        if (append) {
+            String currentResultData = componentResult.getData();
+            resultData = currentResultData != null ?
+                    currentResultData + postedResultData : postedResultData;
+        } else {
+            resultData = postedResultData;
+        }
+        componentResult.setData(resultData);
+        componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
+        componentResultDao.update(componentResult);
+        return ok();
+    }
 
-		String postedResultData = request().body().asText();
-		String resultData;
-		if (append) {
-			String currentResultData = componentResult.getData();
-			resultData = currentResultData != null ?
-					currentResultData + postedResultData : postedResultData;
-		} else {
-			resultData = postedResultData;
-		}
-		componentResult.setData(resultData);
-		componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
-		componentResultDao.update(componentResult);
-		return ok();
-	}
+    @Override
+    public Result finishComponent(Long studyId, Long componentId,
+            Long studyResultId, Boolean successful, String errorMsg)
+            throws PublixException {
+        LOGGER.info(".finishComponent: studyId " + studyId + ", "
+                + "componentId " + componentId + ", " + "studyResultId "
+                + studyResultId + ", " + "successful " + successful + ", "
+                + "errorMsg \"" + errorMsg + "\"");
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        Component component = publixUtils.retrieveComponent(study, componentId);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        publixUtils.checkComponentBelongsToStudy(study, component);
 
-	@Override
-	public Result finishComponent(Long studyId, Long componentId,
-			Long studyResultId, Boolean successful, String errorMsg)
-			throws PublixException {
-		LOGGER.info(".finishComponent: studyId " + studyId + ", "
-				+ "componentId " + componentId + ", " + "studyResultId "
-				+ studyResultId + ", " + "successful " + successful + ", "
-				+ "errorMsg \"" + errorMsg + "\"");
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		Component component = publixUtils.retrieveComponent(study, componentId);
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		publixUtils.checkComponentBelongsToStudy(study, component);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        ComponentResult componentResult = publixUtils
+                .retrieveCurrentComponentResult(studyResult);
+        if (componentResult == null) {
+            String error = PublixErrorMessages.componentNeverStarted(studyId,
+                    componentId, "submitResultData");
+            return redirect(controllers.publix.routes.PublixInterceptor
+                    .finishStudy(studyId, studyResult.getId(), false, error));
+        }
 
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		ComponentResult componentResult = publixUtils
-				.retrieveCurrentComponentResult(studyResult);
-		if (componentResult == null) {
-			String error = PublixErrorMessages.componentNeverStarted(studyId,
-					componentId, "submitResultData");
-			return redirect(controllers.publix.routes.PublixInterceptor
-					.finishStudy(studyId, studyResult.getId(), false, error));
-		}
+        if (successful) {
+            componentResult.setComponentState(ComponentState.FINISHED);
+            componentResult.setErrorMsg(errorMsg);
+        } else {
+            componentResult.setComponentState(ComponentState.FAIL);
+            componentResult.setErrorMsg(errorMsg);
+        }
+        componentResultDao.update(componentResult);
+        return ok();
+    }
 
-		if (successful) {
-			componentResult.setComponentState(ComponentState.FINISHED);
-			componentResult.setErrorMsg(errorMsg);
-		} else {
-			componentResult.setComponentState(ComponentState.FAIL);
-			componentResult.setErrorMsg(errorMsg);
-		}
-		componentResultDao.update(componentResult);
-		return ok();
-	}
+    @Override
+    public Result abortStudy(Long studyId, Long studyResultId, String message)
+            throws PublixException {
+        LOGGER.info(".abortStudy: studyId " + studyId + ", " + ", "
+                + "studyResultId " + studyResultId + ", " + "message \""
+                + message + "\"");
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-	@Override
-	public Result abortStudy(Long studyId, Long studyResultId, String message)
-			throws PublixException {
-		LOGGER.info(".abortStudy: studyId " + studyId + ", " + ", "
-				+ "studyResultId " + studyResultId + ", " + "message \""
-				+ message + "\"");
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        if (!PublixHelpers.studyDone(studyResult)) {
+            publixUtils.abortStudy(message, studyResult);
+            groupAdministration.finishStudyResultInGroup(studyResult);
+        }
+        idCookieService.discardIdCookie(studyResult.getId());
+        if (HttpUtils.isAjax()) {
+            return ok();
+        } else {
+            return ok(views.html.publix.abort.render());
+        }
+    }
 
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		if (!PublixHelpers.studyDone(studyResult)) {
-			publixUtils.abortStudy(message, studyResult);
-			groupAdministration.finishStudyResultInGroup(studyResult);
-		}
-		idCookieService.discardIdCookie(studyResult.getId());
-		if (HttpUtils.isAjax()) {
-			return ok();
-		} else {
-			return ok(views.html.publix.abort.render());
-		}
-	}
+    @Override
+    public Result finishStudy(Long studyId, Long studyResultId,
+            Boolean successful, String errorMsg) throws PublixException {
+        LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
+                + studyResultId + ", " + "successful " + successful + ", "
+                + "errorMsg \"" + errorMsg + "\"");
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-	@Override
-	public Result finishStudy(Long studyId, Long studyResultId,
-			Boolean successful, String errorMsg) throws PublixException {
-		LOGGER.info(".finishStudy: studyId " + studyId + ", " + "studyResultId "
-				+ studyResultId + ", " + "successful " + successful + ", "
-				+ "errorMsg \"" + errorMsg + "\"");
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
+                studyResultId);
+        if (!PublixHelpers.studyDone(studyResult)) {
+            publixUtils.finishStudyResult(successful, errorMsg, studyResult);
+            groupAdministration.finishStudyResultInGroup(studyResult);
+        }
+        idCookieService.discardIdCookie(studyResult.getId());
+        if (HttpUtils.isAjax()) {
+            return ok();
+        } else {
+            if (!successful) {
+                return ok(views.html.publix.error.render(errorMsg));
+            } else {
+                return ok(views.html.publix.finishedAndThanks.render());
+            }
+        }
+    }
 
-		StudyResult studyResult = publixUtils.retrieveStudyResult(worker, study,
-				studyResultId);
-		if (!PublixHelpers.studyDone(studyResult)) {
-			publixUtils.finishStudyResult(successful, errorMsg, studyResult);
-			groupAdministration.finishStudyResultInGroup(studyResult);
-		}
-		idCookieService.discardIdCookie(studyResult.getId());
-		if (HttpUtils.isAjax()) {
-			return ok();
-		} else {
-			if (!successful) {
-				return ok(views.html.publix.error.render(errorMsg));
-			} else {
-				return ok(views.html.publix.finishedAndThanks.render());
-			}
-		}
-	}
-
-	@Override
-	public Result log(Long studyId, Long componentId, Long studyResultId)
-			throws PublixException {
-		IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
-		Study study = publixUtils.retrieveStudy(studyId);
-		Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
-		T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
-		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
-		String msg = request().body().asText();
-		LOGGER.info("logging from client: study ID " + studyId
-				+ ", component ID " + componentId + ", worker ID "
-				+ worker.getId() + ", study result ID " + studyResultId
-				+ ", message \"" + msg + "\".");
-		return ok();
-	}
+    @Override
+    public Result log(Long studyId, Long componentId, Long studyResultId)
+            throws PublixException {
+        IdCookieModel idCookie = idCookieService.getIdCookie(studyResultId);
+        Study study = publixUtils.retrieveStudy(studyId);
+        Batch batch = publixUtils.retrieveBatch(idCookie.getBatchId());
+        T worker = publixUtils.retrieveTypedWorker(idCookie.getWorkerId());
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
+        String msg = request().body().asText();
+        LOGGER.info("logging from client: study ID " + studyId
+                + ", component ID " + componentId + ", worker ID "
+                + worker.getId() + ", study result ID " + studyResultId
+                + ", message \"" + msg + "\".");
+        return ok();
+    }
 
 }

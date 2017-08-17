@@ -3,38 +3,38 @@ package group
 import javax.inject.Inject
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
-import group.GroupDispatcherS._
+import group.GroupDispatcher._
 import play.api.libs.json.JsObject
 
 /**
-  * GroupChannel is an Akka Actor that represents the group channel's WebSocket.
+  * GroupChannelActor is an Akka Actor that represents the group channel's WebSocket.
   * A group channel is a WebSocket connecting a client who's running a study with
   * the JATOS server.
   *
-  * A GroupChannel is only be opened after a StudyResult joined a group, which is
+  * A GroupChannelActor is only be opened after a StudyResult joined a group, which is
   * done in the GroupAdministration. Group data (e.g. who's member) are persisted
-  * in a GroupResult entity. A GroupChannel is closed after the StudyResult left
+  * in a GroupResult entity. A GroupChannelActor is closed after the StudyResult left
   * the GroupResult.
   *
-  * A GroupChannel belongs to a GroupDispatcher. A GroupChannel is created by the
+  * A GroupChannelActor belongs to a GroupDispatcher. A GroupChannelActor is created by the
   * GroupChannelService and registers itself by sending a RegisterChannel message
   * to its GroupDispatcher. It closes down after receiving a PoisonChannel
   * message or if the WebSocket is closed. While closing down it unregisters from
-  * the GroupDispatcher by sending a UnregisterChannel message. A GroupChannel
+  * the GroupDispatcher by sending a UnregisterChannel message. A GroupChannelActor
   * can, if it's told to, reassign itself to a different GroupDispatcher.
   *
   * @author Kristian Lange (2015, 2017)
   */
-object GroupChannelS {
+object GroupChannelActor {
 
   def props(out: ActorRef, studyResultId: Long, groupDispatcher: ActorRef): Props =
-    Props(new GroupChannelS(out, studyResultId, groupDispatcher))
+    Props(new GroupChannelActor(out, studyResultId, groupDispatcher))
 
 }
 
-class GroupChannelS @Inject()(out: ActorRef,
-                              studyResultId: Long,
-                              var groupDispatcher: ActorRef) extends Actor {
+class GroupChannelActor @Inject()(out: ActorRef,
+                                  studyResultId: Long,
+                                  var groupDispatcher: ActorRef) extends Actor {
 
   override def preStart() = {
     groupDispatcher ! RegisterChannel(studyResultId)

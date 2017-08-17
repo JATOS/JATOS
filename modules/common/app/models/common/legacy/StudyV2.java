@@ -360,7 +360,7 @@ public class StudyV2 {
 			errorList.add(new ValidationError(COMMENTS,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (jsonData != null && !JsonUtils.isValidJSON(jsonData)) {
+		if (jsonData != null && !JsonUtils.isValid(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,
 					MessagesStrings.INVALID_JSON_FORMAT));
 		}
