@@ -289,12 +289,11 @@ class JatosGroupChannel @Inject()(publixUtils: JatosPublixUtils,
                                   studyAuthorisation: JatosStudyAuthorisation)
   extends GroupChannel[JatosWorker](publixUtils, studyAuthorisation)
 
+// Handles both MTWorker and MTSandboxWorker
 @Singleton
 class MTGroupChannel @Inject()(publixUtils: MTPublixUtils,
                                studyAuthorisation: MTStudyAuthorisation)
   extends GroupChannel[MTWorker](publixUtils, studyAuthorisation)
-
-//TODO Do we need MTSandboxChannel?
 
 @Singleton
 class PersonalMultipleGroupChannel @Inject()(publixUtils:

@@ -105,12 +105,11 @@ class JatosBatchChannel @Inject()(publixUtils: JatosPublixUtils,
                                   studyAuthorisation: JatosStudyAuthorisation)
   extends BatchChannel[JatosWorker](publixUtils, studyAuthorisation)
 
+// Handles both MTWorker and MTSandboxWorker
 @Singleton
 class MTBatchChannel @Inject()(publixUtils: MTPublixUtils,
                                studyAuthorisation: MTStudyAuthorisation)
   extends BatchChannel[MTWorker](publixUtils, studyAuthorisation)
-
-//TODO Do we need MTSandboxChannel?
 
 @Singleton
 class PersonalMultipleBatchChannel @Inject()(publixUtils: PersonalMultiplePublixUtils,
