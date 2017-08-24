@@ -7,18 +7,19 @@ import batch.BatchDispatcher._
 import play.api.libs.json.JsObject
 
 /**
-  * BatchChannel is an Akka Actor that represents the batch channel's WebSocket.
+  * BatchChannelActor is an Akka Actor that represents the batch channel's WebSocket.
   * A batch channel is a WebSocket connecting a client who's running a study with
   * the JATOS server.
   *
-  * A BatchChannel is always opened during initialization of jatos.js.
+  * A BatchChannelActor is always opened during initialization of jatos.js (where a
+  * GroupChannelActor is opened only after the group was joined).
   *
-  * A BatchChannel belongs to a BatchDispatcher. A BatchChannel is created by the
-  * BatchChannelService and registers itself by sending a RegisterChannel message
-  * to its BatchDispatcher. It closes down after receiving a PoisonChannel
-  * message or if the WebSocket is closed. While closing down it unregisters from
-  * the BatchDispatcher by sending a UnregisterChannel message. A BatchChannel
-  * can, if it's told to, reassign itself to a different BatchDispatcher.
+  * A BatchChannelActor belongs to a BatchDispatcher. A BatchChannelActor is created by the
+  * BatchChannel service and registers itself by sending a RegisterChannel message to its
+  * BatchDispatcher. It closes down after receiving a PoisonChannel message or if the WebSocket
+  * is closed. While closing down it unregisters from the BatchDispatcher by sending a
+  * UnregisterChannel message. A BatchChannelActor can, if it's told to, reassign itself to a
+  * different BatchDispatcher.
   *
   * @author Kristian Lange (2017)
   */
@@ -31,13 +32,9 @@ class BatchChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,
                                   batchDispatcher: ActorRef) extends Actor {
 
-  override def preStart() = {
-    batchDispatcher ! RegisterChannel(studyResultId)
-  }
+  override def preStart() = batchDispatcher ! RegisterChannel(studyResultId)
 
-  override def postStop() = {
-    batchDispatcher ! UnregisterChannel(studyResultId)
-  }
+  override def postStop() = batchDispatcher ! UnregisterChannel(studyResultId)
 
   def receive = {
     case msg: JsObject =>
@@ -48,7 +45,7 @@ class BatchChannelActor @Inject()(out: ActorRef,
       // If we receive a BatchMsg (can only come from the BatchDispatcher)
       // send the unwrapped JSON to the client
       out ! msg.json
-    case PoisonChannel =>
+    case _: PoisonChannel =>
       // Kill this batch channel
       self ! PoisonPill
   }

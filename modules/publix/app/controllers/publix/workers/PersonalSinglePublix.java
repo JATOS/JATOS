@@ -1,14 +1,12 @@
 package controllers.publix.workers;
 
 import controllers.publix.IPublix;
+import controllers.publix.PersonalSingleGroupChannel;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
-import group.GroupAdministration;
-import group.GroupChannelService;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -37,11 +35,9 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
-        implements IPublix {
+public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implements IPublix {
 
-    public static final String PERSONAL_SINGLE_WORKER_ID =
-            "personalSingleWorkerId";
+    public static final String PERSONAL_SINGLE_WORKER_ID = "personalSingleWorkerId";
 
     private static final ALogger LOGGER = Logger.of(PersonalSinglePublix.class);
 
@@ -52,17 +48,14 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker>
     @Inject
     PersonalSinglePublix(JPAApi jpa, PersonalSinglePublixUtils publixUtils,
             PersonalSingleStudyAuthorisation studyAuthorisation,
-            ResultCreator resultCreator,
-            GroupAdministration groupAdministration,
-            GroupChannelService groupChannelService,
+            ResultCreator resultCreator, PersonalSingleGroupChannel groupChannel,
             IdCookieService idCookieService,
             PersonalSingleErrorMessages errorMessages, StudyAssets studyAssets,
             JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-        super(jpa, publixUtils, studyAuthorisation,
-                groupAdministration, groupChannelService, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao,
-                studyResultDao, groupResultDao);
+            StudyResultDao studyResultDao) {
+        super(jpa, publixUtils, studyAuthorisation, groupChannel,
+                idCookieService, errorMessages, studyAssets, jsonUtils,
+                componentResultDao, studyResultDao);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;

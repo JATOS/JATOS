@@ -3,6 +3,7 @@ package models.gui;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
@@ -12,37 +13,35 @@ import utils.common.JsonUtils;
  */
 public class BatchSession {
 
-	public static final String VERSION = "version";
-	public static final String DATA = "data";
+    public static final String VERSION = "version";
+    public static final String DATA = "data";
 
-	private Long version;
+    private Long version;
 
-	private String data;
+    private String data;
 
-	public Long getVersion() {
-		return version;
-	}
+    public Long getVersion() {
+        return version;
+    }
 
-	public void setVersion(Long version) {
-		this.version = version;
-	}
+    public void setVersion(Long version) {
+        this.version = version;
+    }
 
-	public String getData() {
-		return data;
-	}
+    public String getData() {
+        return data;
+    }
 
-	public void setData(String data) {
-		this.data = data;
-	}
+    public void setData(String data) {
+        this.data = data;
+    }
 
-	public List<ValidationError> validate() {
-		List<ValidationError> errorList = new ArrayList<>();
-		if (data != null
-				&& !JsonUtils.isValid(data)) {
-			errorList.add(new ValidationError(DATA,
-					MessagesStrings.INVALID_JSON_FORMAT));
-		}
-		return errorList.isEmpty() ? null : errorList;
-	}
+    public List<ValidationError> validate() {
+        List<ValidationError> errorList = new ArrayList<>();
+        if (!Strings.isNullOrEmpty(data) && !JsonUtils.isValid(data)) {
+            errorList.add(new ValidationError(DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        }
+        return errorList.isEmpty() ? null : errorList;
+    }
 
 }

@@ -6,7 +6,6 @@ import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
 import models.common.workers.*;
 import play.Application;
-import play.api.mvc.WebSocket;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -232,112 +231,6 @@ public class PublixInterceptor extends Controller implements IPublix {
             case GeneralSingleWorker.WORKER_TYPE:
                 result = instanceOfPublix(GeneralSinglePublix.class)
                         .getInitData(studyId, componentId, studyResultId);
-                break;
-            default:
-                throw new BadRequestPublixException(
-                        PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-        }
-        return result;
-    }
-
-    @Override
-    @Transactional
-    public WebSocket joinGroup(Long studyId, Long studyResultId)
-            throws PublixException {
-        WebSocket result = null;
-        switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class).joinGroup(studyId,
-                        studyResultId);
-                break;
-            case JatosWorker.WORKER_TYPE:
-                result = instanceOfPublix(JatosPublix.class).joinGroup(studyId,
-                        studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
-                        .joinGroup(studyId, studyResultId);
-                break;
-            case PersonalSingleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalSinglePublix.class)
-                        .joinGroup(studyId, studyResultId);
-                break;
-            case GeneralSingleWorker.WORKER_TYPE:
-                result = instanceOfPublix(GeneralSinglePublix.class)
-                        .joinGroup(studyId, studyResultId);
-                break;
-            default:
-                throw new BadRequestPublixException(
-                        PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-        }
-        return result;
-    }
-
-    @Override
-    @Transactional
-    public Result reassignGroup(Long studyId, Long studyResultId)
-            throws PublixException {
-        Result result = null;
-        switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class).reassignGroup(studyId,
-                        studyResultId);
-                break;
-            case JatosWorker.WORKER_TYPE:
-                result = instanceOfPublix(JatosPublix.class)
-                        .reassignGroup(studyId,
-                                studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
-                        .reassignGroup(studyId, studyResultId);
-                break;
-            case PersonalSingleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalSinglePublix.class)
-                        .reassignGroup(studyId, studyResultId);
-                break;
-            case GeneralSingleWorker.WORKER_TYPE:
-                result = instanceOfPublix(GeneralSinglePublix.class)
-                        .reassignGroup(studyId, studyResultId);
-                break;
-            default:
-                throw new BadRequestPublixException(
-                        PublixErrorMessages.UNKNOWN_WORKER_TYPE);
-        }
-        return result;
-    }
-
-    @Override
-    @Transactional
-    public Result leaveGroup(Long studyId, Long studyResultId)
-            throws PublixException {
-        Result result = null;
-        switch (getWorkerTypeFromIdCookie(studyResultId)) {
-            case MTWorker.WORKER_TYPE:
-                // Handle MTWorker like MTSandboxWorker
-            case MTSandboxWorker.WORKER_TYPE:
-                result = instanceOfPublix(MTPublix.class).leaveGroup(studyId,
-                        studyResultId);
-                break;
-            case JatosWorker.WORKER_TYPE:
-                result = instanceOfPublix(JatosPublix.class).leaveGroup(studyId,
-                        studyResultId);
-                break;
-            case PersonalMultipleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalMultiplePublix.class)
-                        .leaveGroup(studyId, studyResultId);
-                break;
-            case PersonalSingleWorker.WORKER_TYPE:
-                result = instanceOfPublix(PersonalSinglePublix.class)
-                        .leaveGroup(studyId, studyResultId);
-                break;
-            case GeneralSingleWorker.WORKER_TYPE:
-                result = instanceOfPublix(GeneralSinglePublix.class)
-                        .leaveGroup(studyId, studyResultId);
                 break;
             default:
                 throw new BadRequestPublixException(

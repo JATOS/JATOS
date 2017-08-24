@@ -1,14 +1,12 @@
 package controllers.publix.workers;
 
+import controllers.publix.GeneralSingleGroupChannel;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
-import group.GroupAdministration;
-import group.GroupChannelService;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -38,8 +36,7 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
-        implements IPublix {
+public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements IPublix {
 
     private static final ALogger LOGGER = Logger.of(GeneralSinglePublix.class);
 
@@ -55,17 +52,15 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker>
     GeneralSinglePublix(JPAApi jpa, GeneralSinglePublixUtils publixUtils,
             GeneralSingleStudyAuthorisation studyAuthorisation,
             ResultCreator resultCreator, WorkerCreator workerCreator,
-            GroupAdministration groupAdministration,
-            GroupChannelService groupChannelService,
+            GeneralSingleGroupChannel groupChannel,
             IdCookieService idCookieService,
             GeneralSingleCookieService generalSingleCookieService,
             GeneralSingleErrorMessages errorMessages, StudyAssets studyAssets,
             JsonUtils jsonUtils, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-        super(jpa, publixUtils, studyAuthorisation,
-                groupAdministration, groupChannelService, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao,
-                studyResultDao, groupResultDao);
+            StudyResultDao studyResultDao) {
+        super(jpa, publixUtils, studyAuthorisation, groupChannel,
+                idCookieService, errorMessages, studyAssets,
+                jsonUtils, componentResultDao, studyResultDao);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;

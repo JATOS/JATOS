@@ -7,27 +7,26 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 /**
-  * This class stores the members (channels) of a Dispatcher. It's mostly a
-  * wrapper around a map that stores the study result IDs together with their
-  * corresponding channels specified by an ActorRef.
+  * This class stores the members (channels) of a Dispatcher. It is essentially a wrapper around
+  * a bi-directional map that stores the study result IDs together with their corresponding
+  * channels specified by an ActorRef.
   *
-  * A Registry does not define who is member - it just stores the open channels.
-  * It's possible that a client is a member but currently doesn't have an open
-  * channel.
+  * A Registry does not define who is member - it just stores the open channels. Therefore it is
+  * possible that a client is a member but currently doesn't have an open channel.
   *
   * @author Kristian Lange (2016, 2017)
   */
 class ChannelRegistry {
 
   /**
-    * Contains the members that are handled by a dispatcher. Maps StudyResult's
-    * IDs <-> ActorRefs. Using a bidirectional map because it's a one-to-one
-    * relationship and we need to be able to quickly get entries via the 'key'
-    * and the 'value'.
+    * Contains the members that are handled by a dispatcher. Maps StudyResult's IDs <-> ActorRefs
+    * . Using a bidirectional map because it's a one-to-one relationship and we need to be able
+    * to quickly get entries via the 'key' and the 'value'.
     */
   private val channelMap = new DualHashBidiMap[Long, ActorRef]
 
-  def register(studyResultId: Long, channel: ActorRef) = channelMap.put(studyResultId, channel)
+  def register(studyResultId: Long, channel: ActorRef): ActorRef = channelMap.put(studyResultId,
+    channel)
 
   def unregister(studyResultId: Long) = Option(channelMap.remove(studyResultId))
 

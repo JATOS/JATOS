@@ -2,60 +2,247 @@ package controllers.publix
 
 import javax.inject.{Inject, Singleton}
 
+import controllers.publix.actionannotation.PublixAccessLoggingAction.PublixAccessLogging
+import exceptions.publix.{BadRequestPublixException, ForbiddenPublixException, NotFoundPublixException, PublixException}
 import models.common.workers._
+import play.api.Logger
 import play.api.libs.json.JsValue
-import play.api.mvc.{Controller, Results, WebSocket}
-import play.db.jpa.{JPAApi, Transactional}
+import play.api.mvc.{Action, Controller, Results, WebSocket}
+import play.db.jpa.JPAApi
 import services.publix.idcookie.IdCookieService
 
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 import scala.concurrent.Future
 
+/**
+  * This class intercepts a request before it gets to the BatchChannel or GroupChannel. It has
+  * several purposes: exception handling, final WebSocket creation, and matching to the right
+  * worker type.
+  */
 @Singleton
+@PublixAccessLogging
 class ChannelInterceptor @Inject()(idCookieService: IdCookieService,
                                    jpa: JPAApi,
                                    generalSingleBatchChannel: GeneralSingleBatchChannel,
                                    jatosBatchChannel: JatosBatchChannel,
                                    mTBatchChannel: MTBatchChannel,
                                    personalMultipleBatchChannel: PersonalMultipleBatchChannel,
-                                   personalSingleBatchChannel: PersonalSingleBatchChannel)
+                                   personalSingleBatchChannel: PersonalSingleBatchChannel,
+                                   generalSingleGroupChannel: GeneralSingleGroupChannel,
+                                   jatosGroupChannel: JatosGroupChannel,
+                                   mTGroupChannel: MTGroupChannel,
+                                   personalMultipleGroupChannel: PersonalMultipleGroupChannel,
+                                   personalSingleGroupChannel: PersonalSingleGroupChannel)
   extends Controller {
+
+  private val logger: Logger = Logger(this.getClass)
 
   /**
     * HTTP type: WebSocket
     *
-    * Opens a WebSocket for the batch channel that is used to exchange data
-    * (batch session data) between study runs of a batch. All batch session
-    * data are stored in a Batch model and the batch channels will be handled
-    * by a BatchDispatcher which uses Akka.
+    * Endpoint that opens a WebSocket for the batch channel that is used to exchange data (batch
+    * session data) between study runs of a batch. All batch session data are stored in a Batch
+    * model and the batch channels will be handled by a BatchDispatcher which uses Akka.
     *
     * @param studyId       Study's ID
     * @param studyResultId StudyResult's ID
     * @return WebSocket that transports JSON strings.
     */
-  @Transactional
   def openBatch(studyId: Long, studyResultId: Long): WebSocket =
-  WebSocket.acceptOrResult[JsValue, JsValue] { request =>
+    WebSocket.acceptOrResult[JsValue, JsValue] { request =>
 
-    // Set Http.Context used in Play with Java. Needed by IdCookieService
-    play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
-    val idCookie = idCookieService.getIdCookie(studyResultId)
+      Future.successful({
+        // Set Http.Context used in Play with Java. Needed by IdCookieService
+        play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
+        val idCookie = idCookieService.getIdCookie(studyResultId)
 
-    Future.successful({
-      // Set Http.Context again because it's within Future
+        jpa.withTransaction(asJavaSupplier(() =>
+          try {
+            idCookie.getWorkerType match {
+              case MTWorker.WORKER_TYPE =>
+                Right(mTBatchChannel.open(studyId, studyResultId))
+              case MTSandboxWorker.WORKER_TYPE =>
+                Right(mTBatchChannel.open(studyId, studyResultId))
+              case JatosWorker.WORKER_TYPE =>
+                Right(jatosBatchChannel.open(studyId, studyResultId))
+              case PersonalMultipleWorker.WORKER_TYPE =>
+                Right(personalMultipleBatchChannel.open(studyId, studyResultId))
+              case PersonalSingleWorker.WORKER_TYPE =>
+                Right(personalSingleBatchChannel.open(studyId, studyResultId))
+              case GeneralSingleWorker.WORKER_TYPE =>
+                Right(generalSingleBatchChannel.open(studyId, studyResultId))
+              case _ => Left(Results.BadRequest)
+            }
+          } catch {
+            // Due to returning a WebSocket we can't throw a PublixExceptions like
+            // with other publix endpoints
+            case e: NotFoundPublixException =>
+              logger.info(s".open: ${e.getMessage}")
+              Left(Results.NotFound)
+            case e: ForbiddenPublixException =>
+              logger.info(s".open: ${e.getMessage}")
+              Left(Results.Forbidden)
+            case e: BadRequestPublixException =>
+              logger.info(s".open: ${e.getMessage}")
+              Left(Results.BadRequest)
+            case e: Exception =>
+              logger.error(".open: Exception during opening of batch channel", e)
+              Left(Results.InternalServerError)
+          }
+        ))
+      })
+    }
+
+  /**
+    * HTTP type: WebSocket
+    *
+    * Let the worker (actually it's StudyResult) join a group (actually a GroupResult) and open a
+    * WebSocket (group channel). Only works if this study is a group study. All group data are
+    * stored in a GroupResult and the group channels will be handled by a GroupDispatcher which
+    * uses Akka.
+    *
+    * @param studyId       studyId Study's ID
+    * @param studyResultId StudyResult's ID
+    * @return WebSocket that transfers JSON
+    */
+  def joinGroup(studyId: Long, studyResultId: Long): WebSocket =
+    WebSocket.acceptOrResult[JsValue, JsValue] {
+      request =>
+
+        Future.successful({
+          // Set Http.Context used in Play with Java. Needed by IdCookieService
+          play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
+          val idCookie = idCookieService.getIdCookie(studyResultId)
+
+          try {
+            idCookie.getWorkerType match {
+              case MTWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  mTGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(mTGroupChannel.open(studyResult))
+              case MTSandboxWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  mTGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(mTGroupChannel.open(studyResult))
+              case JatosWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  jatosGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(jatosGroupChannel.open(studyResult))
+              case PersonalMultipleWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  personalMultipleGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(personalMultipleGroupChannel.open(studyResult))
+              case PersonalSingleWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  personalSingleGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(personalSingleGroupChannel.open(studyResult))
+              case GeneralSingleWorker.WORKER_TYPE =>
+                val studyResult = jpa.withTransaction(asJavaSupplier(() =>
+                  generalSingleGroupChannel.join(studyId, studyResultId)
+                ))
+                Right(generalSingleGroupChannel.open(studyResult))
+              case _ => Left(Results.BadRequest)
+            }
+          } catch {
+            // Due to returning a WebSocket we can't throw a PublixExceptions like
+            // with other publix endpoints
+            case e: NotFoundPublixException =>
+              logger.info(s".open: ${e.getMessage}")
+              Left(Results.NotFound)
+            case e: ForbiddenPublixException =>
+              logger.info(s".open: ${e.getMessage}")
+              Left(Results.Forbidden)
+            case e: BadRequestPublixException =>
+              logger.info(s".open: ${e.getMessage}")
+              Left(Results.BadRequest)
+            case e: Exception =>
+              logger.error(".open: Exception during opening of group channel", e)
+              Left(Results.InternalServerError)
+          }
+        })
+    }
+
+  /**
+    * HTTP type: Ajax GET request
+    *
+    * Try to find a different group for this StudyResult. It reuses the already opened group
+    * channel and just reassigns it to a different group (or in more detail to a different
+    * GroupResult and GroupDispatcher). If it is successful it returns an 200 (OK) HTTP status
+    * code. If it can't find any other group it returns a 204 (NO CONTENT) HTTP status code.
+    *
+    * @param studyId       studyId Study's ID
+    * @param studyResultId StudyResult's ID
+    * @return Result
+    * @throws PublixException will be handled in the global ErrorHandler
+    */
+  @throws(classOf[PublixException])
+  def reassignGroup(studyId: Long, studyResultId: Long) = Action {
+    request =>
+      // Set Http.Context used in Play with Java. Needed by IdCookieService
       play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
-      jpa.withTransaction(asJavaSupplier(() =>
+      val idCookie = idCookieService.getIdCookie(studyResultId)
+
+      jpa.withTransaction(asJavaSupplier(() => {
 
         idCookie.getWorkerType match {
-          case MTWorker.WORKER_TYPE => mTBatchChannel.open(studyId, studyResultId)
-          case MTSandboxWorker.WORKER_TYPE => mTBatchChannel.open(studyId, studyResultId)
-          case JatosWorker.WORKER_TYPE => jatosBatchChannel.open(studyId, studyResultId)
-          case PersonalMultipleWorker.WORKER_TYPE => personalMultipleBatchChannel.open(studyId, studyResultId)
-          case PersonalSingleWorker.WORKER_TYPE => personalSingleBatchChannel.open(studyId, studyResultId)
-          case GeneralSingleWorker.WORKER_TYPE => generalSingleBatchChannel.open(studyId, studyResultId)
-          case _ => Left(Results.BadRequest)
-
-        }))
-    })
+          case MTWorker.WORKER_TYPE =>
+            mTGroupChannel.reassign(studyId, studyResultId)
+          case MTSandboxWorker.WORKER_TYPE =>
+            mTGroupChannel.reassign(studyId, studyResultId)
+          case JatosWorker.WORKER_TYPE =>
+            jatosGroupChannel.reassign(studyId, studyResultId)
+          case PersonalMultipleWorker.WORKER_TYPE =>
+            personalMultipleGroupChannel.reassign(studyId, studyResultId)
+          case PersonalSingleWorker.WORKER_TYPE =>
+            personalSingleGroupChannel.reassign(studyId, studyResultId)
+          case GeneralSingleWorker.WORKER_TYPE =>
+            generalSingleGroupChannel.reassign(studyId, studyResultId)
+          case _ => Results.BadRequest
+        }
+      }))
   }
+
+  /**
+    * HTTP type: Ajax GET request
+    *
+    * Let the worker leave the group (actually a GroupResult) he joined before and closes the
+    * group channel. Only works if this study is a group study.
+    *
+    * @param studyId       studyId Study's ID
+    * @param studyResultId StudyResult's ID
+    * @return Result
+    * @throws PublixException will be handled in the global ErrorHandler
+    */
+  @throws(classOf[PublixException])
+  def leaveGroup(studyId: Long, studyResultId: Long) = Action {
+    request =>
+      // Set Http.Context used in Play with Java. Needed by IdCookieService
+      play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request))
+      val idCookie = idCookieService.getIdCookie(studyResultId)
+
+      jpa.withTransaction(asJavaSupplier(() => {
+
+        idCookie.getWorkerType match {
+          case MTWorker.WORKER_TYPE =>
+            mTGroupChannel.leave(studyId, studyResultId)
+          case MTSandboxWorker.WORKER_TYPE =>
+            mTGroupChannel.leave(studyId, studyResultId)
+          case JatosWorker.WORKER_TYPE =>
+            jatosGroupChannel.leave(studyId, studyResultId)
+          case PersonalMultipleWorker.WORKER_TYPE =>
+            personalMultipleGroupChannel.leave(studyId, studyResultId)
+          case PersonalSingleWorker.WORKER_TYPE =>
+            personalSingleGroupChannel.leave(studyId, studyResultId)
+          case GeneralSingleWorker.WORKER_TYPE =>
+            generalSingleGroupChannel.leave(studyId, studyResultId)
+          case _ => Results.BadRequest
+        }
+      }))
+  }
+
 }

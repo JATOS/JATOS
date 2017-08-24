@@ -1,14 +1,12 @@
 package controllers.publix.workers;
 
 import controllers.publix.IPublix;
+import controllers.publix.PersonalMultipleGroupChannel;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.PublixException;
-import group.GroupAdministration;
-import group.GroupChannelService;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -36,11 +34,9 @@ import javax.inject.Singleton;
  * @author Kristian Lange
  */
 @Singleton
-public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
-        implements IPublix {
+public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker> implements IPublix {
 
-    public static final String PERSONAL_MULTIPLE_WORKER_ID =
-            "personalMultipleWorkerId";
+    public static final String PERSONAL_MULTIPLE_WORKER_ID = "personalMultipleWorkerId";
 
     private static final ALogger LOGGER = Logger
             .of(PersonalMultiplePublix.class);
@@ -53,17 +49,15 @@ public class PersonalMultiplePublix extends Publix<PersonalMultipleWorker>
     PersonalMultiplePublix(JPAApi jpa, PersonalMultiplePublixUtils publixUtils,
             PersonalMultipleStudyAuthorisation studyAuthorisation,
             ResultCreator resultCreator,
-            GroupAdministration groupAdministration,
-            GroupChannelService groupChannelService,
+            PersonalMultipleGroupChannel groupChannel,
             IdCookieService idCookieService,
             PersonalMultipleErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils,
             ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
+            StudyResultDao studyResultDao) {
         super(jpa, publixUtils, studyAuthorisation,
-                groupAdministration, groupChannelService, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao,
-                studyResultDao, groupResultDao);
+                groupChannel, idCookieService, errorMessages, studyAssets,
+                jsonUtils, componentResultDao, studyResultDao);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;

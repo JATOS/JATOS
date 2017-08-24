@@ -213,13 +213,24 @@ public abstract class PublixUtils<T extends Worker> {
             // If the abandoned study result isn't done, finish it.
             if (abandonedStudyResult != null
                     && !PublixHelpers.studyDone(abandonedStudyResult)) {
-                groupAdministration
-                        .finishStudyResultInGroup(abandonedStudyResult);
+                finishMemberInGroup(abandonedStudyResult);
                 finishStudyResult(false,
                         PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
                         abandonedStudyResult);
             }
             idCookieService.discardIdCookie(abandonedStudyResultId);
+        }
+    }
+
+    /**
+     * Moves the given StudyResult in its group result into history
+     */
+    public void finishMemberInGroup(StudyResult studyResult) {
+        GroupResult groupResult = studyResult.getActiveGroupResult();
+        Study study = studyResult.getStudy();
+        if (study.isGroupStudy() && groupResult != null) {
+            groupAdministration.moveToHistory(studyResult);
+            groupAdministration.checkAndFinishGroup(groupResult);
         }
     }
 

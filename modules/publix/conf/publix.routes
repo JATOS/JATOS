@@ -8,10 +8,6 @@
 GET     /publix/:studyId/start                           @controllers.publix.PublixInterceptor.startStudy(studyId: Long, batchId: Long ?= -1)
 GET     /publix/:studyId/end                             @controllers.publix.PublixInterceptor.finishStudy(studyId: Long, srid: Long, successful: Boolean ?= true, errorMsg: String ?= null)
 GET     /publix/:studyId/abort                           @controllers.publix.PublixInterceptor.abortStudy(studyId: Long, srid: Long, message: String ?= null)
-GET     /publix/:studyId/batch/open                      @controllers.publix.ChannelInterceptor.openBatch(studyId: Long, srid: Long)
-GET     /publix/:studyId/group/join                      @controllers.publix.PublixInterceptor.joinGroup(studyId: Long, srid: Long)
-GET     /publix/:studyId/group/reassign                  @controllers.publix.PublixInterceptor.reassignGroup(studyId: Long, srid: Long)
-GET     /publix/:studyId/group/leave                     @controllers.publix.PublixInterceptor.leaveGroup(studyId: Long, srid: Long)
 POST    /publix/:studyId/heartbeat                       @controllers.publix.PublixInterceptor.heartbeat(studyId: Long, srid: Long)
 POST    /publix/:studyId/studySessionData                @controllers.publix.PublixInterceptor.setStudySessionData(studyId: Long, srid: Long)
 GET     /publix/:studyId/nextComponent/start             @controllers.publix.PublixInterceptor.startNextComponent(studyId: Long, srid: Long)
@@ -24,6 +20,12 @@ GET     /publix/:studyId/:componentId/initData           @controllers.publix.Pub
 PUT     /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.submitResultData(studyId: Long, componentId: Long, srid: Long)
 POST    /publix/:studyId/:componentId/resultData         @controllers.publix.PublixInterceptor.appendResultData(studyId: Long, componentId: Long, srid: Long)
 POST    /publix/:studyId/:componentId/log                @controllers.publix.PublixInterceptor.log(studyId: Long, componentId: Long, srid: Long)
+
+# Batch and group channel endpoints
+GET     /publix/:studyId/batch/open                      @controllers.publix.ChannelInterceptor.openBatch(studyId: Long, srid: Long)
+GET     /publix/:studyId/group/join                      @controllers.publix.ChannelInterceptor.joinGroup(studyId: Long, srid: Long)
+GET     /publix/:studyId/group/reassign                  @controllers.publix.ChannelInterceptor.reassignGroup(studyId: Long, srid: Long)
+GET     /publix/:studyId/group/leave                     @controllers.publix.ChannelInterceptor.leaveGroup(studyId: Long, srid: Long)
 
 
 ### Static resources ###

@@ -14,8 +14,7 @@ import play.db.jpa.JPAApi
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 
 /**
-  * Handles batch action messages received by an BatchDispatcher
-  * from a client via a batch channel.
+  * Handles batch action messages received by a BatchDispatcher from a client via a batch channel.
   *
   * @author Kristian Lange (2017)
   */
@@ -27,27 +26,24 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
   private val logger: Logger = Logger(this.getClass)
 
   /**
-    * Handles batch action messages originating from a client: Gets a batch
-    * actions message and returns a BatchActionMsgBundle. The batch action
-    * messages in the BatchActionMsgBundle will be send by the BatchDispatcher
-    * to their receivers.
+    * Handles batch action messages originating from a client: Gets a BatchMsg that contains a field
+    * 'action' in their JSON. The only action handled here is the a patch for the batch session.
+    * The function returns BatchMsges that will be send out to the batch members.
     */
-  def handleActionMsg(actionMsg: BatchMsg,
-                      batchId: Long): List[BatchMsg] = {
+  def handleActionMsg(actionMsg: BatchMsg, batchId: Long): List[BatchMsg] = {
     val actionValue = (actionMsg.json \ BatchActionJsonKey.Action.toString).as[String]
     val action = BatchAction.withName(actionValue)
     action match {
-      case BatchAction.Session =>
-        handlePatch(actionMsg.json, batchId)
+      case BatchAction.Session => handlePatch(actionMsg.json, batchId)
       case _ =>
         List(msgBuilder.buildError(s"Unknown action $action", TellWhom.SenderOnly))
     }
   }
 
   /**
-    * Persists batch session patch and tells everyone
+    * Applies JSON Patch for the batch session and tells everyone in the batch
     */
-  def handlePatch(json: JsObject, batchId: Long): List[BatchMsg] = {
+  private def handlePatch(json: JsObject, batchId: Long): List[BatchMsg] = {
     jpa.withTransaction(asJavaSupplier(() => {
       val batch = batchDao.findById(batchId)
       if (batch == null) {
@@ -60,24 +56,20 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
         val patch = (json \ BatchActionJsonKey.SessionPatches.toString).get
         val patchedSessionData = patchSessionData(patch, batch)
         logger.debug(s".handlePatch: batchId $batchId, " +
-          s"clientsVersion $clientsVersion, " +
-          s"batchSessionPatch ${Json.stringify(patch)}, " +
+          s"clientsVersion $clientsVersion, batchSessionPatch ${Json.stringify(patch)}, " +
           s"updatedSessionData ${Json.stringify(patchedSessionData)}")
 
-        val success = checkVersionAndPersistSessionData(patchedSessionData,
-          batch, clientsVersion)
+        val success = checkVersionAndPersistSessionData(patchedSessionData, batch, clientsVersion)
         if (success) {
           val msg1 = msgBuilder.buildSessionPatch(batch, patch, TellWhom.All)
-          val msg2 = msgBuilder.buildSimple(batch, BatchAction.SessionAck,
-            TellWhom.SenderOnly)
+          val msg2 = msgBuilder.buildSimple(batch, BatchAction.SessionAck, TellWhom.SenderOnly)
           List(msg1, msg2)
-        } else {
+        } else
           List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, TellWhom.SenderOnly))
-        }
+
       } catch {
         case e: Exception =>
-          logger.warn(s".handlePatch: batchId $batchId, " +
-            s"json ${Json.stringify(json)}, " +
+          logger.warn(s".handlePatch: batchId $batchId, json ${Json.stringify(json)}, " +
             s"${e.getClass.getName}: ${e.getMessage}")
           List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, TellWhom.SenderOnly))
       }
@@ -98,8 +90,7 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
     * is equal to the received one. Returns true if this was successful -
     * otherwise false.
     */
-  private def checkVersionAndPersistSessionData(sessionData: JsValue,
-                                                batch: Batch,
+  private def checkVersionAndPersistSessionData(sessionData: JsValue, batch: Batch,
                                                 version: Long): Boolean = {
     if (batch != null && sessionData != null && batch.getBatchSessionVersion == version) {
       batch.setBatchSessionData(sessionData.toString)

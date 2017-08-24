@@ -34,7 +34,8 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
           Forbidden("You're not allowed to access this resource.")
         case Http.Status.REQUEST_ENTITY_TOO_LARGE =>
           logger.info(s"request entity too large: $message")
-          Status(statusCode)("Request entity too large: You probably tried  to upload a file that is too large")
+          Status(statusCode)("Request entity too large: You probably tried  to upload a file that" +
+            " is too large")
         case _ =>
           logger.warn(s"HTTP status code $statusCode: $message")
           Status(statusCode)(s"JATOS error: $statusCode")
@@ -52,18 +53,25 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
           logger.info(s"JatosGuiException during call ${request.uri}: ${e.getMessage}")
           e.getSimpleResult.asScala()
         case e: InternalServerErrorPublixException =>
-          logger.error(s"InternalServerErrorPublixException during call ${request.uri}: ${e.getMessage}")
-          e.getSimpleResult.asScala()
+          logger.error(s"InternalServerErrorPublixException during call ${request.uri}: ${e
+            .getMessage}")
+          getErrorResult(e.getHttpStatus, e.getMessage, request)
         case e: PublixException =>
           logger.info(s"PublixException during call ${request.uri}: ${e.getMessage}")
-          e.getSimpleResult.asScala()
+          getErrorResult(e.getHttpStatus, e.getMessage, request)
         case _ =>
           logger.error("Internal JATOS error", throwable)
-          val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more information."
-          if (HttpUtils.isAjax) InternalServerError(msg)
+          val msg = s"Internal JATOS error during ${request.uri}. Check logs to get more " +
+            s"information."
+          if (HttpUtils.isAjax(request)) InternalServerError(msg)
           else InternalServerError(views.html.error.render(msg))
       }
     )
+  }
+
+  private def getErrorResult(status: Int, msg: String, request: RequestHeader): Result = {
+    if (HttpUtils.isAjax(request)) Status(status)(msg)
+    else Status(status)(views.html.publix.error.render(msg))
   }
 
 }

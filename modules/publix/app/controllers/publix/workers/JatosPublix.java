@@ -1,16 +1,14 @@
 package controllers.publix.workers;
 
 import controllers.publix.IPublix;
+import controllers.publix.JatosGroupChannel;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenPublixException;
 import exceptions.publix.ForbiddenReloadException;
 import exceptions.publix.PublixException;
-import group.GroupAdministration;
-import group.GroupChannelService;
 import models.common.*;
 import models.common.workers.JatosWorker;
 import play.Logger;
@@ -89,17 +87,14 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
     @Inject
     JatosPublix(JPAApi jpa, JatosPublixUtils publixUtils,
             JatosStudyAuthorisation studyAuthorisation,
-            ResultCreator resultCreator,
-            GroupAdministration groupAdministration,
-            GroupChannelService groupChannelService,
+            ResultCreator resultCreator, JatosGroupChannel groupChannel,
             IdCookieService idCookieService, JatosErrorMessages errorMessages,
             StudyAssets studyAssets, JsonUtils jsonUtils,
             ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, GroupResultDao groupResultDao) {
-        super(jpa, publixUtils, studyAuthorisation,
-                groupAdministration, groupChannelService, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao,
-                studyResultDao, groupResultDao);
+            StudyResultDao studyResultDao) {
+        super(jpa, publixUtils, studyAuthorisation, groupChannel,
+                idCookieService, errorMessages, studyAssets, jsonUtils,
+                componentResultDao, studyResultDao);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
@@ -183,7 +178,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                 break;
         }
 
-        ComponentResult componentResult = null;
+        ComponentResult componentResult;
         try {
             componentResult = publixUtils.startComponent(component,
                     studyResult);
@@ -223,7 +218,6 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                 break;
             case RUN_COMPONENT_START:
                 // Should never happen
-                jatosRun = JatosRun.RUN_COMPONENT_FINISHED;
                 return redirect(controllers.publix.routes.PublixInterceptor
                         .finishStudy(studyId, studyResult.getId(), false,
                                 null));
@@ -265,7 +259,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                 studyResultId);
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.abortStudy(message, studyResult);
-            groupAdministration.finishStudyResultInGroup(studyResult);
+            publixUtils.finishMemberInGroup(studyResult);
+            groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
         if (HttpUtils.isAjax()) {
@@ -297,7 +292,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                 studyResultId);
         if (!PublixHelpers.studyDone(studyResult)) {
             publixUtils.finishStudyResult(successful, errorMsg, studyResult);
-            groupAdministration.finishStudyResultInGroup(studyResult);
+            publixUtils.finishMemberInGroup(studyResult);
+            groupChannel.closeGroupChannel(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
         if (HttpUtils.isAjax()) {

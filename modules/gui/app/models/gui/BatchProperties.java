@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.base.Strings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
@@ -261,7 +262,7 @@ public class BatchProperties {
 			errorList.add(new ValidationError(COMMENTS,
 					MessagesStrings.NO_HTML_ALLOWED));
 		}
-		if (jsonData != null && !JsonUtils.isValid(jsonData)) {
+		if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
 			errorList.add(new ValidationError(JSON_DATA,
 					MessagesStrings.INVALID_JSON_FORMAT));
 		}

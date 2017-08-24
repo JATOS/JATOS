@@ -19,12 +19,26 @@ object GroupDispatcherRegistry {
 
   abstract class RegistryProtocol
 
-  case class ItsThisOne(groupDispatcherOption: Option[ActorRef]) extends RegistryProtocol
-
+  /**
+    * Used by the GroupChannel service to ask which GroupDispatcher actor manages a particular
+    * group (specified by the group result ID).
+    */
   case class Get(groupResultId: Long) extends RegistryProtocol
 
+  /**
+    * Used by the GroupChannel service to ask which GroupDispatcher actor manages a particular
+    * group (specified by the group result ID). If it doesn't exist, create a new one.
+    */
   case class GetOrCreate(groupResultId: Long) extends RegistryProtocol
 
+  /**
+    * Used to answer the GroupChannel service which GroupDispatcher manages a particular group.
+    */
+  case class ItsThisOne(groupDispatcherOption: Option[ActorRef]) extends RegistryProtocol
+
+  /**
+    * Used by a GroupDispatcher to unregister itself from this registry
+    */
   case class Unregister(groupResultId: Long) extends RegistryProtocol
 
 }
@@ -39,8 +53,7 @@ class GroupDispatcherRegistry @Inject()(actorSystem: ActorSystem,
   private val logger: Logger = Logger(this.getClass)
 
   /**
-    * Contains the dispatchers that are currently registered. Maps the an ID to
-    * the ActorRef.
+    * Contains the dispatchers that are currently registered. Maps the an ID to the ActorRef.
     */
   private val dispatcherMap = mutable.HashMap[Long, ActorRef]()
 

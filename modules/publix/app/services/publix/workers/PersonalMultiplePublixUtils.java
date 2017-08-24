@@ -1,5 +1,6 @@
 package services.publix.workers;
 
+import controllers.publix.PersonalMultipleGroupChannel;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;

@@ -1,16 +1,14 @@
 package controllers.publix.workers;
 
 import controllers.publix.IPublix;
+import controllers.publix.MTGroupChannel;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
-import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.MTWorkerDao;
 import exceptions.publix.BadRequestPublixException;
 import exceptions.publix.PublixException;
-import group.GroupAdministration;
-import group.GroupChannelService;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -68,17 +66,14 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
     MTPublix(JPAApi jpa, MTPublixUtils publixUtils,
             MTStudyAuthorisation studyAuthorisation,
             ResultCreator resultCreator, WorkerCreator workerCreator,
-            GroupAdministration groupAdministration,
-            GroupChannelService groupChannelService,
-            IdCookieService idCookieService, MTErrorMessages errorMessages,
-            StudyAssets studyAssets, JsonUtils jsonUtils,
-            ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao,
-            GroupResultDao groupResultDao) {
+            MTGroupChannel groupChannel, IdCookieService idCookieService,
+            MTErrorMessages errorMessages, StudyAssets studyAssets,
+            JsonUtils jsonUtils, ComponentResultDao componentResultDao,
+            StudyResultDao studyResultDao, MTWorkerDao mtWorkerDao) {
         super(jpa, publixUtils, studyAuthorisation,
-                groupAdministration, groupChannelService, idCookieService,
+                groupChannel, idCookieService,
                 errorMessages, studyAssets, jsonUtils, componentResultDao,
-                studyResultDao, groupResultDao);
+                studyResultDao);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
@@ -156,7 +151,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
         if (!PublixHelpers.studyDone(studyResult)) {
             confirmationCode = publixUtils.finishStudyResult(successful,
                     errorMsg, studyResult);
-            groupAdministration.finishStudyResultInGroup(studyResult);
+            publixUtils.finishMemberInGroup(studyResult);
+            groupChannel.closeGroupChannel(studyResult);
         } else {
             confirmationCode = studyResult.getConfirmationCode();
         }

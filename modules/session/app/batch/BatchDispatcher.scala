@@ -12,23 +12,21 @@ import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 
 /**
-  * A BatchDispatcher is an Akka Actor responsible for distributing messages
-  * (BatchMsg) within a batch.
+  * A BatchDispatcher is an Akka Actor responsible for distributing messages (BatchMsg) within a
+  * batch.
   *
-  * A BatchChannel is always opened during initialization of jatos.js.
+  * A BatchChannelActor is always opened during initialization of jatos.js (where a
+  * GroupChannelActor is opened only after the group was joined).
   *
-  * A BatchChannel registers in a BatchDispatcher by sending the RegisterChannel
-  * message and unregisters by sending a UnregisterChannel message.
+  * A BatchChannelActor registers in a BatchDispatcher by sending the RegisterChannel message and
+  * unregisters by sending a UnregisterChannel message.
   *
-  * A new BatchDispatcher is created by the BatchDispatcherRegistry. If a
-  * BatchDispatcher has no more members it closes itself.
+  * A new BatchDispatcher is created by the BatchDispatcherRegistry. If a BatchDispatcher has no
+  * more members it closes itself.
   *
-  * A BatchDispatcher handles all messages specified in the
-  * BatchDispatcherProtocol. Fundamentally these are batch session patches.
-  *
-  * The batch session patches are JSON Patches after RFC 6902 and used to
-  * describe changes in the batch session data. The session data are stored in
-  * the Batch.
+  * A BatchDispatcher handles and distributes messages between currently active the members of a
+  * batch. These messages are essentially JSON Patches after RFC 6902 and used to describe
+  * changes in the batch session data. The session data are stored and persisted with the Batch.
   *
   * @author Kristian Lange (2017)
   */
@@ -42,19 +40,19 @@ object BatchDispatcher {
   }
 
   /**
-    * Message a BatchChannel can send to register in a BatchDispatcher.
+    * Message a BatchChannelActor can send to register in a BatchDispatcher.
     */
   case class RegisterChannel(studyResultId: Long)
 
   /**
-    * Message an BatchChannel can send to its BatchDispatcher to indicate it's
+    * Message an BatchChannelActor can send to its BatchDispatcher to indicate it's
     * closure.
     */
   case class UnregisterChannel(studyResultId: Long)
 
   /**
-    * Message that forces a BatchChannel to close itself. Send to a
-    * BatchDispatcher it will be forwarded to the right BatchChannel.
+    * Message that forces a BatchChannelActor to close itself. Send from the BatchChannel service
+    * to a BatchDispatcher and there it will be forwarded to the right BatchChannelActor.
     */
   case class PoisonChannel(studyResultId: Long)
 
@@ -69,9 +67,12 @@ object BatchDispatcher {
   object BatchActionJsonKey extends Enumeration {
     type BatchActionKey = Value
     val Action = Value("action") // JSON key name for an action (mandatory for an BatchMsg)
-    val SessionData = Value("data") // JSON key name for session data (must be accompanied with a session version)
-    val SessionPatches = Value("patches") // JSON key name for a session patches (must be accompanied with a session version)
-    val SessionVersion = Value("version") // JSON key name for the batch session version (always together with either session data or patches)
+    val SessionData = Value("data") // JSON key name for session data (must be accompanied with a
+    // session version)
+    val SessionPatches = Value("patches") // JSON key name for a session patches (must be
+    // accompanied with a session version)
+    val SessionVersion = Value("version") // JSON key name for the batch session version (always
+    // together with either session data or patches)
     val ErrorMsg = Value("errorMsg") // JSON key name for an error message
   }
 
@@ -106,20 +107,13 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
 
   private val channelRegistry = new ChannelRegistry
 
-  override def postStop() = {
-    dispatcherRegistry ! Unregister(batchId)
-  }
+  override def postStop() = dispatcherRegistry ! Unregister(batchId)
 
   def receive = {
-    case actionMsg: BatchMsg =>
-      handleActionMsg(actionMsg)
-    case RegisterChannel(studyResultId: Long) =>
-      registerChannel(studyResultId)
-    case UnregisterChannel(studyResultId: Long) =>
-      unregisterChannel(studyResultId)
-    case p: PoisonChannel =>
-      // Comes from BatchChannelService: close a batch channel
-      poisonChannel(p)
+    case actionMsg: BatchMsg => handleActionMsg(actionMsg)
+    case RegisterChannel(studyResultId: Long) => registerChannel(studyResultId)
+    case UnregisterChannel(studyResultId: Long) => unregisterChannel(studyResultId)
+    case p: PoisonChannel => poisonChannel(p)
   }
 
   /**
@@ -134,8 +128,7 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   }
 
   /**
-    * Registers the given channel in the channelRegistry and send an OPENED msg back to
-    * the sender
+    * Registers the given channel in the channelRegistry and send an OPENED msg back to the sender
     */
   private def registerChannel(studyResultId: Long) = {
     logger.debug(s".registerChannel: batchId $batchId, studyResultId $studyResultId")
@@ -145,15 +138,14 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   }
 
   /**
-    * Unregisters the given channel and sends an CLOSED action batch message to
-    * everyone in this batch. Then if the batch is now empty it sends a
-    * PoisonPill to this BatchDispatcher itself.
+    * Unregisters the given channel and sends an CLOSED action batch message to everyone in this
+    * batch. Then if the batch is now empty it sends a PoisonPill to this BatchDispatcher itself.
     */
   private def unregisterChannel(studyResultId: Long) {
     logger.debug(s".unregisterChannel: batchId $batchId, studyResultId $studyResultId")
 
-    // Only unregister BatchChannel if it's the one from the sender (there
-    // might be a new BatchChannel for the same StudyResult after a reload)
+    // Only unregister BatchChannelActor if it's the one from the sender (there
+    // might be a new BatchChannelActor for the same StudyResult after a reload)
     val channelOption = channelRegistry.getChannel(studyResultId)
     if (channelOption.isDefined && channelOption.get == sender)
       channelRegistry.unregister(studyResultId)
@@ -163,11 +155,11 @@ class BatchDispatcher @Inject()(@Assisted dispatcherRegistry: ActorRef,
   }
 
   /**
-    * Tells the BatchChannel to close itself. The BatchChannel then sends a
-    * ChannelClosed back to this BatchDispatcher during postStop and then we
-    * can remove the channel from the batch channelRegistry and tell all other members
-    * about it. Also send false back to the sender (BatchChannelService) if the
-    * BatchChannel wasn't handled by this BatchDispatcher.
+    * Tells the BatchChannelActor to close itself. The BatchChannelActor then sends a
+    * UnregisterChannel back to this BatchDispatcher during postStop and then we
+    * can remove the channel from the batch channelRegistry and tell all other batch members
+    * about it. Also send false back to the sender (BatchChannel service) if the
+    * BatchChannelActor wasn't handled by this BatchDispatcher.
     */
   private def poisonChannel(poisonChannel: PoisonChannel) = {
     val studyResultId = poisonChannel.studyResultId

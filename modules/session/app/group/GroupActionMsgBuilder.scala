@@ -15,6 +15,12 @@ import play.db.jpa.JPAApi
 import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 
+
+/**
+  * Utility class that builds GroupMsgs. So it mostly handles the JSON creation.
+  *
+  * @author Kristian Lange (2015, 2017)
+  */
 @Singleton
 class GroupActionMsgBuilder @Inject()(jpa: JPAApi,
                                       groupResultDao: GroupResultDao) {
@@ -33,8 +39,7 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi,
   }
 
   /**
-    * Builds a simple GroupActionMsg with the action, group result ID, and the
-    * session version
+    * Builds a simple GroupMsg with the action, group result ID, and the session version
     */
   def buildSimple(groupResult: GroupResult, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     logger.debug(s".buildSimple: groupResult ${groupResult.getId}")
@@ -42,57 +47,65 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi,
       GroupActionJsonKey.Action.toString -> action.toString,
       GroupActionJsonKey.GroupResultId.toString -> JsNumber(BigDecimal(groupResult.getId)),
       GroupActionJsonKey.GroupState.toString -> groupResult.getGroupState.name,
-      GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult.getGroupSessionVersion)))
+      GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult
+        .getGroupSessionVersion)))
     GroupMsg(json, tellWhom)
   }
 
   /**
-    * Builds a GroupActionMsg with or without session data but always with
-    * session version
+    * Builds a GroupMsg with or without session data but always with session version
     */
   def build(groupResultId: Long, studyResultId: Long, registry: ChannelRegistry,
-            includeSessionData: Boolean, action: GroupAction,
-            tellWhom: TellWhom): GroupMsg = {
-    // The current group data are persisted in a GroupResult entity. The
-    // GroupResult determines who is member of the group - and not
-    // the group registry.
+            includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
+    // The current group data are persisted in a GroupResult entity.
+    // The GroupResult determines who is member of the group - and not the group registry.
     jpa.withTransaction(asJavaSupplier(() => {
-      logger.debug(s".build: groupResultId $groupResultId, studyResultId $studyResultId, action $action , tellWhom ${tellWhom.toString}")
-      val groupResult = groupResultDao.findById(studyResultId)
+      logger.debug(s".build: groupResultId $groupResultId, studyResultId $studyResultId, action " +
+        s"$action , tellWhom ${tellWhom.toString}")
+      val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult != null)
         buildAction(groupResult, studyResultId, registry, includeSessionData, action, tellWhom)
       else
-        buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database.", TellWhom.SenderOnly);
+        buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database" +
+          s".", TellWhom.SenderOnly)
     }))
   }
 
   /**
-    * Builds a GroupActionMsg with the group session patch and version
+    * Builds a GroupMsg with the group session patch and version
     */
-  def buildSessionPatch(groupResult: GroupResult, studyResultId: Long, patch: JsValue, tellWhom: TellWhom): GroupMsg = {
-    logger.debug(s".buildSessionPatch: groupResultId ${groupResult.getId}, studyResultId $studyResultId")
+  def buildSessionPatch(groupResult: GroupResult, studyResultId: Long, patch: JsValue,
+                        tellWhom: TellWhom): GroupMsg = {
+    logger.debug(s".buildSessionPatch: groupResultId ${groupResult.getId}, studyResultId " +
+      s"$studyResultId")
     val json = Json.obj(
       GroupActionJsonKey.Action.toString -> GroupAction.Session.toString,
       GroupActionJsonKey.SessionPatches.toString -> patch,
-      GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult.getGroupSessionVersion)))
+      GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult
+        .getGroupSessionVersion)))
     GroupMsg(json, tellWhom)
   }
 
   private def buildAction(groupResult: GroupResult, studyResultId: Long, registry: ChannelRegistry,
-                          includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
-    val members = JsArray(groupResult.getActiveMemberList.asScala.map(sr => JsNumber(BigDecimal(sr.getId))).toSeq)
+                          includeSessionData: Boolean, action: GroupAction,
+                          tellWhom: TellWhom): GroupMsg = {
+    val members = JsArray(
+      groupResult.getActiveMemberList.asScala.map(sr => JsNumber(BigDecimal(sr.getId))).toSeq
+    )
     val channels = JsArray(registry.getAllStudyResultIds.map(id => JsNumber(BigDecimal(id))).toSeq)
-    val json = Json.obj(
+    var json = Json.obj(
       GroupActionJsonKey.Action.toString -> action.toString,
       GroupActionJsonKey.MemberId.toString -> studyResultId,
       GroupActionJsonKey.GroupResultId.toString -> JsNumber(BigDecimal(groupResult.getId)),
       GroupActionJsonKey.GroupState.toString -> groupResult.getGroupState.name,
       GroupActionJsonKey.Members.toString -> members,
       GroupActionJsonKey.Channels.toString -> channels,
-      GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult.getGroupSessionVersion)))
-    if (includeSessionData) json + (GroupActionJsonKey.SessionData.toString -> JsString(groupResult.getGroupSessionData))
+      GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult
+        .getGroupSessionVersion)))
+    if (includeSessionData)
+      json = json + (GroupActionJsonKey.SessionData.toString -> Json.parse(groupResult
+        .getGroupSessionData))
     GroupMsg(json, tellWhom)
   }
-
 
 }

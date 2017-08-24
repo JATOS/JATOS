@@ -546,6 +546,28 @@ var jatos = {};
 	};
 
 	/**
+	 * This function defines the JSON Patch test operation but it 
+	 * does not use the 'test' operation of the JSON patch
+	 * implementation but the JSON pointer implementation.
+	 * @param {string} path - JSON pointer path to be tested
+	 * @param {object} value - value to be tested
+	 * @return {boolean}
+	 */
+	jatos.batchSession.test = function (path, value) {
+		var obj = jsonpointer.get(batchSessionData, path);
+		return obj === value;
+	};
+
+	/**
+	 * Check if the field under the given path is exists.
+	 * @param {string} path - JSON pointer path
+	 * @return {boolean}
+	 */
+	jatos.batchSession.defined = function (path) {
+		return !jatos.batchSession.test(path, undefined);
+	};
+
+	/**
 	 * JSON Patch add operation
 	 * @param {string} path - JSON pointer path 
 	 * @param {object} value - value to be stored
@@ -610,7 +632,8 @@ var jatos = {};
 	};
 
 	/**
-	 * Clears the batch session data and sets it to an empty object
+	 * Clears the batch session data and sets it to an empty object. It 
+	 * actually does a 'remove' on every sub-object.
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
@@ -619,7 +642,16 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.batchSession.clear = function (onSuccess, onFail) {
-		return jatos.batchSession.remove("", onSuccess, onFail);
+		var patches = [];
+		Object.keys(batchSessionData).forEach(function(path) {
+			var patch = generatePatch("remove", "/" + path, null, null);
+			patches.push(patch);
+		});
+		if (patches.length !== 0) {
+			return sendBatchSessionPatch(patches, onSuccess, onFail);
+		} else {
+			return resolvedPromise();
+		}
 	};
 
 	/**
@@ -671,18 +703,6 @@ var jatos = {};
 	};
 
 	/**
-	 * JSON Patch test operation
-	 * @param {string} path - JSON pointer path to be tested
-	 * @param {object} value - value to be tested
-	 * @return {boolean}
-	 */
-	jatos.batchSession.test = function (path, value) {
-		var patches = [];
-		patches.push(generatePatch("test", path, value, null));
-		return jsonpatch.apply(batchSessionData, patches);
-	};
-
-	/**
 	 * Generates an abstract JSON Patch
 	 */
 	function generatePatch(op, path, value, from) {
@@ -704,7 +724,7 @@ var jatos = {};
 	 * Sends a JSON Patch via the batch channel to JATOS and subsequently to all
 	 * other study currently running in this batch
 	 */
-	function sendBatchSessionPatch(patch, onSuccess, onFail) {
+	function sendBatchSessionPatch(patches, onSuccess, onFail) {
 		if (!batchChannel || batchChannel.readyState != 1) {
 			callingOnError(onFail, "No open batch channel");
 			return rejectedPromise();
@@ -717,8 +737,7 @@ var jatos = {};
 		sendingBatchSessionDeferred = jatos.jQuery.Deferred();
 		var msgObj = {};
 		msgObj.action = "SESSION";
-		msgObj.patches = [];
-		msgObj.patches.push(patch);
+		msgObj.patches = (patches.constructor === Array) ? patches : [patches];
 		msgObj.version = batchSessionVersion;
 		try {
 			batchChannel.send(JSON.stringify(msgObj));
@@ -1284,6 +1303,28 @@ var jatos = {};
 	};
 
 	/**
+	 * This function defines the JSON Patch test operation but it 
+	 * does not use the 'test' operation of the JSON patch
+	 * implementation but the JSON pointer implementation.
+	 * @param {string} path - JSON pointer path to be tested
+	 * @param {object} value - value to be tested
+	 * @return {boolean}
+	 */
+	jatos.groupSession.test = function (path, value) {
+		var obj = jsonpointer.get(groupSessionData, path);
+		return obj === value;
+	};
+
+	/**
+	 * Check if the field under the given path is exists.
+	 * @param {string} path - JSON pointer path
+	 * @return {boolean}
+	 */
+	jatos.groupSession.defined = function (path) {
+		return !jatos.groupSession.test(path, undefined);
+	};
+
+	/**
 	 * JSON Patch add operation
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
@@ -1340,7 +1381,8 @@ var jatos = {};
 	};
 
 	/**
-	 * Clears the group session data and sets it to an empty object
+	 * Clears the group session data and sets it to an empty object. It
+	 * actually does a 'remove' on every object of the session. 
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
@@ -1349,7 +1391,16 @@ var jatos = {};
 	 * @return {jQuery.deferred.promise}
 	 */
 	jatos.groupSession.clear = function (onSuccess, onFail) {
-		return jatos.groupSession.remove("", onSuccess, onFail);
+		var patches = [];
+		Object.keys(groupSessionData).forEach(function(path) {
+			var patch = generatePatch("remove", "/" + path, null, null);
+			patches.push(patch);
+		});
+		if (patches.length !== 0) {
+			return sendGroupSessionPatch(patches, onSuccess, onFail);
+		} else {
+			return resolvedPromise();
+		}
 	};
 
 	/**
@@ -1395,20 +1446,10 @@ var jatos = {};
 	};
 
 	/**
-	 * JSON Patch test operation
-	 * @return {boolean}
-	 */
-	jatos.groupSession.test = function (path, value) {
-		var patches = [];
-		patches.push(generatePatch("test", path, value, null));
-		return jsonpatch.apply(groupSessionData, patches);
-	};
-
-	/**
 	 * Sends a JSON Patch via the group channel to JATOS and subsequently to all
 	 * other study currently running in this group
 	 */
-	function sendGroupSessionPatch(patch, onSuccess, onFail) {
+	function sendGroupSessionPatch(patches, onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != 1) {
 			callingOnError(onFail, "No open group channel");
 			return rejectedPromise();
@@ -1421,8 +1462,7 @@ var jatos = {};
 		sendingGroupSessionDeferred = jatos.jQuery.Deferred();
 		var msgObj = {};
 		msgObj.action = "SESSION";
-		msgObj.sessionPatches = [];
-		msgObj.sessionPatches.push(patch);
+		msgObj.sessionPatches = (patches.constructor === Array) ? patches : [patches];
 		msgObj.sessionVersion = groupSessionVersion;
 		try {
 			groupChannel.send(JSON.stringify(msgObj));

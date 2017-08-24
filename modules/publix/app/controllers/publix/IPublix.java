@@ -1,7 +1,6 @@
 package controllers.publix;
 
 import exceptions.publix.PublixException;
-import play.api.mvc.WebSocket;
 import play.mvc.Result;
 
 import java.io.IOException;
@@ -11,7 +10,7 @@ import java.io.IOException;
  * studies and components (running in the browser) can communicate (e.g. start,
  * finish components/studies, retrieve/persist data, join a group) with the
  * JATOS server (running on the server side).
- *
+ * <p>
  * Group and batch channel are handled by the ChannelInterceptor.
  *
  * @author Kristian Lange
@@ -67,44 +66,6 @@ public interface IPublix {
      */
     Result getInitData(Long studyId, Long componentId, Long studyResultId)
             throws PublixException, IOException;
-
-    /**
-     * HTTP type: WebSocket
-     * <p>
-     * Let the worker (actually it's StudyResult) join a group (actually a
-     * GroupResult) and open a WebSocket (group channel). Only works if this
-     * study is a group study. All group data are stored in a GroupResult and
-     * the group channels will be handled by a GroupDispatcher which uses Akka.
-     *
-     * @param studyId Study's ID
-     * @return WebSocket that transports JSON strings.
-     * @throws PublixException
-     */
-    WebSocket joinGroup(Long studyId, Long studyResultId)
-            throws PublixException;
-
-    /**
-     * HTTP type: Ajax GET request
-     * <p>
-     * Try to find a different group for this StudyResult. It reuses the already
-     * opened group channel and just reassigns it to a different group (or in
-     * more detail to a different GroupResult and GroupDispatcher). If it is
-     * successful it returns an 200 (OK) HTTP status code. If it can't find any
-     * other group it returns a 204 (NO CONTENT) HTTP status code.
-     *
-     * @param studyId Study's ID
-     * @throws PublixException
-     */
-    Result reassignGroup(Long studyId, Long studyResultId)
-            throws PublixException;
-
-    /**
-     * HTTP type: Ajax GET request
-     * <p>
-     * Let the worker leave the group (actually a GroupResult) he joined before
-     * and closes the group channel. Only works if this study is a group study.
-     */
-    Result leaveGroup(Long studyId, Long studyResultId) throws PublixException;
 
     /**
      * HTTP type: Ajax POST request
