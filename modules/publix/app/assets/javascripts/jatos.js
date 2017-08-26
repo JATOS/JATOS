@@ -548,7 +548,8 @@ var jatos = {};
 	/**
 	 * This function defines the JSON Patch test operation but it 
 	 * does not use the 'test' operation of the JSON patch
-	 * implementation but the JSON pointer implementation.
+	 * implementation, but uses the JSON pointer implementation
+	 * instead.
 	 * @param {string} path - JSON pointer path to be tested
 	 * @param {object} value - value to be tested
 	 * @return {boolean}
@@ -559,7 +560,7 @@ var jatos = {};
 	};
 
 	/**
-	 * Check if the field under the given path is exists.
+	 * Check if the field under the given path exists.
 	 * @param {string} path - JSON pointer path
 	 * @return {boolean}
 	 */
@@ -632,8 +633,8 @@ var jatos = {};
 	};
 
 	/**
-	 * Clears the batch session data and sets it to an empty object. It 
-	 * actually does a 'remove' on every sub-object.
+	 * Clears the batch session data. It actually does a 'remove' on
+	 * every sub-object.
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
@@ -721,8 +722,9 @@ var jatos = {};
 	}
 
 	/**
-	 * Sends a JSON Patch via the batch channel to JATOS and subsequently to all
-	 * other study currently running in this batch
+	 * Sends JSON Patch(es) via the batch channel to JATOS and subsequently to all
+	 * other study currently running in this batch. The parameter 'patches' can be a
+	 * a single patch object or an array of patch objects.
 	 */
 	function sendBatchSessionPatch(patches, onSuccess, onFail) {
 		if (!batchChannel || batchChannel.readyState != 1) {
@@ -1305,7 +1307,8 @@ var jatos = {};
 	/**
 	 * This function defines the JSON Patch test operation but it 
 	 * does not use the 'test' operation of the JSON patch
-	 * implementation but the JSON pointer implementation.
+	 * implementation but uses the JSON pointer implementation
+	 * instead.
 	 * @param {string} path - JSON pointer path to be tested
 	 * @param {object} value - value to be tested
 	 * @return {boolean}
@@ -1381,8 +1384,8 @@ var jatos = {};
 	};
 
 	/**
-	 * Clears the group session data and sets it to an empty object. It
-	 * actually does a 'remove' on every object of the session. 
+	 * Clears the group session data. It actually does a 'remove' on
+	 * every object of the session.
 	 * @param {optional callback} onSuccess - Function to be called if
 	 *             this patch was successfully applied on the server and
 	 *             the client side
@@ -1447,7 +1450,8 @@ var jatos = {};
 
 	/**
 	 * Sends a JSON Patch via the group channel to JATOS and subsequently to all
-	 * other study currently running in this group
+	 * other study currently running in this group. The parameter 'patches' can be a
+	 * a single patch object or an array of patch objects.
 	 */
 	function sendGroupSessionPatch(patches, onSuccess, onFail) {
 		if (!groupChannel || groupChannel.readyState != 1) {
