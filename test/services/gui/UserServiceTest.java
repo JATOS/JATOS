@@ -125,9 +125,7 @@ public class UserServiceTest {
 		userModelBla.setPasswordRepeat("blaPw");
 		userModelBla.setAdminRole(true);
 
-		jpaApi.withTransaction(() -> {
-			userService.bindToUserAndPersist(userModelBla);
-		});
+		jpaApi.withTransaction(() -> userService.bindToUserAndPersist(userModelBla));
 
 		// Check that the user is stored in the DB properly
 		jpaApi.withTransaction(() -> {
@@ -150,9 +148,7 @@ public class UserServiceTest {
 		userModelFoo.setPassword("fooPw");
 		userModelFoo.setPasswordRepeat("differentPassword");
 		userModelFoo.setAdminRole(false);
-		jpaApi.withTransaction(() -> {
-			userService.bindToUserAndPersist(userModelFoo);
-		});
+		jpaApi.withTransaction(() -> userService.bindToUserAndPersist(userModelFoo));
 		jpaApi.withTransaction(() -> {
 			User u = userDao.findByEmail(userModelFoo.getEmail());
 			// Since we didn't requested an admin user it only has the USER role
@@ -173,9 +169,7 @@ public class UserServiceTest {
 		userBla.setEmail(TestHelper.BLA_EMAIL);
 		userBla.setName("Bla Bla");
 
-		jpaApi.withTransaction(() -> {
-			userService.createAndPersistUser(userBla, "blaPassword", true);
-		});
+		jpaApi.withTransaction(() -> userService.createAndPersistUser(userBla, "blaPassword", true));
 
 		// Check that the user is stored in the DB properly
 		jpaApi.withTransaction(() -> {
@@ -192,9 +186,7 @@ public class UserServiceTest {
 		User userFoo = new User();
 		userFoo.setEmail("foo@foo.org");
 		userFoo.setName("Foo Foo");
-		jpaApi.withTransaction(() -> {
-			userService.createAndPersistUser(userFoo, "fooPassword", false);
-		});
+		jpaApi.withTransaction(() -> userService.createAndPersistUser(userFoo, "fooPassword", false));
 		jpaApi.withTransaction(() -> {
 			User u = userDao.findByEmail(userFoo.getEmail());
 			// It only has the USER role
@@ -392,13 +384,9 @@ public class UserServiceTest {
 			// User is removed from database
 			assertThat(userDao.findByEmail(userBla.getEmail())).isNull();
 			// User's studies are removed
-			userBla.getStudyList().forEach(s -> {
-				assertThat(studyDao.findById(s.getId())).isNull();
-			});
+			userBla.getStudyList().forEach(s -> assertThat(studyDao.findById(s.getId())).isNull());
 			// Study's batches are removed
-			study.getBatchList().forEach(s -> {
-				assertThat(batchDao.findById(study.getId())).isNull();
-			});
+			study.getBatchList().forEach(s -> assertThat(batchDao.findById(study.getId())).isNull());
 		});
 	}
 

@@ -77,9 +77,7 @@ public class GeneralSingleStudyAuthorisationTest {
 		batch.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 
 		GeneralSingleWorker worker = new GeneralSingleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		jpaApi.withTransaction(() -> {
 			StudyResult studyResult = resultCreator.createStudyResult(study,
@@ -120,9 +118,7 @@ public class GeneralSingleStudyAuthorisationTest {
 				.addAllowedWorkerType(GeneralSingleWorker.WORKER_TYPE);
 		
 		GeneralSingleWorker worker = new GeneralSingleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		jpaApi.withTransaction(() -> {
 			StudyResult studyResult = resultCreator.createStudyResult(study,

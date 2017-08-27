@@ -266,9 +266,7 @@ public class StudiesControllerTest {
 		assertEquals(OK, result.status());
 
 		// Check that edited properties are stored
-		Study editedStudy = jpaApi.withTransaction(() -> {
-			return studyDao.findById(study.getId());
-		});
+		Study editedStudy = jpaApi.withTransaction(() -> studyDao.findById(study.getId()));
 		assertEquals("Title Test", editedStudy.getTitle());
 		assertEquals("Description test.", editedStudy.getDescription());
 		assertEquals("Comments test.", editedStudy.getComments());

@@ -23,8 +23,8 @@ public abstract class UploadUnmarshaller<T> {
 	}
 	
 	public T unmarshalling(File file) throws IOException {
-		T object = null;
-		String jsonStr = null;
+		T object;
+		String jsonStr;
 		try {
 			jsonStr = ioUtils.readFile(file);
 		} catch (IOException e) {

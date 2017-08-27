@@ -7,8 +7,6 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 
 class GuiceModule extends AbstractModule with AkkaGuiceSupport {
 
-  private val logger: Logger = Logger(this.getClass)
-
   def configure() = {
     // JATOS startup initialisation (eager -> called during JATOS start)
     bind(classOf[Common]).asEagerSingleton()

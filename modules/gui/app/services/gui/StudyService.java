@@ -197,7 +197,7 @@ public class StudyService {
         // Create components
         study.getComponentList()
                 .forEach(c -> componentService.createComponent(study, c));
-        study.getComponentList().forEach(c -> componentDao.create(c));
+        study.getComponentList().forEach(componentDao::create);
 
         if (study.getBatchList().isEmpty()) {
             // Create default batch if we have no batch
@@ -207,7 +207,7 @@ public class StudyService {
         } else {
             study.getBatchList()
                     .forEach(b -> batchService.createBatch(b, study));
-            study.getBatchList().forEach(b -> batchDao.create(b));
+            study.getBatchList().forEach(batchDao::create);
         }
 
         // Add user

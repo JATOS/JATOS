@@ -203,10 +203,8 @@ public class AuthenticationServiceTest {
         Map<String, String> data = new HashMap<>();
         Http.Session session = new Http.Session(data);
 
-        jpaApi.withTransaction(() -> {
-            authenticationService.writeSessionCookieAndSessionCache(session,
-                    userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM);
-        });
+        jpaApi.withTransaction(() -> authenticationService.writeSessionCookieAndSessionCache(session,
+                userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM));
 
         // Check session cookie
         assertThat(session.get(AuthenticationService.SESSION_ID)).isNotEmpty();
@@ -283,10 +281,8 @@ public class AuthenticationServiceTest {
         data.put(AuthenticationService.SESSION_LOGIN_TIME, "blafasel");
         data.put(AuthenticationService.SESSION_USER_EMAIL, "blafasel");
         Http.Session session = new Http.Session(data);
-        jpaApi.withTransaction(() -> {
-            authenticationService.clearSessionCookieAndSessionCache(session,
-                    userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM);
-        });
+        jpaApi.withTransaction(() -> authenticationService.clearSessionCookieAndSessionCache(session,
+                userBla.getEmail(), TestHelper.WWW_EXAMPLE_COM));
 
         // Check that session is cleared
         assertThat(

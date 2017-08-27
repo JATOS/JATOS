@@ -5,7 +5,6 @@ import com.google.inject.Injector;
 import general.TestHelper;
 import models.common.Study;
 import models.common.workers.GeneralSingleWorker;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import play.ApplicationLoader;

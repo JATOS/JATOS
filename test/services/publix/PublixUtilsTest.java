@@ -142,7 +142,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
     public void checkRetrieveWorkerNotExist() {
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.retrieveWorker(2222l);
+                publixUtils.retrieveWorker(2222L);
                 Fail.fail();
             } catch (ForbiddenPublixException e) {
                 assertThat(e.getMessage())
@@ -461,7 +461,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         // Check that oldest Id cookie is gone (the one with ID 1l)
         try {
-            idCookieService.getIdCookie(1l);
+            idCookieService.getIdCookie(1L);
             Fail.fail();
         } catch (BadRequestPublixException e) {
             // just throwing the exception is enough
@@ -495,7 +495,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         // Check that oldest Id cookie is gone (the one with ID 1l)
         try {
-            idCookieService.getIdCookie(1l);
+            idCookieService.getIdCookie(1L);
             Fail.fail();
         } catch (BadRequestPublixException e) {
             // just throwing the exception is enough
@@ -657,7 +657,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             try {
-                publixUtils.retrieveStudyResult(admin.getWorker(), study, 1l);
+                publixUtils.retrieveStudyResult(admin.getWorker(), study, 1L);
                 Fail.fail();
             } catch (BadRequestPublixException e) {
                 assertThat(e.getMessage()).isEqualTo(
@@ -1045,11 +1045,11 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.retrieveComponent(study, 999l);
+                publixUtils.retrieveComponent(study, 999L);
                 Fail.fail();
             } catch (NotFoundPublixException e) {
                 assertThat(e.getMessage()).isEqualTo(PublixErrorMessages
-                        .componentNotExist(study.getId(), 999l));
+                        .componentNotExist(study.getId(), 999L));
             } catch (BadRequestPublixException | ForbiddenPublixException e) {
                 throw new RuntimeException(e);
             }
@@ -1197,11 +1197,11 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.retrieveStudy(999l);
+                publixUtils.retrieveStudy(999L);
                 Fail.fail();
             } catch (NotFoundPublixException e) {
                 assertThat(e.getMessage())
-                        .isEqualTo(PublixErrorMessages.studyNotExist(999l));
+                        .isEqualTo(PublixErrorMessages.studyNotExist(999L));
             }
         });
     }
@@ -1314,8 +1314,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
 
         jpaApi.withTransaction(() -> {
-            Batch retrievedBatch = publixUtils.retrieveBatchByIdOrDefault(-1l,
-                    study);
+            Batch retrievedBatch = publixUtils.retrieveBatchByIdOrDefault(-1L, study);
             assertThat(retrievedBatch).isEqualTo(study.getDefaultBatch());
         });
     }
@@ -1378,7 +1377,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
         jpaApi.withTransaction(() -> {
             try {
-                publixUtils.retrieveBatch(999l);
+                publixUtils.retrieveBatch(999L);
                 Fail.fail();
             } catch (ForbiddenPublixException e) {
                 // Just an exception is fine
@@ -1506,7 +1505,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
     private List<Cookie> generateIdCookieList(int size) {
         List<Cookie> cookieList = new ArrayList<>();
-        for (long i = 1l; i <= size; i++) {
+        for (long i = 1L; i <= size; i++) {
             IdCookieModel idCookie = idCookieTestHelper.buildDummyIdCookie(i);
             cookieList.add(idCookieTestHelper.buildCookie(idCookie));
         }

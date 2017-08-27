@@ -89,7 +89,7 @@ public class IdCookieCollection {
                     PublixErrorMessages.IDCOOKIE_COLLECTION_INDEX_OUT_OF_BOUND);
         }
         List<Integer> existingIndices = idCookieMap.values().stream()
-                .map(c -> c.getIndex()).collect(Collectors.toList());
+                .map(IdCookieModel::getIndex).collect(Collectors.toList());
         for (int i = 0; i < MAX_ID_COOKIES; i++) {
             if (!existingIndices.contains(i)) {
                 return i;
@@ -109,7 +109,7 @@ public class IdCookieCollection {
 
     @Override
     public String toString() {
-        return idCookieMap.keySet().stream().map(key -> key.toString())
+        return idCookieMap.keySet().stream().map(Object::toString)
                 .collect(Collectors.joining(", "));
     }
 

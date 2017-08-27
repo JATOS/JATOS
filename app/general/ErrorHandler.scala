@@ -18,7 +18,7 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
 
   private val logger: Logger = Logger(this.getClass)
 
-  def onClientError(request: RequestHeader, statusCode: Int, message: String) = {
+  def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
     // Log error messages and show some message - but don't
     // show any longer message (e.g. with stack trace) to a worker
     Future.successful(
@@ -43,7 +43,7 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
     )
   }
 
-  def onServerError(request: RequestHeader, throwable: Throwable) = {
+  def onServerError(request: RequestHeader, throwable: Throwable): Future[Result] = {
     // We use Play's onServerError() to catch JATOS' JatosGuiExceptions and
     // PublixException. Those exceptions come with a their own result. We
     // log the exception and show this result.

@@ -181,15 +181,13 @@ public class TestHelper {
 	}
 
 	public void removeAllStudies() {
-		jpaApi.withTransaction(() -> {
-			studyDao.findAll().forEach(study -> {
-				try {
-					studyService.removeStudyInclAssets(study);
-				} catch (IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			});
-		});
+		jpaApi.withTransaction(() -> studyDao.findAll().forEach(study -> {
+            try {
+                studyService.removeStudyInclAssets(study);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }));
 	}
 
 	/**

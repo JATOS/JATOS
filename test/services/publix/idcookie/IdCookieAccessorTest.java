@@ -4,7 +4,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import general.TestHelper;
 import general.common.RequestScope;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import play.ApplicationLoader;

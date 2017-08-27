@@ -77,9 +77,7 @@ public class PersonalMultipleStudyAuthorisationTest {
 		batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 	}
@@ -93,9 +91,7 @@ public class PersonalMultipleStudyAuthorisationTest {
 		batch.removeAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
@@ -117,9 +113,7 @@ public class PersonalMultipleStudyAuthorisationTest {
 		batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
 
 		PersonalMultipleWorker worker = new PersonalMultipleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		// State of study has no influence. Personal multiple workers can do
 		// studies multiple times (we create a StudyResult just in case)

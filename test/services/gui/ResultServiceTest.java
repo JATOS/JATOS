@@ -402,9 +402,7 @@ public class ResultServiceTest {
 				List<Long> idList = resultService.extractResultIds(ids);
 				List<StudyResult> studyResultList = resultService
 						.getStudyResults(idList);
-				studyResultList.forEach(studyResult -> {
-					studyResult.getStudy().removeUser(admin);
-				});
+				studyResultList.forEach(studyResult -> studyResult.getStudy().removeUser(admin));
 			} catch (BadRequestException | NotFoundException e) {
 				throw new RuntimeException(e);
 			}

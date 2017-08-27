@@ -28,8 +28,7 @@ public class UserSession {
      * this ID can't be used from a different remote address (session
      * hijacking).
      */
-    private final Map<String, String> sessionIdMap =
-            new ConcurrentHashMap<String, String>();
+    private final Map<String, String> sessionIdMap = new ConcurrentHashMap<>();
 
     /**
      * Container for the last 4 login times (no matter of failed or successful).

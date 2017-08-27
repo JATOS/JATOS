@@ -1,13 +1,6 @@
 package controllers.gui;
 
-import java.io.IOException;
-import java.util.List;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import com.fasterxml.jackson.databind.JsonNode;
-
 import controllers.gui.actionannotations.AuthenticationAction.Authenticated;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ComponentDao;
@@ -28,13 +21,13 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.AuthenticationService;
-import services.gui.BreadcrumbsService;
-import services.gui.Checker;
-import services.gui.JatosGuiExceptionThrower;
-import services.gui.ResultRemover;
+import services.gui.*;
 import utils.common.HttpUtils;
 import utils.common.JsonUtils;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.util.List;
 
 /**
  * Controller that deals with requests regarding ComponentResult.

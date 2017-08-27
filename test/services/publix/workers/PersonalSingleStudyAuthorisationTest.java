@@ -78,9 +78,7 @@ public class PersonalSingleStudyAuthorisationTest {
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 	}
@@ -94,9 +92,7 @@ public class PersonalSingleStudyAuthorisationTest {
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		// Doesn't start if there is an StudyResult already
 		createStudyResult(study, batch, worker, StudyState.FINISHED);
@@ -119,9 +115,7 @@ public class PersonalSingleStudyAuthorisationTest {
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 	}
@@ -135,9 +129,7 @@ public class PersonalSingleStudyAuthorisationTest {
 		batch.removeAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		try {
 			studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study,
@@ -159,9 +151,7 @@ public class PersonalSingleStudyAuthorisationTest {
 		batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
 
 		PersonalSingleWorker worker = new PersonalSingleWorker();
-		jpaApi.withTransaction(() -> {
-			workerDao.create(worker);
-		});
+		jpaApi.withTransaction(() -> workerDao.create(worker));
 
 		// PersonalSingleWorker cannot repeat the same study (StudyState in
 		// FINISHED, FAIL, ABORTED

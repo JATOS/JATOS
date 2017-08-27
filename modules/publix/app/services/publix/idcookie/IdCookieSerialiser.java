@@ -43,7 +43,7 @@ public class IdCookieSerialiser {
 		return sb.toString();
 	}
 
-	private StringBuilder appendCookieEntry(StringBuilder sb, String key,
+	private void appendCookieEntry(StringBuilder sb, String key,
 			Object value, boolean cookieAnd) {
 		sb.append(key);
 		sb.append(COOKIE_EQUALS);
@@ -51,6 +51,5 @@ public class IdCookieSerialiser {
 		if (cookieAnd) {
 			sb.append(COOKIE_AND);
 		}
-		return sb;
 	}
 }

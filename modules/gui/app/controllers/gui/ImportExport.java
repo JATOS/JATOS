@@ -110,7 +110,7 @@ public class ImportExport extends Controller {
 			jatosGuiExceptionThrower.throwAjax(MessagesStrings.FILE_MISSING,
 					Http.Status.BAD_REQUEST);
 		}
-		if (!filePart.getKey().equals(Study.STUDY)) {
+		if (!Study.STUDY.equals(filePart.getKey())) {
 			// If wrong key the upload comes from wrong form
 			jatosGuiExceptionThrower.throwAjax(MessagesStrings.NO_STUDY_UPLOAD,
 					Http.Status.BAD_REQUEST);
@@ -143,10 +143,7 @@ public class ImportExport extends Controller {
 		JsonNode json = request().body().asJson();
 		try {
 			importExportService.importStudyConfirmed(loggedInUser, json);
-		} catch (ForbiddenException | IOException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwHome(e);
 		} catch (Exception e) {
-			// Unexpected exception, but we have to clean up
 			jatosGuiExceptionThrower.throwHome(e);
 		} finally {
 			importExportService.cleanupAfterStudyImport();
@@ -274,10 +271,7 @@ public class ImportExport extends Controller {
 					ImportExportService.SESSION_TEMP_COMPONENT_FILE);
 			importExportService.importComponentConfirmed(study,
 					tempComponentFileName);
-		} catch (ForbiddenException | IOException | BadRequestException e) {
-			jatosGuiExceptionThrower.throwStudy(e, study.getId());
 		} catch (Exception e) {
-			// Unexpected exception, but we have to clean up
 			jatosGuiExceptionThrower.throwStudy(e, study.getId());
 		} finally {
 			importExportService.cleanupAfterComponentImport();

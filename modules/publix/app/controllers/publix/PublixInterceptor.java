@@ -59,7 +59,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result startStudy(Long studyId, Long batchId)
             throws PublixException {
-        Result result = null;
+        Result result;
         String workerType = getWorkerTypeFromQuery();
         switch (workerType) {
             case MTWorker.WORKER_TYPE:
@@ -95,7 +95,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result startComponent(Long studyId, Long componentId,
             Long studyResultId) throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -132,7 +132,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result startComponentByPosition(Long studyId, Integer position,
             Long studyResultId) throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -172,7 +172,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result startNextComponent(Long studyId, Long studyResultId)
             throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -207,7 +207,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result getInitData(Long studyId, Long componentId,
             Long studyResultId) throws PublixException, IOException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -243,7 +243,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result setStudySessionData(Long studyId, Long studyResultId)
             throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -278,7 +278,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result heartbeat(Long studyId, Long studyResultId)
             throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -313,7 +313,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result submitResultData(Long studyId, Long componentId,
             Long studyResultId) throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -349,7 +349,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result appendResultData(Long studyId, Long componentId,
             Long studyResultId) throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -386,7 +386,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     public Result finishComponent(Long studyId, Long componentId,
             Long studyResultId, Boolean successful, String errorMsg)
             throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -427,7 +427,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result abortStudy(Long studyId, Long studyResultId, String message)
             throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker
@@ -462,7 +462,7 @@ public class PublixInterceptor extends Controller implements IPublix {
     @Transactional
     public Result finishStudy(Long studyId, Long studyResultId,
             Boolean successful, String errorMsg) throws PublixException {
-        Result result = null;
+        Result result;
         switch (getWorkerTypeFromIdCookie(studyResultId)) {
             case MTWorker.WORKER_TYPE:
                 // Handle MTWorker like MTSandboxWorker

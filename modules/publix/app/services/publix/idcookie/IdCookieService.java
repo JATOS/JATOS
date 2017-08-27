@@ -122,7 +122,7 @@ public class IdCookieService {
 			JatosRun jatosRun) throws InternalServerErrorPublixException {
 		IdCookieCollection idCookieCollection = getIdCookieCollection();
 		try {
-			String newIdCookieName = null;
+			String newIdCookieName;
 
 			// Check if there is an existing IdCookie for this StudyResult
 			IdCookieModel existingIdCookie = idCookieCollection

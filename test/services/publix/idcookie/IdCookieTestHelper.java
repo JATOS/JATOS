@@ -69,9 +69,8 @@ public class IdCookieTestHelper {
 
     public Cookie buildCookie(IdCookieModel idCookie) {
         String cookieValue = idCookieSerialiser.asCookieValueString(idCookie);
-        Cookie cookie = new Cookie(idCookie.getName(), cookieValue,
-                Integer.MAX_VALUE, "/", "", false, false);
-        return cookie;
+        return new Cookie(idCookie.getName(), cookieValue, Integer.MAX_VALUE, "/", "", false,
+                false);
     }
 
 }

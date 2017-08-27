@@ -63,9 +63,6 @@ public class ResultRemover {
 	 *            For each ComponentResult it will be checked that the given
 	 *            user is a user of the study that the ComponentResult belongs
 	 *            too.
-	 * @throws BadRequestException
-	 * @throws NotFoundException
-	 * @throws ForbiddenException
 	 */
 	public void removeComponentResults(String componentResultIds, User user)
 			throws BadRequestException, NotFoundException, ForbiddenException {
@@ -87,9 +84,6 @@ public class ResultRemover {
 	 * @param user
 	 *            For each StudyResult it will be checked that the given user is
 	 *            a user of the study that the StudyResult belongs too.
-	 * @throws BadRequestException
-	 * @throws NotFoundException
-	 * @throws ForbiddenException
 	 */
 	public void removeStudyResults(String studyResultIds, User user)
 			throws BadRequestException, NotFoundException, ForbiddenException {

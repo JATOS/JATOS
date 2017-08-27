@@ -11,7 +11,6 @@ import models.gui.Breadcrumbs;
 import play.libs.Json;
 import utils.common.JsonUtils;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**

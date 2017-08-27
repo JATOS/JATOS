@@ -94,8 +94,6 @@ public class ImportExportServiceTest {
     /**
      * Import a component that already exists in a study. It should be
      * overwritten.
-     *
-     * @throws Exception
      */
     @Test
     public void importExistingComponent() throws Exception {
@@ -104,7 +102,7 @@ public class ImportExportServiceTest {
 
         // First component of the study is the one in the component file
         File componentFile = getExampleComponentFile();
-        FilePart<File> filePart = new FilePart<File>(Component.COMPONENT,
+        FilePart<File> filePart = new FilePart<>(Component.COMPONENT,
                 componentFile.getName(), "multipart/form-data", componentFile);
 
         // Call importComponent()
@@ -115,9 +113,7 @@ public class ImportExportServiceTest {
                 throw new UncheckedIOException(e);
             }
         });
-        assertThat(
-                jsonNode.get(ImportExportService.COMPONENT_EXISTS).asBoolean())
-                .isTrue();
+        assertThat(jsonNode.get(ImportExportService.COMPONENT_EXISTS).asBoolean()).isTrue();
         assertThat(jsonNode.get(ImportExportService.COMPONENT_TITLE).asText())
                 .isEqualTo("Quit button");
 
@@ -140,8 +136,7 @@ public class ImportExportServiceTest {
         // already part of the study (at first position), it will be overwritten
         jpaApi.withTransaction(() -> {
             try {
-                importExportService.importComponentConfirmed(study,
-                        componentFile.getName());
+                importExportService.importComponentConfirmed(study, componentFile.getName());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -156,15 +151,12 @@ public class ImportExportServiceTest {
 
         // Check that IDs are unchanged
         assertThat(updatedComponent.getId()).isEqualTo(firstComponent.getId());
-        assertThat(updatedComponent.getUuid())
-                .isEqualTo(firstComponent.getUuid());
+        assertThat(updatedComponent.getUuid()).isEqualTo(firstComponent.getUuid());
 
         // Check changed component properties
         assertThat(updatedComponent.getTitle()).isEqualTo("Changed Title");
-        assertThat(updatedComponent.getComments())
-                .isEqualTo("Changed comments");
-        assertThat(updatedComponent.getHtmlFilePath())
-                .isEqualTo("changedHtmlFilePath");
+        assertThat(updatedComponent.getComments()).isEqualTo("Changed comments");
+        assertThat(updatedComponent.getHtmlFilePath()).isEqualTo("changedHtmlFilePath");
         assertThat(updatedComponent.getJsonData()).isEqualTo("{}");
         assertThat(updatedComponent.getStudy()).isEqualTo(study);
         assertThat(updatedComponent.isActive()).isFalse();
@@ -180,7 +172,7 @@ public class ImportExportServiceTest {
     public void importNewComponent() throws Exception {
         Study study = testHelper.createAndPersistExampleStudyForAdmin(injector);
         File componentFile = getExampleComponentFile();
-        FilePart<File> filePart = new FilePart<File>(Component.COMPONENT,
+        FilePart<File> filePart = new FilePart<>(Component.COMPONENT,
                 componentFile.getName(), "multipart/form-data", componentFile);
 
         // Remove the last component (so we can import it again later on)
@@ -191,14 +183,12 @@ public class ImportExportServiceTest {
         });
 
         // Check that the last component is removed
-        assertThat(studyWithoutLast.getLastComponent().getTitle())
-                .isNotEqualTo("Quit button");
+        assertThat(studyWithoutLast.getLastComponent().getTitle()).isNotEqualTo("Quit button");
 
         // Import 1. part: Call importComponent()
         ObjectNode jsonNode = jpaApi.withTransaction(() -> {
             try {
-                return importExportService.importComponent(studyWithoutLast,
-                        filePart);
+                return importExportService.importComponent(studyWithoutLast, filePart);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -206,8 +196,7 @@ public class ImportExportServiceTest {
 
         // Check returned JSON object
         assertThat(
-                jsonNode.get(ImportExportService.COMPONENT_EXISTS).asBoolean())
-                .isFalse();
+                jsonNode.get(ImportExportService.COMPONENT_EXISTS).asBoolean()).isFalse();
         assertThat(jsonNode.get(ImportExportService.COMPONENT_TITLE).asText())
                 .isEqualTo("Quit button");
 
@@ -216,8 +205,7 @@ public class ImportExportServiceTest {
         Study studyWithImportedComponent = jpaApi.withTransaction(() -> {
             try {
                 Study s = studyDao.findById(study.getId());
-                importExportService.importComponentConfirmed(s,
-                        componentFile.getName());
+                importExportService.importComponentConfirmed(s, componentFile.getName());
                 return s;
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -225,18 +213,14 @@ public class ImportExportServiceTest {
         });
 
         // Check all properties of the imported component
-        Component importedComponent = studyWithImportedComponent
-                .getLastComponent();
-        assertThat(study.getLastComponent().getTitle())
-                .isEqualTo("Quit button");
+        Component importedComponent = studyWithImportedComponent.getLastComponent();
+        assertThat(study.getLastComponent().getTitle()).isEqualTo("Quit button");
         assertThat(importedComponent.getId()).isNotNull();
-        assertThat(importedComponent.getUuid())
-                .isEqualTo("503941c3-a0d5-43dc-ae56-083ab08df4b2");
+        assertThat(importedComponent.getUuid()).isEqualTo("503941c3-a0d5-43dc-ae56-083ab08df4b2");
         assertThat(importedComponent.getComments()).isEqualTo("");
-        assertThat(importedComponent.getHtmlFilePath())
-                .isEqualTo("quit_button.html");
-        assertThat(importedComponent.getJsonData()).contains(
-                "This component is about what you can do in the client side");
+        assertThat(importedComponent.getHtmlFilePath()).isEqualTo("quit_button.html");
+        assertThat(importedComponent.getJsonData())
+                .contains("This component is about what you can do in the client side");
         assertThat(importedComponent.getStudy()).isEqualTo(study);
         assertThat(importedComponent.isActive()).isTrue();
         assertThat(importedComponent.isReloadable()).isFalse();
@@ -251,17 +235,15 @@ public class ImportExportServiceTest {
     public void importNewStudy() throws Exception {
         // Import 1. part: Call importStudy()
         File studyFile = getExampleStudyFile();
-        FilePart<File> filePart = new FilePart<File>(Study.STUDY,
-                studyFile.getName(), "multipart/form-data", studyFile);
+        FilePart<File> filePart =
+                new FilePart<>(Study.STUDY, studyFile.getName(), "multipart/form-data", studyFile);
         ObjectNode jsonNode = importStudy(filePart.getFile());
 
         // Check returned JSON object
-        assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
-                .isFalse();
+        assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean()).isFalse();
         assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
                 .isEqualTo("Basic Example Study");
-        assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean())
-                .isFalse();
+        assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean()).isFalse();
         assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText() + "."
                 + IOUtils.ZIP_FILE_SUFFIX).isEqualTo("basic_example_study.zip");
 
@@ -293,7 +275,7 @@ public class ImportExportServiceTest {
 
         // Import 1. call: importStudy()
         File studyFile = getExampleStudyFile();
-        FilePart<File> filePart = new FilePart<File>(Study.STUDY,
+        FilePart<File> filePart = new FilePart<>(Study.STUDY,
                 studyFile.getName(), "multipart/form-data", studyFile);
         ObjectNode jsonNode = importStudy(filePart.getFile());
 
@@ -336,7 +318,7 @@ public class ImportExportServiceTest {
 
         // Import 1. call: importStudy()
         File studyFile = getExampleStudyFile();
-        FilePart<File> filePart = new FilePart<File>(Study.STUDY,
+        FilePart<File> filePart = new FilePart<>(Study.STUDY,
                 studyFile.getName(), "multipart/form-data", studyFile);
         ObjectNode jsonNode = importStudy(filePart.getFile());
 
@@ -377,17 +359,15 @@ public class ImportExportServiceTest {
 
         // Import 1. call
         File studyFile = getExampleStudyFile();
-        FilePart<File> filePart = new FilePart<File>(Study.STUDY,
+        FilePart<File> filePart = new FilePart<>(Study.STUDY,
                 studyFile.getName(), "multipart/form-data", studyFile);
         ObjectNode jsonNode = importStudy(filePart.getFile());
 
         // Check returned JSON object
-        assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean())
-                .isTrue();
+        assertThat(jsonNode.get(ImportExportService.STUDY_EXISTS).asBoolean()).isTrue();
         assertThat(jsonNode.get(ImportExportService.STUDY_TITLE).asText())
                 .isEqualTo("Basic Example Study");
-        assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean())
-                .isFalse();
+        assertThat(jsonNode.get(ImportExportService.DIR_EXISTS).asBoolean()).isFalse();
         assertThat(jsonNode.get(ImportExportService.DIR_PATH).asText() + "."
                 + IOUtils.ZIP_FILE_SUFFIX).isEqualTo("basic_example_study.zip");
 

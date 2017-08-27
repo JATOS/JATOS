@@ -113,7 +113,7 @@ public class StudyAssets extends Controller {
 	 */
 	public Result retrieveComponentHtmlFile(String studyDirName,
 			String componentHtmlFilePath) throws NotFoundPublixException {
-		File file = null;
+		File file;
 		try {
 			file = ioUtils.getFileInStudyAssetsDir(studyDirName,
 					componentHtmlFilePath);

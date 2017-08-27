@@ -390,7 +390,7 @@ public class JsonUtils {
             }
             sidebarStudyList.add(sidebarStudy);
         }
-        Collections.sort(sidebarStudyList, new SidebarStudyComparator());
+        sidebarStudyList.sort(new SidebarStudyComparator());
         return asJsonNode(sidebarStudyList);
     }
 

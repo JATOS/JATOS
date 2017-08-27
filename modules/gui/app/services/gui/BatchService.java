@@ -184,8 +184,8 @@ public class BatchService {
 
     public boolean updateBatchSession(long batchId, BatchSession batchSession) {
         Batch currentBatch = batchDao.findById(batchId);
-        if (currentBatch == null || batchSession.getVersion() != currentBatch
-                .getBatchSessionVersion()) {
+        if (currentBatch == null || !batchSession.getVersion().equals(currentBatch
+                .getBatchSessionVersion())) {
             return false;
         }
 

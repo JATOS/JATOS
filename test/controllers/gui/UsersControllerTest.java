@@ -175,7 +175,7 @@ public class UsersControllerTest {
 	 */
 	@Test
 	public void callSubmitCreated() throws Exception {
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(NewUserModel.ADMIN_PASSWORD, UserService.ADMIN_PASSWORD);
 		formMap.put(NewUserModel.ADMIN_ROLE, "true");
 		formMap.put(NewUserModel.EMAIL, "foo@foo.org");
@@ -202,7 +202,7 @@ public class UsersControllerTest {
 		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(ChangeUserProfileModel.NAME, "Different Name");
 
 		Http.Session session = testHelper.mockSessionCookieandCache(userBla);
@@ -229,7 +229,7 @@ public class UsersControllerTest {
 		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "");
 		formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
 		formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT,
@@ -259,7 +259,7 @@ public class UsersControllerTest {
 	public void callSubmitChangedPasswordByAdmin() throws Exception {
 		testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(ChangePasswordModel.ADMIN_PASSWORD,
 				UserService.ADMIN_PASSWORD);
 		formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
@@ -294,7 +294,7 @@ public class UsersControllerTest {
 		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "wrong password");
 		formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
 		formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT,
@@ -327,7 +327,7 @@ public class UsersControllerTest {
 		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put(ChangePasswordModel.ADMIN_PASSWORD, "");
 		formMap.put(ChangePasswordModel.NEW_PASSWORD, "Different Password");
 		formMap.put(ChangePasswordModel.NEW_PASSWORD_REPEAT,
@@ -357,7 +357,7 @@ public class UsersControllerTest {
 	public void callRemoveByAdmin() throws Exception {
 		testHelper.createAndPersistUser(TestHelper.BLA_EMAIL, "Bla Bla", "bla");
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put("password", UserService.ADMIN_PASSWORD);
 
 		Http.Session session = testHelper
@@ -370,9 +370,7 @@ public class UsersControllerTest {
 
 		assertThat(result.status()).isEqualTo(OK);
 
-		jpaApi.withTransaction(() -> {
-			assertThat(userDao.findByEmail(TestHelper.BLA_EMAIL)).isNull();
-		});
+		jpaApi.withTransaction(() -> assertThat(userDao.findByEmail(TestHelper.BLA_EMAIL)).isNull());
 	}
 
 	/**
@@ -386,7 +384,7 @@ public class UsersControllerTest {
 		User userBla = testHelper.createAndPersistUser(TestHelper.BLA_EMAIL,
 				"Bla Bla", "bla");
 
-		Map<String, String> formMap = new HashMap<String, String>();
+		Map<String, String> formMap = new HashMap<>();
 		formMap.put("password", "bla");
 
 		Http.Session session = testHelper.mockSessionCookieandCache(userBla);
@@ -398,9 +396,7 @@ public class UsersControllerTest {
 
 		assertThat(result.status()).isEqualTo(OK);
 
-		jpaApi.withTransaction(() -> {
-			assertThat(userDao.findByEmail(TestHelper.BLA_EMAIL)).isNull();
-		});
+		jpaApi.withTransaction(() -> assertThat(userDao.findByEmail(TestHelper.BLA_EMAIL)).isNull());
 	}
 
 	/**

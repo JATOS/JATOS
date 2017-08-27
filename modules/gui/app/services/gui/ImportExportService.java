@@ -402,7 +402,7 @@ public class ImportExportService {
     }
 
     private File unzipUploadedFile(File file) throws IOException {
-        File tempDir = null;
+        File tempDir;
         try {
             tempDir = ZipUtil.unzip(file);
         } catch (IOException e) {
