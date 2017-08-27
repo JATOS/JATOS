@@ -32,8 +32,8 @@
 
     <logger name="play" level="INFO"/>
     <logger name="services" level="INFO"/>
-    <logger name="batch" level="DEBUG"/>
-    <logger name="group" level="DEBUG"/>
+    <logger name="batch" level="INFO"/>
+    <logger name="group" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="ASYNCFILE"/>
