@@ -1,5 +1,6 @@
 name := "jatos-publix"
-
+version := "3.1.8"
+organization := "org.jatos"
 scalaVersion := "2.11.11"
 
 libraryDependencies ++= Seq(
