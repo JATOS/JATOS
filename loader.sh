@@ -42,7 +42,7 @@ function start() {
 function stop() {
 	if [ ! -f "$pidfile" ] || ! kill -0 $(cat "$pidfile") 2>&1 >/dev/null
 	then
-		echo "JATOS not running"
+		echo "This JATOS was not running"
 		exit 1
 	fi
 	echo -n "Stopping JATOS"

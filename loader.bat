@@ -94,7 +94,7 @@ rem ### Functions ###
 
 :stop
   if not exist "%JATOS_HOME%\RUNNING_PID" (
-    echo JATOS isn't running
+    echo This JATOS was not running
     goto:eof
   )
   echo Stopping JATOS
