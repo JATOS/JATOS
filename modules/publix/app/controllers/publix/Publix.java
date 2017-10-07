@@ -98,7 +98,7 @@ public abstract class Publix<T extends Worker> extends Controller
         idCookieService.writeIdCookie(worker, batch, studyResult,
                 componentResult);
         return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
-                component.getHtmlFilePath());
+                component.getHtmlFilePath()).asJava();
     }
 
     @Override

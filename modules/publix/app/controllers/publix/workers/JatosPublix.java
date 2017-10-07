@@ -190,7 +190,7 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
         idCookieService.writeIdCookie(worker, batch, studyResult,
                 componentResult, jatosRun);
         return studyAssets.retrieveComponentHtmlFile(study.getDirName(),
-                component.getHtmlFilePath());
+                component.getHtmlFilePath()).asJava();
     }
 
     @Override
