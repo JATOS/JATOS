@@ -1,7 +1,7 @@
 import com.typesafe.config._
 
 name := "jatos-common"
-version := "3.1.8"
+version := "3.1.9"
 organization := "org.jatos"
 scalaVersion := "2.11.11"
 
