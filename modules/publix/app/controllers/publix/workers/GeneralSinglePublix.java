@@ -111,6 +111,7 @@ public class GeneralSinglePublix extends Publix<GeneralSingleWorker> implements 
             generalSingleCookieService.set(study, worker);
         }
         publixUtils.setPreStudyStateByPre(pre, studyResult);
+        publixUtils.setUrlQueryParameter(studyResult);
 
         Component firstComponent = publixUtils
                 .retrieveFirstActiveComponent(study);

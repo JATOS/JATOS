@@ -226,7 +226,7 @@ public class TestHelper {
 	 */
 	public void mockContext() {
 		Cookies cookies = mock(Cookies.class);
-		mockContext(cookies);
+		mockContext(cookies, null);
 	}
 
 	/**
@@ -236,7 +236,7 @@ public class TestHelper {
 	public void mockContext(Cookie cookie) {
 		Cookies cookies = mock(Cookies.class);
 		when(cookies.get(cookie.name())).thenReturn(cookie);
-		mockContext(cookies);
+		mockContext(cookies, null);
 	}
 
 	/**
@@ -246,16 +246,25 @@ public class TestHelper {
 	public void mockContext(List<Cookie> cookieList) {
 		Cookies cookies = mock(Cookies.class);
 		when(cookies.iterator()).thenReturn(cookieList.iterator());
-		mockContext(cookies);
+		mockContext(cookies, null);
 	}
 
-	private void mockContext(Cookies cookies) {
+	/**
+	 * Mocks Play's Http.Context with URL query string parameters
+	 */
+	public void mockContext(Map<String, String[]> queryString) {
+		Cookies cookies = mock(Cookies.class);
+		mockContext(cookies, queryString);
+	}
+
+	private void mockContext(Cookies cookies, Map<String, String[]> queryString) {
 		Map<String, String> flashData = Collections.emptyMap();
 		Map<String, Object> argData = Collections.emptyMap();
 		Long id = 2L;
 		RequestHeader header = mock(RequestHeader.class);
 		Http.Request request = mock(Http.Request.class);
 		when(request.cookies()).thenReturn(cookies);
+		when(request.queryString()).thenReturn(queryString);
 		Http.Context context = new Http.Context(id, header, request, flashData,
 				flashData, argData);
 		Http.Context.current.set(context);

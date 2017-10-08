@@ -1,11 +1,13 @@
 package services.publix.workers;
 
+import controllers.publix.workers.PersonalSinglePublix;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
 import group.GroupAdministration;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
+import play.mvc.Http;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
@@ -13,6 +15,8 @@ import services.publix.idcookie.IdCookieService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * PersonalSinglePublix' implementation of PublixUtils
@@ -61,6 +65,17 @@ public class PersonalSinglePublixUtils
                     PublixErrorMessages.workerNotExist(workerIdStr));
         }
         return retrieveTypedWorker(workerId);
+    }
+
+    @Override
+    public Map<String, String> getNonJatosUrlQueryParameters() {
+        // Flatten Map<String, String[]> to Map<String, String>
+        Map<String, String> queryMap = new HashMap<>();
+        Http.Context.current().request().queryString().forEach((k, v) -> queryMap.put(k, v[0]));
+        queryMap.remove(PersonalSinglePublix.PERSONAL_SINGLE_WORKER_ID);
+        queryMap.remove("batchId");
+        queryMap.remove("pre");
+        return queryMap;
     }
 
 }

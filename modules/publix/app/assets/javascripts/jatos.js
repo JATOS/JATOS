@@ -390,6 +390,9 @@ var jatos = {};
 			}
 			delete jatos.componentProperties.jsonData;
 
+			// Query string parameters of the URL that starts the study
+			jatos.urlQueryParameters = initData.urlQueryParameters;
+
 			// Initialising finished
 			initialized = true;
 		}

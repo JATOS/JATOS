@@ -45,6 +45,9 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
 
     private static final ALogger LOGGER = Logger.of(MTPublix.class);
 
+    /**
+     * URL query parameter used by MT
+     */
     public static final String ASSIGNMENT_ID = "assignmentId";
 
     /**
@@ -121,8 +124,8 @@ public class MTPublix extends Publix<MTWorker> implements IPublix {
                 + worker.getId());
 
         publixUtils.finishAbandonedStudyResults();
-        StudyResult studyResult = resultCreator.createStudyResult(study, batch,
-                worker);
+        StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
+        publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(worker, batch, studyResult);
 
         Component firstComponent = publixUtils

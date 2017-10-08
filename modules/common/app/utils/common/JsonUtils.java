@@ -112,16 +112,17 @@ public class JsonUtils {
         ArrayNode componentList = getComponentListForInitData(study);
         String componentProperties = asJsonForPublix(component);
         String studySessionData = studyResult.getStudySessionData();
+        String urlQueryParameters = studyResult.getUrlQueryParameters();
+
         ObjectNode initData = Json.mapper().createObjectNode();
         initData.put("studySessionData", studySessionData);
         // This is ugly: first marshaling, now unmarshaling again
-        initData.set("studyProperties",
-                Json.mapper().readTree(studyProperties));
-        initData.set("batchProperties",
-                Json.mapper().readTree(batchProperties));
+        // https://stackoverflow.com/questions/23006241/converting-pojo-to-jsonnode-using-a-jsonview
+        initData.set("studyProperties", Json.mapper().readTree(studyProperties));
+        initData.set("batchProperties", Json.mapper().readTree(batchProperties));
         initData.set("componentList", componentList);
-        initData.set("componentProperties",
-                Json.mapper().readTree(componentProperties));
+        initData.set("componentProperties", Json.mapper().readTree(componentProperties));
+        initData.set("urlQueryParameters", Json.mapper().readTree(urlQueryParameters));
         return initData;
     }
 

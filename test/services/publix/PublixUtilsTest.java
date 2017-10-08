@@ -43,7 +43,7 @@ import static org.fest.assertions.Assertions.assertThat;
  */
 public abstract class PublixUtilsTest<T extends Worker> {
 
-    private Injector injector;
+    protected Injector injector;
 
     @Inject
     protected TestHelper testHelper;
@@ -53,9 +53,6 @@ public abstract class PublixUtilsTest<T extends Worker> {
 
     @Inject
     protected PublixUtils<T> publixUtils;
-
-    @Inject
-    protected PublixErrorMessages errorMessages;
 
     @Inject
     protected IdCookieService idCookieService;
@@ -1479,7 +1476,7 @@ public abstract class PublixUtilsTest<T extends Worker> {
         });
     }
 
-    private long createStudyResult(Study study) {
+    protected long createStudyResult(Study study) {
         return jpaApi.withTransaction(() -> {
             User admin = userDao.findByEmail(UserService.ADMIN_EMAIL);
             StudyResult studyResult = resultCreator.createStudyResult(study,

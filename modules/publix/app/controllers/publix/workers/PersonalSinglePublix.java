@@ -99,6 +99,7 @@ public class PersonalSinglePublix extends Publix<PersonalSingleWorker> implement
             studyResult = worker.getLastStudyResult();
         }
         publixUtils.setPreStudyStateByPre(pre, studyResult);
+        publixUtils.setUrlQueryParameter(studyResult);
 
         Component component = publixUtils.retrieveFirstActiveComponent(study);
         return redirect(

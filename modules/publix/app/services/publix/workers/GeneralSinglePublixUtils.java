@@ -1,5 +1,6 @@
 package services.publix.workers;
 
+import controllers.publix.workers.GeneralSinglePublix;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
 import exceptions.publix.ForbiddenPublixException;
@@ -8,6 +9,7 @@ import models.common.StudyResult;
 import models.common.StudyResult.StudyState;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.Worker;
+import play.mvc.Http;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
@@ -15,6 +17,8 @@ import services.publix.idcookie.IdCookieService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * GeneralSinglePublix' implementation of PublixUtils
@@ -66,6 +70,16 @@ public class GeneralSinglePublixUtils extends PublixUtils<GeneralSingleWorker> {
             throw new ForbiddenPublixException(
                     PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
+    }
+
+    @Override
+    public Map<String, String> getNonJatosUrlQueryParameters() {
+        Map<String, String> queryMap = new HashMap<>();
+        Http.Context.current().request().queryString().forEach((k, v) -> queryMap.put(k, v[0]));
+        queryMap.remove(GeneralSinglePublix.GENERALSINGLE);
+        queryMap.remove("batchId");
+        queryMap.remove("pre");
+        return queryMap;
     }
 
 }

@@ -11,12 +11,15 @@ import group.GroupAdministration;
 import models.common.User;
 import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
+import play.mvc.Http;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * JatosPublix' implementation of PublixUtils (studies or components started via
@@ -91,6 +94,15 @@ public class JatosPublixUtils extends PublixUtils<JatosWorker> {
             throw new BadRequestPublixException(
                     JatosErrorMessages.MALFORMED_JATOS_RUN_SESSION_PARAMETER);
         }
+    }
+
+    @Override
+    public Map<String, String> getNonJatosUrlQueryParameters() {
+        Map<String, String> queryMap = new HashMap<>();
+        Http.Context.current().request().queryString().forEach((k, v) -> queryMap.put(k, v[0]));
+        queryMap.remove(JatosPublix.JATOS_WORKER_ID);
+        queryMap.remove("batchId");
+        return queryMap;
     }
 
 }

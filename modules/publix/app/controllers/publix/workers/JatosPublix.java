@@ -131,8 +131,8 @@ public class JatosPublix extends Publix<JatosWorker> implements IPublix {
                         JatosErrorMessages.STUDY_NEVER_STARTED_FROM_JATOS);
         }
         publixUtils.finishAbandonedStudyResults();
-        StudyResult studyResult = resultCreator.createStudyResult(study, batch,
-                worker);
+        StudyResult studyResult = resultCreator.createStudyResult(study, batch, worker);
+        publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(worker, batch, studyResult, jatosRun);
         return redirect(controllers.publix.routes.PublixInterceptor
                 .startComponent(studyId, componentId, studyResult.getId()));
