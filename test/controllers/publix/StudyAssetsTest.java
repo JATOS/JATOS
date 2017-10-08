@@ -227,7 +227,7 @@ public class StudyAssetsTest {
 
 		Result result = studyAssets.retrieveComponentHtmlFile(
 				study.getDirName(),
-				study.getFirstComponent().getHtmlFilePath());
+				study.getFirstComponent().getHtmlFilePath()).asJava();
 
 		assertThat(result.status()).isEqualTo(OK);
 		assertThat(result.charset().get()).isEqualTo("utf-8");

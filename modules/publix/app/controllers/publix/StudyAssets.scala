@@ -20,7 +20,7 @@ import utils.common.{HttpUtils, IOUtils}
   */
 @Singleton
 class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService) extends
-  Controller {
+    Controller {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -53,7 +53,7 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService) 
         else Forbidden(views.html.publix.error.render(errorMsg))
       case e: IOException =>
         logger.info(s".versioned: failed loading from path ${Common.getStudyAssetsRootPath}" +
-          s"${File.separator}$urlPath")
+            s"${File.separator}$urlPath")
         val errorMsg = s"Resource '$urlPath' couldn't be found."
         if (HttpUtils.isAjax) NotFound(errorMsg)
         else NotFound(views.html.publix.error.render(errorMsg))
@@ -75,12 +75,12 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService) 
   private def checkProperAssets(urlPath: String): Unit = {
     val filePathArray = urlPath.split(URL_PATH_SEPARATOR)
     if (filePathArray.isEmpty)
-      throw new ForbiddenPublixException(PublixErrorMessages.studyAssetsNotAllowedOutsideRun
-      (urlPath))
+      throw new ForbiddenPublixException(
+        PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
     val studyAssets = filePathArray(0)
     if (!idCookieService.oneIdCookieHasThisStudyAssets(studyAssets))
-      throw new ForbiddenPublixException(PublixErrorMessages.studyAssetsNotAllowedOutsideRun
-      (urlPath))
+      throw new ForbiddenPublixException(
+        PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
   }
 
   /**
@@ -90,7 +90,8 @@ class StudyAssets @Inject()(ioUtils: IOUtils, idCookieService: IdCookieService) 
   def retrieveComponentHtmlFile(studyDirName: String, componentHtmlFilePath: String): Result = {
     try {
       val file = ioUtils.getFileInStudyAssetsDir(studyDirName, componentHtmlFilePath)
-      Ok.sendFile(file, true)
+      Ok.sendFile(file, true).as("text/html; charset=utf-8")
+          .withHeaders("Cache-control" -> "no-cache, no-store")
     } catch {
       case e: IOException =>
         throw new NotFoundPublixException(
