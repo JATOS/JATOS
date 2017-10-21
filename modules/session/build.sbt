@@ -1,5 +1,5 @@
 name := "jatos-session"
-version := "3.1.9"
+version := "3.1.10"
 organization := "org.jatos"
 scalaVersion := "2.11.11"
 
