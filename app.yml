@@ -1,18 +1,14 @@
 # this config file is for installer.71m.us
-
 name: JATOS
 image: ubuntu-16-04-x64
 min_size: 1gb
 config:
   #cloud-config
-  users:
-    - name: jatos
-      groups: sudo
-      shell: /bin/bash
-      sudo: ['ALL=(ALL) NOPASSWD:ALL']
-  package_upgrade: true
-  packages:
-    - docker
-  runcmd:
+runcmd:
+    - apt install apt-transport-https ca-certificates curl software-properties-common
+    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    - apt update
+    - apt install docker-ce
     - docker pull jatos/jatos:3.1.10
     - docker run -d -p 80:9000 jatos/jatos:3.1.10
