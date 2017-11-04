@@ -11,8 +11,9 @@ config:
       shell: /bin/bash
       sudo: ['ALL=(ALL) NOPASSWD:ALL']
   runcmd:
+    - su jatos
     - cd /home/jatos/
     - wget https://github.com/JATOS/JATOS/releases/download/v3.1.10/jatos-3.1.10_linux_java.zip
     - unzip jatos-3.1.10_linux_java.zip
     - cd jatos-3.1.10_linux_java
-    - su -l jatos -c "nohup ./loader.sh start -Dhttp.port=80 -Dhttp.address=localhost &"
+    - nohup ./loader.sh start -Dhttp.port=80 -Dhttp.address=localhost &
