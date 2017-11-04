@@ -1,5 +1,5 @@
 name: JATOS
-image: docker
+image: docker-16-04
 min_size: 1gb
 config:
   #cloud-config
