@@ -5,4 +5,4 @@ config:
   #cloud-config
   runcmd:
     - docker pull jatos/jatos:3.1.10
-    - docker run -d -p 80:9000 jatos/jatos:3.1.10
+    - nohup docker run -p 80:9000 jatos/jatos:3.1.10 &
