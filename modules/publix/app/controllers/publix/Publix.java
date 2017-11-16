@@ -183,7 +183,7 @@ public abstract class Publix<T extends Worker> extends Controller
         String studySessionData = request().body().asText();
         studyResult.setStudySessionData(studySessionData);
         studyResultDao.update(studyResult);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     @Override
@@ -198,7 +198,7 @@ public abstract class Publix<T extends Worker> extends Controller
                 studyResultId);
         studyResult.setLastSeenDate(new Timestamp(new Date().getTime()));
         studyResultDao.update(studyResult);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     @Override
@@ -254,7 +254,7 @@ public abstract class Publix<T extends Worker> extends Controller
         componentResult.setData(resultData);
         componentResult.setComponentState(ComponentState.RESULTDATA_POSTED);
         componentResultDao.update(componentResult);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     @Override
@@ -292,7 +292,7 @@ public abstract class Publix<T extends Worker> extends Controller
             componentResult.setErrorMsg(errorMsg);
         }
         componentResultDao.update(componentResult);
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
     @Override
@@ -316,7 +316,7 @@ public abstract class Publix<T extends Worker> extends Controller
         }
         idCookieService.discardIdCookie(studyResult.getId());
         if (HttpUtils.isAjax()) {
-            return ok();
+            return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
             return ok(views.html.publix.abort.render());
         }
@@ -343,7 +343,7 @@ public abstract class Publix<T extends Worker> extends Controller
         }
         idCookieService.discardIdCookie(studyResult.getId());
         if (HttpUtils.isAjax()) {
-            return ok();
+            return ok(" "); // jQuery.ajax cannot handle empty responses
         } else {
             if (!successful) {
                 return ok(views.html.publix.error.render(errorMsg));
@@ -366,7 +366,7 @@ public abstract class Publix<T extends Worker> extends Controller
                 + ", component ID " + componentId + ", worker ID "
                 + worker.getId() + ", study result ID " + studyResultId
                 + ", message \"" + msg + "\".");
-        return ok();
+        return ok(" "); // jQuery.ajax cannot handle empty responses
     }
 
 }

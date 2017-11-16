@@ -857,15 +857,15 @@ var jatos = {};
 		submittingResultDataDeferred = jatos.jQuery.Deferred();
 		jatos.jQuery.ajax({
 			url: "/publix/" + jatos.studyId + "/" +
-			jatos.componentId + "/resultData" +	"?srid=" + jatos.studyResultId,
+				jatos.componentId + "/resultData" +	"?srid=" + jatos.studyResultId,
 			data: resultData,
 			processData: false,
-			type: httpMethod,
-			contentType: "text/plain; charset=UTF-8",
+			method: httpMethod,
+			dataType: "text",
 			timeout: jatos.httpTimeout,
-			success: function (response) {
-				callFunctionIfExist(onSuccess, response);
-				submittingResultDataDeferred.resolve(response);
+			success: function () {
+				callFunctionIfExist(onSuccess);
+				submittingResultDataDeferred.resolve();
 			},
 			error: function (err) {
 				var errMsg = getAjaxErrorMsg(err);
@@ -909,8 +909,8 @@ var jatos = {};
 			url: "/publix/" + jatos.studyId + "/studySessionData" + "?srid=" + jatos.studyResultId,
 			data: studySessionDataStr,
 			processData: false,
-			type: "POST",
-			contentType: "text/plain; charset=UTF-8",
+			method: "POST",
+			dataType: "text",
 			timeout: jatos.httpTimeout,
 			success: function () {
 				callFunctionIfExist(onSuccess);
@@ -1890,7 +1890,7 @@ var jatos = {};
 			data: logMsg,
 			processData: false,
 			type: "POST",
-			contentType: "text/plain; charset=UTF-8",
+			dataType: "text",
 			timeout: jatos.httpTimeout,
 			error: function (err) {
 				callingOnError(null, getAjaxErrorMsg(err));
