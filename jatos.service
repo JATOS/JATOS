@@ -1,0 +1,18 @@
+[Unit]
+Description=JATOS
+After=network-online.target
+# If you use JATOS with an MySQL database use
+#After=network-online.target mysql.service
+
+[Service]
+Type=forking
+PIDFile=/opt/docker/RUNNING_PID
+User=daemon
+ExecStart=/opt/docker/bin/jatos -Dconfig.file=conf/production.conf -J-server
+ExecStop=/bin/kill $MAINPID
+ExecStopPost=/bin/rm -f /opt/docker/RUNNING_PID
+ExecRestart=/bin/kill $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
