@@ -14,18 +14,18 @@ libraryDependencies ++= Seq(
 
 // Docker commands to run in Dockerfile
 dockerCommands := Seq(
-  Cmd("FROM", "java:8-jre"),
+  Cmd("FROM", "openjdk:8-jre"),
   Cmd("MAINTAINER", "Kristian Lange"),
   Cmd("WORKDIR", "/opt/docker"),
   Cmd("ADD", "opt /opt"),
   Cmd("EXPOSE", "9000 9443"),
-  Cmd("RUN", "apt-get update -y && apt-get install vim -y"),
+  Cmd("RUN", "apt update -y && apt install vim -y"),
   ExecCmd("RUN", "mkdir", "-p", "/opt/docker/logs"),
   ExecCmd("RUN", "chown", "-R", "daemon:daemon", "."),
   Cmd("VOLUME", "/opt/docker/logs"),
   Cmd("RUN", "bash -l -c 'echo export JATOS_SECRET=$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom | fold -w128 | head -n1) >> /etc/bash.bashrc'"),
   Cmd("USER", "daemon"),
-  ExecCmd("ENTRYPOINT", "bin/jatos", "-Dconfig.file=conf/production.conf", "-J-server")
+  ExecCmd("ENTRYPOINT", "bin/jatos", "-Dconfig.file=conf/production.conf", "-Dpidfile.path=/dev/null", "-J-server")
 )
 
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
@@ -40,31 +40,31 @@ PlayKeys.externalizeResources := false
 
 // JATOS root project with GUI. Container for all the submodules
 lazy val jatos: Project = (project in file("."))
-  .enablePlugins(PlayScala, SbtWeb)
-  .aggregate(publix, common, gui)
-  .dependsOn(publix, common, gui)
-  .settings(
-    aggregateReverseRoutes := Seq(publix, common, gui)
-  )
+    .enablePlugins(PlayScala, SbtWeb)
+    .aggregate(publix, common, gui)
+    .dependsOn(publix, common, gui)
+    .settings(
+      aggregateReverseRoutes := Seq(publix, common, gui)
+    )
 
 // Submodule jatos-utils: common utils for JSON, disk IO and such
 lazy val common = (project in file("modules/common"))
-  .enablePlugins(PlayJava)
+    .enablePlugins(PlayJava)
 
 // Submodule jatos-session: does group and batch session
 lazy val session = (project in file("modules/session"))
-  .enablePlugins(PlayScala)
-  .dependsOn(common)
+    .enablePlugins(PlayScala)
+    .dependsOn(common)
 
 // Submodule jatos-publix: responsible for running studies
 lazy val publix = (project in file("modules/publix"))
-  .enablePlugins(PlayJava, PlayScala)
-  .dependsOn(common, session)
+    .enablePlugins(PlayJava, PlayScala)
+    .dependsOn(common, session)
 
 // Submodule jatos-gui: responsible for running studies
 lazy val gui = (project in file("modules/gui"))
-  .enablePlugins(PlayJava)
-  .dependsOn(common)
+    .enablePlugins(PlayJava)
+    .dependsOn(common)
 
 // Routes from submodules
 routesGenerator := InjectedRoutesGenerator
