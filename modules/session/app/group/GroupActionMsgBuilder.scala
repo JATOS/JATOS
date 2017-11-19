@@ -22,8 +22,7 @@ import scala.compat.java8.FunctionConverters.asJavaSupplier
   * @author Kristian Lange (2015, 2017)
   */
 @Singleton
-class GroupActionMsgBuilder @Inject()(jpa: JPAApi,
-                                      groupResultDao: GroupResultDao) {
+class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -34,7 +33,7 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi,
     val json = Json.obj(
       GroupActionJsonKey.Action.toString -> GroupAction.Error.toString,
       GroupActionJsonKey.ErrorMsg.toString -> errorMsg,
-      GroupActionJsonKey.GroupResultId.toString -> groupResultId)
+      GroupActionJsonKey.GroupResultId.toString -> groupResultId.toString)
     GroupMsg(json, tellWhom)
   }
 
@@ -45,10 +44,10 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi,
     logger.debug(s".buildSimple: groupResult ${groupResult.getId}")
     val json = Json.obj(
       GroupActionJsonKey.Action.toString -> action.toString,
-      GroupActionJsonKey.GroupResultId.toString -> JsNumber(BigDecimal(groupResult.getId)),
+      GroupActionJsonKey.GroupResultId.toString -> groupResult.getId.toString,
       GroupActionJsonKey.GroupState.toString -> groupResult.getGroupState.name,
       GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult
-        .getGroupSessionVersion)))
+          .getGroupSessionVersion)))
     GroupMsg(json, tellWhom)
   }
 
@@ -61,13 +60,13 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi,
     // The GroupResult determines who is member of the group - and not the group registry.
     jpa.withTransaction(asJavaSupplier(() => {
       logger.debug(s".build: groupResultId $groupResultId, studyResultId $studyResultId, action " +
-        s"$action , tellWhom ${tellWhom.toString}")
+          s"$action , tellWhom ${tellWhom.toString}")
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult != null)
         buildAction(groupResult, studyResultId, registry, includeSessionData, action, tellWhom)
       else
         buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database" +
-          s".", TellWhom.SenderOnly)
+            s".", TellWhom.SenderOnly)
     }))
   }
 
@@ -77,12 +76,12 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi,
   def buildSessionPatch(groupResult: GroupResult, studyResultId: Long, patch: JsValue,
                         tellWhom: TellWhom): GroupMsg = {
     logger.debug(s".buildSessionPatch: groupResultId ${groupResult.getId}, studyResultId " +
-      s"$studyResultId")
+        s"$studyResultId")
     val json = Json.obj(
       GroupActionJsonKey.Action.toString -> GroupAction.Session.toString,
       GroupActionJsonKey.SessionPatches.toString -> patch,
       GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult
-        .getGroupSessionVersion)))
+          .getGroupSessionVersion)))
     GroupMsg(json, tellWhom)
   }
 
@@ -90,21 +89,21 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi,
                           includeSessionData: Boolean, action: GroupAction,
                           tellWhom: TellWhom): GroupMsg = {
     val members = JsArray(
-      groupResult.getActiveMemberList.asScala.map(sr => JsNumber(BigDecimal(sr.getId))).toSeq
+      groupResult.getActiveMemberList.asScala.map(sr => JsString(sr.getId.toString)).toSeq
     )
-    val channels = JsArray(registry.getAllStudyResultIds.map(id => JsNumber(BigDecimal(id))).toSeq)
+    val channels = JsArray(registry.getAllStudyResultIds.map(id => JsString(id.toString)).toSeq)
     var json = Json.obj(
       GroupActionJsonKey.Action.toString -> action.toString,
-      GroupActionJsonKey.MemberId.toString -> studyResultId,
-      GroupActionJsonKey.GroupResultId.toString -> JsNumber(BigDecimal(groupResult.getId)),
+      GroupActionJsonKey.MemberId.toString -> studyResultId.toString,
+      GroupActionJsonKey.GroupResultId.toString -> groupResult.getId.toString,
       GroupActionJsonKey.GroupState.toString -> groupResult.getGroupState.name,
       GroupActionJsonKey.Members.toString -> members,
       GroupActionJsonKey.Channels.toString -> channels,
       GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult
-        .getGroupSessionVersion)))
+          .getGroupSessionVersion)))
     if (includeSessionData)
       json = json + (GroupActionJsonKey.SessionData.toString -> Json.parse(groupResult
-        .getGroupSessionData))
+          .getGroupSessionData))
     GroupMsg(json, tellWhom)
   }
 
