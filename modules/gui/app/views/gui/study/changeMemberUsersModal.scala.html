@@ -151,7 +151,7 @@ function alterTableAfterUserAdding(user) {
 	var isAlreadyInTable = false;
 	memberUserTable.rows().every(function(rowIdx, tableLoop, rowLoop) {
 		var tableMember = this.data();
-		if (tableMember.email == user.email) {
+		if (tableMember.email.toLowerCase() === user.email.toLowerCase()) {
 			isAlreadyInTable = true;
 			if (tableMember.isMember) {
 				var msg = "User " + user.name + " (" + user.email + ") is already member."; 

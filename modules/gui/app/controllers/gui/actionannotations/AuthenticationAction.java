@@ -151,8 +151,8 @@ public class AuthenticationAction extends Action<Authenticated> {
                 redirect(controllers.gui.routes.Authentication.login()));
     }
 
-    private CompletionStage<Result> callForbiddenDueToInvalidSession(
-            String userEmail, String remoteAddress, String urlPath) {
+    private CompletionStage<Result> callForbiddenDueToInvalidSession(String userEmail,
+            String remoteAddress, String urlPath) {
         LOGGER.warn("Invalid session: user " + userEmail
                 + " tried to access page " + urlPath + " from remote address "
                 + remoteAddress + ".");
@@ -165,8 +165,7 @@ public class AuthenticationAction extends Action<Authenticated> {
         }
     }
 
-    private CompletionStage<Result> callForbiddenDueToSessionTimeout(
-            String userEmail) {
+    private CompletionStage<Result> callForbiddenDueToSessionTimeout(String userEmail) {
         LOGGER.info("Session of user " + userEmail
                 + " has expired and the user has been logged out.");
         if (HttpUtils.isAjax()) {
@@ -190,8 +189,8 @@ public class AuthenticationAction extends Action<Authenticated> {
         }
     }
 
-    private CompletionStage<Result> callForbiddenDueToAuthorization(
-            String userEmail, String urlPath) {
+    private CompletionStage<Result> callForbiddenDueToAuthorization(String userEmail,
+            String urlPath) {
         String message = "User " + userEmail + " isn't allowed to access page "
                 + urlPath + ".";
         LOGGER.warn(message);

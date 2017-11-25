@@ -103,8 +103,7 @@ public class Users extends Controller {
 				+ ", " + "adminRole " + adminRole);
 		boolean hasAdminRole;
 		try {
-			hasAdminRole = userService.changeAdminRole(emailOfUserToChange,
-					adminRole);
+			hasAdminRole = userService.changeAdminRole(emailOfUserToChange, adminRole);
 		} catch (NotFoundException e) {
 			return badRequest(e.getMessage());
 		} catch (ForbiddenException e) {
