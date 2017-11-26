@@ -747,7 +747,7 @@ var jatos = {};
 		try {
 			batchChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			batchSessionTimeout = setChannelSendingTimeout(
+			batchSessionTimeout = setChannelSendingTimeoutAndPromiseResolution(
 				sendingBatchSessionDeferred, onSuccess, onFail);
 		} catch (error) {
 			callingOnError(onFail, error);
@@ -1474,7 +1474,7 @@ var jatos = {};
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			groupSessionTimeout = setChannelSendingTimeout(
+			groupSessionTimeout = setChannelSendingTimeoutAndPromiseResolution(
 				sendingGroupSessionDeferred, onSuccess, onFail);
 		} catch (error) {
 			callingOnError(onFail, error);
@@ -1508,7 +1508,7 @@ var jatos = {};
 		try {
 			groupChannel.send(JSON.stringify(msgObj));
 			// Setup timeout: How long to wait for an answer from JATOS.
-			groupFixedTimeout = setChannelSendingTimeout(
+			groupFixedTimeout = setChannelSendingTimeoutAndPromiseResolution(
 				sendingGroupFixedDeferred, onSuccess, onFail);
 		} catch (error) {
 			callingOnError(onFail, error);
@@ -1984,7 +1984,7 @@ var jatos = {};
 	 * Sets a timeout and returns an object with two functions 1) to cancel the
 	 * timeout and 2) to trigger the timeout prematurely
 	 */
-	function setChannelSendingTimeout(deferred, onSuccess, onFail) {
+	function setChannelSendingTimeoutAndPromiseResolution(deferred, onSuccess, onFail) {
 		var timeoutId = setTimeout(function () {
 			callFunctionIfExist(onFail, "Timeout sending message");
 			deferred.reject("Timeout sending message");
