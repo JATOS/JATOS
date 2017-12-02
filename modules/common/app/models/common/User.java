@@ -68,13 +68,13 @@ public class User {
     private Set<Study> studyList = new HashSet<>();
 
     public User(String email, String name, String passwordHash) {
-        this.email = email;
+        this.email = email.toLowerCase();
         this.name = name;
         this.passwordHash = passwordHash;
     }
 
     public User(String email, String name) {
-        this.email = email;
+        this.email = email.toLowerCase();
         this.name = name;
     }
 
@@ -82,7 +82,7 @@ public class User {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = email.toLowerCase();
     }
 
     public String getEmail() {
@@ -166,7 +166,7 @@ public class User {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((email == null) ? 0 : email.toLowerCase().hashCode());
+        result = prime * result + ((email == null) ? 0 : email.hashCode());
         return result;
     }
 
@@ -186,7 +186,7 @@ public class User {
             if (other.getEmail() != null) {
                 return false;
             }
-        } else if (!email.toLowerCase().equals(other.getEmail().toLowerCase())) {
+        } else if (!email.equals(other.getEmail())) {
             return false;
         }
         return true;
