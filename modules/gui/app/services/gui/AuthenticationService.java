@@ -104,10 +104,10 @@ public class AuthenticationService {
      * the database.
      */
     public User getLoggedInUserBySessionCookie(Http.Session session) {
-        String email = session.get(AuthenticationService.SESSION_USER_EMAIL).toLowerCase();
+        String email = session.get(AuthenticationService.SESSION_USER_EMAIL);
         User loggedInUser = null;
         if (email != null) {
-            loggedInUser = userDao.findByEmail(email);
+            loggedInUser = userDao.findByEmail(email.toLowerCase());
         }
         return loggedInUser;
     }
