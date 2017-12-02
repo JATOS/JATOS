@@ -32,14 +32,12 @@ public class PublixErrorMessages {
 	}
 
 	public static String workerNotAllowedStudy(Worker worker, Long studyId) {
-		return "Worker " + worker.getId() + " is not allowed to do " + "study "
-				+ studyId + ".";
+		return "Worker " + worker.getId() + " is not allowed to do study " + studyId + ".";
 	}
 
 	public static String workerFinishedStudyAlready(Worker worker,
 			Long studyId) {
-		return "Worker " + worker.getId() + " finished study " + studyId
-				+ " already.";
+		return "Worker " + worker.getId() + " finished study " + studyId + " already.";
 	}
 
 	public static String workerNotExist(Long workerId) {

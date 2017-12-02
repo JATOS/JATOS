@@ -11,7 +11,7 @@ import play.data.validation.ValidationError;
 
 /**
  * Model used by the GUI to create a new user. Validation is done in this class
- * in the validate() method and in the AuthenticationService.
+ * in the validate() method and in the AuthenticationService. Emails are stored in lower case.
  * 
  * @author Kristian Lange (2017)
  */
@@ -47,7 +47,7 @@ public class NewUserModel {
 	}
 
 	public void setEmail(String email) {
-		this.email = email;
+		this.email = email.toLowerCase();
 	}
 
 	public String getName() {
