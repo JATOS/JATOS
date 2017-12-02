@@ -25,10 +25,7 @@ public class User {
     }
 
     /**
-     * Email address is used as ID. Emails are stored in a case-sensitive way in the database but
-     * all comparison is done in a case-insensitive way. So Homer.Simson@Gmail.com is equal to
-     * home.simpson@gmail.com when it comes to authentication but still shown as
-     * Homer.Simson@Gmail.com in the GUI.
+     * Email address is used as ID. Emails are stored in lower case.
      */
     @Id
     private String email;
@@ -86,7 +83,7 @@ public class User {
     }
 
     public String getEmail() {
-        return this.email;
+        return this.email.toLowerCase();
     }
 
     public void setName(String name) {
@@ -155,10 +152,10 @@ public class User {
 
     @Override
     public String toString() {
-        if (name != null && !name.trim().isEmpty()) {
-            return name + " (" + email + ")";
+        if (this.getName() != null && !this.getName().trim().isEmpty()) {
+            return this.getName() + " (" + this.getEmail() + ")";
         } else {
-            return email;
+            return this.getEmail();
         }
     }
 
@@ -166,7 +163,7 @@ public class User {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((email == null) ? 0 : email.hashCode());
+        result = prime * result + ((this.getEmail() == null) ? 0 : this.getEmail().hashCode());
         return result;
     }
 
@@ -182,11 +179,11 @@ public class User {
             return false;
         }
         User other = (User) obj;
-        if (email == null) {
+        if (this.getEmail() == null) {
             if (other.getEmail() != null) {
                 return false;
             }
-        } else if (!email.equals(other.getEmail())) {
+        } else if (!this.getEmail().equals(other.getEmail())) {
             return false;
         }
         return true;

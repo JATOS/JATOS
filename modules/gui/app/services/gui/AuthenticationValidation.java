@@ -41,12 +41,10 @@ public class AuthenticationValidation {
      */
     public List<ValidationError> validateNewUser(NewUserModel newUserModel,
             String loggedInAdminEmail) {
-        loggedInAdminEmail = loggedInAdminEmail.toLowerCase();
         List<ValidationError> errorList = new ArrayList<>();
 
         // Check if user with this email already exists
-        // (string comparision in our DB is case-insensitve)
-        String email = newUserModel.getEmail().toLowerCase();
+        String email = newUserModel.getEmail();
         User existingUser = userDao.findByEmail(email);
         if (existingUser != null) {
             errorList.add(new ValidationError(NewUserModel.EMAIL,
@@ -89,9 +87,8 @@ public class AuthenticationValidation {
         // Only user 'admin' is allowed to change his password
         if (emailOfUserToChange.equals(UserService.ADMIN_EMAIL)
                 && !loggedInUser.getEmail().equals(UserService.ADMIN_EMAIL)) {
-            errorList
-                    .add(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
-                            MessagesStrings.NOT_ALLOWED_CHANGE_PW_ADMIN));
+            errorList.add(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
+                    MessagesStrings.NOT_ALLOWED_CHANGE_PW_ADMIN));
         }
 
         // Check both passwords equal
@@ -108,28 +105,23 @@ public class AuthenticationValidation {
                 && changePasswordModel.getAdminPassword() != null) {
             String adminEmail = loggedInUser.getEmail();
             String adminPassword = changePasswordModel.getAdminPassword();
-            if (!authenticationService.authenticate(adminEmail,
-                    adminPassword)) {
-                errorList.add(
-                        new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
-                                MessagesStrings.WRONG_PASSWORD));
+            if (!authenticationService.authenticate(adminEmail, adminPassword)) {
+                errorList.add(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
+                        MessagesStrings.WRONG_PASSWORD));
             }
 
         } else if (loggedInUser.getEmail().equals(emailOfUserToChange)
                 && changePasswordModel.getOldPassword() != null) {
             String oldPassword = changePasswordModel.getOldPassword();
-            if (!authenticationService.authenticate(emailOfUserToChange,
-                    oldPassword)) {
-                errorList.add(
-                        new ValidationError(ChangePasswordModel.OLD_PASSWORD,
-                                MessagesStrings.WRONG_OLD_PASSWORD));
+            if (!authenticationService.authenticate(emailOfUserToChange, oldPassword)) {
+                errorList.add(new ValidationError(ChangePasswordModel.OLD_PASSWORD,
+                        MessagesStrings.WRONG_OLD_PASSWORD));
             }
 
         } else {
             // Should never happen since we checked role ADMIN already
-            errorList
-                    .add(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
-                            MessagesStrings.NOT_ALLOWED_TO_CHANGE_PASSWORDS));
+            errorList.add(new ValidationError(ChangePasswordModel.ADMIN_PASSWORD,
+                    MessagesStrings.NOT_ALLOWED_TO_CHANGE_PASSWORDS));
         }
 
         return errorList;

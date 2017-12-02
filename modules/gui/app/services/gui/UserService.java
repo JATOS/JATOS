@@ -121,7 +121,6 @@ public class UserService {
      */
     public void updatePassword(String emailOfUserToChange, String newPassword)
             throws NotFoundException {
-        emailOfUserToChange = emailOfUserToChange.toLowerCase();
         User user = retrieveUser(emailOfUserToChange);
         String newPasswordHash = HashUtils.getHashMDFive(newPassword);
         user.setPasswordHash(newPasswordHash);
@@ -144,7 +143,6 @@ public class UserService {
      */
     public boolean changeAdminRole(String email, boolean adminRole)
             throws NotFoundException, ForbiddenException {
-        email = email.toLowerCase();
         User user = retrieveUser(email);
         User loggedInUser = authenticationService.getLoggedInUser();
         if (user.equals(loggedInUser)) {
@@ -171,7 +169,6 @@ public class UserService {
      */
     public void removeUser(String email)
             throws NotFoundException, ForbiddenException, IOException {
-        email = email.toLowerCase();
         User user = retrieveUser(email);
         if (user.getEmail().equals(ADMIN_EMAIL)) {
             throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_DELETE_ADMIN);

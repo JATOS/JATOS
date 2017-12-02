@@ -276,7 +276,7 @@ public class Users extends Controller {
 
 	private void checkEmailIsOfLoggedInUser(String email, User loggedInUser)
 			throws JatosGuiException {
-		if (!email.equals(loggedInUser.getEmail())) {
+		if (!email.toLowerCase().equals(loggedInUser.getEmail())) {
 			ForbiddenException e = new ForbiddenException(
 					MessagesStrings.userNotAllowedToGetData(email));
 			jatosGuiExceptionThrower.throwRedirect(e,

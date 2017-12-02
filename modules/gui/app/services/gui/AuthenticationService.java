@@ -26,7 +26,7 @@ import java.time.temporal.ChronoUnit;
  * If a user is authenticated (same password as stored in the database) a user
  * session ID is generated and stored in Play's session cookie and in the the
  * cache. With each subsequent request this session is checked in the
- * AuthenticationAction. For Authentication the User's email is turned into
+ * AuthenticationAction. For authentication the user's email is turned into
  * lower case.
  *
  * @author Kristian Lange (2017)
